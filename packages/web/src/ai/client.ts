@@ -42,6 +42,9 @@ export async function chatCompletion(
       model: settings.model,
       messages,
       tools: registry.llmTools(),
+      ...(settings.effort && settings.effort !== 'auto'
+        ? { reasoning_effort: settings.effort }
+        : {}),
     }),
     signal: opts?.signal,
   });

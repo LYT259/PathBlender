@@ -34,6 +34,7 @@ export async function runAssistantInstruction(
   ctx: ActionContext,
   onEvent: (e: AssistantEvent) => void,
   requestConfirmation: (req: ConfirmRequest) => Promise<boolean>,
+  opts?: { signal?: AbortSignal },
 ): Promise<void> {
   const messages: ChatMessage[] = [
     { role: 'system', content: systemPrompt(ctx) },
@@ -41,7 +42,7 @@ export async function runAssistantInstruction(
   ];
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const choice = await chatCompletion(settings, messages);
+    const choice = await chatCompletion(settings, messages, { signal: opts?.signal });
     const calls = choice.message.tool_calls ?? [];
 
     if (calls.length === 0) {
