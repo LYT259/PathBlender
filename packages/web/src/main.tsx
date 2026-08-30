@@ -1,4 +1,4 @@
-import { StrictMode, useState } from 'react';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { I18nProvider, LANGUAGES, langLabel, useI18n, type Lang } from './i18n';
@@ -17,21 +17,14 @@ if (typeof window !== 'undefined' && (window.location.protocol === 'tauri:' || w
 }
 
 function PrefsOnly() {
-  const { lang, setLang } = useI18n();
-  const [value, setValue] = useState<Lang>(lang);
+  const { lang, setLang, t } = useI18n();
   return (
     <div className="prefs-only">
       <div className="prefs-modal static">
-        <h3>Preferences</h3>
+        <h3>{t('prefs.title')}</h3>
         <label className="prefs-row">
-          <span>Language / 语言</span>
-          <select
-            value={value}
-            onChange={(e) => {
-              setValue(e.target.value as Lang);
-              setLang(e.target.value as Lang);
-            }}
-          >
+          <span>{t('prefs.language')}</span>
+          <select value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
             {LANGUAGES.map((l) => (
               <option key={l} value={l}>
                 {langLabel(l)}
@@ -40,10 +33,6 @@ function PrefsOnly() {
           </select>
         </label>
         <ThemeRow />
-        <p className="prefs-note">
-          {/* Static text is fine here: the window lives outside the main UI. */}
-          Preferences are shared with the main window.
-        </p>
       </div>
     </div>
   );
@@ -77,13 +66,14 @@ if (
 
 function ThemeRow() {
   const { mode, setMode } = useTheme();
+  const { t } = useI18n();
   return (
     <label className="prefs-row">
-      <span>Theme / 主题</span>
+      <span>{t('prefs.theme')}</span>
       <select value={mode} onChange={(e) => setMode(e.target.value as ThemeMode)}>
-        <option value="system">System / 跟随系统</option>
-        <option value="dark">Dark / 深色</option>
-        <option value="light">Light / 浅色</option>
+        <option value="system">{t('theme.system')}</option>
+        <option value="dark">{t('theme.dark')}</option>
+        <option value="light">{t('theme.light')}</option>
       </select>
     </label>
   );
