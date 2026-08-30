@@ -8,6 +8,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import { fieldImageWorldRect, samplePoseAt } from '@pathblender/core';
 
@@ -20,6 +21,8 @@ interface Props {
   fieldImageUrl?: string;
   robots: SessionTrajectory[];
   currentT: number;
+  /** Field construction variant (AndyMark vs welded), when offered. */
+  variant?: 'welded' | 'andymark';
 }
 
 interface Scene3D {
@@ -31,9 +34,25 @@ interface Scene3D {
   cy: number;
   dynamic: THREE.Group;
   boxes: { mesh: THREE.Mesh; robot: SessionTrajectory }[];
+  /** Render-on-demand: a frame is drawn only when something changed. */
+  dirty: () => void;
+  /** Official 3D field model (when available); replaces the fallback. */
+  modelRoot: THREE.Group;
+  /** Hand-built slab/walls/beacons — visible only without a model. */
+  fallback: THREE.Group;
 }
 
 const CAM_HOME: [number, number, number] = [0, 8.5, 11.5];
+
+/** Official 3D field models (AdvantageScopeAssets, BSD-3) per season and
+ *  construction variant; 2018-2020 have none and keep the fallback. */
+const FIELD3D_MODELS: Record<string, { welded: string; andymark?: string }> = {
+  'rapidreact-2022': { welded: '2022-rapidreact' },
+  'chargedup-2023': { welded: '2023-chargedup' },
+  'crescendo-2024': { welded: '2024-crescendo' },
+  'reefscape-2025': { welded: '2025-reefscape-welded', andymark: '2025-reefscape-andymark' },
+  'rebuilt-2026': { welded: '2026-rebuilt' },
+};
 const WALL_H = 0.9;
 const TAG_PURPLE = '#9c6bff';
 
@@ -45,7 +64,7 @@ function cssToken(name: string, fallback: string): string {
 }
 
 export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function FieldCanvas3D(
-  { field, fieldImageUrl, robots, currentT },
+  { field, fieldImageUrl, robots, currentT, variant = 'welded' },
   ref,
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -65,7 +84,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       setGlFailed(true);
       return;
     }
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     // Soft shadows are the strongest depth cue for the field structures.
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -79,6 +98,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.maxPolarAngle = Math.PI / 2.05;
+
+    // Render on demand (declared early — Scene3D.dirty exposes it).
+    let needsDraw = true;
+    const markDirty = () => {
+      needsDraw = true;
+    };
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.75));
     const sun = new THREE.DirectionalLight(0xffffff, 1.8);
@@ -101,6 +126,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const w = rect.right - rect.left;
     const h = rect.top - rect.bottom;
 
+    const modelRoot = new THREE.Group();
+    const fallback = new THREE.Group();
+    scene.add(modelRoot);
+    scene.add(fallback);
+
     if (fieldImageUrl) {
       const tex = new THREE.TextureLoader().load(fieldImageUrl);
       tex.colorSpace = THREE.SRGBColorSpace;
@@ -114,9 +144,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       );
       slab.position.y = -0.06;
       slab.receiveShadow = true;
-      scene.add(slab);
+      fallback.add(slab);
     } else {
-      scene.add(
+      fallback.add(
         new THREE.GridHelper(
           Math.max(w, h),
           24,
@@ -138,7 +168,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       ]),
       new THREE.LineBasicMaterial({ color: new THREE.Color(cssToken('--fg-dim', '#9a9aa0')) }),
     );
-    scene.add(outline);
+    fallback.add(outline);
 
     // Perimeter walls — the cheapest cue that makes the plane read as a
     // place instead of a picture.
@@ -159,7 +189,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       wall.position.set(wx, WALL_H / 2, wz);
       wall.castShadow = true;
       wall.receiveShadow = true;
-      scene.add(wall);
+      fallback.add(wall);
     }
 
     // AprilTag beacons: posts rising to each tag's official mount height,
@@ -185,7 +215,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const dynamic = new THREE.Group();
     scene.add(dynamic);
 
-    sceneRef.current = { renderer, scene, camera, controls, cx, cy, dynamic, boxes: [] };
+    sceneRef.current = { renderer, scene, camera, controls, cx, cy, dynamic, boxes: [], modelRoot, fallback, dirty: markDirty };
 
     const resize = () => {
       const wpx = host.clientWidth || 1;
@@ -217,10 +247,19 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     renderer.domElement.addEventListener('gesturestart', onGestureStart);
     renderer.domElement.addEventListener('gesturechange', onGestureChange);
 
+    // Draw only when the camera moved or something was marked dirty —
+    // the heavy field model made render-per-frame starve all macrotasks.
+    controls.addEventListener('change', markDirty);
+    const ro0 = new ResizeObserver(markDirty);
+    ro0.observe(host);
+
     let raf = 0;
     const loop = () => {
-      controls.update();
-      renderer.render(scene, camera);
+      const moved = controls.update();
+      if (needsDraw || moved) {
+        needsDraw = false;
+        renderer.render(scene, camera);
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -228,6 +267,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      ro0.disconnect();
+      controls.removeEventListener('change', markDirty);
       renderer.domElement.removeEventListener('gesturestart', onGestureStart);
       renderer.domElement.removeEventListener('gesturechange', onGestureChange);
       controls.dispose();
@@ -236,6 +277,66 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       sceneRef.current = null;
     };
   }, [field, fieldImageUrl]);
+
+  // Official 3D field model (AdvantageScope assets, BSD-3): replaces the
+  // hand-built fallback. Transform validated against the WPILib 2026 tag
+  // layout: config rotation (x 90°) into the AS frame, then mirror X into
+  // our blue-origin frame (reflection → materials flipped to DoubleSide).
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    const entry = FIELD3D_MODELS[field.id];
+    const dir =
+      entry && (variant === 'andymark' ? entry.andymark ?? entry.welded : entry.welded);
+    if (!dir) return; // no official model (2018-2020) — fallback stays
+    let disposed = false;
+    const url = `${import.meta.env.BASE_URL}fields3d/${dir}/model.glb`;
+    new GLTFLoader().load(
+      url,
+      (gltf) => {
+        if (disposed) return;
+        const g = gltf.scene;
+        g.rotation.x = Math.PI / 2;
+        g.scale.x = -1;
+        g.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          // Heavy model stays OUT of the shadow pass (a full second render
+          // of ~1M triangles froze the main thread); a shadow-catcher
+          // floor below still receives the robots' shadows cheaply.
+          mesh.castShadow = false;
+          mesh.receiveShadow = false;
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const m of mats) {
+            (m as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
+          }
+        });
+        const catcher = new THREE.Mesh(
+          new THREE.PlaneGeometry(field.lengthM + 2, field.widthM + 2),
+          new THREE.ShadowMaterial({ opacity: 0.28 }),
+        );
+        catcher.rotation.x = -Math.PI / 2;
+        catcher.position.y = 0.002;
+        catcher.receiveShadow = true;
+        st.modelRoot.add(catcher, g);
+        st.fallback.visible = false;
+        st.dirty();
+      },
+      undefined,
+      () => undefined, // offline/missing model: fallback keeps rendering
+    );
+    return () => {
+      disposed = true;
+      st.modelRoot.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        mesh.geometry?.dispose?.();
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const m of mats) m?.dispose?.();
+      });
+      st.modelRoot.clear();
+      st.fallback.visible = true;
+    };
+  }, [field.id, variant]);
 
   // Rebuild path tubes + robot boxes when the robot set changes.
   useEffect(() => {
@@ -278,6 +379,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       mesh.castShadow = true;
       st.dynamic.add(mesh);
       st.boxes.push({ mesh, robot: r });
+      st.dirty();
     }
   }, [robots]);
 
@@ -289,6 +391,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       const pose = samplePoseAt(robot, currentT);
       mesh.position.set(pose.x - st.cx, 0.225, -(pose.y - st.cy));
       mesh.rotation.y = pose.heading;
+      st.dirty();
     }
   }, [currentT, robots]);
 

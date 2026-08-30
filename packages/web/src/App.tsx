@@ -92,6 +92,7 @@ function AppBody() {
   const aiUndoRef = useRef<{ label: string; robots: SessionTrajectory[] }[]>([]);
   const [aiUndoTop, setAiUndoTop] = useState<string | null>(null);
   const [fieldId, setFieldId] = useState(REBUILT_2026.id);
+  const [fieldVariant, setFieldVariant] = useState<'welded' | 'andymark'>('welded');
   const [customField, setCustomField] = useState<FieldPackage | undefined>(undefined);
   const [customImageUrl, setCustomImageUrl] = useState<string | undefined>(undefined);
   const [cfOpen, setCfOpen] = useState(false);
@@ -103,7 +104,12 @@ function AppBody() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<FieldCanvasHandle>(null);
   const canvas3DRef = useRef<FieldCanvas3DHandle>(null);
-  const field = fieldId === CUSTOM_FIELD_ID && customField ? customField : fieldById(fieldId);
+  const baseField = fieldId === CUSTOM_FIELD_ID && customField ? customField : fieldById(fieldId);
+  // The 2D overlay / beacons follow the selected field construction.
+  const field =
+    fieldVariant === 'andymark' && baseField?.aprilTagsAndyMark
+      ? { ...baseField, aprilTags: baseField.aprilTagsAndyMark }
+      : baseField;
 
   const duration = sessionDuration(robots);
   const playback = usePlayback(duration);
@@ -595,6 +601,18 @@ function AppBody() {
               ))}
               <option value={CUSTOM_FIELD_ID}>{tr('customField.title')}</option>
             </select>
+            {field.aprilTagsAndyMark && (
+              <select
+                className="field-select"
+                value={fieldVariant}
+                onChange={(e) => setFieldVariant(e.target.value as 'welded' | 'andymark')}
+                title={tr('field.variant')}
+                aria-label={tr('field.variant')}
+              >
+                <option value="welded">Welded</option>
+                <option value="andymark">AndyMark</option>
+              </select>
+            )}
             <button
               className={`btn small ${view3D ? 'on' : ''}`}
               onClick={() => setView3D((v) => !v)}
@@ -631,6 +649,7 @@ function AppBody() {
           {view3D ? (
             <FieldCanvas3D
               ref={canvas3DRef}
+              variant={fieldVariant}
               field={field}
               fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl}
               robots={visible}
