@@ -18,7 +18,7 @@ their autonomous programs on the same 26×54 ft field at the same time. Teams
 plan paths in different tools (Choreo, PathPlanner), and nobody can see whether
 the resulting autos will collide until they actually do — in a match.
 
-GHPathBlender fills that gap:
+PathBlender fills that gap:
 
 - **Multi-toolchain import** — Choreo `.traj`, Team 103 Collaborative fork
   `.ghostauto`, and native PathPlanner `.path` / `.auto` (trajectory
