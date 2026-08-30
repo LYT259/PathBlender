@@ -491,3 +491,45 @@ body.desktop .editor-bar { padding-left: 84px; }
 .ai-hero .sparkle { color: var(--accent); opacity: 0.9; }
 .ai-hero-title { font-size: 14px; font-weight: 600; }
 .ai-hero-hint { font-size: 12px; color: var(--fg-dim); }
+
+/* ---------- harness composer (round 11) ---------- */
+.ai-composer {
+  position: relative; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg-card); padding: 6px 8px 6px; margin-top: 8px;
+}
+.ai-composer textarea {
+  width: 100%; border: none; background: transparent; color: var(--fg);
+  font: inherit; resize: none; outline: none; padding: 4px 2px;
+  max-height: 120px; min-height: 40px;
+}
+.ai-composer-row {
+  display: flex; align-items: center; gap: 6px; padding-top: 4px;
+}
+.ai-composer-row select {
+  border: none; border-radius: 6px; background: var(--seg-bg); color: var(--fg-dim);
+  font-size: 11px; padding: 2px 6px; max-width: 110px;
+}
+.ai-perm.full, select.ai-perm option[value="full"] { color: var(--warn); }
+.ai-ctx { font-size: 11px; color: var(--fg-dim); min-width: 30px; text-align: center; }
+.ai-model { max-width: 130px; }
+.ai-send {
+  margin-left: auto; width: 28px; height: 28px; border-radius: 50%;
+  border: none; background: var(--accent); color: #fff; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.ai-send:disabled { opacity: 0.35; cursor: default; }
+.ai-icon-btn.stop { color: var(--danger); margin-left: auto; }
+.ai-menu {
+  position: absolute; bottom: calc(100% + 6px); left: 8px; right: 8px; z-index: 5;
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px var(--shadow); overflow-y: auto; max-height: 240px;
+}
+.ai-menu.tall { max-height: 260px; }
+.ai-menu button {
+  display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left;
+  background: transparent; border: none; padding: 7px 10px; cursor: pointer;
+  color: var(--fg); font-size: 12px;
+}
+.ai-menu button:hover { background: var(--hover); }
+.ai-cmd-name { font-family: ui-monospace, monospace; color: var(--accent); }
+.ai-cmd-desc { color: var(--fg-dim); font-size: 11px; }

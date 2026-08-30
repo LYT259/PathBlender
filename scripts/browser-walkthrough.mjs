@@ -365,6 +365,21 @@ check(
     (await page.locator('.ai-settings').count()) === 0 &&
     errors.length === 0,
 );
+// Harness composer: slash menu lists whitelisted commands; controls present.
+const ta = page.locator('.ai-composer textarea');
+await ta.fill('/');
+await page.waitForTimeout(250);
+const cmdCount = await page.locator('.ai-menu button').count();
+await ta.fill('');
+check(
+  'harness composer present (perm/ctx/model/effort) + slash menu',
+  cmdCount >= 8 &&
+    (await page.locator('select.ai-perm').count()) === 1 &&
+    (await page.locator('.ai-ctx').count()) === 1 &&
+    (await page.locator('select.ai-model').count()) === 1 &&
+    (await page.locator('select.ai-effort').count()) === 1,
+  `commands=${cmdCount}`,
+);
 await page.locator('.ai-icon-btn').first().click(); // gear -> settings
 await page.waitForTimeout(200);
 check(

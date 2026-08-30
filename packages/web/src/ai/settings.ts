@@ -8,6 +8,11 @@
 
 export interface AISettings {
   enabled: boolean;
+  /** Approval tier: standard confirms high-risk actions; full auto-approves
+   *  (the harness "bypass/YOLO" mode — still whitelisted actions only). */
+  permission: 'standard' | 'full';
+  /** Reasoning effort hint passed as reasoning_effort (auto = omit). */
+  effort: 'auto' | 'low' | 'medium' | 'high';
   /** Active provider id (see PROVIDER_PRESETS). */
   provider: string;
   baseUrl: string;
@@ -51,6 +56,8 @@ export function providerPreset(id: string): ProviderPreset {
 
 export const DEFAULT_AI_SETTINGS: AISettings = {
   enabled: false,
+  permission: 'standard',
+  effort: 'auto',
   provider: DEFAULT_PROVIDER,
   baseUrl: '',
   model: '',
@@ -79,8 +86,13 @@ export function loadAISettings(): AISettings {
       v.keys = { ...v.keys, openai: v.keys.codex };
       delete v.keys.codex;
     }
+    const permission = v.permission === 'full' ? 'full' : 'standard';
+    const effort =
+      v.effort === 'low' || v.effort === 'medium' || v.effort === 'high' ? v.effort : 'auto';
     return {
       enabled: Boolean(v.enabled),
+      permission,
+      effort,
       provider: typeof v.provider === 'string' ? v.provider : DEFAULT_PROVIDER,
       baseUrl: typeof v.baseUrl === 'string' ? v.baseUrl : '',
       model: typeof v.model === 'string' ? v.model : '',
