@@ -692,6 +692,7 @@ function AppBody() {
             buildContext={buildActionContext}
             undoLabel={aiUndoTop}
             onUndo={aiUndo}
+            onAttachFiles={(files) => void importFiles(files)}
           />
         )}
       </main>
