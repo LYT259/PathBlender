@@ -1,0 +1,81 @@
+{
+  "name": "2023 Field",
+  "isFTC": false,
+  "coordinateSystem": "wall-blue",
+  "rotations": [
+    {
+      "axis": "x",
+      "degrees": 90
+    }
+  ],
+  "widthInches": 651.25,
+  "heightInches": 315.5,
+  "driverStations": [
+    [
+      8.27,
+      -0.611
+    ],
+    [
+      8.27,
+      1.218
+    ],
+    [
+      8.27,
+      3.046
+    ],
+    [
+      -8.27,
+      3.046
+    ],
+    [
+      -8.27,
+      1.218
+    ],
+    [
+      -8.27,
+      -0.611
+    ]
+  ],
+  "gamePieces": [
+    {
+      "name": "Cone",
+      "rotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        }
+      ],
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "stagedObjects": [
+        "Traffic_Cone_v2",
+        "Traffic_Cone_v2_1",
+        "Traffic_Cone_v2_2",
+        "Traffic_Cone_v2_3"
+      ]
+    },
+    {
+      "name": "Cube",
+      "rotations": [
+        {
+          "axis": "x",
+          "degrees": 90
+        }
+      ],
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "stagedObjects": [
+        "Cube_v3",
+        "Cube_v3_1",
+        "Cube_v3_2",
+        "Cube_v3_3"
+      ]
+    }
+  ]
+}

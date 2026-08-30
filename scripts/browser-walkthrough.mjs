@@ -31,6 +31,8 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+let modelLoaded = false;
+page.on('response', (r) => { if (r.url().includes('fields3d/') && r.url().endsWith('model.glb') && r.status() === 200) modelLoaded = true; });
 
 await page.goto(BASE, { waitUntil: 'domcontentloaded' });
 await page.waitForSelector('.field-canvas-3d canvas');
@@ -377,6 +379,7 @@ check(
   '3D view renders (canvas + no errors)',
   (await page.locator('.field-canvas-3d canvas').count()) >= 1 && errors.length === 0,
 );
+check('official 3D field model loaded', modelLoaded, modelLoaded ? 'fields3d glb fetched' : 'no model request');
 await page.screenshot({ path: `${SHOTS}/14-3d.png` });
 await page.locator('.canvas-bar .btn', { hasText: '3D' }).click(); // back to 2D
 await page.locator('.ai-toggle').click(); // close
