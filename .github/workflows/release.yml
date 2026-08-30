@@ -1,0 +1,114 @@
+# Release: on a pushed v* tag, build + sign desktop installers, generate
+# the updater feed, and publish a GitHub Release with all artifacts.
+# Web app deploys separately via deploy.yml (Pages, push to stable).
+#
+# Signing: repo secret TAURI_SIGNING_PRIVATE_KEY (content of
+# ~/.tauri/pathblender-updater.key) + TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+# (see docs/releasing.md — key backup discipline).
+#
+# Platform matrix: macOS is active today. The Windows and Linux jobs are
+# staged but disabled (`if: false`) until their bundle configs land in
+# tauri.conf.json (NSIS/WebView2 bootstrapper, deb/AppImage — report
+# v1.10 §7.1 runtime matrix); flip them on when those land.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install workspace deps
+        run: npm install
+      - name: Build signed desktop bundle
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: npx tauri build -w packages/desktop
+      - name: Stage artifacts
+        run: |
+          mkdir -p release
+          B=packages/desktop/src-tauri/target/release/bundle
+          cp "$B/macos/PathBlender.app.tar.gz" "$B/macos/PathBlender.app.tar.gz.sig" release/
+          cp "$B/dmg/PathBlender_"*_aarch64.dmg release/ || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: release/
+
+  # build-windows:
+  #   if: false  # enable when NSIS/MSI + WebView2 bootstrapper config lands
+  #   runs-on: windows-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with: { node-version: 23 }
+  #     - uses: dtolnay/rust-toolchain@stable
+  #     - run: npm install
+  #     - env:
+  #         TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+  #         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+  #       run: npx tauri build -w packages/desktop --bundles nsis
+  #     - run: |
+  #         mkdir release
+  #         cp packages/desktop/src-tauri/target/release/bundle/nsis/* release/
+  #     - uses: actions/upload-artifact@v4
+  #       with: { name: windows, path: release/ }
+
+  # build-linux:
+  #   if: false  # enable when deb/AppImage targets land
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with: { node-version: 23 }
+  #     - uses: dtolnay/rust-toolchain@stable
+  #     - run: npm install
+  #     - env:
+  #         TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+  #         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+  #       run: npx tauri build -w packages/desktop --bundles deb,appimage
+  #     - run: |
+  #         mkdir release
+  #         cp packages/desktop/src-tauri/target/release/bundle/deb/*.deb release/
+  #         cp packages/desktop/src-tauri/target/release/bundle/appimage/* release/
+  #     - uses: actions/upload-artifact@v4
+  #       with: { name: linux, path: release/ }
+
+  publish:
+    needs: [build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: artifacts }
+      - name: Gather artifacts
+        run: |
+          mkdir -p bundle/macos release
+          cp artifacts/macos/*.tar.gz* bundle/macos/
+          cp artifacts/macos/*.dmg release/ || true
+      - name: Generate updater feed
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          node scripts/gen-latest-json.mjs "$VERSION" bundle > release/latest.json
+          cat release/latest.json
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          gh release create "$GITHUB_REF_NAME" \
+            --title "PathBlender v${VERSION}" \
+            --generate-notes \
+            release/*
