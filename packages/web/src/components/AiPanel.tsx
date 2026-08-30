@@ -8,9 +8,11 @@
 import { useCallback, useRef, useState } from 'react';
 import { PROVIDER_PRESETS, DEFAULT_PROVIDER, providerPreset, disconnectAI, type AISettings } from '../ai/settings';
 import { runAssistantInstruction } from '../ai/assistant';
+import { registry } from '../ai/actions';
 import type { AssistantEvent, ConfirmRequest } from '../ai/assistant';
 import type { ActionContext } from '../ai/actions';
 import { useI18n } from '../i18n';
+import type { MessageKey } from '../i18n/en';
 
 interface Props {
   settings: AISettings;
@@ -18,6 +20,8 @@ interface Props {
   buildContext: () => ActionContext;
   undoLabel: string | null;
   onUndo: () => void;
+  /** "+" attachment: route picked path files into the session import. */
+  onAttachFiles: (files: FileList | File[]) => void;
 }
 
 interface LogEntry {
@@ -25,7 +29,7 @@ interface LogEntry {
   text: string;
 }
 
-export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo }: Props) {
+export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo, onAttachFiles }: Props) {
   const { t } = useI18n();
   const [view, setView] = useState<'chat' | 'settings'>('chat');
   const [showKey, setShowKey] = useState(false);
@@ -38,6 +42,10 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo 
   const [log, setLog] = useState<LogEntry[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [menu, setMenu] = useState<'plus' | 'slash' | 'dollar' | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const folderRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<ConfirmRequest | null>(null);
   const pendingResolve = useRef<((ok: boolean) => void) | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
@@ -54,6 +62,8 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo 
       model: draft.model,
       apiKey: draft.apiKey,
       keys: { ...settings.keys, [draft.provider]: draft.apiKey },
+      permission: settings.permission,
+      effort: settings.effort,
     });
     setView('chat');
     push({ who: 'notice', text: t('ai.connected') });
@@ -80,10 +90,16 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo 
     });
   };
 
+  const stop = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+  };
+
   const send = async () => {
     const text = input.trim();
     if (!text || busy) return;
     setInput('');
+    setMenu(null);
     setBusy(true);
     push({ who: 'user', text });
     const onEvent = (e: AssistantEvent) => {
@@ -92,11 +108,21 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo 
       push({ who, text: e.text });
       logRef.current?.scrollTo({ top: 1e9 });
     };
+    const confirmFn =
+      settings.permission === 'full'
+        ? async () => true // full access: auto-approve (still whitelisted actions)
+        : requestConfirmation;
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
-      await runAssistantInstruction(text, settings, buildContext(), onEvent, requestConfirmation);
+      await runAssistantInstruction(text, settings, buildContext(), onEvent, confirmFn, {
+        signal: controller.signal,
+      });
     } catch (e) {
-      push({ who: 'notice', text: e instanceof Error ? e.message : String(e) });
+      const msg = e instanceof Error ? e.message : String(e);
+      push({ who: 'notice', text: controller.signal.aborted ? t('ai.stopped') : msg });
     } finally {
+      abortRef.current = null;
       setBusy(false);
     }
   };
@@ -115,6 +141,18 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo 
       const model = d.model || preset.model;
       return { ...d, apiKey: key, baseUrl, model };
     });
+  };
+
+  // Rough context gauge: chars of the running conversation vs a nominal
+  // 32k window (estimate — providers differ; tooltip says so).
+  const ctxPct = () => {
+    const chars =
+      log.reduce((n, l) => n + l.text.length, 0) + input.length + 2600 /*system prompt*/;
+    return Math.min(99, Math.round((chars / 3 / 32000) * 100));
+  };
+  const modelOptions = () => {
+    const preset = providerPreset(settings.provider);
+    return Array.from(new Set([settings.model, preset.model].filter(Boolean)));
   };
 
   return (
@@ -240,7 +278,6 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo 
               <div className="ai-hero">
                 <SparkleIcon big />
                 <div className="ai-hero-title">{t('ai.newChat')}</div>
-                <div className="ai-hero-hint">{t('ai.empty')}</div>
                 {!settings.enabled && (
                   <button className="btn small" onClick={() => setView('settings')}>
                     {t('ai.configure')}
@@ -276,23 +313,179 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo 
             </div>
           )}
 
-          <div className="ai-input">
-            <input
+          <div className={`ai-composer ${menu ? 'menu-open' : ''}`}>
+            {menu === 'plus' && (
+              <div className="ai-menu">
+                <button onClick={() => fileRef.current?.click()}>{t('ai.attachFile')}</button>
+                <button onClick={() => folderRef.current?.click()}>{t('ai.attachFolder')}</button>
+              </div>
+            )}
+            {menu === 'slash' && (
+              <div className="ai-menu tall">
+                {COMMANDS.filter((c) =>
+                  c.name.toLowerCase().includes(input.replace(/^\//, '').toLowerCase()),
+                ).map((c) => (
+                  <button key={c.name} onClick={() => { setInput(`/${c.name} `); setMenu(null); }}>
+                    <span className="ai-cmd-name">/{c.name}</span>
+                    <span className="ai-cmd-desc">{c.description}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {menu === 'dollar' && (
+              <div className="ai-menu">
+                {SKILLS.map((sk) => (
+                  <button key={sk.id} onClick={() => { setInput(sk.prompt); setMenu(null); }}>
+                    <span className="ai-cmd-name">${t(sk.label)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <textarea
               value={input}
               placeholder={t('ai.placeholder')}
+              rows={2}
               disabled={busy || pending != null}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                const v = e.target.value;
+                if (v.startsWith('/')) setMenu('slash');
+                else if (v.startsWith('$')) setMenu('dollar');
+                else if (menu) setMenu(null);
+              }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') void send();
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  void send();
+                }
+                if (e.key === 'Escape') setMenu(null);
               }}
             />
-            <button className="btn small" disabled={!input.trim() || busy} onClick={() => void send()}>
-              {t('ai.send')}
-            </button>
+            <div className="ai-composer-row">
+              <button
+                className="ai-icon-btn"
+                title={t('ai.attach')}
+                aria-label={t('ai.attach')}
+                onClick={() => setMenu(menu === 'plus' ? null : 'plus')}
+              >
+                <PlusIcon />
+              </button>
+              <select
+                className="ai-perm"
+                value={settings.permission}
+                title={t('ai.permission')}
+                aria-label={t('ai.permission')}
+                onChange={(e) => onSettings({ ...settings, permission: e.target.value as AISettings['permission'] })}
+              >
+                <option value="standard">{t('ai.perm.standard')}</option>
+                <option value="full">{t('ai.perm.full')}</option>
+              </select>
+              <span className="ai-ctx" title={t('ai.ctxNote')}>
+                {ctxPct()}%
+              </span>
+              <select
+                className="ai-model"
+                value={settings.model}
+                title={t('ai.model')}
+                aria-label={t('ai.model')}
+                onChange={(e) => onSettings({ ...settings, model: e.target.value })}
+              >
+                {modelOptions().map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+              <select
+                className="ai-effort"
+                value={settings.effort}
+                title={t('ai.effort')}
+                aria-label={t('ai.effort')}
+                onChange={(e) => onSettings({ ...settings, effort: e.target.value as AISettings['effort'] })}
+              >
+                <option value="auto">{t('ai.effort.auto')}</option>
+                <option value="low">{t('ai.effort.low')}</option>
+                <option value="medium">{t('ai.effort.medium')}</option>
+                <option value="high">{t('ai.effort.high')}</option>
+              </select>
+              {busy ? (
+                <button className="ai-icon-btn stop" title={t('ai.stop')} aria-label={t('ai.stop')} onClick={stop}>
+                  <StopIcon />
+                </button>
+              ) : (
+                <button
+                  className="ai-send"
+                  disabled={!input.trim() || pending != null}
+                  aria-label={t('ai.send')}
+                  title={t('ai.send')}
+                  onClick={() => void send()}
+                >
+                  <SendIcon />
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              multiple
+              hidden
+              onChange={(e) => {
+                if (e.target.files?.length) onAttachFiles(e.target.files);
+                e.target.value = '';
+                setMenu(null);
+              }}
+            />
+            <input
+              ref={folderRef}
+              type="file"
+              hidden
+              // @ts-expect-error non-standard but universally supported
+              webkitdirectory=""
+              onChange={(e) => {
+                if (e.target.files?.length) onAttachFiles(e.target.files);
+                e.target.value = '';
+                setMenu(null);
+              }}
+            />
           </div>
         </>
       )}
     </aside>
+  );
+}
+
+/** Whitelisted capabilities for the "/" menu (from the core registry). */
+const COMMANDS = registry.llmTools().map((t) => ({
+  name: t.function.name,
+  description: t.function.description,
+}));
+
+/** Built-in "$" skills: one-shot instructions over the same whitelist. */
+const SKILLS: { id: string; label: MessageKey; prompt: string }[] = [
+  { id: 'resolve', label: 'ai.skill.resolve', prompt: '调用 auto_resolve_conflicts 消解所有碰撞，然后逐台报告新增的起步延迟。' },
+  { id: 'bounds', label: 'ai.skill.bounds', prompt: '查询并汇报所有机器人的越界(out-of-bounds)时段与位置。' },
+  { id: 'export', label: 'ai.skill.export', prompt: '把每一台机器人导出为 .ghostauto 文件。' },
+];
+
+function PlusIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+function SendIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 2L11 13" />
+      <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+    </svg>
+  );
+}
+function StopIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <rect x="5" y="5" width="14" height="14" rx="2" />
+    </svg>
   );
 }
 
