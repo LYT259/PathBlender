@@ -20,6 +20,8 @@ export interface AISettings {
   apiKey: string;
   /** Saved API keys per provider — switch without re-entering. */
   keys: Record<string, string>;
+  /** Model list per provider (call id / display name / context size). */
+  models: Record<string, ModelEntry[]>;
 }
 
 /**
@@ -33,6 +35,16 @@ export interface ProviderPreset {
   label: string;
   baseUrl: string;
   model: string;
+}
+
+/** A configured model (CC Switch style): call id, display name, context. */
+export interface ModelEntry {
+  /** API call name (e.g. glm-4.6). */
+  id: string;
+  /** Display name override (e.g. 旗舰). */
+  name?: string;
+  /** Context window in k tokens (drives the composer gauge). */
+  ctxK?: number;
 }
 
 export const PROVIDER_PRESETS: ProviderPreset[] = [
@@ -54,6 +66,13 @@ export function providerPreset(id: string): ProviderPreset {
   return PROVIDER_PRESETS.find((p) => p.id === id) ?? PROVIDER_PRESETS[PROVIDER_PRESETS.length - 1]!;
 }
 
+/** Every provider starts with its preset model as the first list entry. */
+function seedModels(): Record<string, ModelEntry[]> {
+  return Object.fromEntries(
+    PROVIDER_PRESETS.filter((p) => p.id !== 'custom').map((p) => [p.id, [{ id: p.model }]]),
+  );
+}
+
 export const DEFAULT_AI_SETTINGS: AISettings = {
   enabled: false,
   permission: 'standard',
@@ -63,6 +82,7 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   model: '',
   apiKey: '',
   keys: {},
+  models: seedModels(),
 };
 
 const STORAGE_KEY = 'ghpb.ai';
@@ -89,6 +109,23 @@ export function loadAISettings(): AISettings {
     const permission = v.permission === 'full' ? 'full' : 'standard';
     const effort =
       v.effort === 'low' || v.effort === 'medium' || v.effort === 'high' ? v.effort : 'auto';
+    const models =
+      v.models && typeof v.models === 'object' && !Array.isArray(v.models)
+        ? Object.fromEntries(
+            Object.entries(v.models as Record<string, unknown>).map(([k, val]) => [
+              k,
+              (Array.isArray(val) ? val : []).filter(
+                (m): m is ModelEntry =>
+                  typeof m === 'object' && m !== null && typeof (m as ModelEntry).id === 'string',
+              ),
+            ]),
+          )
+        : {};
+    // Seed providers that have no list yet with their preset default.
+    const seed = seedModels();
+    for (const [id, list] of Object.entries(seed)) {
+      if (!models[id]?.length) models[id] = list;
+    }
     return {
       enabled: Boolean(v.enabled),
       permission,
@@ -98,6 +135,7 @@ export function loadAISettings(): AISettings {
       model: typeof v.model === 'string' ? v.model : '',
       apiKey: typeof v.apiKey === 'string' ? v.apiKey : '',
       keys,
+      models,
     };
   } catch {
     return DEFAULT_AI_SETTINGS;
