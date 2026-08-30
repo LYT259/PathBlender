@@ -1,0 +1,72 @@
+/**
+ * Theme system (report v1.7 §7.4): dark/light palettes, default follows the
+ * OS (`prefers-color-scheme`, live), Preferences can override with a
+ * remembered choice (localStorage 'ghpb.theme').
+ */
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+
+export type ThemeMode = 'system' | 'dark' | 'light';
+
+const STORAGE_KEY = 'ghpb.theme';
+
+interface ThemeCtx {
+  mode: ThemeMode;
+  resolved: 'dark' | 'light';
+  setMode: (m: ThemeMode) => void;
+}
+
+const Ctx = createContext<ThemeCtx>({ mode: 'system', resolved: 'dark', setMode: () => {} });
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [mode, setModeState] = useState<ThemeMode>(() => {
+    try {
+      const v = localStorage.getItem(STORAGE_KEY);
+      return v === 'dark' || v === 'light' ? v : 'system';
+    } catch {
+      return 'system';
+    }
+  });
+  const [systemDark, setSystemDark] = useState(
+    () => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true,
+  );
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return; // jsdom
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  const resolved: 'dark' | 'light' = mode === 'system' ? (systemDark ? 'dark' : 'light') : mode;
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = resolved;
+  }, [resolved]);
+
+  const setMode = useCallback((m: ThemeMode) => {
+    setModeState(m);
+    try {
+      if (m === 'system') localStorage.removeItem(STORAGE_KEY);
+      else localStorage.setItem(STORAGE_KEY, m);
+    } catch {
+      /* storage unavailable — session-only theme */
+    }
+  }, []);
+
+  const value = useMemo(() => ({ mode, resolved, setMode }), [mode, resolved, setMode]);
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
+export function useTheme(): ThemeCtx {
+  return useContext(Ctx);
+}

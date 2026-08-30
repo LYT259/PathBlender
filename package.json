@@ -1,0 +1,27 @@
+{
+  "name": "pathblender",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Multi-source FRC autonomous path fusion viewer (Choreo .traj + .ghostauto, unified-timeline playback + collision checking)",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=23.6"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @pathblender/web",
+    "build": "npm run build -w @pathblender/core && npm run build -w @pathblender/web",
+    "typecheck": "npm run typecheck -ws --if-present",
+    "test": "npm run test -ws --if-present",
+    "preview": "npm run preview -w @pathblender/web"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@tauri-apps/cli": "2.11.4",
+    "opencc-js": "1.4.2",
+    "playwright-core": "^1.62.1"
+  }
+}

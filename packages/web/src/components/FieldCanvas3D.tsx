@@ -1,0 +1,290 @@
+/**
+ * 3D field view (user request, round 4): the same field image laid as a
+ * ground plane, trajectories as colored lines, robots as boxes that follow
+ * the shared clock. Orbit with drag, zoom with wheel/pinch, pan with
+ * right-drag — first-person "walk the field" perspective on the fusion.
+ */
+
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
+import { fieldImageWorldRect, samplePoseAt } from '@pathblender/core';
+
+export interface FieldCanvas3DHandle {
+  resetCam: () => void;
+}
+
+interface Props {
+  field: FieldPackage;
+  fieldImageUrl?: string;
+  robots: SessionTrajectory[];
+  currentT: number;
+}
+
+interface Scene3D {
+  renderer: THREE.WebGLRenderer;
+  scene: THREE.Scene;
+  camera: THREE.PerspectiveCamera;
+  controls: OrbitControls;
+  cx: number;
+  cy: number;
+  dynamic: THREE.Group;
+  boxes: { mesh: THREE.Mesh; robot: SessionTrajectory }[];
+}
+
+const CAM_HOME: [number, number, number] = [0, 8.5, 11.5];
+const WALL_H = 0.55;
+const TAG_PURPLE = '#9c6bff';
+
+/** Read a theme token at build time. */
+function cssToken(name: string, fallback: string): string {
+  return (
+    getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+  );
+}
+
+export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function FieldCanvas3D(
+  { field, fieldImageUrl, robots, currentT },
+  ref,
+) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<Scene3D | null>(null);
+  // Environments without WebGL (jsdom, locked-down webviews) fall back to a
+  // quiet empty pane instead of crashing the app.
+  const [glFailed, setGlFailed] = useState(false);
+
+  // Scene scaffold: renderer/camera/controls/lights/ground — per field.
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+    } catch {
+      setGlFailed(true);
+      return;
+    }
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    host.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(cssToken('--bg', '#1e1e20'));
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
+    camera.position.set(...CAM_HOME);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.maxPolarAngle = Math.PI / 2.05;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+    sun.position.set(6, 14, 7);
+    scene.add(sun);
+
+    const rect = field.image
+      ? fieldImageWorldRect(field.image, field.lengthM, field.widthM)
+      : { left: -0.5, right: field.lengthM + 0.5, bottom: -0.5, top: field.widthM + 0.5 };
+    const cx = (rect.left + rect.right) / 2;
+    const cy = (rect.bottom + rect.top) / 2;
+    const w = rect.right - rect.left;
+    const h = rect.top - rect.bottom;
+
+    if (fieldImageUrl) {
+      const tex = new THREE.TextureLoader().load(fieldImageUrl);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      // A 12 cm-thick slab (image on the top face via a rotated box with
+      // per-face materials) reads as a physical floor, not a picture.
+      const wood = new THREE.MeshStandardMaterial({ color: 0x3a3a40, roughness: 0.9 });
+      const top = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95 });
+      const slab = new THREE.Mesh(
+        new THREE.BoxGeometry(w, 0.12, h),
+        [wood, wood, top, wood, wood, wood],
+      );
+      slab.position.y = -0.06;
+      scene.add(slab);
+    } else {
+      scene.add(
+        new THREE.GridHelper(
+          Math.max(w, h),
+          24,
+          new THREE.Color(cssToken('--fg-dim', '#9a9aa0')),
+          new THREE.Color(cssToken('--border', '#3d3d41')),
+        ),
+      );
+    }
+
+    // Playfield outline (world 0..L × 0..W → centered coords).
+    const hw = field.lengthM / 2;
+    const hh = field.widthM / 2;
+    const outline = new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-hw, 0.02, -hh),
+        new THREE.Vector3(hw, 0.02, -hh),
+        new THREE.Vector3(hw, 0.02, hh),
+        new THREE.Vector3(-hw, 0.02, hh),
+      ]),
+      new THREE.LineBasicMaterial({ color: new THREE.Color(cssToken('--fg-dim', '#9a9aa0')) }),
+    );
+    scene.add(outline);
+
+    // Perimeter walls — the cheapest cue that makes the plane read as a
+    // place instead of a picture.
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(cssToken('--fg-dim', '#9a9aa0')),
+      roughness: 0.8,
+      transparent: true,
+      opacity: 0.9,
+    });
+    const thk = 0.08;
+    for (const [wx, wz, sx, sz] of [
+      [0, -hh - thk / 2, field.lengthM + thk * 2, thk],
+      [0, hh + thk / 2, field.lengthM + thk * 2, thk],
+      [-hw - thk / 2, 0, thk, field.widthM],
+      [hw + thk / 2, 0, thk, field.widthM],
+    ] as const) {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(sx, WALL_H, sz), wallMat);
+      wall.position.set(wx, WALL_H / 2, wz);
+      scene.add(wall);
+    }
+
+    // AprilTag beacons: posts rising to each tag's official mount height,
+    // plate at the tag position (built-in 2026 layout or custom fields).
+    for (const tag of field.aprilTags ?? []) {
+      const z = Math.max(0.3, tag.z ?? 0.55);
+      const post = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.025, 0.025, z, 8),
+        new THREE.MeshStandardMaterial({ color: 0x8a8a90, roughness: 0.6 }),
+      );
+      post.position.set(tag.x - cx, z / 2, -(tag.y - cy));
+      scene.add(post);
+      const plate = new THREE.Mesh(
+        new THREE.BoxGeometry(0.17, 0.17, 0.02),
+        new THREE.MeshStandardMaterial({ color: new THREE.Color(TAG_PURPLE) }),
+      );
+      plate.position.set(tag.x - cx, z, -(tag.y - cy));
+      if (tag.rotRad != null) plate.rotation.y = tag.rotRad;
+      scene.add(plate);
+    }
+
+    const dynamic = new THREE.Group();
+    scene.add(dynamic);
+
+    sceneRef.current = { renderer, scene, camera, controls, cx, cy, dynamic, boxes: [] };
+
+    const resize = () => {
+      const wpx = host.clientWidth || 1;
+      const hpx = host.clientHeight || 1;
+      renderer.setSize(wpx, hpx);
+      camera.aspect = wpx / hpx;
+      camera.updateProjectionMatrix();
+    };
+    const ro = new ResizeObserver(resize);
+    ro.observe(host);
+    resize();
+
+    // WebKit trackpad pinch fires gesture* events, not wheel+ctrlKey —
+    // dolly the camera manually so pinch zoom works in the desktop shell.
+    let lastScale = 1;
+    const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
+    const onGestureStart = (e: Event) => {
+      lastScale = gestureScale(e);
+    };
+    const onGestureChange = (e: Event) => {
+      e.preventDefault();
+      const s = gestureScale(e);
+      if (s > 0 && lastScale > 0) {
+        const dir = camera.position.clone().sub(controls.target).multiplyScalar(1 / s);
+        if (dir.length() > 1.5) camera.position.copy(controls.target).add(dir);
+      }
+      lastScale = s;
+    };
+    renderer.domElement.addEventListener('gesturestart', onGestureStart);
+    renderer.domElement.addEventListener('gesturechange', onGestureChange);
+
+    let raf = 0;
+    const loop = () => {
+      controls.update();
+      renderer.render(scene, camera);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      renderer.domElement.removeEventListener('gesturestart', onGestureStart);
+      renderer.domElement.removeEventListener('gesturechange', onGestureChange);
+      controls.dispose();
+      renderer.dispose();
+      if (renderer.domElement.parentElement === host) host.removeChild(renderer.domElement);
+      sceneRef.current = null;
+    };
+  }, [field, fieldImageUrl]);
+
+  // Rebuild path tubes + robot boxes when the robot set changes.
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    const disposeDeep = (obj: THREE.Object3D) => {
+      obj.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        mesh.geometry?.dispose?.();
+        const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+        else mat?.dispose?.();
+      });
+    };
+    disposeDeep(st.dynamic);
+    st.dynamic.clear();
+    st.boxes = [];
+    for (const r of robots) {
+      const color = new THREE.Color(r.color);
+      const pts = r.trajectory.samples.map(
+        (s) => new THREE.Vector3(s.x - st.cx, 0.06, -(s.y - st.cy)),
+      );
+      if (pts.length > 1) {
+        // Tube geometry gives the path real thickness (line width is not
+        // honored by the WebGL backend) — a strong 3D cue.
+        const curve = new THREE.CatmullRomCurve3(pts);
+        const tube = new THREE.Mesh(
+          new THREE.TubeGeometry(curve, Math.min(600, pts.length * 3), 0.05, 8),
+          new THREE.MeshStandardMaterial({ color, roughness: 0.4 }),
+        );
+        st.dynamic.add(tube);
+      }
+      const L = r.trajectory.geometry.lengthM;
+      const W = r.trajectory.geometry.widthM;
+      const H = 0.45;
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(L, H, W),
+        new THREE.MeshStandardMaterial({ color, roughness: 0.45 }),
+      );
+      st.dynamic.add(mesh);
+      st.boxes.push({ mesh, robot: r });
+    }
+  }, [robots]);
+
+  // Drive boxes along the shared clock.
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    for (const { mesh, robot } of st.boxes) {
+      const pose = samplePoseAt(robot, currentT);
+      mesh.position.set(pose.x - st.cx, 0.225, -(pose.y - st.cy));
+      mesh.rotation.y = pose.heading;
+    }
+  }, [currentT, robots]);
+
+  useImperativeHandle(ref, () => ({
+    resetCam: () => {
+      const st = sceneRef.current;
+      if (!st) return;
+      st.camera.position.set(...CAM_HOME);
+      st.controls.target.set(0, 0, 0);
+      st.controls.update();
+    },
+  }));
+
+  if (glFailed) return <div className="field-canvas-3d" aria-label="WebGL unavailable" />;
+  return <div ref={hostRef} className="field-canvas-3d" />;
+});

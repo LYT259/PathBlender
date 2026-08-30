@@ -1,0 +1,42 @@
+# 发布 Checklist（每次公开发版前过一遍）
+
+> 依据：可行性研究报告 §七（许可证）、AGENTS.md 红线 §2/§4。
+
+## 构建与质量
+
+- [ ] `npm run typecheck` 零错误
+- [ ] `npm test` 全绿（core + web e2e）
+- [ ] `npm run build` 成功；`packages/web/dist` 体积合理（gzip JS < 300 KB 量级）
+- [ ] 本地 `npm run preview` 过一遍完整流程：四格式导入 → 回放 → 碰撞 → 延迟 what-if → 会话存/取 → Share link → PNG
+- [ ] 桌面版：`npm run tauri build -w packages/desktop` 出 .app/.dmg；ad-hoc 签名保留（`codesign -dv` 核对）；启动冒烟（进程存活）
+
+## 许可证与素材
+
+- [ ] NOTICE.md 归属清单与当前代码一致（PathPlanner / Choreo / 103 fork / WPILib）
+- [ ] PathPlanner 轨迹生成移植说明保留在发布说明中（MIT 要求注明）
+- [ ] **FIRST 场地素材条款复查**：核对当赛季（当前：2026 REBUILT）Game Manual / Official Field Drawings 的素材使用条款是否仍允许工具内置场地图片（AdvantageScope / PathPlanner 先例）；若收紧 → 启用用户自导入场地（报告 §八 降级方案）
+  - **2026-08-26 复查记录**（依据：FIRST《Policy on the Use of FIRST® Trademarks and Copyrighted Materials》rev. 04/19/25，官方 PDF）：①注册 FIRST 队伍可非商业使用 FIRST 版权材料（**明文含 field designs**）开展 FIRST 项目相关活动，条件是展示 §IV 标准 disclaimer（已落入 NOTICE.md 与 README）；②**「copyrighted materials may never be used in any modified form」**——本项目场地图为裁剪/缩放标定版，处于该条款灰区；社区先例（AdvantageScope / PathPlanner 内置场地多年）支持继续内置，但若 FIRST 收紧执法：立即停发内置场地、启用用户自导入场地路径（已就位）；③FIRST 保留随时终止许可的权利——每次发版重新核对本条；④Logos（图形商标）不可用，仅 word marks 可提及。
+- [ ] 场地图来源与标定记录与 `docs/formats/format-facts.md` 一致
+
+## 隐私红线
+
+- [ ] 无任何网络上传/遥测/统计脚本（`grep -rn "fetch\|XMLHttpRequest\|sendBeacon" packages/web/src` 人工复核——唯一豁免：`packages/web/src/ai/client.ts` 的用户自配 AI 调用（报告 v1.4 §6.4 / AGENTS.md 红线增补口径）：默认关闭、仅当用户在面板配置并启用后才会向其自填 base URL 发请求；AI 测试全部 mock 网络）
+- [ ] README 隐私声明与实际行为一致（文件本地解析、Share link 仅含会话数据本身）
+
+## GitHub（发布操作纪律）
+
+- [ ] 推送 / PR / Pages 配置一律手动单发，不写自动重试循环；失败间隔 ≥60 秒再评估
+- [ ] Pages 部署优先走 Actions（`.github/workflows/deploy.yml`，push 到 stable 自动构建发布），避免高频手动操作
+- [ ] 发布帖（Chief Delphi）中注明：PathPlanner 移植关系与 MIT 来源、Choreo 互操作定位、零上传承诺
+
+## 更新签名密钥（tauri-plugin-updater，2026-08-30 集成）
+
+- **密钥**：ed25519，`npx tauri signer generate` 生成，**无口令**。
+  - 主副本：`~/.tauri/pathblender-updater.key`（权限 600，**空口令**——构建时需 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""`，install-desktop.sh 已带）；公钥 `.key.pub` 已写入 `tauri.conf.json`（可公开）。
+  - 备份：`[local key backup]`（随 iCloud 桌面同步；不放心可移至离线介质，保住 ~/.tauri 主副本即可）。
+- **红线**：私钥绝不进 git 仓库/截图/日志/会话文件（同 AI 密钥纪律）。
+- **本地构建**：`scripts/install-desktop.sh` 检测到 `~/.tauri` 密钥会自动导出 `TAURI_SIGNING_PRIVATE_KEY_PATH`，`createUpdaterArtifacts: true` 产出带签名的 `.app.tar.gz` + `.sig`。
+- **发版时**：CI/手工用同一密钥签名上传 `.app.tar.gz` 与 `.sig` 到 GitHub Release，并生成 `latest.json`（版本号、平台产物 URL、签名）。endpoint 已配置为
+  `https://github.com/GH-FRC/PathBlender/releases/latest/download/latest.json`。
+- **丢钥后果**：已分发用户永远收不到自动更新，只能手动重装——发版前确认两处副本齐全。
+- **应用内入口**：菜单「检查更新…」→ 有更新则下载安装并重启；404/离线显示「尚未上线」toast——发布渠道上线后自动变为真实行为。

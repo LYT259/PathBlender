@@ -1,0 +1,14 @@
+{
+ "name": "ungenerated",
+ "version": 3,
+ "snapshot": {
+  "waypoints": [],
+  "constraints": [],
+  "targetDt": 0.02
+ },
+ "params": {
+  "waypoints": [],
+  "constraints": [],
+  "targetDt": 0.02
+ }
+}
