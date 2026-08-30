@@ -3,7 +3,9 @@
  * App shell: cache-first for hashed /assets, network-first for the document
  * so updates land on reload. No user path data is ever cached or sent.
  */
-const CACHE = 'ghpb-v1';
+// CACHE is rewritten by scripts/set-sw-version.mjs on every build
+// so each release ships a fresh cache namespace automatically.
+const CACHE = 'pb-0.1.0';
 const CORE = ['./', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {

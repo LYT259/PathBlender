@@ -16,13 +16,33 @@ works; each remains under its own license:
   The `.ghostauto` format facts implemented here are uncopyrightable facts; any
   code reference requires a license check of that repository first (see
   AGENTS.md red line §2).
-- **WPILib** (BSD-3) — red/blue alliance transform semantics follow the
-  official WPILib coordinate conventions.
+- **WPILib** (BSD-3-Clause) — https://github.com/wpilibsuite/allwpilib
+  Red/blue alliance transform semantics follow the official WPILib
+  coordinate conventions, and the built-in 2026 REBUILT AprilTag layout is
+  the official `2026-rebuilt-welded` field layout from allwpilib's apriltag
+  resources (field-fact data; attribution also carried in
+  `packages/core/src/field.ts`).
 
-FRC field visuals and game names/terms are owned by FIRST. Use of season field
-materials follows the precedent of community tools (AdvantageScope,
-PathPlanner) and is rechecked against the current season's terms before every
-public release.
+## Bundled third-party libraries
+
+Runtime dependencies of the shipped app, each under its own license:
+
+- **React / React DOM** (MIT) — https://react.dev
+- **three.js** (MIT) — https://threejs.org — the 3D field view.
+- **Tauri, tauri-plugin-dialog / -updater / -process**
+  (MIT OR Apache-2.0) — https://tauri.app — desktop shell and its plugins.
+- **window-vibrancy** (Apache-2.0 OR MIT) —
+  https://github.com/tauri-apps/tauri-plugin-vibrancy — macOS sidebar
+  material.
+- Dev-time only (not shipped in the bundle): Vite, vitest, TypeScript,
+  Playwright (all MIT), OpenCC/opencc-js (Apache-2.0, generates the
+  Traditional-Chinese dictionary at build time).
+
+FRC field visuals and game names/terms are owned by FIRST. The bundled
+season field images originate from the AdvantageScope asset set
+(https://github.com/Mechanical-Advantage/AdvantageScope), whose
+community-tool precedent we follow; use of season field materials is
+rechecked against the current season's terms before every public release.
 
 ## FIRST trademark disclaimer
 
@@ -33,6 +53,13 @@ Per FIRST's Policy on the Use of FIRST® Trademarks and Copyrighted Materials
 > registered trademarks of FIRST® (www.firstinspires.org) which is not
 > overseeing, involved with, or responsible for this activity, product, or
 > service.
+
+Terms recheck record (2026-08-30, pre-release): the governing policy is
+unchanged — the Policy on the Use of FIRST Trademarks and Copyrighted
+Materials (Brand & Assets page, rev. 04/19/25) still governs; 2026 REBUILT
+field materials ship under the same terms via the Season Materials /
+Playing Field pages. No new revision found; the 2026-08-26 conclusion
+below stands.
 
 Terms check record (2026-08-26, for the 2026 REBUILT season): the policy
 permits registered FIRST teams non-commercial use of FIRST copyrighted
