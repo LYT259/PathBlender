@@ -33,6 +33,7 @@ export const en = {
 
   'conflicts.autoResolvePartial': 'minimized — {n} conflict(s) need manual edits',
   'conflicts.autoResolve': 'Auto-resolve',
+  'field.variant': 'Field construction (welded vs AndyMark-built)',
   'conflicts.title': 'Conflicts',
   'conflicts.minSep':
     'closest approach {d} m at t={t} s ({a} × {b})',

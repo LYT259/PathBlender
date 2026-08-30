@@ -16,6 +16,12 @@ works; each remains under its own license:
   The `.ghostauto` format facts implemented here are uncopyrightable facts; any
   code reference requires a license check of that repository first (see
   AGENTS.md red line §2).
+- **AdvantageScopeAssets** (BSD-3-Clause) —
+  https://github.com/Mechanical-Advantage/AdvantageScopeAssets
+  The bundled 3D field models (`public/fields3d/`, FRC 2022–2026 incl.
+  the 2025 welded/AndyMark variants) originate from this repository and
+  are redistributed under its BSD-3-Clause terms; the models themselves
+  derive from FIRST field CAD (see the FIRST section below).
 - **WPILib** (BSD-3-Clause) — https://github.com/wpilibsuite/allwpilib
   Red/blue alliance transform semantics follow the official WPILib
   coordinate conventions, and the built-in 2026 REBUILT AprilTag layout is
