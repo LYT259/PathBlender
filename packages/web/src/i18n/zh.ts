@@ -35,6 +35,7 @@ export const zh: Record<MessageKey, string> = {
 
   'conflicts.autoResolvePartial': '已最小化冲突，剩余 {n} 处需手动调整',
   'conflicts.autoResolve': '一键消解',
+  'field.variant': '场地结构（Welded=焊接场 / AndyMark=拼装场）',
   'conflicts.title': '冲突',
   'conflicts.minSep': '最近间距 {d} 米，t={t} 秒（{a} × {b}）',
   'conflicts.item': '{start}–{end} 秒 · 最近 {d} 米 @ ({x}, {y})',
