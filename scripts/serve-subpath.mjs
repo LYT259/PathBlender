@@ -1,9 +1,9 @@
 /**
  * Static server that serves packages/web/dist under a URL subpath, mimicking
- * a GitHub Pages project site (https://user.github.io/GHPathBlender/).
+ * a GitHub Pages project site (https://user.github.io/PathBlender/).
  * Used to verify the production build is subpath-safe before each release.
  *
- * Usage: node scripts/serve-subpath.mjs   → http://localhost:4174/GHPathBlender/
+ * Usage: node scripts/serve-subpath.mjs   → http://localhost:4174/PathBlender/
  */
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -11,7 +11,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('../packages/web/dist', import.meta.url));
-const PREFIX = '/GHPathBlender/';
+const PREFIX = '/PathBlender/';
 const PORT = Number(process.env.PORT ?? 4174);
 
 const TYPES = {
