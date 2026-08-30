@@ -130,13 +130,16 @@ describe('App import → fusion → collision flow', () => {
     expect(localStorage.getItem('ghpb.theme')).toBeNull();
   });
 
-  it('AI panel stays inert until configured (default off, no network)', async () => {
+  it('AI panel opens on the new-chat view; gear reveals settings (default off, no network)', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Agent', exact: true }));
-    // Settings form shows; no chat input until connected.
+    fireEvent.click(screen.getByRole('button', { name: 'AI Assistant', exact: true }));
+    // New-chat hero first; settings live behind the gear.
     expect(document.querySelector('.ai-panel')).not.toBeNull();
+    expect(document.querySelector('.ai-hero')).not.toBeNull();
+    expect(document.querySelector('.ai-settings')).toBeNull();
+    fireEvent.click(document.querySelector('.ai-icon-btn')!);
     expect(document.querySelector('.ai-settings')).not.toBeNull();
-    expect(document.querySelector('.ai-input')).toBeNull();
+    expect(document.querySelector('.ai-hero')).toBeNull();
   });
 
   it('the what-if start delay resolves the collision', async () => {
