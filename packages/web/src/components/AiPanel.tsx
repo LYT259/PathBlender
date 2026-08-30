@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useRef, useState } from 'react';
-import { PROVIDER_PRESETS, DEFAULT_PROVIDER, providerPreset, disconnectAI, type AISettings } from '../ai/settings';
+import { PROVIDER_PRESETS, DEFAULT_PROVIDER, providerPreset, disconnectAI, type AISettings, type ModelEntry } from '../ai/settings';
 import { runAssistantInstruction } from '../ai/assistant';
 import { registry } from '../ai/actions';
 import type { AssistantEvent, ConfirmRequest } from '../ai/assistant';
@@ -43,6 +43,7 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [menu, setMenu] = useState<'plus' | 'slash' | 'dollar' | null>(null);
+  const [testing, setTesting] = useState<'idle' | 'busy' | 'ok' | 'fail'>('idle');
   const abortRef = useRef<AbortController | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
@@ -55,18 +56,43 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
   }, []);
 
   const saveSettings = () => {
+    const list = settings.models[draft.provider] ?? [];
     onSettings({
       enabled: true,
       provider: draft.provider,
       baseUrl: draft.baseUrl,
-      model: draft.model,
+      model: draft.model || list[0]?.id || '',
       apiKey: draft.apiKey,
       keys: { ...settings.keys, [draft.provider]: draft.apiKey },
       permission: settings.permission,
       effort: settings.effort,
+      models: settings.models,
     });
     setView('chat');
     push({ who: 'notice', text: t('ai.connected') });
+  };
+
+  // CC Switch-style connectivity probe: a 1-token completion against the
+  // drafted endpoint/key (same whitelisted fetch as the chat).
+  const testConnection = async () => {
+    setTesting('busy');
+    try {
+      const res = await fetch(`${draft.baseUrl.replace(/\/$/, '')}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          ...(draft.apiKey ? { authorization: `Bearer ${draft.apiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          model: draft.model,
+          messages: [{ role: 'user', content: 'ping' }],
+          max_tokens: 1,
+        }),
+      });
+      setTesting(res.ok ? 'ok' : 'fail');
+    } catch {
+      setTesting('fail');
+    }
   };
 
   const doDisconnect = () => {
@@ -131,7 +157,8 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
   // endpoint/model from the preset — CCSwitch behavior.
   const provider = (key: string) => {
     const preset = providerPreset(key);
-    setDraft((d) => ({ ...d, provider: key, baseUrl: preset.baseUrl, model: preset.model }));
+    const first = (settings.models[key] ?? [{ id: preset.model }])[0]?.id ?? preset.model;
+    setDraft((d) => ({ ...d, provider: key, baseUrl: preset.baseUrl, model: first }));
   };
   const onKeyPaste = (key: string) => {
     setDraft((d) => {
@@ -148,12 +175,20 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
   const ctxPct = () => {
     const chars =
       log.reduce((n, l) => n + l.text.length, 0) + input.length + 2600 /*system prompt*/;
-    return Math.min(99, Math.round((chars / 3 / 32000) * 100));
+    return Math.min(99, Math.round((chars / 3 / ctxWindow) * 100));
   };
+  const activeModels = settings.models[settings.provider] ?? [];
+  const activeEntry = activeModels.find((m) => m.id === settings.model);
   const modelOptions = () => {
-    const preset = providerPreset(settings.provider);
-    return Array.from(new Set([settings.model, preset.model].filter(Boolean)));
+    const ids = activeModels.map((m) => m.id).filter(Boolean);
+    if (settings.model && !ids.includes(settings.model)) ids.unshift(settings.model);
+    return ids;
   };
+  const modelLabel = (id: string) => {
+    const m = activeModels.find((x) => x.id === id);
+    return m?.name ? `${m.name} (${id})` : id;
+  };
+  const ctxWindow = activeEntry?.ctxK ? activeEntry.ctxK * 1000 : 32000;
 
   return (
     <aside className="ai-panel">
@@ -201,7 +236,7 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
               <input
                 type={showKey ? 'text' : 'password'}
                 autoComplete="off"
-                placeholder={t('ai.keyPlaceholder')}
+                placeholder="sk-…"
                 value={draft.apiKey}
                 onChange={(e) => onKeyPaste(e.target.value)}
               />
@@ -219,13 +254,101 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
             <span>{t('ai.baseUrl')}</span>
             <input type="url" value={draft.baseUrl} onChange={(e) => setDraft((d) => ({ ...d, baseUrl: e.target.value }))} />
           </label>
-          <label className="ai-row">
-            <span>{t('ai.model')}</span>
-            <input value={draft.model} onChange={(e) => setDraft((d) => ({ ...d, model: e.target.value }))} />
-          </label>
+          <div className="ai-models">
+            <div className="ai-models-head">
+              <span>{t('ai.models')}</span>
+              <button
+                className="btn small"
+                onClick={() =>
+                  onSettings({
+                    ...settings,
+                    models: {
+                      ...settings.models,
+                      [draft.provider]: [
+                        ...(settings.models[draft.provider] ?? []),
+                        { id: '' },
+                      ],
+                    },
+                  })
+                }
+              >
+                + {t('ai.addModel')}
+              </button>
+            </div>
+            {(settings.models[draft.provider] ?? []).map((m, i) => {
+              const list = settings.models[draft.provider] ?? [];
+              const set = (patch: Partial<ModelEntry>) =>
+                onSettings({
+                  ...settings,
+                  models: {
+                    ...settings.models,
+                    [draft.provider]: list.map((x, j) => (j === i ? { ...x, ...patch } : x)),
+                  },
+                });
+              const drop = () =>
+                onSettings({
+                  ...settings,
+                  models: {
+                    ...settings.models,
+                    [draft.provider]: list.filter((_, j) => j !== i),
+                  },
+                });
+              const active = settings.provider === draft.provider && settings.model === m.id;
+              return (
+                <div className={`ai-model-row ${active ? 'active' : ''}`} key={i}>
+                  <button
+                    className="ai-model-pick"
+                    title={t('ai.useModel')}
+                    onClick={() => {
+                      const preset = providerPreset(draft.provider);
+                      onSettings({
+                        ...settings,
+                        provider: draft.provider,
+                        baseUrl: draft.baseUrl || preset.baseUrl,
+                        model: m.id,
+                        apiKey: draft.apiKey,
+                        enabled: true,
+                      });
+                      setDraft((d) => ({ ...d, model: m.id }));
+                    }}
+                  >
+                    ●
+                  </button>
+                  <input
+                    className="m-id"
+                    placeholder={t('ai.modelId')}
+                    value={m.id}
+                    onChange={(e) => set({ id: e.target.value })}
+                  />
+                  <input
+                    className="m-name"
+                    placeholder={t('ai.modelName')}
+                    value={m.name ?? ''}
+                    onChange={(e) => set({ name: e.target.value })}
+                  />
+                  <input
+                    className="m-ctx"
+                    placeholder="128"
+                    inputMode="numeric"
+                    value={m.ctxK ?? ''}
+                    onChange={(e) =>
+                      set({ ctxK: e.target.value === '' ? undefined : Number(e.target.value) || undefined })
+                    }
+                    title={t('ai.ctxK')}
+                  />
+                  <button className="robot-remove" title={t('robots.remove')} onClick={drop}>
+                    ✕
+                  </button>
+                </div>
+              );
+            })}
+          </div>
           <div className="ai-row btns">
             <button className="btn small" disabled={!draft.baseUrl || !draft.model} onClick={saveSettings}>
               {t('ai.save')}
+            </button>
+            <button className="btn small" disabled={!draft.baseUrl || !draft.apiKey} onClick={() => void testConnection()}>
+              {testing === 'idle' ? t('ai.test') : testing === 'ok' ? t('ai.testOk') : testing === 'fail' ? t('ai.testFail') : t('ai.testing')}
             </button>
             {settings.enabled && (
               <button className="btn small danger" onClick={doDisconnect}>
@@ -391,7 +514,7 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
                 onChange={(e) => onSettings({ ...settings, model: e.target.value })}
               >
                 {modelOptions().map((m) => (
-                  <option key={m} value={m}>{m}</option>
+                  <option key={m} value={m}>{modelLabel(m)}</option>
                 ))}
               </select>
               <select
