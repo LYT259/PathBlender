@@ -106,7 +106,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       tex.colorSpace = THREE.SRGBColorSpace;
       // A 12 cm-thick slab (image on the top face via a rotated box with
       // per-face materials) reads as a physical floor, not a picture.
-      const wood = new THREE.MeshStandardMaterial({ color: 0x3a3a40, roughness: 0.9 });
+      const wood = new THREE.MeshStandardMaterial({ color: new THREE.Color(cssToken('--3d-slab', '#3a3a40')), roughness: 0.9 });
       const top = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95 });
       const slab = new THREE.Mesh(
         new THREE.BoxGeometry(w, 0.12, h),
@@ -143,7 +143,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // Perimeter walls — the cheapest cue that makes the plane read as a
     // place instead of a picture.
     const wallMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(cssToken('--fg-dim', '#9a9aa0')),
+      color: new THREE.Color(cssToken('--3d-wall', '#4a4a4f')),
       roughness: 0.8,
       transparent: true,
       opacity: 0.95,
@@ -168,7 +168,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       const z = Math.max(0.3, tag.z ?? 0.55);
       const post = new THREE.Mesh(
         new THREE.CylinderGeometry(0.025, 0.025, z, 8),
-        new THREE.MeshStandardMaterial({ color: 0x8a8a90, roughness: 0.6 }),
+        new THREE.MeshStandardMaterial({ color: new THREE.Color(cssToken('--3d-post', '#6a6a70')), roughness: 0.6 }),
       );
       post.position.set(tag.x - cx, z / 2, -(tag.y - cy));
       post.castShadow = true;
