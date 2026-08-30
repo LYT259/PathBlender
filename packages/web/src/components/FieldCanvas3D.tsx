@@ -34,7 +34,7 @@ interface Scene3D {
 }
 
 const CAM_HOME: [number, number, number] = [0, 8.5, 11.5];
-const WALL_H = 0.55;
+const WALL_H = 0.9;
 const TAG_PURPLE = '#9c6bff';
 
 /** Read a theme token at build time. */
@@ -66,19 +66,31 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       return;
     }
     renderer.setPixelRatio(window.devicePixelRatio || 1);
+    // Soft shadows are the strongest depth cue for the field structures.
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(cssToken('--bg', '#1e1e20'));
+    scene.fog = new THREE.Fog(scene.background, 34, 70);
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
     camera.position.set(...CAM_HOME);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.maxPolarAngle = Math.PI / 2.05;
 
-    scene.add(new THREE.AmbientLight(0xffffff, 1.1));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.4);
-    sun.position.set(6, 14, 7);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+    sun.position.set(9, 16, 8);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.left = -12;
+    sun.shadow.camera.right = 12;
+    sun.shadow.camera.top = 12;
+    sun.shadow.camera.bottom = -12;
+    sun.shadow.camera.near = 2;
+    sun.shadow.camera.far = 45;
     scene.add(sun);
 
     const rect = field.image
@@ -101,6 +113,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         [wood, wood, top, wood, wood, wood],
       );
       slab.position.y = -0.06;
+      slab.receiveShadow = true;
       scene.add(slab);
     } else {
       scene.add(
@@ -133,7 +146,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       color: new THREE.Color(cssToken('--fg-dim', '#9a9aa0')),
       roughness: 0.8,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.95,
     });
     const thk = 0.08;
     for (const [wx, wz, sx, sz] of [
@@ -144,6 +157,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     ] as const) {
       const wall = new THREE.Mesh(new THREE.BoxGeometry(sx, WALL_H, sz), wallMat);
       wall.position.set(wx, WALL_H / 2, wz);
+      wall.castShadow = true;
+      wall.receiveShadow = true;
       scene.add(wall);
     }
 
@@ -156,6 +171,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         new THREE.MeshStandardMaterial({ color: 0x8a8a90, roughness: 0.6 }),
       );
       post.position.set(tag.x - cx, z / 2, -(tag.y - cy));
+      post.castShadow = true;
       scene.add(post);
       const plate = new THREE.Mesh(
         new THREE.BoxGeometry(0.17, 0.17, 0.02),
@@ -259,6 +275,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         new THREE.BoxGeometry(L, H, W),
         new THREE.MeshStandardMaterial({ color, roughness: 0.45 }),
       );
+      mesh.castShadow = true;
       st.dynamic.add(mesh);
       st.boxes.push({ mesh, robot: r });
     }
