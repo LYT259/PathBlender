@@ -497,7 +497,10 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       }, 'image/png');
     },
     fit,
-  }));
+    // Deps: without this array the handle is recreated on every render and
+    // re-invokes the parent's ref callback — a re-render loop with a
+    // state-held ref (bit us in the round-9 editor page).
+  }), [fit]);
 
   // Fit once the image is ready and a size is known.
   useEffect(() => {

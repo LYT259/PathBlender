@@ -222,7 +222,11 @@ await page.screenshot({ path: `${SHOTS}/11-pathplanner.png` });
 // --- meditation editing: drag Pickup's first waypoint, see the badge, export ---
 const pickupCard = page.locator('.robot-card', { hasText: 'Pickup' }).first();
 await pickupCard.locator('button', { hasText: 'edit path' }).click();
-await page.waitForTimeout(300);
+await page.waitForSelector('.editor');
+// Let the field image load and the initial fit settle before projecting
+// drag coordinates onto the canvas.
+await page.waitForTimeout(800);
+check('editor page opens (own workspace)', true);
 const canvasBox = await page.locator('.field-canvas').boundingBox();
 if (canvasBox) {
   // Fit-view scale for the 2026 field (16.54 × 8.07 + 0.5 margins), then the
@@ -244,15 +248,26 @@ await page.screenshot({ path: `${SHOTS}/13-editing.png` });
 
 const [exportDl] = await Promise.all([
   page.waitForEvent('download', { timeout: 10000 }).catch(() => undefined),
-  pickupCard.locator('.export-row button', { hasText: '.path' }).click(),
+  page.locator('.editor-bar .seg button', { hasText: '.path' }).click(),
 ]);
 check('adjusted .path export downloads', exportDl !== undefined, exportDl?.suggestedFilename());
 const [ghostDl] = await Promise.all([
   page.waitForEvent('download', { timeout: 10000 }).catch(() => undefined),
-  pickupCard.locator('.export-row button', { hasText: '.ghostauto' }).click(),
+  page.locator('.editor-bar .seg button', { hasText: '.ghostauto' }).click(),
 ]);
 check('adjusted .ghostauto export downloads', ghostDl !== undefined, ghostDl?.suggestedFilename());
-await pickupCard.locator('button', { hasText: 'done editing' }).click();
+// Numeric waypoint edit in the side panel marks the robot adjusted too
+// (PP rows unfold first; Choreo rows are always visible).
+await page.locator('.wp-head').first().click();
+await page.waitForTimeout(200);
+const firstNum = page.locator('.waypoint-panel input').first();
+await firstNum.fill('2.5');
+await firstNum.press('Enter');
+await page.waitForTimeout(400);
+check('numeric waypoint edit works', (await page.locator('.adjusted-badge').count()) >= 1);
+await page.locator('.editor-back').click();
+await page.waitForSelector('.app-body');
+check('editor back returns to fusion', true);
 
 // --- session save → reload through the real file input ---
 const [download] = await Promise.all([
@@ -339,15 +354,23 @@ const swUrl = await page.evaluate(async () => {
 check('service worker registered', swUrl.includes('sw.js'), swUrl);
 
 // --- AI panel: opens to its settings form, fires nothing while off ---
-await page.locator('.canvas-bar .btn', { hasText: 'Agent' }).click();
+await page.locator('.ai-toggle').click();
 await page.waitForTimeout(300);
 check(
-  'AI panel opens with settings form (inert by default)',
+  'AI panel opens on the new-chat hero (inert by default)',
   (await page.locator('.ai-panel').count()) === 1 &&
-    (await page.locator('.ai-settings').count()) === 1 &&
+    (await page.locator('.ai-hero').count()) === 1 &&
+    (await page.locator('.ai-settings').count()) === 0 &&
     errors.length === 0,
 );
-await page.locator('.canvas-bar .btn', { hasText: 'Agent' }).click(); // close
+await page.locator('.ai-icon-btn').first().click(); // gear -> settings
+await page.waitForTimeout(200);
+check(
+  'gear reveals provider settings',
+  (await page.locator('.ai-settings').count()) === 1,
+);
+await page.locator('.ai-icon-btn').first().click(); // back
+await page.locator('.ai-toggle').click(); // close
 await page.locator('.canvas-bar .btn', { hasText: '3D' }).click();
 await page.waitForTimeout(1200);
 check(
@@ -356,7 +379,7 @@ check(
 );
 await page.screenshot({ path: `${SHOTS}/14-3d.png` });
 await page.locator('.canvas-bar .btn', { hasText: '3D' }).click(); // back to 2D
-await page.locator('.canvas-bar .btn', { hasText: 'Agent' }).click(); // close
+await page.locator('.ai-toggle').click(); // close
 
 check('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 
