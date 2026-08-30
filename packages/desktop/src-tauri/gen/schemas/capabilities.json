@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Shell hosts the web build; plugins reachable from JS: updater check/install + relaunch.","local":true,"windows":["main"],"permissions":["updater:default","process:allow-restart"]}}

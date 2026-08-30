@@ -1,0 +1,99 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import {
+  applyAllianceChange,
+  deserializeSession,
+  flipPoseToBlue,
+  makeSession,
+  parseGhostAuto,
+  parseTraj,
+  REBUILT_2026,
+  samplePoseAt,
+  serializeSession,
+  sessionDuration,
+} from '../src';
+
+const SAMPLES = resolve(__dirname, '../../../samples');
+const read = (rel: string): string =>
+  readFileSync(resolve(SAMPLES, rel), 'utf-8');
+
+describe('red→blue normalization (WPILib semantics)', () => {
+  it('flips a pose 180° about the field center', () => {
+    const p = flipPoseToBlue({ x: 1, y: 2, heading: 0.3 }, REBUILT_2026);
+    expect(p.x).toBeCloseTo(REBUILT_2026.lengthM - 1, 9);
+    expect(p.y).toBeCloseTo(REBUILT_2026.widthM - 2, 9);
+    expect(p.heading).toBeCloseTo(Math.PI + 0.3 - 2 * Math.PI, 9); // wrapped
+  });
+
+  it('flip is an involution', () => {
+    const p = { x: 4.2, y: 3.1, heading: 1.1 };
+    const there = flipPoseToBlue(p, REBUILT_2026);
+    const back = flipPoseToBlue(there, REBUILT_2026);
+    expect(back.x).toBeCloseTo(p.x, 9);
+    expect(back.y).toBeCloseTo(p.y, 9);
+    expect(back.heading).toBeCloseTo(p.heading, 9);
+  });
+
+  it('applyAllianceChange flips every sample once and toggles back losslessly', () => {
+    const traj = parseTraj(read('traj/v3_swerve.traj'), 'v3.traj');
+    const red = applyAllianceChange(traj, 'red', REBUILT_2026);
+    expect(red.alliance).toBe('red');
+    expect(red.samples[0]!.x).toBeCloseTo(REBUILT_2026.lengthM - traj.samples[0]!.x, 9);
+    const back = applyAllianceChange(red, 'blue', REBUILT_2026);
+    expect(back.samples[0]!.x).toBeCloseTo(traj.samples[0]!.x, 9);
+    expect(back.samples[0]!.heading).toBeCloseTo(traj.samples[0]!.heading, 9);
+  });
+});
+
+describe('session sampling on the global clock', () => {
+  const traj = parseGhostAuto(read('ghostauto/straight_run.ghostauto'), 's');
+  const st = makeSession(traj);
+
+  it('t<delay parks at the start pose; t>end clamps to last', () => {
+    const delayed = { ...st, startDelayS: 2 };
+    expect(samplePoseAt(delayed, 1).x).toBeCloseTo(2, 6);
+    expect(samplePoseAt(delayed, 99).x).toBeCloseTo(11.96, 2);
+    // At local t=1s, x = 2 + 1.2×1 = 3.2
+    expect(samplePoseAt(delayed, 3).x).toBeCloseTo(3.2, 2);
+  });
+
+  it('session duration covers the latest end', () => {
+    expect(sessionDuration([st, { ...st, startDelayS: 3 }])).toBeCloseTo(
+      3 + traj.durationS,
+      6,
+    );
+  });
+});
+
+describe('session file round-trip', () => {
+  it('serialize → deserialize preserves everything needed', () => {
+    const a = makeSession(parseGhostAuto(read('ghostauto/straight_run.ghostauto'), 'a'), 0);
+    const b = { ...makeSession(parseTraj(read('traj/v3_swerve.traj'), 'b'), 1), startDelayS: 1.5 };
+    const text = serializeSession([a, b], 'rebuilt-2026');
+    const back = deserializeSession(text);
+    expect(back.fieldId).toBe('rebuilt-2026');
+    expect(back.robots).toHaveLength(2);
+    expect(back.robots[1]!.startDelayS).toBeCloseTo(1.5, 9);
+    expect(back.robots[0]!.trajectory.teamNumber).toBe('0001');
+    expect(back.robots[1]!.trajectory.teamNumber).toBe('');
+    expect(back.robots[0]!.trajectory.samples).toHaveLength(a.trajectory.samples.length);
+    expect(back.robots[0]!.trajectory.geometry.lengthM).toBeCloseTo(0.9, 6);
+    expect(back.robots[1]!.trajectory.geometrySource).toBe('file');
+    // Restored robots behave identically.
+    expect(samplePoseAt(back.robots[0]!, 4).x).toBeCloseTo(samplePoseAt(a, 4).x, 9);
+  });
+
+  it('pre-v1.4 session files (no teamNumber) still deserialize', () => {
+    const a = makeSession(parseGhostAuto(read('ghostauto/straight_run.ghostauto'), 'a'), 0);
+    const text = serializeSession([a], 'rebuilt-2026');
+    const legacy = JSON.parse(text);
+    for (const r of legacy.robots) delete r.teamNumber;
+    const back = deserializeSession(JSON.stringify(legacy));
+    expect(back.robots[0]!.trajectory.teamNumber).toBe('');
+  });
+
+  it('rejects foreign JSON', () => {
+    expect(() => deserializeSession('{"app":"other"}')).toThrow();
+  });
+});

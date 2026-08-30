@@ -1,0 +1,9 @@
+{
+ "name": "empty",
+ "version": 3,
+ "trajectory": {
+  "sampleType": "Swerve",
+  "samples": [],
+  "splits": []
+ }
+}

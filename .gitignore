@@ -1,0 +1,25 @@
+# 私有 AI 协作文件（沿用 GHPaths 2026-08-19 指令，不入库）
+AGENTS.md
+CLAUDE.md
+.claude/
+.cursor/
+
+# 依赖与构建产物
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# 编辑器与系统
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# 本地环境
+.env
+.env.*
+*.local
+
+# Tauri desktop build artifacts (packages/desktop)
+packages/desktop/src-tauri/target/

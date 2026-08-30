@@ -1,0 +1,27 @@
+[package]
+name = "pathblender-desktop"
+version = "0.1.0"
+description = "GHPathBlender — FRC alliance path fusion viewer (desktop shell)"
+edition = "2021"
+
+[lib]
+name = "ghpathblender_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+window-vibrancy = "0.6"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+# ad-hoc 签名保留（沿用 GHPaths ADR-0007 v2 红线：禁止剥离签名配置）
+strip = false
+lto = false
+codegen-units = 1

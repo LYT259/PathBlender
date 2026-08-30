@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Ollama-style local AI endpoints are outbound loopback fetches;
+	     declare the usage so macOS can prompt instead of silently fail. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>GHPathBlender only contacts AI endpoints you configure yourself (e.g. a local Ollama server). Path files never leave this computer otherwise.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Allow user-configured http:// AI endpoints (local models). -->
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+</dict>
+</plist>
