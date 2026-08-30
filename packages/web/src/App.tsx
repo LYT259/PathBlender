@@ -61,7 +61,8 @@ import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
 import { I18nProvider, LANGUAGES, langLabel, useI18n, type Lang } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
-import { AiPanel } from './components/AiPanel';
+import { AiPanel, SparkleIcon } from './components/AiPanel';
+import { EditorPage } from './components/EditorPage';
 import type { ActionContext } from './ai/actions';
 import { loadAISettings, saveAISettings, type AISettings } from './ai/settings';
 
@@ -510,6 +511,27 @@ function AppBody() {
       .catch(() => undefined);
   }, [lang]);
 
+  // Editing lives on its own page (round 9): the fusion view unmounts
+  // entirely, Choreo-style — the robot's edits persist on close.
+  if (editingId && editRobot) {
+    return (
+      <div className="app">
+        <EditorPage
+          robot={editRobot}
+          field={field}
+          fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl}
+          onEditWaypoint={editWaypoint}
+          onAddWaypoint={addWaypoint}
+          onRemoveWaypoint={removeWaypoint}
+          onReset={resetEdit}
+          onExport={exportRobot}
+          onClose={() => setEditingId(null)}
+        />
+        {toast !== '' && <div className="toast">{toast}</div>}
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <header className="toolbar" data-tauri-drag-region="" aria-label="primary">
@@ -598,11 +620,12 @@ function AppBody() {
             </label>
             <span className="canvas-spacer" />
             <button
-              className="btn small"
+              className="btn small ai-toggle"
               title={tr('ai.title')}
+              aria-label={tr('ai.title')}
               onClick={() => setShowAi((v) => !v)}
             >
-              {tr('ai.open')}
+              <SparkleIcon />
             </button>
           </div>
           {view3D ? (
