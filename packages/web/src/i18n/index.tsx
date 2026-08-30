@@ -3,7 +3,8 @@
  * localStorage preference, browser-language default (ADR-0002).
  */
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState, type ReactNode , useEffect} from 'react';
+import { broadcastPref, listenPrefs } from '../pref-sync';
 import { en, type MessageKey } from './en';
 import { zh } from './zh';
 import { zhTw } from './zh-tw';
@@ -50,10 +51,24 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       setLang: (l) => {
         localStorage.setItem(STORAGE_KEY, l);
         setLangState(l);
+        // Other windows (desktop prefs) apply instantly.
+        broadcastPref('lang', l);
       },
       t: (key, vars) => interpolate((DICTS[lang] ?? en)[key] ?? en[key], vars),
     }),
     [lang],
+  );
+  // Apply preferences changed in another window (no re-broadcast — the
+  // same-value echo terminates the loop).
+  useEffect(
+    () =>
+      listenPrefs((key, v) => {
+        if (key === 'lang') {
+          localStorage.setItem(STORAGE_KEY, v);
+          setLangState(v as Lang);
+        }
+      }),
+    [],
   );
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

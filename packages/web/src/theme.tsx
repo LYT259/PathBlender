@@ -13,6 +13,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { broadcastPref, listenPrefs } from './pref-sync';
 
 export type ThemeMode = 'system' | 'dark' | 'light';
 
@@ -61,7 +62,26 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } catch {
       /* storage unavailable — session-only theme */
     }
+    broadcastPref('theme', m); // other windows (desktop prefs) apply instantly
   }, []);
+
+  // Apply theme changed in another window (no re-broadcast — the echo is a
+  // same-value no-op and stops the loop).
+  useEffect(
+    () =>
+      listenPrefs((key, v) => {
+        if (key !== 'theme') return;
+        const m = (v === 'dark' || v === 'light' ? v : 'system') as ThemeMode;
+        setModeState(m);
+        try {
+          if (m === 'system') localStorage.removeItem(STORAGE_KEY);
+          else localStorage.setItem(STORAGE_KEY, m);
+        } catch {
+          /* session-only */
+        }
+      }),
+    [],
+  );
 
   const value = useMemo(() => ({ mode, resolved, setMode }), [mode, resolved, setMode]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
