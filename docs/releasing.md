@@ -40,3 +40,8 @@
   `https://github.com/GH-FRC/PathBlender/releases/latest/download/latest.json`。
 - **丢钥后果**：已分发用户永远收不到自动更新，只能手动重装——发版前确认两处副本齐全。
 - **应用内入口**：菜单「检查更新…」→ 有更新则下载安装并重启；404/离线显示「尚未上线」toast——发布渠道上线后自动变为真实行为。
+
+## 姊妹项目协调（发布时）
+
+- GHPaths 侧 ADR-0013/0017/0018 以旧名「GHPathBlender core（MIT）」提及本项目——**不改其冻结的 ADR 正文**（两项目共守的 ADR 纪律）；名称（PathBlender）与许可证（Apache-2.0）的变迁在 GHPaths 实际集成 core 时由其自建新 ADR 记录，届时包名 `@pathblender/core`。
+- `@pathblender/core` 首次 npm 发布后通知 GHPaths 侧锁定版本（其 ADR-0013 已把 semver 列为一等约束）。
