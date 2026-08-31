@@ -39,6 +39,12 @@ export const zhTw: Record<MessageKey, string> = {
 
   'conflicts.autoResolvePartial': '已最小化衝突，剩餘 {n} 處需手動調整',
   'conflicts.autoResolve': '一鍵消解',
+  'vc.top': '上',
+  'vc.bottom': '下',
+  'vc.front': '前',
+  'vc.back': '後',
+  'vc.left': '左',
+  'vc.right': '右',
   'field.variant': '場地結構（Welded=焊接場 / AndyMark=拼裝場）',
   'conflicts.title': '衝突',
   'conflicts.minSep': '最近間距 {d} 米，t={t} 秒（{a} × {b}）',
