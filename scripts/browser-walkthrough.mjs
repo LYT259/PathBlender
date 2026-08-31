@@ -395,6 +395,24 @@ check(
   (await page.locator('.field-canvas-3d canvas').count()) >= 1 && errors.length === 0,
 );
 check('official 3D field model loaded', modelLoaded, modelLoaded ? 'fields3d glb fetched' : 'no model request');
+check(
+  'viewcube present with home button',
+  (await page.locator('.viewcube canvas').count()) === 1 &&
+    (await page.locator('.vc-home').count()) === 1,
+);
+// Home snap returns to the default orbit (settled click, no drags before).
+const polBeforeHome = await page.evaluate(() => window.__pb3d?.controls.getPolarAngle?.());
+await page.locator('.vc-home').click();
+await page.waitForTimeout(400);
+const homeState = await page.evaluate(() => ({
+  az: window.__pb3d.controls.getAzimuthalAngle(),
+  pol: window.__pb3d.controls.getPolarAngle(),
+}));
+check(
+  'viewcube home snaps to default view',
+  Math.abs(homeState.az) < 0.2 && Math.abs(homeState.pol - 0.934) < 0.15,
+  `az=${homeState.az.toFixed(2)} pol=${homeState.pol.toFixed(2)} (from ${polBeforeHome?.toFixed?.(2)})`,
+);
 await page.screenshot({ path: `${SHOTS}/14-3d.png` });
 await page.locator('.canvas-bar .btn', { hasText: '3D' }).click(); // back to 2D
 await page.locator('.ai-toggle').click(); // close
