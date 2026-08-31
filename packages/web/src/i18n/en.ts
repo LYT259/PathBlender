@@ -33,6 +33,12 @@ export const en = {
 
   'conflicts.autoResolvePartial': 'minimized — {n} conflict(s) need manual edits',
   'conflicts.autoResolve': 'Auto-resolve',
+  'vc.top': 'T',
+  'vc.bottom': 'B',
+  'vc.front': 'F',
+  'vc.back': 'K',
+  'vc.left': 'L',
+  'vc.right': 'R',
   'field.variant': 'Field construction (welded vs AndyMark-built)',
   'conflicts.title': 'Conflicts',
   'conflicts.minSep':
