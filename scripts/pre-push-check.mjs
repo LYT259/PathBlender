@@ -16,17 +16,30 @@
  */
 import { execFileSync } from 'node:child_process';
 
+// Generic patterns only — this file is public, so it must not spell out the
+// org's internal-only tokens. Add those to .pre-push-patterns (gitignored),
+// one RegExp source per line, e.g. an account handle or ticket number.
 const PATTERNS = [
-  /[REDACTED]/i,
-  /[REDACTED]/,
-  /192\.168\.\d+\.\d+/,
-  /[REDACTED]/i,
-  /sk-ant-[A-Za-z0-9_-]{10,}/,
-  /sk-proj-[A-Za-z0-9_-]{10,}/,
-  /ghp_[A-Za-z0-9]{20,}/,
-  /gho_[A-Za-z0-9]{20,}/,
+  /192\.168\.\d+\.\d+/,          // RFC1918 LAN addresses
+  /sk-ant-[A-Za-z0-9_-]{10,}/,   // Anthropic keys
+  /sk-proj-[A-Za-z0-9_-]{10,}/,  // OpenAI keys
+  /ghp_[A-Za-z0-9]{20,}/,        // GitHub PATs
+  /gho_[A-Za-z0-9]{20,}/,        // GitHub OAuth tokens
   /-----BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY-----/,
 ];
+
+import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const localPatternsPath = join(dirname(fileURLToPath(import.meta.url)), '..', '.pre-push-patterns');
+if (existsSync(localPatternsPath)) {
+  for (const line of readFileSync(localPatternsPath, 'utf8').split('\n')) {
+    const src = line.trim();
+    if (!src || src.startsWith('#')) continue;
+    PATTERNS.push(new RegExp(src));
+  }
+}
 
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
 
@@ -78,8 +91,6 @@ for (const sha of commits) {
       continue;
     }
     if (!line.startsWith('+') || line.startsWith('+++')) continue;
-    // Self-exemption: this script's own pattern list spells the tokens.
-    if (currentFile === 'scripts/pre-push-check.mjs') continue;
     for (const re of PATTERNS) {
       if (re.test(line)) {
         hits.push({ sha: sha.slice(0, 8), line: line.slice(1, 120), pattern: re.source });
