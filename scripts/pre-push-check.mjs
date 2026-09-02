@@ -71,8 +71,15 @@ for (const sha of commits) {
   } catch {
     continue;
   }
+  let currentFile = '';
   for (const line of diff.split('\n')) {
-    if (!line.startsWith('+')) continue;
+    if (line.startsWith('+++ b/')) {
+      currentFile = line.slice(6);
+      continue;
+    }
+    if (!line.startsWith('+') || line.startsWith('+++')) continue;
+    // Self-exemption: this script's own pattern list spells the tokens.
+    if (currentFile === 'scripts/pre-push-check.mjs') continue;
     for (const re of PATTERNS) {
       if (re.test(line)) {
         hits.push({ sha: sha.slice(0, 8), line: line.slice(1, 120), pattern: re.source });
