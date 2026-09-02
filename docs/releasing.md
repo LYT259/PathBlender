@@ -35,7 +35,7 @@
 
 - **密钥**：ed25519，`npx tauri signer generate` 生成，**无口令**。
   - 主副本：`~/.tauri/pathblender-updater.key`（权限 600，**空口令**——构建时需 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""`，install-desktop.sh 已带）；公钥 `.key.pub` 已写入 `tauri.conf.json`（可公开）。
-  - 备份：`[local key backup]`（随 iCloud 桌面同步；不放心可移至离线介质，保住 ~/.tauri 主副本即可）。
+  - 备份：离线/次要位置一份（本机 README 有恢复流程；保住 ~/.tauri 主副本即可）。
 - **红线**：私钥绝不进 git 仓库/截图/日志/会话文件（同 AI 密钥纪律）。
 - **本地构建**：`scripts/install-desktop.sh` 检测到 `~/.tauri` 密钥会自动导出 `TAURI_SIGNING_PRIVATE_KEY_PATH`，`createUpdaterArtifacts: true` 产出带签名的 `.app.tar.gz` + `.sig`。
 - **发版时**：CI/手工用同一密钥签名上传 `.app.tar.gz` 与 `.sig` 到 GitHub Release，并生成 `latest.json`（版本号、平台产物 URL、签名）。endpoint 已配置为
