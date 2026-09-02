@@ -7,7 +7,8 @@ anywhere.**
 
 ## Three steps
 
-1. **Open the link** (see the README for the URL; Safari / Chrome / Edge all work).
+1. **Open the link** (see the README for the URL; Safari / Chrome / Edge all
+   work), or launch the desktop app.
 2. **Drag files onto the window** — multi-select and mixed formats are fine:
    Choreo `.traj`, PathPlanner `.path` / `.auto`, and Team 103 Collaborative
    fork `.ghostauto`. Broken files report why they failed without blocking the rest.
@@ -23,42 +24,86 @@ anywhere.**
 | PathPlanner | `.path` + `.auto` | Take the files from the project folder; **every `.path` referenced by an `.auto` must be dragged in the same batch** |
 | 103 Collaborative fork | `.ghostauto` | Export a ghost from the fork — it carries the robot size and team name |
 
-## Resolving conflicts with start delays (what-if)
+## Three ways to resolve a conflict
 
-Two robots collide around t = 4–5 s? Don't ask anyone to redraw a path — try
-offsetting in time first:
+1. **Auto-resolve** (top of the conflict panel): finds the **smallest set of
+   start delays** that clears every conflict (0.25 s steps, deferring the
+   earlier starter). If some conflicts can't be cleared by delays alone (e.g.
+   a path entered twice), it says so honestly and leaves them for you.
+2. **Manual start delays (what-if)**: the delay input on a robot card, 1–3 s
+   is usually enough; the conflict panel refreshes live. Delays live only in
+   your session — **no source file is ever modified**.
+3. **Path editing** (next section): when time can't be shifted, shift geometry.
 
-1. Find the **delay** input on a robot card (left panel);
-2. Give one robot a 1–3 s start delay;
-3. The conflict panel refreshes live. If the collision clears, "leave X
-   seconds later" is the answer — take it back to the other team.
+## Path editor (its own page)
 
-Delays live only in your session — **no source file is ever modified**. The
-same goes for the geometry inputs (length/width) if you want the check to
-match real bumpers.
+Press **edit path** on a robot card (`.path` / `.traj` only; `.ghostauto`
+files carry no waypoints) — the whole window becomes an editing workspace:
+
+- **Drag points** on the field; **double-click** a segment to insert,
+  **right-click** a point to remove;
+- the **waypoint panel** edits exact numbers: PathPlanner rows expand to
+  anchor + prev/next control points, Choreo rows edit x/y (heading is
+  read-only);
+- every change regenerates the trajectory and recomputes collisions — when
+  the red rings are gone, you're done. Edits are **derived copies** (the
+  header shows "adjusted" with a one-click full revert);
+- export **.path / .traj / .ghostauto** straight from the editor bar (file
+  name gets an `-adjusted` suffix) and send it back to the owning team.
+  PathPlanner paths regenerate their timing; Choreo paths keep the original
+  timing with remapped geometry (warned on the badge).
+
+## 3D view & fields
+
+- The **3D** button in the header switches to the stereo view: **official
+  field models for FRC 2022–2026** (welded and AndyMark constructions where
+  they differ) with free orbit. The little cube in the corner (**ViewCube**)
+  snaps the camera to standard views — click a face; the house button
+  returns home; **Fit** frames the current content.
+- The 2D view stays the fast tactical overlay with each season's official
+  AprilTag layout. 2018–2020 have no official 3D models; the 3D view uses
+  simplified structures there.
+- The **Welded / AndyMark** selector appears next to the season picker only
+  where the two constructions differ — pick whichever your event actually
+  uses and the tag layout follows.
+
+## AI assistant (off by default)
+
+Open the panel with the **✦ button** in the canvas bar; the **gear** at the
+top-right opens settings: pick a provider (Zhipu Z.ai / Claude (Anthropic) /
+OpenAI / DeepSeek / local Ollama or custom), paste your API key, and manage
+a **model list per provider** (call name + display name + context size; add
+as many as you like, ● activates one, **Test** probes connectivity).
+
+The chat composer (mature-harness style):
+
+- type `/` for the **command menu** (the full whitelisted action set);
+- type `$` for **skills** (resolve all conflicts / check bounds / export all);
+- `+` attaches **path files or a whole folder** into the session;
+- inline controls: **permission** (standard = high-risk actions confirm
+  first; full access auto-approves — still whitelist-only), **context
+  gauge**, model switch, effort, and **send / stop**.
+
+Discipline: the key lives only on your machine and never enters session
+files, share links, or exports; the assistant can only run whitelisted
+commands, every action is undoable. Collision verdicts always come from the
+deterministic detector, never the model. While enabled, conversation data
+goes to the provider you configured — a local Ollama keeps it on your
+machine.
 
 ## Other things you'll use
 
-- **Red/blue alliance**: a partner's path drawn from the red perspective? Toggle Red on the robot card and it is mirrored into the unified frame automatically;
-- **Season fields**: switch 2022–2026 in the header; custom field images can be imported too (two-point calibration + an AprilTag layout JSON);
-- **Sharing**: Share link packs the whole session into the URL (no server involved); Save session produces a `.ghpb.json` file; PNG export for the alliance chat;
-- **Languages**: 简体中文 / 繁體中文 / English from the header;
-- **Install as an app**: Safari "Add to Dock" / Chrome "Install" — standalone window + icon, and it still opens with no network (static assets are cached).
-
-## Mediation editing & export (new in v1.4)
-
-Beyond delays, you can nudge path geometry directly:
-
-1. Press **edit path** on a robot card (`.path` / `.traj` only; `.ghostauto` files carry no waypoints);
-2. **Drag the white points** on the field (PathPlanner paths also expose bezier control points on dashed arms); **double-click** a segment to insert a point, **right-click** a point to remove it;
-3. Collisions recompute on every change — when the red rings are gone, you're done. Edits are **derived copies** (the card shows "adjusted" with a one-click **reset**); PathPlanner paths regenerate their timing, Choreo paths keep the original timing with remapped geometry (warned on the card);
-4. Use the card's **.path / .traj / .ghostauto** buttons to export the adjusted copy (file name gets an `-adjusted` suffix) and send it back to the team that owns the path.
-
-## AI assistant (new in v1.4, off by default)
-
-Open the **AI** panel from the header: pick a provider (Zhipu Z.ai / OpenAI / DeepSeek / local Ollama or custom), fill in the base URL, model, and your API key, then connect. You can then give plain-language instructions like "delay the second robot half a second to clear the collision, then export all paths".
-
-Discipline: the key lives only in this browser and never enters session files, share links, or exports; the assistant can only run whitelisted commands (delays / alliance / team number / waypoints, collision queries…), every action is undoable, and **exports and robot removal ask for confirmation first**. Collision verdicts always come from the deterministic detector, never the model. Disconnect any time. While enabled, path data goes to the provider you configured — a local Ollama keeps it on your machine.
+- **Red/blue alliance**: a partner's path drawn from the red perspective?
+  Toggle Red on the robot card and it is mirrored into the unified frame;
+- **Seasons & custom fields**: 2018–2026 in the header; custom field images
+  can be imported (calibration + an AprilTag layout JSON);
+- **Sharing**: Share packs the whole session into the URL (no server);
+  Save session produces a `.ghpb.json` file; PNG export for the alliance
+  chat. Desktop: everything lives in the PathBlender menu;
+- **Appearance & languages**: light/dark/follow-system in Preferences
+  (⌘, on desktop), 简体中文 / 繁體中文 / English;
+- **Install as an app** (web): Safari "Add to Dock" / Chrome "Install";
+  desktop builds download as a dmg with in-app update checks.
 
 ## FAQ
 
@@ -71,6 +116,10 @@ verdicts as advisory and double-check timing-critical calls with both teams.
 **Q: An `.auto` import says "routine references path … — import the matching .path file too"?**
 An `.auto` is a routine (path references + waits/commands). Drag the matching
 `.path` files **in the same batch** as the `.auto`.
+
+**Q: Auto-resolve left some conflicts behind?**
+Delay-only resolution can't fix structural overlaps — most often the same
+path imported twice. Check for duplicates, remove one, and run it again.
 
 **Q: The auto period is 15 s but the timeline is longer/shorter?**
 Timeline length = the longest trajectory including delays. Each robot's band

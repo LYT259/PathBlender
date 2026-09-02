@@ -4,6 +4,8 @@
 
 ## 构建与质量
 
+- [ ] **推送前门禁**：`scripts/pre-push-check.mjs`（git pre-push 钩子自动执行；新克隆后先跑 `scripts/install-hooks.sh`）——待推提交命中敏感词（账号/工单/内网 IP/真实姓名/密钥材料）一律中止。2026-09-02 教训：一次性扫描会随日志追加失效，门禁是唯一可靠形态。
+
 - [ ] `npm run typecheck` 零错误
 - [ ] `npm test` 全绿（core + web e2e）
 - [ ] `npm run build` 成功；`packages/web/dist` 体积合理（gzip JS < 300 KB 量级）
