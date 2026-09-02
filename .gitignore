@@ -23,3 +23,6 @@ coverage/
 
 # Tauri desktop build artifacts (packages/desktop)
 packages/desktop/src-tauri/target/
+
+# local-only pre-push gate patterns
+.pre-push-patterns
