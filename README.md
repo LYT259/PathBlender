@@ -1,8 +1,8 @@
 # PathBlender
 
-**Multi-source autonomous path fusion viewer for FRC alliance strategy.**
+**English** | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md)
 
-把联盟伙伴各队导出的自动路径文件融合到同一场地上：统一时间轴回放 + 碰撞/干涉检查，供策略组赛前协调。
+**Multi-source autonomous path fusion viewer for FRC alliance strategy.**
 
 Blend autonomous path files exported from different toolchains onto one
 field: unified-timeline playback and collision checking, built for
