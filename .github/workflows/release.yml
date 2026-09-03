@@ -34,7 +34,7 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: npx tauri build -w packages/desktop
+        run: cd packages/desktop && npx tauri build
       - name: Stage artifacts
         run: |
           mkdir -p release
@@ -58,7 +58,7 @@ jobs:
   #     - env:
   #         TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
   #         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-  #       run: npx tauri build -w packages/desktop --bundles nsis
+  #       run: cd packages/desktop && npx tauri build --bundles nsis
   #     - run: |
   #         mkdir release
   #         cp packages/desktop/src-tauri/target/release/bundle/nsis/* release/
@@ -78,7 +78,7 @@ jobs:
   #     - env:
   #         TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
   #         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-  #       run: npx tauri build -w packages/desktop --bundles deb,appimage
+  #       run: cd packages/desktop && npx tauri build --bundles deb,appimage
   #     - run: |
   #         mkdir release
   #         cp packages/desktop/src-tauri/target/release/bundle/deb/*.deb release/
