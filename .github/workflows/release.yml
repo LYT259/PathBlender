@@ -97,6 +97,7 @@ jobs:
         run: |
           mkdir -p bundle/macos release
           cp artifacts/macos/*.tar.gz* bundle/macos/
+          cp artifacts/macos/*.tar.gz* release/
           cp artifacts/macos/*.dmg release/ || true
       - name: Generate updater feed
         run: |
