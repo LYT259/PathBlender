@@ -43,17 +43,25 @@ if (existsSync(localPatternsPath)) {
 
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
 
+// Git pre-push sends "<local_ref> <local_sha> <remote_ref> <remote_sha>" per
+// line on STDIN (argv gets remote name/URL instead). We can't block on stdin
+// when run manually, so only read it when the hook invocation provides it.
+const isHook = !process.argv[2]?.includes(' ') || process.argv[2] === 'origin';
+let stdinData = '';
+if (isHook && !process.stdin.isTTY) {
+  stdinData = readFileSync(0, 'utf8'); // fd 0, non-blocking after hook wires it
+}
+
 let range;
-if (process.argv.length > 2 && process.argv[2] && !process.argv[2].includes(' ')) {
-  // manual run with an explicit range, e.g. `pre-push-check.mjs HEAD~3..HEAD`
-  range = process.argv[2];
-} else if (process.argv.length > 2) {
-  // hook args: <local ref> <local sha> <remote ref> <remote sha> pairs
-  const lines = process.argv.slice(2).join('\n').split('\n').filter(Boolean);
-  const first = lines[0]?.split(' ');
+const ZERO_SHA = /^0+$/;
+if (stdinData.trim()) {
+  const first = stdinData.trim().split('\n')[0]?.split(' ');
   const localSha = first?.[1] ?? '';
   const remoteSha = first?.[3] ?? '';
-  range = remoteSha ? `${remoteSha}..${localSha}` : localSha;
+  // New branch (remote = all zeros) → scan the full local history
+  range = remoteSha && !ZERO_SHA.test(remoteSha) ? `${remoteSha}..${localSha}` : localSha || 'HEAD';
+} else if (process.argv.length > 2 && process.argv[2] && !process.argv[2].includes(' ')) {
+  range = process.argv[2];
 } else {
   // manual run: everything not yet on any remote
   range = '@{u}..HEAD';
