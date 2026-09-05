@@ -22,6 +22,8 @@ export interface AISettings {
   keys: Record<string, string>;
   /** Model list per provider (call id / display name / context size). */
   models: Record<string, ModelEntry[]>;
+  /** Update channel: stable or beta (drives the updater feed URL). */
+  updateChannel?: 'stable' | 'beta';
 }
 
 /**
