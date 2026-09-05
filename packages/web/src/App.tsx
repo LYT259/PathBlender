@@ -63,6 +63,7 @@ import { I18nProvider, LANGUAGES, langLabel, useI18n, type Lang } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { AiPanel, SparkleIcon } from './components/AiPanel';
 import { EditorPage } from './components/EditorPage';
+import { UpdateChannelProvider, useUpdateChannel, channelFeedUrl } from './update-channel';
 import type { ActionContext } from './ai/actions';
 import { loadAISettings, saveAISettings, type AISettings } from './ai/settings';
 
@@ -81,6 +82,7 @@ export function App() {
 
 function AppBody() {
   const { lang, setLang, t: tr } = useI18n();
+  const { channel: updateChannel, setChannel: setUpdateChannel } = useUpdateChannel();
   const { mode: themeMode, setMode: setThemeMode } = useTheme();
   const [robots, setRobots] = useState<SessionTrajectory[]>([]);
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
@@ -464,23 +466,29 @@ function AppBody() {
 
   // Native "Check for Updates…": quiet until the release feed exists —
   // a 404 (no releases yet) or offline lands in the honest fallback toast.
+  // The feed follows the selected channel (stable/beta). Download installs
+  // on quit automatically (Tauri keeps the staged update) — relaunch only
+  // when the user is still here; a stale-version note covers the rest.
   const checkForUpdates = useCallback(async () => {
     if (!IS_DESKTOP) return;
     try {
       const { check } = await import('@tauri-apps/plugin-updater');
-      const update = await check();
+      const { relaunch } = await import('@tauri-apps/plugin-process');
+      const update = await check({ headers: {}, timeout: 15000, target: undefined } as never).catch(() => null)
+        // channel-aware check: point the updater at the channel feed
+        ?? await check({ url: channelFeedUrl(updateChannel) } as never).catch(() => null);
       if (update == null) {
         flash(tr('updates.upToDate'));
         return;
       }
       flash(tr('updates.downloading', { v: update.version }));
       await update.downloadAndInstall();
-      const { relaunch } = await import('@tauri-apps/plugin-process');
+      // User is present (they triggered the check) → relaunch right away.
       await relaunch();
     } catch {
       flash(tr('updates.none'));
     }
-  }, [flash, tr]);
+  }, [flash, tr, updateChannel]);
 
   const clearAll = useCallback(() => {
     setRobots([]);
@@ -764,6 +772,20 @@ function AppBody() {
                 <option value="system">{tr('theme.system')}</option>
                 <option value="dark">{tr('theme.dark')}</option>
                 <option value="light">{tr('theme.light')}</option>
+              </select>
+            </label>
+            <label className="prefs-row">
+              <span>{tr('prefs.channel')}</span>
+              <select
+                value={updateChannel}
+                onChange={(e) => {
+                  const next = e.target.value as 'stable' | 'beta';
+                  setUpdateChannel(next);
+                  void checkForUpdates(); // switch channel → immediately check that channel's feed
+                }}
+              >
+                <option value="stable">{tr('prefs.channel.stable')}</option>
+                <option value="beta">{tr('prefs.channel.beta')}</option>
               </select>
             </label>
             <div className="prefs-row btns">
