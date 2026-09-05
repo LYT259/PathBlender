@@ -99,11 +99,18 @@ jobs:
           cp artifacts/macos/*.tar.gz* bundle/macos/
           cp artifacts/macos/*.tar.gz* release/
           cp artifacts/macos/*.dmg release/ || true
-      - name: Generate updater feed
+      - name: Generate updater feeds
         run: |
           VERSION=${GITHUB_REF_NAME#v}
+          PRERELEASE=$(gh api repos/${GITHUB_REPOSITORY}/releases/tags/$GITHUB_REF_NAME --jq '.prerelease' 2>/dev/null || echo false)
           node scripts/gen-latest-json.mjs "$VERSION" bundle > release/latest.json
+          if [ "$PRERELEASE" = "true" ]; then
+            PB_CHANNEL=beta node scripts/gen-latest-json.mjs "$VERSION" bundle > /dev/null
+            cp latest-beta.json release/latest-beta.json
+          fi
           cat release/latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

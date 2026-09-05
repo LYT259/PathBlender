@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { I18nProvider, LANGUAGES, langLabel, useI18n, type Lang } from './i18n';
 import { ThemeProvider, useTheme, type ThemeMode } from './theme';
+import { UpdateChannelProvider, useUpdateChannel } from './update-channel';
 import './app.css';
 
 // Desktop ⌘, Preferences opens a second webview on the same bundle,
@@ -33,15 +34,32 @@ function PrefsOnly() {
           </select>
         </label>
         <ThemeRow />
+        <ChannelRow />
       </div>
     </div>
+  );
+}
+
+function ChannelRow() {
+  const { channel, setChannel } = useUpdateChannel();
+  const { t } = useI18n();
+  return (
+    <label className="prefs-row">
+      <span>{t('prefs.channel')}</span>
+      <select value={channel} onChange={(e) => setChannel(e.target.value as 'stable' | 'beta')}>
+        <option value="stable">{t('prefs.channel.stable')}</option>
+        <option value="beta">{t('prefs.channel.beta')}</option>
+      </select>
+    </label>
   );
 }
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-      <I18nProvider>{isPrefsWindow ? <PrefsOnly /> : <App />}</I18nProvider>
+      <UpdateChannelProvider>
+        <I18nProvider>{isPrefsWindow ? <PrefsOnly /> : <App />}</I18nProvider>
+      </UpdateChannelProvider>
     </ThemeProvider>
   </StrictMode>,
 );
