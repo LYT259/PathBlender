@@ -1,6 +1,6 @@
 # PathBlender
 
-[English](README.md) | **简体中文** | [繁體中文](README.zh-TW.md)
+[English](README.md) | **简体中文** | [繁體中文](README.zh-Hant.md)
 
 **面向 FRC 联盟策略协作的多源自动路径融合查看器。**
 

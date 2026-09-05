@@ -1,6 +1,6 @@
 # PathBlender
 
-**English** | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md)
+**English** | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-Hant.md)
 
 **Multi-source autonomous path fusion viewer for FRC alliance strategy.**
 
