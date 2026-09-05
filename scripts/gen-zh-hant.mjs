@@ -40,7 +40,10 @@ const TERMS = [
   ['米)', '公尺)'],
 ];
 
-const converter = await Converter({ from: 'cn', to: 'tw' });
+// zh-Hant for HK+TW both: 'hk' avoids TW-only phrasing (網路/軟體) in favor
+// of the shared vocabulary (網絡/軟件 is mainland; hk keeps 中性 IT 詞彙).
+// Regional specifics are handled by the TERMS table below.
+const converter = await Converter({ from: 'cn', to: 'hk' });
 
 const src = readFileSync('packages/web/src/i18n/zh.ts', 'utf-8');
 
