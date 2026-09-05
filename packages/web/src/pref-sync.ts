@@ -8,7 +8,7 @@
  * loop). Web/browser contexts: both helpers degrade to no-ops.
  */
 
-type PrefKey = 'lang' | 'theme';
+type PrefKey = 'lang' | 'theme' | 'updateChannel';
 
 const isDesktop =
   typeof window !== 'undefined' &&
