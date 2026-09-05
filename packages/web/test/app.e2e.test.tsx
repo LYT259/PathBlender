@@ -120,7 +120,8 @@ describe('App import → fusion → collision flow', () => {
     expect(['dark', 'light']).toContain(document.documentElement.dataset.theme);
     fireEvent.click(screen.getByRole('button', { name: /Preferences|偏好设置/ }));
     const selects = document.querySelectorAll('.prefs-modal select');
-    const themeSelect = selects[selects.length - 1] as HTMLSelectElement;
+    // order: language, theme, channel — theme is the second-to-last
+    const themeSelect = selects[selects.length - 2] as HTMLSelectElement;
     fireEvent.change(themeSelect, { target: { value: 'light' } });
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(localStorage.getItem('ghpb.theme')).toBe('light');
