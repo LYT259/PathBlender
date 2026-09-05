@@ -98,6 +98,7 @@ export const zh: Record<MessageKey, string> = {
   'rail.clear': '清空',
   'prefs.title': '偏好设置',
   'prefs.language': '语言',
+  'prefs.ai': 'AI 助手',
   'prefs.channel': '更新通道',
   'prefs.channel.stable': 'Stable（稳定版）',
   'prefs.channel.beta': 'Beta（抢先体验版）',
