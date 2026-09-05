@@ -98,6 +98,7 @@ export const en = {
   'rail.clear': 'Clear',
   'prefs.title': 'Preferences',
   'prefs.language': 'Language',
+  'prefs.ai': 'AI Assistant',
   'prefs.channel': 'Update channel',
   'prefs.channel.stable': 'Stable',
   'prefs.channel.beta': 'Beta',

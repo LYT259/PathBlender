@@ -121,7 +121,7 @@ describe('App import → fusion → collision flow', () => {
     fireEvent.click(screen.getByRole('button', { name: /Preferences|偏好设置/ }));
     const selects = document.querySelectorAll('.prefs-modal select');
     // order: language, theme, channel — theme is the second-to-last
-    const themeSelect = selects[selects.length - 2] as HTMLSelectElement;
+    const themeSelect = selects[1] as HTMLSelectElement; // language, theme, channel, then AI model selects
     fireEvent.change(themeSelect, { target: { value: 'light' } });
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(localStorage.getItem('ghpb.theme')).toBe('light');
@@ -131,16 +131,17 @@ describe('App import → fusion → collision flow', () => {
     expect(localStorage.getItem('ghpb.theme')).toBeNull();
   });
 
-  it('AI panel opens on the new-chat view; gear reveals settings (default off, no network)', async () => {
+  it('AI panel opens on the new-chat view; gear opens Preferences with AI settings', async () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'AI Assistant', exact: true }));
-    // New-chat hero first; settings live behind the gear.
+    // New-chat hero first; gear now opens the Preferences modal.
     expect(document.querySelector('.ai-panel')).not.toBeNull();
     expect(document.querySelector('.ai-hero')).not.toBeNull();
     expect(document.querySelector('.ai-settings')).toBeNull();
     fireEvent.click(document.querySelector('.ai-icon-btn')!);
-    expect(document.querySelector('.ai-settings')).not.toBeNull();
-    expect(document.querySelector('.ai-hero')).toBeNull();
+    // Preferences modal shows the AI section (single settings entry).
+    expect(document.querySelector('.prefs-modal')).not.toBeNull();
+    expect(document.querySelector('.prefs-ai')).not.toBeNull();
   });
 
   it('the what-if start delay resolves the collision', async () => {
