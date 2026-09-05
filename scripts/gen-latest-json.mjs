@@ -56,12 +56,26 @@ if (platforms.length === 0) {
   process.exit(1);
 }
 
+// Channel: PB_CHANNEL=beta writes latest-beta.json keys (prerelease flag is
+// on the GitHub Release itself; the feed just needs to exist under its name).
+const channel = process.env.PB_CHANNEL === 'beta' ? 'beta' : 'stable';
+
 const notesPath = join(root, 'RELEASE_NOTES.md');
 const feed = {
   version,
-  notes: existsSync(notesPath) ? readFileSync(notesPath, 'utf-8').trim() : `PathBlender v${version}`,
+  notes:
+    (existsSync(notesPath) ? readFileSync(notesPath, 'utf-8').trim() : `PathBlender v${version}`) +
+    (channel === 'beta' ? '\n\nBeta channel build — may be less tested than stable.' : ''),
   pub_date: new Date().toISOString(),
   platforms: Object.assign({}, ...platforms),
 };
 
-console.log(JSON.stringify(feed, null, 2));
+if (channel === 'beta') {
+  // Also emit under the beta feed name so both channels coexist.
+  console.log(JSON.stringify(feed, null, 2));
+  const { writeFileSync } = await import('node:fs');
+  writeFileSync('latest-beta.json', JSON.stringify(feed, null, 2));
+  console.error('wrote latest-beta.json');
+} else {
+  console.log(JSON.stringify(feed, null, 2));
+}
