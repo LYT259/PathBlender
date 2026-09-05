@@ -22,6 +22,8 @@ interface Props {
   onUndo: () => void;
   /** "+" attachment: route picked path files into the session import. */
   onAttachFiles: (files: FileList | File[]) => void;
+  /** Gear pressed: the app opens Preferences at the AI section. */
+  onOpenSettings: () => void;
 }
 
 interface LogEntry {
@@ -29,21 +31,13 @@ interface LogEntry {
   text: string;
 }
 
-export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo, onAttachFiles }: Props) {
+export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo, onAttachFiles, onOpenSettings }: Props) {
   const { t } = useI18n();
-  const [view, setView] = useState<'chat' | 'settings'>('chat');
-  const [showKey, setShowKey] = useState(false);
-  const [draft, setDraft] = useState(() => ({
-    provider: matchProvider(settings.baseUrl, settings.model),
-    baseUrl: settings.baseUrl,
-    model: settings.model,
-    apiKey: settings.apiKey,
-  }));
+  // Settings live in Preferences (single entry); the panel is chat-only.
   const [log, setLog] = useState<LogEntry[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [menu, setMenu] = useState<'plus' | 'slash' | 'dollar' | null>(null);
-  const [testing, setTesting] = useState<'idle' | 'busy' | 'ok' | 'fail'>('idle');
   const abortRef = useRef<AbortController | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
@@ -55,52 +49,6 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
     setLog((l) => [...l.slice(-80), entry]);
   }, []);
 
-  const saveSettings = () => {
-    const list = settings.models[draft.provider] ?? [];
-    onSettings({
-      enabled: true,
-      provider: draft.provider,
-      baseUrl: draft.baseUrl,
-      model: draft.model || list[0]?.id || '',
-      apiKey: draft.apiKey,
-      keys: { ...settings.keys, [draft.provider]: draft.apiKey },
-      permission: settings.permission,
-      effort: settings.effort,
-      models: settings.models,
-    });
-    setView('chat');
-    push({ who: 'notice', text: t('ai.connected') });
-  };
-
-  // CC Switch-style connectivity probe: a 1-token completion against the
-  // drafted endpoint/key (same whitelisted fetch as the chat).
-  const testConnection = async () => {
-    setTesting('busy');
-    try {
-      const res = await fetch(`${draft.baseUrl.replace(/\/$/, '')}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          ...(draft.apiKey ? { authorization: `Bearer ${draft.apiKey}` } : {}),
-        },
-        body: JSON.stringify({
-          model: draft.model,
-          messages: [{ role: 'user', content: 'ping' }],
-          max_tokens: 1,
-        }),
-      });
-      setTesting(res.ok ? 'ok' : 'fail');
-    } catch {
-      setTesting('fail');
-    }
-  };
-
-  const doDisconnect = () => {
-    const next = disconnectAI(settings);
-    onSettings(next);
-    setDraft({ provider: next.provider, baseUrl: '', model: '', apiKey: '' });
-    setLog([]);
-  };
 
   const confirm = (ok: boolean) => {
     if (ok) pending?.perform();
@@ -153,22 +101,6 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
     }
   };
 
-  // Selecting a provider (or pasting a key with one chosen) fills the
-  // endpoint/model from the preset — CCSwitch behavior.
-  const provider = (key: string) => {
-    const preset = providerPreset(key);
-    const first = (settings.models[key] ?? [{ id: preset.model }])[0]?.id ?? preset.model;
-    setDraft((d) => ({ ...d, provider: key, baseUrl: preset.baseUrl, model: first }));
-  };
-  const onKeyPaste = (key: string) => {
-    setDraft((d) => {
-      if (key.trim().length < 8) return { ...d, apiKey: key };
-      const preset = providerPreset(d.provider);
-      const baseUrl = d.baseUrl || preset.baseUrl;
-      const model = d.model || preset.model;
-      return { ...d, apiKey: key, baseUrl, model };
-    });
-  };
 
   // Rough context gauge: chars of the running conversation vs a nominal
   // 32k window (estimate — providers differ; tooltip says so).
@@ -197,212 +129,25 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
           <SparkleIcon />
         </span>
         <span className="ai-top-title">{t('ai.title')}</span>
-        {view === 'chat' ? (
-          <button
-            className="ai-icon-btn"
-            title={t('ai.settings')}
-            aria-label={t('ai.settings')}
-            onClick={() => setView('settings')}
-          >
-            <GearIcon />
-          </button>
-        ) : (
-          <button
-            className="ai-icon-btn"
-            title={t('ai.back')}
-            aria-label={t('ai.back')}
-            onClick={() => setView('chat')}
-          >
-            <BackIcon />
-          </button>
-        )}
+        <button
+          className="ai-icon-btn"
+          title={t('ai.settings')}
+          aria-label={t('ai.settings')}
+          onClick={onOpenSettings}
+        >
+          <GearIcon />
+        </button>
       </div>
 
-      {view === 'settings' ? (
-        <div className="ai-settings">
-          <label className="ai-row">
-            <span>{t('ai.provider')}</span>
-            <select value={draft.provider} onChange={(e) => provider(e.target.value)}>
-              {PROVIDER_PRESETS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="ai-row">
-            <span>{t('ai.apiKey')}</span>
-            <span className="ai-key-row">
-              <input
-                type={showKey ? 'text' : 'password'}
-                autoComplete="off"
-                placeholder="sk-…"
-                value={draft.apiKey}
-                onChange={(e) => onKeyPaste(e.target.value)}
-              />
-              <button
-                type="button"
-                className="ai-icon-btn"
-                title={t('ai.showKey')}
-                onClick={() => setShowKey((v) => !v)}
-              >
-                {showKey ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </span>
-          </label>
-          <label className="ai-row">
-            <span>{t('ai.baseUrl')}</span>
-            <input type="url" value={draft.baseUrl} onChange={(e) => setDraft((d) => ({ ...d, baseUrl: e.target.value }))} />
-          </label>
-          <div className="ai-models">
-            <div className="ai-models-head">
-              <span>{t('ai.models')}</span>
-              <button
-                className="btn small"
-                onClick={() =>
-                  onSettings({
-                    ...settings,
-                    models: {
-                      ...settings.models,
-                      [draft.provider]: [
-                        ...(settings.models[draft.provider] ?? []),
-                        { id: '' },
-                      ],
-                    },
-                  })
-                }
-              >
-                + {t('ai.addModel')}
-              </button>
-            </div>
-            {(settings.models[draft.provider] ?? []).map((m, i) => {
-              const list = settings.models[draft.provider] ?? [];
-              const set = (patch: Partial<ModelEntry>) =>
-                onSettings({
-                  ...settings,
-                  models: {
-                    ...settings.models,
-                    [draft.provider]: list.map((x, j) => (j === i ? { ...x, ...patch } : x)),
-                  },
-                });
-              const drop = () =>
-                onSettings({
-                  ...settings,
-                  models: {
-                    ...settings.models,
-                    [draft.provider]: list.filter((_, j) => j !== i),
-                  },
-                });
-              const active = settings.provider === draft.provider && settings.model === m.id;
-              return (
-                <div className={`ai-model-row ${active ? 'active' : ''}`} key={i}>
-                  <button
-                    className="ai-model-pick"
-                    title={t('ai.useModel')}
-                    onClick={() => {
-                      const preset = providerPreset(draft.provider);
-                      onSettings({
-                        ...settings,
-                        provider: draft.provider,
-                        baseUrl: draft.baseUrl || preset.baseUrl,
-                        model: m.id,
-                        apiKey: draft.apiKey,
-                        enabled: true,
-                      });
-                      setDraft((d) => ({ ...d, model: m.id }));
-                    }}
-                  >
-                    ●
-                  </button>
-                  <input
-                    className="m-id"
-                    placeholder={t('ai.modelId')}
-                    value={m.id}
-                    onChange={(e) => set({ id: e.target.value })}
-                  />
-                  <input
-                    className="m-name"
-                    placeholder={t('ai.modelName')}
-                    value={m.name ?? ''}
-                    onChange={(e) => set({ name: e.target.value })}
-                  />
-                  <input
-                    className="m-ctx"
-                    placeholder="128"
-                    inputMode="numeric"
-                    value={m.ctxK ?? ''}
-                    onChange={(e) =>
-                      set({ ctxK: e.target.value === '' ? undefined : Number(e.target.value) || undefined })
-                    }
-                    title={t('ai.ctxK')}
-                  />
-                  <button className="robot-remove" title={t('robots.remove')} onClick={drop}>
-                    ✕
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-          <div className="ai-row btns">
-            <button className="btn small" disabled={!draft.baseUrl || !draft.model} onClick={saveSettings}>
-              {t('ai.save')}
-            </button>
-            <button className="btn small" disabled={!draft.baseUrl || !draft.apiKey} onClick={() => void testConnection()}>
-              {testing === 'idle' ? t('ai.test') : testing === 'ok' ? t('ai.testOk') : testing === 'fail' ? t('ai.testFail') : t('ai.testing')}
-            </button>
-            {settings.enabled && (
-              <button className="btn small danger" onClick={doDisconnect}>
-                {t('ai.disconnect')}
-              </button>
-            )}
-          </div>
 
-          {settings.enabled && (
-            <div className="ai-switch">
-              <select
-                value={settings.provider}
-                title={t('ai.provider')}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  const preset = providerPreset(id);
-                  const key = settings.keys[id] ?? '';
-                  if (!key && id !== 'ollama') return;
-                  onSettings({
-                    ...settings,
-                    provider: id,
-                    baseUrl: preset.baseUrl,
-                    model: preset.model || settings.model,
-                    apiKey: key,
-                    enabled: true,
-                  });
-                  push({ who: 'notice', text: `${t('ai.switchedTo')} ${preset.label}` });
-                }}
-              >
-                {PROVIDER_PRESETS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {(settings.keys[p.id] ?? '') !== '' || p.id === 'ollama' ? '● ' : '○ '}
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={settings.model}
-                placeholder={t('ai.model')}
-                title={t('ai.model')}
-                onChange={(e) => onSettings({ ...settings, model: e.target.value })}
-              />
-            </div>
-          )}
-        </div>
-      ) : (
         <>
-          <div className="ai-log" ref={logRef}>
+      <div className="ai-log" ref={logRef}>
             {log.length === 0 ? (
               <div className="ai-hero">
                 <SparkleIcon big />
                 <div className="ai-hero-title">{t('ai.newChat')}</div>
                 {!settings.enabled && (
-                  <button className="btn small" onClick={() => setView('settings')}>
+                  <button className="btn small" onClick={onOpenSettings}>
                     {t('ai.configure')}
                   </button>
                 )}
@@ -570,7 +315,6 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
             />
           </div>
         </>
-      )}
     </aside>
   );
 }
