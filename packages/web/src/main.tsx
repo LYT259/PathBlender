@@ -4,6 +4,9 @@ import { App } from './App';
 import { I18nProvider, LANGUAGES, langLabel, useI18n, type Lang } from './i18n';
 import { ThemeProvider, useTheme, type ThemeMode } from './theme';
 import { UpdateChannelProvider, useUpdateChannel } from './update-channel';
+import { AiSettingsSection } from './components/AiSettingsSection';
+import { loadAISettings, saveAISettings } from './ai/settings';
+import { useState as useReactState } from 'react';
 import './app.css';
 
 // Desktop ⌘, Preferences opens a second webview on the same bundle,
@@ -19,9 +22,10 @@ if (typeof window !== 'undefined' && (window.location.protocol === 'tauri:' || w
 
 function PrefsOnly() {
   const { lang, setLang, t } = useI18n();
+  const [ai, setAi] = useReactState(() => loadAISettings());
   return (
     <div className="prefs-only">
-      <div className="prefs-modal static">
+      <div className="prefs-modal static tall">
         <h3>{t('prefs.title')}</h3>
         <label className="prefs-row">
           <span>{t('prefs.language')}</span>
@@ -35,6 +39,16 @@ function PrefsOnly() {
         </label>
         <ThemeRow />
         <ChannelRow />
+        <div className="prefs-ai">
+          <h4>{t('prefs.ai')}</h4>
+          <AiSettingsSection
+            settings={ai}
+            onSettings={(next) => {
+              setAi(next);
+              saveAISettings(next);
+            }}
+          />
+        </div>
       </div>
     </div>
   );

@@ -62,6 +62,7 @@ import { usePlayback } from './playback';
 import { I18nProvider, LANGUAGES, langLabel, useI18n, type Lang } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { AiPanel, SparkleIcon } from './components/AiPanel';
+import { AiSettingsSection } from './components/AiSettingsSection';
 import { EditorPage } from './components/EditorPage';
 import { UpdateChannelProvider, useUpdateChannel, channelFeedUrl } from './update-channel';
 import type { ActionContext } from './ai/actions';
@@ -701,6 +702,7 @@ function AppBody() {
             undoLabel={aiUndoTop}
             onUndo={aiUndo}
             onAttachFiles={(files) => void importFiles(files)}
+            onOpenSettings={() => setShowPrefs(true)}
           />
         )}
       </main>
@@ -788,6 +790,13 @@ function AppBody() {
                 <option value="beta">{tr('prefs.channel.beta')}</option>
               </select>
             </label>
+            <div className="prefs-ai">
+              <h4>{tr('prefs.ai')}</h4>
+              <AiSettingsSection
+                settings={aiSettings}
+                onSettings={applyAiSettings}
+              />
+            </div>
             <div className="prefs-row btns">
               <button className="btn small" onClick={() => setShowPrefs(false)}>
                 {tr('prefs.done')}
