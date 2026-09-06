@@ -7,8 +7,72 @@ use std::sync::Mutex;
 use tauri::menu::{AboutMetadataBuilder, MenuBuilder, MenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_updater::{Update, UpdaterExt};
 
 const PREFS_WINDOW: &str = "prefs";
+
+/// Updater feeds per channel — the whitelist. Must stay in sync with
+/// scripts/gen-latest-json.mjs (which publishes latest.json /
+/// latest-beta.json onto GitHub releases). The channel choice cannot be
+/// made web-side: the updater plugin's JS `check()` has no endpoint
+/// override, so it is resolved here from the channel string.
+const FEED_STABLE: &str = "https://github.com/GH-FRC/pathblender/releases/latest/download/latest.json";
+const FEED_BETA: &str = "https://github.com/GH-FRC/pathblender/releases/latest/download/latest-beta.json";
+
+/// The update found by `check_update`, held until `install_update`
+/// consumes it (the webview drives both, mirroring the plugin's JS API).
+struct PendingUpdate(Mutex<Option<Update>>);
+
+#[derive(serde::Serialize)]
+struct UpdateMeta {
+    version: String,
+}
+
+/// Check the selected channel's feed. Ok(None) = feed reached and the app is
+/// current; Err = feed unreachable (offline / no release assets yet) — the
+/// UI maps that to an honest failure toast, never to "up to date".
+#[tauri::command]
+async fn check_update(
+    app: AppHandle,
+    pending: State<'_, PendingUpdate>,
+    channel: String,
+) -> Result<Option<UpdateMeta>, String> {
+    let feed = if channel == "beta" { FEED_BETA } else { FEED_STABLE };
+    let url = tauri::Url::parse(feed).map_err(|e| e.to_string())?;
+    let updater = app
+        .updater_builder()
+        .endpoints(vec![url])
+        .map_err(|e| e.to_string())?
+        .build()
+        .map_err(|e| e.to_string())?;
+    let update = updater.check().await.map_err(|e| e.to_string())?;
+    let meta = update.as_ref().map(|u| UpdateMeta {
+        version: u.version.clone(),
+    });
+    // Scoped so the guard never survives across the async fn's await points
+    // (the command future must stay Send).
+    *pending.0.lock().map_err(|e| e.to_string())? = update;
+    Ok(meta)
+}
+
+/// Download and install the update found by `check_update`. The webview
+/// relaunches afterwards; on Windows the NSIS installer exits the app
+/// itself, so callers must treat install as the last reliable step.
+#[tauri::command]
+async fn install_update(pending: State<'_, PendingUpdate>) -> Result<(), String> {
+    let update = {
+        let mut guard = pending.0.lock().map_err(|e| e.to_string())?;
+        guard.take()
+    };
+    let Some(update) = update else {
+        return Err("no update was checked".into());
+    };
+    update
+        .download_and_install(|_chunk, _total| {}, || {})
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
 
 /// UI strings per app language (zh-tw falls back to zh where wording matches).
 struct MenuLang {
@@ -164,10 +228,16 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .invoke_handler(tauri::generate_handler![save_file, set_menu_language])
+        .invoke_handler(tauri::generate_handler![
+            save_file,
+            set_menu_language,
+            check_update,
+            install_update
+        ])
         .manage(MenuState {
             lang: Mutex::new(String::from("en")),
         })
+        .manage(PendingUpdate(Mutex::new(None)))
         .setup(|app| {
             // Apple-style sidebar material behind the translucent panels
             // (through the overlay title bar so the toolbar shares it).

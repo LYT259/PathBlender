@@ -89,7 +89,7 @@ export const zhTw: Record<MessageKey, string> = {
   'share.note': '整個工作階段壓縮在此連結中，不上傳任何服務器。',
   'updates.upToDate': '已是最新版本',
   'updates.downloading': '發現 v{v}，正在下載安裝並重啓…',
-  'updates.none': '自動更新尚未上線，目前版本手動分發',
+  'updates.failed': '更新檢查失敗，請檢查網路後重試',
   'share.copy': '複製',
   'share.copyFailed': '複製失敗——請手動全選複製',
   'actions.saveHint': '儲存整個工作階段（.ghpb.json：全部機器人+設定，用「匯入」重新打開）；單條路徑匯出在機器人卡片上。',

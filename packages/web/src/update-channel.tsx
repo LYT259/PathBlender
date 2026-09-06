@@ -1,9 +1,10 @@
 /**
  * Update channel (user request, 2026-09-03): stable vs beta. Persisted in
  * localStorage, cross-window synced via the shared pref bridge (same
- * mechanism as language/theme). The updater endpoint follows the channel:
- * releases/latest/download/latest.json          → stable
- * releases/latest/download/latest-beta.json     → beta
+ * mechanism as language/theme). The channel→feed mapping (latest.json vs
+ * latest-beta.json) lives in the Rust shell's check_update command — the
+ * updater plugin's JS API cannot override the configured endpoint, so the
+ * choice has to be made native-side (see update-check.ts and src-tauri).
  */
 
 import {
@@ -71,11 +72,4 @@ export function useUpdateChannel(): ChannelCtx {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error('useUpdateChannel outside UpdateChannelProvider');
   return ctx;
-}
-
-/** Updater feed URL for a channel (public release assets). */
-export function channelFeedUrl(c: UpdateChannel): string {
-  return c === 'beta'
-    ? 'https://github.com/GH-FRC/pathblender/releases/latest/download/latest-beta.json'
-    : 'https://github.com/GH-FRC/pathblender/releases/latest/download/latest.json';
 }

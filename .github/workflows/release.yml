@@ -102,21 +102,24 @@ jobs:
       - name: Generate updater feeds
         run: |
           VERSION=${GITHUB_REF_NAME#v}
-          PRERELEASE=$(gh api repos/${GITHUB_REPOSITORY}/releases/tags/$GITHUB_REF_NAME --jq '.prerelease' 2>/dev/null || echo false)
-          node scripts/gen-latest-json.mjs "$VERSION" bundle > release/latest.json
-          if [ "$PRERELEASE" = "true" ]; then
-            PB_CHANNEL=beta node scripts/gen-latest-json.mjs "$VERSION" bundle > /dev/null
-            cp latest-beta.json release/latest-beta.json
+          # Channel routing by tag: a pre-release suffix (-alpha/-beta/-rc)
+          # publishes ONLY latest-beta.json and marks the GitHub Release as a
+          # prerelease (keeps it out of GitHub's "latest", so stable feeds
+          # can never point at a beta build); a stable release publishes both
+          # feeds — stable raises the beta channel too.
+          CH=$(node scripts/release-channel.mjs "$GITHUB_REF_NAME")
+          node scripts/gen-latest-json.mjs "$VERSION" bundle > release/latest-beta.json
+          if [ "$CH" = "stable" ]; then
+            cp release/latest-beta.json release/latest.json
           fi
-          cat release/latest.json
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          cat release/latest-beta.json release/latest.json
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=${GITHUB_REF_NAME#v}
-          gh release create "$GITHUB_REF_NAME" \
-            --title "PathBlender v${VERSION}" \
-            --generate-notes \
-            release/*
+          ARGS=(--title "PathBlender v${VERSION}" --generate-notes)
+          if [ "$(node scripts/release-channel.mjs "$GITHUB_REF_NAME")" = "beta" ]; then
+            ARGS+=(--prerelease)
+          fi
+          gh release create "$GITHUB_REF_NAME" "${ARGS[@]}" release/*
