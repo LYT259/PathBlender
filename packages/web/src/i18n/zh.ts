@@ -85,7 +85,7 @@ export const zh: Record<MessageKey, string> = {
   'share.note': '整个会话压缩在此链接中，不上传任何服务器。',
   'updates.upToDate': '已是最新版本',
   'updates.downloading': '发现 v{v}，正在下载安装并重启…',
-  'updates.none': '自动更新尚未上线，当前版本手动分发',
+  'updates.failed': '更新检查失败，请检查网络后重试',
   'share.copy': '复制',
   'share.copyFailed': '复制失败——请手动全选复制',
   'actions.saveHint': '保存整个会话（.ghpb.json：全部机器人+设置，用「导入」重新打开）；单条路径导出在机器人卡片上。',
