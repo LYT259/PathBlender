@@ -395,6 +395,40 @@ check(
   (await page.locator('.field-canvas-3d canvas').count()) >= 1 && errors.length === 0,
 );
 check('official 3D field model loaded', modelLoaded, modelLoaded ? 'fields3d glb fetched' : 'no model request');
+// Theme hot-switch in 3D: the scene is built once per field; retint must
+// follow without a reload (sky-corner sample: #1c1c1e dark / #ffffff light).
+const sample3dSky = () =>
+  page.evaluate(() => {
+    const st = window.__pb3d;
+    const cv = document.querySelector('.field-canvas-3d canvas');
+    if (!st?.renderer || !st?.scene || !st?.camera || !cv) return null;
+    // WebGL default is preserveDrawingBuffer:false — the buffer reads black
+    // once composited. Re-render synchronously, then read in the same task.
+    st.renderer.render(st.scene, st.camera);
+    const off = document.createElement('canvas');
+    off.width = 1;
+    off.height = 1;
+    const g = off.getContext('2d', { willReadFrequently: true });
+    g.drawImage(cv, 0, 0, Math.round(cv.width * 0.12), Math.round(cv.height * 0.12), 0, 0, 1, 1);
+    const d = g.getImageData(0, 0, 1, 1).data;
+    return [d[0], d[1], d[2]];
+  });
+const near = (px, rgb, tol = 6) =>
+  Array.isArray(px) && rgb.every((v, i) => Math.abs(px[i] - v) <= tol);
+const skyDark = await sample3dSky();
+check('3D sky is dark before theme switch', near(skyDark, [28, 28, 30]), JSON.stringify(skyDark));
+await page.locator('.tool-btn[aria-label="Preferences"], .tool-btn[aria-label="偏好设置"]').first().click();
+await page.waitForSelector('.prefs-modal');
+await page.locator('.prefs-modal select').nth(1).selectOption('light');
+await page.waitForTimeout(700);
+const skyLight = await sample3dSky();
+check('3D retints to light on hot-switch', near(skyLight, [255, 255, 255]), JSON.stringify(skyLight));
+await page.screenshot({ path: `${SHOTS}/14b-3d-light.png` });
+await page.locator('.prefs-modal select').nth(1).selectOption('dark');
+await page.waitForTimeout(700);
+const skyDark2 = await sample3dSky();
+check('3D retints back to dark', near(skyDark2, [28, 28, 30]), JSON.stringify(skyDark2));
+await page.getByRole('button', { name: 'Done' }).click();
 check(
   'viewcube present with home button',
   (await page.locator('.viewcube canvas').count()) === 1 &&
