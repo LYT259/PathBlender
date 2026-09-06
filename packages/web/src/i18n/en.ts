@@ -85,7 +85,7 @@ export const en = {
   'share.note': 'The whole session is compressed into this link — nothing is uploaded.',
   'updates.upToDate': "You're up to date",
   'updates.downloading': 'Found v{v}, downloading and relaunching…',
-  'updates.none': 'Auto-update is not available yet; this build is distributed manually',
+  'updates.failed': 'Update check failed — check your connection and try again',
   'share.copy': 'Copy',
   'share.copyFailed': 'Copy failed — select the text manually',
   'actions.saveHint': 'Save the whole session (.ghpb.json: all robots + settings; reopen with Import). Per-robot path exports live on the robot cards.',
