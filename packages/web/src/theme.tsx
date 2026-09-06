@@ -9,6 +9,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -50,7 +51,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const resolved: 'dark' | 'light' = mode === 'system' ? (systemDark ? 'dark' : 'light') : mode;
 
-  useEffect(() => {
+  // Layout effect: data-theme must land on <html> before any child's passive
+  // effect reads computed styles (the 3D scene retints from CSS tokens) and
+  // before the browser paints (no wrong-theme flash on mount).
+  useLayoutEffect(() => {
     document.documentElement.dataset.theme = resolved;
   }, [resolved]);
 

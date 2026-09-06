@@ -12,6 +12,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import { fieldImageWorldRect, samplePoseAt } from '@pathblender/core';
 import { useI18n } from '../i18n';
+import { useTheme } from '../theme';
 
 export interface FieldCanvas3DHandle {
   resetCam: () => void;
@@ -41,6 +42,10 @@ interface Scene3D {
   modelRoot: THREE.Group;
   /** Hand-built slab/walls/beacons — visible only without a model. */
   fallback: THREE.Group;
+  /** Theme-token colors with live refs, retinted when the theme flips. */
+  themed: { color: THREE.Color; token: string }[];
+  /** ViewCube face textures bake tokens; regenerate on theme change. */
+  retintCube: () => void;
 }
 
 const CAM_HOME: [number, number, number] = [0, 8.5, 11.5];
@@ -93,8 +98,19 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(cssToken('--bg', '#1e1e20'));
-    scene.fog = new THREE.Fog(scene.background, 34, 70);
+    // Colors below are baked from theme tokens at build time; keep live refs
+    // so a theme flip can retint them without rebuilding the scene.
+    const themed: { color: THREE.Color; token: string }[] = [];
+    const track = <T extends { color: THREE.Color }>(owner: T, token: string): T => {
+      themed.push({ color: owner.color, token });
+      return owner;
+    };
+    let retintCube: () => void = () => {};
+    scene.background = new THREE.Color(cssToken('--canvas-bg', '#1c1c1e'));
+    themed.push({ color: scene.background as THREE.Color, token: '--canvas-bg' });
+    scene.fog = new THREE.Fog(0x000000, 34, 70);
+    scene.fog.color.copy(scene.background);
+    themed.push({ color: scene.fog.color, token: '--canvas-bg' });
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
     camera.position.set(...CAM_HOME);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -141,7 +157,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       tex.colorSpace = THREE.SRGBColorSpace;
       // A 12 cm-thick slab (image on the top face via a rotated box with
       // per-face materials) reads as a physical floor, not a picture.
-      const wood = new THREE.MeshStandardMaterial({ color: new THREE.Color(cssToken('--3d-slab', '#3a3a40')), roughness: 0.9 });
+      const wood = track(
+        new THREE.MeshStandardMaterial({ color: cssToken('--3d-slab', '#3a3a40'), roughness: 0.9 }),
+        '--3d-slab',
+      );
       const top = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95 });
       const slab = new THREE.Mesh(
         new THREE.BoxGeometry(w, 0.12, h),
@@ -171,18 +190,21 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         new THREE.Vector3(hw, 0.02, hh),
         new THREE.Vector3(-hw, 0.02, hh),
       ]),
-      new THREE.LineBasicMaterial({ color: new THREE.Color(cssToken('--fg-dim', '#9a9aa0')) }),
+      track(new THREE.LineBasicMaterial({ color: cssToken('--fg-dim', '#9a9aa0') }), '--fg-dim'),
     );
     fallback.add(outline);
 
     // Perimeter walls — the cheapest cue that makes the plane read as a
     // place instead of a picture.
-    const wallMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(cssToken('--3d-wall', '#4a4a4f')),
-      roughness: 0.8,
-      transparent: true,
-      opacity: 0.95,
-    });
+    const wallMat = track(
+      new THREE.MeshStandardMaterial({
+        color: cssToken('--3d-wall', '#4a4a4f'),
+        roughness: 0.8,
+        transparent: true,
+        opacity: 0.95,
+      }),
+      '--3d-wall',
+    );
     const thk = 0.08;
     for (const [wx, wz, sx, sz] of [
       [0, -hh - thk / 2, field.lengthM + thk * 2, thk],
@@ -203,7 +225,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       const z = Math.max(0.3, tag.z ?? 0.55);
       const post = new THREE.Mesh(
         new THREE.CylinderGeometry(0.025, 0.025, z, 8),
-        new THREE.MeshStandardMaterial({ color: new THREE.Color(cssToken('--3d-post', '#6a6a70')), roughness: 0.6 }),
+        track(
+          new THREE.MeshStandardMaterial({ color: cssToken('--3d-post', '#6a6a70'), roughness: 0.6 }),
+          '--3d-post',
+        ),
       );
       post.position.set(tag.x - cx, z / 2, -(tag.y - cy));
       post.castShadow = true;
@@ -220,7 +245,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const dynamic = new THREE.Group();
     scene.add(dynamic);
 
-    sceneRef.current = { renderer, scene, camera, controls, cx, cy, dynamic, boxes: [], modelRoot, fallback, dirty: markDirty };
+    sceneRef.current = { renderer, scene, camera, controls, cx, cy, dynamic, boxes: [], modelRoot, fallback, dirty: markDirty, themed, retintCube };
 
     const resize = () => {
       const wpx = host.clientWidth || 1;
@@ -299,11 +324,21 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       t('vc.right'), t('vc.left'), t('vc.top'), t('vc.bottom'), t('vc.front'), t('vc.back'),
     ];
     const mats = labels.map((lab) => new THREE.MeshBasicMaterial({ map: faceTexture(lab) }));
+    // Face textures bake theme tokens at draw time; regenerate on theme flip.
+    retintCube = () => {
+      labels.forEach((lab, i) => {
+        const m = mats[i];
+        if (!m) return;
+        m.map?.dispose();
+        m.map = faceTexture(lab);
+        m.needsUpdate = true;
+      });
+    };
     const cubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.55, 1.55), mats);
     cubeGroup.add(cubeMesh);
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(cubeMesh.geometry),
-      new THREE.LineBasicMaterial({ color: new THREE.Color(cssToken('--fg-dim', '#9a9aa0')) }),
+      track(new THREE.LineBasicMaterial({ color: cssToken('--fg-dim', '#9a9aa0') }), '--fg-dim'),
     );
     cubeGroup.add(edges);
 
@@ -369,7 +404,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     raf = requestAnimationFrame(loop);
 
     // Test/debug hook: orientation + camera state assertions.
-    (window as unknown as { __pb3d?: unknown }).__pb3d = { camera, controls };
+    (window as unknown as { __pb3d?: unknown }).__pb3d = { camera, controls, renderer, scene };
 
     return () => {
       cancelAnimationFrame(raf);
@@ -389,6 +424,19 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       sceneRef.current = null;
     };
   }, [field, fieldImageUrl]);
+
+  // Theme flips retint the built-once scene: background/fog, token-backed
+  // structure materials, ViewCube face textures. React to the theme context —
+  // the data-theme attribute is written by ThemeProvider's effect, so a DOM
+  // read during render would always see the previous value.
+  const themeResolved = useTheme().resolved;
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    for (const { color, token } of st.themed) color.set(cssToken(token, '#1c1c1e'));
+    st.retintCube();
+    st.dirty();
+  }, [themeResolved]);
 
   // Official 3D field model (AdvantageScope assets, BSD-3): replaces the
   // hand-built fallback. Transform validated against the WPILib 2026 tag
