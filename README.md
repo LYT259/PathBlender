@@ -112,10 +112,8 @@ Full walkthrough per tool and an FAQ:
 ## Status
 
 Working MVP — everything above is implemented and regression-tested
-(127 automated tests + a real-browser walkthrough). Not yet deployed
-publicly. See [`PathBlender_可行性研究报告.md`](./PathBlender_可行性研究报告.md)
-(feasibility study, in Chinese) for the full plan: market research,
-file-format analysis, roadmap, and risk register.
+(automated tests + a real-browser walkthrough). Not yet deployed
+publicly.
 
 ## License & attribution
 
