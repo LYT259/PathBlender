@@ -280,7 +280,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = cssVar('--bg', '#1e1e20');
+    ctx.fillStyle = cssVar('--canvas-bg', '#1c1c1e');
     ctx.fillRect(0, 0, w, h);
 
     const v = viewRef.current;
@@ -577,7 +577,7 @@ function drawRobot(
     ctx.lineWidth = 3;
     // Halo in the page background color keeps the number readable on any
     // field artwork, in both themes (fg text + bg halo).
-    ctx.strokeStyle = cssVar('--bg', '#1e1e20');
+    ctx.strokeStyle = cssVar('--canvas-bg', '#1c1c1e');
     ctx.strokeText(r.trajectory.teamNumber, 0, 0);
     ctx.fillStyle = cssVar('--fg', '#e6e6e8');
     ctx.fillText(r.trajectory.teamNumber, 0, 0);
