@@ -24,10 +24,16 @@ works; each remains under its own license:
   derive from FIRST field CAD (see the FIRST section below).
 - **WPILib** (BSD-3-Clause) — https://github.com/wpilibsuite/allwpilib
   Red/blue alliance transform semantics follow the official WPILib
-  coordinate conventions, and the built-in 2026 REBUILT AprilTag layout is
-  the official `2026-rebuilt-welded` field layout from allwpilib's apriltag
-  resources (field-fact data; attribution also carried in
-  `packages/core/src/field.ts`).
+  coordinate conventions, and the built-in 2022–2026 AprilTag layouts
+  (welded + AndyMark variants, including full pose quaternions) are the
+  official field layouts from allwpilib's `fields` resources (field-fact
+  data; attribution also carried in `packages/core/src/field.ts`).
+- **AprilTag (apriltag2, tag36h11)** — © 2013-2016 The Regents of The
+  University of Michigan (Edwin Olson, APRIL Robotics Lab), BSD-2-Clause,
+  as vendored by wpilib's apriltag thirdparty. The 36h11 code words and
+  bit layout reproduced in `packages/web/src/april-tag-texture.ts` are
+  that project's published reference tables, used to render authentic
+  tag faces in the 3D view.
 
 ## Bundled third-party libraries
 
