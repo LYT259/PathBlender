@@ -96,8 +96,30 @@ function AppBody() {
   const [showPrefs, setShowPrefs] = useState(false);
   const aiUndoRef = useRef<{ label: string; robots: SessionTrajectory[] }[]>([]);
   const [aiUndoTop, setAiUndoTop] = useState<string | null>(null);
-  const [fieldId, setFieldId] = useState(REBUILT_2026.id);
-  const [fieldVariant, setFieldVariant] = useState<'welded' | 'andymark'>('welded');
+  // Remembered field + construction variant (localStorage, report §7.4 —
+  // same pattern as theme/language). AndyMark is the community default.
+  const FIELD_PREFS_KEY = 'ghpb.fieldPrefs';
+  const loadFieldPrefs = (): { fieldId?: string; variant?: 'welded' | 'andymark' } => {
+    try {
+      return JSON.parse(localStorage.getItem(FIELD_PREFS_KEY) ?? '{}') ?? {};
+    } catch {
+      return {};
+    }
+  };
+  const [fieldId, setFieldId] = useState(() => {
+    const remembered = loadFieldPrefs().fieldId;
+    return remembered && remembered !== CUSTOM_FIELD_ID && fieldById(remembered) ? remembered : REBUILT_2026.id;
+  });
+  const [fieldVariant, setFieldVariant] = useState<'welded' | 'andymark'>(
+    () => loadFieldPrefs().variant ?? 'andymark',
+  );
+  const rememberFieldPrefs = (id: string, variant: 'welded' | 'andymark') => {
+    try {
+      localStorage.setItem(FIELD_PREFS_KEY, JSON.stringify({ fieldId: id, variant }));
+    } catch {
+      /* storage unavailable — session-only */
+    }
+  };
   const [customField, setCustomField] = useState<FieldPackage | undefined>(undefined);
   const [customImageUrl, setCustomImageUrl] = useState<string | undefined>(undefined);
   const [cfOpen, setCfOpen] = useState(false);
@@ -115,6 +137,9 @@ function AppBody() {
     fieldVariant === 'andymark' && baseField?.aprilTagsAndyMark
       ? { ...baseField, aprilTags: baseField.aprilTagsAndyMark }
       : baseField;
+  useEffect(() => {
+    if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, fieldVariant);
+  }, [fieldId, fieldVariant]);
 
   const duration = sessionDuration(robots);
   const playback = usePlayback(duration);
@@ -629,8 +654,8 @@ function AppBody() {
                 title={tr('field.variant')}
                 aria-label={tr('field.variant')}
               >
-                <option value="welded">Welded</option>
                 <option value="andymark">AndyMark</option>
+                <option value="welded">Welded</option>
               </select>
             )}
             <button
