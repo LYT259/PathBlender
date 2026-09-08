@@ -31,6 +31,7 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+page.on('response', (r) => { if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`); });
 let modelLoaded = false;
 page.on('response', (r) => { if (r.url().includes('fields3d/') && r.url().endsWith('model.glb') && r.status() === 200) modelLoaded = true; });
 
@@ -436,8 +437,16 @@ check(
 );
 // Home snap returns to the default orbit (settled click, no drags before).
 const polBeforeHome = await page.evaluate(() => window.__pb3d?.controls.getPolarAngle?.());
+const atHome = () =>
+  page.waitForFunction(
+    () =>
+      Math.abs(window.__pb3d.controls.getAzimuthalAngle()) < 0.05 &&
+      Math.abs(window.__pb3d.controls.getPolarAngle() - 0.934) < 0.05,
+    undefined,
+    { timeout: 6000, polling: 100 },
+  );
 await page.locator('.vc-home').click();
-await page.waitForTimeout(400);
+await atHome();
 const homeState = await page.evaluate(() => ({
   az: window.__pb3d.controls.getAzimuthalAngle(),
   pol: window.__pb3d.controls.getPolarAngle(),
@@ -447,7 +456,140 @@ check(
   Math.abs(homeState.az) < 0.2 && Math.abs(homeState.pol - 0.934) < 0.15,
   `az=${homeState.az.toFixed(2)} pol=${homeState.pol.toFixed(2)} (from ${polBeforeHome?.toFixed?.(2)})`,
 );
+
+// Face/edge/corner picks tween the camera to the picked feature direction
+// (asserted against the pick hook — headless rAF is sparse, so wait for the
+// value instead of a fixed delay).
+const vcBox = await page.locator('.viewcube canvas').boundingBox();
+const clickCube = async (fx, fy) => {
+  await page.locator('.vc-home').click();
+  await atHome();
+  // move+down+up split: mouse.click() batches the events and occasionally
+  // drops the pointerdown under load (Playwright flake, not app logic).
+  await page.mouse.move(vcBox.x + vcBox.width * fx, vcBox.y + vcBox.height * fy);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForFunction(
+    () => (window.__pb3d.lastPick ? true : false),
+    undefined,
+    { timeout: 4000, polling: 100 },
+  );
+  const lp = await page.evaluate(() => {
+    const p = window.__pb3d.lastPick;
+    window.__pb3d.lastPick = undefined;
+    return [p.x, p.y, p.z];
+  });
+  const reached = await page
+    .waitForFunction(
+      ([x, y, z]) => {
+        const az = window.__pb3d.controls.getAzimuthalAngle();
+        const pol = window.__pb3d.controls.getPolarAngle();
+        const n = Math.hypot(x, y, z); // pick dirs are unnormalized sign vectors
+        const tAz = Math.atan2(x, z);
+        const tPol = Math.acos(Math.max(-1, Math.min(1, y / n)));
+        return Math.abs(az - tAz) < 0.1 && Math.abs(pol - tPol) < 0.1;
+      },
+      lp,
+      { timeout: 6000, polling: 100 },
+    )
+    .then(() => true)
+    .catch(async () => {
+      const s = await page.evaluate(() => ({
+        az: window.__pb3d.controls.getAzimuthalAngle(),
+        pol: window.__pb3d.controls.getPolarAngle(),
+      }));
+      console.log(`  [clickCube miss] target=${JSON.stringify(lp)} camera az=${s.az.toFixed(3)} pol=${s.pol.toFixed(3)}`);
+      return false;
+    });
+  if (!reached) return null;
+  return lp;
+};
+const cornerDir = await clickCube(0.3, 0.3);
+check(
+  'viewcube corner click tweens to trimetric',
+  Array.isArray(cornerDir) && cornerDir.filter((v) => Math.abs(v) > 0.4).length === 3,
+  JSON.stringify(cornerDir),
+);
+const edgeDir = await clickCube(0.5, 0.32);
+check(
+  'viewcube edge click tweens to two-axis view',
+  Array.isArray(edgeDir) && edgeDir.filter((v) => Math.abs(v) > 0.4).length === 2,
+  JSON.stringify(edgeDir),
+);
+
+// Onshape-style: the view stops the instant the pointer is released.
+{
+  const main = await page.locator('.field-canvas-3d canvas').first().boundingBox();
+  await page.locator('.vc-home').click();
+  await atHome();
+  await page.mouse.move(main.x + main.width / 2, main.y + main.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(main.x + main.width / 2 + 160, main.y + main.height / 2 + 60, { steps: 10 });
+  await page.mouse.up();
+  const rel = await page.evaluate(() => ({
+    az: window.__pb3d.controls.getAzimuthalAngle(),
+    pol: window.__pb3d.controls.getPolarAngle(),
+  }));
+  await page.waitForTimeout(700);
+  const late = await page.evaluate(() => ({
+    az: window.__pb3d.controls.getAzimuthalAngle(),
+    pol: window.__pb3d.controls.getPolarAngle(),
+  }));
+  check(
+    'orbit stops on release (no inertia)',
+    Math.abs(late.az - rel.az) < 0.002 && Math.abs(late.pol - rel.pol) < 0.002,
+    `az ${rel.az.toFixed(3)}→${late.az.toFixed(3)} pol ${rel.pol.toFixed(3)}→${late.pol.toFixed(3)}`,
+  );
+}
+
 await page.screenshot({ path: `${SHOTS}/14-3d.png` });
+
+// AprilTag quads: real 36h11 faces at the official poses (2026 = 32 tags).
+{
+  const tagCount = await page.evaluate(() => {
+    let n = 0;
+    window.__pb3d.scene.traverse((o) => {
+      if (o.name.startsWith('apriltag-')) n++;
+    });
+    return n;
+  });
+  check('3D renders official tag quads (2026: 32)', tagCount === 32, `count=${tagCount}`);
+}
+
+// Season switch while 3D stays open: the scaffold rebuild (env map + model)
+// must not starve the page — the old heavy-model regression.
+await page.locator('select').first().selectOption('reefscape-2025');
+await page.waitForFunction(
+  () => document.querySelectorAll('.robot-card').length >= 1,
+  undefined,
+  { timeout: 20000, polling: 100 },
+);
+check('season switch with 3D open keeps robots', true);
+{
+  const tagCount25 = await page.evaluate(() => {
+    let n = 0;
+    window.__pb3d.scene.traverse((o) => {
+      if (o.name.startsWith('apriltag-')) n++;
+    });
+    return n;
+  });
+  check('3D tag quads follow season (2025: 22)', tagCount25 === 22, `count=${tagCount25}`);
+}
+
+// Field + variant remembered across reloads (AndyMark default). Navigate to
+// the bare URL — a leftover share-link hash would restore that session and
+// (by design) override the remembered field.
+await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+await page.waitForSelector('.field-canvas-3d canvas');
+await page.waitForTimeout(800);
+const restoredField = await page.locator('select').first().inputValue();
+check('field selection remembered across reload', restoredField === 'reefscape-2025', restoredField);
+const variantSelected = await page
+  .locator('select option[value="andymark"]')
+  .first()
+  .evaluate((opt) => opt.selected);
+check('variant defaults to AndyMark', variantSelected === true);
+
 await page.locator('.canvas-bar .btn', { hasText: '3D' }).click(); // back to 2D
 await page.locator('.ai-toggle').click(); // close
 
