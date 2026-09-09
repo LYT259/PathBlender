@@ -185,6 +185,8 @@ body.desktop .toolbar { padding-left: 84px; }
 .btn.on { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
 .btn:disabled { opacity: 0.4; cursor: default; }
 .btn.small { padding: 3px 8px; font-size: 12px; }
+.btn.small.accent { background: var(--accent); color: var(--accent-fg); border: none; }
+.btn.small.accent:hover { filter: brightness(1.08); }
 .btn.icon { padding: 4px 9px; font-size: 12px; }
 .btn.danger:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
 .btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }

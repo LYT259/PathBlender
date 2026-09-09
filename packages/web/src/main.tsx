@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { I18nProvider, LANGUAGES, langLabel, useI18n, type Lang } from './i18n';
+import { I18nProvider, LANGUAGES, langLabel, useI18n, type LangChoice } from './i18n';
 import { ThemeProvider, useTheme, type ThemeMode } from './theme';
 import { UpdateChannelProvider, useUpdateChannel } from './update-channel';
 import { AiSettingsSection } from './components/AiSettingsSection';
@@ -21,7 +21,7 @@ if (typeof window !== 'undefined' && (window.location.protocol === 'tauri:' || w
 }
 
 function PrefsOnly() {
-  const { lang, setLang, t } = useI18n();
+  const { langChoice, setLang, t } = useI18n();
   const [ai, setAi] = useReactState(() => loadAISettings());
   return (
     <div className="prefs-only">
@@ -29,10 +29,10 @@ function PrefsOnly() {
         <h3>{t('prefs.title')}</h3>
         <label className="prefs-row">
           <span>{t('prefs.language')}</span>
-          <select value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+          <select value={langChoice} onChange={(e) => setLang(e.target.value as LangChoice)}>
             {LANGUAGES.map((l) => (
               <option key={l} value={l}>
-                {langLabel(l)}
+                {l === 'system' ? t('prefs.langSystem') : langLabel(l)}
               </option>
             ))}
           </select>
