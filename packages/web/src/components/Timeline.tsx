@@ -3,6 +3,7 @@ import type {
   OutOfBoundsInterval,
   SessionTrajectory,
 } from '@pathblender/core';
+import { AUTO_PERIOD_S } from '@pathblender/core';
 import { activeEndT } from '@pathblender/core';
 import { useI18n } from '../i18n';
 
@@ -34,7 +35,7 @@ export function Timeline({
 }: Props) {
   const { t: tr } = useI18n();
   const { t, setT, playing, setPlaying, speed, setSpeed } = playback;
-  const axisMax = Math.max(15, Math.ceil(duration));
+  const axisMax = Math.max(AUTO_PERIOD_S, Math.ceil(duration));
 
   return (
     <div className="timeline">

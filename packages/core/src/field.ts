@@ -12,6 +12,10 @@ import type { Alliance, Pose2d, Trajectory } from './types';
 import { wrapAngle } from './math';
 import type { AprilTag } from './april-tags';
 
+/** Autonomous Period length, seconds — 2026 REBUILT made it 20 s
+ *  (15 s through 2025). Timeline floor and delay ceilings derive from it. */
+export const AUTO_PERIOD_S = 20;
+
 export interface FieldImageCalibration {
   /** Image pixel size. */
   pixelWidth: number;
