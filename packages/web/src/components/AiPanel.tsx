@@ -9,6 +9,7 @@ import { useCallback, useRef, useState } from 'react';
 import { PROVIDER_PRESETS, DEFAULT_PROVIDER, providerPreset, disconnectAI, type AISettings, type ModelEntry } from '../ai/settings';
 import { runAssistantInstruction } from '../ai/assistant';
 import { registry } from '../ai/actions';
+import { VIEWER_ONLY } from '../viewer';
 import type { AssistantEvent, ConfirmRequest } from '../ai/assistant';
 import type { ActionContext } from '../ai/actions';
 import { useI18n } from '../i18n';
@@ -325,12 +326,15 @@ const COMMANDS = registry.llmTools().map((t) => ({
   description: t.function.description,
 }));
 
-/** Built-in "$" skills: one-shot instructions over the same whitelist. */
-const SKILLS: { id: string; label: MessageKey; prompt: string }[] = [
-  { id: 'resolve', label: 'ai.skill.resolve', prompt: '调用 auto_resolve_conflicts 消解所有碰撞，然后逐台报告新增的起步延迟。' },
-  { id: 'bounds', label: 'ai.skill.bounds', prompt: '查询并汇报所有机器人的越界(out-of-bounds)时段与位置。' },
-  { id: 'export', label: 'ai.skill.export', prompt: '把每一台机器人导出为 .ghostauto 文件。' },
-];
+/** Built-in "$" skills: one-shot instructions over the same whitelist.
+ *  Viewer deployments keep only the read-only ones. */
+const SKILLS: { id: string; label: MessageKey; prompt: string }[] = (
+  [
+    { id: 'resolve', label: 'ai.skill.resolve', prompt: '调用 auto_resolve_conflicts 消解所有碰撞，然后逐台报告新增的起步延迟。' },
+    { id: 'bounds', label: 'ai.skill.bounds', prompt: '查询并汇报所有机器人的越界(out-of-bounds)时段与位置。' },
+    { id: 'export', label: 'ai.skill.export', prompt: '把每一台机器人导出为 .ghostauto 文件。' },
+  ] as const
+).filter((s) => !VIEWER_ONLY || s.id === 'bounds');
 
 function PlusIcon() {
   return (
