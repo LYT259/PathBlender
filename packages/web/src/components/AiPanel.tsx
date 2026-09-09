@@ -230,35 +230,11 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
     openChat(forked);
   };
 
-  // Rough context gauge: chars of the running conversation vs the active
-  // model's declared window (fallback 32k).
-  const ctxPct = () => {
-    const chars =
-      log.reduce((n, l) => n + l.text.length, 0) + input.length + 2600 /*system prompt*/;
-    return Math.min(99, Math.round((chars / 3 / ctxWindow) * 100));
-  };
+  // All session controls (model, effort, permission) live in Preferences;
+  // the panel shows the active model as a read-only chip that opens them.
   const activeModels = settings.models[settings.provider] ?? [];
   const activeEntry = activeModels.find((m) => m.id === settings.model);
-  const modelOptions = () => {
-    const ids = activeModels.map((m) => m.id).filter(Boolean);
-    if (settings.model && !ids.includes(settings.model)) ids.unshift(settings.model);
-    return ids;
-  };
-  const modelLabel = (id: string) => {
-    const m = activeModels.find((x) => x.id === id);
-    return m?.name ? `${m.name} (${id})` : id;
-  };
-  const ctxWindow = activeEntry?.ctxK ? activeEntry.ctxK * 1000 : 32000;
-  const effortOptions: string[] = activeEntry?.efforts?.length
-    ? ['auto', ...activeEntry.efforts]
-    : ['auto', 'low', 'medium', 'high'];
-  const effortValue = activeEntry?.efforts?.length
-    ? settings.effortCustom ?? 'auto'
-    : settings.effort;
-
-  const pickModel = (id: string) => {
-    onSettings({ ...settings, model: id, effortCustom: undefined });
-  };
+  const modelChipLabel = activeEntry?.name ?? activeEntry?.id ?? t('ai.noModel');
 
   return (
     <aside className="ai-panel">
@@ -282,6 +258,13 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
           onClick={newConversation}
         >
           <NewChatIcon />
+        </button>
+        <button
+          className="ai-model-chip"
+          title={t('ai.modelChipNote')}
+          onClick={onOpenSettings}
+        >
+          {modelChipLabel}
         </button>
         <button
           className="ai-icon-btn"
@@ -450,48 +433,6 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
           >
             <PlusIcon />
           </button>
-          <select
-            className="ai-perm"
-            value={settings.permission}
-            title={t('ai.permission')}
-            aria-label={t('ai.permission')}
-            onChange={(e) => onSettings({ ...settings, permission: e.target.value as AISettings['permission'] })}
-          >
-            <option value="standard">{t('ai.perm.standard')}</option>
-            <option value="full">{t('ai.perm.full')}</option>
-          </select>
-          <span className="ai-ctx" title={t('ai.ctxNote')}>
-            {ctxPct()}%
-          </span>
-          <select
-            className="ai-model"
-            value={settings.model}
-            title={t('ai.model')}
-            aria-label={t('ai.model')}
-            onChange={(e) => pickModel(e.target.value)}
-          >
-            {modelOptions().map((m) => (
-              <option key={m} value={m}>{modelLabel(m)}</option>
-            ))}
-          </select>
-          <select
-            className="ai-effort"
-            value={effortValue}
-            title={t('ai.effort')}
-            aria-label={t('ai.effort')}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (activeEntry?.efforts?.length)
-                onSettings({ ...settings, effortCustom: v === 'auto' ? undefined : v });
-              else onSettings({ ...settings, effort: v as AISettings['effort'] });
-            }}
-          >
-            {effortOptions.map((lvl) => (
-              <option key={lvl} value={lvl}>
-                {lvl === 'auto' ? t('ai.effort.auto') : lvl}
-              </option>
-            ))}
-          </select>
           {busy ? (
             <button className="ai-icon-btn stop" title={t('ai.stop')} aria-label={t('ai.stop')} onClick={stop}>
               <StopIcon />
