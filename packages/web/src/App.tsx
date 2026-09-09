@@ -59,7 +59,7 @@ import { RobotList } from './components/RobotList';
 import { ConflictPanel } from './components/ConflictPanel';
 import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
-import { I18nProvider, LANGUAGES, langLabel, useI18n, type Lang } from './i18n';
+import { I18nProvider, LANGUAGES, langLabel, useI18n, type LangChoice } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { AiPanel, SparkleIcon } from './components/AiPanel';
 import { AiSettingsSection } from './components/AiSettingsSection';
@@ -83,7 +83,7 @@ export function App() {
 }
 
 function AppBody() {
-  const { lang, setLang, t: tr } = useI18n();
+  const { lang, langChoice, setLang, t: tr } = useI18n();
   const { channel: updateChannel, setChannel: setUpdateChannel } = useUpdateChannel();
   const { mode: themeMode, setMode: setThemeMode } = useTheme();
   const [robots, setRobots] = useState<SessionTrajectory[]>([]);
@@ -93,6 +93,13 @@ function AppBody() {
   const [view3D, setView3D] = useState(true);
   const [showTrail, setShowTrail] = useState(true);
   const [showPrefs, setShowPrefs] = useState(false);
+  // Language is staged: picking one reveals Cancel/Save instead of applying
+  // instantly (other preferences keep their immediate-apply behavior).
+  const [pendingLang, setPendingLang] = useState<LangChoice | null>(null);
+  const closePrefs = useCallback(() => {
+    setShowPrefs(false);
+    setPendingLang(null);
+  }, []);
   const aiUndoRef = useRef<{ label: string; robots: SessionTrajectory[] }[]>([]);
   const [aiUndoTop, setAiUndoTop] = useState<string | null>(null);
   const [fieldId, setFieldId] = useState(REBUILT_2026.id);
@@ -650,14 +657,16 @@ function AppBody() {
               <span className="sw-text">{tr('canvas.trails')}</span>
             </label>
             <span className="canvas-spacer" />
-            <button
-              className="btn small ai-toggle"
-              title={tr('ai.title')}
-              aria-label={tr('ai.title')}
-              onClick={() => setShowAi((v) => !v)}
-            >
-              <SparkleIcon />
-            </button>
+            {!VIEWER_ONLY && (
+              <button
+                className="btn small ai-toggle"
+                title={tr('ai.title')}
+                aria-label={tr('ai.title')}
+                onClick={() => setShowAi((v) => !v)}
+              >
+                <SparkleIcon />
+              </button>
+            )}
           </div>
           {view3D ? (
             <FieldCanvas3D
@@ -698,7 +707,7 @@ function AppBody() {
             if (remaining > 0) flash(tr('conflicts.autoResolvePartial', { n: remaining }));
           }}
         />
-        {showAi && (
+        {showAi && !VIEWER_ONLY && (
           <AiPanel
             settings={aiSettings}
             onSettings={applyAiSettings}
@@ -759,15 +768,18 @@ function AppBody() {
         </div>
       )}
       {showPrefs && (
-        <div className="prefs-overlay" onClick={() => setShowPrefs(false)}>
+        <div className="prefs-overlay" onClick={closePrefs}>
           <div className="prefs-modal" onClick={(e) => e.stopPropagation()}>
             <h3>{tr('prefs.title')}</h3>
             <label className="prefs-row">
               <span>{tr('prefs.language')}</span>
-              <select value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+              <select
+                value={pendingLang ?? langChoice}
+                onChange={(e) => setPendingLang(e.target.value as LangChoice)}
+              >
                 {LANGUAGES.map((l) => (
                   <option key={l} value={l}>
-                    {langLabel(l)}
+                    {l === 'system' ? tr('prefs.langSystem') : langLabel(l)}
                   </option>
                 ))}
               </select>
@@ -794,17 +806,36 @@ function AppBody() {
                 <option value="beta">{tr('prefs.channel.beta')}</option>
               </select>
             </label>
-            <div className="prefs-ai">
-              <h4>{tr('prefs.ai')}</h4>
-              <AiSettingsSection
-                settings={aiSettings}
-                onSettings={applyAiSettings}
-              />
-            </div>
+            {!VIEWER_ONLY && (
+              <div className="prefs-ai">
+                <h4>{tr('prefs.ai')}</h4>
+                <AiSettingsSection
+                  settings={aiSettings}
+                  onSettings={applyAiSettings}
+                />
+              </div>
+            )}
             <div className="prefs-row btns">
-              <button className="btn small" onClick={() => setShowPrefs(false)}>
-                {tr('prefs.done')}
-              </button>
+              {pendingLang != null && pendingLang !== langChoice ? (
+                <>
+                  <button className="btn small" onClick={() => setPendingLang(null)}>
+                    {tr('prefs.cancel')}
+                  </button>
+                  <button
+                    className="btn small accent"
+                    onClick={() => {
+                      setLang(pendingLang);
+                      setPendingLang(null);
+                    }}
+                  >
+                    {tr('prefs.save')}
+                  </button>
+                </>
+              ) : (
+                <button className="btn small" onClick={closePrefs}>
+                  {tr('prefs.done')}
+                </button>
+              )}
             </div>
           </div>
         </div>

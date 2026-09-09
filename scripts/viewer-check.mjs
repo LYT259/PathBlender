@@ -62,23 +62,28 @@ check('export row absent', (await body.locator('.export-row').count()) === 0);
 check('conflict panel renders', (await page.locator('.conflict-panel h2').count()) === 1);
 check('auto-resolve button absent', (await page.locator('.auto-resolve').count()) === 0);
 
-// --- AI surface: read-only actions + bounds skill only ---
-await page.locator('.canvas-bar .ai-toggle').click();
-await page.waitForSelector('.ai-panel .ai-composer textarea');
-const ta = page.locator('.ai-panel .ai-composer textarea');
-await ta.fill('/');
-await page.waitForTimeout(300);
-let cmds = await page.locator('.ai-menu .ai-cmd-name').allTextContents();
-const cmdNames = cmds.map((c) => c.replace(/^\//, '').trim()).sort();
+// --- AI is absent from the website entirely (no harness at all) ---
+check('ai toggle absent', (await page.locator('.ai-toggle').count()) === 0);
+check('ai panel absent', (await page.locator('.ai-panel').count()) === 0);
+await page.locator('.tool-btn', { hasText: /Prefs|偏好设置|Preferences/ }).first().click();
+await page.waitForSelector('.prefs-modal');
+check('prefs has no AI section', (await page.locator('.prefs-modal .prefs-ai').count()) === 0);
+const langOpts = await page.locator('.prefs-modal select').first().locator('option').allTextContents();
 check(
-  '"/" menu = 4 read-only actions',
-  JSON.stringify(cmdNames) === JSON.stringify(['list_robots', 'query_collisions', 'remove_robot', 'set_team_number']),
-  JSON.stringify(cmdNames),
+  'language list: Follow system first',
+  langOpts.length === 4 && /Follow system/i.test(langOpts[0] ?? ''),
+  JSON.stringify(langOpts),
 );
-await ta.fill('$');
-await page.waitForTimeout(300);
-cmds = await page.locator('.ai-menu .ai-cmd-name').allTextContents();
-check('"$" menu = bounds skill only', cmds.length === 1, JSON.stringify(cmds));
+await page.locator('.prefs-modal .prefs-row.btns .btn.small').last().click(); // Done
+
+// --- first visit follows the OS language ---
+const zhCtx = await browser.newContext({ locale: 'zh-CN' });
+const zhPage = await zhCtx.newPage();
+await zhPage.goto(BASE, { waitUntil: 'domcontentloaded' });
+await zhPage.waitForSelector('.robot-list h2', { timeout: 10000 });
+const zhH2 = await zhPage.locator('.robot-list h2').first().textContent();
+check('first visit follows OS language (zh-CN)', /机器人/.test(zhH2 ?? ''), zhH2 ?? '');
+await zhCtx.close();
 
 check('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();

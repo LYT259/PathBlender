@@ -90,17 +90,31 @@ await page.locator('.tool-btn[aria-label="Preferences"], .tool-btn[aria-label="�
 await page.waitForTimeout(300);
 const langSelect = page.locator('.prefs-modal select').first();
 await langSelect.waitFor({ state: 'visible', timeout: 8000 });
+// Language is staged: choosing reveals Cancel + blue Save; Cancel reverts.
+const saveBtn = page.locator('.prefs-modal .btn.small.accent');
+const cancelBtn = page.locator('.prefs-modal .prefs-row.btns .btn.small:not(.accent)');
+const firstOption = await langSelect.locator('option').first().textContent();
+check('follow-system sits first in the language list', /Follow system|跟随系统|跟隨系統/i.test(firstOption ?? ''), firstOption ?? '');
 await langSelect.selectOption('zh');
+await page.waitForTimeout(150);
+check('save/cancel appear after choosing a language', (await saveBtn.count()) === 1 && (await cancelBtn.count()) === 1);
+await cancelBtn.click();
+await page.waitForTimeout(150);
+check('cancel reverts the pending language', (await saveBtn.count()) === 0 && (await langSelect.inputValue()) !== 'zh');
+await langSelect.selectOption('zh');
+await saveBtn.click();
 await page.waitForTimeout(300);
 const zhText = await page.locator('.robot-list h2').first().textContent();
 check('zh switch', /机器人/.test(zhText ?? ''), zhText ?? '');
 await page.screenshot({ path: `${SHOTS}/05-zh.png` });
 await langSelect.selectOption('zh-tw');
+await saveBtn.click();
 await page.waitForTimeout(300);
 const twText = await page.locator('.robot-list h2').first().textContent();
 check('zh-tw switch', /機器人/.test(twText ?? ''), twText ?? '');
 await page.screenshot({ path: `${SHOTS}/06-zhtw.png` });
 await langSelect.selectOption('en');
+await saveBtn.click();
 await page.locator('.prefs-modal .prefs-row.btns .btn.small').click(); // Done
 await page.waitForTimeout(200);
 // theme: switch to light via Preferences, verify token + shot, then back
