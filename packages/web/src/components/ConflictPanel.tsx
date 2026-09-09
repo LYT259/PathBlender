@@ -4,6 +4,7 @@ import type {
   SessionTrajectory,
 } from '@pathblender/core';
 import { useI18n } from '../i18n';
+import { VIEWER_ONLY } from '../viewer';
 
 interface Props {
   robots: SessionTrajectory[];
@@ -32,7 +33,7 @@ export function ConflictPanel({
         <span className={`conflict-count ${conflicts.length > 0 ? 'bad' : 'ok'}`}>
           {conflicts.length}
         </span>
-        {conflicts.length > 0 && (
+        {conflicts.length > 0 && !VIEWER_ONLY && (
           <button className="btn small auto-resolve" onClick={onAutoResolve}>
             {t('conflicts.autoResolve')}
           </button>

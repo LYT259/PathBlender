@@ -67,6 +67,7 @@ import { EditorPage } from './components/EditorPage';
 import { UpdateChannelProvider, useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
 import { listenPrefs } from './pref-sync';
+import { VIEWER_ONLY } from './viewer';
 import type { ActionContext } from './ai/actions';
 import { loadAISettings, saveAISettings, type AISettings } from './ai/settings';
 
@@ -564,7 +565,8 @@ function AppBody() {
 
   // Editing lives on its own page (round 9): the fusion view unmounts
   // entirely, Choreo-style — the robot's edits persist on close.
-  if (editingId && editRobot) {
+  // (Viewer deployments have no editing at all.)
+  if (!VIEWER_ONLY && editingId && editRobot) {
     return (
       <div className="app">
         <EditorPage
@@ -594,13 +596,15 @@ function AppBody() {
           inputRef={importInputRef}
           onFiles={(files) => void importFiles(files)}
         />
-        {!IS_DESKTOP && (
+        {!IS_DESKTOP && !VIEWER_ONLY && (
           <ToolBtn label={tr('rail.save')} aria={tr('actions.save')} onClick={saveSession} disabled={robots.length === 0} />
         )}
         {!IS_DESKTOP && (
           <>
             <ToolBtn label={tr('rail.share')} aria="Share link" onClick={() => void shareUrl()} disabled={robots.length === 0} />
-            <ToolBtn label={tr('rail.png')} aria={tr('actions.png')} onClick={exportPng} disabled={robots.length === 0 || view3D} />
+            {!VIEWER_ONLY && (
+              <ToolBtn label={tr('rail.png')} aria={tr('actions.png')} onClick={exportPng} disabled={robots.length === 0 || view3D} />
+            )}
             <ToolBtn label={tr('rail.prefs')} aria={tr('prefs.title')} onClick={() => setShowPrefs(true)} />
             <span className="toolbar-spacer" />
             <ToolBtn label={tr('rail.clear')} aria={tr('actions.clear')} danger onClick={clearAll} disabled={robots.length === 0} />

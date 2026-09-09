@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CollisionInterval, RobotGeometry, SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
+import { VIEWER_ONLY } from '../viewer';
 
 interface Props {
   robots: SessionTrajectory[];
@@ -105,23 +106,25 @@ export function RobotList({
                   <div key={i} className="robot-warning">⚠ {w}</div>
                 ))}
 
-                <div className="robot-row">
-                  <label>{t('robots.alliance')}</label>
-                  <div className="seg">
-                    <button
-                      className={r.trajectory.alliance === 'blue' ? 'on-blue' : ''}
-                      onClick={() => onSetAlliance(r.trajectory.id, 'blue')}
-                    >
-                      {t('robots.blue')}
-                    </button>
-                    <button
-                      className={r.trajectory.alliance === 'red' ? 'on-red' : ''}
-                      onClick={() => onSetAlliance(r.trajectory.id, 'red')}
-                    >
-                      {t('robots.red')}
-                    </button>
+                {!VIEWER_ONLY && (
+                  <div className="robot-row">
+                    <label>{t('robots.alliance')}</label>
+                    <div className="seg">
+                      <button
+                        className={r.trajectory.alliance === 'blue' ? 'on-blue' : ''}
+                        onClick={() => onSetAlliance(r.trajectory.id, 'blue')}
+                      >
+                        {t('robots.blue')}
+                      </button>
+                      <button
+                        className={r.trajectory.alliance === 'red' ? 'on-red' : ''}
+                        onClick={() => onSetAlliance(r.trajectory.id, 'red')}
+                      >
+                        {t('robots.red')}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="robot-row">
                   <label>{t('robots.teamNumber')}</label>
@@ -141,58 +144,62 @@ export function RobotList({
                   />
                 </div>
 
-                <div className="robot-row">
-                  <label>{t('robots.delay')}</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.1}
-                    value={r.startDelayS}
-                    onChange={(e) =>
-                      onUpdate(r.trajectory.id, {
-                        startDelayS: Math.max(0, Number(e.target.value) || 0),
-                      })
-                    }
-                  />
-                </div>
+                {!VIEWER_ONLY && (
+                  <div className="robot-row">
+                    <label>{t('robots.delay')}</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.1}
+                      value={r.startDelayS}
+                      onChange={(e) =>
+                        onUpdate(r.trajectory.id, {
+                          startDelayS: Math.max(0, Number(e.target.value) || 0),
+                        })
+                      }
+                    />
+                  </div>
+                )}
 
-                <div className="robot-row geom">
-                  <label>
-                    {t('robots.bumper')}
-                    {r.trajectory.geometrySource === 'default' && (
-                      <span className="geom-note">{t('robots.bumperDefault')}</span>
-                    )}
-                  </label>
-                  <span className="geom-inputs">
-                    <input
-                      type="number"
-                      min={0.2}
-                      max={2}
-                      step={0.01}
-                      value={r.trajectory.geometry.lengthM}
-                      title={t('robots.length')}
-                      onChange={(e) =>
-                        onSetGeometry(r.trajectory.id, {
-                          lengthM: clampMeters(e.target.value),
-                        })
-                      }
-                    />
-                    ×
-                    <input
-                      type="number"
-                      min={0.2}
-                      max={2}
-                      step={0.01}
-                      value={r.trajectory.geometry.widthM}
-                      title={t('robots.width')}
-                      onChange={(e) =>
-                        onSetGeometry(r.trajectory.id, {
-                          widthM: clampMeters(e.target.value),
-                        })
-                      }
-                    />
-                  </span>
-                </div>
+                {!VIEWER_ONLY && (
+                  <div className="robot-row geom">
+                    <label>
+                      {t('robots.bumper')}
+                      {r.trajectory.geometrySource === 'default' && (
+                        <span className="geom-note">{t('robots.bumperDefault')}</span>
+                      )}
+                    </label>
+                    <span className="geom-inputs">
+                      <input
+                        type="number"
+                        min={0.2}
+                        max={2}
+                        step={0.01}
+                        value={r.trajectory.geometry.lengthM}
+                        title={t('robots.length')}
+                        onChange={(e) =>
+                          onSetGeometry(r.trajectory.id, {
+                            lengthM: clampMeters(e.target.value),
+                          })
+                        }
+                      />
+                      ×
+                      <input
+                        type="number"
+                        min={0.2}
+                        max={2}
+                        step={0.01}
+                        value={r.trajectory.geometry.widthM}
+                        title={t('robots.width')}
+                        onChange={(e) =>
+                          onSetGeometry(r.trajectory.id, {
+                            widthM: clampMeters(e.target.value),
+                          })
+                        }
+                      />
+                    </span>
+                  </div>
+                )}
 
                 <label className="switch robot-visible">
                   <input
@@ -204,56 +211,60 @@ export function RobotList({
                   <span className="sw-text">{t('robots.visible')}</span>
                 </label>
 
-                <div className="robot-row edit-row">
-                  <button
-                    className="btn small"
-                    disabled={!r.trajectory.editable}
-                    title={
-                      r.trajectory.editable
-                        ? undefined
-                        : t('robots.editUnavailable')
-                    }
-                    onClick={() => onToggleEdit(r.trajectory.id)}
-                  >
-                    {editingId === r.trajectory.id
-                      ? t('robots.doneEdit')
-                      : t('robots.editPath')}
-                  </button>
-                  {r.trajectory.edited && (
-                    <>
-                      <span className="adjusted-badge">{t('robots.adjusted')}</span>
-                      <button
-                        className="btn small"
-                        onClick={() => onResetEdit(r.trajectory.id)}
-                      >
-                        {t('robots.resetEdit')}
-                      </button>
-                    </>
-                  )}
-                </div>
+                {!VIEWER_ONLY && (
+                  <div className="robot-row edit-row">
+                    <button
+                      className="btn small"
+                      disabled={!r.trajectory.editable}
+                      title={
+                        r.trajectory.editable
+                          ? undefined
+                          : t('robots.editUnavailable')
+                      }
+                      onClick={() => onToggleEdit(r.trajectory.id)}
+                    >
+                      {editingId === r.trajectory.id
+                        ? t('robots.doneEdit')
+                        : t('robots.editPath')}
+                    </button>
+                    {r.trajectory.edited && (
+                      <>
+                        <span className="adjusted-badge">{t('robots.adjusted')}</span>
+                        <button
+                          className="btn small"
+                          onClick={() => onResetEdit(r.trajectory.id)}
+                        >
+                          {t('robots.resetEdit')}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
 
-                <div className="robot-row export-row">
-                  <label>{t('robots.export')}</label>
-                  <span className="seg">
-                    <button
-                      disabled={r.trajectory.editable?.kind !== 'pathplanner'}
-                      title={r.trajectory.editable?.kind === 'pathplanner' ? undefined : t('robots.exportNoSource')}
-                      onClick={() => onExport(r.trajectory.id, 'path')}
-                    >
-                      .path
-                    </button>
-                    <button
-                      disabled={r.trajectory.editable?.kind !== 'choreo'}
-                      title={r.trajectory.editable?.kind === 'choreo' ? undefined : t('robots.exportNoSource')}
-                      onClick={() => onExport(r.trajectory.id, 'traj')}
-                    >
-                      .traj
-                    </button>
-                    <button onClick={() => onExport(r.trajectory.id, 'ghostauto')}>
-                      .ghostauto
-                    </button>
-                  </span>
-                </div>
+                {!VIEWER_ONLY && (
+                  <div className="robot-row export-row">
+                    <label>{t('robots.export')}</label>
+                    <span className="seg">
+                      <button
+                        disabled={r.trajectory.editable?.kind !== 'pathplanner'}
+                        title={r.trajectory.editable?.kind === 'pathplanner' ? undefined : t('robots.exportNoSource')}
+                        onClick={() => onExport(r.trajectory.id, 'path')}
+                      >
+                        .path
+                      </button>
+                      <button
+                        disabled={r.trajectory.editable?.kind !== 'choreo'}
+                        title={r.trajectory.editable?.kind === 'choreo' ? undefined : t('robots.exportNoSource')}
+                        onClick={() => onExport(r.trajectory.id, 'traj')}
+                      >
+                        .traj
+                      </button>
+                      <button onClick={() => onExport(r.trajectory.id, 'ghostauto')}>
+                        .ghostauto
+                      </button>
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
