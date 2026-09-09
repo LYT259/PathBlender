@@ -54,11 +54,12 @@ export interface ActionSpec {
   /** JSON-schema-shaped parameter declaration (subset: type/enum/required/properties). */
   parameters: {
     type: 'object';
-    properties: Record<string, { type?: string; enum?: string[] }>;
+    properties: Record<string, { type?: string; enum?: string[]; description?: string }>;
     required?: string[];
   };
   risk: RiskLevel;
-  handler: (ctx: ActionContext, args: Args) => ActionResult;
+  /** Sync handlers run through execute(); async ones require executeAsync(). */
+  handler: (ctx: ActionContext, args: Args) => ActionResult | Promise<ActionResult>;
 }
 
 export class ActionRegistry {
@@ -93,6 +94,36 @@ export class ActionRegistry {
    * against the declared schema before the handler sees them.
    */
   execute(name: string, args: Args, ctx: ActionContext): ActionResult {
+    const spec = this.specs.get(name);
+    if (!spec) {
+      return {
+        ok: false,
+        summary: `rejected unknown action "${name}"`,
+        result: { error: 'unknown action' },
+      };
+    }
+    const invalid = validateArgs(spec, args);
+    if (invalid) {
+      return {
+        ok: false,
+        summary: `rejected "${name}" — ${invalid}`,
+        result: { error: 'invalid arguments', detail: invalid },
+      };
+    }
+    const r = spec.handler(ctx, args);
+    if (r instanceof Promise) {
+      return {
+        ok: false,
+        summary: `action "${name}" is asynchronous — call executeAsync`,
+        result: { error: 'async action' },
+      };
+    }
+    return r;
+  }
+
+  /** Async-aware dispatch for handlers that await (e.g. network fetches).
+   *  Mirrors execute()'s whitelist + validation, then awaits the handler. */
+  async executeAsync(name: string, args: Args, ctx: ActionContext): Promise<ActionResult> {
     const spec = this.specs.get(name);
     if (!spec) {
       return {
