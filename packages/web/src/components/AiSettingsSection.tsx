@@ -144,6 +144,56 @@ export function AiSettingsSection({ settings, onSettings }: Props) {
 
   return (
     <>
+      <div className="ai-models-head">
+        <span>{t('ai.sessionDefaults')}</span>
+      </div>
+      <label className="ai-row">
+        <span>{t('ai.model')}</span>
+        <select
+          value={settings.model}
+          onChange={(e) => onSettings({ ...settings, model: e.target.value, effortCustom: undefined, enabled: true })}
+        >
+          {(settings.models[settings.provider] ?? []).filter((m) => m.id).map((m) => (
+            <option key={m.id} value={m.id}>{m.name ? `${m.name} (${m.id})` : m.id}</option>
+          ))}
+        </select>
+      </label>
+      <label className="ai-row">
+        <span>{t('ai.effort')}</span>
+        {(() => {
+          const entry = (settings.models[settings.provider] ?? []).find((m) => m.id === settings.model);
+          const options: string[] = entry?.efforts?.length ? ['auto', ...entry.efforts] : ['auto', 'low', 'medium', 'high'];
+          const value = entry?.efforts?.length ? settings.effortCustom ?? 'auto' : settings.effort;
+          return (
+            <select
+              value={value}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (entry?.efforts?.length)
+                  onSettings({ ...settings, effortCustom: v === 'auto' ? undefined : v });
+                else onSettings({ ...settings, effort: v as AISettings['effort'] });
+              }}
+            >
+              {options.map((lvl) => (
+                <option key={lvl} value={lvl}>
+                  {lvl === 'auto' ? t('ai.effort.auto') : lvl}
+                </option>
+              ))}
+            </select>
+          );
+        })()}
+      </label>
+      <label className="ai-row">
+        <span>{t('ai.permission')}</span>
+        <select
+          value={settings.permission}
+          onChange={(e) => onSettings({ ...settings, permission: e.target.value as AISettings['permission'] })}
+        >
+          <option value="standard">{t('ai.perm.standard')}</option>
+          <option value="full">{t('ai.perm.full')}</option>
+        </select>
+      </label>
+
       <label className="ai-row">
         <span>{t('ai.provider')}</span>
         <select value={settings.provider} onChange={(e) => pickProvider(e.target.value)}>

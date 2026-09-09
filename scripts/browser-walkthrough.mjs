@@ -373,12 +373,11 @@ await page.waitForTimeout(250);
 const cmdCount = await page.locator('.ai-menu button').count();
 await ta.fill('');
 check(
-  'harness composer present (perm/ctx/model/effort) + slash menu',
+  'harness composer is chat-only (+ / text / send) + slash menu',
   cmdCount >= 8 &&
-    (await page.locator('select.ai-perm').count()) === 1 &&
-    (await page.locator('.ai-ctx').count()) === 1 &&
-    (await page.locator('select.ai-model').count()) === 1 &&
-    (await page.locator('select.ai-effort').count()) === 1,
+    (await page.locator('.ai-composer select').count()) === 0 &&
+    (await page.locator('.ai-composer textarea').count()) === 1 &&
+    (await page.locator('.ai-model-chip').count()) === 1,
   `commands=${cmdCount}`,
 );
 await page.locator('.ai-top .ai-icon-btn').last().click(); // gear -> Preferences (AI settings live there now)
@@ -561,6 +560,20 @@ check(
     Math.abs(late.az - rel.az) < 0.002 && Math.abs(late.pol - rel.pol) < 0.002,
     `az ${rel.az.toFixed(3)}→${late.az.toFixed(3)} pol ${rel.pol.toFixed(3)}→${late.pol.toFixed(3)}`,
   );
+}
+
+// Turntable clamp: dragging below the horizon stops at ~93°, never under.
+{
+  const main = await page.locator('.field-canvas-3d canvas').first().boundingBox();
+  await page.locator('.vc-home').click();
+  await atHome();
+  await page.mouse.move(main.x + main.width / 2, main.y + main.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(main.x + main.width / 2, main.y + main.height / 2 + 400, { steps: 14 });
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+  const pol = await page.evaluate(() => window.__pb3d.controls.getPolarAngle());
+  check('orbit never dips under the field (polar ≤ 93°)', pol <= 1.62 + 0.02, `pol=${pol.toFixed(3)}`);
 }
 
 await page.screenshot({ path: `${SHOTS}/14-3d.png` });

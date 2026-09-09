@@ -624,6 +624,15 @@ body.desktop .editor-bar { padding-left: 84px; }
 .ai-history-meta { font-size: 10.5px; color: var(--fg-dim); }
 .ai-carry-note { font-size: 11px; color: var(--accent); max-width: 260px; }
 
+/* ---------- AI model chip (read-only, opens Preferences) ---------- */
+.ai-model-chip {
+  border: none; background: transparent; cursor: pointer;
+  color: var(--fg-dim); font-size: 11px; max-width: 110px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding: 2px 6px; border-radius: 5px;
+}
+.ai-model-chip:hover { background: var(--hover); color: var(--fg); }
+
 /* ---------- vision chips + inline fork ---------- */
 .ai-image-chips { display: flex; gap: 4px; flex-wrap: wrap; padding: 2px 0; }
 .ai-image-chip {
