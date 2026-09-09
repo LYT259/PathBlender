@@ -15,11 +15,13 @@ import { detectCollisions } from './collision/detect';
 import { activeEndT } from './session';
 import type { SessionTrajectory } from './session';
 import type { CollisionInterval } from './collision/detect';
+import { AUTO_PERIOD_S } from './field';
 
 /** Delay increment per retry, seconds (report: what-if granularity). */
 const STEP_S = 0.25;
-/** Per-robot delay ceiling — beyond this the plan needs human judgement. */
-export const MAX_DELAY_S = 15;
+/** Per-robot delay ceiling — beyond this the plan needs human judgement
+ *  (a delay past the Autonomous Period is pointless by construction). */
+export const MAX_DELAY_S = AUTO_PERIOD_S;
 /** Safety bound on total steps. */
 const MAX_ROUNDS = 4000;
 /** Stop early after this many rounds without a new global best. */

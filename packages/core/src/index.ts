@@ -16,6 +16,7 @@ export type {
 export { DEFAULT_GEOMETRY, teamNumberFromName, trajectoryDuration } from './types';
 
 export {
+  AUTO_PERIOD_S,
   CUSTOM_FIELD_ID,
   FIELDS,
   REBUILT_2026,
