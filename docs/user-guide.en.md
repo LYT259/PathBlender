@@ -75,6 +75,15 @@ OpenAI / DeepSeek / local Ollama or custom), paste your API key, and manage
 a **model list per provider** (call name + display name + context size; add
 as many as you like, ● activates one, **Test** probes connectivity).
 
+Settings also offer: **API protocol** (OpenAI-compatible by default; the
+Anthropic preset automatically uses the native Messages API), **Fetch
+models** (pull the endpoint's model list and tick what to add), a
+**write-only key field** (saved keys show as `••••1234`), per-model
+**vision** declaration, **custom effort levels** (comma separated, first =
+off; a `T` toggle for thinks-by-default models sends
+`thinking:disabled` at off), and the **web fetch** switch (default off;
+when on the assistant may read one public page per call).
+
 The chat composer (mature-harness style):
 
 - type `/` for the **command menu** (the full whitelisted action set);
@@ -82,7 +91,15 @@ The chat composer (mature-harness style):
 - `+` attaches **path files or a whole folder** into the session;
 - inline controls: **permission** (standard = high-risk actions confirm
   first; full access auto-approves — still whitelist-only), **context
-  gauge**, model switch, effort, and **send / stop**.
+  gauge**, model switch, effort, and **send / stop**;
+- **history** (clock icon, top-right): conversations persist locally —
+  reopen to continue, delete, hover any of your messages and press **⎇ to
+  fork** a what-if line, or **⇪ carry a summary** into a new chat;
+- **image attachments**: the `+` menu sends images to models that declare
+  vision;
+- **reminders**: ask "remind me in N seconds…" — `schedule_create/list/
+  delete` set session-local reminders delivered as a follow-up message
+  when the assistant is idle. No system notification.
 
 Discipline: the key lives only on your machine and never enters session
 files, share links, or exports; the assistant can only run whitelisted

@@ -381,13 +381,34 @@ check(
     (await page.locator('select.ai-effort').count()) === 1,
   `commands=${cmdCount}`,
 );
-await page.locator('.ai-icon-btn').first().click(); // gear -> Preferences (AI settings live there now)
+await page.locator('.ai-top .ai-icon-btn').last().click(); // gear -> Preferences (AI settings live there now)
 await page.waitForTimeout(200);
 check(
   'gear reveals provider settings',
   (await page.locator('.prefs-modal .ai-row').count()) >= 1,
 );
-await page.getByRole('button', { name: 'Done' }).click(); // close Preferences
+// DSH-parity surface: protocol picker + model discovery live in Preferences.
+check(
+  'provider settings include protocol picker + model discovery',
+  (await page.locator('.prefs-modal select option[value="anthropic"]').count()) >= 1 &&
+    (await page.locator('.prefs-modal .ai-models-actions button', { hasText: 'Fetch' }).count()) === 1,
+);
+await page.getByRole('button', { name: 'Done' }).click();
+await page.waitForTimeout(150);
+
+// History drawer + vision attach entry.
+await page.locator('.ai-top .ai-icon-btn').nth(0).click(); // clock icon
+check(
+  'ai history drawer opens',
+  (await page.locator('[data-testid="ai-history"]').count()) === 1,
+);
+await page.locator('.ai-top .ai-icon-btn').nth(0).click(); // close
+await page.locator('.ai-composer .ai-icon-btn').first().click(); // plus menu
+check(
+  'plus menu offers file / folder / image attach',
+  (await page.locator('.ai-menu button').count()) >= 3,
+);
+await page.keyboard.press('Escape');
 await page.locator('.ai-toggle').click(); // close
 await page.locator('.canvas-bar .btn', { hasText: '3D' }).click();
 await page.waitForTimeout(1200);
