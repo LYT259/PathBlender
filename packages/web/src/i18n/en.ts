@@ -54,6 +54,7 @@ export const en = {
   'toast.pngOnly2d': 'PNG export is 2D-only',
   'toast.pngSaved': 'PNG saved',
   'toast.pngFailed': 'PNG export failed',
+  'canvas.view': 'View',
   'canvas.fit': 'Fit',
   'canvas.editHint': 'edit: drag points · double-click inserts · right-click removes',
   'canvas.trails': 'trails',

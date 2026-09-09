@@ -55,6 +55,7 @@ export const zh: Record<MessageKey, string> = {
   'toast.pngOnly2d': '截图仅支持 2D 视图',
   'toast.pngSaved': '截图已保存',
   'toast.pngFailed': '截图导出失败',
+  'canvas.view': '视图',
   'canvas.fit': '适配',
   'canvas.editHint': '编辑：拖动路点 · 双击插入 · 右键删除',
   'canvas.trails': '轨迹尾巴',

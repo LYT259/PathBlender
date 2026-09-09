@@ -59,7 +59,7 @@ import { RobotList } from './components/RobotList';
 import { ConflictPanel } from './components/ConflictPanel';
 import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
-import { I18nProvider, LANGUAGES, langLabel, useI18n, type Lang } from './i18n';
+import { I18nProvider, LANGUAGES, langLabel, useI18n, type LangChoice } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { AiPanel, SparkleIcon } from './components/AiPanel';
 import { AiSettingsSection } from './components/AiSettingsSection';
@@ -85,7 +85,7 @@ export function App() {
 }
 
 function AppBody() {
-  const { lang, setLang, t: tr } = useI18n();
+  const { lang, langChoice, setLang, t: tr } = useI18n();
   const { channel: updateChannel, setChannel: setUpdateChannel } = useUpdateChannel();
   const { mode: themeMode, setMode: setThemeMode } = useTheme();
   const [robots, setRobots] = useState<SessionTrajectory[]>([]);
@@ -138,11 +138,11 @@ function AppBody() {
     fieldVariant === 'andymark' && baseField?.aprilTagsAndyMark
       ? { ...baseField, aprilTags: baseField.aprilTagsAndyMark }
       : baseField;
-  useEffect(() => {
-    if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, fieldVariant);
-  }, [fieldId, fieldVariant]);
+  // Field/variant memory is written ONLY from the user's own selects —
+  // share-link and session-file restores must not overwrite it.
 
-  const duration = sessionDuration(robots);
+  // The timeline opens at 20 s (user request); real sessions may extend it.
+  const duration = Math.max(sessionDuration(robots), 20);
   const playback = usePlayback(duration);
   const { t, setT } = playback;
 
@@ -637,6 +637,8 @@ function AppBody() {
               value={fieldId}
               onChange={(e) => {
                 setFieldId(e.target.value);
+                if (e.target.value !== CUSTOM_FIELD_ID)
+                  rememberFieldPrefs(e.target.value, fieldVariant);
                 if (e.target.value === CUSTOM_FIELD_ID && !customField) {
                   setCfOpen(true);
                 }
@@ -654,7 +656,11 @@ function AppBody() {
               <select
                 className="field-select"
                 value={fieldVariant}
-                onChange={(e) => setFieldVariant(e.target.value as 'welded' | 'andymark')}
+                onChange={(e) => {
+                  const v = e.target.value as 'welded' | 'andymark';
+                  setFieldVariant(v);
+                  if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, v);
+                }}
                 title={tr('field.variant')}
                 aria-label={tr('field.variant')}
               >
@@ -662,12 +668,10 @@ function AppBody() {
                 <option value="welded">Welded</option>
               </select>
             )}
-            <button
-              className={`btn small ${view3D ? 'on' : ''}`}
-              onClick={() => setView3D((v) => !v)}
-            >
-              3D
-            </button>
+            <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
+              <button className={view3D ? 'on' : ''} onClick={() => setView3D(true)}>3D</button>
+              <button className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
+            </div>
             {view3D && (
               <button
                 className="btn small"
@@ -800,7 +804,7 @@ function AppBody() {
             <h3>{tr('prefs.title')}</h3>
             <label className="prefs-row">
               <span>{tr('prefs.language')}</span>
-              <select value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+              <select value={langChoice} onChange={(e) => setLang(e.target.value as LangChoice)}>
                 {LANGUAGES.map((l) => (
                   <option key={l} value={l}>
                     {langLabel(l)}

@@ -1,6 +1,6 @@
 /**
  * Real-browser end-to-end walkthrough against the production preview build:
- * import → collision report → playback (incl. 2x speed) → language switch →
+ * import → collision report → playback (incl. 0.5x speed) → language switch →
  * share-link restore → field bounds → season switch → custom field →
  * PathPlanner batch → session download → service worker. Screenshots land in
  * /tmp/ghpb-shots for human/AI visual inspection.
@@ -39,7 +39,7 @@ await page.goto(BASE, { waitUntil: 'domcontentloaded' });
 await page.waitForSelector('.field-canvas-3d canvas');
 await page.waitForTimeout(800);
 check('starts in 3D by default', true);
-await page.locator('.canvas-bar .btn', { hasText: '3D' }).click(); // to 2D for the import flow
+await page.locator('.view-toggle button', { hasText: '2D' }).click(); // to 2D for the import flow
 await page.waitForSelector('.field-canvas');
 await page.screenshot({ path: `${SHOTS}/01-empty.png` });
 check('page loads', true);
@@ -72,15 +72,17 @@ await playBtn.click(); // play
 await page.waitForTimeout(1500);
 await playBtn.click(); // pause
 
-// --- playback speed: 2x should advance the clock ~twice as fast ---
-const speedBtn2x = page.locator('.speeds button', { hasText: '2×' });
-await speedBtn2x.click();
+// --- playback speeds: 0.25/0.5/1 only (2×/4× removed per user request);
+//     verify the 0.5× step exists and slows the clock ---
+const halfBtn = page.locator('.speeds button', { hasText: '0.5×' });
+await halfBtn.click();
 const t1 = parseFloat(await page.locator('.clock').textContent() ?? '0');
-await playBtn.click(); // play at 2x
+await playBtn.click(); // play at 0.5x
 await page.waitForTimeout(1000);
 await playBtn.click(); // pause
 const t2 = parseFloat(await page.locator('.clock').textContent() ?? '0');
-check('playback 2x speed', t2 - t1 > 1.6, `clock ${t1.toFixed(2)} → ${t2.toFixed(2)} over 1s wall`);
+check('playback 0.5x speed slows the clock', t2 - t1 > 0.25 && t2 - t1 < 0.9, `clock ${t1.toFixed(2)} → ${t2.toFixed(2)} over 1s wall`);
+check('fast-forward speeds removed', (await page.locator('.speeds button', { hasText: '2×' }).count()) === 0 && (await page.locator('.speeds button', { hasText: '4×' }).count()) === 0);
 await page.locator('.speeds button', { hasText: '1×' }).click();
 const midClock = await page.locator('.clock').textContent();
 check('playback advances clock', parseFloat(midClock ?? '') > 0.5, `clock=${midClock}`);
@@ -341,13 +343,13 @@ const [pngDl] = await Promise.all([
   page.locator('.tool-btn[aria-label="Export PNG"], .tool-btn[aria-label="导出 PNG"]').click(),
 ]);
 check('PNG export downloads', pngDl !== undefined, pngDl?.suggestedFilename());
-await page.locator('.canvas-bar .btn', { hasText: '3D' }).click();
+await page.locator('.view-toggle button', { hasText: '3D' }).click();
 await page.waitForTimeout(600);
 check(
   'PNG disabled in 3D (no silent no-op)',
   (await page.locator('.tool-btn[aria-label="Export PNG"], .tool-btn[aria-label="导出 PNG"]').isDisabled()) === true,
 );
-await page.locator('.canvas-bar .btn', { hasText: '3D' }).click(); // back to 2D
+await page.locator('.view-toggle button', { hasText: '2D' }).click(); // back to 2D
 
 // --- PWA service worker has registered and activated ---
 const swUrl = await page.evaluate(async () => {
@@ -409,7 +411,7 @@ check(
 );
 await page.keyboard.press('Escape');
 await page.locator('.ai-toggle').click(); // close
-await page.locator('.canvas-bar .btn', { hasText: '3D' }).click();
+await page.locator('.view-toggle button', { hasText: '3D' }).click();
 await page.waitForTimeout(1200);
 check(
   '3D view renders (canvas + no errors)',
@@ -461,7 +463,7 @@ const atHome = () =>
   page.waitForFunction(
     () =>
       Math.abs(window.__pb3d.controls.getAzimuthalAngle()) < 0.05 &&
-      Math.abs(window.__pb3d.controls.getPolarAngle() - 0.934) < 0.05,
+      Math.abs(window.__pb3d.controls.getPolarAngle() - 0.661) < 0.06,
     undefined,
     { timeout: 6000, polling: 100 },
   );
@@ -473,7 +475,7 @@ const homeState = await page.evaluate(() => ({
 }));
 check(
   'viewcube home snaps to default view',
-  Math.abs(homeState.az) < 0.2 && Math.abs(homeState.pol - 0.934) < 0.15,
+  Math.abs(homeState.az) < 0.2 && Math.abs(homeState.pol - 0.661) < 0.15,
   `az=${homeState.az.toFixed(2)} pol=${homeState.pol.toFixed(2)} (from ${polBeforeHome?.toFixed?.(2)})`,
 );
 
@@ -524,13 +526,13 @@ const clickCube = async (fx, fy) => {
   if (!reached) return null;
   return lp;
 };
-const cornerDir = await clickCube(0.3, 0.3);
+const cornerDir = await clickCube(0.28, 0.5);
 check(
   'viewcube corner click tweens to trimetric',
   Array.isArray(cornerDir) && cornerDir.filter((v) => Math.abs(v) > 0.4).length === 3,
   JSON.stringify(cornerDir),
 );
-const edgeDir = await clickCube(0.5, 0.32);
+const edgeDir = await clickCube(0.5, 0.5);
 check(
   'viewcube edge click tweens to two-axis view',
   Array.isArray(edgeDir) && edgeDir.filter((v) => Math.abs(v) > 0.4).length === 2,
@@ -624,7 +626,7 @@ const variantSelected = await page
   .evaluate((opt) => opt.selected);
 check('variant defaults to AndyMark', variantSelected === true);
 
-await page.locator('.canvas-bar .btn', { hasText: '3D' }).click(); // back to 2D
+await page.locator('.view-toggle button', { hasText: '2D' }).click(); // back to 2D
 await page.locator('.ai-toggle').click(); // close
 
 check('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));

@@ -49,7 +49,9 @@ interface Scene3D {
   retintCube: () => void;
 }
 
-const CAM_HOME: [number, number, number] = [0, 8.5, 11.5];
+// AS-style overview: higher and further back than the early low angle,
+// which read as a tilted slab (strong perspective) rather than a field.
+const CAM_HOME: [number, number, number] = [0, 13.5, 10.5];
 
 /** Official 3D field models (AdvantageScopeAssets, BSD-3) per season and
  *  construction variant; 2018-2020 have none and keep the fallback. */
@@ -182,8 +184,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       needsDraw = true;
     };
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.5));
-    const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.6));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.1);
     sun.position.set(9, 16, 8);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);

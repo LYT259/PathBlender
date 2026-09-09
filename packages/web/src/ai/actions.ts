@@ -375,7 +375,7 @@ export function resetReminders() {
   persistReminders();
 }
 
-registry.register(
+if (!VIEWER_ONLY) registry.register(
   spec({
     name: 'schedule_create',
     description:
@@ -419,7 +419,7 @@ registry.register(
   }),
 );
 
-registry.register(
+if (!VIEWER_ONLY) registry.register(
   spec({
     name: 'schedule_list',
     description: 'List active session-local reminders (id, due time, prompt, cadence).',
@@ -441,7 +441,7 @@ registry.register(
   }),
 );
 
-registry.register(
+if (!VIEWER_ONLY) registry.register(
   spec({
     name: 'schedule_delete',
     description: 'Delete a session-local reminder by id (see schedule_list).',
@@ -475,7 +475,7 @@ export function setWebFetchEnabled(on: boolean) {
 
 const BLOCKED_HOST = /^(localhost|127\.|0\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1)/i;
 
-registry.register(
+if (!VIEWER_ONLY) registry.register(
   spec({
     name: 'web_fetch',
     description:
