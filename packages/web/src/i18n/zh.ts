@@ -104,7 +104,7 @@ export const zh: Record<MessageKey, string> = {
   'prefs.ai': 'AI 助手',
   'prefs.channel': '更新通道',
   'prefs.channel.stable': 'Stable（稳定版）',
-  'prefs.channel.beta': 'Beta（抢先体验版）',
+  'prefs.channel.beta': 'Beta（预览版）',
   'prefs.theme': '主题',
   'theme.system': '跟随系统',
   'theme.dark': '深色',

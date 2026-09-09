@@ -186,6 +186,8 @@ body.desktop .toolbar { padding-left: 84px; }
 .btn:disabled { opacity: 0.4; cursor: default; }
 .btn.small { padding: 3px 8px; font-size: 12px; }
 .btn.small.accent { background: var(--accent); color: var(--accent-fg); border: none; }
+.gh-link { color: var(--fg-dim); display: inline-flex; align-items: center; }
+.gh-link:hover { color: var(--fg); }
 .btn.small.accent:hover { filter: brightness(1.08); }
 .btn.icon { padding: 4px 9px; font-size: 12px; }
 .btn.danger:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }

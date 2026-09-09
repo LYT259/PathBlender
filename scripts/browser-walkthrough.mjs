@@ -86,13 +86,15 @@ check('playback advances clock', parseFloat(midClock ?? '') > 0.5, `clock=${midC
 await page.screenshot({ path: `${SHOTS}/04-playing.png` });
 
 // --- language switch via Preferences (rail gear → modal) ---
-await page.locator('.tool-btn[aria-label="Preferences"], .tool-btn[aria-label="偏好设置"]').first().click();
-await page.waitForTimeout(300);
-const langSelect = page.locator('.prefs-modal select').first();
-await langSelect.waitFor({ state: 'visible', timeout: 8000 });
-// Language is staged: choosing reveals Cancel + blue Save; Cancel reverts.
+// Language is staged: choosing reveals Cancel + blue Save; Cancel reverts,
+// Save applies AND closes the modal (no second Done click).
 const saveBtn = page.locator('.prefs-modal .btn.small.accent');
 const cancelBtn = page.locator('.prefs-modal .prefs-row.btns .btn.small:not(.accent)');
+const openPrefs = () =>
+  page.locator('.tool-btn[aria-label="Preferences"], .tool-btn[aria-label="偏好设置"], .tool-btn[aria-label="偏好設定"]').first().click();
+await openPrefs();
+const langSelect = page.locator('.prefs-modal select').first();
+await langSelect.waitFor({ state: 'visible', timeout: 8000 });
 const firstOption = await langSelect.locator('option').first().textContent();
 check('follow-system sits first in the language list', /Follow system|跟随系统|跟隨系統/i.test(firstOption ?? ''), firstOption ?? '');
 await langSelect.selectOption('zh');
@@ -104,18 +106,20 @@ check('cancel reverts the pending language', (await saveBtn.count()) === 0 && (a
 await langSelect.selectOption('zh');
 await saveBtn.click();
 await page.waitForTimeout(300);
+check('save closes the preferences modal', (await page.locator('.prefs-modal').count()) === 0);
 const zhText = await page.locator('.robot-list h2').first().textContent();
 check('zh switch', /机器人/.test(zhText ?? ''), zhText ?? '');
 await page.screenshot({ path: `${SHOTS}/05-zh.png` });
-await langSelect.selectOption('zh-tw');
+await openPrefs();
+await page.locator('.prefs-modal select').first().selectOption('zh-tw');
 await saveBtn.click();
 await page.waitForTimeout(300);
 const twText = await page.locator('.robot-list h2').first().textContent();
 check('zh-tw switch', /機器人/.test(twText ?? ''), twText ?? '');
 await page.screenshot({ path: `${SHOTS}/06-zhtw.png` });
-await langSelect.selectOption('en');
+await openPrefs();
+await page.locator('.prefs-modal select').first().selectOption('en');
 await saveBtn.click();
-await page.locator('.prefs-modal .prefs-row.btns .btn.small').click(); // Done
 await page.waitForTimeout(200);
 // theme: switch to light via Preferences, verify token + shot, then back
 const prefsSelects = page.locator('.prefs-modal select');
@@ -167,6 +171,34 @@ await page.screenshot({ path: `${SHOTS}/08-bounds.png` });
 const seasonSelect = page.locator('select').first();
 await seasonSelect.selectOption('reefscape-2025');
 await page.waitForTimeout(700);
+// Variant stickiness: pick AndyMark, reload, both field and variant survive.
+const variantSelect = page.locator('.field-select').nth(1);
+await variantSelect.selectOption('andymark');
+await page.waitForTimeout(400);
+// Drop the share-link hash left by an earlier step — a reload with #s=…
+// intentionally restores the shared session's own field instead.
+await page.evaluate(() => history.replaceState(null, '', location.pathname));
+await page.reload({ waitUntil: 'domcontentloaded' });
+await page.waitForSelector('.field-canvas-3d canvas');
+const fieldAfterReload = await page.locator('select').first().inputValue();
+const variantAfterReload = await page.locator('.field-select').nth(1).inputValue();
+check(
+  'field + AndyMark variant survive reload',
+  fieldAfterReload === 'reefscape-2025' && variantAfterReload === 'andymark',
+  `field=${fieldAfterReload} variant=${variantAfterReload}`,
+);
+// The reload cleared the in-memory session — re-import for the steps below
+// (the out-of-bounds ghost too: later steps expect it in the card count).
+await page.locator('input[type="file"][multiple]').first().setInputFiles([
+  `${SAMPLES}/ghostauto/straight_run.ghostauto`,
+  `${SAMPLES}/ghostauto/stop_and_score.ghostauto`,
+  `${SAMPLES}/ghostauto/out_of_bounds.ghostauto`,
+]);
+await page.waitForSelector('.robot-card', { timeout: 10000 });
+// The reload also reset the view to the 3D default — the rest of the flow
+// assumes 2D (as after the initial toggle at the top).
+await page.locator('.canvas-bar .btn', { hasText: '3D' }).click();
+await page.waitForSelector('.field-canvas');
 await page.screenshot({ path: `${SHOTS}/09-reefscape.png` });
 check('season switch', true);
 await seasonSelect.selectOption('powerup-2018');

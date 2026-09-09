@@ -108,7 +108,7 @@ export const zhTw: Record<MessageKey, string> = {
   'prefs.ai': 'AI 助手',
   'prefs.channel': '更新通道',
   'prefs.channel.stable': 'Stable（穩定版）',
-  'prefs.channel.beta': 'Beta（搶先體驗版）',
+  'prefs.channel.beta': 'Beta（預覽版）',
   'prefs.theme': '主題',
   'theme.system': '跟隨系統',
   'theme.dark': '深色',

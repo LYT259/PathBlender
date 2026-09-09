@@ -32,6 +32,8 @@ check('import button present', toolLabels.some((t) => /导入|Import/i.test(t)),
 check('share button present', toolLabels.some((t) => /分享|Share/i.test(t)));
 check('save button absent', !toolLabels.some((t) => /保存|Save/i.test(t)));
 check('png button absent', !toolLabels.some((t) => /PNG/i.test(t)));
+const ghHref = await page.locator('.toolbar .gh-link').first().getAttribute('href');
+check('github link beside Prefs', ghHref === 'https://github.com/GH-FRC/pathblender', ghHref ?? 'missing');
 
 // --- import still works end to end, collisions still detected ---
 const input = page.locator('input[type="file"][multiple]').first();
@@ -68,6 +70,10 @@ check('ai panel absent', (await page.locator('.ai-panel').count()) === 0);
 await page.locator('.tool-btn', { hasText: /Prefs|偏好设置|Preferences/ }).first().click();
 await page.waitForSelector('.prefs-modal');
 check('prefs has no AI section', (await page.locator('.prefs-modal .prefs-ai').count()) === 0);
+check(
+  'prefs has no update-channel row (website never self-updates)',
+  (await page.locator('.prefs-modal select').count()) === 2,
+);
 const langOpts = await page.locator('.prefs-modal select').first().locator('option').allTextContents();
 check(
   'language list: Follow system first',
