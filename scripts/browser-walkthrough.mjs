@@ -101,7 +101,7 @@ const twText = await page.locator('.robot-list h2').first().textContent();
 check('zh-tw switch', /機器人/.test(twText ?? ''), twText ?? '');
 await page.screenshot({ path: `${SHOTS}/06-zhtw.png` });
 await langSelect.selectOption('en');
-await page.locator('.prefs-modal .btn.small').click(); // Done
+await page.locator('.prefs-modal .prefs-row.btns .btn.small').click(); // Done
 await page.waitForTimeout(200);
 // theme: switch to light via Preferences, verify token + shot, then back
 const prefsSelects = page.locator('.prefs-modal select');
@@ -115,7 +115,7 @@ check('theme switches to light', htmlTheme === 'light', `data-theme=${htmlTheme}
 await page.screenshot({ path: `${SHOTS}/15-theme-light.png` });
 await themeSel.selectOption('dark');
 await page.waitForTimeout(300);
-await page.locator('.prefs-modal .btn.small').last().click(); // Done
+await page.locator('.prefs-modal .prefs-row.btns .btn.small').click(); // Done
 
 // --- share link: dialog with the compressed session, then restore ---
 await page.locator('.tool-btn[aria-label="Share link"]').click();
@@ -127,7 +127,7 @@ check(
   shareText.includes('#s=') && hash.startsWith('#s='),
   shareText.slice(0, 40) + '…',
 );
-await page.locator('.prefs-modal .btn.small').last().click(); // close dialog
+await page.locator('.prefs-modal .prefs-row.btns .btn.small').last().click(); // close dialog
 
 const ctx2 = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const page2 = await ctx2.newPage();
@@ -380,13 +380,14 @@ check(
     (await page.locator('select.ai-effort').count()) === 1,
   `commands=${cmdCount}`,
 );
-await page.locator('.ai-icon-btn').first().click(); // gear -> settings
+await page.locator('.ai-icon-btn').first().click(); // gear -> Preferences (AI settings live there since the prefs merge)
 await page.waitForTimeout(200);
 check(
-  'gear reveals provider settings',
-  (await page.locator('.ai-settings').count()) === 1,
+  'gear reveals provider settings (Preferences)',
+  (await page.locator('.prefs-modal .prefs-ai').count()) === 1,
 );
-await page.locator('.ai-icon-btn').first().click(); // back
+await page.locator('.prefs-modal .prefs-row.btns .btn.small').click(); // Done
+await page.waitForTimeout(200);
 await page.locator('.ai-toggle').click(); // close
 await page.locator('.canvas-bar .btn', { hasText: '3D' }).click();
 await page.waitForTimeout(1200);

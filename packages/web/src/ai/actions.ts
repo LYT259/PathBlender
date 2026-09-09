@@ -11,6 +11,7 @@
 
 import { ActionRegistry, autoResolveConflicts } from '@pathblender/core';
 import type { ActionContext, ActionSpec, Args } from '@pathblender/core';
+import { VIEWER_ONLY } from '../viewer';
 
 function str(a: Args, k: string): string | undefined {
   const v = a[k];
@@ -40,7 +41,11 @@ export const registry = new ActionRegistry();
 
 // --- read-only queries (risk: low) ---
 
-registry.register(
+// Viewer deployments (the website) register only queries + annotations —
+// the authoring/export actions below never get registered, so tool
+// declarations, the "/" menu, and executeAction agree on one reduced set.
+
+if (!VIEWER_ONLY) registry.register(
   spec({
     name: 'auto_resolve_conflicts',
     description:
@@ -121,7 +126,7 @@ registry.register(
 
 // --- low-risk mutations: auto-run, undoable ---
 
-registry.register(
+if (!VIEWER_ONLY) registry.register(
   spec({
     name: 'set_start_delay',
     description: "Set a robot's what-if start delay in seconds (0 or more). Recomputes collisions immediately.",
@@ -144,7 +149,7 @@ registry.register(
   }),
 );
 
-registry.register(
+if (!VIEWER_ONLY) registry.register(
   spec({
     name: 'set_alliance',
     description: "Set a robot's alliance perspective ('blue' or 'red') for field normalization.",
@@ -184,7 +189,7 @@ registry.register(
   }),
 );
 
-registry.register(
+if (!VIEWER_ONLY) registry.register(
   spec({
     name: 'adjust_waypoint',
     description:
@@ -224,7 +229,7 @@ registry.register(
   }),
 );
 
-registry.register(
+if (!VIEWER_ONLY) registry.register(
   spec({
     name: 'add_waypoint',
     description: 'Insert a new waypoint after the given index (midpoint of that segment).',
@@ -247,7 +252,7 @@ registry.register(
   }),
 );
 
-registry.register(
+if (!VIEWER_ONLY) registry.register(
   spec({
     name: 'remove_waypoint',
     description: 'Remove the waypoint at the given index (a path always keeps at least 2).',
@@ -272,7 +277,7 @@ registry.register(
 
 // --- high-risk actions: user approval before running ---
 
-registry.register(
+if (!VIEWER_ONLY) registry.register(
   spec({
     name: 'export_file',
     description: 'Download a derived adjusted copy of a robot as .path, .traj, or .ghostauto. Requires user confirmation.',
