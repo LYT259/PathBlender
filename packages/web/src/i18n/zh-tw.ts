@@ -59,6 +59,7 @@ export const zhTw: Record<MessageKey, string> = {
   'toast.pngOnly2d': '截圖僅支援 2D 視圖',
   'toast.pngSaved': '截圖已儲存',
   'toast.pngFailed': '截圖匯出失敗',
+  'canvas.view': '視圖',
   'canvas.fit': '適配',
   'canvas.editHint': '編輯：拖動路點 · 雙擊插入 · 右鍵刪除',
   'canvas.trails': '軌跡尾巴',

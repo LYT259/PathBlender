@@ -24,7 +24,7 @@ PathBlender fills that gap:
   `.ghostauto`, and native PathPlanner `.path` / `.auto` (trajectory
   generation ported to TypeScript — no other browser tool does this);
 - **Unified timeline playback** — every robot on one 15 s autonomous
-  clock, play / pause / scrub / speed control (0.25×–4×);
+  clock, play / pause / scrub / speed control (0.25×–1×);
 - **Collision & interference checking** — bumper-rectangle OBB overlap
   along the whole timeline, with a conflict report (who, when, where),
   out-of-bounds detection, and a minimum-separation report. **Auto-resolve**

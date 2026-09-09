@@ -6,7 +6,7 @@ import type {
 import { activeEndT } from '@pathblender/core';
 import { useI18n } from '../i18n';
 
-const SPEEDS = [0.25, 0.5, 1, 2, 4];
+const SPEEDS = [0.25, 0.5, 1];
 
 interface Playback {
   t: number;
