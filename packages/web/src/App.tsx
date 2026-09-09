@@ -70,6 +70,38 @@ import type { ActionContext } from './ai/actions';
 import { loadAISettings, saveAISettings, type AISettings } from './ai/settings';
 
 const SESSION_EXT = '.ghpb.json';
+// The project's public home — the repo is private today; the link simply
+// starts resolving once it goes public.
+const GITHUB_URL = 'https://github.com/GH-FRC/pathblender';
+
+// The field + variant survive refreshes (a custom field is not persisted —
+// its definition lives only in the session/share payload).
+const FIELD_PREF_KEY = 'ghpb.field';
+type FieldPref = { id: string; variant: 'welded' | 'andymark' };
+function loadFieldPref(): FieldPref {
+  const fallback: FieldPref = { id: REBUILT_2026.id, variant: 'welded' };
+  try {
+    const raw = localStorage.getItem(FIELD_PREF_KEY);
+    if (!raw) return fallback;
+    const p = JSON.parse(raw) as Partial<FieldPref>;
+    const f = p.id ? fieldById(p.id) : undefined;
+    if (!f) return fallback;
+    return {
+      id: f.id,
+      variant: p.variant === 'andymark' && f.aprilTagsAndyMark ? 'andymark' : 'welded',
+    };
+  } catch {
+    return fallback;
+  }
+}
+function rememberFieldPrefs(id: string, variant: 'welded' | 'andymark') {
+  if (id === CUSTOM_FIELD_ID) return;
+  try {
+    localStorage.setItem(FIELD_PREF_KEY, JSON.stringify({ id, variant }));
+  } catch {
+    /* private browsing — stickiness is best-effort */
+  }
+}
 
 // Desktop (Tauri) hides the in-page preferences gear — ⌘, owns it there.
 const IS_DESKTOP = location.protocol === 'tauri:' || location.protocol === 'asset:';
@@ -102,8 +134,9 @@ function AppBody() {
   }, []);
   const aiUndoRef = useRef<{ label: string; robots: SessionTrajectory[] }[]>([]);
   const [aiUndoTop, setAiUndoTop] = useState<string | null>(null);
-  const [fieldId, setFieldId] = useState(REBUILT_2026.id);
-  const [fieldVariant, setFieldVariant] = useState<'welded' | 'andymark'>('welded');
+  const [initialFieldPref] = useState(loadFieldPref);
+  const [fieldId, setFieldId] = useState(initialFieldPref.id);
+  const [fieldVariant, setFieldVariant] = useState<'welded' | 'andymark'>(initialFieldPref.variant);
   const [customField, setCustomField] = useState<FieldPackage | undefined>(undefined);
   const [customImageUrl, setCustomImageUrl] = useState<string | undefined>(undefined);
   const [cfOpen, setCfOpen] = useState(false);
@@ -577,6 +610,18 @@ function AppBody() {
               <ToolBtn label={tr('rail.png')} aria={tr('actions.png')} onClick={exportPng} disabled={robots.length === 0 || view3D} />
             )}
             <ToolBtn label={tr('rail.prefs')} aria={tr('prefs.title')} onClick={() => setShowPrefs(true)} />
+            <a
+              className="tool-btn gh-link"
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+              title="GitHub"
+            >
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+              </svg>
+            </a>
             <span className="toolbar-spacer" />
             <ToolBtn label={tr('rail.clear')} aria={tr('actions.clear')} danger onClick={clearAll} disabled={robots.length === 0} />
           </>
@@ -608,6 +653,7 @@ function AppBody() {
               value={fieldId}
               onChange={(e) => {
                 setFieldId(e.target.value);
+                rememberFieldPrefs(e.target.value, fieldVariant);
                 if (e.target.value === CUSTOM_FIELD_ID && !customField) {
                   setCfOpen(true);
                 }
@@ -625,7 +671,11 @@ function AppBody() {
               <select
                 className="field-select"
                 value={fieldVariant}
-                onChange={(e) => setFieldVariant(e.target.value as 'welded' | 'andymark')}
+                onChange={(e) => {
+                  const v = e.target.value as 'welded' | 'andymark';
+                  setFieldVariant(v);
+                  rememberFieldPrefs(fieldId, v);
+                }}
                 title={tr('field.variant')}
                 aria-label={tr('field.variant')}
               >
@@ -792,20 +842,22 @@ function AppBody() {
                 <option value="light">{tr('theme.light')}</option>
               </select>
             </label>
-            <label className="prefs-row">
-              <span>{tr('prefs.channel')}</span>
-              <select
-                value={updateChannel}
-                onChange={(e) => {
-                  const next = e.target.value as 'stable' | 'beta';
-                  setUpdateChannel(next);
-                  void checkForUpdates(); // switch channel → immediately check that channel's feed
-                }}
-              >
-                <option value="stable">{tr('prefs.channel.stable')}</option>
-                <option value="beta">{tr('prefs.channel.beta')}</option>
-              </select>
-            </label>
+            {!VIEWER_ONLY && (
+              <label className="prefs-row">
+                <span>{tr('prefs.channel')}</span>
+                <select
+                  value={updateChannel}
+                  onChange={(e) => {
+                    const next = e.target.value as 'stable' | 'beta';
+                    setUpdateChannel(next);
+                    void checkForUpdates(); // switch channel → immediately check that channel's feed
+                  }}
+                >
+                  <option value="stable">{tr('prefs.channel.stable')}</option>
+                  <option value="beta">{tr('prefs.channel.beta')}</option>
+                </select>
+              </label>
+            )}
             {!VIEWER_ONLY && (
               <div className="prefs-ai">
                 <h4>{tr('prefs.ai')}</h4>
@@ -825,7 +877,7 @@ function AppBody() {
                     className="btn small accent"
                     onClick={() => {
                       setLang(pendingLang);
-                      setPendingLang(null);
+                      closePrefs();
                     }}
                   >
                     {tr('prefs.save')}
