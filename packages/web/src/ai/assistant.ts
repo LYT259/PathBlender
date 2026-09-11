@@ -11,7 +11,7 @@
 
 import { chatCompletion } from './client';
 import type { ChatMessage } from './client';
-import { executeAction } from './actions';
+import { executeActionAsync } from './actions';
 import { registry } from './actions';
 import type { ActionContext } from './actions';
 import type { AISettings } from './settings';
@@ -23,7 +23,6 @@ export interface AssistantEvent {
 
 export interface ConfirmRequest {
   summary: string;
-  perform: () => void;
 }
 
 const MAX_TOOL_ROUNDS = 8;
@@ -34,11 +33,17 @@ export async function runAssistantInstruction(
   ctx: ActionContext,
   onEvent: (e: AssistantEvent) => void,
   requestConfirmation: (req: ConfirmRequest) => Promise<boolean>,
-  opts?: { signal?: AbortSignal },
-): Promise<void> {
+  opts?: { signal?: AbortSignal; history?: ChatMessage[]; carryNote?: string; images?: { mimeType: string; base64: string }[] },
+): Promise<ChatMessage[]> {
   const messages: ChatMessage[] = [
-    { role: 'system', content: systemPrompt(ctx) },
-    { role: 'user', content: instruction },
+    {
+      role: 'system',
+      content:
+        systemPrompt(ctx) +
+        (opts?.carryNote ? `\n\nEarlier conversation context (summary):\n${opts.carryNote}` : ''),
+    },
+    ...(opts?.history ?? []),
+    { role: 'user', content: instruction, ...(opts?.images?.length ? { images: opts.images } : {}) },
   ];
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -47,47 +52,36 @@ export async function runAssistantInstruction(
 
     if (calls.length === 0) {
       onEvent({ kind: 'reply', text: choice.message.content?.trim() || '(no reply)' });
-      return;
+      return messages;
     }
 
     messages.push({ role: 'assistant', content: choice.message.content ?? null, tool_calls: calls });
 
     for (const call of calls) {
-      if (registry.riskOf(call.function.name) === 'high') {
-        // Confirmation-required path: describe, await approval, then run.
-        let args: Record<string, unknown> = {};
-        try {
-          args = JSON.parse(call.function.arguments || '{}') as Record<string, unknown>;
-        } catch {
-          /* fall through with empty args; validation rejects */
-        }
-        const label = `${call.function.name} ${describeArgs(args, ctx)}`;
-        const approved = await requestConfirmation({
-          summary: label,
-          perform: () => {
-            const r = executeAction(call.function.name, args, ctx);
-            onEvent({ kind: 'action', text: r.summary });
-          },
-        });
-        onEvent({
-          kind: 'notice',
-          text: approved ? `approved: ${label}` : `denied by user: ${label}`,
-        });
-        messages.push({
-          role: 'tool',
-          tool_call_id: call.id,
-          content: JSON.stringify({ done: approved, userApproved: approved }),
-        });
-        continue;
-      }
-
       let args: Record<string, unknown> = {};
       try {
         args = JSON.parse(call.function.arguments || '{}') as Record<string, unknown>;
       } catch {
-        /* validation will reject */
+        /* validation rejects */
       }
-      const r = executeAction(call.function.name, args, ctx);
+
+      if (registry.riskOf(call.function.name) === 'high') {
+        // Confirmation-required path: describe, await approval, then run.
+        const label = `${call.function.name} ${describeArgs(args, ctx)}`;
+        const approved = await requestConfirmation({ summary: label });
+        if (!approved) {
+          onEvent({ kind: 'notice', text: `denied by user: ${label}` });
+          messages.push({
+            role: 'tool',
+            tool_call_id: call.id,
+            content: JSON.stringify({ done: false, userApproved: false }),
+          });
+          continue;
+        }
+        onEvent({ kind: 'notice', text: `approved: ${label}` });
+      }
+
+      const r = await executeActionAsync(call.function.name, args, ctx);
       onEvent({ kind: r.ok ? 'action' : 'notice', text: r.summary });
       messages.push({
         role: 'tool',
@@ -98,6 +92,7 @@ export async function runAssistantInstruction(
   }
 
   onEvent({ kind: 'notice', text: `stopped after ${MAX_TOOL_ROUNDS} tool rounds` });
+  return messages;
 }
 
 function describeArgs(args: Record<string, unknown>, ctx: ActionContext): string {

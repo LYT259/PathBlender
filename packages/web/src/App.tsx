@@ -64,7 +64,9 @@ import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { AiPanel, SparkleIcon } from './components/AiPanel';
 import { AiSettingsSection } from './components/AiSettingsSection';
 import { EditorPage } from './components/EditorPage';
-import { UpdateChannelProvider, useUpdateChannel, channelFeedUrl } from './update-channel';
+import { UpdateChannelProvider, useUpdateChannel, type UpdateChannel } from './update-channel';
+import { runUpdateCheck } from './update-check';
+import { listenPrefs } from './pref-sync';
 import { VIEWER_ONLY } from './viewer';
 import type { ActionContext } from './ai/actions';
 import { loadAISettings, saveAISettings, type AISettings } from './ai/settings';
@@ -79,7 +81,7 @@ const GITHUB_URL = 'https://github.com/GH-FRC/pathblender';
 const FIELD_PREF_KEY = 'ghpb.field';
 type FieldPref = { id: string; variant: 'welded' | 'andymark' };
 function loadFieldPref(): FieldPref {
-  const fallback: FieldPref = { id: REBUILT_2026.id, variant: 'welded' };
+  const fallback: FieldPref = { id: REBUILT_2026.id, variant: 'andymark' };
   try {
     const raw = localStorage.getItem(FIELD_PREF_KEY);
     if (!raw) return fallback;
@@ -154,6 +156,8 @@ function AppBody() {
     fieldVariant === 'andymark' && baseField?.aprilTagsAndyMark
       ? { ...baseField, aprilTags: baseField.aprilTagsAndyMark }
       : baseField;
+  // Field/variant memory is written ONLY from the user's own selects —
+  // share-link and session-file restores must not overwrite it.
 
   const duration = sessionDuration(robots);
   const playback = usePlayback(duration);
@@ -506,31 +510,40 @@ function AppBody() {
     canvasRef.current?.exportPng((ok) => flash(tr(ok ? 'toast.pngSaved' : 'toast.pngFailed')));
   }, [view3D, flash, tr]);
 
-  // Native "Check for Updates…": quiet until the release feed exists —
-  // a 404 (no releases yet) or offline lands in the honest fallback toast.
-  // The feed follows the selected channel (stable/beta). Download installs
-  // on quit automatically (Tauri keeps the staged update) — relaunch only
-  // when the user is still here; a stale-version note covers the rest.
-  const checkForUpdates = useCallback(async () => {
-    if (!IS_DESKTOP) return;
-    try {
-      const { check } = await import('@tauri-apps/plugin-updater');
-      const { relaunch } = await import('@tauri-apps/plugin-process');
-      const update = await check({ headers: {}, timeout: 15000, target: undefined } as never).catch(() => null)
-        // channel-aware check: point the updater at the channel feed
-        ?? await check({ url: channelFeedUrl(updateChannel) } as never).catch(() => null);
-      if (update == null) {
-        flash(tr('updates.upToDate'));
-        return;
-      }
-      flash(tr('updates.downloading', { v: update.version }));
-      await update.downloadAndInstall();
-      // User is present (they triggered the check) → relaunch right away.
-      await relaunch();
-    } catch {
-      flash(tr('updates.none'));
-    }
-  }, [flash, tr, updateChannel]);
+  // Native "Check for Updates…" and channel switches. The Rust shell owns
+  // the channel→feed mapping (check_update); feed unreachable (offline, or
+  // no release assets yet) reports 'failed' → the honest toast, not a fake
+  // "up to date". Install + relaunch are one hop: the user asked for it.
+  const checkForUpdates = useCallback(
+    (ch: UpdateChannel = updateChannel) => {
+      if (!IS_DESKTOP) return;
+      void runUpdateCheck(ch, (e) => {
+        if (e.kind === 'found') flash(tr('updates.downloading', { v: e.version }));
+        else if (e.kind === 'upToDate') flash(tr('updates.upToDate'));
+        else if (e.kind === 'failed') flash(tr('updates.failed'));
+        // 'installed' — the relaunch is already in flight; nothing left to say.
+      });
+    },
+    [flash, tr, updateChannel],
+  );
+
+  // Channel switches from any window (in-app modal here, or the ⌘, prefs
+  // window via the pref bridge — broadcasts self-deliver too) immediately
+  // check the newly selected channel's feed. The event carries the value,
+  // so no stale-closure race with the state update.
+  const checkRef = useRef(checkForUpdates);
+  useEffect(() => {
+    checkRef.current = checkForUpdates;
+  }, [checkForUpdates]);
+  useEffect(
+    () =>
+      listenPrefs((key, v) => {
+        if (v === 'beta' || v === 'stable') {
+          if (key === 'updateChannel') checkRef.current(v);
+        }
+      }),
+    [],
+  );
 
   const clearAll = useCallback(() => {
     setRobots([]);
@@ -653,7 +666,8 @@ function AppBody() {
               value={fieldId}
               onChange={(e) => {
                 setFieldId(e.target.value);
-                rememberFieldPrefs(e.target.value, fieldVariant);
+                if (e.target.value !== CUSTOM_FIELD_ID)
+                  rememberFieldPrefs(e.target.value, fieldVariant);
                 if (e.target.value === CUSTOM_FIELD_ID && !customField) {
                   setCfOpen(true);
                 }
@@ -674,21 +688,19 @@ function AppBody() {
                 onChange={(e) => {
                   const v = e.target.value as 'welded' | 'andymark';
                   setFieldVariant(v);
-                  rememberFieldPrefs(fieldId, v);
+                  if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, v);
                 }}
                 title={tr('field.variant')}
                 aria-label={tr('field.variant')}
               >
-                <option value="welded">Welded</option>
                 <option value="andymark">AndyMark</option>
+                <option value="welded">Welded</option>
               </select>
             )}
-            <button
-              className={`btn small ${view3D ? 'on' : ''}`}
-              onClick={() => setView3D((v) => !v)}
-            >
-              3D
-            </button>
+            <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
+              <button className={view3D ? 'on' : ''} onClick={() => setView3D(true)}>3D</button>
+              <button className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
+            </div>
             {view3D && (
               <button
                 className="btn small"

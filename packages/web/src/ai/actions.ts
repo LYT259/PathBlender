@@ -311,10 +311,225 @@ registry.register(
   }),
 );
 
+// --- session-local reminders (DSH Schedule, lightweight port) ---
+
+export interface Reminder {
+  id: string;
+  prompt: string;
+  /** Epoch ms when the reminder fires; fixed-rate reminders re-arm. */
+  dueAt: number;
+  /** Repeat interval in ms (>= 300 s), or absent for one-shot. */
+  everyMs?: number;
+}
+
+const REMINDER_KEY = 'ghpb.aiReminders';
+let reminders: Reminder[] = (() => {
+  try {
+    const v = JSON.parse(localStorage.getItem(REMINDER_KEY) ?? '[]') as unknown;
+    return Array.isArray(v) ? (v.filter((r) => typeof r === 'object' && r !== null) as Reminder[]) : [];
+  } catch {
+    return [];
+  }
+})();
+function persistReminders() {
+  try {
+    localStorage.setItem(REMINDER_KEY, JSON.stringify(reminders));
+  } catch {
+    /* session-only then */
+  }
+}
+type ReminderListener = (due: Reminder[]) => void;
+const reminderListeners = new Set<ReminderListener>();
+/** The panel subscribes; due reminders are handed over exactly once. */
+export function onRemindersDue(l: ReminderListener): () => void {
+  reminderListeners.add(l);
+  return () => {
+    reminderListeners.delete(l);
+  };
+}
+function fireDue(now: number) {
+  const due = reminders.filter((r) => r.dueAt <= now);
+  if (due.length === 0) return;
+  const ids = new Set(due.map((r) => r.id));
+  reminders = reminders
+    .map((r) => (ids.has(r.id) && r.everyMs ? { ...r, dueAt: r.dueAt + r.everyMs } : r))
+    .filter((r) => !ids.has(r.id) || r.everyMs);
+  persistReminders();
+  for (const l of [...reminderListeners]) l(due);
+}
+// 1 Hz reminder pump — started by the AI panel; safe to call repeatedly.
+let reminderTimer: ReturnType<typeof setInterval> | null = null;
+export function startReminderPump() {
+  if (reminderTimer) return;
+  reminderTimer = setInterval(() => fireDue(Date.now()), 1000);
+}
+export function stopReminderPump() {
+  if (reminderTimer) clearInterval(reminderTimer);
+  reminderTimer = null;
+}
+
+/** Test hook: drop all in-memory reminders (localStorage may have been
+ *  cleared between tests while the module array survives). */
+export function resetReminders() {
+  reminders = [];
+  persistReminders();
+}
+
+if (!VIEWER_ONLY) registry.register(
+  spec({
+    name: 'schedule_create',
+    description:
+      'Create a session-local reminder. When it is due and the assistant is idle, the prompt is delivered into this conversation as a follow-up message. No system notification is sent.',
+    parameters: {
+      type: 'object',
+      properties: {
+        prompt: { type: 'string', description: 'Message to deliver when due' },
+        after_seconds: { type: 'number', description: 'Positive whole seconds from now' },
+        every_seconds: { type: 'number', description: 'Fixed-rate repeat interval, at least 300 s' },
+      },
+      required: ['prompt'],
+    },
+    risk: 'low',
+    handler: (_ctx, a) => {
+      const prompt = str(a, 'prompt')?.trim();
+      const after = num(a, 'after_seconds');
+      const every = num(a, 'every_seconds');
+      if (!prompt) return { ok: false, summary: 'schedule_create: prompt required', result: {} };
+      if (after == null && every == null)
+        return { ok: false, summary: 'schedule_create: after_seconds or every_seconds required', result: {} };
+      if (every != null && every < 300)
+        return { ok: false, summary: 'schedule_create: every_seconds must be >= 300', result: {} };
+      const everyMs = every != null ? every * 1000 : undefined;
+      const dueAt = Date.now() + (after != null ? after * 1000 : everyMs!);
+      const r: Reminder = {
+        id: `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`,
+        prompt,
+        dueAt,
+        ...(everyMs ? { everyMs } : {}),
+      };
+      reminders.push(r);
+      persistReminders();
+      const when = new Date(r.dueAt).toLocaleTimeString();
+      return {
+        ok: true,
+        summary: `reminder set: ${everyMs ? `every ${every}s, next` : ''} ${when} — ${prompt}`,
+        result: { id: r.id, dueAt: r.dueAt },
+      };
+    },
+  }),
+);
+
+if (!VIEWER_ONLY) registry.register(
+  spec({
+    name: 'schedule_list',
+    description: 'List active session-local reminders (id, due time, prompt, cadence).',
+    parameters: { type: 'object', properties: {}, required: [] },
+    risk: 'low',
+    handler: () => ({
+      ok: true,
+      summary:
+        reminders.length === 0
+          ? 'no reminders'
+          : reminders
+              .map(
+                (r) =>
+                  `${r.id} ${new Date(r.dueAt).toLocaleTimeString()}${r.everyMs ? ` (every ${r.everyMs / 1000}s)` : ''} — ${r.prompt}`,
+              )
+              .join('; '),
+      result: reminders,
+    }),
+  }),
+);
+
+if (!VIEWER_ONLY) registry.register(
+  spec({
+    name: 'schedule_delete',
+    description: 'Delete a session-local reminder by id (see schedule_list).',
+    parameters: {
+      type: 'object',
+      properties: { id: { type: 'string' } },
+      required: ['id'],
+    },
+    risk: 'low',
+    handler: (_ctx, a) => {
+      const id = str(a, 'id');
+      const before = reminders.length;
+      reminders = reminders.filter((r) => r.id !== id);
+      persistReminders();
+      return {
+        ok: reminders.length < before,
+        summary: reminders.length < before ? `deleted ${id}` : `no reminder ${id}`,
+        result: { done: reminders.length < before },
+      };
+    },
+  }),
+);
+
+// --- optional read-only web fetch (default OFF; user opt-in in settings) ---
+
+let webFetchEnabled = false;
+/** Synced from AISettings by the app — the action refuses while off. */
+export function setWebFetchEnabled(on: boolean) {
+  webFetchEnabled = on;
+}
+
+const BLOCKED_HOST = /^(localhost|127\.|0\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1)/i;
+
+if (!VIEWER_ONLY) registry.register(
+  spec({
+    name: 'web_fetch',
+    description:
+      'Fetch one public http(s) URL (read-only, no auth) and return up to 20 KB of text. Disabled unless the user enables web fetch in Preferences ▸ AI. Subject to the browser CORS policy: endpoints that do not allow cross-origin reads fail with an error.',
+    parameters: {
+      type: 'object',
+      properties: { url: { type: 'string' } },
+      required: ['url'],
+    },
+    risk: 'low',
+    handler: async (_ctx, a) => {
+      if (!webFetchEnabled)
+        return { ok: false, summary: 'web fetch is off — enable it in Preferences ▸ AI', result: {} };
+      const raw = str(a, 'url');
+      let u: URL;
+      try {
+        u = new URL(raw ?? '');
+      } catch {
+        return { ok: false, summary: 'web_fetch: invalid url', result: {} };
+      }
+      if (u.protocol !== 'https:' && u.protocol !== 'http:')
+        return { ok: false, summary: 'web_fetch: only http(s)', result: {} };
+      if (BLOCKED_HOST.test(u.hostname))
+        return { ok: false, summary: 'web_fetch: private/loopback hosts are not allowed', result: {} };
+      try {
+        const res = await fetch(u, { redirect: 'follow' });
+        const text = (await res.text()).slice(0, 20000);
+        return {
+          ok: res.ok,
+          summary: `fetched ${u.host} (${res.status}, ${text.length} chars)`,
+          result: { status: res.status, contentType: res.headers.get('content-type') ?? '', text },
+        };
+      } catch (e) {
+        return {
+          ok: false,
+          summary: `web_fetch failed: ${e instanceof Error ? e.message : String(e)} (often CORS)`,
+          result: {},
+        };
+      }
+    },
+  }),
+);
+
 // --- compatibility surface for existing consumers ---
 
+/** Sync dispatch (all built-in non-network actions). Async handlers (e.g.
+ *  web_fetch) report an error here — use executeActionAsync for those. */
 export function executeAction(name: string, args: Args, ctx: ActionContext) {
   return registry.execute(name, args, ctx);
+}
+
+/** Async-aware dispatch — the assistant loop always uses this one. */
+export async function executeActionAsync(name: string, args: Args, ctx: ActionContext) {
+  return registry.executeAsync(name, args, ctx);
 }
 
 export function actionNeedsConfirmation(name: string): boolean {

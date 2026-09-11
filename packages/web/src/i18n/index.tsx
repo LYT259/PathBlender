@@ -10,12 +10,26 @@ import { zh } from './zh';
 import { zhTw } from './zh-tw';
 
 export type Lang = 'en' | 'zh' | 'zh-tw';
-/** User choice: 'system' follows the OS language (the first-visit default). */
+/** User choice: 'system' follows the OS language live (first visit uses it). */
 export type LangChoice = 'system' | Lang;
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, zh, 'zh-tw': zhTw };
-const LANG_LABEL: Record<Lang, string> = { en: 'English', zh: '简体中文', 'zh-tw': '繁體中文' };
+const LANG_LABEL: Record<LangChoice, string> = {
+  system: '跟随系统 / Follow system',
+  en: 'English',
+  zh: '简体中文',
+  'zh-tw': '繁體中文',
+};
 const STORAGE_KEY = 'ghpb.lang';
+
+function systemLang(): Lang {
+  const langs = navigator.languages ?? [navigator.language];
+  for (const l of langs) {
+    if (/^zh-(tw|hant|hk|mo)/i.test(l)) return 'zh-tw';
+    if (/^zh/i.test(l)) return 'zh';
+  }
+  return 'en';
+}
 
 export type TFunc = (key: MessageKey, vars?: Record<string, string | number>) => string;
 
@@ -26,17 +40,7 @@ function interpolate(template: string, vars?: Record<string, string | number>): 
   );
 }
 
-/** The OS language mapped onto a supported dictionary. */
-function systemLang(): Lang {
-  const langs = navigator.languages ?? [navigator.language];
-  for (const l of langs) {
-    if (/^zh-(tw|hant|hk|mo)/i.test(l)) return 'zh-tw';
-    if (/^zh/i.test(l)) return 'zh';
-  }
-  return 'en';
-}
-
-/** Persisted choice — 'system' (follow the OS) until the user picks one. */
+/** Persisted choice (defaults to 'system' on first visit). */
 function savedChoice(): LangChoice {
   const saved = localStorage.getItem(STORAGE_KEY);
   return saved === 'en' || saved === 'zh' || saved === 'zh-tw' || saved === 'system'
@@ -93,6 +97,5 @@ export function useI18n(): I18nContextValue {
   return ctx;
 }
 
-/** Dropdown order: Follow system first, ahead of English. */
-export const LANGUAGES = ['system', ...Object.keys(LANG_LABEL)] as LangChoice[];
-export const langLabel = (l: Lang): string => LANG_LABEL[l];
+export const LANGUAGES = ['system', 'en', 'zh', 'zh-tw'] as const satisfies LangChoice[];
+export const langLabel = (l: LangChoice): string => LANG_LABEL[l];

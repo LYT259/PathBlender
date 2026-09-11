@@ -51,7 +51,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDgzMTA2OThFQ0NDOTI2MTEKUldRUkpzbk1qbWtRZzRqZmxpQ2FEU2hQUTgyUDhnUXBzT1UxREJXd3NVUmxqdVU5bWJyVGFKSEwK",
       "endpoints": [
-        "https://github.com/GH-FRC/PathBlender/releases/latest/download/latest.json"
+        "https://github.com/GH-FRC/pathblender/releases/latest/download/latest.json"
       ]
     }
   }

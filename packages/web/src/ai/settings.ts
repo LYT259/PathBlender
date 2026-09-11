@@ -22,21 +22,29 @@ export interface AISettings {
   keys: Record<string, string>;
   /** Model list per provider (call id / display name / context size). */
   models: Record<string, ModelEntry[]>;
-  /** Update channel: stable or beta (drives the updater feed URL). */
-  updateChannel?: 'stable' | 'beta';
+  /** Wire protocol: 'openai' (chat/completions, the default) or 'anthropic'
+   *  (native /v1/messages — the official Anthropic endpoint needs it). */
+  protocol: 'openai' | 'anthropic';
+  /** Custom effort level picked from the active model's efforts[] list —
+   *  takes precedence over `effort` when set (cleared on model switch). */
+  effortCustom?: string;
+  /** Opt-in read-only web_fetch action (default off — red-line: explicit
+   *  data-flow consent before any extra network feature). */
+  webFetch?: boolean;
 }
 
 /**
  * Provider presets (CCSwitch-style): picking a provider fills the endpoint
- * and model; every entry speaks the OpenAI-compatible protocol, so the
- * choice is simply "where your API key comes from" — a GLM key on the GLM
- * preset just works, no protocol decision needed.
+ * and model. Most presets speak the OpenAI-compatible protocol; Anthropic's
+ * official endpoint only speaks its native Messages API, so that preset
+ * declares protocol 'anthropic'.
  */
 export interface ProviderPreset {
   id: string;
   label: string;
   baseUrl: string;
   model: string;
+  protocol: 'openai' | 'anthropic';
 }
 
 /** A configured model (CC Switch style): call id, display name, context. */
@@ -47,19 +55,29 @@ export interface ModelEntry {
   name?: string;
   /** Context window in k tokens (drives the composer gauge). */
   ctxK?: number;
+  /** Declares image input — attachments send as vision content (DSH-style
+   *  modality claim: the model refuses images unless this is set). */
+  vision?: boolean;
+  /** Custom reasoning-effort levels sent verbatim as reasoning_effort.
+   *  Empty/off entry = send nothing (stops only endpoints that think on
+   *  request); see thinkingOff for models that think by default. */
+  efforts?: string[];
+  /** DeepSeek-style models that think unless told not to: selecting the
+   *  first (off) effort level sends thinking:{type:'disabled'} instead. */
+  thinkingOff?: boolean;
 }
 
 export const PROVIDER_PRESETS: ProviderPreset[] = [
-  { id: 'claude', label: 'Claude（Anthropic）', baseUrl: 'https://api.anthropic.com/v1', model: 'claude-sonnet-4-5' },
+  { id: 'claude', label: 'Claude（Anthropic）', baseUrl: 'https://api.anthropic.com/v1', model: 'claude-sonnet-4-5', protocol: 'anthropic' },
   // Official name: "OpenAI" (developers.openai.com). Codex is their coding
   // agent product, not the API provider name.
-  { id: 'openai', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+  { id: 'openai', label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini', protocol: 'openai' },
   // Official provider name: 智谱 (global brand Z.ai, open platform
   // bigmodel.cn). GLM is the model series, not the provider name.
-  { id: 'glm', label: '智谱（Z.ai）', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4.6' },
-  { id: 'deepseek', label: 'DeepSeek（深度求索）', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
-  { id: 'ollama', label: 'Ollama（本地）', baseUrl: 'http://localhost:11434/v1', model: 'qwen3:8b' },
-  { id: 'custom', label: '自定义 Custom', baseUrl: '', model: '' },
+  { id: 'glm', label: '智谱（Z.ai）', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4.6', protocol: 'openai' },
+  { id: 'deepseek', label: 'DeepSeek（深度求索）', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat', protocol: 'openai' },
+  { id: 'ollama', label: 'Ollama（本地）', baseUrl: 'http://localhost:11434/v1', model: 'qwen3:8b', protocol: 'openai' },
+  { id: 'custom', label: '自定义 Custom', baseUrl: '', model: '', protocol: 'openai' },
 ];
 
 export const DEFAULT_PROVIDER = 'glm';
@@ -85,6 +103,7 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   apiKey: '',
   keys: {},
   models: seedModels(),
+  protocol: 'openai',
 };
 
 const STORAGE_KEY = 'ghpb.ai';
@@ -111,6 +130,13 @@ export function loadAISettings(): AISettings {
     const permission = v.permission === 'full' ? 'full' : 'standard';
     const effort =
       v.effort === 'low' || v.effort === 'medium' || v.effort === 'high' ? v.effort : 'auto';
+    const provider = typeof v.provider === 'string' ? v.provider : DEFAULT_PROVIDER;
+    // Pre-protocol archives: the official Anthropic preset has always needed
+    // its native Messages API — read that back for the claude provider.
+    const protocol: AISettings['protocol'] =
+      v.protocol === 'anthropic' || (v.protocol == null && provider === 'claude')
+        ? 'anthropic'
+        : 'openai';
     const models =
       v.models && typeof v.models === 'object' && !Array.isArray(v.models)
         ? Object.fromEntries(
@@ -132,6 +158,9 @@ export function loadAISettings(): AISettings {
       enabled: Boolean(v.enabled),
       permission,
       effort,
+      protocol,
+      effortCustom: typeof v.effortCustom === 'string' ? v.effortCustom : undefined,
+      webFetch: v.webFetch === true,
       provider: typeof v.provider === 'string' ? v.provider : DEFAULT_PROVIDER,
       baseUrl: typeof v.baseUrl === 'string' ? v.baseUrl : '',
       model: typeof v.model === 'string' ? v.model : '',

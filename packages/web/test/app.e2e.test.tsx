@@ -138,7 +138,9 @@ describe('App import → fusion → collision flow', () => {
     expect(document.querySelector('.ai-panel')).not.toBeNull();
     expect(document.querySelector('.ai-hero')).not.toBeNull();
     expect(document.querySelector('.ai-settings')).toBeNull();
-    fireEvent.click(document.querySelector('.ai-icon-btn')!);
+    // Gear is the last of the three top-bar icons (history, new chat, gear).
+    const topBtns = document.querySelectorAll('.ai-top .ai-icon-btn');
+    fireEvent.click(topBtns[topBtns.length - 1]!);
     // Preferences modal shows the AI section (single settings entry).
     expect(document.querySelector('.prefs-modal')).not.toBeNull();
     expect(document.querySelector('.prefs-ai')).not.toBeNull();
