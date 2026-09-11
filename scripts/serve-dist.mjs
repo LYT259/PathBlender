@@ -12,6 +12,8 @@ const MIME = {
   '.glb': 'model/gltf-binary', '.wasm': 'application/wasm', '.ico': 'image/x-icon',
   '.webmanifest': 'application/manifest+json', '.txt': 'text/plain',
 };
+const PORT = Number(process.argv[2] ?? 4173);
+
 createServer(async (req, res) => {
   try {
     let p = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
@@ -24,5 +26,4 @@ createServer(async (req, res) => {
   } catch {
     res.writeHead(404).end('not found');
   }
-const PORT = Number(process.argv[2] ?? 4173);
 }).listen(PORT, '127.0.0.1', () => console.log(`static up on ${PORT}`));
