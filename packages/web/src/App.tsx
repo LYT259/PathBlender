@@ -67,7 +67,7 @@ import { EditorPage } from './components/EditorPage';
 import { UpdateChannelProvider, useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
 import { listenPrefs } from './pref-sync';
-import { VIEWER_ONLY } from './viewer';
+import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from './viewer';
 import type { ActionContext } from './ai/actions';
 import { loadAISettings, saveAISettings, type AISettings } from './ai/settings';
 
@@ -130,6 +130,7 @@ function AppBody() {
   // Language is staged: picking one reveals Cancel/Save instead of applying
   // instantly (other preferences keep their immediate-apply behavior).
   const [pendingLang, setPendingLang] = useState<LangChoice | null>(null);
+  const [pendingTheme, setPendingTheme] = useState<ThemeMode | null>(null);
   const closePrefs = useCallback(() => {
     setShowPrefs(false);
     setPendingLang(null);
@@ -635,11 +636,29 @@ function AppBody() {
                 <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
               </svg>
             </a>
+            {VIEWER_ONLY && !SITE_PREVIEW && (
+              <a
+                className="tool-btn gh-link beta-link"
+                href={SITE_URLS.preview}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={tr('site.tryPreview')}
+                title={tr('site.tryPreview')}
+              >
+                <span className="beta-glyph" aria-hidden="true">β</span>
+              </a>
+            )}
             <span className="toolbar-spacer" />
             <ToolBtn label={tr('rail.clear')} aria={tr('actions.clear')} danger onClick={clearAll} disabled={robots.length === 0} />
           </>
         )}
       </header>
+      {VIEWER_ONLY && SITE_PREVIEW && (
+        <div className="site-preview-banner" role="contentinfo">
+          <span>{tr('site.previewNote')}</span>
+          <a href={SITE_URLS.stable}>{tr('site.backStable')}</a>
+        </div>
+      )}
       <div className="app-col">
 
 
@@ -846,9 +865,25 @@ function AppBody() {
                 ))}
               </select>
             </label>
+            {VIEWER_ONLY && (
+              <label className="prefs-row">
+                <span>{tr('site.version')}</span>
+                <a
+                  className="prefs-link"
+                  href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {SITE_PREVIEW ? tr('site.backStable') : tr('site.tryPreview')} ↗
+                </a>
+              </label>
+            )}
             <label className="prefs-row">
               <span>{tr('prefs.theme')}</span>
-              <select value={themeMode} onChange={(e) => setThemeMode(e.target.value as ThemeMode)}>
+              <select
+                value={pendingTheme ?? themeMode}
+                onChange={(e) => setPendingTheme(e.target.value as ThemeMode)}
+              >
                 <option value="system">{tr('theme.system')}</option>
                 <option value="dark">{tr('theme.dark')}</option>
                 <option value="light">{tr('theme.light')}</option>
@@ -880,26 +915,28 @@ function AppBody() {
               </div>
             )}
             <div className="prefs-row btns">
-              {pendingLang != null && pendingLang !== langChoice ? (
-                <>
-                  <button className="btn small" onClick={() => setPendingLang(null)}>
-                    {tr('prefs.cancel')}
-                  </button>
-                  <button
-                    className="btn small accent"
-                    onClick={() => {
-                      setLang(pendingLang);
-                      closePrefs();
-                    }}
-                  >
-                    {tr('prefs.save')}
-                  </button>
-                </>
-              ) : (
-                <button className="btn small" onClick={closePrefs}>
-                  {tr('prefs.done')}
-                </button>
-              )}
+              <button
+                className="btn small"
+                disabled={pendingLang == null && pendingTheme == null}
+                onClick={() => {
+                  setPendingLang(null);
+                  setPendingTheme(null);
+                }}
+              >
+                {tr('prefs.cancel')}
+              </button>
+              <button
+                className="btn small accent"
+                onClick={() => {
+                  if (pendingLang != null) setLang(pendingLang);
+                  if (pendingTheme != null) setThemeMode(pendingTheme);
+                  setPendingLang(null);
+                  setPendingTheme(null);
+                  closePrefs();
+                }}
+              >
+                {tr('prefs.save')}
+              </button>
             </div>
           </div>
         </div>

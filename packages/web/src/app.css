@@ -628,6 +628,21 @@ body.desktop .editor-bar { padding-left: 84px; }
 .ai-history-meta { font-size: 10.5px; color: var(--fg-dim); }
 .ai-carry-note { font-size: 11px; color: var(--accent); max-width: 260px; }
 
+/* ---------- site flavor: β badge (stable site) + preview banner ---------- */
+.beta-link .beta-glyph {
+  font-size: 14px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif;
+  line-height: 1; display: inline-block; transform: translateY(0.5px);
+}
+.site-preview-banner {
+  flex: none; display: flex; align-items: center; justify-content: center; gap: 14px;
+  min-height: 28px; padding: 0 12px; font-size: 12px;
+  background: var(--accent-dim); color: var(--fg);
+  border-bottom: 1px solid var(--border);
+}
+.site-preview-banner a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.site-preview-banner a:hover { text-decoration: underline; }
+.prefs-link { color: var(--accent); font-size: 12.5px; }
+
 /* ---------- AI model chip (read-only, opens Preferences) ---------- */
 .ai-model-chip {
   border: none; background: transparent; cursor: pointer;

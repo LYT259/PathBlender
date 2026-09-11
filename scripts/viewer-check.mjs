@@ -80,7 +80,7 @@ check(
   langOpts.length === 4 && /Follow system/i.test(langOpts[0] ?? ''),
   JSON.stringify(langOpts),
 );
-await page.locator('.prefs-modal .prefs-row.btns .btn.small').last().click(); // Done
+await page.locator('.prefs-modal .btn.small.accent').click(); // Save
 
 // --- first visit follows the OS language ---
 const zhCtx = await browser.newContext({ locale: 'zh-CN' });
@@ -91,6 +91,18 @@ const zhH2 = await zhPage.locator('.robot-list h2').first().textContent();
 check('first visit follows OS language (zh-CN)', /机器人/.test(zhH2 ?? ''), zhH2 ?? '');
 await zhCtx.close();
 
+// Site flavor: the build under test shows exactly one cross-site entry.
+const betaBadge = await page.locator('.beta-link').count();
+const previewBanner = await page.locator('.site-preview-banner').count();
+if (process.env.SITE_FLAVOR === 'preview') {
+  check('preview banner present with stable link',
+    previewBanner === 1 && betaBadge === 0 &&
+      (await page.locator('.site-preview-banner a').getAttribute('href')) === 'https://pathblender.pages.dev');
+} else {
+  check('stable site offers the β badge to preview',
+    betaBadge === 1 && previewBanner === 0 &&
+      (await page.locator('.beta-link').getAttribute('href')) === 'https://pathblender-preview.pages.dev');
+}
 check('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 await browser.close();
 const failed = results.filter((r) => !r.ok);

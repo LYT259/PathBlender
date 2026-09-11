@@ -102,10 +102,10 @@ const firstOption = await langSelect.locator('option').first().textContent();
 check('follow-system sits first in the language list', /Follow system|跟随系统|跟隨系統/i.test(firstOption ?? ''), firstOption ?? '');
 await langSelect.selectOption('zh');
 await page.waitForTimeout(150);
-check('save/cancel appear after choosing a language', (await saveBtn.count()) === 1 && (await cancelBtn.count()) === 1);
+check('save/cancel are always present in the footer', (await saveBtn.count()) === 1 && (await cancelBtn.count()) === 1);
 await cancelBtn.click();
 await page.waitForTimeout(150);
-check('cancel reverts the pending language', (await saveBtn.count()) === 0 && (await langSelect.inputValue()) !== 'zh');
+check('cancel reverts the pending language', (await langSelect.inputValue()) !== 'zh');
 await langSelect.selectOption('zh');
 await saveBtn.click();
 await page.waitForTimeout(300);
@@ -129,14 +129,21 @@ const prefsSelects = page.locator('.prefs-modal select');
 await page.locator('.tool-btn[aria-label="Preferences"], .tool-btn[aria-label="偏好设置"]').first().click();
 await page.waitForTimeout(200);
 const themeSel = prefsSelects.nth(1);
+// Headless defaults to system-light, so stage dark first: the DOM must stay
+// light until Save proves the staged semantics.
+await themeSel.selectOption('dark');
+await page.waitForTimeout(150);
+check('theme staged before Save', (await page.evaluate(() => document.documentElement.dataset.theme)) === 'light');
 await themeSel.selectOption('light');
+await saveBtn.click();
 await page.waitForTimeout(300);
 const htmlTheme = await page.evaluate(() => document.documentElement.dataset.theme);
-check('theme switches to light', htmlTheme === 'light', `data-theme=${htmlTheme}`);
+check('theme switches to light on Save', htmlTheme === 'light', `data-theme=${htmlTheme}`);
 await page.screenshot({ path: `${SHOTS}/15-theme-light.png` });
-await themeSel.selectOption('dark');
+await openPrefs();
+await page.locator('.prefs-modal select').nth(1).selectOption('dark');
+await saveBtn.click();
 await page.waitForTimeout(300);
-await page.getByRole('button', { name: 'Done' }).click(); // Done
 
 // --- share link: dialog with the compressed session, then restore ---
 await page.locator('.tool-btn[aria-label="Share link"]').click();
@@ -148,7 +155,7 @@ check(
   shareText.includes('#s=') && hash.startsWith('#s='),
   shareText.slice(0, 40) + '…',
 );
-await page.getByRole('button', { name: 'Done' }).click(); // close dialog
+await page.getByRole('button', { name: 'Done' }).click(); // close share dialog (not the prefs Save)
 
 const ctx2 = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const page2 = await ctx2.newPage();
@@ -440,7 +447,7 @@ check(
   (await page.locator('.prefs-modal select option[value="anthropic"]').count()) >= 1 &&
     (await page.locator('.prefs-modal .ai-models-actions button', { hasText: 'Fetch' }).count()) === 1,
 );
-await page.getByRole('button', { name: 'Done' }).click();
+await page.locator('.prefs-modal .btn.small.accent').click();
 await page.waitForTimeout(150);
 
 // History drawer + vision attach entry.
@@ -489,15 +496,18 @@ check('3D sky is dark before theme switch', near(skyDark, [28, 28, 30]), JSON.st
 await page.locator('.tool-btn[aria-label="Preferences"], .tool-btn[aria-label="偏好设置"]').first().click();
 await page.waitForSelector('.prefs-modal');
 await page.locator('.prefs-modal select').nth(1).selectOption('light');
+await page.locator('.prefs-modal .btn.small.accent').click(); // Save applies the staged theme
 await page.waitForTimeout(700);
 const skyLight = await sample3dSky();
 check('3D retints to light on hot-switch', near(skyLight, [255, 255, 255]), JSON.stringify(skyLight));
 await page.screenshot({ path: `${SHOTS}/14b-3d-light.png` });
+await page.locator('.tool-btn[aria-label="Preferences"], .tool-btn[aria-label="偏好设置"]').first().click();
+await page.waitForSelector('.prefs-modal');
 await page.locator('.prefs-modal select').nth(1).selectOption('dark');
+await page.locator('.prefs-modal .btn.small.accent').click();
 await page.waitForTimeout(700);
 const skyDark2 = await sample3dSky();
 check('3D retints back to dark', near(skyDark2, [28, 28, 30]), JSON.stringify(skyDark2));
-await page.getByRole('button', { name: 'Done' }).click();
 check(
   'viewcube present with home button',
   (await page.locator('.viewcube canvas').count()) === 1 &&
