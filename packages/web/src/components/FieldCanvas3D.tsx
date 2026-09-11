@@ -12,6 +12,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import { fieldImageWorldRect, samplePoseAt } from '@pathblender/core';
 import { useI18n } from '../i18n';
+import { useTheme } from '../theme';
+import { aprilTagTexture } from '../april-tag-texture';
 
 export interface FieldCanvas3DHandle {
   resetCam: () => void;
@@ -41,9 +43,15 @@ interface Scene3D {
   modelRoot: THREE.Group;
   /** Hand-built slab/walls/beacons — visible only without a model. */
   fallback: THREE.Group;
+  /** Theme-token colors with live refs, retinted when the theme flips. */
+  themed: { color: THREE.Color; token: string }[];
+  /** ViewCube face textures bake tokens; regenerate on theme change. */
+  retintCube: () => void;
 }
 
-const CAM_HOME: [number, number, number] = [0, 8.5, 11.5];
+// AS-style overview: higher and further back than the early low angle,
+// which read as a tilted slab (strong perspective) rather than a field.
+const CAM_HOME: [number, number, number] = [0, 13.5, 10.5];
 
 /** Official 3D field models (AdvantageScopeAssets, BSD-3) per season and
  *  construction variant; 2018-2020 have none and keep the fallback. */
@@ -55,12 +63,49 @@ const FIELD3D_MODELS: Record<string, { welded: string; andymark?: string }> = {
   'rebuilt-2026': { welded: '2026-rebuilt' },
 };
 const WALL_H = 0.9;
-const TAG_PURPLE = '#9c6bff';
+/** FRC official tag size (36h11 family, 6.5 in black square). */
+const TAG_SIZE_M = 0.1651;
+
+/** Field-frame quaternion [x,y,z,w] (WPILib, z-up) → three-frame quaternion
+ *  (three.y = field.z, three.z = -field.y): q_three = q_M ⊗ q_field ⊗ q_M⁻¹. */
+function fieldQuatToThree(q: [number, number, number, number]): THREE.Quaternion {
+  const qM = new THREE.Quaternion().setFromRotationMatrix(
+    new THREE.Matrix4().makeBasis(
+      new THREE.Vector3(1, 0, 0),
+      new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(0, -1, 0),
+    ),
+  );
+  const qf = new THREE.Quaternion(q[0], q[1], q[2], q[3]).normalize();
+  return qM.clone().multiply(qf).multiply(qM.clone().invert());
+}
 
 /** Read a theme token at build time. */
 function cssToken(name: string, fallback: string): string {
   return (
     getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+  );
+}
+
+/** THREE.Color silently drops the alpha of rgba() tokens (e.g. light-theme
+ *  --fg-dim is rgba(0,0,0,.5)) — composite over --canvas-bg instead so dim
+ *  lines keep their translucency. Returns a hex number. */
+function tokenColorHex(token: string, fallback: string): number {
+  const v = cssToken(token, fallback);
+  const m = /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+))?\s*\)$/i.exec(v);
+  if (!m) {
+    const h = /^#([0-9a-f]{6})$/i.exec(v);
+    if (h) return parseInt(h[1]!, 16);
+    return 0x9a9aa0;
+  }
+  const b = /^#([0-9a-f]{6})$/i.exec(cssToken('--canvas-bg', '#1c1c1e'));
+  const bh = b?.[1] ?? '1c1c1e';
+  const bg = [parseInt(bh.slice(0, 2), 16), parseInt(bh.slice(2, 4), 16), parseInt(bh.slice(4, 6), 16)];
+  const alpha = m[4];
+  const a = alpha != null ? Math.min(1, Math.max(0, parseFloat(alpha))) : 1;
+  const mix = (fg: number, i: number) => Math.round(fg * a + (bg[i] ?? 28) * (1 - a));
+  return (
+    (mix(parseFloat(m[1]!), 0) << 16) | (mix(parseFloat(m[2]!), 1) << 8) | mix(parseFloat(m[3]!), 2)
   );
 }
 
@@ -89,20 +134,49 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     // Soft shadows are the strongest depth cue for the field structures.
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    // AdvantageScope's lighting recipe: no tone mapping, no environment
+    // map, no fog — a hemisphere fill plus one shadow-casting key light.
+    // (The earlier ACES+studio-env stack overexposed the official models.)
     host.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(cssToken('--bg', '#1e1e20'));
-    scene.fog = new THREE.Fog(scene.background, 34, 70);
+    // Colors below are baked from theme tokens at build time; keep live refs
+    // so a theme flip can retint them without rebuilding the scene.
+    const themed: { color: THREE.Color; token: string }[] = [];
+    const track = <T extends { color: THREE.Color }>(owner: T, token: string): T => {
+      themed.push({ color: owner.color, token });
+      return owner;
+    };
+    let retintCube: () => void = () => {};
+    scene.background = new THREE.Color(cssToken('--canvas-bg', '#1c1c1e'));
+    themed.push({ color: scene.background as THREE.Color, token: '--canvas-bg' });
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
     camera.position.set(...CAM_HOME);
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    // Onshape-style free orbit: no horizon clamp (it blocked one side of
-    // the vertical swing); only pole epsilons avoid the gimbal dead spot.
+    // Onshape-style: the view stops the moment the pointer is released — no
+    // residual spin. (Damping also fought camera tweens; see flyTo below.)
+    controls.enableDamping = false;
+    // Turntable-style vertical clamp (Onshape semantics): the horizon is
+    // the floor of the swing — the camera never dips under the field.
     controls.minPolarAngle = 0.001;
-    controls.maxPolarAngle = Math.PI - 0.001;
+    controls.maxPolarAngle = 1.62; // ~93°: a touch below grazing, never under
+    controls.minDistance = 2;
+    controls.maxDistance = 60;
+    // Trackpad two-finger horizontal swipes arrive as wheel deltaX, which
+    // OrbitControls ignores — turn them into azimuth rotation so "dragging
+    // left/right" works without holding the button.
+    const onWheelX = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      const sph = new THREE.Spherical().setFromVector3(
+        camera.position.clone().sub(controls.target),
+      );
+      sph.theta -= e.deltaX * 0.0025;
+      camera.position.setFromSpherical(sph).add(controls.target);
+      camera.lookAt(controls.target);
+      markDirty();
+    };
+    renderer.domElement.addEventListener('wheel', onWheelX, { passive: true });
 
     // Render on demand (declared early — Scene3D.dirty exposes it).
     let needsDraw = true;
@@ -110,8 +184,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       needsDraw = true;
     };
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.6));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.1);
     sun.position.set(9, 16, 8);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -141,7 +215,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       tex.colorSpace = THREE.SRGBColorSpace;
       // A 12 cm-thick slab (image on the top face via a rotated box with
       // per-face materials) reads as a physical floor, not a picture.
-      const wood = new THREE.MeshStandardMaterial({ color: new THREE.Color(cssToken('--3d-slab', '#3a3a40')), roughness: 0.9 });
+      const wood = track(
+        new THREE.MeshStandardMaterial({ color: cssToken('--3d-slab', '#3a3a40'), roughness: 0.9 }),
+        '--3d-slab',
+      );
       const top = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95 });
       const slab = new THREE.Mesh(
         new THREE.BoxGeometry(w, 0.12, h),
@@ -155,8 +232,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         new THREE.GridHelper(
           Math.max(w, h),
           24,
-          new THREE.Color(cssToken('--fg-dim', '#9a9aa0')),
-          new THREE.Color(cssToken('--border', '#3d3d41')),
+          new THREE.Color(tokenColorHex('--fg-dim', '#9a9aa0')),
+          new THREE.Color(tokenColorHex('--border', '#3d3d41')),
         ),
       );
     }
@@ -171,18 +248,21 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         new THREE.Vector3(hw, 0.02, hh),
         new THREE.Vector3(-hw, 0.02, hh),
       ]),
-      new THREE.LineBasicMaterial({ color: new THREE.Color(cssToken('--fg-dim', '#9a9aa0')) }),
+      track(new THREE.LineBasicMaterial({ color: tokenColorHex('--fg-dim', '#9a9aa0') }), '--fg-dim'),
     );
     fallback.add(outline);
 
     // Perimeter walls — the cheapest cue that makes the plane read as a
     // place instead of a picture.
-    const wallMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(cssToken('--3d-wall', '#4a4a4f')),
-      roughness: 0.8,
-      transparent: true,
-      opacity: 0.95,
-    });
+    const wallMat = track(
+      new THREE.MeshStandardMaterial({
+        color: cssToken('--3d-wall', '#4a4a4f'),
+        roughness: 0.8,
+        transparent: true,
+        opacity: 0.95,
+      }),
+      '--3d-wall',
+    );
     const thk = 0.08;
     for (const [wx, wz, sx, sz] of [
       [0, -hh - thk / 2, field.lengthM + thk * 2, thk],
@@ -197,30 +277,53 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       fallback.add(wall);
     }
 
-    // AprilTag beacons: posts rising to each tag's official mount height,
-    // plate at the tag position (built-in 2026 layout or custom fields).
+    // AprilTag faces: real 36h11 patterns mounted at each tag's official
+    // 6-DOF pose (WPILib layout quaternions). Pose convention (per AS's
+    // AprilTagManager): the tag's local +X is the outward normal, so a
+    // +Z-facing quad needs a corrective Y-rotation first; geometry edge =
+    // black-square size × 10/8 (the texture adds the one-module quiet
+    // ring), floated 1 mm off the surface. Beacon posts stay in the
+    // fallback group for fields without an official model.
+    const TAG_NORMAL_FIX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
     for (const tag of field.aprilTags ?? []) {
-      const z = Math.max(0.3, tag.z ?? 0.55);
+      const z = Math.max(0.05, tag.z ?? 0.55);
+      const quad = new THREE.Mesh(
+        new THREE.PlaneGeometry(TAG_SIZE_M * (10 / 8), TAG_SIZE_M * (10 / 8)),
+        new THREE.MeshBasicMaterial({ map: aprilTagTexture(tag.id), side: THREE.DoubleSide, toneMapped: false }),
+      );
+      quad.name = `apriltag-${tag.id}`;
+      quad.position.set(tag.x - cx, z, -(tag.y - cy));
+      if (tag.quat) {
+        quad.quaternion.copy(fieldQuatToThree(tag.quat)).multiply(TAG_NORMAL_FIX);
+      } else if (tag.rotRad != null) {
+        quad.rotation.y = tag.rotRad;
+      }
+      quad.position.add(
+        new THREE.Vector3(0, 0, 1).applyQuaternion(quad.quaternion).multiplyScalar(0.001),
+      );
+      scene.add(quad);
       const post = new THREE.Mesh(
         new THREE.CylinderGeometry(0.025, 0.025, z, 8),
-        new THREE.MeshStandardMaterial({ color: new THREE.Color(cssToken('--3d-post', '#6a6a70')), roughness: 0.6 }),
+        track(
+          new THREE.MeshStandardMaterial({ color: cssToken('--3d-post', '#6a6a70'), roughness: 0.6 }),
+          '--3d-post',
+        ),
       );
       post.position.set(tag.x - cx, z / 2, -(tag.y - cy));
       post.castShadow = true;
-      scene.add(post);
-      const plate = new THREE.Mesh(
-        new THREE.BoxGeometry(0.17, 0.17, 0.02),
-        new THREE.MeshStandardMaterial({ color: new THREE.Color(TAG_PURPLE) }),
-      );
-      plate.position.set(tag.x - cx, z, -(tag.y - cy));
-      if (tag.rotRad != null) plate.rotation.y = tag.rotRad;
-      scene.add(plate);
+      fallback.add(post);
     }
+
+    // Season structures for fields without official 3D models (2018–2020
+    // have none in AdvantageScopeAssets): recognizable silhouettes from the
+    // public game manuals, not CAD replicas.
+    const season = seasonStructures(field.id, cx, cy);
+    if (season) fallback.add(season);
 
     const dynamic = new THREE.Group();
     scene.add(dynamic);
 
-    sceneRef.current = { renderer, scene, camera, controls, cx, cy, dynamic, boxes: [], modelRoot, fallback, dirty: markDirty };
+    sceneRef.current = { renderer, scene, camera, controls, cx, cy, dynamic, boxes: [], modelRoot, fallback, dirty: markDirty, themed, retintCube };
 
     const resize = () => {
       const wpx = host.clientWidth || 1;
@@ -259,15 +362,27 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     ro0.observe(host);
 
     // --- Onshape-style ViewCube (top-right overlay) ---
-    // A second tiny renderer mirrors the main camera's orientation; faces
-    // snap the main camera to standard views, the house returns home.
-    const flyTo = (to: THREE.Vector3) => {
-      // Instant snap (deterministic under residual drag inertia — a 320 ms
-      // tween fought OrbitControls' damping and could deadlock the loop).
-      camera.position.copy(to);
-      controls.target.set(0, 0, 0);
-      controls.update();
-      markDirty();
+    // A second renderer mirrors the main camera's orientation. Faces, edges
+    // and corners are separate pick targets; each click tweens the camera to
+    // the matching view (face → ortho, edge → two-axis, corner → trimetric).
+    // Safe to tween now that damping is off — the old damping/tween fight
+    // that deadlocked the rAF loop is gone, and user input cancels mid-flight.
+    let tween: { from: THREE.Spherical; to: THREE.Spherical; start: number } | null = null;
+    const onUserStart = () => {
+      tween = null;
+    };
+    controls.addEventListener('start', onUserStart);
+    const flyTo = (toPos: THREE.Vector3) => {
+      const from = new THREE.Spherical().setFromVector3(
+        camera.position.clone().sub(controls.target),
+      );
+      const to = new THREE.Spherical().setFromVector3(toPos.clone().sub(controls.target));
+      let d = to.theta - from.theta;
+      if (d > Math.PI) to.theta -= 2 * Math.PI;
+      else if (d < -Math.PI) to.theta += 2 * Math.PI;
+      to.phi = THREE.MathUtils.clamp(to.phi, 0.0015, 1.62);
+      from.phi = THREE.MathUtils.clamp(from.phi, 0.0015, 1.62);
+      tween = { from, to, start: performance.now() };
     };
     const viewcubeEl = document.createElement('div');
     viewcubeEl.className = 'viewcube';
@@ -282,69 +397,112 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     host.appendChild(viewcubeEl);
 
     const cubeRenderer = new THREE.WebGLRenderer({ canvas: cubeCanvas, alpha: true, antialias: true });
-    cubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    cubeRenderer.setSize(92, 92);
+    cubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 3));
+    cubeRenderer.setSize(110, 110);
     const cubeScene = new THREE.Scene();
     const cubeCam = new THREE.PerspectiveCamera(38, 1, 0.1, 20);
     cubeCam.position.set(0, 0, 3.6);
     const cubeGroup = new THREE.Group();
     cubeScene.add(cubeGroup);
-    // Material order for BoxGeometry: +x -x +y -y +z -z.
-    const faceDirs = [
-      new THREE.Vector3(1, 0, 0), new THREE.Vector3(-1, 0, 0),
-      new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0),
-      new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, -1),
-    ];
     const labels = [
       t('vc.right'), t('vc.left'), t('vc.top'), t('vc.bottom'), t('vc.front'), t('vc.back'),
     ];
-    const mats = labels.map((lab) => new THREE.MeshBasicMaterial({ map: faceTexture(lab) }));
+    // Face textures bake per-world-face shading (top lit, bottom dark) at
+    // 512px so the 110px cube stays crisp on retina displays.
+    const mats = labels.map((lab, i) => new THREE.MeshBasicMaterial({ map: faceTexture(lab, i) }));
+    // Face textures bake theme tokens at draw time; regenerate on theme flip.
+    retintCube = () => {
+      labels.forEach((lab, i) => {
+        const m = mats[i];
+        if (!m) return;
+        m.map?.dispose();
+        m.map = faceTexture(lab, i);
+        m.needsUpdate = true;
+      });
+      (cornerMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
+      (edgeMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
+    };
     const cubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.55, 1.55), mats);
     cubeGroup.add(cubeMesh);
-    const edges = new THREE.LineSegments(
-      new THREE.EdgesGeometry(cubeMesh.geometry),
-      new THREE.LineBasicMaterial({ color: new THREE.Color(cssToken('--fg-dim', '#9a9aa0')) }),
-    );
-    cubeGroup.add(edges);
+
+    // Onshape-style clean cube: no resident grips. Edge/corner intent is
+    // signaled by two dynamic markers that appear only while hovered and
+    // move to the classified feature (the resident hotspot meshes left
+    // faint artifacts on real GPUs and read as dented corners).
+    const CUBE_H = 1.55 / 2;
+    const hoverMat = () =>
+      new THREE.MeshBasicMaterial({ color: cssToken('--accent', '#0a84ff'), transparent: true, opacity: 0.95 });
+    const cornerMarker = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12), hoverMat());
+    const edgeMarker = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.5, 10), hoverMat());
+    cornerMarker.visible = false;
+    edgeMarker.visible = false;
+    cubeGroup.add(cornerMarker, edgeMarker);
+    const hideMarkers = () => {
+      cornerMarker.visible = false;
+      edgeMarker.visible = false;
+    };
 
     const ray = new THREE.Raycaster();
     const cubePtr = new THREE.Vector2();
-    const pickFace = (ev: PointerEvent): number => {
+    interface CubePick {
+      dir: THREE.Vector3 | null;
+      faceIdx: number;
+      hot: THREE.Mesh | null;
+    }
+    const pick = (ev: PointerEvent): CubePick => {
       const r = cubeCanvas.getBoundingClientRect();
       cubePtr.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
       ray.setFromCamera(cubePtr, cubeCam);
       const hit = ray.intersectObject(cubeMesh, false)[0];
-      if (!hit || hit.face == null) return -1;
-      // Local normal → material index (rounded to axis).
-      const n = hit.face.normal;
-      const axes: [number, number, number][] = [
-        [1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1],
-      ];
-      return axes.findIndex(
-        (a) => Math.abs(n.x - a[0]) < 0.5 && Math.abs(n.y - a[1]) < 0.5 && Math.abs(n.z - a[2]) < 0.5,
+      if (!hit) return { dir: null, faceIdx: -1, hot: null };
+      // Classify by how many local axes sit near their extreme: one → face,
+      // two → edge, three → corner (the world direction IS the local one —
+      // the cube only mirrors the camera).
+      const p = cubeMesh.worldToLocal(hit.point.clone());
+      const big = [Math.abs(p.x) > 0.5 * CUBE_H, Math.abs(p.y) > 0.5 * CUBE_H, Math.abs(p.z) > 0.5 * CUBE_H];
+      const dir = new THREE.Vector3(
+        big[0] ? Math.sign(p.x) : 0,
+        big[1] ? Math.sign(p.y) : 0,
+        big[2] ? Math.sign(p.z) : 0,
       );
+      const faceIdx =
+        dir.lengthSq() === 1
+          ? [dir.x, -dir.x, dir.y, -dir.y, dir.z, -dir.z].findIndex((v) => v === 1)
+          : -1;
+      return { dir: dir.lengthSq() > 0 ? dir : null, faceIdx, hot: null };
     };
-    const applyHover = (idx: number) => {
-      mats.forEach((m, i) => m.color.set(i === idx ? cssToken('--accent', '#0a84ff') : '#ffffff'));
+    const applyHover = (p: CubePick) => {
+      mats.forEach((m, i) => m.color.set(i === p.faceIdx ? cssToken('--accent', '#0a84ff') : '#ffffff'));
+      hideMarkers();
+      const nz = p.dir
+        ? [p.dir.x, p.dir.y, p.dir.z].filter((v) => Math.abs(v) > 0.4).length
+        : 0;
+      if (nz === 3 && p.dir) {
+        cornerMarker.position.copy(p.dir).multiplyScalar(CUBE_H);
+        cornerMarker.visible = true;
+      } else if (nz === 2 && p.dir) {
+        const axis = [0, 1, 2].find((i) => p.dir!.getComponent(i) === 0) ?? 0;
+        if (axis === 0) edgeMarker.rotation.set(0, 0, Math.PI / 2);
+        else if (axis === 2) edgeMarker.rotation.set(Math.PI / 2, 0, 0);
+        else edgeMarker.rotation.set(0, 0, 0);
+        edgeMarker.position.copy(p.dir).multiplyScalar(CUBE_H);
+        edgeMarker.visible = true;
+      }
       markDirty();
     };
-    let dragMoved = false;
     const onCubeDown = (ev: PointerEvent) => {
       ev.stopPropagation();
-      dragMoved = false;
-      const idx = pickFace(ev);
-      if (idx >= 0) {
-        // Face normals are glued to the WORLD axes (the cube only mirrors
-        // them into view) — fly straight along the world axis, Onshape-style.
-        const worldDir = faceDirs[idx]!.clone().normalize();
-        const dist = camera.position.distanceTo(controls.target);
-        flyTo(controls.target.clone().add(worldDir.multiplyScalar(dist)));
-      }
+      const p = pick(ev);
+      if (!p.dir) return;
+      // Test hook: the walkthrough asserts the camera reaches this target.
+      (window as unknown as { __pb3d?: { lastPick?: THREE.Vector3 } }).__pb3d!.lastPick = p.dir.clone();
+      const dist = camera.position.distanceTo(controls.target);
+      flyTo(controls.target.clone().add(p.dir.clone().multiplyScalar(dist)));
     };
     const onCubeMove = (ev: PointerEvent) => {
-      applyHover(pickFace(ev));
-      cubeCanvas.style.cursor = pickFace(ev) >= 0 ? 'pointer' : 'default';
-      dragMoved = true;
+      const p = pick(ev);
+      applyHover(p);
+      cubeCanvas.style.cursor = p.dir ? 'pointer' : 'default';
     };
     cubeCanvas.addEventListener('pointerdown', onCubeDown);
     cubeCanvas.addEventListener('pointermove', onCubeMove);
@@ -356,6 +514,23 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
 
     let raf = 0;
     const loop = () => {
+      // Ease azimuth sensitivity near the poles: OrbitControls turns a
+      // constant radian-per-pixel, which visually spins up as the view
+      // approaches straight up/down. sin(polar) → 0 at the poles.
+      controls.rotateSpeed = Math.max(0.3, Math.sin(controls.getPolarAngle()) * 1.15);
+      if (tween) {
+        const t = Math.min(1, (performance.now() - tween.start) / 300);
+        const e = 1 - Math.pow(1 - t, 3); // ease-out cubic
+        const sph = new THREE.Spherical(
+          THREE.MathUtils.lerp(tween.from.radius, tween.to.radius, e),
+          THREE.MathUtils.lerp(tween.from.phi, tween.to.phi, e),
+          THREE.MathUtils.lerp(tween.from.theta, tween.to.theta, e),
+        );
+        camera.position.setFromSpherical(sph).add(controls.target);
+        camera.lookAt(controls.target);
+        needsDraw = true;
+        if (t >= 1) tween = null;
+      }
       const moved = controls.update();
       if (needsDraw || moved) {
         needsDraw = false;
@@ -369,18 +544,20 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     raf = requestAnimationFrame(loop);
 
     // Test/debug hook: orientation + camera state assertions.
-    (window as unknown as { __pb3d?: unknown }).__pb3d = { camera, controls };
+    (window as unknown as { __pb3d?: unknown }).__pb3d = { camera, controls, renderer, scene };
 
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
       ro0.disconnect();
       controls.removeEventListener('change', markDirty);
+      controls.removeEventListener('start', onUserStart);
       cubeCanvas.removeEventListener('pointerdown', onCubeDown);
       cubeCanvas.removeEventListener('pointermove', onCubeMove);
       homeBtn.removeEventListener('click', onHome);
       cubeRenderer.dispose();
       viewcubeEl.remove();
+      renderer.domElement.removeEventListener('wheel', onWheelX);
       renderer.domElement.removeEventListener('gesturestart', onGestureStart);
       renderer.domElement.removeEventListener('gesturechange', onGestureChange);
       controls.dispose();
@@ -389,6 +566,19 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       sceneRef.current = null;
     };
   }, [field, fieldImageUrl]);
+
+  // Theme flips retint the built-once scene: background/fog, token-backed
+  // structure materials, ViewCube face textures. React to the theme context —
+  // the data-theme attribute is written by ThemeProvider's effect, so a DOM
+  // read during render would always see the previous value.
+  const themeResolved = useTheme().resolved;
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    for (const { color, token } of st.themed) color.set(tokenColorHex(token, '#1c1c1e'));
+    st.retintCube();
+    st.dirty();
+  }, [themeResolved]);
 
   // Official 3D field model (AdvantageScope assets, BSD-3): replaces the
   // hand-built fallback. Transform validated against the WPILib 2026 tag
@@ -420,7 +610,13 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
           mesh.receiveShadow = false;
           const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
           for (const m of mats) {
-            (m as THREE.MeshStandardMaterial).side = THREE.DoubleSide;
+            const std = m as THREE.MeshStandardMaterial;
+            std.side = THREE.DoubleSide;
+            // The field has no chrome: clamp PBR sliders so the official
+            // models read as carpet/wood/plastic under the studio env.
+            std.roughness = Math.max(std.roughness ?? 0.5, 0.55);
+            std.metalness = Math.min(std.metalness ?? 0, 0.05);
+            std.envMapIntensity = 0.55;
           }
         });
         const catcher = new THREE.Mesh(
@@ -529,23 +725,127 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
 });
 
 
-/** Localized label texture for one ViewCube face. */
-function faceTexture(label: string): THREE.CanvasTexture {
+/** Localized label texture for one ViewCube face (512px for retina-crisp
+ *  rendering). faceIdx: 0 +x, 1 -x, 2 top, 3 bottom, 4 +z, 5 -z — the
+ *  per-world-face brightness is baked, Onshape-style lit cube. */
+function faceTexture(label: string, faceIdx: number): THREE.CanvasTexture {
   const c = document.createElement('canvas');
-  c.width = 128;
-  c.height = 128;
+  c.width = 512;
+  c.height = 512;
   const g = c.getContext('2d')!;
-  g.fillStyle = cssToken('--bg-card', '#f7f7f9');
-  g.fillRect(0, 0, 128, 128);
-  g.strokeStyle = cssToken('--border', '#d2d2d7');
-  g.lineWidth = 6;
-  g.strokeRect(3, 3, 122, 122);
-  g.fillStyle = cssToken('--fg-dim', '#6e6e73');
-  g.font = '600 40px -apple-system, "Segoe UI", sans-serif';
+  const card = cssToken('--bg-card', '#2c2c2f');
+  const m = /^#([0-9a-f]{6})$/i.exec(card.trim());
+  const hex = m?.[1] ?? '8c8c91';
+  const base = [
+    parseInt(hex.slice(0, 2), 16),
+    parseInt(hex.slice(2, 4), 16),
+    parseInt(hex.slice(4, 6), 16),
+  ];
+  const shade = (mul: number) =>
+    `rgb(${base.map((v) => Math.round(Math.max(0, Math.min(255, v * mul)))).join(',')})`;
+  const faceMul = faceIdx === 2 ? 1.1 : faceIdx === 3 ? 0.78 : 1;
+  const grad = g.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0, shade(faceMul * 1.05));
+  grad.addColorStop(1, shade(faceMul * 0.92));
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 512, 512);
+  g.strokeStyle = cssToken('--border', '#3d3d41');
+  g.lineWidth = 14;
+  g.strokeRect(10, 10, 492, 492);
+  g.fillStyle = cssToken('--fg', '#e6e6e8');
+  g.font = '700 168px -apple-system, "Segoe UI", sans-serif';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.fillText(label, 64, 68);
+  g.fillText(label, 256, 272);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
   return tex;
+}
+
+/** Recognizable season silhouettes for the no-official-model years.
+ *  Field-frame (fx, fy) positions map to three as (fx-cx, h, -(fy-cy)).
+ *  Colors: neutral gray structure with red/blue alliance accents. */
+function seasonStructures(fieldId: string, cx: number, cy: number): THREE.Group | null {
+  const g = new THREE.Group();
+  const P = (fx: number, fy: number, h: number) => new THREE.Vector3(fx - cx, h, -(fy - cy));
+  const RED = 0xb03030;
+  const BLUE = 0x3050b0;
+  const WOOD = 0x9a8a70;
+  const GRAY = 0x8a8a90;
+  const box = (w: number, h: number, d: number, pos: THREE.Vector3, color: number) => {
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(w, h, d),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.7 }),
+    );
+    m.position.copy(pos);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    g.add(m);
+    return m;
+  };
+  const cyl = (r: number, h: number, pos: THREE.Vector3, color: number) => {
+    const m = new THREE.Mesh(
+      new THREE.CylinderGeometry(r, r, h, 16),
+      new THREE.MeshStandardMaterial({ color, roughness: 0.7 }),
+    );
+    m.position.copy(pos);
+    m.castShadow = true;
+    g.add(m);
+    return m;
+  };
+
+  if (fieldId === 'powerup-2018') {
+    // Scales (tall balanced platforms, one per alliance) + switches (low).
+    for (const [fx, color] of [[2.8, BLUE], [13.7, RED]] as const) {
+      cyl(0.12, 1.75, P(fx, 4.11, 0.875), GRAY);
+      box(0.3, 0.3, 3.2, P(fx, 4.11, 1.75), color);
+      box(1.4, 0.1, 0.9, P(fx, 4.11, 1.9), color);
+    }
+    for (const [fx, color] of [[5.9, BLUE], [10.6, RED]] as const) {
+      box(1.5, 0.35, 3.0, P(fx, 4.11, 0.175), color);
+      box(0.25, 0.55, 3.0, P(fx, 4.11, 0.55), WOOD);
+    }
+    // Power cube piles flanking the scale zone.
+    for (const fy of [1.6, 6.6]) {
+      for (let i = 0; i < 3; i++) box(0.32, 0.32, 0.32, P(4.4 + i * 0.36, fy, 0.16), 0xd8c040);
+    }
+    return g;
+  }
+  if (fieldId === 'deepspace-2019') {
+    // Cargo ships along both long sides.
+    for (const fy of [1.15, 7.05]) {
+      box(5.4, 1.3, 1.25, P(8.23, fy, 0.65), WOOD);
+      box(5.4, 0.55, 1.35, P(8.23, fy, 1.55), GRAY);
+    }
+    // Rockets (angled towers) near each short end.
+    for (const [fx, color] of [[2.3, BLUE], [14.1, RED]] as const) {
+      for (const fy of [2.2, 6.0]) {
+        box(1.4, 0.15, 1.4, P(fx, fy, 0.35), color);
+        const tower = box(1.1, 2.6, 0.18, P(fx + 0.25, fy, 1.65), color);
+        tower.rotation.z = -0.28;
+      }
+    }
+    // HAB climb platforms against the short walls.
+    for (const [fx, color] of [[0.75, BLUE], [15.7, RED]] as const) {
+      box(1.2, 0.18, 5.0, P(fx, 4.11, 0.09), color);
+      const ramp = box(1.4, 0.16, 2.6, P(fx + 1.1, 4.11, 0.22), color);
+      ramp.rotation.z = 0.17;
+    }
+    return g;
+  }
+  if (fieldId === 'infinitercharge-2020') {
+    // Control panel at center.
+    cyl(0.14, 0.5, P(8.23, 4.11, 0.25), GRAY);
+    cyl(0.5, 0.08, P(8.23, 4.11, 0.54), 0xd04040);
+    // Trench barriers along both long sides.
+    for (const fy of [1.55, 6.65]) box(6.5, 0.65, 0.16, P(8.23, fy, 0.325), GRAY);
+    // Sector targets (hex-ish towers) against each short wall + climb bars.
+    for (const [fx, color] of [[0.6, BLUE], [15.85, RED]] as const) {
+      box(0.5, 2.2, 3.4, P(fx, 4.11, 1.1), color);
+      cyl(0.06, 3.6, P(fx + 1.3, 4.11, 2.3), GRAY).rotation.z = Math.PI / 2;
+    }
+    return g;
+  }
+  return null;
 }

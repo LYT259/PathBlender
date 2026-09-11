@@ -26,3 +26,10 @@ packages/desktop/src-tauri/target/
 
 # local-only pre-push gate patterns
 .pre-push-patterns
+
+# 私有文件（2026-09-07 用户指令：研究报告/工程日志不上 GitHub）
+PathBlender_可行性研究报告.md
+engineering-log/
+
+# 网站内部规格（2026-09-10 用户指令：与报告同等地位，不入库）
+PathBlender_网站规格.md

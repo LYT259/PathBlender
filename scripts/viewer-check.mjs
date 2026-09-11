@@ -23,7 +23,7 @@ page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 
 await page.goto(BASE, { waitUntil: 'domcontentloaded' });
 await page.waitForSelector('.field-canvas-3d canvas');
-await page.locator('.canvas-bar .btn', { hasText: '3D' }).click(); // to 2D for import flow
+await page.locator('.view-toggle button', { hasText: '2D' }).click(); // to 2D for import flow
 await page.waitForSelector('.field-canvas');
 
 // --- toolbar: import/share/prefs stay; save & PNG are gone ---
