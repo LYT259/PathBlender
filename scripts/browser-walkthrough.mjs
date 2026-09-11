@@ -595,7 +595,8 @@ check(
   JSON.stringify(edgeDir),
 );
 
-// Onshape-style: the view stops the instant the pointer is released.
+// Damped drag (user-restored feel): the view glides after release, then
+// settles — assert it STOPS (no endless drift / rAF death).
 {
   const main = await page.locator('.field-canvas-3d canvas').first().boundingBox();
   await page.locator('.vc-home').click();
@@ -604,19 +605,37 @@ check(
   await page.mouse.down();
   await page.mouse.move(main.x + main.width / 2 + 160, main.y + main.height / 2 + 60, { steps: 10 });
   await page.mouse.up();
-  const rel = await page.evaluate(() => ({
-    az: window.__pb3d.controls.getAzimuthalAngle(),
-    pol: window.__pb3d.controls.getPolarAngle(),
-  }));
-  await page.waitForTimeout(700);
-  const late = await page.evaluate(() => ({
-    az: window.__pb3d.controls.getAzimuthalAngle(),
-    pol: window.__pb3d.controls.getPolarAngle(),
-  }));
+  await page.waitForTimeout(2600);
+  const glide = await page.evaluate(() => window.__pb3d.controls.getAzimuthalAngle());
+  await page.waitForTimeout(600);
+  const settled = await page.evaluate(() => window.__pb3d.controls.getAzimuthalAngle());
   check(
-    'orbit stops on release (no inertia)',
-    Math.abs(late.az - rel.az) < 0.002 && Math.abs(late.pol - rel.pol) < 0.002,
-    `az ${rel.az.toFixed(3)}→${late.az.toFixed(3)} pol ${rel.pol.toFixed(3)}→${late.pol.toFixed(3)}`,
+    'damped orbit settles after release',
+    Math.abs(settled - glide) < 0.005,
+    `az ${glide.toFixed(3)}→${settled.toFixed(3)}`,
+  );
+}
+
+// AprilTag pose sanity (2026 welded): the quad's outward normal must point
+// into the field — tag 1 sits on the far wall (yaw π) → three −X; tag 2 on
+// the reef face (yaw +π/2) → three −Z.
+{
+  const normals = await page.evaluate(() => {
+    const out = {};
+    for (const id of [1, 2]) {
+      const tag = window.__pb3d.scene.getObjectByName(`apriltag-${id}`);
+      if (!tag) continue;
+      const Vector3 = Object.getPrototypeOf(tag.position).constructor;
+      const dir = new Vector3(0, 0, 1).applyQuaternion(tag.quaternion);
+      out[id] = [dir.x, dir.y, dir.z];
+    }
+    return out;
+  });
+  const nearV = (v, t) => v && Math.abs(v[0] - t[0]) < 0.06 && Math.abs(v[1] - t[1]) < 0.06 && Math.abs(v[2] - t[2]) < 0.06;
+  check(
+    'april tag normals point into the field (2026: tag1 −X, tag2 −Z)',
+    nearV(normals[1], [-1, 0, 0]) && nearV(normals[2], [0, 0, -1]),
+    JSON.stringify(normals),
   );
 }
 

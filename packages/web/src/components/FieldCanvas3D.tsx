@@ -71,9 +71,13 @@ const TAG_SIZE_M = 0.1651;
 function fieldQuatToThree(q: [number, number, number, number]): THREE.Quaternion {
   const qM = new THREE.Quaternion().setFromRotationMatrix(
     new THREE.Matrix4().makeBasis(
+      // Columns are the images of the field axes in three space:
+      // field.x ↦ +X, field.y ↦ −Z, field.z ↦ +Y (matches the position
+      // mapping (x−cx, z, −(y−cy)); the old basis had both Y/Z columns
+      // flipped, which rotated every tag pose the wrong way).
       new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3(0, 0, 1),
-      new THREE.Vector3(0, -1, 0),
+      new THREE.Vector3(0, 0, -1),
+      new THREE.Vector3(0, 1, 0),
     ),
   );
   const qf = new THREE.Quaternion(q[0], q[1], q[2], q[3]).normalize();
@@ -154,9 +158,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
     camera.position.set(...CAM_HOME);
     const controls = new OrbitControls(camera, renderer.domElement);
-    // Onshape-style: the view stops the moment the pointer is released — no
-    // residual spin. (Damping also fought camera tweens; see flyTo below.)
-    controls.enableDamping = false;
+    // Damped drag (the flat-field-era feel the user asked back): releasing
+    // the pointer lets the view glide to a stop. The tween path cancels on
+    // user input, and the rAF loop runs unconditionally, so the old
+    // damping/tween deadlock does not apply.
+    controls.enableDamping = true; // default dampingFactor (0.05): the original glide
     // Turntable-style vertical clamp (Onshape semantics): the horizon is
     // the floor of the swing — the camera never dips under the field.
     controls.minPolarAngle = 0.001;
@@ -319,6 +325,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // public game manuals, not CAD replicas.
     const season = seasonStructures(field.id, cx, cy);
     if (season) fallback.add(season);
+    // No flash of the flat fallback while an official model loads: seasons
+    // that have one keep the fallback hidden until (and unless) loading
+    // fails; model-less seasons show it right away.
+    if (FIELD3D_MODELS[field.id]) fallback.visible = false;
 
     const dynamic = new THREE.Group();
     scene.add(dynamic);
@@ -514,10 +524,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
 
     let raf = 0;
     const loop = () => {
-      // Ease azimuth sensitivity near the poles: OrbitControls turns a
-      // constant radian-per-pixel, which visually spins up as the view
-      // approaches straight up/down. sin(polar) → 0 at the poles.
-      controls.rotateSpeed = Math.max(0.3, Math.sin(controls.getPolarAngle()) * 1.15);
       if (tween) {
         const t = Math.min(1, (performance.now() - tween.start) / 300);
         const e = 1 - Math.pow(1 - t, 3); // ease-out cubic
@@ -631,7 +637,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         st.dirty();
       },
       undefined,
-      () => undefined, // offline/missing model: fallback keeps rendering
+      () => {
+        if (disposed) return;
+        // offline/missing model: the flat fallback takes over
+        st.fallback.visible = true;
+        st.dirty();
+      },
     );
     return () => {
       disposed = true;
@@ -642,7 +653,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         for (const m of mats) m?.dispose?.();
       });
       st.modelRoot.clear();
-      st.fallback.visible = true;
+      // Visibility stays false for official-model seasons across the swap
+      // (restating it true here flashes the flat field for one frame).
     };
   }, [field.id, variant]);
 
