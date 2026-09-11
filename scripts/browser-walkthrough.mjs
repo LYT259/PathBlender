@@ -200,7 +200,7 @@ await page.locator('input[type="file"][multiple]').first().setInputFiles([
 await page.waitForSelector('.robot-card', { timeout: 10000 });
 // The reload also reset the view to the 3D default — the rest of the flow
 // assumes 2D (as after the initial toggle at the top).
-await page.locator('.canvas-bar .btn', { hasText: '3D' }).click();
+await page.locator('.view-toggle button', { hasText: '2D' }).click();
 await page.waitForSelector('.field-canvas');
 await page.screenshot({ path: `${SHOTS}/09-reefscape.png` });
 check('season switch', true);
