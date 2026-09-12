@@ -163,12 +163,71 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // user input, and the rAF loop runs unconditionally, so the old
     // damping/tween deadlock does not apply.
     controls.enableDamping = true; // default dampingFactor (0.05): the original glide
-    // Turntable-style vertical clamp (Onshape semantics): the horizon is
-    // the floor of the swing — the camera never dips under the field.
-    controls.minPolarAngle = 0.001;
-    controls.maxPolarAngle = 1.62; // ~93°: a touch below grazing, never under
+    // Turntable-style vertical clamp: both sides of the field stay
+    // reachable. 0.15 keeps a top-down view (never gimbal-dead at the
+    // exact pole); 2.60 leans well past the far wall from the home side —
+    // the "other side's" low grazing angle users asked for (the old 1.62
+    // clamp blocked it; that read as one-sided dragging). The camera can
+    // dip below the slab plane at these angles without cutting into the
+    // model because the slab is thin and the near wall occludes.
+    controls.minPolarAngle = 0.15;
+    controls.maxPolarAngle = 2.6;
     controls.minDistance = 2;
     controls.maxDistance = 60;
+    // Custom drag-orbit (replaces OrbitControls' built-in rotate): the
+    // user's mental model is "drag the camera" — dragging DOWN presses the
+    // view toward the far side (phi grows), dragging up raises it. The
+    // library's built-in direction is the opposite and its damping fights
+    // the clamp, so rotate is disabled there and owned here, sharing the
+    // spherical math with the wheel-deltaX handler below.
+    controls.enableRotate = false;
+    const drag = { active: false, x: 0, y: 0, vTheta: 0, vPhi: 0, lastT: 0 };
+    const applyOrbit = (dTheta: number, dPhi: number) => {
+      const sph = new THREE.Spherical().setFromVector3(
+        camera.position.clone().sub(controls.target),
+      );
+      sph.theta -= dTheta;
+      sph.phi = THREE.MathUtils.clamp(sph.phi + dPhi, 0.15, 2.6);
+      camera.position.setFromSpherical(sph).add(controls.target);
+      camera.lookAt(controls.target);
+      markDirty();
+    };
+    const onDragDown = (e: PointerEvent) => {
+      if (e.button !== 0 || e.shiftKey) return; // Shift+left = pan (controls)
+      drag.active = true;
+      drag.x = e.clientX;
+      drag.y = e.clientY;
+      drag.vTheta = 0;
+      drag.vPhi = 0;
+      drag.lastT = performance.now();
+      tween = null;
+      renderer.domElement.setPointerCapture(e.pointerId);
+    };
+    const onDragMove = (e: PointerEvent) => {
+      if (!drag.active) return;
+      const ROT = 0.0052; // rad per px — the flat-field-era sensitivity
+      const dTheta = (e.clientX - drag.x) * ROT;
+      const dPhi = (e.clientY - drag.y) * ROT; // drag down → phi grows → press low
+      drag.x = e.clientX;
+      drag.y = e.clientY;
+      const now = performance.now();
+      const dt = Math.max(1, now - drag.lastT);
+      drag.lastT = now;
+      applyOrbit(dTheta, dPhi);
+      // velocity for the release glide (rad/ms)
+      drag.vTheta = drag.vTheta * 0.7 + (dTheta / dt) * 0.3;
+      drag.vPhi = drag.vPhi * 0.7 + (dPhi / dt) * 0.3;
+    };
+    const onDragUp = (e: PointerEvent) => {
+      if (!drag.active) return;
+      drag.active = false;
+      renderer.domElement.releasePointerCapture(e.pointerId);
+    };
+    renderer.domElement.addEventListener('pointerdown', onDragDown);
+    renderer.domElement.addEventListener('pointermove', onDragMove);
+    renderer.domElement.addEventListener('pointerup', onDragUp);
+    renderer.domElement.addEventListener('pointercancel', onDragUp);
+
     // Trackpad two-finger horizontal swipes arrive as wheel deltaX, which
     // OrbitControls ignores — turn them into azimuth rotation so "dragging
     // left/right" works without holding the button.
@@ -298,7 +357,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         new THREE.MeshBasicMaterial({ map: aprilTagTexture(tag.id), side: THREE.DoubleSide, toneMapped: false }),
       );
       quad.name = `apriltag-${tag.id}`;
-      quad.position.set(tag.x - cx, z, -(tag.y - cy));
+      // Blue alliance sits at −X in the render frame (matches the asset
+      // config: tag 1 = [−3.607, −3.39, 0.889]), so X is negated.
+      quad.position.set(-(tag.x - cx), z, -(tag.y - cy));
       if (tag.quat) {
         quad.quaternion.copy(fieldQuatToThree(tag.quat)).multiply(TAG_NORMAL_FIX);
       } else if (tag.rotRad != null) {
@@ -315,7 +376,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
           '--3d-post',
         ),
       );
-      post.position.set(tag.x - cx, z / 2, -(tag.y - cy));
+      post.position.set(-(tag.x - cx), z / 2, -(tag.y - cy));
       post.castShadow = true;
       fallback.add(post);
     }
@@ -390,8 +451,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       let d = to.theta - from.theta;
       if (d > Math.PI) to.theta -= 2 * Math.PI;
       else if (d < -Math.PI) to.theta += 2 * Math.PI;
-      to.phi = THREE.MathUtils.clamp(to.phi, 0.0015, 1.62);
-      from.phi = THREE.MathUtils.clamp(from.phi, 0.0015, 1.62);
+      to.phi = THREE.MathUtils.clamp(to.phi, 0.15, 2.6);
+      from.phi = THREE.MathUtils.clamp(from.phi, 0.15, 2.6);
       tween = { from, to, start: performance.now() };
     };
     const viewcubeEl = document.createElement('div');
@@ -563,6 +624,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       homeBtn.removeEventListener('click', onHome);
       cubeRenderer.dispose();
       viewcubeEl.remove();
+      renderer.domElement.removeEventListener('pointerdown', onDragDown);
+      renderer.domElement.removeEventListener('pointermove', onDragMove);
+      renderer.domElement.removeEventListener('pointerup', onDragUp);
+      renderer.domElement.removeEventListener('pointercancel', onDragUp);
       renderer.domElement.removeEventListener('wheel', onWheelX);
       renderer.domElement.removeEventListener('gesturestart', onGestureStart);
       renderer.domElement.removeEventListener('gesturechange', onGestureChange);
@@ -604,8 +669,14 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       (gltf) => {
         if (disposed) return;
         const g = gltf.scene;
-        g.rotation.x = Math.PI / 2;
-        g.scale.x = -1;
+        // The GLB is natively X = length (±11.3, incl. staged fuel piles),
+        // Y = up (−0.13..3.06), Z = width but NOT centered (−4.12..6.44 —
+        // the +Z side carries the staged fuel piles). No rotation; just
+        // recenter so the playing surface sits at origin on the floor.
+        // (The earlier rotX(90°) + mirror stood the field on its side —
+        // that mismatch vs. the correctly-placed tags was the "all tags
+        // wrong" report.)
+        g.position.set(0, 0.13, -1.16);
         g.traverse((o) => {
           const mesh = o as THREE.Mesh;
           if (!mesh.isMesh) return;

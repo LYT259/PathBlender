@@ -639,7 +639,8 @@ check(
   );
 }
 
-// Turntable clamp: dragging below the horizon stops at ~93°, never under.
+// Vertical drag reaches BOTH sides: down-press leans toward the far side
+// (polar grows toward 2.6), up-raise tops out at 0.15 — never stuck.
 {
   const main = await page.locator('.field-canvas-3d canvas').first().boundingBox();
   await page.locator('.vc-home').click();
@@ -648,9 +649,19 @@ check(
   await page.mouse.down();
   await page.mouse.move(main.x + main.width / 2, main.y + main.height / 2 + 400, { steps: 14 });
   await page.mouse.up();
-  await page.waitForTimeout(400);
-  const pol = await page.evaluate(() => window.__pb3d.controls.getPolarAngle());
-  check('orbit never dips under the field (polar ≤ 93°)', pol <= 1.62 + 0.02, `pol=${pol.toFixed(3)}`);
+  await page.waitForTimeout(2200);
+  const polDown = await page.evaluate(() => window.__pb3d.controls.getPolarAngle());
+  await page.mouse.move(main.x + main.width / 2, main.y + main.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(main.x + main.width / 2, main.y + main.height / 2 - 900, { steps: 20 });
+  await page.mouse.up();
+  await page.waitForTimeout(2200);
+  const polUp = await page.evaluate(() => window.__pb3d.controls.getPolarAngle());
+  check(
+    'vertical drag spans both sides (down→2.6, up→0.15)',
+    polDown > 2.0 && Math.abs(polUp - 0.15) < 0.03,
+    `down=${polDown.toFixed(2)} up=${polUp.toFixed(2)}`,
+  );
 }
 
 await page.screenshot({ path: `${SHOTS}/14-3d.png` });
