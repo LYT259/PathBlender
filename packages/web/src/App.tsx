@@ -717,8 +717,8 @@ function AppBody() {
               </select>
             )}
             <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
-              <button className={view3D ? 'on' : ''} onClick={() => setView3D(true)}>3D</button>
               <button className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
+              <button className={view3D ? 'on' : ''} onClick={() => setView3D(true)}>3D</button>
             </div>
             {view3D && (
               <button

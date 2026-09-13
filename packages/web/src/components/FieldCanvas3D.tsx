@@ -45,8 +45,6 @@ interface Scene3D {
   fallback: THREE.Group;
   /** Theme-token colors with live refs, retinted when the theme flips. */
   themed: { color: THREE.Color; token: string }[];
-  /** ViewCube face textures bake tokens; regenerate on theme change. */
-  retintCube: () => void;
 }
 
 // AS-style overview: higher and further back than the early low angle,
@@ -152,14 +150,13 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       themed.push({ color: owner.color, token });
       return owner;
     };
-    let retintCube: () => void = () => {};
     scene.background = new THREE.Color(cssToken('--canvas-bg', '#1c1c1e'));
     themed.push({ color: scene.background as THREE.Color, token: '--canvas-bg' });
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
     camera.position.set(...CAM_HOME);
     const controls = new OrbitControls(camera, renderer.domElement);
     // Damped drag (the flat-field-era feel the user asked back): releasing
-    // the pointer lets the view glide to a stop. The tween path cancels on
+    // the pointer lets the view glide to a stop.
     // user input, and the rAF loop runs unconditionally, so the old
     // damping/tween deadlock does not apply.
     controls.enableDamping = true; // default dampingFactor (0.05): the original glide
@@ -174,12 +171,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     controls.maxPolarAngle = 2.6;
     controls.minDistance = 2;
     controls.maxDistance = 60;
-    // Custom drag-orbit (replaces OrbitControls' built-in rotate): the
-    // user's mental model is "drag the camera" — dragging DOWN presses the
-    // view toward the far side (phi grows), dragging up raises it. The
-    // library's built-in direction is the opposite and its damping fights
-    // the clamp, so rotate is disabled there and owned here, sharing the
-    // spherical math with the wheel-deltaX handler below.
+    // Drag-orbit (original 3D-mode logic, Onshape-style): cursor down lifts
+    // the camera so the field's top tilts into view — the same direction the
+    // flat-field build used. Owned here (not OrbitControls) so the glide and
+    // clamp share the spherical math with the wheel-deltaX handler.
     controls.enableRotate = false;
     const drag = { active: false, x: 0, y: 0, vTheta: 0, vPhi: 0, lastT: 0 };
     const applyOrbit = (dTheta: number, dPhi: number) => {
@@ -187,7 +182,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         camera.position.clone().sub(controls.target),
       );
       sph.theta -= dTheta;
-      sph.phi = THREE.MathUtils.clamp(sph.phi + dPhi, 0.15, 2.6);
+      sph.phi = THREE.MathUtils.clamp(sph.phi - dPhi, 0.15, 2.6);
       camera.position.setFromSpherical(sph).add(controls.target);
       camera.lookAt(controls.target);
       markDirty();
@@ -200,14 +195,13 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       drag.vTheta = 0;
       drag.vPhi = 0;
       drag.lastT = performance.now();
-      tween = null;
       renderer.domElement.setPointerCapture(e.pointerId);
     };
     const onDragMove = (e: PointerEvent) => {
       if (!drag.active) return;
       const ROT = 0.0052; // rad per px — the flat-field-era sensitivity
       const dTheta = (e.clientX - drag.x) * ROT;
-      const dPhi = (e.clientY - drag.y) * ROT; // drag down → phi grows → press low
+      const dPhi = (e.clientY - drag.y) * ROT; // drag down → phi shrinks → camera rises
       drag.x = e.clientX;
       drag.y = e.clientY;
       const now = performance.now();
@@ -394,7 +388,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const dynamic = new THREE.Group();
     scene.add(dynamic);
 
-    sceneRef.current = { renderer, scene, camera, controls, cx, cy, dynamic, boxes: [], modelRoot, fallback, dirty: markDirty, themed, retintCube };
+    sceneRef.current = { renderer, scene, camera, controls, cx, cy, dynamic, boxes: [], modelRoot, fallback, dirty: markDirty, themed };
 
     const resize = () => {
       const wpx = host.clientWidth || 1;
@@ -432,179 +426,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const ro0 = new ResizeObserver(markDirty);
     ro0.observe(host);
 
-    // --- Onshape-style ViewCube (top-right overlay) ---
-    // A second renderer mirrors the main camera's orientation. Faces, edges
-    // and corners are separate pick targets; each click tweens the camera to
-    // the matching view (face → ortho, edge → two-axis, corner → trimetric).
-    // Safe to tween now that damping is off — the old damping/tween fight
-    // that deadlocked the rAF loop is gone, and user input cancels mid-flight.
-    let tween: { from: THREE.Spherical; to: THREE.Spherical; start: number } | null = null;
-    const onUserStart = () => {
-      tween = null;
-    };
-    controls.addEventListener('start', onUserStart);
-    const flyTo = (toPos: THREE.Vector3) => {
-      const from = new THREE.Spherical().setFromVector3(
-        camera.position.clone().sub(controls.target),
-      );
-      const to = new THREE.Spherical().setFromVector3(toPos.clone().sub(controls.target));
-      let d = to.theta - from.theta;
-      if (d > Math.PI) to.theta -= 2 * Math.PI;
-      else if (d < -Math.PI) to.theta += 2 * Math.PI;
-      to.phi = THREE.MathUtils.clamp(to.phi, 0.15, 2.6);
-      from.phi = THREE.MathUtils.clamp(from.phi, 0.15, 2.6);
-      tween = { from, to, start: performance.now() };
-    };
-    const viewcubeEl = document.createElement('div');
-    viewcubeEl.className = 'viewcube';
-    const cubeCanvas = document.createElement('canvas');
-    viewcubeEl.appendChild(cubeCanvas);
-    const homeBtn = document.createElement('button');
-    homeBtn.className = 'vc-home';
-    homeBtn.title = 'Home';
-    homeBtn.innerHTML =
-      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
-    viewcubeEl.appendChild(homeBtn);
-    host.appendChild(viewcubeEl);
-
-    const cubeRenderer = new THREE.WebGLRenderer({ canvas: cubeCanvas, alpha: true, antialias: true });
-    cubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 3));
-    cubeRenderer.setSize(110, 110);
-    const cubeScene = new THREE.Scene();
-    const cubeCam = new THREE.PerspectiveCamera(38, 1, 0.1, 20);
-    cubeCam.position.set(0, 0, 3.6);
-    const cubeGroup = new THREE.Group();
-    cubeScene.add(cubeGroup);
-    const labels = [
-      t('vc.right'), t('vc.left'), t('vc.top'), t('vc.bottom'), t('vc.front'), t('vc.back'),
-    ];
-    // Face textures bake per-world-face shading (top lit, bottom dark) at
-    // 512px so the 110px cube stays crisp on retina displays.
-    const mats = labels.map((lab, i) => new THREE.MeshBasicMaterial({ map: faceTexture(lab, i) }));
-    // Face textures bake theme tokens at draw time; regenerate on theme flip.
-    retintCube = () => {
-      labels.forEach((lab, i) => {
-        const m = mats[i];
-        if (!m) return;
-        m.map?.dispose();
-        m.map = faceTexture(lab, i);
-        m.needsUpdate = true;
-      });
-      (cornerMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
-      (edgeMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
-    };
-    const cubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.55, 1.55), mats);
-    cubeGroup.add(cubeMesh);
-
-    // Onshape-style clean cube: no resident grips. Edge/corner intent is
-    // signaled by two dynamic markers that appear only while hovered and
-    // move to the classified feature (the resident hotspot meshes left
-    // faint artifacts on real GPUs and read as dented corners).
-    const CUBE_H = 1.55 / 2;
-    const hoverMat = () =>
-      new THREE.MeshBasicMaterial({ color: cssToken('--accent', '#0a84ff'), transparent: true, opacity: 0.95 });
-    const cornerMarker = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12), hoverMat());
-    const edgeMarker = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.5, 10), hoverMat());
-    cornerMarker.visible = false;
-    edgeMarker.visible = false;
-    cubeGroup.add(cornerMarker, edgeMarker);
-    const hideMarkers = () => {
-      cornerMarker.visible = false;
-      edgeMarker.visible = false;
-    };
-
-    const ray = new THREE.Raycaster();
-    const cubePtr = new THREE.Vector2();
-    interface CubePick {
-      dir: THREE.Vector3 | null;
-      faceIdx: number;
-      hot: THREE.Mesh | null;
-    }
-    const pick = (ev: PointerEvent): CubePick => {
-      const r = cubeCanvas.getBoundingClientRect();
-      cubePtr.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
-      ray.setFromCamera(cubePtr, cubeCam);
-      const hit = ray.intersectObject(cubeMesh, false)[0];
-      if (!hit) return { dir: null, faceIdx: -1, hot: null };
-      // Classify by how many local axes sit near their extreme: one → face,
-      // two → edge, three → corner (the world direction IS the local one —
-      // the cube only mirrors the camera).
-      const p = cubeMesh.worldToLocal(hit.point.clone());
-      const big = [Math.abs(p.x) > 0.5 * CUBE_H, Math.abs(p.y) > 0.5 * CUBE_H, Math.abs(p.z) > 0.5 * CUBE_H];
-      const dir = new THREE.Vector3(
-        big[0] ? Math.sign(p.x) : 0,
-        big[1] ? Math.sign(p.y) : 0,
-        big[2] ? Math.sign(p.z) : 0,
-      );
-      const faceIdx =
-        dir.lengthSq() === 1
-          ? [dir.x, -dir.x, dir.y, -dir.y, dir.z, -dir.z].findIndex((v) => v === 1)
-          : -1;
-      return { dir: dir.lengthSq() > 0 ? dir : null, faceIdx, hot: null };
-    };
-    const applyHover = (p: CubePick) => {
-      mats.forEach((m, i) => m.color.set(i === p.faceIdx ? cssToken('--accent', '#0a84ff') : '#ffffff'));
-      hideMarkers();
-      const nz = p.dir
-        ? [p.dir.x, p.dir.y, p.dir.z].filter((v) => Math.abs(v) > 0.4).length
-        : 0;
-      if (nz === 3 && p.dir) {
-        cornerMarker.position.copy(p.dir).multiplyScalar(CUBE_H);
-        cornerMarker.visible = true;
-      } else if (nz === 2 && p.dir) {
-        const axis = [0, 1, 2].find((i) => p.dir!.getComponent(i) === 0) ?? 0;
-        if (axis === 0) edgeMarker.rotation.set(0, 0, Math.PI / 2);
-        else if (axis === 2) edgeMarker.rotation.set(Math.PI / 2, 0, 0);
-        else edgeMarker.rotation.set(0, 0, 0);
-        edgeMarker.position.copy(p.dir).multiplyScalar(CUBE_H);
-        edgeMarker.visible = true;
-      }
-      markDirty();
-    };
-    const onCubeDown = (ev: PointerEvent) => {
-      ev.stopPropagation();
-      const p = pick(ev);
-      if (!p.dir) return;
-      // Test hook: the walkthrough asserts the camera reaches this target.
-      (window as unknown as { __pb3d?: { lastPick?: THREE.Vector3 } }).__pb3d!.lastPick = p.dir.clone();
-      const dist = camera.position.distanceTo(controls.target);
-      flyTo(controls.target.clone().add(p.dir.clone().multiplyScalar(dist)));
-    };
-    const onCubeMove = (ev: PointerEvent) => {
-      const p = pick(ev);
-      applyHover(p);
-      cubeCanvas.style.cursor = p.dir ? 'pointer' : 'default';
-    };
-    cubeCanvas.addEventListener('pointerdown', onCubeDown);
-    cubeCanvas.addEventListener('pointermove', onCubeMove);
-    const onHome = (ev: Event) => {
-      ev.preventDefault();
-      flyTo(new THREE.Vector3(...CAM_HOME));
-    };
-    homeBtn.addEventListener('click', onHome);
-
     let raf = 0;
     const loop = () => {
-      if (tween) {
-        const t = Math.min(1, (performance.now() - tween.start) / 300);
-        const e = 1 - Math.pow(1 - t, 3); // ease-out cubic
-        const sph = new THREE.Spherical(
-          THREE.MathUtils.lerp(tween.from.radius, tween.to.radius, e),
-          THREE.MathUtils.lerp(tween.from.phi, tween.to.phi, e),
-          THREE.MathUtils.lerp(tween.from.theta, tween.to.theta, e),
-        );
-        camera.position.setFromSpherical(sph).add(controls.target);
-        camera.lookAt(controls.target);
-        needsDraw = true;
-        if (t >= 1) tween = null;
-      }
       const moved = controls.update();
       if (needsDraw || moved) {
         needsDraw = false;
         renderer.render(scene, camera);
-        // Mirror the main orientation into the cube and draw it too.
-        cubeGroup.quaternion.copy(camera.quaternion).invert();
-        cubeRenderer.render(cubeScene, cubeCam);
       }
       raf = requestAnimationFrame(loop);
     };
@@ -618,12 +445,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       ro.disconnect();
       ro0.disconnect();
       controls.removeEventListener('change', markDirty);
-      controls.removeEventListener('start', onUserStart);
-      cubeCanvas.removeEventListener('pointerdown', onCubeDown);
-      cubeCanvas.removeEventListener('pointermove', onCubeMove);
-      homeBtn.removeEventListener('click', onHome);
-      cubeRenderer.dispose();
-      viewcubeEl.remove();
       renderer.domElement.removeEventListener('pointerdown', onDragDown);
       renderer.domElement.removeEventListener('pointermove', onDragMove);
       renderer.domElement.removeEventListener('pointerup', onDragUp);
@@ -647,7 +468,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const st = sceneRef.current;
     if (!st) return;
     for (const { color, token } of st.themed) color.set(tokenColorHex(token, '#1c1c1e'));
-    st.retintCube();
     st.dirty();
   }, [themeResolved]);
 

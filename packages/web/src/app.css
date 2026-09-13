@@ -680,14 +680,3 @@ body.desktop .editor-bar { padding-left: 84px; }
 
 /* ---------- ViewCube overlay ---------- */
 .field-canvas-3d { position: relative; }
-.viewcube {
-  position: absolute; top: 10px; right: 10px; width: 110px; z-index: 4;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-}
-.viewcube canvas { width: 110px; height: 110px; }
-.vc-home {
-  width: 26px; height: 26px; border-radius: 6px; border: none; cursor: pointer;
-  background: var(--seg-bg); color: var(--fg-dim);
-  display: inline-flex; align-items: center; justify-content: center;
-}
-.vc-home:hover { background: var(--hover); color: var(--fg); }
