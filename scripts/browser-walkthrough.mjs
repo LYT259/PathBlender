@@ -541,26 +541,32 @@ check('3D opens at the overview camera', true);
   );
 }
 
-// AprilTag pose sanity (2026 welded): the quad's outward normal must point
-// into the field — tag 1 sits on the far wall (yaw π) → three −X; tag 2 on
-// the reef face (yaw +π/2) → three −Z.
+// AprilTag pose sanity (2026 welded), asserted against the official asset
+// config anchors and face directions: tag 1 anchor (−3.59, −3.38, 0.89) sits
+// on the −Y side wall with its face INTO the field (three +Y); tag 7 on the
+// +Y wall faces −Y.
 {
-  const normals = await page.evaluate(() => {
+  const got = await page.evaluate(() => {
+    const V = Object.getPrototypeOf(window.__pb3d.camera.position).constructor;
     const out = {};
-    for (const id of [1, 2]) {
-      const tag = window.__pb3d.scene.getObjectByName(`apriltag-${id}`);
-      if (!tag) continue;
-      const Vector3 = Object.getPrototypeOf(tag.position).constructor;
-      const dir = new Vector3(0, 0, 1).applyQuaternion(tag.quaternion);
-      out[id] = [dir.x, dir.y, dir.z];
+    for (const id of [1, 7]) {
+      const t = window.__pb3d.scene.getObjectByName(`apriltag-${id}`);
+      if (!t) continue;
+      const n = new V(0, 0, 1).applyQuaternion(t.quaternion);
+      out[id] = { pos: [t.position.x, t.position.y, t.position.z].map((v) => +v.toFixed(2)), n: [n.x, n.y, n.z].map((v) => +v.toFixed(2)) };
     }
     return out;
   });
   const nearV = (v, t) => v && Math.abs(v[0] - t[0]) < 0.06 && Math.abs(v[1] - t[1]) < 0.06 && Math.abs(v[2] - t[2]) < 0.06;
   check(
-    'april tag normals point into the field (2026: tag1 −X, tag2 −Z)',
-    nearV(normals[1], [-1, 0, 0]) && nearV(normals[2], [0, 0, -1]),
-    JSON.stringify(normals),
+    'april tag 1 sits at the official anchor facing +Z (out of its wall)',
+    nearV(got[1]?.pos, [-3.59, 0.89, -3.38]) && nearV(got[1]?.n, [0, 0, 1]),
+    JSON.stringify(got),
+  );
+  check(
+    'april tag 7 mirrors it facing −Z',
+    nearV(got[7]?.n, [0, 0, -1]),
+    JSON.stringify(got[7]),
   );
 }
 

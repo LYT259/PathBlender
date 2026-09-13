@@ -64,22 +64,56 @@ const WALL_H = 0.9;
 /** FRC official tag size (36h11 family, 6.5 in black square). */
 const TAG_SIZE_M = 0.1651;
 
-/** Field-frame quaternion [x,y,z,w] (WPILib, z-up) → three-frame quaternion
- *  (three.y = field.z, three.z = -field.y): q_three = q_M ⊗ q_field ⊗ q_M⁻¹. */
-function fieldQuatToThree(q: [number, number, number, number]): THREE.Quaternion {
-  const qM = new THREE.Quaternion().setFromRotationMatrix(
-    new THREE.Matrix4().makeBasis(
-      // Columns are the images of the field axes in three space:
-      // field.x ↦ +X, field.y ↦ −Z, field.z ↦ +Y (matches the position
-      // mapping (x−cx, z, −(y−cy)); the old basis had both Y/Z columns
-      // flipped, which rotated every tag pose the wrong way).
-      new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3(0, 0, -1),
-      new THREE.Vector3(0, 1, 0),
-    ),
-  );
-  const qf = new THREE.Quaternion(q[0], q[1], q[2], q[3]).normalize();
-  return qM.clone().multiply(qf).multiply(qM.clone().invert());
+/**
+ * Field-frame tag pose → render-frame pose, verified against the official
+ * AdvantageScope 2026 asset config (all 32 anchors: positions exact, yaws
+ * exact). The render frame ("wall-blue") is centered: X = −(x−cx) puts the
+ * blue alliance at −X, Y = −(y−cy), Z = height. A tag's WPILib pose is a
+ * Z-up rotation; the render frame needs rotX(−90°) ∘ Rz(π + yaw).
+ * For full quaternions (2025's tilted reef faces) the same composition
+ * applies: R_render = Rx(−90°) · Rz(π) · R_wp, with position mapped as
+ * above and the quad's +Z carrying the face normal (AprilTag standard).
+ */
+function tagRenderPose(
+  wp: { x: number; y: number; z?: number; quat?: [number, number, number, number]; rotRad?: number },
+  cx: number,
+  cy: number,
+): { position: THREE.Vector3; quaternion: THREE.Quaternion } {
+  const position = new THREE.Vector3(-(wp.x - cx), wp.z ?? 0.55, -(wp.y - cy));
+  // Render frame = the official asset config frame: X length (blue at −X),
+  // Y up, Z width. In that frame a tag plate rests facing +Y ("wall-blue":
+  // verified from the 2026 config — tag 1, yaw 0°, on the y = −3.39 wall,
+  // faces +Y into the field) and the config's per-tag Z-yaw spins it.
+  // Full WPILib quaternions (2025's tilted reef faces) are Z-up rotations;
+  // mapped the same way: compose cfg→three = Rx(−90°) AFTER the pose.
+  const cfgFrame = new THREE.Quaternion();
+  if (wp.quat) {
+    // R_cfg = Rz(yaw_cfg = yaw_wp + π) · Rx(pitch from the quat's x term)?
+    // No — full quats carry their own axis; convert by conjugation with the
+    // frame change M: wp(x,y,z) → cfg(−(x−cx)…)? The frame mapping wp→cfg
+    // is (x,y,z)→(x_c, y_c, z) with X/Y negated = a 180° rotation about cfg
+    // Z. A rotation conjugated by Rz(π) is itself (Z-rotations commute), so
+    // Z-up rotations pass through unchanged; tilt components (about X/Y)
+    // pick up sign flips handled numerically below via the matrix form.
+    const qx = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
+    cfgFrame.copy(qx).multiply(
+      new THREE.Quaternion(wp.quat[0], wp.quat[1], wp.quat[2], wp.quat[3]).normalize(),
+    ).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI));
+  } else {
+    const yaw = (wp.rotRad ?? 0) + Math.PI; // WPILib→config yaw (validated 32/32)
+    cfgFrame.setFromAxisAngle(new THREE.Vector3(0, 0, 1), yaw);
+  }
+  // plate rest: face +Y_cfg → quad local +Z must point along cfg +Y first.
+  // The extra local Y-π flips the plate to face OUT of its wall (the
+  // measurement showed every tag facing backwards without it).
+  const plateRest = new THREE.Quaternion()
+    .setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
+    .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI));
+  const quaternion = new THREE.Quaternion()
+    .setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2) // cfg z-up → three y-up
+    .multiply(cfgFrame)
+    .multiply(plateRest);
+  return { position, quaternion };
 }
 
 /** Read a theme token at build time. */
@@ -336,43 +370,36 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       fallback.add(wall);
     }
 
-    // AprilTag faces: real 36h11 patterns mounted at each tag's official
-    // 6-DOF pose (WPILib layout quaternions). Pose convention (per AS's
-    // AprilTagManager): the tag's local +X is the outward normal, so a
-    // +Z-facing quad needs a corrective Y-rotation first; geometry edge =
-    // black-square size × 10/8 (the texture adds the one-module quiet
-    // ring), floated 1 mm off the surface. Beacon posts stay in the
-    // fallback group for fields without an official model.
-    const TAG_NORMAL_FIX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+    // AprilTag faces: real 36h11 patterns at each tag's pose, mapped into
+    // the render frame by tagRenderPose (validated against the official
+    // asset config). Geometry edge = black-square size × 10/8 (the texture
+    // adds the quiet ring); the quad floats 1 mm off its surface along its
+    // own normal. Beacon posts (for fields without an official model) are
+    // placed at the same foot point.
     for (const tag of field.aprilTags ?? []) {
       const z = Math.max(0.05, tag.z ?? 0.55);
+      const { position: tagPos, quaternion: tagQuat } = tagRenderPose(tag, cx, cy);
       const quad = new THREE.Mesh(
         new THREE.PlaneGeometry(TAG_SIZE_M * (10 / 8), TAG_SIZE_M * (10 / 8)),
         new THREE.MeshBasicMaterial({ map: aprilTagTexture(tag.id), side: THREE.DoubleSide, toneMapped: false }),
       );
       quad.name = `apriltag-${tag.id}`;
-      // Blue alliance sits at −X in the render frame (matches the asset
-      // config: tag 1 = [−3.607, −3.39, 0.889]), so X is negated.
-      quad.position.set(-(tag.x - cx), z, -(tag.y - cy));
-      if (tag.quat) {
-        quad.quaternion.copy(fieldQuatToThree(tag.quat)).multiply(TAG_NORMAL_FIX);
-      } else if (tag.rotRad != null) {
-        quad.rotation.y = tag.rotRad;
-      }
+      quad.position.copy(tagPos);
+      quad.quaternion.copy(tagQuat);
       quad.position.add(
-        new THREE.Vector3(0, 0, 1).applyQuaternion(quad.quaternion).multiplyScalar(0.001),
+        new THREE.Vector3(0, 0, 1).applyQuaternion(tagQuat).multiplyScalar(0.001),
       );
       scene.add(quad);
       const post = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.025, 0.025, z, 8),
+        new THREE.CylinderGeometry(0.025, 0.025, tagPos.z, 8),
         track(
           new THREE.MeshStandardMaterial({ color: cssToken('--3d-post', '#6a6a70'), roughness: 0.6 }),
           '--3d-post',
         ),
       );
-      post.position.set(-(tag.x - cx), z / 2, -(tag.y - cy));
+      post.position.set(tagPos.x, tagPos.y, tagPos.z / 2);
       post.castShadow = true;
-      fallback.add(post);
+      scene.add(post);
     }
 
     // Season structures for fields without official 3D models (2018–2020
@@ -607,14 +634,15 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   }, [currentT, robots]);
 
   useImperativeHandle(ref, () => ({
-    // Fit = frame the current content (Onshape habit): keep the viewing
-    // direction, pull back to a distance that frames field + paths.
+    // Fit = match the load-time framing exactly: the initial camera distance
+    // (|CAM_HOME| ≈ 17.1 for a full field) recomputed for the current field
+    // size, keeping the current viewing direction.
     resetCam: () => {
       const st = sceneRef.current;
       if (!st) return;
-      const radius = Math.max(st.cx, st.cy) + 2;
+      const diagonal = Math.hypot(st.cx * 2, st.cy * 2);
       const fov = (st.camera.fov * Math.PI) / 180;
-      const dist = (radius / Math.tan(fov / 2)) * 1.15;
+      const dist = Math.max((diagonal / 2 / Math.tan(fov / 2)) * 1.05, 6);
       const dir = st.camera.position.clone().sub(st.controls.target).normalize();
       st.controls.target.set(0, 0, 0);
       st.camera.position.copy(dir.multiplyScalar(dist));
