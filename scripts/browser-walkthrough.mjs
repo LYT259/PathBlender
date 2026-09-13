@@ -508,99 +508,24 @@ await page.locator('.prefs-modal .btn.small.accent').click();
 await page.waitForTimeout(700);
 const skyDark2 = await sample3dSky();
 check('3D retints back to dark', near(skyDark2, [28, 28, 30]), JSON.stringify(skyDark2));
-check(
-  'viewcube present with home button',
-  (await page.locator('.viewcube canvas').count()) === 1 &&
-    (await page.locator('.vc-home').count()) === 1,
-);
-// Home snap returns to the default orbit (settled click, no drags before).
-const polBeforeHome = await page.evaluate(() => window.__pb3d?.controls.getPolarAngle?.());
+// Drag-orbit sanity: no ViewCube anymore (removed per user request), so the
+// default-view anchor is the camera position itself.
 const atHome = () =>
   page.waitForFunction(
-    () =>
-      Math.abs(window.__pb3d.controls.getAzimuthalAngle()) < 0.05 &&
-      Math.abs(window.__pb3d.controls.getPolarAngle() - 0.661) < 0.06,
+    () => {
+      const p = window.__pb3d.camera.position;
+      return Math.abs(p.x) < 0.05 && Math.abs(p.y - 13.5) < 0.1 && Math.abs(p.z - 10.5) < 0.1;
+    },
     undefined,
     { timeout: 6000, polling: 100 },
   );
-await page.locator('.vc-home').click();
 await atHome();
-const homeState = await page.evaluate(() => ({
-  az: window.__pb3d.controls.getAzimuthalAngle(),
-  pol: window.__pb3d.controls.getPolarAngle(),
-}));
-check(
-  'viewcube home snaps to default view',
-  Math.abs(homeState.az) < 0.2 && Math.abs(homeState.pol - 0.661) < 0.15,
-  `az=${homeState.az.toFixed(2)} pol=${homeState.pol.toFixed(2)} (from ${polBeforeHome?.toFixed?.(2)})`,
-);
-
-// Face/edge/corner picks tween the camera to the picked feature direction
-// (asserted against the pick hook — headless rAF is sparse, so wait for the
-// value instead of a fixed delay).
-const vcBox = await page.locator('.viewcube canvas').boundingBox();
-const clickCube = async (fx, fy) => {
-  await page.locator('.vc-home').click();
-  await atHome();
-  // move+down+up split: mouse.click() batches the events and occasionally
-  // drops the pointerdown under load (Playwright flake, not app logic).
-  await page.mouse.move(vcBox.x + vcBox.width * fx, vcBox.y + vcBox.height * fy);
-  await page.mouse.down();
-  await page.mouse.up();
-  await page.waitForFunction(
-    () => (window.__pb3d.lastPick ? true : false),
-    undefined,
-    { timeout: 4000, polling: 100 },
-  );
-  const lp = await page.evaluate(() => {
-    const p = window.__pb3d.lastPick;
-    window.__pb3d.lastPick = undefined;
-    return [p.x, p.y, p.z];
-  });
-  const reached = await page
-    .waitForFunction(
-      ([x, y, z]) => {
-        const az = window.__pb3d.controls.getAzimuthalAngle();
-        const pol = window.__pb3d.controls.getPolarAngle();
-        const n = Math.hypot(x, y, z); // pick dirs are unnormalized sign vectors
-        const tAz = Math.atan2(x, z);
-        const tPol = Math.acos(Math.max(-1, Math.min(1, y / n)));
-        return Math.abs(az - tAz) < 0.1 && Math.abs(pol - tPol) < 0.1;
-      },
-      lp,
-      { timeout: 6000, polling: 100 },
-    )
-    .then(() => true)
-    .catch(async () => {
-      const s = await page.evaluate(() => ({
-        az: window.__pb3d.controls.getAzimuthalAngle(),
-        pol: window.__pb3d.controls.getPolarAngle(),
-      }));
-      console.log(`  [clickCube miss] target=${JSON.stringify(lp)} camera az=${s.az.toFixed(3)} pol=${s.pol.toFixed(3)}`);
-      return false;
-    });
-  if (!reached) return null;
-  return lp;
-};
-const cornerDir = await clickCube(0.28, 0.5);
-check(
-  'viewcube corner click tweens to trimetric',
-  Array.isArray(cornerDir) && cornerDir.filter((v) => Math.abs(v) > 0.4).length === 3,
-  JSON.stringify(cornerDir),
-);
-const edgeDir = await clickCube(0.5, 0.5);
-check(
-  'viewcube edge click tweens to two-axis view',
-  Array.isArray(edgeDir) && edgeDir.filter((v) => Math.abs(v) > 0.4).length === 2,
-  JSON.stringify(edgeDir),
-);
+check('3D opens at the overview camera', true);
 
 // Damped drag (user-restored feel): the view glides after release, then
 // settles — assert it STOPS (no endless drift / rAF death).
 {
   const main = await page.locator('.field-canvas-3d canvas').first().boundingBox();
-  await page.locator('.vc-home').click();
-  await atHome();
   await page.mouse.move(main.x + main.width / 2, main.y + main.height / 2);
   await page.mouse.down();
   await page.mouse.move(main.x + main.width / 2 + 160, main.y + main.height / 2 + 60, { steps: 10 });
@@ -643,8 +568,6 @@ check(
 // (polar grows toward 2.6), up-raise tops out at 0.15 — never stuck.
 {
   const main = await page.locator('.field-canvas-3d canvas').first().boundingBox();
-  await page.locator('.vc-home').click();
-  await atHome();
   await page.mouse.move(main.x + main.width / 2, main.y + main.height / 2);
   await page.mouse.down();
   await page.mouse.move(main.x + main.width / 2, main.y + main.height / 2 + 400, { steps: 14 });
@@ -658,9 +581,14 @@ check(
   await page.waitForTimeout(2200);
   const polUp = await page.evaluate(() => window.__pb3d.controls.getPolarAngle());
   check(
-    'vertical drag spans both sides (down→2.6, up→0.15)',
-    polDown > 2.0 && Math.abs(polUp - 0.15) < 0.03,
-    `down=${polDown.toFixed(2)} up=${polUp.toFixed(2)}`,
+    'cursor down sees the field top (Onshape direction)',
+    Math.abs(polDown - 0.15) < 0.03,
+    `down=${polDown.toFixed(2)}`,
+  );
+  check(
+    'cursor up presses to the far-side low angle',
+    polUp > 2.0,
+    `up=${polUp.toFixed(2)}`,
   );
 }
 
