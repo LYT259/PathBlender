@@ -516,14 +516,17 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       (gltf) => {
         if (disposed) return;
         const g = gltf.scene;
-        // The GLB is natively X = length (±11.3, incl. staged fuel piles),
-        // Y = up (−0.13..3.06), Z = width but NOT centered (−4.12..6.44 —
-        // the +Z side carries the staged fuel piles). No rotation; just
-        // recenter so the playing surface sits at origin on the floor.
-        // (The earlier rotX(90°) + mirror stood the field on its side —
-        // that mismatch vs. the correctly-placed tags was the "all tags
-        // wrong" report.)
-        g.position.set(0, 0.13, -1.16);
+        // AdvantageScope's loadField applies the config rotation Rx(90°),
+        // and its scene then wraps everything in a group carrying
+        // Rx(−90°)·Ry(180°) — the NET model rotation is a plain 180° yaw:
+        // (x, y, z) → (−x, −y, z). We removed that yaw by accident in the
+        // "no rotation" pass, mirroring the field end-for-end so the tags
+        // (placed on the correct side of the coordinate frame) floated
+        // behind structures. Apply the 180° yaw and recenter: native Z is
+        // off-center (−4.12..6.44, fuel piles at +Z) → shift Z by +1.16
+        // after the yaw flips its sign; native floor at −0.13 → +0.13.
+        g.rotation.y = Math.PI;
+        g.position.set(0, 0.13, 1.16);
         g.traverse((o) => {
           const mesh = o as THREE.Mesh;
           if (!mesh.isMesh) return;
