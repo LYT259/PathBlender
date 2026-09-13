@@ -79,40 +79,29 @@ function tagRenderPose(
   cx: number,
   cy: number,
 ): { position: THREE.Vector3; quaternion: THREE.Quaternion } {
+  // Position mapping (verified against the official 2026 asset config, 32/32
+  // anchors exact): render = (−(x−cx), z, −(y−cy)). Blue alliance lands at −X.
   const position = new THREE.Vector3(-(wp.x - cx), wp.z ?? 0.55, -(wp.y - cy));
-  // Render frame = the official asset config frame: X length (blue at −X),
-  // Y up, Z width. In that frame a tag plate rests facing +Y ("wall-blue":
-  // verified from the 2026 config — tag 1, yaw 0°, on the y = −3.39 wall,
-  // faces +Y into the field) and the config's per-tag Z-yaw spins it.
-  // Full WPILib quaternions (2025's tilted reef faces) are Z-up rotations;
-  // mapped the same way: compose cfg→three = Rx(−90°) AFTER the pose.
-  const cfgFrame = new THREE.Quaternion();
-  if (wp.quat) {
-    // R_cfg = Rz(yaw_cfg = yaw_wp + π) · Rx(pitch from the quat's x term)?
-    // No — full quats carry their own axis; convert by conjugation with the
-    // frame change M: wp(x,y,z) → cfg(−(x−cx)…)? The frame mapping wp→cfg
-    // is (x,y,z)→(x_c, y_c, z) with X/Y negated = a 180° rotation about cfg
-    // Z. A rotation conjugated by Rz(π) is itself (Z-rotations commute), so
-    // Z-up rotations pass through unchanged; tilt components (about X/Y)
-    // pick up sign flips handled numerically below via the matrix form.
-    const qx = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
-    cfgFrame.copy(qx).multiply(
-      new THREE.Quaternion(wp.quat[0], wp.quat[1], wp.quat[2], wp.quat[3]).normalize(),
-    ).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI));
-  } else {
-    const yaw = (wp.rotRad ?? 0) + Math.PI; // WPILib→config yaw (validated 32/32)
-    cfgFrame.setFromAxisAngle(new THREE.Vector3(0, 0, 1), yaw);
-  }
-  // plate rest: face +Y_cfg → quad local +Z must point along cfg +Y first.
-  // The extra local Y-π flips the plate to face OUT of its wall (the
-  // measurement showed every tag facing backwards without it).
-  const plateRest = new THREE.Quaternion()
-    .setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
-    .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI));
-  const quaternion = new THREE.Quaternion()
-    .setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2) // cfg z-up → three y-up
-    .multiply(cfgFrame)
-    .multiply(plateRest);
+
+  // Orientation: WPILib tag plates rest facing −Y_wp (tag 7, yaw 0, on the
+  // +Y wall, faces −Y into the field; tag 1, yaw π, on the −Y wall, faces
+  // +Y — both confirmed against the official layout). The render frame maps
+  // wp directions (a,b,c) → (−a, c, −b), a reflection; conjugating the
+  // WPILib rotation through it yields the render rotation, and because the
+  // reflection flips handedness one extra local-Y π spin is appended so the
+  // plate faces out of its wall instead of into it.
+  const RwpM = new THREE.Matrix4().makeRotationFromQuaternion(
+    wp.quat
+      ? new THREE.Quaternion(wp.quat[0], wp.quat[1], wp.quat[2], wp.quat[3]).normalize()
+      : new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), wp.rotRad ?? 0),
+  );
+  // M_dir (wp dir → render dir): wp(1,0,0)→render(−1,0,0); wp(0,1,0)→(0,0,−1); wp(0,0,1)→(0,1,0)
+  const MD = new THREE.Matrix4().set(-1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1);
+  const MDt = new THREE.Matrix4().copy(MD).transpose();
+  const R3 = new THREE.Matrix4().multiplyMatrices(MD, RwpM).multiply(MDt);
+  const base = new THREE.Quaternion().setFromRotationMatrix(R3);
+  const flip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+  const quaternion = base.multiply(flip);
   return { position, quaternion };
 }
 
