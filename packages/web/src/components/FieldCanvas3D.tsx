@@ -101,7 +101,11 @@ function tagRenderPose(
   const R3 = new THREE.Matrix4().multiplyMatrices(MD, RwpM).multiply(MDt);
   const base = new THREE.Quaternion().setFromRotationMatrix(R3);
   const flip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
-  const quaternion = base.multiply(flip);
+  // In-plane 90° spin: PlaneGeometry UV layout vs the AprilTag bit-packing
+  // origin (top-left in the texture vs bottom-left in the geometry) need a
+  // quarter-turn correction per the WPILib mounting convention.
+  const spin = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+  const quaternion = base.multiply(flip).multiply(spin);
   return { position, quaternion };
 }
 
