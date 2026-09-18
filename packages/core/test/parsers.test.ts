@@ -104,11 +104,30 @@ describe('parseGhostAuto', () => {
     expect(traj.moduleLocations.length).toBe(4);
   });
 
-  it('teamNumberFromName extracts the first number run', () => {
+  it('teamNumberFromName takes the first 3-5 digit run (report v1.17)', () => {
     expect(teamNumberFromName('Team 0001')).toBe('0001');
     expect(teamNumberFromName('Cybersonics 103')).toBe('103');
     expect(teamNumberFromName('无数字队伍')).toBe('');
     expect(teamNumberFromName('')).toBe('');
+    // Waypoint-style numbering must never win the guess again.
+    expect(teamNumberFromName('L1.traj')).toBe('');
+    expect(teamNumberFromName('v3_swerve.traj')).toBe('');
+    expect(teamNumberFromName('v11.traj')).toBe('');
+    expect(teamNumberFromName('Pickup 2.path')).toBe('');
+    // A real team number still lands, even behind a bogus run.
+    expect(teamNumberFromName('254_L1.traj')).toBe('254');
+    expect(teamNumberFromName('team9001')).toBe('9001');
+    expect(teamNumberFromName('20260912_254.traj')).toBe('254'); // 8-digit stamp skipped
+    // Accepted cost: 1-2 digit legacy teams fall back to the manual field.
+    expect(teamNumberFromName('33_traverse.traj')).toBe('');
+    expect(teamNumberFromName('67.traj')).toBe('');
+  });
+
+  it('file names without a 3-digit run leave the team number empty', () => {
+    const traj = parseTraj(read('traj/v3_swerve.traj'), 'L1.traj');
+    expect(traj.teamNumber).toBe('');
+    const auto = parsePathFile(read('traj/v3_swerve.traj'), 'v11.traj');
+    expect(auto.teamNumber).toBe('');
   });
 
   it('team numbers default to the file name when the format carries none', () => {
