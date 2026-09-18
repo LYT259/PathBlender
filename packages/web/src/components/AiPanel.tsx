@@ -111,7 +111,9 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
 
   const send = async (override?: string, viaReminder?: Reminder[]) => {
     const text = (override ?? input).trim();
-    if (!text || busy) return;
+    // Nothing leaves the browser unless the assistant is switched on — the
+    // red-line default is off, and `chatCompletion` refuses as well.
+    if (!text || busy || !settings.enabled) return;
     const turn = log.length > 0 ? log[log.length - 1]!.turn + 1 : 0;
     setInput('');
     setMenu(null);
@@ -409,7 +411,8 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
           value={input}
           placeholder={t('ai.placeholder')}
           rows={2}
-          disabled={busy || pending != null}
+          disabled={busy || pending != null || !settings.enabled}
+          title={settings.enabled ? undefined : t('ai.configure')}
           onChange={(e) => {
             setInput(e.target.value);
             const v = e.target.value;
@@ -441,9 +444,9 @@ export function AiPanel({ settings, onSettings, buildContext, undoLabel, onUndo,
           ) : (
             <button
               className="ai-send"
-              disabled={!input.trim() || pending != null}
+              disabled={!input.trim() || pending != null || !settings.enabled}
               aria-label={t('ai.send')}
-              title={t('ai.send')}
+              title={settings.enabled ? t('ai.send') : t('ai.configure')}
               onClick={() => void send()}
             >
               <SendIcon />
