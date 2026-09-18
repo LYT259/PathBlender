@@ -114,10 +114,22 @@ export interface Trajectory {
   };
 }
 
-/** Extract a leading FRC team number from a free-form team name, '' if none. */
+/**
+ * Extract an FRC team number from a free-form name or file stem, '' if none.
+ *
+ * Only digit runs of 3–5 digits count as a team number (report v1.17 §6.1,
+ * user directive 2026-09-12): waypoint-style numbering used to win the guess
+ * — `L1.traj`, `v3_swerve.traj`, `v11.traj` all returned a bogus team. The
+ * cost, accepted in the same directive: 1–2 digit legacy teams (33, 67) are
+ * no longer inferred and fall back to the manual field on the robot card.
+ * A run longer than 5 digits (a timestamp, a version string) is not a team
+ * number either, and the scan continues to the next run.
+ */
 export function teamNumberFromName(teamName: string): string {
-  const m = /(\d{1,5})/.exec(teamName.trim());
-  return m ? (m[1] as string) : '';
+  for (const run of teamName.trim().match(/\d+/g) ?? []) {
+    if (run.length >= 3 && run.length <= 5) return run;
+  }
+  return '';
 }
 
 export function trajectoryDuration(samples: TrajectorySample[]): number {
