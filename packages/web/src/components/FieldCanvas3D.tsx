@@ -10,10 +10,21 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
-import { fieldImageWorldRect, samplePoseAt } from '@pathblender/core';
+import { samplePoseAt } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
 import { aprilTagTexture } from '../april-tag-texture';
+// One coordinate frame for the whole scene — tags, robots, trails, fallback
+// structures and the flat field image all map through these, so no layer can
+// drift into a mirrored copy of another. Derivation and the numeric per-tag
+// check live in `../field3d-frame` + `test/field3d-frame.test.ts`.
+import {
+  fieldRenderBounds,
+  headingToRender,
+  tagRenderPose,
+  worldToRender,
+  worldToRenderVec3,
+} from '../field3d-frame';
 
 export interface FieldCanvas3DHandle {
   resetCam: () => void;
@@ -63,51 +74,6 @@ const FIELD3D_MODELS: Record<string, { welded: string; andymark?: string }> = {
 const WALL_H = 0.9;
 /** FRC official tag size (36h11 family, 6.5 in black square). */
 const TAG_SIZE_M = 0.1651;
-
-/**
- * Field-frame tag pose → render-frame pose, verified against the official
- * AdvantageScope 2026 asset config (all 32 anchors: positions exact, yaws
- * exact). The render frame ("wall-blue") is centered: X = −(x−cx) puts the
- * blue alliance at −X, Y = −(y−cy), Z = height. A tag's WPILib pose is a
- * Z-up rotation; the render frame needs rotX(−90°) ∘ Rz(π + yaw).
- * For full quaternions (2025's tilted reef faces) the same composition
- * applies: R_render = Rx(−90°) · Rz(π) · R_wp, with position mapped as
- * above and the quad's +Z carrying the face normal (AprilTag standard).
- */
-function tagRenderPose(
-  wp: { x: number; y: number; z?: number; quat?: [number, number, number, number]; rotRad?: number },
-  cx: number,
-  cy: number,
-): { position: THREE.Vector3; quaternion: THREE.Quaternion } {
-  // Position mapping (verified against the official 2026 asset config, 32/32
-  // anchors exact): render = (−(x−cx), z, −(y−cy)). Blue alliance lands at −X.
-  const position = new THREE.Vector3(-(wp.x - cx), wp.z ?? 0.55, -(wp.y - cy));
-
-  // Orientation: WPILib tag plates rest facing −Y_wp (tag 7, yaw 0, on the
-  // +Y wall, faces −Y into the field; tag 1, yaw π, on the −Y wall, faces
-  // +Y — both confirmed against the official layout). The render frame maps
-  // wp directions (a,b,c) → (−a, c, −b), a reflection; conjugating the
-  // WPILib rotation through it yields the render rotation, and because the
-  // reflection flips handedness one extra local-Y π spin is appended so the
-  // plate faces out of its wall instead of into it.
-  const RwpM = new THREE.Matrix4().makeRotationFromQuaternion(
-    wp.quat
-      ? new THREE.Quaternion(wp.quat[0], wp.quat[1], wp.quat[2], wp.quat[3]).normalize()
-      : new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), wp.rotRad ?? 0),
-  );
-  // M_dir (wp dir → render dir): wp(1,0,0)→render(−1,0,0); wp(0,1,0)→(0,0,−1); wp(0,0,1)→(0,1,0)
-  const MD = new THREE.Matrix4().set(-1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1);
-  const MDt = new THREE.Matrix4().copy(MD).transpose();
-  const R3 = new THREE.Matrix4().multiplyMatrices(MD, RwpM).multiply(MDt);
-  const base = new THREE.Quaternion().setFromRotationMatrix(R3);
-  const flip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
-  // In-plane 90° spin: PlaneGeometry UV layout vs the AprilTag bit-packing
-  // origin (top-left in the texture vs bottom-left in the geometry) need a
-  // quarter-turn correction per the WPILib mounting convention.
-  const spin = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
-  const quaternion = base.multiply(flip).multiply(spin);
-  return { position, quaternion };
-}
 
 /** Read a theme token at build time. */
 function cssToken(name: string, fallback: string): string {
@@ -283,13 +249,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     sun.shadow.camera.far = 45;
     scene.add(sun);
 
-    const rect = field.image
-      ? fieldImageWorldRect(field.image, field.lengthM, field.widthM)
-      : { left: -0.5, right: field.lengthM + 0.5, bottom: -0.5, top: field.widthM + 0.5 };
-    const cx = (rect.left + rect.right) / 2;
-    const cy = (rect.bottom + rect.top) / 2;
-    const w = rect.right - rect.left;
-    const h = rect.top - rect.bottom;
+    const { cx, cy, width: w, depth: h } = fieldRenderBounds(field);
 
     const modelRoot = new THREE.Group();
     const fallback = new THREE.Group();
@@ -299,6 +259,15 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     if (fieldImageUrl) {
       const tex = new THREE.TextureLoader().load(fieldImageUrl);
       tex.colorSpace = THREE.SRGBColorSpace;
+      // The field artwork runs left→right with world +x, but the render frame
+      // maps world +x to −X (see field3d-frame), so the image is flipped
+      // along U or the flat fallback shows the blue alliance on the red side.
+      // Derived from worldToRender rather than hardcoded: if the frame ever
+      // changes sense, the artwork follows it.
+      const xSense = Math.sign(worldToRender(1, 0, 0, 0)[0]);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.repeat.x = xSense;
+      tex.offset.x = xSense < 0 ? 1 : 0;
       // A 12 cm-thick slab (image on the top face via a rotated box with
       // per-face materials) reads as a physical floor, not a picture.
       const wood = track(
@@ -479,8 +448,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
   }, [field, fieldImageUrl]);
 
-  // Theme flips retint the built-once scene: background/fog, token-backed
-  // structure materials, ViewCube face textures. React to the theme context —
+  // Theme flips retint the built-once scene: background/fog and every
+  // token-backed structure material. React to the theme context —
   // the data-theme attribute is written by ThemeProvider's effect, so a DOM
   // read during render would always see the previous value.
   const themeResolved = useTheme().resolved;
@@ -590,8 +559,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     st.boxes = [];
     for (const r of robots) {
       const color = new THREE.Color(r.color);
-      const pts = r.trajectory.samples.map(
-        (s) => new THREE.Vector3(s.x - st.cx, 0.06, -(s.y - st.cy)),
+      const pts = r.trajectory.samples.map((s) =>
+        worldToRenderVec3(s.x, s.y, 0.06, st.cx, st.cy),
       );
       if (pts.length > 1) {
         // Tube geometry gives the path real thickness (line width is not
@@ -623,16 +592,19 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     if (!st) return;
     for (const { mesh, robot } of st.boxes) {
       const pose = samplePoseAt(robot, currentT);
-      mesh.position.set(pose.x - st.cx, 0.225, -(pose.y - st.cy));
-      mesh.rotation.y = pose.heading;
+      mesh.position.copy(worldToRenderVec3(pose.x, pose.y, 0.225, st.cx, st.cy));
+      // The render frame reflects X, so the heading reflects with it —
+      // leaving it raw would have every robot drive sideways.
+      mesh.rotation.y = headingToRender(pose.heading);
       st.dirty();
     }
   }, [currentT, robots]);
 
   useImperativeHandle(ref, () => ({
-    // Fit = match the load-time framing exactly: the initial camera distance
-    // (|CAM_HOME| ≈ 17.1 for a full field) recomputed for the current field
-    // size, keeping the current viewing direction.
+    // Fit the whole field into the vertical field of view from the current
+    // viewing direction — the toolbar's Fit action. It deliberately keeps the
+    // direction the user orbited to, so it does NOT restore the load-time
+    // camera (CAM_HOME sits closer, at |CAM_HOME| ≈ 17.1 m).
     resetCam: () => {
       const st = sceneRef.current;
       if (!st) return;
@@ -652,50 +624,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
 });
 
 
-/** Localized label texture for one ViewCube face (512px for retina-crisp
- *  rendering). faceIdx: 0 +x, 1 -x, 2 top, 3 bottom, 4 +z, 5 -z — the
- *  per-world-face brightness is baked, Onshape-style lit cube. */
-function faceTexture(label: string, faceIdx: number): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 512;
-  const g = c.getContext('2d')!;
-  const card = cssToken('--bg-card', '#2c2c2f');
-  const m = /^#([0-9a-f]{6})$/i.exec(card.trim());
-  const hex = m?.[1] ?? '8c8c91';
-  const base = [
-    parseInt(hex.slice(0, 2), 16),
-    parseInt(hex.slice(2, 4), 16),
-    parseInt(hex.slice(4, 6), 16),
-  ];
-  const shade = (mul: number) =>
-    `rgb(${base.map((v) => Math.round(Math.max(0, Math.min(255, v * mul)))).join(',')})`;
-  const faceMul = faceIdx === 2 ? 1.1 : faceIdx === 3 ? 0.78 : 1;
-  const grad = g.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0, shade(faceMul * 1.05));
-  grad.addColorStop(1, shade(faceMul * 0.92));
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 512, 512);
-  g.strokeStyle = cssToken('--border', '#3d3d41');
-  g.lineWidth = 14;
-  g.strokeRect(10, 10, 492, 492);
-  g.fillStyle = cssToken('--fg', '#e6e6e8');
-  g.font = '700 168px -apple-system, "Segoe UI", sans-serif';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText(label, 256, 272);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 8;
-  return tex;
-}
-
 /** Recognizable season silhouettes for the no-official-model years.
- *  Field-frame (fx, fy) positions map to three as (fx-cx, h, -(fy-cy)).
+ *  Field-frame (fx, fy) positions go through the scene's one mapping.
  *  Colors: neutral gray structure with red/blue alliance accents. */
 function seasonStructures(fieldId: string, cx: number, cy: number): THREE.Group | null {
   const g = new THREE.Group();
-  const P = (fx: number, fy: number, h: number) => new THREE.Vector3(fx - cx, h, -(fy - cy));
+  const P = (fx: number, fy: number, h: number) => worldToRenderVec3(fx, fy, h, cx, cy);
   const RED = 0xb03030;
   const BLUE = 0x3050b0;
   const WOOD = 0x9a8a70;
@@ -745,19 +679,20 @@ function seasonStructures(fieldId: string, cx: number, cy: number): THREE.Group 
       box(5.4, 1.3, 1.25, P(8.23, fy, 0.65), WOOD);
       box(5.4, 0.55, 1.35, P(8.23, fy, 1.55), GRAY);
     }
-    // Rockets (angled towers) near each short end.
+    // Rockets (angled towers) near each short end. The lean sign follows the
+    // frame's X reflection, so the towers tip away from their own wall.
     for (const [fx, color] of [[2.3, BLUE], [14.1, RED]] as const) {
       for (const fy of [2.2, 6.0]) {
         box(1.4, 0.15, 1.4, P(fx, fy, 0.35), color);
         const tower = box(1.1, 2.6, 0.18, P(fx + 0.25, fy, 1.65), color);
-        tower.rotation.z = -0.28;
+        tower.rotation.z = 0.28;
       }
     }
     // HAB climb platforms against the short walls.
     for (const [fx, color] of [[0.75, BLUE], [15.7, RED]] as const) {
       box(1.2, 0.18, 5.0, P(fx, 4.11, 0.09), color);
       const ramp = box(1.4, 0.16, 2.6, P(fx + 1.1, 4.11, 0.22), color);
-      ramp.rotation.z = 0.17;
+      ramp.rotation.z = -0.17;
     }
     return g;
   }
