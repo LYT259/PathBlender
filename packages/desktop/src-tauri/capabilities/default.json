@@ -1,11 +1,13 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Shell hosts the web build; plugins reachable from JS: updater check/install + relaunch.",
+  "description": "Shell hosts the web build; JS reaches core events (native menu commands, cross-window preference sync) plus the updater and relaunch. Both webviews need it: ⌘, opens a second window that writes the same preferences.",
   "windows": [
-    "main"
+    "main",
+    "prefs"
   ],
   "permissions": [
+    "core:default",
     "updater:default",
     "process:allow-restart"
   ]
