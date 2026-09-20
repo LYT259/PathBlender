@@ -25,6 +25,8 @@ function inspectorCallbacks() {
     onResetEdit: vi.fn(),
     onExport: vi.fn(),
     onRemove: vi.fn(),
+    libraryProfiles: [],
+    onApplyProfile: vi.fn(),
   };
 }
 
@@ -38,7 +40,7 @@ describe('robot workspace controls', () => {
     const sample = robot();
     const onSelect = vi.fn();
     const onUpdate = vi.fn();
-    render(<I18nProvider><RobotList robots={[sample]} conflicts={[]} selectedId={sample.trajectory.id} onSelect={onSelect} onImport={vi.fn()} onUpdate={onUpdate} /></I18nProvider>);
+    render(<I18nProvider><RobotList robots={[sample]} conflicts={[]} selectedId={sample.trajectory.id} onSelect={onSelect} onImport={vi.fn()} onUpdate={onUpdate} libraryRoutes={[]} libraryProfiles={[]} onPickRoute={vi.fn()} onAddRoute={vi.fn()} /></I18nProvider>);
 
     const select = screen.getByRole('button', { name: '#0001 Straight Run, Ghost, 8.30 s' });
     expect(select).toHaveAttribute('aria-pressed', 'true');

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { CollisionInterval, RobotGeometry, SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { VIEWER_ONLY } from '../viewer';
+import { displayName, type LibraryProfile, type LibraryRoute } from '../route-library';
 import './RobotList.css';
 
 interface RobotListProps {
@@ -11,6 +12,11 @@ interface RobotListProps {
   onSelect: (id: string) => void;
   onImport: () => void;
   onUpdate: (id: string, patch: Partial<SessionTrajectory>) => void;
+  libraryRoutes: LibraryRoute[];
+  libraryProfiles: LibraryProfile[];
+  /** Robot slot id → library route id. */
+  onPickRoute: (robotId: string, routeId: string) => void;
+  onAddRoute: (routeId: string) => void;
 }
 
 interface RobotInspectorProps {
@@ -24,10 +30,12 @@ interface RobotInspectorProps {
   onResetEdit: (id: string) => void;
   onExport: (id: string, format: 'path' | 'traj' | 'ghostauto') => void;
   onRemove: (id: string) => void;
+  libraryProfiles: LibraryProfile[];
+  onApplyProfile: (robotId: string, profileId: string) => void;
 }
 
 /** Selection lives in the workspace so the list, field and inspector agree. */
-export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate }: RobotListProps) {
+export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, libraryRoutes, libraryProfiles, onPickRoute, onAddRoute }: RobotListProps) {
   const { t } = useI18n();
   return (
     <aside className="robot-list robot-library" aria-label={t('robots.title', { n: robots.length })}>
@@ -54,6 +62,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
               `${trajectory.durationS.toFixed(2)} s`,
               hit ? t('robots.collision') : '',
             ].filter(Boolean).join(', ');
+            const currentRoute = libraryRoutes.find((r) => r.id === robot.routeId);
             return (
               <li key={trajectory.id} className={`robot-library-row${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
                 <button className="robot-library-select" aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
@@ -70,6 +79,22 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     </span>
                   </span>
                 </button>
+                {libraryRoutes.length > 0 && (
+                  <select
+                    className="route-picker"
+                    value={robot.routeId ?? ''}
+                    title={currentRoute ? currentRoute.relPath : t('library.routeOffLibrary')}
+                    aria-label={t('library.routePicker', { name: trajectory.name })}
+                    onChange={(e) => onPickRoute(trajectory.id, e.target.value)}
+                  >
+                    {!currentRoute && <option value="">{displayName(trajectory)}</option>}
+                    {libraryRoutes.map((route) => (
+                      <option key={route.id} value={route.id} title={route.relPath}>
+                        {displayName(route.trajectory)} · {route.trajectory.durationS.toFixed(1)} s
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
                   <EyeIcon visible={robot.visible} />
                 </button>
@@ -78,11 +103,42 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
           })}
         </ul>
       )}
+      {(libraryRoutes.length > 0 || libraryProfiles.length > 0) && (
+        <section className="route-library-panel" aria-label={t('library.title')}>
+          <h3>{t('library.title', { n: libraryRoutes.length })}</h3>
+          {libraryRoutes.length > 0 && (
+            <ul className="route-library-items">
+              {libraryRoutes.map((route) => (
+                <li key={route.id} className="route-library-item" title={route.relPath}>
+                  <span className="route-library-item-body">
+                    <span className="route-library-item-name">{displayName(route.trajectory)}</span>
+                    <span className="route-library-item-meta">{sourceLabel(route.trajectory.source)} · {route.trajectory.durationS.toFixed(1)} s</span>
+                  </span>
+                  <button className="route-library-add-btn" onClick={() => onAddRoute(route.id)} aria-label={t('library.add', { name: displayName(route.trajectory) })} title={t('library.add', { name: displayName(route.trajectory) })}>+</button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {libraryProfiles.length > 0 && (
+            <ul className="route-library-items route-library-profiles">
+              {libraryProfiles.map((entry) => (
+                <li key={entry.id} className="route-library-item" title={entry.relPath}>
+                  <span className="route-library-item-body">
+                    <span className="route-library-item-name">{entry.profile.name}</span>
+                    <span className="route-library-item-meta">{t('robots.profileEntry', { l: entry.profile.geometry.lengthM.toFixed(2), w: entry.profile.geometry.widthM.toFixed(2) })}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="route-library-note">{t('library.hint')}</p>
+        </section>
+      )}
     </aside>
   );
 }
 
-export function RobotInspector({ robot, editingId, onUpdate, onSetAlliance, onSetGeometry, onSetTeamNumber, onToggleEdit, onResetEdit, onExport, onRemove }: RobotInspectorProps) {
+export function RobotInspector({ robot, editingId, onUpdate, onSetAlliance, onSetGeometry, onSetTeamNumber, onToggleEdit, onResetEdit, onExport, onRemove, libraryProfiles, onApplyProfile }: RobotInspectorProps) {
   const { t } = useI18n();
   if (!robot) return <div className="robot-inspector-empty">{t('robots.selectPrompt')}</div>;
   const { trajectory } = robot;
@@ -143,6 +199,27 @@ export function RobotInspector({ robot, editingId, onUpdate, onSetAlliance, onSe
           </div>
         )}
         <p className="robot-inspector-note">{t(fileGeometry ? 'robots.fileDataNote' : 'robots.defaultDataNote')}</p>
+        {libraryProfiles.length > 0 && (
+          <label className="robot-inspector-row robot-inspector-profile">
+            <span>{t('robots.applyProfile')}</span>
+            <select
+              aria-label={t('robots.applyProfile')}
+              value=""
+              title={t('robots.applyProfileHint')}
+              onChange={(event) => {
+                if (event.target.value) onApplyProfile(id, event.target.value);
+                event.target.value = '';
+              }}
+            >
+              <option value="">{t('robots.profilePick')}</option>
+              {libraryProfiles.map((entry) => (
+                <option key={entry.id} value={entry.id} title={entry.relPath}>
+                  {entry.profile.name} · {entry.profile.geometry.lengthM.toFixed(2)}×{entry.profile.geometry.widthM.toFixed(2)} m
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {trajectory.warnings.length > 0 && (
           <ul className="robot-inspector-warnings">{trajectory.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>
         )}

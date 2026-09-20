@@ -14,6 +14,7 @@ const paths = {
   warning: <><path d="m12 3 10 18H2Z"/><path d="M12 9v5m0 3v.1"/></>,
   path: <><path d="M5 18c0-7 14-5 14-12M5 18h.01M19 6h.01"/><rect x="2" y="15" width="6" height="6" rx="1.5"/><rect x="16" y="3" width="6" height="6" rx="1.5"/></>,
   close: <path d="m6 6 12 12M6 18 18 6"/>,
+  folder: <><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M12 11v5m-2-2 2 2 2-2"/></>,
 } as const;
 
 export function Icon({ name, size = 18, style }: { name: keyof typeof paths; size?: number; style?: CSSProperties }) {
