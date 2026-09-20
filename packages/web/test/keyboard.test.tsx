@@ -45,10 +45,8 @@ describe('playback keyboard shortcuts', () => {
     await waitFor(() => {
       expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument();
     });
-    const delayInput = document.querySelector(
-      '.robot-card input[type="number"]',
-    ) as HTMLInputElement;
-    expect(delayInput).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /^#0001 Straight Run,/ }));
+    const delayInput = screen.getByRole('spinbutton', { name: 'delay (s)' });
     delayInput.focus();
     fireEvent.keyDown(delayInput, { code: 'ArrowRight', key: 'ArrowRight' });
     expect(clock()).toBeCloseTo(0, 5);

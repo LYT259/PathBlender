@@ -8,6 +8,7 @@ import { AiSettingsSection } from './components/AiSettingsSection';
 import { loadAISettings, saveAISettings } from './ai/settings';
 import { useState as useReactState } from 'react';
 import './app.css';
+import './workspace.css';
 
 // Desktop ⌘, Preferences opens a second webview on the same bundle,
 // distinguished only by the ?window=prefs query param — it renders the
@@ -16,7 +17,7 @@ const isPrefsWindow = new URLSearchParams(location.search).get('window') === 'pr
 
 // Desktop (Tauri) shell marker: the overlay title bar's traffic lights sit
 // inside the toolbar's left padding (see .desktop .toolbar in app.css).
-if (typeof window !== 'undefined' && (window.location.protocol === 'tauri:' || window.location.protocol === 'asset:')) {
+if (typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || window.location.protocol === 'tauri:' || window.location.protocol === 'asset:')) {
   document.body.classList.add('desktop');
 }
 

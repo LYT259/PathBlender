@@ -9,7 +9,7 @@
  * user's explicit approval. Model output is data, never code (no eval).
  */
 
-import { ActionRegistry, autoResolveConflicts } from '@pathblender/core';
+import { ActionRegistry, autoResolveConflicts, detectCollisions } from '@pathblender/core';
 import type { ActionContext, ActionSpec, Args } from '@pathblender/core';
 import { VIEWER_ONLY } from '../viewer';
 
@@ -49,11 +49,16 @@ if (!VIEWER_ONLY) registry.register(
   spec({
     name: 'auto_resolve_conflicts',
     description:
-      'One-click mediation: add the smallest start delays (0.25 s steps) that clear every collision, delaying the earlier-starting robot of each pair. Prefer this over manual set_start_delay when the user asks for minimal fixes.',
+      'Try to clear collisions across every robot, including hidden robots, by adjusting start delays in 0.25 s steps. Field visibility is preserved. Prefer this over manual set_start_delay when the user asks for minimal fixes.',
     parameters: { type: 'object', properties: {}, required: [] },
     risk: 'low',
     handler: (ctx) => {
-      const resolved = autoResolveConflicts(ctx.robots);
+      // The core solver still treats visible=false as excluded. In this
+      // workspace visibility only controls drawing, so solve the full session
+      // without changing the user's display choices.
+      const visibility = new Map(ctx.robots.map((r) => [r.trajectory.id, r.visible]));
+      const resolved = autoResolveConflicts(ctx.robots.map((r) => ({ ...r, visible: true })))
+        .map((r) => ({ ...r, visible: visibility.get(r.trajectory.id) ?? r.visible }));
       const changes = resolved
         .filter((r) => {
           const before = ctx.robots.find((x) => x.trajectory.id === r.trajectory.id);
@@ -107,20 +112,24 @@ registry.register(
   spec({
     name: 'query_collisions',
     description:
-      'Return the current collision report: robot pairs, time intervals, closest positions, and out-of-bounds entries.',
+      'Return the collision report for every robot in the session, including hidden robots: robot pairs, time intervals, and closest positions. Visibility only controls field display.',
     parameters: { type: 'object', properties: {}, required: [] },
     risk: 'low',
-    handler: (ctx) => ({
-      ok: true,
-      summary: `queried collisions (${ctx.conflicts.length})`,
-      result: ctx.conflicts.map((c) => ({
-        a: nameOf(ctx, c.aId),
-        b: nameOf(ctx, c.bId),
-        startT: c.startT,
-        endT: c.endT,
-        closest: c.closestA,
-      })),
-    }),
+    handler: (ctx) => {
+      // Do not inherit a caller's display-filtered collision cache.
+      const conflicts = detectCollisions(ctx.robots);
+      return {
+        ok: true,
+        summary: `queried collisions (${conflicts.length})`,
+        result: conflicts.map((c) => ({
+          a: nameOf(ctx, c.aId),
+          b: nameOf(ctx, c.bId),
+          startT: c.startT,
+          endT: c.endT,
+          closest: c.closestA,
+        })),
+      };
+    },
   }),
 );
 
