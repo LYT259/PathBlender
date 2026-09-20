@@ -47,6 +47,7 @@ export { adjustedName, exportGhostAuto, exportPathPlannerPath, exportTraj } from
 export {
   detectFormat,
   parsePathFile,
+  parseRobotProfile,
   parseTraj,
   parseGhostAuto,
   parsePathPlannerPath,
@@ -54,6 +55,7 @@ export {
   ParseError,
 } from './parsers';
 export type { DetectedFormat, ParseErrorKind } from './parsers';
+export type { RobotProfile } from './parsers/robot-profile';
 export type { AutoSegment } from './parsers/pathplanner-auto';
 
 // PathPlanner trajectory generation (Phase 2 port, MIT-licensed upstream).

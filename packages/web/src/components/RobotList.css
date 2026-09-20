@@ -1,0 +1,74 @@
+.robot-list.robot-library { padding: 12px 8px; background: var(--bg-panel); }
+.robot-library-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 4px 10px; }
+.robot-library .robot-library-heading h2 { margin: 0 6px; font-size: 12px; font-weight: 650; letter-spacing: .01em; color: var(--fg-dim); }
+.robot-library-add, .robot-library-visibility { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 30px; height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--fg-dim); cursor: pointer; }
+.robot-library-add:hover, .robot-library-visibility:hover { background: var(--hover); color: var(--fg); }
+.robot-library-items { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 3px; }
+.robot-library-row { display: flex; align-items: center; border-radius: 8px; padding-right: 4px; border: 1px solid transparent; }
+.robot-library-row:hover { background: var(--hover); }
+.robot-library-row.is-selected { background: var(--accent-dim); border-color: var(--accent-dim); }
+.robot-library-select { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 9px; padding: 11px 7px 11px 10px; border: 0; border-radius: 7px; text-align: left; color: var(--fg); background: transparent; font: inherit; cursor: pointer; }
+.robot-library-select > .band-dot { margin-top: 5px; width: 7px; height: 7px; border-radius: 50%; }
+.robot-library-content { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+.robot-library-name { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.robot-library-team { flex: none; font-size: 12.5px; font-variant-numeric: tabular-nums; font-weight: 650; }
+.robot-library-name .robot-name { font-size: 12.5px; font-weight: 550; }
+.robot-library-meta { display: flex; align-items: center; flex-wrap: wrap; column-gap: 8px; row-gap: 3px; color: var(--fg-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.robot-library-conflict { color: var(--danger); font-weight: 600; }
+.robot-library-row.is-hidden .robot-library-select { opacity: .6; }
+.robot-library-row.is-hidden .robot-library-visibility { color: var(--fg-dim); }
+.robot-library-empty { padding: 4px 10px 14px; color: var(--fg-dim); font-size: 12px; line-height: 1.6; }
+.robot-library-empty p { margin: 0 0 14px; }
+.robot-library button:focus-visible, .robot-inspector button:focus-visible, .robot-inspector input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.robot-inspector { padding: 18px 16px 22px; color: var(--fg); }
+.robot-inspector-empty { padding: 24px 18px; color: var(--fg-dim); font-size: 12px; line-height: 1.6; }
+.robot-inspector-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.robot-inspector-heading h2 { flex: 1; min-width: 0; overflow-wrap: anywhere; margin: 0; font-size: 16px; line-height: 1.4; font-weight: 650; letter-spacing: -.02em; }
+.robot-inspector-section { padding: 16px 0; border-top: 1px solid var(--border); }
+.robot-inspector-section h3 { margin: 0 0 12px; font-size: 11px; font-weight: 650; color: var(--fg-dim); letter-spacing: .025em; }
+.robot-inspector-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.robot-inspector-section-heading h3 { margin-bottom: 0; }
+.robot-inspector-team-name { margin: 0 0 10px; font-size: 12px; }
+.robot-inspector-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 0; font-size: 12px; }
+.robot-inspector-row > span:first-child { color: var(--fg-dim); }
+.robot-inspector input[type="number"], .robot-inspector input[type="text"] { width: 86px; min-width: 0; height: 30px; padding: 4px 7px; color: var(--fg); background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; font: inherit; font-variant-numeric: tabular-nums; }
+.robot-inspector-row input { text-align: right; }
+.robot-inspector-note { margin: 9px 0 0; font-size: 11px; line-height: 1.6; color: var(--fg-dim); }
+.robot-inspector-caption { margin: 0 0 9px; font-size: 12px; }
+.robot-data-source { font-size: 10px; color: var(--fg-dim); background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 2px 5px; white-space: nowrap; }
+.robot-data-source.is-estimated { color: var(--warn); }
+.robot-dimensions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
+.robot-dimensions > div, .robot-dimensions > label { display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 7px; }
+.robot-dimensions dt, .robot-dimensions label > span { font-size: 10.5px; color: var(--fg-dim); }
+.robot-dimensions dd { margin: 0; font-size: 14px; font-weight: 550; font-variant-numeric: tabular-nums; }
+.robot-inspector .robot-dimensions-editable input { width: 100%; background: var(--bg-panel); }
+.robot-inspector-warnings { margin: 12px 0 0; padding-left: 15px; color: var(--warn); font-size: 11px; line-height: 1.6; }
+.robot-inspector-warnings li + li { margin-top: 5px; }
+.robot-inspector-actions .robot-inspector-edit { width: 100%; justify-content: center; min-height: 32px; }
+.robot-inspector-actions > .btn + .btn { margin-top: 8px; }
+.robot-inspector-export { margin-top: 16px; font-size: 11px; color: var(--fg-dim); }
+.robot-export-options { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.robot-inspector .robot-export-options .btn { flex: 1; justify-content: center; padding-inline: 6px; font-size: 11px; }
+.robot-inspector-remove { margin-top: 20px; padding: 0; border: 0; background: transparent; color: var(--danger); font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
+.robot-inspector-remove:hover { text-decoration: underline; }
+
+/* Per-robot route picker: flip between imported autos without re-importing. */
+.route-picker { flex: none; max-width: 96px; height: 26px; padding: 0 4px; color: var(--fg-dim); background: transparent; border: 1px solid transparent; border-radius: 6px; font: inherit; font-size: 10.5px; cursor: pointer; }
+.route-picker:hover { background: var(--bg-card); border-color: var(--border); color: var(--fg); }
+.route-picker:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.route-picker option { color: initial; background: initial; }
+
+/* Library panel: imported routes awaiting placement, plus robot profiles. */
+.route-library-panel { margin: 14px 4px 6px; padding: 12px 6px 4px; border-top: 1px solid var(--border); }
+.route-library-panel h3 { margin: 0 6px 9px; font-size: 11px; font-weight: 650; color: var(--fg-dim); letter-spacing: .025em; }
+.route-library-panel .route-library-items + .route-library-items { margin-top: 8px; }
+.route-library-panel .route-library-items + .route-library-profiles { padding-top: 8px; border-top: 1px dashed var(--border); }
+.route-library-item { display: flex; align-items: center; gap: 6px; padding: 6px 6px; border-radius: 7px; }
+.route-library-item:hover { background: var(--hover); }
+.route-library-item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.route-library-item-name { font-size: 12px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-library-item-meta { color: var(--fg-dim); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.route-library-add-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: var(--fg-dim); font-size: 14px; line-height: 1; cursor: pointer; }
+.route-library-add-btn:hover { color: var(--fg); border-color: var(--accent); }
+.route-library-note { margin: 9px 6px 8px; font-size: 10.5px; line-height: 1.6; color: var(--fg-dim); }
+.robot-inspector-profile select { max-width: 150px; height: 28px; padding: 3px 6px; color: var(--fg); background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 11px; }
