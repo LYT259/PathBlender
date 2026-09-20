@@ -17,11 +17,11 @@ import {
   exportTraj,
   FIELDS,
   fieldById,
-  makeSession,
   minimumSeparation,
   moveChoreoWaypoint,
   movePpWaypoint,
   parsePathFile,
+  parseRobotProfile,
   ParseError,
   REBUILT_2026,
   reparameterize,
@@ -31,7 +31,9 @@ import {
   serializeSession,
   sessionDuration,
 } from '@pathblender/core';
-import type { FieldPackage, RobotGeometry, SessionTrajectory, Trajectory } from '@pathblender/core';
+import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } from '@pathblender/core';
+import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
+import { displayName, robotFromRoute, type LibraryProfile, type LibraryRoute } from './route-library';
 import { hashToSession, sessionToHash } from './share-url';
 import { copyText, saveText } from './download';
 import { useTheme, type ThemeMode } from './theme';
@@ -180,23 +182,31 @@ function AppBody() {
   // .path texts stay available so later .auto imports can resolve their
   // pathName references (within the same batch or across this session).
   const pathTextsRef = useRef(new Map<string, string>());
+  // Route/profile library: everything parsed this session stays pickable
+  // next to each robot, so users can compare autos by switching (2026-09-20).
+  const [libraryRoutes, setLibraryRoutes] = useState<LibraryRoute[]>([]);
+  const [libraryProfiles, setLibraryProfiles] = useState<LibraryProfile[]>([]);
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
-  const importFiles = useCallback(async (files: FileList | File[]) => {
+  const importFiles = useCallback(async (files: FileList | File[] | IncomingFile[], opts?: { fromFolder?: boolean }) => {
     const nextErrors: { fileName: string; message: string }[] = [];
-    const added: Trajectory[] = [];
+    const incoming = toIncoming(files);
+    // A folder drop/pick is any import that carries paths below its root.
+    const fromFolder = opts?.fromFolder ?? incoming.some((f) => f.relPath.includes('/'));
+    const knownRouteExt = /\.(traj|ghostauto|path|auto|chor)$/i;
     const batch = new Map<string, string>(pathTextsRef.current);
-    const list = Array.from(files);
-    for (const file of list) {
-      const text = await file.text();
+    for (const { file, relPath } of incoming) {
       if (/\.path$/i.test(file.name)) {
-        const stem = file.name.replace(/\.path$/i, '');
-        batch.set(stem, text);
+        const stem = relPath.split('/').pop()!.replace(/\.path$/i, '');
+        batch.set(stem, await file.text());
       }
     }
-    for (const file of list) {
+    const addedRoutes: LibraryRoute[] = [];
+    const addedProfiles: LibraryProfile[] = [];
+    for (const { file, relPath } of incoming) {
       const text = await file.text();
       // Session files restore as a whole session rather than one robot.
-      if (file.name.endsWith(SESSION_EXT)) {
+      if (relPath.endsWith(SESSION_EXT)) {
         try {
           const restored = deserializeSession(text);
           setScene({ robots: restored.robots, fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
@@ -209,49 +219,156 @@ function AppBody() {
           setErrors([]);
           return;
         } catch {
-          nextErrors.push({ fileName: file.name, message: tr('import.notSession') });
+          nextErrors.push({ fileName: relPath, message: tr('import.notSession') });
           continue;
         }
       }
+      let profile: RobotProfile | null = null;
       try {
-        const traj = parsePathFile(text, file.name, (name) => batch.get(name));
-        added.push(traj);
+        profile = parseRobotProfile(text, relPath);
+      } catch {
+        // Not JSON — let the route parsers raise their (identical) error.
+      }
+      if (profile) {
+        addedProfiles.push({ id: crypto.randomUUID(), relPath, profile });
+        continue;
+      }
+      try {
+        const traj = parsePathFile(text, relPath, (name) => batch.get(name));
+        addedRoutes.push({ id: crypto.randomUUID(), relPath, trajectory: traj });
       } catch (e) {
+        // Folder imports tolerate bystanders (jars, images, dotfiles);
+        // anything claiming a known route extension still reports honestly.
+        if (fromFolder && !knownRouteExt.test(file.name)) continue;
         const message =
           e instanceof ParseError
             ? friendlyParseError(e, file.name, tr)
             : e instanceof Error
               ? e.message
               : String(e);
-        nextErrors.push({ fileName: file.name, message });
+        nextErrors.push({ fileName: relPath, message });
       }
     }
     pathTextsRef.current = batch;
-    if (added.length > 0) {
-      // Colors follow the live robot count so consecutive imports keep cycling
-      // through the palette instead of all landing on color 0.
-      setRobots((prev) => [
-        ...prev,
-        ...added.map((traj, i) => makeSession(traj, prev.length + i)),
-      ]);
+    // Re-importing the same path refreshes the entry in place (stable id, so
+    // robots pointing at it follow the update).
+    setLibraryRoutes((prev) => {
+      const byRel = new Map(prev.map((r) => [r.relPath, r]));
+      for (const r of addedRoutes) {
+        const old = byRel.get(r.relPath);
+        byRel.set(r.relPath, old ? { ...r, id: old.id } : r);
+      }
+      return [...byRel.values()];
+    });
+    setLibraryProfiles((prev) => {
+      const byRel = new Map(prev.map((p) => [p.relPath, p]));
+      for (const p of addedProfiles) {
+        const old = byRel.get(p.relPath);
+        byRel.set(p.relPath, old ? { ...p, id: old.id } : p);
+      }
+      return [...byRel.values()];
+    });
+    if (addedRoutes.length > 0 || addedProfiles.length > 0) {
+      flash(tr('library.imported', { n: addedRoutes.length, m: addedProfiles.length }));
     }
-    if (added.length > 0) {
-      setSelectedId(added[0]!.id);
-      setInspectorMode('checks');
-      setInspectorOpen(window.innerWidth > 900);
-      if (window.innerWidth <= 640) setPathsOpen(false);
+    if (addedRoutes.length > 0) {
+      // Ids are decided up front so selection can target the first new
+      // robot without depending on when the state update flushes.
+      const ids = addedRoutes.map(() => crypto.randomUUID());
+      const willSeed = fromFolder && robots.length === 0;
+      setRobots((prev) =>
+        fromFolder
+          ? prev.length > 0
+            ? prev
+            : [robotFromRoute(addedRoutes[0]!, 0, ids[0]!)]
+          : [
+              ...prev,
+              ...addedRoutes.map((route, i) => robotFromRoute(route, prev.length + i, ids[i]!)),
+            ],
+      );
+      if (!fromFolder || willSeed) {
+        setSelectedId(ids[0]!);
+        setInspectorMode('checks');
+        setInspectorOpen(window.innerWidth > 900);
+        if (window.innerWidth <= 640) setPathsOpen(false);
+      }
     }
     setErrors(nextErrors);
-  }, [tr, setRobots, setScene, setT, playback.setPlaying]);
+  }, [tr, flash, robots.length, setRobots, setScene, setT, playback.setPlaying]);
 
-  // Whole-window drag & drop.
+  /** Switch one robot onto another library route (the comparison loop). */
+  const pickRoute = useCallback((robotId: string, routeId: string) => {
+    const route = libraryRoutes.find((r) => r.id === routeId);
+    if (!route) return;
+    // An in-progress waypoint edit belongs to the previous route; leave edit
+    // mode rather than half-apply it to the new one.
+    setEditingId((cur) => (cur === robotId ? null : cur));
+    setRobots((prev) =>
+      prev.map((r) => {
+        if (r.trajectory.id !== robotId) return r;
+        let traj = route.trajectory;
+        // Alliance is the robot's (user-chosen) property — bring the route
+        // into it rather than letting the file's origin flip the robot.
+        if (traj.alliance !== r.trajectory.alliance) traj = applyAllianceChange(traj, r.trajectory.alliance, field);
+        return {
+          ...r,
+          trajectory: { ...traj, id: r.trajectory.id, name: displayName(traj) },
+          routeId: route.id,
+        };
+      }),
+    );
+  }, [libraryRoutes, field, setRobots]);
+
+  const addRouteAsRobot = useCallback((routeId: string) => {
+    const route = libraryRoutes.find((r) => r.id === routeId);
+    if (!route) return;
+    // Decide the id before dispatching so selection can target it directly.
+    const id = crypto.randomUUID();
+    setRobots((prev) => [...prev, robotFromRoute(route, prev.length, id)]);
+    setSelectedId(id);
+    setInspectorMode('robot');
+    setInspectorOpen(true);
+    if (window.innerWidth <= 640) setPathsOpen(false);
+  }, [libraryRoutes, setRobots]);
+
+  /** Apply an imported profile's bumper box to one robot. */
+  const applyProfile = useCallback((robotId: string, profileId: string) => {
+    const entry = libraryProfiles.find((p) => p.id === profileId);
+    if (!entry) return;
+    setRobots((prev) =>
+      prev.map((r) =>
+        r.trajectory.id === robotId
+          ? {
+              ...r,
+              trajectory: {
+                ...r.trajectory,
+                geometry: entry.profile.geometry,
+                moduleLocations: entry.profile.moduleLocations,
+                geometrySource: 'file',
+              },
+            }
+          : r,
+      ),
+    );
+  }, [libraryProfiles, setRobots]);
+
+  // Whole-window drag & drop; folders are walked recursively.
   useEffect(() => {
     const over = (e: DragEvent) => {
       e.preventDefault();
     };
     const drop = (e: DragEvent) => {
       e.preventDefault();
-      if (e.dataTransfer?.files.length) void importFiles(e.dataTransfer.files);
+      const dt = e.dataTransfer;
+      if (!dt) return;
+      void (async () => {
+        const collected = dt.items ? await filesFromDataTransfer(dt.items) : null;
+        if (collected && collected.length > 0) {
+          void importFiles(collected);
+          return;
+        }
+        if (dt.files.length) void importFiles(dt.files);
+      })();
     };
     window.addEventListener('dragover', over);
     window.addEventListener('drop', drop);
@@ -638,6 +755,13 @@ function AppBody() {
         <span className="toolbar-divider" />
         <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
+        {!VIEWER_ONLY && (
+          <>
+            <button className="tool-btn import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" /><span>{tr('library.importFolder')}</span></button>
+            {/* webkitdirectory is non-standard; set it imperatively so TS stays quiet */}
+            <input ref={(el) => { folderInputRef.current = el; if (el) el.webkitdirectory = true; }} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files, { fromFolder: true }); e.target.value = ''; }} />
+          </>
+        )}
         <div className="history-controls">
           <button className="tool-btn square" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
           <button className="tool-btn square" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
@@ -663,7 +787,7 @@ function AppBody() {
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
         <main className={`app-body workspace-body ${pathsOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
-          {pathsOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} />}
+          {pathsOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} libraryRoutes={libraryRoutes} libraryProfiles={libraryProfiles} onPickRoute={pickRoute} onAddRoute={addRouteAsRobot} />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
             <div className="canvas-slot">
               <div className="canvas-bar workspace-canvas-bar">
@@ -694,7 +818,10 @@ function AppBody() {
                 <div className="welcome-mark"><Icon name="path" size={40} /></div>
                 <h1>{tr('workspace.emptyTitle')}</h1>
                 <p>{tr('workspace.emptyBody')}</p>
-                <button className="btn accent welcome-import" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>
+                <div className="welcome-actions">
+                  <button className="btn accent welcome-import" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>
+                  {!VIEWER_ONLY && <button className="btn welcome-folder-import" onClick={() => folderInputRef.current?.click()}><Icon name="folder" />{tr('library.importFolder')}</button>}
+                </div>
                 <span className="drop-hint">{tr('workspace.dropHint')}</span>
                 <div className="welcome-steps">{(['workspace.importStep', 'workspace.compareStep', 'workspace.checkStep'] as const).map((key, i) => <span key={key}><b>{i + 1}</b>{tr(key)}</span>)}</div>
                 <small>{tr('workspace.formats')}</small>
@@ -713,7 +840,7 @@ function AppBody() {
               {!VIEWER_ONLY && <button className={inspectorMode === 'ai' ? 'on' : ''} aria-label={tr('ai.title')} aria-pressed={inspectorMode === 'ai'} onClick={() => setInspectorMode('ai')}><SparkleIcon />{tr('workspace.assistant')}</button>}
             </div><button className="tool-btn square inspector-close" title={tr('workspace.closePanel')} aria-label={tr('workspace.closePanel')} onClick={() => setInspectorOpen(false)}><Icon name="close" size={14} /></button></div>
             {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} onAdjust={selectRobot} onAutoResolve={resolveConflicts} />}
-            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} editingId={editingId} onUpdate={updateRobot} onSetAlliance={setAlliance} onSetGeometry={setGeometry} onSetTeamNumber={setTeamNumber} onToggleEdit={toggleEdit} onResetEdit={resetEdit} onExport={exportRobot} onRemove={removeRobot} />{editRobot && <WaypointPanel key={editRobot.trajectory.id} robot={editRobot} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}</div>}
+            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} editingId={editingId} onUpdate={updateRobot} onSetAlliance={setAlliance} onSetGeometry={setGeometry} onSetTeamNumber={setTeamNumber} onToggleEdit={toggleEdit} onResetEdit={resetEdit} onExport={exportRobot} onRemove={removeRobot} libraryProfiles={libraryProfiles} onApplyProfile={applyProfile} />{editRobot && <WaypointPanel key={editRobot.trajectory.id} robot={editRobot} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}</div>}
             {aiMounted && !VIEWER_ONLY && <div className="inspector-ai" hidden={inspectorMode !== 'ai'}><AiPanel settings={aiSettings} onSettings={applyAiSettings} buildContext={buildActionContext} undoLabel={canUndo ? tr('workspace.undo') : null} onUndo={undoSession} onAttachFiles={(files) => void importFiles(files)} onOpenSettings={() => setShowPrefs(true)} /></div>}
           </aside>
         </main>

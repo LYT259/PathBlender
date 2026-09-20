@@ -38,7 +38,7 @@ describe('workspace workflow', () => {
     const openPicker = vi.spyOn(input, 'click').mockImplementation(() => undefined);
     const welcome = document.querySelector<HTMLElement>('.workspace-empty')!;
     expect(welcome).toBeInTheDocument();
-    fireEvent.click(within(welcome).getByRole('button', { name: /import/i }));
+    fireEvent.click(within(welcome).getByRole('button', { name: 'Import paths' }));
     expect(openPicker).toHaveBeenCalledOnce();
     expect(screen.getByRole('button', { name: '2D', exact: true })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: /^Undo$/i })).toBeDisabled();
