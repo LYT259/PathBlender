@@ -10,7 +10,7 @@ import type { ActionContext } from '../src/ai/actions';
 import { runAssistantInstruction } from '../src/ai/assistant';
 import type { AssistantEvent, ConfirmRequest } from '../src/ai/assistant';
 import { DEFAULT_AI_SETTINGS, loadAISettings, saveAISettings } from '../src/ai/settings';
-import { makeSession, parseGhostAuto, serializeSession } from '@pathblender/core';
+import { autoResolveConflicts, detectCollisions, makeSession, parseGhostAuto, serializeSession } from '@pathblender/core';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -72,6 +72,54 @@ describe('action whitelist + validation', () => {
     expect(r.ok).toBe(true);
     expect(ctx.calls.pushUndo).toHaveLength(1);
     expect(ctx.calls.setStartDelay).toEqual([[id, 0.5]]);
+  });
+});
+
+describe('AI analysis includes hidden robots', () => {
+  function crossingRobots() {
+    return [
+      makeSession(parseGhostAuto(read('ghostauto/straight_run.ghostauto'), 'straight'), 0),
+      { ...makeSession(parseGhostAuto(read('ghostauto/stop_and_score.ghostauto'), 'crossing'), 1), visible: false },
+    ];
+  }
+
+  it('queries the whole session even when the supplied collision cache omitted hidden paths', () => {
+    const robots = crossingRobots();
+    const expected = detectCollisions(robots);
+    expect(expected.length).toBeGreaterThan(0);
+    const ctx = makeCtx({ robots, conflicts: detectCollisions(robots.filter((r) => r.visible)) });
+    expect(ctx.conflicts).toHaveLength(0);
+
+    const result = executeAction('query_collisions', {}, ctx);
+    expect(result.ok).toBe(true);
+    expect(result.result).toHaveLength(expected.length);
+    expect(result.result).toEqual(expect.arrayContaining([
+      expect.objectContaining({ a: robots[0]!.trajectory.name, b: robots[1]!.trajectory.name }),
+    ]));
+    expect(robots.map((r) => r.visible)).toEqual([true, false]);
+    expect(Object.keys(ctx.calls)).toHaveLength(0);
+  });
+
+  it('resolves the same conflicts as the visible session while preserving display choices and source state', () => {
+    const robots = crossingRobots();
+    const expected = autoResolveConflicts(robots.map((r) => ({ ...r, visible: true })));
+    const ctx = makeCtx({ robots, conflicts: detectCollisions(robots) });
+
+    const result = executeAction('auto_resolve_conflicts', {}, ctx);
+    expect(result.ok).toBe(true);
+    expect(ctx.calls.pushUndo).toEqual([['auto-resolve']]);
+    expect(ctx.calls.setStartDelay).toEqual(expected
+      .filter((r, index) => r.startDelayS !== robots[index]!.startDelayS)
+      .map((r) => [r.trajectory.id, r.startDelayS]));
+    const applied = robots.map((r) => {
+      const update = ctx.calls.setStartDelay?.find(([id]) => id === r.trajectory.id);
+      const delay = update?.[1];
+      return { ...r, startDelayS: typeof delay === 'number' ? delay : r.startDelayS };
+    });
+    expect(detectCollisions(applied)).toHaveLength(0);
+    expect(applied.map((r) => r.visible)).toEqual([true, false]);
+    expect(robots.map((r) => r.startDelayS)).toEqual([0, 0]);
+    expect(robots.map((r) => r.visible)).toEqual([true, false]);
   });
 });
 

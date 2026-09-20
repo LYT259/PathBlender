@@ -15,6 +15,13 @@ export interface SessionTrajectory {
   /** UI display color; persisted in session files. */
   color: string;
   visible: boolean;
+  /**
+   * Route-library id of the trajectory this robot currently shows, when it
+   * came from (or was switched to) an imported library route. Session-layer
+   * concern only — survives undo/redo with the robot, inert when the library
+   * it points at is gone (restored sessions start with an empty library).
+   */
+  routeId?: string;
 }
 
 /** Palette mirroring the 103 fork's ghost colors (community-familiar). */
@@ -90,6 +97,8 @@ export interface SessionFileV1 {
     startDelayS: number;
     color: string;
     visible: boolean;
+    /** Route-library id when the robot's current route came from the library. */
+    routeId?: string;
     geometry: RobotGeometry;
     geometrySource: Trajectory['geometrySource'];
     moduleLocations: Trajectory['moduleLocations'];
@@ -134,6 +143,7 @@ export function serializeSession(
       startDelayS: st.startDelayS,
       color: st.color,
       visible: st.visible,
+      routeId: st.routeId,
       geometry: st.trajectory.geometry,
       geometrySource: st.trajectory.geometrySource,
       moduleLocations: st.trajectory.moduleLocations,
@@ -196,6 +206,7 @@ export function deserializeSession(text: string): {
       startDelayS: r.startDelayS,
       color: r.color,
       visible: r.visible,
+      routeId: r.routeId,
     } satisfies SessionTrajectory;
   });
   return { fieldId: v.fieldId, field: customField, robots };

@@ -12,6 +12,7 @@ import { fieldImageWorldRect, samplePoseAt } from '@pathblender/core';
 import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { useI18n } from '../i18n';
+import { useTheme } from '../theme';
 
 export interface FieldCanvasHandle {
   exportPng: (onDone?: (ok: boolean) => void) => void;
@@ -28,6 +29,8 @@ interface Props {
   bounds: OutOfBoundsInterval[];
   /** Robot currently in meditation-edit mode (report v1.4 §6.3); null = off. */
   editRobot?: SessionTrajectory | null;
+  onBeginEdit?: () => void;
+  onEndEdit?: () => void;
   onEditWaypoint?: (
     robotId: string,
     idx: number,
@@ -57,6 +60,8 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     conflicts,
     bounds,
     editRobot = null,
+    onBeginEdit,
+    onEndEdit,
     onEditWaypoint,
     onAddWaypoint,
     onRemoveWaypoint,
@@ -65,12 +70,32 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   ref,
 ) {
   const { t } = useI18n();
+  const { resolved: theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [imgReady, setImgReady] = useState(false);
   const viewRef = useRef<View>({ scale: 40, cx: field.lengthM / 2, cy: field.widthM / 2 });
   const sizeRef = useRef({ w: 0, h: 0 });
+  const autoFitRef = useRef(true);
+  const dragRef = useRef<{ idx: number; kind: 'anchor' | 'prevControl' | 'nextControl' } | null>(null);
+  const drawRef = useRef<() => void>(() => {});
+  const frameRef = useRef<number | null>(null);
+  const requestDraw = useCallback(() => {
+    if (frameRef.current != null) return;
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null;
+      drawRef.current();
+    });
+  }, []);
+  useEffect(() => () => {
+    if (frameRef.current != null) cancelAnimationFrame(frameRef.current);
+    frameRef.current = null;
+  }, []);
+  useEffect(() => () => {
+    if (dragRef.current) onEndEdit?.();
+    dragRef.current = null;
+  }, [editRobot?.trajectory.id, onEndEdit]);
 
   // (Re)load the field image when the season changes.
   useEffect(() => {
@@ -78,14 +103,16 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     setImgReady(false);
     if (!fieldImageUrl) return;
     const img = new Image();
-    img.src = fieldImageUrl;
     img.onload = () => {
       imgRef.current = img;
       setImgReady(true);
     };
+    img.src = fieldImageUrl;
+    return () => { img.onload = null; };
   }, [fieldImageUrl, field.id]);
 
   const fit = useCallback(() => {
+    autoFitRef.current = true;
     const { w, h } = sizeRef.current;
     if (w === 0 || h === 0) return;
     const rect = field.image
@@ -98,7 +125,8 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       cx: field.lengthM / 2,
       cy: field.widthM / 2,
     };
-  }, [field]);
+    requestDraw();
+  }, [field, requestDraw]);
 
   // Track container size (DPR aware canvas backing store).
   useLayoutEffect(() => {
@@ -112,10 +140,14 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       const dpr = window.devicePixelRatio || 1;
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
+      if (autoFitRef.current) fit();
+      else requestDraw();
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, []);
+  }, [fit, requestDraw]);
+
+  useLayoutEffect(() => { fit(); }, [fit]);
 
   // Pointer pan + wheel zoom (anchored at the cursor); in edit mode a
   // pointer-down on a waypoint captures the drag for the waypoint instead.
@@ -133,10 +165,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     };
 
     type WpTarget = { idx: number; kind: 'anchor' | 'prevControl' | 'nextControl' };
-    let wpDrag: WpTarget | null = null;
-    const HIT_M = 12 / viewRef.current.scale; // ~12 px grab radius in meters
 
     const hitWaypoint = (wx: number, wy: number): WpTarget | null => {
+      const HIT_M = 12 / viewRef.current.scale; // constant screen-space grab radius
       const e = editRobot?.trajectory.editable;
       if (!e) return null;
       if (e.kind === 'pathplanner') {
@@ -191,19 +222,22 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         const w = world(e.offsetX, e.offsetY);
         const hit = hitWaypoint(w.x, w.y);
         if (hit) {
-          wpDrag = hit;
+          onBeginEdit?.();
+          dragRef.current = hit;
           canvas.setPointerCapture(e.pointerId);
           return;
         }
       }
     };
     const onMove = (e: PointerEvent) => {
-      if (!wpDrag || !editRobot || !onEditWaypoint) return;
+      const target = dragRef.current;
+      if (!target || !editRobot || !onEditWaypoint) return;
       const w = world(e.offsetX, e.offsetY);
-      onEditWaypoint(editRobot.trajectory.id, wpDrag.idx, w, wpDrag.kind);
+      onEditWaypoint(editRobot.trajectory.id, target.idx, w, target.kind);
     };
     const onUp = () => {
-      wpDrag = null;
+      if (dragRef.current) onEndEdit?.();
+      dragRef.current = null;
     };
     // WebKit trackpad pinch fires gesture* events (not wheel+ctrlKey).
     let lastScale = 1;
@@ -215,19 +249,23 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       e.preventDefault();
       const scale = gestureScale(e);
       if (scale > 0 && lastScale > 0) {
+        autoFitRef.current = false;
         const v = viewRef.current;
         v.scale = Math.min(400, Math.max(8, v.scale * (scale / lastScale)));
+        requestDraw();
       }
       lastScale = scale;
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      autoFitRef.current = false;
       const v = viewRef.current;
       const before = world(e.offsetX, e.offsetY);
       v.scale = Math.min(400, Math.max(8, v.scale * Math.exp(-e.deltaY * 0.0012)));
       const after = world(e.offsetX, e.offsetY);
       v.cx += before.x - after.x;
       v.cy += before.y - after.y;
+      requestDraw();
     };
     const onDblClick = (e: MouseEvent) => {
       if (!editRobot || !onAddWaypoint) return;
@@ -248,6 +286,8 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     canvas.addEventListener('pointerdown', onDown);
     canvas.addEventListener('pointermove', onMove);
     canvas.addEventListener('pointerup', onUp);
+    canvas.addEventListener('pointercancel', onUp);
+    canvas.addEventListener('lostpointercapture', onUp);
     canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('gesturestart', onGestureStart);
     canvas.addEventListener('gesturechange', onGestureChange);
@@ -257,20 +297,20 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       canvas.removeEventListener('pointerdown', onDown);
       canvas.removeEventListener('pointermove', onMove);
       canvas.removeEventListener('pointerup', onUp);
+      canvas.removeEventListener('pointercancel', onUp);
+      canvas.removeEventListener('lostpointercapture', onUp);
       canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('gesturestart', onGestureStart);
       canvas.removeEventListener('gesturechange', onGestureChange);
       canvas.removeEventListener('dblclick', onDblClick);
       canvas.removeEventListener('contextmenu', onContextMenu);
     };
-  }, [editRobot, onEditWaypoint, onAddWaypoint, onRemoveWaypoint]);
+  }, [editRobot, onEditWaypoint, onAddWaypoint, onRemoveWaypoint, onBeginEdit, onEndEdit, requestDraw]);
 
-  // Redraw whenever anything relevant changes.
-  // Redraw on every animation frame: canvas panning/zooming mutates
-  // viewRef without a React render, so a render-driven redraw would miss it.
-  useEffect(() => {
-    let raf = 0;
-    const redraw = () => {
+  // Coalesce data, view, image and theme changes into one frame. Paused
+  // scenes do no recurring work; playback schedules draws as time changes.
+  useLayoutEffect(() => {
+    drawRef.current = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -467,13 +507,8 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     ctx.font = '13px ui-monospace, monospace';
     ctx.fillText(t('canvas.clock', { t: currentT.toFixed(2) }), 12, 20);
     };
-    const loop = () => {
-      redraw();
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  });
+    requestDraw();
+  }, [field, robots, currentT, conflicts, bounds, editRobot, showTrail, imgReady, theme, t, requestDraw]);
 
   useImperativeHandle(ref, () => ({
     exportPng: (onDone?: (ok: boolean) => void) => {
@@ -501,11 +536,6 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     // re-invokes the parent's ref callback — a re-render loop with a
     // state-held ref (bit us in the round-9 editor page).
   }), [fit]);
-
-  // Fit once the image is ready and a size is known.
-  useEffect(() => {
-    if (imgReady && sizeRef.current.w > 0) fit();
-  }, [imgReady, fit]);
 
   return (
     <div className="field-canvas-wrap" ref={wrapRef}>
