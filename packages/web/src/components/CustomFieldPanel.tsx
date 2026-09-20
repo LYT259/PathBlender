@@ -7,12 +7,14 @@ import {
   type FieldPackage,
 } from '@pathblender/core';
 import { useI18n } from '../i18n';
+import { Dialog } from './Dialog';
 
 interface Props {
   open: boolean;
   onClose: () => void;
   /** Current custom field (to prefill), if any. */
   current?: FieldPackage;
+  currentImageUrl?: string;
   onApply: (field: FieldPackage, imageUrl: string | undefined) => void;
 }
 
@@ -28,10 +30,12 @@ interface Draft {
  * concept): pick an image, set pixels-per-meter, margin, and playfield
  * size. Suggested sizes derive from the image's natural pixel size.
  */
-export function CustomFieldPanel({ open, onClose, current, onApply }: Props) {
+export function CustomFieldPanel({ open, onClose, current, currentImageUrl, onApply }: Props) {
   const { t } = useI18n();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
+  const tagsRef = useRef<HTMLInputElement>(null);
+  const [imageUrl, setImageUrl] = useState(currentImageUrl);
+  const [imageError, setImageError] = useState(false);
   const [pixels, setPixels] = useState<{ w: number; h: number } | undefined>(
     current?.image
       ? { w: current.image.pixelWidth, h: current.image.pixelHeight }
@@ -58,6 +62,8 @@ export function CustomFieldPanel({ open, onClose, current, onApply }: Props) {
     if (!file) return;
     const url = URL.createObjectURL(file);
     const img = new Image();
+    setImageError(false);
+    setPixels(undefined);
     img.onload = () => {
       setPixels({ w: img.naturalWidth, h: img.naturalHeight });
       // Suggest playfield straight from calibration.
@@ -69,6 +75,8 @@ export function CustomFieldPanel({ open, onClose, current, onApply }: Props) {
         widthM: (img.naturalHeight / ppm - 2 * margin).toFixed(2),
       }));
     };
+    img.onerror = () => { setImageError(true); URL.revokeObjectURL(url); };
+    img.src = url;
     setImageUrl(url);
   };
 
@@ -92,8 +100,9 @@ export function CustomFieldPanel({ open, onClose, current, onApply }: Props) {
     }
   };
 
+  const validSize = ['ppm', 'lengthM', 'widthM'].every((key) => Number.isFinite(Number(draft[key as keyof Draft])) && Number(draft[key as keyof Draft]) > 0) && draft.marginM.trim() !== '' && Number.isFinite(Number(draft.marginM)) && Number(draft.marginM) >= 0;
   const apply = () => {
-    if (!pixels) return;
+    if (!pixels || !validSize) return;
     const field = makeCustomField({
       lengthM: Number(draft.lengthM) || 16.54,
       widthM: Number(draft.widthM) || 8.07,
@@ -120,10 +129,10 @@ export function CustomFieldPanel({ open, onClose, current, onApply }: Props) {
   );
 
   return (
+    <Dialog title={t('customField.title')} onClose={onClose}>
     <div className="cf-panel">
       <h3>{t('customField.title')}</h3>
-      <label className="btn small cf-file">
-        {t('customField.pickImage')}
+      <button className="btn cf-file" onClick={() => fileRef.current?.click()}>{t('customField.pickImage')}</button>
         <input
           ref={fileRef}
           type="file"
@@ -131,22 +140,21 @@ export function CustomFieldPanel({ open, onClose, current, onApply }: Props) {
           hidden
           onChange={(e) => pickImage(e.target.files?.[0])}
         />
-      </label>
+      {imageError && <p role="alert" className="cf-error">{t('customField.imageError')}</p>}
       {pixels && (
         <div className="cf-meta">
           {pixels.w}×{pixels.h}px
           {imageUrl && <img src={imageUrl} alt="" className="cf-thumb" />}
         </div>
       )}
-      <label className="btn small cf-file">
-        {t('customField.tags')}
+      <button className="btn cf-file" onClick={() => tagsRef.current?.click()}>{t('customField.tags')}</button>
         <input
+          ref={tagsRef}
           type="file"
           accept=".json,application/json"
           hidden
           onChange={(e) => void pickTags(e.target.files?.[0])}
         />
-      </label>
       {tagError !== '' && <div className="cf-error">{tagError}</div>}
       {aprilTags && (
         <div className="cf-meta">
@@ -158,8 +166,9 @@ export function CustomFieldPanel({ open, onClose, current, onApply }: Props) {
       {num(t('customField.length'), 'lengthM')}
       {num(t('customField.width'), 'widthM')}
       <p className="cf-note">{t('customField.note')}</p>
+      {!validSize && <p role="alert" className="cf-error">{t('customField.invalidSize')}</p>}
       <div className="cf-actions">
-        <button className="btn small" onClick={apply} disabled={!pixels}>
+        <button className="btn accent" onClick={apply} disabled={!pixels || !validSize}>
           {t('customField.apply')}
         </button>
         <button className="btn small" onClick={onClose}>
@@ -168,5 +177,6 @@ export function CustomFieldPanel({ open, onClose, current, onApply }: Props) {
       </div>
       <input type="hidden" data-field-id={CUSTOM_FIELD_ID} />
     </div>
+    </Dialog>
   );
 }

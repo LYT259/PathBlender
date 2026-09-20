@@ -1,11 +1,12 @@
+import type { CSSProperties } from 'react';
 import type {
   CollisionInterval,
   OutOfBoundsInterval,
   SessionTrajectory,
 } from '@pathblender/core';
-import { AUTO_PERIOD_S } from '@pathblender/core';
-import { activeEndT } from '@pathblender/core';
+import { AUTO_PERIOD_S, activeEndT } from '@pathblender/core';
 import { useI18n } from '../i18n';
+import './Timeline.css';
 
 const SPEEDS = [0.25, 0.5, 1];
 
@@ -24,129 +25,189 @@ interface Props {
   bounds: OutOfBoundsInterval[];
   duration: number;
   playback: Playback;
+  selectedId?: string;
+  onSelect?: (id: string) => void;
+  onJump?: (time: number, robotIds: string[]) => void;
 }
 
-export function Timeline({
-  robots,
-  conflicts,
-  bounds,
-  duration,
-  playback,
-}: Props) {
+function TransportIcon({ kind }: { kind: 'rewind' | 'back' | 'play' | 'pause' | 'forward' }) {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor" aria-hidden="true">
+      {kind === 'rewind' && <path d="M4 4h2v12H4zm12 .5v11L7 10z" />}
+      {kind === 'back' && <path d="M9.5 5v10l-7-5zm8 0v10l-7-5z" />}
+      {kind === 'forward' && <path d="M2.5 5v10l7-5zm8 0v10l7-5z" />}
+      {kind === 'play' && <path d="M6 3.5v13L16 10z" />}
+      {kind === 'pause' && <path d="M5 4h3.5v12H5zm6.5 0H15v12h-3.5z" />}
+    </svg>
+  );
+}
+
+export function Timeline({ robots, conflicts, bounds, duration, playback, selectedId, onSelect, onJump }: Props) {
   const { t: tr } = useI18n();
   const { t, setT, playing, setPlaying, speed, setSpeed } = playback;
-  const axisMax = Math.max(AUTO_PERIOD_S, Math.ceil(duration));
+  const end = Number.isFinite(duration) ? Math.max(0, duration) : 0;
+  const currentT = Math.min(end, Math.max(0, t));
+  // Ruler, range, activity, markers, and playhead all share this domain.
+  const axisMax = Math.max(AUTO_PERIOD_S, Math.ceil(end));
+  const tickStep = Math.max(1, Math.ceil(axisMax / 20));
+  const ticks = Array.from({ length: Math.floor(axisMax / tickStep) + 1 }, (_, i) => i * tickStep);
+  if (ticks[ticks.length - 1] !== axisMax) ticks.push(axisMax);
+  const percent = (time: number) => `${(Math.min(axisMax, Math.max(0, time)) / axisMax) * 100}%`;
+  const intervalStyle = (start: number, finish: number): CSSProperties => ({
+    left: percent(start),
+    width: `${(Math.max(0, Math.min(axisMax, finish) - Math.max(0, start)) / axisMax) * 100}%`,
+  });
+  const seek = (time: number, robotId?: string) => {
+    setPlaying(false);
+    setT(Math.min(end, Math.max(0, time)));
+    if (robotId) onSelect?.(robotId);
+  };
+  const jump = (time: number, robotIds: string[], selectedRobotId = robotIds[0]) => {
+    // The workspace can reveal every participant, including hidden paths.
+    if (onJump) onJump(Math.min(end, Math.max(0, time)), robotIds);
+    else seek(time, selectedRobotId);
+  };
 
   return (
-    <div className="timeline">
-      <div className="timeline-controls">
-        <button
-          className="btn icon transport"
-          onClick={() => setPlaying(!playing)}
-          disabled={duration === 0}
-          title={playing ? 'Pause' : 'Play'}
-        >
-          {playing ? '❚❚' : '▶'}
-        </button>
-        <div className="seg speeds">
+    <section className="timeline timeline-workspace" aria-label={tr('timeline.title')}>
+      <div className="timeline-toolbar">
+        <h2>{tr('timeline.title')}</h2>
+        <div className="timeline-transport">
+          <button type="button" onClick={() => seek(0)} disabled={end === 0} aria-label={tr('timeline.rewind')} title={tr('timeline.rewind')}>
+            <TransportIcon kind="rewind" />
+          </button>
+          <button type="button" onClick={() => seek(currentT - 0.5)} disabled={end === 0 || currentT === 0} aria-label={tr('timeline.stepBack')} title={tr('timeline.stepBack')}>
+            <TransportIcon kind="back" />
+          </button>
+          <button
+            type="button"
+            className="timeline-play"
+            onClick={() => setPlaying(!playing)}
+            disabled={end === 0}
+            aria-label={tr(playing ? 'timeline.pause' : 'timeline.play')}
+            title={tr(playing ? 'timeline.pause' : 'timeline.play')}
+          >
+            <TransportIcon kind={playing ? 'pause' : 'play'} />
+          </button>
+          <button type="button" onClick={() => seek(currentT + 0.5)} disabled={end === 0 || currentT === end} aria-label={tr('timeline.stepForward')} title={tr('timeline.stepForward')}>
+            <TransportIcon kind="forward" />
+          </button>
+        </div>
+        <span className="clock timeline-clock">
+          {tr('timeline.clock', { t: currentT.toFixed(2), d: end.toFixed(2) })}
+        </span>
+        <div className="timeline-speeds" role="group" aria-label={tr('timeline.playbackSpeed')}>
           {SPEEDS.map((s) => (
-            <button
-              key={s}
-              className={s === speed ? 'on' : ''}
-              onClick={() => setSpeed(s)}
-            >
+            <button type="button" key={s} aria-pressed={s === speed} onClick={() => setSpeed(s)}>
               {tr('timeline.speed', { n: s })}
             </button>
           ))}
         </div>
-        <span className="clock">
-          {tr('timeline.clock', { t: t.toFixed(2), d: duration.toFixed(2) })}
-        </span>
+        {robots.length > 0 && (
+          <div className="timeline-legend">
+            <span><i className="timeline-legend-collision" />{tr('timeline.collision')}</span>
+            <span><i className="timeline-legend-bounds" />{tr('timeline.outOfBounds')}</span>
+            <span><i className="timeline-legend-event" />{tr('timeline.event')}</span>
+          </div>
+        )}
       </div>
 
-      <div className="timeline-track">
-        <input
-          type="range"
-          min={0}
-          max={Math.max(duration, 0.001)}
-          step={0.01}
-          value={Math.min(t, duration)}
-          disabled={duration === 0}
-          onChange={(e) => setT(Number(e.target.value))}
-        />
-        <div className="ticks">
-          {Array.from({ length: axisMax + 1 }, (_, i) => (
-            <span key={i} className="tick" style={{ left: `${(i / axisMax) * 100}%` }}>
-              {i}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="per-robot-bands">
-        {robots.map((r) => {
-          const span = Math.max(axisMax, duration) || 1;
-          const eventDots = r.trajectory.events.map((ev, i) => (
-            <div
-              key={`ev-${i}`}
-              className="band-event"
-              style={{ left: `${(ev.t / span) * 100}%` }}
-              title={`${ev.name} @ ${ev.t.toFixed(2)}s`}
-            />
-          ));
-          const oobBands = bounds
-            .filter((b) => b.robotId === r.trajectory.id)
-            .map((b) => (
-              <div
-                key={`oob-${b.robotId}-${b.startT}`}
-                className="band-oob"
-                style={{
-                  left: `${(b.startT / span) * 100}%`,
-                  width: `${((b.endT - b.startT) / span) * 100}%`,
-                }}
-                title={tr('timeline.band', {
-                  start: b.startT.toFixed(2),
-                  end: b.endT.toFixed(2),
-                })}
-              />
-            ));
-          const bands = conflicts
-            .filter((c) => c.aId === r.trajectory.id || c.bId === r.trajectory.id)
-            .map((c) => (
-              <div
-                key={`${c.aId}-${c.bId}-${c.startT}`}
-                className="band-conflict"
-                style={{
-                  left: `${(c.startT / span) * 100}%`,
-                  width: `${((c.endT - c.startT) / span) * 100}%`,
-                }}
-                title={tr('timeline.band', { start: c.startT.toFixed(2), end: c.endT.toFixed(2) })}
-              />
-            ));
-          const endPct = `${Math.min(100, (activeEndT(r) / span) * 100)}%`;
-          return (
-            <div key={r.trajectory.id} className="band-row">
-              <span className="band-dot" style={{ background: r.color }} />
-              <span className="band-name" title={r.trajectory.name}>
-                {r.trajectory.name}
-              </span>
-              <div className="band-track">
-                <div className="band-active" style={{ width: endPct, background: hexAlpha(r.color, 0.5) }} />
-                {oobBands}
-                {bands}
-                {eventDots}
+      {robots.length === 0 ? <p className="timeline-empty">{tr('timeline.empty')}</p> : (
+        <div className="timeline-scroller">
+          <div className="timeline-surface">
+            <div className="timeline-axis">
+              <span className="timeline-unit">{tr('timeline.seconds')}</span>
+              <div className="timeline-ruler">
+                <div className="timeline-ticks" aria-hidden="true">
+                  {ticks.map((tick) => (
+                    <span key={tick} className="timeline-tick" style={{ left: percent(tick) }}>{tick}</span>
+                  ))}
+                </div>
+                <input
+                  className="timeline-scrubber"
+                  type="range"
+                  min={0}
+                  max={axisMax}
+                  step={0.01}
+                  value={currentT}
+                  disabled={end === 0}
+                  aria-label={tr('timeline.position')}
+                  aria-valuetext={tr('timeline.clock', { t: currentT.toFixed(2), d: end.toFixed(2) })}
+                  onChange={(e) => seek(Number(e.target.value))}
+                  onKeyDown={(e) => {
+                    // End goes to the actual session end even when the ruler
+                    // still includes the remainder of the autonomous period.
+                    if (e.key === 'End') {
+                      e.preventDefault();
+                      seek(end);
+                    }
+                  }}
+                />
               </div>
             </div>
-          );
-        })}
-      </div>
-    </div>
+            <div className="timeline-rows">
+              {robots.map((robot) => {
+                const { trajectory } = robot;
+                const robotConflicts = conflicts.filter((c) => c.aId === trajectory.id || c.bId === trajectory.id);
+                const robotBounds = bounds.filter((b) => b.robotId === trajectory.id);
+                const activityLabel = tr('timeline.activity', {
+                  name: trajectory.name,
+                  start: robot.startDelayS.toFixed(2),
+                  end: activeEndT(robot).toFixed(2),
+                });
+                return (
+                  <div className={`timeline-row${selectedId === trajectory.id ? ' is-selected' : ''}`} key={trajectory.id}>
+                    <button
+                      type="button"
+                      className="timeline-robot"
+                      onClick={() => onSelect?.(trajectory.id)}
+                      aria-label={tr('timeline.selectRobot', { name: trajectory.name })}
+                      aria-pressed={selectedId === trajectory.id}
+                      title={trajectory.name}
+                    >
+                      <span className="timeline-robot-dot" style={{ background: robot.color }} />
+                      <span>{trajectory.name}</span>
+                    </button>
+                    <div className="timeline-lane">
+                      <div
+                        className="timeline-activity"
+                        style={{ ...intervalStyle(robot.startDelayS, activeEndT(robot)), background: robot.color }}
+                        role="img"
+                        aria-label={activityLabel}
+                        title={activityLabel}
+                      />
+                      {robotBounds.map((issue, index) => {
+                        const label = tr('timeline.issue', {
+                          kind: tr('timeline.outOfBounds'), name: trajectory.name,
+                          start: issue.startT.toFixed(2), end: issue.endT.toFixed(2),
+                        });
+                        return <button key={`bounds-${index}`} type="button" className="timeline-issue timeline-bounds" style={intervalStyle(issue.startT, issue.endT)} aria-label={label} title={label} onClick={() => jump(issue.startT, [trajectory.id])} />;
+                      })}
+                      {robotConflicts.map((issue, index) => {
+                        const otherId = issue.aId === trajectory.id ? issue.bId : issue.aId;
+                        const other = robots.find((r) => r.trajectory.id === otherId);
+                        const label = tr('timeline.issue', {
+                          kind: tr('timeline.collision'), name: `${trajectory.name} × ${other?.trajectory.name ?? otherId}`,
+                          start: issue.startT.toFixed(2), end: issue.endT.toFixed(2),
+                        });
+                        return <button key={`collision-${index}`} type="button" className="timeline-issue timeline-collision" style={intervalStyle(issue.startT, issue.endT)} aria-label={label} title={label} onClick={() => jump(issue.startT, [issue.aId, issue.bId], trajectory.id)} />;
+                      })}
+                      {trajectory.events.map((event, index) => {
+                        const globalT = event.t + robot.startDelayS;
+                        const label = tr('timeline.eventAt', { name: event.name, t: globalT.toFixed(2) });
+                        return <button key={`event-${index}`} type="button" className="timeline-event" style={{ left: percent(globalT) }} title={label} aria-label={label} onClick={() => jump(globalT, [trajectory.id])} />;
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="timeline-playhead-plane" aria-hidden="true">
+              <div className="timeline-playhead" style={{ left: percent(currentT) }} />
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
   );
-}
-
-function hexAlpha(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
 }

@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { RefObject } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSessionHistory } from './session-history';
+import { Icon } from './components/Icon';
+import { Dialog } from './components/Dialog';
 import {
   applyAllianceChange,
   autoResolveConflicts,
@@ -53,9 +55,10 @@ const FIELD_IMAGES: Record<string, string> = {
   'rebuilt-2026': field2026,
 };
 import { FieldCanvas, type FieldCanvasHandle } from './components/FieldCanvas';
-import { FieldCanvas3D, type FieldCanvas3DHandle } from './components/FieldCanvas3D';
+import type { FieldCanvas3DHandle } from './components/FieldCanvas3D';
+const FieldCanvas3D = lazy(() => import('./components/FieldCanvas3D').then((module) => ({ default: module.FieldCanvas3D })));
 import { Timeline } from './components/Timeline';
-import { RobotList } from './components/RobotList';
+import { RobotList, RobotInspector } from './components/RobotList';
 import { ConflictPanel } from './components/ConflictPanel';
 import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
@@ -63,7 +66,7 @@ import { I18nProvider, LANGUAGES, langLabel, useI18n, type LangChoice } from './
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { AiPanel, SparkleIcon } from './components/AiPanel';
 import { AiSettingsSection } from './components/AiSettingsSection';
-import { EditorPage } from './components/EditorPage';
+import { WaypointPanel } from './components/WaypointPanel';
 import { UpdateChannelProvider, useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
 import { listenPrefs } from './pref-sync';
@@ -105,8 +108,8 @@ function rememberFieldPrefs(id: string, variant: 'welded' | 'andymark') {
   }
 }
 
-// Desktop (Tauri) hides the in-page preferences gear — ⌘, owns it there.
-const IS_DESKTOP = location.protocol === 'tauri:' || location.protocol === 'asset:';
+// Native menus supplement the same visible workspace actions.
+const IS_DESKTOP = '__TAURI_INTERNALS__' in window || location.protocol === 'tauri:' || location.protocol === 'asset:';
 
 export function App() {
   return (
@@ -120,11 +123,17 @@ function AppBody() {
   const { lang, langChoice, setLang, t: tr } = useI18n();
   const { channel: updateChannel, setChannel: setUpdateChannel } = useUpdateChannel();
   const { mode: themeMode, setMode: setThemeMode } = useTheme();
-  const [robots, setRobots] = useState<SessionTrajectory[]>([]);
+  const [initialFieldPref] = useState(loadFieldPref);
+  const { robots, setRobots, setScene, fieldId, fieldVariant, customField, customImageUrl, undo, redo, beginEdit, endEdit, canUndo, canRedo } = useSessionHistory(initialFieldPref);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [pathsOpen, setPathsOpen] = useState(() => window.innerWidth > 640);
+  const [inspectorOpen, setInspectorOpen] = useState(true);
+  const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot' | 'ai'>('checks');
+  const [aiMounted, setAiMounted] = useState(false);
+  useEffect(() => { if (inspectorMode === 'ai') setAiMounted(true); }, [inspectorMode]);
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
   const [aiSettings, setAiSettings] = useState<AISettings>(() => loadAISettings());
-  const [showAi, setShowAi] = useState(false);
-  const [view3D, setView3D] = useState(true);
+  const [view3D, setView3D] = useState(false);
   const [showTrail, setShowTrail] = useState(true);
   const [showPrefs, setShowPrefs] = useState(false);
   // Language is staged: picking one reveals Cancel/Save instead of applying
@@ -134,14 +143,8 @@ function AppBody() {
   const closePrefs = useCallback(() => {
     setShowPrefs(false);
     setPendingLang(null);
+    setPendingTheme(null);
   }, []);
-  const aiUndoRef = useRef<{ label: string; robots: SessionTrajectory[] }[]>([]);
-  const [aiUndoTop, setAiUndoTop] = useState<string | null>(null);
-  const [initialFieldPref] = useState(loadFieldPref);
-  const [fieldId, setFieldId] = useState(initialFieldPref.id);
-  const [fieldVariant, setFieldVariant] = useState<'welded' | 'andymark'>(initialFieldPref.variant);
-  const [customField, setCustomField] = useState<FieldPackage | undefined>(undefined);
-  const [customImageUrl, setCustomImageUrl] = useState<string | undefined>(undefined);
   const [cfOpen, setCfOpen] = useState(false);
   const [toast, setToast] = useState('');
   const flash = useCallback((msg: string) => {
@@ -153,24 +156,26 @@ function AppBody() {
   const canvas3DRef = useRef<FieldCanvas3DHandle>(null);
   const baseField = fieldId === CUSTOM_FIELD_ID && customField ? customField : fieldById(fieldId);
   // The 2D overlay / beacons follow the selected field construction.
-  const field =
+  const field = useMemo(() =>
     fieldVariant === 'andymark' && baseField?.aprilTagsAndyMark
       ? { ...baseField, aprilTags: baseField.aprilTagsAndyMark }
-      : baseField;
+      : baseField, [baseField, fieldVariant]);
   // Field/variant memory is written ONLY from the user's own selects —
   // share-link and session-file restores must not overwrite it.
 
   const duration = sessionDuration(robots);
   const playback = usePlayback(duration);
   const { t, setT } = playback;
+  const undoSession = useCallback(() => { playback.setPlaying(false); undo(); }, [playback.setPlaying, undo]);
+  const redoSession = useCallback(() => { playback.setPlaying(false); redo(); }, [playback.setPlaying, redo]);
 
   const visible = useMemo(() => robots.filter((r) => r.visible), [robots]);
   const conflicts = useMemo(
-    () => detectCollisions(visible),
-    [visible],
+    () => detectCollisions(robots),
+    [robots],
   );
-  const bounds = useMemo(() => detectFieldBounds(visible, field), [visible, field]);
-  const minSep = useMemo(() => minimumSeparation(visible), [visible]);
+  const bounds = useMemo(() => detectFieldBounds(robots, field), [robots, field]);
+  const minSep = useMemo(() => minimumSeparation(robots), [robots]);
 
   // .path texts stay available so later .auto imports can resolve their
   // pathName references (within the same batch or across this session).
@@ -194,7 +199,13 @@ function AppBody() {
       if (file.name.endsWith(SESSION_EXT)) {
         try {
           const restored = deserializeSession(text);
-          setRobots(restored.robots);
+          setScene({ robots: restored.robots, fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
+          setSelectedId(restored.robots[0]?.trajectory.id ?? null);
+          setInspectorMode('checks');
+          setInspectorOpen(window.innerWidth > 900);
+          if (window.innerWidth <= 640) setPathsOpen(false);
+          playback.setPlaying(false);
+          setT(0);
           setErrors([]);
           return;
         } catch {
@@ -224,8 +235,14 @@ function AppBody() {
         ...added.map((traj, i) => makeSession(traj, prev.length + i)),
       ]);
     }
+    if (added.length > 0) {
+      setSelectedId(added[0]!.id);
+      setInspectorMode('checks');
+      setInspectorOpen(window.innerWidth > 900);
+      if (window.innerWidth <= 640) setPathsOpen(false);
+    }
     setErrors(nextErrors);
-  }, []);
+  }, [tr, setRobots, setScene, setT, playback.setPlaying]);
 
   // Whole-window drag & drop.
   useEffect(() => {
@@ -261,22 +278,23 @@ function AppBody() {
   // --- meditation editing (report v1.4 §6.3) ---
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const selectRobot = useCallback((id: string) => {
+    setSelectedId(id);
+    setInspectorMode('robot');
+    setInspectorOpen(true);
+    if (window.innerWidth <= 640) setPathsOpen(false);
+    setEditingId((current) => current === id ? current : null);
+  }, []);
   const toggleEdit = useCallback((id: string) => {
     setEditingId((cur) => (cur === id ? null : id));
-  }, []);
-
-  const applyEdited = useCallback(
-    (id: string, edit: (t: import('@pathblender/core').Trajectory) => import('@pathblender/core').Trajectory) => {
-      setRobots((prev) =>
-        prev.map((r) =>
-          r.trajectory.id === id
-            ? { ...r, trajectory: reparameterize(edit(r.trajectory)) }
-            : r,
-        ),
-      );
-    },
-    [],
-  );
+    setSelectedId(id);
+    setInspectorMode('robot');
+    setInspectorOpen(true);
+    setView3D(false);
+    setShowTrail(true);
+    playback.setPlaying(false);
+    setRobots((previous) => previous.map((r) => r.trajectory.id === id && !r.visible ? { ...r, visible: true } : r));
+  }, [playback.setPlaying, setRobots]);
 
   const editWaypoint = useCallback(
     (
@@ -372,6 +390,10 @@ function AppBody() {
     () => robots.find((r) => r.trajectory.id === editingId) ?? null,
     [robots, editingId],
   );
+  const selectedRobot = robots.find((r) => r.trajectory.id === selectedId) ?? robots[0];
+  useEffect(() => {
+    if (editingId && !robots.some((r) => r.trajectory.id === editingId)) setEditingId(null);
+  }, [robots, editingId]);
 
 
 
@@ -397,7 +419,7 @@ function AppBody() {
     (id: string, patch: Partial<RobotGeometry>) => {
       setRobots((prev) =>
         prev.map((r) =>
-          r.trajectory.id === id
+          r.trajectory.id === id && r.trajectory.geometrySource !== 'file'
             ? {
                 ...r,
                 trajectory: {
@@ -433,20 +455,10 @@ function AppBody() {
       removeWaypoint,
       removeRobot,
       exportRobot,
-      pushUndo: (label) => {
-        aiUndoRef.current = [...aiUndoRef.current.slice(-19), { label, robots }];
-        setAiUndoTop(label);
-      },
+      // Every mutation is captured by the shared session history.
+      pushUndo: () => {},
     };
   }, [robots, conflicts, setStartDelay, setAlliance, setTeamNumber, editWaypoint, addWaypoint, removeWaypoint, removeRobot, exportRobot]);
-
-  const aiUndo = useCallback(() => {
-    const top = aiUndoRef.current[aiUndoRef.current.length - 1];
-    if (!top) return;
-    aiUndoRef.current = aiUndoRef.current.slice(0, -1);
-    setAiUndoTop(aiUndoRef.current[aiUndoRef.current.length - 1]?.label ?? null);
-    setRobots(top.robots);
-  }, []);
 
   const applyAiSettings = useCallback((next: AISettings) => {
     setAiSettings(next);
@@ -464,8 +476,20 @@ function AppBody() {
       'json',
       text,
     );
-  }, [robots, fieldId]);
+  }, [robots, fieldId, field]);
 
+
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      const element = e.target instanceof Element ? e.target : null;
+      if ((!e.metaKey && !e.ctrlKey) || e.key.toLowerCase() !== 'z' || e.altKey || element?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]') || document.querySelector('[aria-modal="true"]')) return;
+      e.preventDefault();
+      playback.setPlaying(false);
+      if (e.shiftKey) redo(); else undo();
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [undo, redo, playback.setPlaying]);
 
   const [shareLink, setShareLink] = useState<string | null>(null);
   const shareUrl = useCallback(async () => {
@@ -487,18 +511,14 @@ function AppBody() {
     } catch {
       flash(tr('toast.shareFailed'));
     }
-  }, [robots, fieldId, flash, tr]);
+  }, [robots, fieldId, field, flash, tr]);
 
   // Restore a shared session from the URL hash on first load.
   useEffect(() => {
     if (!location.hash.startsWith('#s=')) return;
     void hashToSession(location.hash).then((restored) => {
       if (restored && restored.robots.length > 0) {
-        setFieldId(restored.fieldId);
-        if (restored.fieldId === CUSTOM_FIELD_ID && restored.field) {
-          setCustomField(restored.field);
-        }
-        setRobots(restored.robots);
+        setScene({ robots: restored.robots, fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
       }
     });
   }, []);
@@ -550,9 +570,11 @@ function AppBody() {
     setRobots([]);
     setErrors([]);
     setT(0);
-  }, [setT]);
-  // Desktop: the native app menu owns Import/Save/Share/PNG/Clear —
-  // the toolbar buttons hide there, but the shared input stays reachable.
+    playback.setPlaying(false);
+    setEditingId(null);
+    setSelectedId(null);
+  }, [setT, setRobots, playback.setPlaying]);
+  // Desktop: native menu commands and visible buttons share the same handlers.
   // The menu is rebuilt in the app language whenever it changes.
   useEffect(() => {
     if (!IS_DESKTOP) return;
@@ -560,12 +582,12 @@ function AppBody() {
     const unbinds: (() => void)[] = [];
     void import('@tauri-apps/api/event').then(({ listen }) => {
       if (disposed) return;
-      void listen('menu-import', () => importInputRef.current?.click()).then((u) => unbinds.push(u));
-      void listen('menu-save', () => saveSession()).then((u) => unbinds.push(u));
-      void listen('menu-share', () => void shareUrl()).then((u) => unbinds.push(u));
-      void listen('menu-png', () => exportPng()).then((u) => unbinds.push(u));
-      void listen('menu-clear', () => clearAll()).then((u) => unbinds.push(u));
-      void listen('menu-check-update', () => void checkForUpdates()).then((u) => unbinds.push(u));
+      void listen('menu-import', () => importInputRef.current?.click()).then((u) => { if (disposed) u(); else unbinds.push(u); });
+      void listen('menu-save', () => saveSession()).then((u) => { if (disposed) u(); else unbinds.push(u); });
+      void listen('menu-share', () => void shareUrl()).then((u) => { if (disposed) u(); else unbinds.push(u); });
+      void listen('menu-png', () => exportPng()).then((u) => { if (disposed) u(); else unbinds.push(u); });
+      void listen('menu-clear', () => clearAll()).then((u) => { if (disposed) u(); else unbinds.push(u); });
+      void listen('menu-check-update', () => void checkForUpdates()).then((u) => { if (disposed) u(); else unbinds.push(u); });
     });
     return () => {
       disposed = true;
@@ -581,254 +603,135 @@ function AppBody() {
       .catch(() => undefined);
   }, [lang]);
 
-  // Editing lives on its own page (round 9): the fusion view unmounts
-  // entirely, Choreo-style — the robot's edits persist on close.
-  // (Viewer deployments have no editing at all.)
-  if (!VIEWER_ONLY && editingId && editRobot) {
-    return (
-      <div className="app">
-        <EditorPage
-          robot={editRobot}
-          field={field}
-          fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl}
-          onEditWaypoint={editWaypoint}
-          onAddWaypoint={addWaypoint}
-          onRemoveWaypoint={removeWaypoint}
-          onReset={resetEdit}
-          onExport={exportRobot}
-          onClose={() => setEditingId(null)}
-        />
-        {toast !== '' && <div className="toast">{toast}</div>}
-      </div>
-    );
-  }
+  const hasRobots = robots.length > 0;
+  const issueCount = conflicts.length + bounds.length;
+  const rightOpen = inspectorOpen && (hasRobots || inspectorMode === 'ai');
+  const openImport = () => importInputRef.current?.click();
+  const jumpToIssue = (time: number, robotIds: string[] = []) => {
+    playback.setPlaying(false);
+    setT(time);
+    if (robotIds[0]) {
+      setSelectedId(robotIds[0]);
+      setEditingId((current) => current === robotIds[0] ? current : null);
+    }
+    // A located problem must be visible even if its paths were hidden.
+    if (robotIds.some((id) => robots.some((r) => r.trajectory.id === id && !r.visible)))
+      setRobots((previous) => previous.map((r) => robotIds.includes(r.trajectory.id) ? { ...r, visible: true } : r));
+  };
+  const resolveConflicts = () => {
+    playback.setPlaying(false);
+    const next = autoResolveConflicts(robots.map((r) => ({ ...r, visible: true })))
+      .map((r, i) => ({ ...r, visible: robots[i]!.visible }));
+    setRobots(next);
+    const remaining = detectCollisions(next).length;
+    flash(tr(remaining > 0 ? 'conflicts.autoResolvePartial' : 'checks.resolved', { n: remaining }));
+  };
 
   return (
     <div className="app">
-      <header className="toolbar" data-tauri-drag-region="" aria-label="primary">
-        <ToolBtn
-          label={tr('rail.import')}
-          aria={tr('actions.import')}
-          fileInput
-          hidden={IS_DESKTOP}
-          inputRef={importInputRef}
-          onFiles={(files) => void importFiles(files)}
-        />
-        {!IS_DESKTOP && !VIEWER_ONLY && (
-          <ToolBtn label={tr('rail.save')} aria={tr('actions.save')} onClick={saveSession} disabled={robots.length === 0} />
-        )}
-        {!IS_DESKTOP && (
-          <>
-            <ToolBtn label={tr('rail.share')} aria="Share link" onClick={() => void shareUrl()} disabled={robots.length === 0} />
-            {!VIEWER_ONLY && (
-              <ToolBtn label={tr('rail.png')} aria={tr('actions.png')} onClick={exportPng} disabled={robots.length === 0 || view3D} />
-            )}
-            <ToolBtn label={tr('rail.prefs')} aria={tr('prefs.title')} onClick={() => setShowPrefs(true)} />
-            <a
-              className="tool-btn gh-link"
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub"
-              title="GitHub"
-            >
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
-              </svg>
-            </a>
-            {VIEWER_ONLY && !SITE_PREVIEW && (
-              <a
-                className="tool-btn gh-link beta-link"
-                href={SITE_URLS.preview}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={tr('site.tryPreview')}
-                title={tr('site.tryPreview')}
-              >
-                <span className="beta-glyph" aria-hidden="true">β</span>
-              </a>
-            )}
-            <span className="toolbar-spacer" />
-            <ToolBtn label={tr('rail.clear')} aria={tr('actions.clear')} danger onClick={clearAll} disabled={robots.length === 0} />
-          </>
-        )}
-      </header>
-      {VIEWER_ONLY && SITE_PREVIEW && (
-        <div className="site-preview-banner" role="contentinfo">
-          <span>{tr('site.previewNote')}</span>
-          <a href={SITE_URLS.stable}>{tr('site.backStable')}</a>
+      <header className="toolbar workspace-toolbar" data-tauri-drag-region="" aria-label="primary">
+        <button className="tool-btn square" aria-label={tr('workspace.togglePaths')} aria-pressed={pathsOpen} onClick={() => { setPathsOpen(!pathsOpen); if (!pathsOpen && window.innerWidth <= 640) setInspectorOpen(false); }}><Icon name="sidebar" /></button>
+        <div className="workspace-brand" data-tauri-drag-region="">
+          <strong data-tauri-drag-region="">PathBlender</strong>
+          <span data-tauri-drag-region="">{tr('workspace.subtitle')}</span>
         </div>
-      )}
-      <div className="app-col">
-
-
-      <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
-
-      <main className="app-body">
-        <RobotList
-          robots={robots}
-          conflicts={conflicts}
-          onUpdate={updateRobot}
-          onSetAlliance={setAlliance}
-          onSetGeometry={setGeometry}
-          onSetTeamNumber={setTeamNumber}
-          editingId={editingId}
-          onToggleEdit={toggleEdit}
-          onResetEdit={resetEdit}
-          onExport={exportRobot}
-          onRemove={removeRobot}
-        />
-        <div className="canvas-slot">
-          <div className="canvas-bar">
-            <select
-              className="field-select"
-              value={fieldId}
-              onChange={(e) => {
-                setFieldId(e.target.value);
-                if (e.target.value !== CUSTOM_FIELD_ID)
-                  rememberFieldPrefs(e.target.value, fieldVariant);
-                if (e.target.value === CUSTOM_FIELD_ID && !customField) {
-                  setCfOpen(true);
-                }
-              }}
-              title="Game season"
-            >
-              {FIELDS.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name} {f.year}
-                </option>
-              ))}
-              <option value={CUSTOM_FIELD_ID}>{tr('customField.title')}</option>
-            </select>
-            {field.aprilTagsAndyMark && (
-              <select
-                className="field-select"
-                value={fieldVariant}
-                onChange={(e) => {
-                  const v = e.target.value as 'welded' | 'andymark';
-                  setFieldVariant(v);
-                  if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, v);
-                }}
-                title={tr('field.variant')}
-                aria-label={tr('field.variant')}
-              >
-                <option value="andymark">AndyMark</option>
-                <option value="welded">Welded</option>
-              </select>
-            )}
-            <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
-              <button className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
-              <button className={view3D ? 'on' : ''} onClick={() => setView3D(true)}>3D</button>
-            </div>
-            {view3D && (
-              <button
-                className="btn small"
-                onClick={() => canvas3DRef.current?.resetCam()}
-              >
-                {tr('canvas.fit')}
-              </button>
-            )}
-            <label className="switch">
-              <input
-                type="checkbox"
-                checked={showTrail}
-                onChange={(e) => setShowTrail(e.target.checked)}
-              />
-              <span className="sw-track" aria-hidden="true" />
-              <span className="sw-text">{tr('canvas.trails')}</span>
-            </label>
-            <span className="canvas-spacer" />
-            {!VIEWER_ONLY && (
-              <button
-                className="btn small ai-toggle"
-                title={tr('ai.title')}
-                aria-label={tr('ai.title')}
-                onClick={() => setShowAi((v) => !v)}
-              >
-                <SparkleIcon />
-              </button>
-            )}
+        <span className="toolbar-divider" />
+        <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>
+        <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
+        <div className="history-controls">
+          <button className="tool-btn square" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
+          <button className="tool-btn square" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
+        </div>
+        <span className="toolbar-spacer" data-tauri-drag-region="" />
+        {!VIEWER_ONLY && <button className="tool-btn save-action" disabled={!hasRobots} onClick={saveSession} title={tr('actions.saveHint')}>{tr('actions.save')}</button>}
+        <button className="tool-btn share-action" disabled={!hasRobots} aria-label={tr('actions.share')} onClick={() => void shareUrl()}><Icon name="share" /><span>{tr('rail.share')}</span></button>
+        <details className="workspace-menu">
+          <summary className="tool-btn square" aria-label={tr('workspace.more')} title={tr('workspace.more')}><Icon name="more" /></summary>
+          <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
+            {!VIEWER_ONLY && <button className="menu-save-action" disabled={!hasRobots} onClick={saveSession}>{tr('actions.save')}</button>}
+            {!VIEWER_ONLY && <button disabled={!hasRobots || view3D} onClick={exportPng} title={view3D ? tr('toast.pngOnly2d') : undefined}>{tr('actions.png')}</button>}
+            <button disabled={!hasRobots} onClick={clearAll}>{tr('actions.clear')}</button>
+            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+            {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
           </div>
-          {view3D ? (
-            <FieldCanvas3D
-              ref={canvas3DRef}
-              variant={fieldVariant}
-              field={field}
-              fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl}
-              robots={visible}
-              currentT={t}
-            />
-          ) : (
-            <FieldCanvas
-              ref={canvasRef}
-              showTrail={showTrail}
-          field={field}
-          fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl}
-          robots={visible}
-          currentT={t}
-          conflicts={conflicts}
-          bounds={bounds}
-          editRobot={editRobot}
-          onEditWaypoint={editWaypoint}
-          onAddWaypoint={addWaypoint}
-              onRemoveWaypoint={removeWaypoint}
-            />
-          )}
-        </div>
-        <ConflictPanel
-          robots={visible}
-          conflicts={conflicts}
-          bounds={bounds}
-          minSeparation={minSep}
-          onJump={setT}
-          onAutoResolve={() => {
-            const next = autoResolveConflicts(robots);
-            setRobots(next);
-            const remaining = detectCollisions(next.filter((r) => r.visible)).length;
-            if (remaining > 0) flash(tr('conflicts.autoResolvePartial', { n: remaining }));
-          }}
-        />
-        {showAi && !VIEWER_ONLY && (
-          <AiPanel
-            settings={aiSettings}
-            onSettings={applyAiSettings}
-            buildContext={buildActionContext}
-            undoLabel={aiUndoTop}
-            onUndo={aiUndo}
-            onAttachFiles={(files) => void importFiles(files)}
-            onOpenSettings={() => setShowPrefs(true)}
-          />
-        )}
-      </main>
+        </details>
+        {!VIEWER_ONLY && !rightOpen && <button className="tool-btn square" aria-label={tr('ai.title')} title={tr('ai.title')} onClick={() => { setInspectorMode('ai'); setInspectorOpen(true); }}><SparkleIcon /></button>}
+        <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={() => setShowPrefs(true)}><Icon name="settings" /></button>
+        <button className="tool-btn square" aria-label={tr('workspace.toggleInspector')} aria-pressed={rightOpen} onClick={() => { setInspectorOpen(!inspectorOpen); if (!inspectorOpen && window.innerWidth <= 640) setPathsOpen(false); }} disabled={!hasRobots}><Icon name="inspector" /></button>
+      </header>
+      {VIEWER_ONLY && SITE_PREVIEW && <div className="site-preview-banner" role="contentinfo"><span>{tr('site.previewNote')}</span><a href={SITE_URLS.stable}>{tr('site.backStable')}</a></div>}
+      <div className="app-col">
+        <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
+        <main className={`app-body workspace-body ${pathsOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
+          {pathsOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} />}
+          <section className="workspace-stage" aria-label={tr('canvas.view')}>
+            <div className="canvas-slot">
+              <div className="canvas-bar workspace-canvas-bar">
+                <div className="field-options">
+                  <select className="field-select" aria-label={tr('workspace.season')} value={fieldId} onChange={(e) => {
+                    if (e.target.value === CUSTOM_FIELD_ID) { setCfOpen(true); return; }
+                    setScene({ fieldId: e.target.value });
+                    rememberFieldPrefs(e.target.value, fieldVariant);
+                  }}>
+                    {FIELDS.map((f) => <option key={f.id} value={f.id}>{f.name} {f.year}</option>)}
+                    <option value={CUSTOM_FIELD_ID}>{tr('customField.title')}</option>
+                  </select>
+                  {field.aprilTagsAndyMark && <select className="field-select field-variant" value={fieldVariant} onChange={(e) => {
+                    const v = e.target.value as 'welded' | 'andymark'; setScene({ fieldVariant: v });
+                    if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, v);
+                  }} title={tr('field.variant')} aria-label={tr('field.variant')}><option value="andymark">AndyMark</option><option value="welded">Welded</option></select>}
+                </div>
+                <span className="canvas-spacer" />
+                <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
+                  <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
+                  <button aria-pressed={view3D} className={view3D ? 'on' : ''} disabled={!!editRobot} title={editRobot ? tr('workspace.edit2d') : undefined} onClick={() => setView3D(true)}>3D</button>
+                </div>
+                {hasRobots && <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>}
+                {!view3D && hasRobots && <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>}
+              </div>
+              {editRobot && <div className="editing-banner"><div><strong>{tr('workspace.editing', { name: editRobot.trajectory.name })}</strong><span>{tr('canvas.editHint')}</span></div><button className="btn" onClick={() => setEditingId(null)}>{tr('robots.doneEdit')}</button></div>}
+              {!hasRobots ? <div className="workspace-empty">
+                <div className="welcome-mark"><Icon name="path" size={40} /></div>
+                <h1>{tr('workspace.emptyTitle')}</h1>
+                <p>{tr('workspace.emptyBody')}</p>
+                <button className="btn accent welcome-import" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>
+                <span className="drop-hint">{tr('workspace.dropHint')}</span>
+                <div className="welcome-steps">{(['workspace.importStep', 'workspace.compareStep', 'workspace.checkStep'] as const).map((key, i) => <span key={key}><b>{i + 1}</b>{tr(key)}</span>)}</div>
+                <small>{tr('workspace.formats')}</small>
+                <small>{tr('workspace.restoreNotice')}</small>
+                <div className="privacy-note"><Icon name="check" size={14} />{tr('workspace.local')}</div>
+              </div> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} /></Suspense> :
+                <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} editRobot={editRobot} onBeginEdit={beginEdit} onEndEdit={endEdit} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}
+            </div>
+            {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); setInspectorOpen(true); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
+            {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} duration={duration} playback={playback} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} /></footer>}
+          </section>
+          <aside className="workspace-inspector" hidden={!rightOpen}>
+            <div className="inspector-header"><div className="seg inspector-tabs" role="group" aria-label={tr('workspace.panels')}>
+              <button className={inspectorMode === 'checks' ? 'on' : ''} aria-pressed={inspectorMode === 'checks'} onClick={() => setInspectorMode('checks')}>{tr('workspace.checks')}{issueCount > 0 && <span className="tab-count">{issueCount}</span>}</button>
+              <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
+              {!VIEWER_ONLY && <button className={inspectorMode === 'ai' ? 'on' : ''} aria-label={tr('ai.title')} aria-pressed={inspectorMode === 'ai'} onClick={() => setInspectorMode('ai')}><SparkleIcon />{tr('workspace.assistant')}</button>}
+            </div><button className="tool-btn square inspector-close" title={tr('workspace.closePanel')} aria-label={tr('workspace.closePanel')} onClick={() => setInspectorOpen(false)}><Icon name="close" size={14} /></button></div>
+            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} onAdjust={selectRobot} onAutoResolve={resolveConflicts} />}
+            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} editingId={editingId} onUpdate={updateRobot} onSetAlliance={setAlliance} onSetGeometry={setGeometry} onSetTeamNumber={setTeamNumber} onToggleEdit={toggleEdit} onResetEdit={resetEdit} onExport={exportRobot} onRemove={removeRobot} />{editRobot && <WaypointPanel key={editRobot.trajectory.id} robot={editRobot} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}</div>}
+            {aiMounted && !VIEWER_ONLY && <div className="inspector-ai" hidden={inspectorMode !== 'ai'}><AiPanel settings={aiSettings} onSettings={applyAiSettings} buildContext={buildActionContext} undoLabel={canUndo ? tr('workspace.undo') : null} onUndo={undoSession} onAttachFiles={(files) => void importFiles(files)} onOpenSettings={() => setShowPrefs(true)} /></div>}
+          </aside>
+        </main>
 
-      <CustomFieldPanel
-        open={cfOpen}
-        onClose={() => {
-          setCfOpen(false);
-          if (!customField) setFieldId(REBUILT_2026.id);
-        }}
+      {cfOpen && <CustomFieldPanel
+        open
+        onClose={() => setCfOpen(false)}
         current={customField}
+        currentImageUrl={customImageUrl}
         onApply={(f, url) => {
-          setCustomField(f);
-          setCustomImageUrl(url);
-          setFieldId(CUSTOM_FIELD_ID);
+          setScene({ customField: f, customImageUrl: url, fieldId: CUSTOM_FIELD_ID });
         }}
-      />
-      {toast !== '' && <div className="toast">{toast}</div>}
-      <footer className="app-footer">
-        <Timeline
-          robots={visible}
-          conflicts={conflicts}
-          bounds={bounds}
-          duration={duration}
-          playback={playback}
-        />
-      </footer>
+      />}
+      {toast !== '' && <div className="toast" role="status">{toast}</div>}
       {shareLink != null && (
-        <div className="prefs-overlay" onClick={() => setShareLink(null)}>
-          <div className="prefs-modal" onClick={(e) => e.stopPropagation()}>
+        <Dialog title={tr('share.title')} onClose={() => setShareLink(null)}>
             <h3>{tr('share.title')}</h3>
-            <textarea className="share-box" readOnly value={shareLink} rows={3} />
+            <textarea aria-label={tr('share.title')} className="share-box" readOnly value={shareLink} rows={3} />
             <p className="prefs-note">{tr('share.note')}</p>
             <div className="prefs-row btns">
               <button
@@ -845,12 +748,10 @@ function AppBody() {
                 {tr('prefs.done')}
               </button>
             </div>
-          </div>
-        </div>
+        </Dialog>
       )}
       {showPrefs && (
-        <div className="prefs-overlay" onClick={closePrefs}>
-          <div className="prefs-modal" onClick={(e) => e.stopPropagation()}>
+        <Dialog title={tr('prefs.title')} onClose={closePrefs}>
             <h3>{tr('prefs.title')}</h3>
             <label className="prefs-row">
               <span>{tr('prefs.language')}</span>
@@ -889,7 +790,7 @@ function AppBody() {
                 <option value="light">{tr('theme.light')}</option>
               </select>
             </label>
-            {!VIEWER_ONLY && (
+            {IS_DESKTOP && (
               <label className="prefs-row">
                 <span>{tr('prefs.channel')}</span>
                 <select
@@ -897,7 +798,6 @@ function AppBody() {
                   onChange={(e) => {
                     const next = e.target.value as 'stable' | 'beta';
                     setUpdateChannel(next);
-                    void checkForUpdates(); // switch channel → immediately check that channel's feed
                   }}
                 >
                   <option value="stable">{tr('prefs.channel.stable')}</option>
@@ -938,8 +838,7 @@ function AppBody() {
                 {tr('prefs.save')}
               </button>
             </div>
-          </div>
-        </div>
+        </Dialog>
       )}
       </div>
     </div>
@@ -963,45 +862,4 @@ function friendlyParseError(
     default:
       return tr('import.unrecognized', { f: fileName });
   }
-}
-
-
-function ToolBtn(props: {
-  label: string;
-  aria: string;
-  onClick?: () => void;
-  disabled?: boolean;
-  active?: boolean;
-  danger?: boolean;
-  fileInput?: boolean;
-  hidden?: boolean;
-  inputRef?: RefObject<HTMLInputElement | null>;
-  onFiles?: (files: FileList) => void;
-  title?: string;
-}) {
-  const { label, aria, onClick, disabled, active, danger, fileInput, hidden, inputRef, onFiles, title } = props;
-  const cls = `tool-btn${active ? ' on' : ''}${danger ? ' danger' : ''}${hidden ? ' hidden-tool' : ''}`;
-  const body = <span className="tool-label">{label}</span>;
-  if (fileInput) {
-    return (
-      <label className={cls} title={title ?? aria} aria-label={aria}>
-        {body}
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          hidden
-          onChange={(e) => {
-            if (e.target.files?.length) onFiles?.(e.target.files);
-            e.target.value = '';
-          }}
-        />
-      </label>
-    );
-  }
-  return (
-    <button className={cls} title={title ?? aria} aria-label={aria} onClick={onClick} disabled={disabled}>
-      {body}
-    </button>
-  );
 }

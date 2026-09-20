@@ -1,11 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CollisionInterval, RobotGeometry, SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { VIEWER_ONLY } from '../viewer';
+import './RobotList.css';
 
-interface Props {
+interface RobotListProps {
   robots: SessionTrajectory[];
   conflicts: CollisionInterval[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onImport: () => void;
+  onUpdate: (id: string, patch: Partial<SessionTrajectory>) => void;
+}
+
+interface RobotInspectorProps {
+  robot: SessionTrajectory | undefined;
   editingId: string | null;
   onUpdate: (id: string, patch: Partial<SessionTrajectory>) => void;
   onSetAlliance: (id: string, alliance: 'blue' | 'red') => void;
@@ -17,274 +26,176 @@ interface Props {
   onRemove: (id: string) => void;
 }
 
-export function RobotList({
-  robots,
-  conflicts,
-  editingId,
-  onUpdate,
-  onSetAlliance,
-  onSetGeometry,
-  onSetTeamNumber,
-  onToggleEdit,
-  onResetEdit,
-  onExport,
-  onRemove,
-}: Props) {
+/** Selection lives in the workspace so the list, field and inspector agree. */
+export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate }: RobotListProps) {
   const { t } = useI18n();
-  // Choreo-style: rows stay compact; details unfold under the selected row.
-  // Rows are open by default (fresh imports are one click from edits); the
-  // set only remembers what the user deliberately collapsed.
-  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
-
-  const toggle = (id: string) => {
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
   return (
-    <aside className="robot-list">
-      <h2>{t('robots.title', { n: robots.length })}</h2>
-      {robots.map((r) => {
-        const hit = conflicts.some(
-          (c) => c.aId === r.trajectory.id || c.bId === r.trajectory.id,
-        );
-        const open = !collapsed.has(r.trajectory.id);
-        return (
-          <div
-            key={r.trajectory.id}
-            className={`robot-card ${hit ? 'has-conflict' : ''} ${open ? 'open' : ''}`}
-          >
-            <div
-              className="robot-head"
-              role="button"
-              tabIndex={0}
-              aria-expanded={open}
-              aria-label={r.trajectory.name}
-              onClick={() => toggle(r.trajectory.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') toggle(r.trajectory.id);
-              }}
-            >
-              <span className="band-dot" style={{ background: r.color }} />
-              <span className="robot-name" title={r.trajectory.name}>
-                {r.trajectory.name}
-              </span>
-              <span className={`source-badge src-${r.trajectory.source}`}>
-                {sourceLabel(r.trajectory.source)}
-              </span>
-              {hit && (
-                <span className="conflict-dot" title={t('robots.collision')}>
-                  ●
-                </span>
-              )}
-              <span className={`chev ${open ? 'open' : ''}`}>▸</span>
-              <button
-                className="btn icon danger robot-remove"
-                title={t('robots.remove')}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemove(r.trajectory.id);
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {open && (
-              <div className="robot-body">
-                <div className="robot-meta">
-                  {r.trajectory.teamName && <span>{r.trajectory.teamName}</span>}
-                  <span>{r.trajectory.durationS.toFixed(2)} s</span>
-                  {hit && <span className="conflict-tag">{t('robots.collision')}</span>}
-                </div>
-
-                {r.trajectory.warnings.map((w, i) => (
-                  <div key={i} className="robot-warning">⚠ {w}</div>
-                ))}
-
-                {!VIEWER_ONLY && (
-                  <div className="robot-row">
-                    <label>{t('robots.alliance')}</label>
-                    <div className="seg">
-                      <button
-                        className={r.trajectory.alliance === 'blue' ? 'on-blue' : ''}
-                        onClick={() => onSetAlliance(r.trajectory.id, 'blue')}
-                      >
-                        {t('robots.blue')}
-                      </button>
-                      <button
-                        className={r.trajectory.alliance === 'red' ? 'on-red' : ''}
-                        onClick={() => onSetAlliance(r.trajectory.id, 'red')}
-                      >
-                        {t('robots.red')}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="robot-row">
-                  <label>{t('robots.teamNumber')}</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={5}
-                    placeholder="—"
-                    value={r.trajectory.teamNumber}
-                    title={t('robots.teamNumber')}
-                    onChange={(e) =>
-                      onSetTeamNumber(
-                        r.trajectory.id,
-                        e.target.value.replace(/\D/g, '').slice(0, 5),
-                      )
-                    }
-                  />
-                </div>
-
-                {!VIEWER_ONLY && (
-                  <div className="robot-row">
-                    <label>{t('robots.delay')}</label>
-                    <input
-                      type="number"
-                      min={0}
-                      step={0.1}
-                      value={r.startDelayS}
-                      onChange={(e) =>
-                        onUpdate(r.trajectory.id, {
-                          startDelayS: Math.max(0, Number(e.target.value) || 0),
-                        })
-                      }
-                    />
-                  </div>
-                )}
-
-                {!VIEWER_ONLY && (
-                  <div className="robot-row geom">
-                    <label>
-                      {t('robots.bumper')}
-                      {r.trajectory.geometrySource === 'default' && (
-                        <span className="geom-note">{t('robots.bumperDefault')}</span>
-                      )}
-                    </label>
-                    <span className="geom-inputs">
-                      <input
-                        type="number"
-                        min={0.2}
-                        max={2}
-                        step={0.01}
-                        value={r.trajectory.geometry.lengthM}
-                        title={t('robots.length')}
-                        onChange={(e) =>
-                          onSetGeometry(r.trajectory.id, {
-                            lengthM: clampMeters(e.target.value),
-                          })
-                        }
-                      />
-                      ×
-                      <input
-                        type="number"
-                        min={0.2}
-                        max={2}
-                        step={0.01}
-                        value={r.trajectory.geometry.widthM}
-                        title={t('robots.width')}
-                        onChange={(e) =>
-                          onSetGeometry(r.trajectory.id, {
-                            widthM: clampMeters(e.target.value),
-                          })
-                        }
-                      />
+    <aside className="robot-list robot-library" aria-label={t('robots.title', { n: robots.length })}>
+      <div className="robot-library-heading">
+        <h2>{t('robots.title', { n: robots.length })}</h2>
+        <button className="robot-library-add" onClick={onImport} title={t('robots.import')} aria-label={t('robots.import')}>
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M10 4v12M4 10h12" /></svg>
+        </button>
+      </div>
+      {robots.length === 0 ? (
+        <div className="robot-library-empty">
+          <p>{t('robots.empty')}</p>
+          <button className="btn small" onClick={onImport}>{t('robots.import')}</button>
+        </div>
+      ) : (
+        <ul className="robot-library-items">
+          {robots.map((robot) => {
+            const { trajectory } = robot;
+            const hit = conflicts.some((c) => c.aId === trajectory.id || c.bId === trajectory.id);
+            const visibilityLabel = t(robot.visible ? 'robots.hide' : 'robots.show', { name: trajectory.name });
+            const selectionLabel = [
+              trajectory.teamNumber ? `#${trajectory.teamNumber} ${trajectory.name}` : trajectory.name,
+              sourceLabel(trajectory.source),
+              `${trajectory.durationS.toFixed(2)} s`,
+              hit ? t('robots.collision') : '',
+            ].filter(Boolean).join(', ');
+            return (
+              <li key={trajectory.id} className={`robot-library-row${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
+                <button className="robot-library-select" aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
+                  <span className="band-dot" style={{ background: robot.color }} aria-hidden="true" />
+                  <span className="robot-library-content">
+                    <span className="robot-library-name" title={trajectory.name}>
+                      {trajectory.teamNumber && <strong className="robot-library-team">#{trajectory.teamNumber}</strong>}
+                      <span className="robot-name">{trajectory.name}</span>
                     </span>
-                  </div>
-                )}
-
-                <label className="switch robot-visible">
-                  <input
-                    type="checkbox"
-                    checked={r.visible}
-                    onChange={(e) => onUpdate(r.trajectory.id, { visible: e.target.checked })}
-                  />
-                  <span className="sw-track" aria-hidden="true" />
-                  <span className="sw-text">{t('robots.visible')}</span>
-                </label>
-
-                {!VIEWER_ONLY && (
-                  <div className="robot-row edit-row">
-                    <button
-                      className="btn small"
-                      disabled={!r.trajectory.editable}
-                      title={
-                        r.trajectory.editable
-                          ? undefined
-                          : t('robots.editUnavailable')
-                      }
-                      onClick={() => onToggleEdit(r.trajectory.id)}
-                    >
-                      {editingId === r.trajectory.id
-                        ? t('robots.doneEdit')
-                        : t('robots.editPath')}
-                    </button>
-                    {r.trajectory.edited && (
-                      <>
-                        <span className="adjusted-badge">{t('robots.adjusted')}</span>
-                        <button
-                          className="btn small"
-                          onClick={() => onResetEdit(r.trajectory.id)}
-                        >
-                          {t('robots.resetEdit')}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {!VIEWER_ONLY && (
-                  <div className="robot-row export-row">
-                    <label>{t('robots.export')}</label>
-                    <span className="seg">
-                      <button
-                        disabled={r.trajectory.editable?.kind !== 'pathplanner'}
-                        title={r.trajectory.editable?.kind === 'pathplanner' ? undefined : t('robots.exportNoSource')}
-                        onClick={() => onExport(r.trajectory.id, 'path')}
-                      >
-                        .path
-                      </button>
-                      <button
-                        disabled={r.trajectory.editable?.kind !== 'choreo'}
-                        title={r.trajectory.editable?.kind === 'choreo' ? undefined : t('robots.exportNoSource')}
-                        onClick={() => onExport(r.trajectory.id, 'traj')}
-                      >
-                        .traj
-                      </button>
-                      <button onClick={() => onExport(r.trajectory.id, 'ghostauto')}>
-                        .ghostauto
-                      </button>
+                    <span className="robot-library-meta">
+                      <span>{sourceLabel(trajectory.source)}</span>
+                      <span>{trajectory.durationS.toFixed(2)} s</span>
+                      {hit && <span className="robot-library-conflict">{t('robots.collision')}</span>}
                     </span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
+                  </span>
+                </button>
+                <button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
+                  <EyeIcon visible={robot.visible} />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </aside>
   );
 }
 
-function clampMeters(v: string): number {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return 0.9;
-  return Math.min(2, Math.max(0.2, n));
+export function RobotInspector({ robot, editingId, onUpdate, onSetAlliance, onSetGeometry, onSetTeamNumber, onToggleEdit, onResetEdit, onExport, onRemove }: RobotInspectorProps) {
+  const { t } = useI18n();
+  if (!robot) return <div className="robot-inspector-empty">{t('robots.selectPrompt')}</div>;
+  const { trajectory } = robot;
+  const id = trajectory.id;
+  const fileGeometry = trajectory.geometrySource === 'file';
+
+  return (
+    <section className="robot-inspector" key={id} aria-label={trajectory.name}>
+      <header className="robot-inspector-heading">
+        <span className="band-dot" style={{ background: robot.color }} aria-hidden="true" />
+        <h2>{trajectory.name}</h2>
+        {trajectory.edited && <span className="adjusted-badge">{t('robots.adjusted')}</span>}
+      </header>
+      <section className="robot-inspector-section">
+        <h3>{t('robots.identity')}</h3>
+        {trajectory.teamName && <p className="robot-inspector-team-name">{trajectory.teamName}</p>}
+        <label className="robot-inspector-row">
+          <span>{t('robots.teamNumber')}</span>
+          <input type="text" inputMode="numeric" maxLength={5} placeholder="—" value={trajectory.teamNumber} onChange={(event) => onSetTeamNumber(id, event.target.value.replace(/\D/g, '').slice(0, 5))} />
+        </label>
+        <div className="robot-inspector-row">
+          <span>{t('robots.alliance')}</span>
+          {VIEWER_ONLY ? <span>{t(trajectory.alliance === 'blue' ? 'robots.blue' : 'robots.red')}</span> : (
+            <div className="seg" role="group" aria-label={t('robots.alliance')}>
+              <button className={trajectory.alliance === 'blue' ? 'on-blue' : ''} aria-pressed={trajectory.alliance === 'blue'} onClick={() => onSetAlliance(id, 'blue')}>{t('robots.blue')}</button>
+              <button className={trajectory.alliance === 'red' ? 'on-red' : ''} aria-pressed={trajectory.alliance === 'red'} onClick={() => onSetAlliance(id, 'red')}>{t('robots.red')}</button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="robot-inspector-section">
+        <h3>{t('robots.timing')}</h3>
+        <div className="robot-inspector-row">
+          <span>{t('robots.delay')}</span>
+          {VIEWER_ONLY ? <span>{robot.startDelayS.toFixed(2)} s</span> : (
+            <NumberField label={t('robots.delay')} value={robot.startDelayS} min={0} step={0.1} onCommit={(value) => onUpdate(id, { startDelayS: value })} />
+          )}
+        </div>
+        {!VIEWER_ONLY && <p className="robot-inspector-note">{t('robots.delayHint')}</p>}
+      </section>
+
+      <section className="robot-inspector-section">
+        <div className="robot-inspector-section-heading">
+          <h3>{t('robots.data')}</h3>
+          <span className={`robot-data-source${fileGeometry ? '' : ' is-estimated'}`}>{t(fileGeometry ? 'robots.fromFile' : 'robots.bumperDefault')}</span>
+        </div>
+        <p className="robot-inspector-caption">{t('robots.bumper')}</p>
+        {fileGeometry || VIEWER_ONLY ? (
+          <dl className="robot-dimensions">
+            <div><dt>{t('robots.length')}</dt><dd>{trajectory.geometry.lengthM.toFixed(2)} m</dd></div>
+            <div><dt>{t('robots.width')}</dt><dd>{trajectory.geometry.widthM.toFixed(2)} m</dd></div>
+          </dl>
+        ) : (
+          <div className="robot-dimensions robot-dimensions-editable">
+            <label><span>{t('robots.length')}</span><NumberField label={t('robots.length')} value={trajectory.geometry.lengthM} min={0.2} max={2} step={0.01} onCommit={(value) => onSetGeometry(id, { lengthM: value })} /></label>
+            <label><span>{t('robots.width')}</span><NumberField label={t('robots.width')} value={trajectory.geometry.widthM} min={0.2} max={2} step={0.01} onCommit={(value) => onSetGeometry(id, { widthM: value })} /></label>
+          </div>
+        )}
+        <p className="robot-inspector-note">{t(fileGeometry ? 'robots.fileDataNote' : 'robots.defaultDataNote')}</p>
+        {trajectory.warnings.length > 0 && (
+          <ul className="robot-inspector-warnings">{trajectory.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>
+        )}
+      </section>
+
+      {!VIEWER_ONLY && (
+        <section className="robot-inspector-section robot-inspector-actions">
+          <h3>{t('robots.actions')}</h3>
+          <button className="btn robot-inspector-edit" disabled={!trajectory.editable} title={trajectory.editable ? undefined : t('robots.editUnavailable')} onClick={() => onToggleEdit(id)}>
+            {t(editingId === id ? 'robots.doneEdit' : 'robots.editPath')}
+          </button>
+          {!trajectory.editable && <p className="robot-inspector-note">{t('robots.editUnavailable')}</p>}
+          {trajectory.edited && <button className="btn small" onClick={() => onResetEdit(id)}>{t('robots.resetEdit')}</button>}
+          <div className="robot-inspector-export">
+            <span>{t('robots.export')}</span>
+            <div className="robot-export-options" role="group" aria-label={t('robots.export')}>
+              <button className="btn small" disabled={trajectory.editable?.kind !== 'pathplanner'} title={trajectory.editable?.kind === 'pathplanner' ? undefined : t('robots.exportNoSource')} onClick={() => onExport(id, 'path')}>.path</button>
+              <button className="btn small" disabled={trajectory.editable?.kind !== 'choreo'} title={trajectory.editable?.kind === 'choreo' ? undefined : t('robots.exportNoSource')} onClick={() => onExport(id, 'traj')}>.traj</button>
+              <button className="btn small" onClick={() => onExport(id, 'ghostauto')}>.ghostauto</button>
+            </div>
+          </div>
+          <button className="robot-inspector-remove" onClick={() => onRemove(id)}>{t('robots.removeFromSession')}</button>
+        </section>
+      )}
+    </section>
+  );
+}
+
+/** Keep incomplete numeric text local; commit only a complete, bounded value. */
+function NumberField({ label, value, min, max = Infinity, step, onCommit }: { label: string; value: number; min: number; max?: number; step: number; onCommit: (value: number) => void }) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+  const commit = () => {
+    const parsed = draft.trim() === '' ? NaN : Number(draft);
+    const next = Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : value;
+    setDraft(String(next));
+    if (next !== value) onCommit(next);
+  };
+  return <input type="number" aria-label={label} value={draft} min={min} max={Number.isFinite(max) ? max : undefined} step={step} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => {
+    if (event.key === 'Enter') event.currentTarget.blur();
+    if (event.key === 'Escape') setDraft(String(value));
+  }} />;
+}
+
+function EyeIcon({ visible }: { visible: boolean }) {
+  return <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5Z" /><circle cx="10" cy="10" r="2.2" />{!visible && <path d="m3 3 14 14" />}</svg>;
 }
 
 function sourceLabel(source: SessionTrajectory['trajectory']['source']): string {
   switch (source) {
     case 'choreo-traj': return 'Choreo';
     case 'ghostauto': return 'Ghost';
-    case 'pathplanner-path': return 'PP';
+    case 'pathplanner-path': return 'PathPlanner';
     case 'pathplanner-auto': return 'PP Auto';
   }
 }
