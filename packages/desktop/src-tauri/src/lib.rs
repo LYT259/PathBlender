@@ -2,7 +2,7 @@
 /// No sidecars, no backend, no telemetry. The only native behavior:
 /// a macOS-standard menu (app menu with About/Preferences/Check-for-Updates,
 /// a File menu for import/save/share/PNG/clear, an Edit menu) that follows
-/// the app language, plus a small preferences window on ?window=prefs.
+/// the app language, plus a preferences window on ?window=prefs.
 use std::sync::Mutex;
 use tauri::menu::{AboutMetadataBuilder, MenuBuilder, MenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
@@ -217,8 +217,9 @@ fn open_prefs(app: &AppHandle) {
         WebviewUrl::App("index.html?window=prefs".into()),
     )
     .title("Preferences")
-    .inner_size(420.0, 260.0)
-    .resizable(false)
+    .inner_size(640.0, 760.0)
+    .min_inner_size(520.0, 560.0)
+    .resizable(true)
     .build();
 }
 
@@ -239,16 +240,6 @@ pub fn run() {
         })
         .manage(PendingUpdate(Mutex::new(None)))
         .setup(|app| {
-            // Apple-style sidebar material behind the translucent panels
-            // (through the overlay title bar so the toolbar shares it).
-            if let Some(win) = app.get_webview_window("main") {
-                let _ = window_vibrancy::apply_vibrancy(
-                    &win,
-                    window_vibrancy::NSVisualEffectMaterial::Sidebar,
-                    None,
-                    None,
-                );
-            }
             let handle = app.handle().clone();
             *handle
                 .state::<MenuState>()
