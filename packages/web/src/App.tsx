@@ -75,6 +75,7 @@ import { listenPrefs } from './pref-sync';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from './viewer';
 import type { ActionContext } from './ai/actions';
 import { loadAISettings, saveAISettings, type AISettings } from './ai/settings';
+import { AI_ENABLED } from './ai/availability';
 
 const SESSION_EXT = '.ghpb.json';
 // The project's public home — the repo is private today; the link simply
@@ -779,7 +780,7 @@ function AppBody() {
             {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
           </div>
         </details>
-        {!VIEWER_ONLY && !rightOpen && <button className="tool-btn square" aria-label={tr('ai.title')} title={tr('ai.title')} onClick={() => { setInspectorMode('ai'); setInspectorOpen(true); }}><SparkleIcon /></button>}
+        {!VIEWER_ONLY && AI_ENABLED && !rightOpen && <button className="tool-btn square" aria-label={tr('ai.title')} title={tr('ai.title')} onClick={() => { setInspectorMode('ai'); setInspectorOpen(true); }}><SparkleIcon /></button>}
         <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={() => setShowPrefs(true)}><Icon name="settings" /></button>
         <button className="tool-btn square" aria-label={tr('workspace.toggleInspector')} aria-pressed={rightOpen} onClick={() => { setInspectorOpen(!inspectorOpen); if (!inspectorOpen && window.innerWidth <= 640) setPathsOpen(false); }} disabled={!hasRobots}><Icon name="inspector" /></button>
       </header>
@@ -837,11 +838,11 @@ function AppBody() {
             <div className="inspector-header"><div className="seg inspector-tabs" role="group" aria-label={tr('workspace.panels')}>
               <button className={inspectorMode === 'checks' ? 'on' : ''} aria-pressed={inspectorMode === 'checks'} onClick={() => setInspectorMode('checks')}>{tr('workspace.checks')}{issueCount > 0 && <span className="tab-count">{issueCount}</span>}</button>
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
-              {!VIEWER_ONLY && <button className={inspectorMode === 'ai' ? 'on' : ''} aria-label={tr('ai.title')} aria-pressed={inspectorMode === 'ai'} onClick={() => setInspectorMode('ai')}><SparkleIcon />{tr('workspace.assistant')}</button>}
+              {!VIEWER_ONLY && AI_ENABLED && <button className={inspectorMode === 'ai' ? 'on' : ''} aria-label={tr('ai.title')} aria-pressed={inspectorMode === 'ai'} onClick={() => setInspectorMode('ai')}><SparkleIcon />{tr('workspace.assistant')}</button>}
             </div><button className="tool-btn square inspector-close" title={tr('workspace.closePanel')} aria-label={tr('workspace.closePanel')} onClick={() => setInspectorOpen(false)}><Icon name="close" size={14} /></button></div>
             {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} onAdjust={selectRobot} onAutoResolve={resolveConflicts} />}
             {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} editingId={editingId} onUpdate={updateRobot} onSetAlliance={setAlliance} onSetGeometry={setGeometry} onSetTeamNumber={setTeamNumber} onToggleEdit={toggleEdit} onResetEdit={resetEdit} onExport={exportRobot} onRemove={removeRobot} libraryProfiles={libraryProfiles} onApplyProfile={applyProfile} />{editRobot && <WaypointPanel key={editRobot.trajectory.id} robot={editRobot} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}</div>}
-            {aiMounted && !VIEWER_ONLY && <div className="inspector-ai" hidden={inspectorMode !== 'ai'}><AiPanel settings={aiSettings} onSettings={applyAiSettings} buildContext={buildActionContext} undoLabel={canUndo ? tr('workspace.undo') : null} onUndo={undoSession} onAttachFiles={(files) => void importFiles(files)} onOpenSettings={() => setShowPrefs(true)} /></div>}
+            {aiMounted && !VIEWER_ONLY && AI_ENABLED && <div className="inspector-ai" hidden={inspectorMode !== 'ai'}><AiPanel settings={aiSettings} onSettings={applyAiSettings} buildContext={buildActionContext} undoLabel={canUndo ? tr('workspace.undo') : null} onUndo={undoSession} onAttachFiles={(files) => void importFiles(files)} onOpenSettings={() => setShowPrefs(true)} /></div>}
           </aside>
         </main>
 
@@ -932,7 +933,7 @@ function AppBody() {
                 </select>
               </label>
             )}
-            {!VIEWER_ONLY && (
+            {!VIEWER_ONLY && AI_ENABLED && (
               <div className="prefs-ai">
                 <h4>{tr('prefs.ai')}</h4>
                 <AiSettingsSection
