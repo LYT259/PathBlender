@@ -143,21 +143,17 @@ describe('App import → fusion → collision flow', () => {
     expect(localStorage.getItem('ghpb.theme')).toBeNull();
   });
 
-  it('AI panel opens on the new-chat view; gear opens Preferences with AI settings', async () => {
+  it('AI assistant stays withdrawn: no entry point in toolbar, inspector or preferences', async () => {
     render(<App />);
     dropFiles([file('ghostauto/side_lane.ghostauto')]);
     await screen.findByText('Side Lane', { selector: '.robot-name' });
-    fireEvent.click(screen.getByRole('button', { name: 'AI Assistant', exact: true }));
-    // New-chat hero first; gear now opens the Preferences modal.
-    expect(document.querySelector('.ai-panel')).not.toBeNull();
-    expect(document.querySelector('.ai-hero')).not.toBeNull();
-    expect(document.querySelector('.ai-settings')).toBeNull();
-    // Gear is the last of the three top-bar icons (history, new chat, gear).
-    const topBtns = document.querySelectorAll('.ai-top .ai-icon-btn');
-    fireEvent.click(topBtns[topBtns.length - 1]!);
-    // Preferences modal shows the AI section (single settings entry).
+    // 2026-09-20 retreat: every assistant surface is unreachable while
+    // AI_ENABLED is false (ai/availability.ts); the code itself remains.
+    expect(screen.queryByRole('button', { name: 'AI Assistant', exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Assistant', exact: true })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /preferences/i }));
     expect(document.querySelector('.prefs-modal')).not.toBeNull();
-    expect(document.querySelector('.prefs-ai')).not.toBeNull();
+    expect(document.querySelector('.prefs-ai')).toBeNull();
   });
 
   it('the what-if start delay resolves the collision', async () => {
