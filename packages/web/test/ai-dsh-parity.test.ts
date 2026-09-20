@@ -65,6 +65,10 @@ afterEach(() => {
 
 const settings = (over: Partial<AISettings>): AISettings => ({
   ...DEFAULT_AI_SETTINGS,
+  // This file tests the wire protocols, and an enabled assistant is the
+  // precondition for any request — `chatCompletion` refuses while the flag is
+  // off (that refusal is covered in ai-gate.test.tsx).
+  enabled: true,
   baseUrl: 'https://gw.example/v1',
   apiKey: 'k',
   model: 'm1',

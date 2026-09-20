@@ -35,6 +35,11 @@ export async function chatCompletion(
   messages: ChatMessage[],
   opts?: { signal?: AbortSignal },
 ): Promise<ChatChoice> {
+  // The enable flag is the privacy gate, so it is enforced here at the one
+  // place every assistant request must pass through — not left to the caller
+  // to remember. Path data leaves the browser only while the user has turned
+  // the assistant on (report §6.4, AGENTS.md red line 1 v1.4 addendum).
+  if (!settings.enabled) throw new Error('assistant is disabled');
   const choice =
     settings.protocol === 'anthropic'
       ? await anthropicCompletion(settings, messages, opts?.signal)
