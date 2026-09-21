@@ -59,7 +59,7 @@ describe('gen-latest-json feed shape', () => {
     expect(feed.version).toBe('0.2.0');
     expect(feed.platforms['darwin-aarch64'].signature).toBe('sig-bytes');
     expect(feed.platforms['darwin-aarch64'].url).toBe(
-      'https://github.com/GH-FRC/pathblender/releases/download/v0.2.0/PathBlender.app.tar.gz',
+      'https://github.com/LYT259/pathblender/releases/download/v0.2.0/PathBlender.app.tar.gz',
     );
     expect(feed.notes).not.toContain('Beta channel build');
   });
