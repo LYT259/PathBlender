@@ -50,7 +50,7 @@
 - **红线**：私钥绝不进 git 仓库/截图/日志/会话文件（同 AI 密钥纪律）。
 - **本地构建**：`scripts/install-desktop.sh` 检测到 `~/.tauri` 密钥会自动导出 `TAURI_SIGNING_PRIVATE_KEY_PATH`，`createUpdaterArtifacts: true` 产出带签名的 `.app.tar.gz` + `.sig`。
 - **发版时**：CI/手工用同一密钥签名上传 `.app.tar.gz` 与 `.sig` 到 GitHub Release，并生成 `latest.json`（版本号、平台产物 URL、签名）。endpoint 与 `tauri.conf.json` 保持一致（仓库名小写）：
-  `https://github.com/GH-FRC/pathblender/releases/latest/download/latest.json`。
+  `https://github.com/LYT259/pathblender/releases/latest/download/latest.json`。
 - **β 渠道**：同目录下的 `latest-beta.json` 由 `scripts/gen-latest-json.mjs` 随每次发版生成，stable 标签才另存一份为 `latest.json`（stable 抬高 beta）。应用内切换渠道走 `check_update`（Rust 侧决定读哪个 feed——插件 JS 的 `check()` 不接受 endpoint 覆盖）。
 - **丢钥后果**：已分发用户永远收不到自动更新，只能手动重装——发版前确认两处副本齐全。
 - **应用内入口**：菜单「检查更新…」→ 有更新则下载安装并重启；404/离线显示「尚未上线」toast——发布渠道上线后自动变为真实行为。

@@ -24,7 +24,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { deriveReleaseChannel } from './release-channel.mjs';
 
-const REPO = 'GH-FRC/pathblender';
+const REPO = 'LYT259/pathblender';
 
 const [version, bundleRootArg] = process.argv.slice(2);
 if (!version || !bundleRootArg) {
