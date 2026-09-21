@@ -16,8 +16,8 @@ const PREFS_WINDOW: &str = "prefs";
 /// latest-beta.json onto GitHub releases). The channel choice cannot be
 /// made web-side: the updater plugin's JS `check()` has no endpoint
 /// override, so it is resolved here from the channel string.
-const FEED_STABLE: &str = "https://github.com/GH-FRC/pathblender/releases/latest/download/latest.json";
-const FEED_BETA: &str = "https://github.com/GH-FRC/pathblender/releases/latest/download/latest-beta.json";
+const FEED_STABLE: &str = "https://github.com/LYT259/pathblender/releases/latest/download/latest.json";
+const FEED_BETA: &str = "https://github.com/LYT259/pathblender/releases/latest/download/latest-beta.json";
 
 /// The update found by `check_update`, held until `install_update`
 /// consumes it (the webview drives both, mirroring the plugin's JS API).

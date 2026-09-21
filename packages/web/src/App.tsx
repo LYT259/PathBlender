@@ -80,7 +80,7 @@ import { AI_ENABLED } from './ai/availability';
 const SESSION_EXT = '.ghpb.json';
 // The project's public home — the repo is private today; the link simply
 // starts resolving once it goes public.
-const GITHUB_URL = 'https://github.com/GH-FRC/pathblender';
+const GITHUB_URL = 'https://github.com/LYT259/pathblender';
 
 // The field + variant survive refreshes (a custom field is not persisted —
 // its definition lives only in the session/share payload).
