@@ -814,8 +814,8 @@ function AppBody() {
                   <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
                   <button aria-pressed={view3D} className={view3D ? 'on' : ''} disabled={!!editRobot} title={editRobot ? tr('workspace.edit2d') : undefined} onClick={() => setView3D(true)}>3D</button>
                 </div>
-                {/* Both rest of the bar only render with robots present, which
-                    is now guaranteed by the gate above. */}
+                {/* The rest of the bar needs a robot to act on, which the gate
+                    above now guarantees. */}
                 <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
                 {!view3D && <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>}
               </div>}
