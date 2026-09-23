@@ -10,8 +10,6 @@ export const zhTw: Record<MessageKey, string> = {
   "workspace.subtitle": "聯盟協作工作區",
   "workspace.emptyTitle": "把聯盟的路徑，放到一起。",
   "workspace.emptyBody": "匯入各隊的自動路徑，同場回放，提前找到衝突。",
-  "workspace.dropHint": "也可以把檔案拖到視窗中的任意位置",
-  "workspace.formats": "Choreo .traj · PathPlanner .path / .auto · .ghostauto",
   "workspace.local": "路徑檔案僅在本機處理",
   "workspace.importStep": "匯入路徑",
   "workspace.compareStep": "同場回放",
