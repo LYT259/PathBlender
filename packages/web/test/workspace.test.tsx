@@ -32,7 +32,7 @@ const conflictPair = () => screen.getByText('Straight Run × Stop And Score', { 
 beforeEach(() => localStorage.clear());
 
 describe('workspace workflow', () => {
-  it('offers a working import action before any files are loaded and starts in 2D', () => {
+  it('keeps the import page clean: no field picker or view switch until there is a field', () => {
     render(<App />);
     const input = document.querySelector<HTMLInputElement>('.toolbar input[type="file"]')!;
     const openPicker = vi.spyOn(input, 'click').mockImplementation(() => undefined);
@@ -40,9 +40,34 @@ describe('workspace workflow', () => {
     expect(welcome).toBeInTheDocument();
     fireEvent.click(within(welcome).getByRole('button', { name: 'Import paths' }));
     expect(openPicker).toHaveBeenCalledOnce();
-    expect(screen.getByRole('button', { name: '2D', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    // User directive 2026-09-23: the season picker, its construction variant and
+    // the 2D/3D switch are meaningless before anything is loaded, so the whole
+    // canvas bar waits for the first robot.
+    expect(screen.queryByRole('button', { name: '2D', exact: true })).toBeNull();
+    expect(screen.queryByRole('button', { name: '3D', exact: true })).toBeNull();
+    expect(document.querySelector('.canvas-bar')).toBeNull();
+    expect(document.querySelectorAll('.field-select')).toHaveLength(0);
+    // What the page does carry instead: the local-processing promise and the
+    // note that a saved session opens through the same import.
+    expect(within(welcome).getByText('Files stay on this device')).toBeInTheDocument();
+    expect(within(welcome).getByText(/saved session/i)).toBeInTheDocument();
+    // And the two import actions share one sizing rule (user complaint: the
+    // folder button sat shorter than the accent one). jsdom does not resolve
+    // the stylesheet, so assert the rule itself rather than a fake computed
+    // height: both buttons must be covered by the same selector.
+    const css = readFileSync(resolve(__dirname, '../src/workspace.css'), 'utf8');
+    expect(css).toMatch(/\.welcome-actions > \.btn \{[^}]*min-height[^}]*white-space: nowrap/);
+    expect(css).toMatch(/\.welcome-actions \{[^}]*align-items: stretch/);
+    expect(css).not.toMatch(/^\.welcome-import \{/m);
     expect(screen.getByRole('button', { name: /^Undo$/i })).toBeDisabled();
     openPicker.mockRestore();
+  });
+
+  it('shows the view switch once robots land, defaulting to 2D', async () => {
+    render(<App />);
+    await importSamples('ghostauto/straight_run.ghostauto');
+    expect(screen.getByRole('button', { name: '2D', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    expect(document.querySelector('.canvas-bar')).toBeInTheDocument();
   });
 
   it('keeps hidden robots in collision analysis, then reveals and pauses at a selected conflict', async () => {

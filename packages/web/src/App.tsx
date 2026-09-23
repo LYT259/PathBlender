@@ -758,7 +758,7 @@ function AppBody() {
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
         {!VIEWER_ONLY && (
           <>
-            <button className="tool-btn import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" /><span>{tr('library.importFolder')}</span></button>
+            <button className="btn import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>
             {/* webkitdirectory is non-standard; set it imperatively so TS stays quiet */}
             <input ref={(el) => { folderInputRef.current = el; if (el) el.webkitdirectory = true; }} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files, { fromFolder: true }); e.target.value = ''; }} />
           </>
@@ -791,7 +791,10 @@ function AppBody() {
           {pathsOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} libraryRoutes={libraryRoutes} libraryProfiles={libraryProfiles} onPickRoute={pickRoute} onAddRoute={addRouteAsRobot} />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
             <div className="canvas-slot">
-              <div className="canvas-bar workspace-canvas-bar">
+              {/* The import page stays clean: the field picker, its construction
+                  variant and the 2D/3D switch only become useful once there is
+                  something on the field, so the bar appears with the robots. */}
+              {hasRobots && <div className="canvas-bar workspace-canvas-bar">
                 <div className="field-options">
                   <select className="field-select" aria-label={tr('workspace.season')} value={fieldId} onChange={(e) => {
                     if (e.target.value === CUSTOM_FIELD_ID) { setCfOpen(true); return; }
@@ -811,9 +814,11 @@ function AppBody() {
                   <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
                   <button aria-pressed={view3D} className={view3D ? 'on' : ''} disabled={!!editRobot} title={editRobot ? tr('workspace.edit2d') : undefined} onClick={() => setView3D(true)}>3D</button>
                 </div>
-                {hasRobots && <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>}
-                {!view3D && hasRobots && <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>}
-              </div>
+                {/* Both rest of the bar only render with robots present, which
+                    is now guaranteed by the gate above. */}
+                <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
+                {!view3D && <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>}
+              </div>}
               {editRobot && <div className="editing-banner"><div><strong>{tr('workspace.editing', { name: editRobot.trajectory.name })}</strong><span>{tr('canvas.editHint')}</span></div><button className="btn" onClick={() => setEditingId(null)}>{tr('robots.doneEdit')}</button></div>}
               {!hasRobots ? <div className="workspace-empty">
                 <div className="welcome-mark"><Icon name="path" size={40} /></div>
@@ -823,10 +828,8 @@ function AppBody() {
                   <button className="btn accent welcome-import" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>
                   {!VIEWER_ONLY && <button className="btn welcome-folder-import" onClick={() => folderInputRef.current?.click()}><Icon name="folder" />{tr('library.importFolder')}</button>}
                 </div>
-                <span className="drop-hint">{tr('workspace.dropHint')}</span>
                 <div className="welcome-steps">{(['workspace.importStep', 'workspace.compareStep', 'workspace.checkStep'] as const).map((key, i) => <span key={key}><b>{i + 1}</b>{tr(key)}</span>)}</div>
-                <small>{tr('workspace.formats')}</small>
-                <small>{tr('workspace.restoreNotice')}</small>
+                <p className="welcome-restore">{tr('workspace.restoreNotice')}</p>
                 <div className="privacy-note"><Icon name="check" size={14} />{tr('workspace.local')}</div>
               </div> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} /></Suspense> :
                 <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} editRobot={editRobot} onBeginEdit={beginEdit} onEndEdit={endEdit} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}
