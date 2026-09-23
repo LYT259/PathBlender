@@ -62,7 +62,8 @@ body.desktop .workspace-toolbar { padding-left: 86px; }
 .btn.accent { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
 .btn.accent:hover { background: var(--accent); }
 .btn.accent:active { opacity: .8; }
-.import-action { white-space: nowrap; }
+/* Toolbar pair: both import buttons share .btn sizing so they line up. */
+.import-action, .import-folder-action { white-space: nowrap; }
 .seg { border-radius: 8px; padding: 3px; }
 .seg button { min-height: 26px; padding: 3px 10px; border-radius: 5px; }
 .switch .sw-track::after { transition: transform 120ms ease; left: 1.5px; }
@@ -92,12 +93,18 @@ body.desktop .workspace-toolbar { padding-left: 86px; }
 .welcome-mark { width: 76px; height: 76px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 20px; color: var(--accent); background: var(--bg-card); margin-bottom: 24px; }
 .workspace-empty h1 { font-size: clamp(22px, 2.6vw, 32px); line-height: 1.2; letter-spacing: -.045em; margin: 0 0 14px; font-weight: 650; }
 .workspace-empty > p { max-width: 400px; line-height: 1.7; color: var(--fg-dim); font-size: 13px; margin: 0 0 25px; }
-.welcome-import { min-height: 38px; padding: 8px 20px; }
-.drop-hint { color: var(--fg-dim); margin-top: 11px; font-size: 11px; }
+/* Both welcome actions are one size. The row is explicit flex with stretch,
+   and the labels never wrap — 导入文件夹 used to break onto a second line and
+   stand 15px taller than its neighbour. Same pattern the toolbar pair uses. */
+.welcome-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: stretch; gap: 10px; }
+.welcome-actions > .btn { min-height: 38px; padding: 8px 20px; white-space: nowrap; }
 .welcome-steps { display: flex; gap: 28px; padding: 32px 0 22px; color: var(--fg-dim); font-size: 12px; }
 .welcome-steps > span { display: inline-flex; align-items: center; gap: 8px; }
 .welcome-steps b { display: grid; place-items: center; width: 21px; height: 21px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border); font-size: 10px; font-weight: 500; }
 .workspace-empty > small { color: var(--fg-dim); font-size: 10px; margin: 3px 0; }
+/* Raised specificity (.workspace-empty > p) so it beats the generic body-copy
+   rule without !important. */
+.workspace-empty > .welcome-restore { margin: 16px 0 0; font-size: 12px; }
 .privacy-note { display: flex; align-items: center; gap: 5px; color: var(--fg-dim); font-size: 10px; padding-top: 24px; }
 .workspace-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; padding: 5px 14px; background: var(--bar-bg); color: var(--fg-dim); border-top: 1px solid var(--border); font-size: 10px; }
 .workspace-status button { border: 0; padding: 0; background: none; color: var(--fg-dim); font-size: inherit; display: flex; gap: 5px; align-items: center; cursor: pointer; }
@@ -173,7 +180,7 @@ body.desktop .workspace-toolbar { padding-left: 86px; }
   .workspace-brand strong { font-size: 13px; }
   .history-controls { margin-left: 0; }
   .share-action span { display: none; }
-  .import-action { padding-inline: 8px; }
+  .import-action, .import-folder-action { padding-inline: 8px; }
   .app-body.workspace-body.with-paths, .app-body.workspace-body.with-paths.with-inspector { grid-template-columns: minmax(0, 1fr); }
   .workspace-body > .robot-library { position: absolute; inset: 0 auto 0 0; width: 224px; z-index: 21; box-shadow: 8px 0 24px var(--shadow); }
   .workspace-empty h1 { font-size: 22px; }

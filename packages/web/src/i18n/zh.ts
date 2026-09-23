@@ -6,8 +6,6 @@ export const zh: Record<MessageKey, string> = {
   "workspace.subtitle": "联盟协作工作区",
   "workspace.emptyTitle": "把联盟的路径，放到一起。",
   "workspace.emptyBody": "导入各队的自动路径，同场回放，提前找到冲突。",
-  "workspace.dropHint": "也可以把文件拖到窗口中的任意位置",
-  "workspace.formats": "Choreo .traj · PathPlanner .path / .auto · .ghostauto",
   "workspace.local": "路径文件仅在本机处理",
   "workspace.importStep": "导入路径",
   "workspace.compareStep": "同场回放",
