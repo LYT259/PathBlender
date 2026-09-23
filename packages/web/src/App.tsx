@@ -250,6 +250,20 @@ function AppBody() {
         nextErrors.push({ fileName: relPath, message });
       }
     }
+    // A folder that yielded nothing usable is also an answer — say so with the
+    // file count instead of leaving the field untouched and unexplained.
+    if (
+      fromFolder &&
+      addedRoutes.length === 0 &&
+      addedProfiles.length === 0 &&
+      nextErrors.length === 0 &&
+      incoming.length > 0
+    ) {
+      nextErrors.push({
+        fileName: incoming[0]!.relPath.split('/')[0] || incoming[0]!.file.name,
+        message: tr('import.folderNoRoutes'),
+      });
+    }
     pathTextsRef.current = batch;
     // Re-importing the same path refreshes the entry in place (stable id, so
     // robots pointing at it follow the update).
@@ -296,6 +310,30 @@ function AppBody() {
     }
     setErrors(nextErrors);
   }, [tr, flash, robots.length, setRobots, setScene, setT, playback.setPlaying]);
+
+  /**
+   * Folder picker result, with every silent exit removed. Before this handler
+   * existed, `if (files?.length)` swallowed both "the engine handed back the
+   * folder but never expanded it" and "the folder held nothing parseable", so
+   * pressing Open looked like a dead button.
+   */
+  const onFolderPicked = useCallback(async (list: File[]) => {
+    // The property is '' in browsers that support it and simply absent in
+    // others, so never assume it exists.
+    const rootOf = (f: File) => (f.webkitRelativePath ?? '').split('/')[0] || f.name;
+    if (list.length === 0) {
+      setErrors([{ fileName: tr('library.importFolder'), message: tr('import.emptyFolder') }]);
+      return;
+    }
+    if (!list.some((f) => f.webkitRelativePath)) {
+      setErrors([{
+        fileName: rootOf(list[0]!),
+        message: tr('import.folderNotExpanded'),
+      }]);
+      return;
+    }
+    await importFiles(list, { fromFolder: true });
+  }, [importFiles, tr]);
 
   /** Switch one robot onto another library route (the comparison loop). */
   const pickRoute = useCallback((robotId: string, routeId: string) => {
@@ -759,8 +797,34 @@ function AppBody() {
         {!VIEWER_ONLY && (
           <>
             <button className="btn import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>
-            {/* webkitdirectory is non-standard; set it imperatively so TS stays quiet */}
-            <input ref={(el) => { folderInputRef.current = el; if (el) el.webkitdirectory = true; }} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files, { fromFolder: true }); e.target.value = ''; }} />
+            <input
+              ref={folderInputRef}
+              type="file"
+              multiple
+              hidden
+              // Directory mode must be a CONTENT attribute. WebKit reads it at
+              // parse time and ignores an IDL assignment (`el.webkitdirectory =
+              // true`), which silently degraded this to a plain file panel: a
+              // chosen folder is not a valid file, so the change came back with
+              // zero files and nothing happened. `directory` is the standardized
+              // spelling; engines that know it accept either.
+              // @ts-expect-error non-standard attributes, supported everywhere
+              webkitdirectory=""
+              directory=""
+              onChange={(e) => {
+                const el = e.currentTarget;
+                const list = Array.from(el.files ?? []);
+                // Reset before reporting, and never let the reset decide
+                // whether the user hears back: some engines refuse a value
+                // write on a file input.
+                try {
+                  el.value = '';
+                } catch {
+                  /* the picker keeps its selection; the import already ran */
+                }
+                void onFolderPicked(list);
+              }}
+            />
           </>
         )}
         <div className="history-controls">
