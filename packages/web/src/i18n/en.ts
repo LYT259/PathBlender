@@ -4,8 +4,6 @@ export const en = {
   "workspace.subtitle": "Alliance workspace",
   "workspace.emptyTitle": "Bring your alliance together.",
   "workspace.emptyBody": "Import each team’s autonomous paths to replay them together and find conflicts before the match.",
-  "workspace.dropHint": "Or drop files anywhere in this window",
-  "workspace.formats": "Choreo .traj · PathPlanner .path / .auto · .ghostauto",
   "workspace.local": "Files stay on this device",
   "workspace.importStep": "Import paths",
   "workspace.compareStep": "Replay together",
