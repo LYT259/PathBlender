@@ -1,7 +1,7 @@
 {
   "name": "pathblender",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.2",
   "type": "module",
   "description": "Multi-source FRC autonomous path fusion viewer (Choreo .traj + .ghostauto, unified-timeline playback + collision checking)",
   "license": "Apache-2.0",
