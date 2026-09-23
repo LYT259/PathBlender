@@ -829,8 +829,6 @@ function AppBody() {
                   {!VIEWER_ONLY && <button className="btn welcome-folder-import" onClick={() => folderInputRef.current?.click()}><Icon name="folder" />{tr('library.importFolder')}</button>}
                 </div>
                 <div className="welcome-steps">{(['workspace.importStep', 'workspace.compareStep', 'workspace.checkStep'] as const).map((key, i) => <span key={key}><b>{i + 1}</b>{tr(key)}</span>)}</div>
-                <p className="welcome-restore">{tr('workspace.restoreNotice')}</p>
-                <div className="privacy-note"><Icon name="check" size={14} />{tr('workspace.local')}</div>
               </div> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} /></Suspense> :
                 <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} editRobot={editRobot} onBeginEdit={beginEdit} onEndEdit={endEdit} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}
             </div>
