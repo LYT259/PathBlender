@@ -102,10 +102,6 @@ body.desktop .workspace-toolbar { padding-left: 86px; }
 .welcome-steps > span { display: inline-flex; align-items: center; gap: 8px; }
 .welcome-steps b { display: grid; place-items: center; width: 21px; height: 21px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border); font-size: 10px; font-weight: 500; }
 .workspace-empty > small { color: var(--fg-dim); font-size: 10px; margin: 3px 0; }
-/* Raised specificity (.workspace-empty > p) so it beats the generic body-copy
-   rule without !important. */
-.workspace-empty > .welcome-restore { margin: 16px 0 0; font-size: 12px; }
-.privacy-note { display: flex; align-items: center; gap: 5px; color: var(--fg-dim); font-size: 10px; padding-top: 24px; }
 .workspace-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; padding: 5px 14px; background: var(--bar-bg); color: var(--fg-dim); border-top: 1px solid var(--border); font-size: 10px; }
 .workspace-status button { border: 0; padding: 0; background: none; color: var(--fg-dim); font-size: inherit; display: flex; gap: 5px; align-items: center; cursor: pointer; }
 .workspace-status .status-warning { color: var(--oob); }

@@ -47,10 +47,12 @@ describe('workspace workflow', () => {
     expect(screen.queryByRole('button', { name: '3D', exact: true })).toBeNull();
     expect(document.querySelector('.canvas-bar')).toBeNull();
     expect(document.querySelectorAll('.field-select')).toHaveLength(0);
-    // What the page does carry instead: the local-processing promise and the
-    // note that a saved session opens through the same import.
-    expect(within(welcome).getByText('Files stay on this device')).toBeInTheDocument();
-    expect(within(welcome).getByText(/saved session/i)).toBeInTheDocument();
+    // Nothing else sits on the import page either: both footnote lines were
+    // deleted on request (2026-09-23), along with their dictionary keys.
+    expect(within(welcome).queryByText('Files stay on this device')).toBeNull();
+    expect(within(welcome).queryByText(/saved session/i)).toBeNull();
+    expect(welcome.textContent).not.toContain('.ghostauto');
+    expect(welcome.textContent).not.toMatch(/drop files anywhere/i);
     // And the two import actions share one sizing rule (user complaint: the
     // folder button sat shorter than the accent one). jsdom does not resolve
     // the stylesheet, so assert the rule itself rather than a fake computed
