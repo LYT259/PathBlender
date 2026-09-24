@@ -47,17 +47,62 @@ describe('i18n dictionaries', () => {
       }
     }
   });
+
+  /**
+   * Untranslated-residue gate (report §7.2 v1.20, item ③ — adapted to this
+   * project's source dictionary, which is `en.ts`): a translated value that is
+   * still byte-identical to English is a missed translation unless it is
+   * deliberately verbatim. The whitelist is the whole allow-list, so a new key
+   * that ships as its own English text fails the run.
+   */
+  const KEEP_VERBATIM = new Set([
+    // Brand and format names, never translated.
+    'app.title',
+    // Symbols and unit strings the field itself renders.
+    'conflicts.pair', 'customField.ppm', 'timeline.speed', 'timeline.clock',
+    'timeline.activity', 'timeline.band', 'canvas.clock', 'rail.png',
+    // View-cube initials: the Latin abbreviations collide, so every dictionary
+    // keeps the English letters (only the CJK ones use single ideographs).
+    'vc.top', 'vc.bottom', 'vc.front', 'vc.back', 'vc.left', 'vc.right',
+    // Words that genuinely coincide with English in at least one shipped
+    // language (fr 'Assistant'/'Pause'/'Vision', tr 'model', es/… 'Robot').
+    'workspace.assistant', 'workspace.details', 'robots.identity', 'robots.title',
+    'robots.collision', 'robots.alliance', 'timeline.pause', 'timeline.collision',
+    'site.version', 'ai.model', 'ai.vision', 'ai.placeholder', 'ai.permission',
+    'ai.perm.standard', 'ai.effort', 'ai.stop',
+    // Tokens sent to the provider or the OS unchanged.
+    'ai.effort.auto', 'ai.testOk', 'prefs.channel.stable', 'prefs.channel.beta',
+  ]);
+
+  it('nothing is left sitting on the English text', () => {
+    for (const code of CODES) {
+      if (code === 'en') continue;
+      for (const [key, source] of Object.entries(en)) {
+        if (KEEP_VERBATIM.has(key)) continue;
+        expect(DICTS[code]![key], `${code}:${key} still holds the English text`).not.toBe(source);
+      }
+    }
+  });
+
+  it('the verbatim whitelist does not carry dead entries', () => {
+    // A key that stopped being identical to English should leave the list, or
+    // the gate silently allows a future regression on it.
+    for (const key of KEEP_VERBATIM) {
+      const stillVerbatim = CODES.some((c) => c !== 'en' && DICTS[c]![key] === en[key as keyof typeof en]);
+      expect(stillVerbatim, `en:${key} is translated everywhere; drop it from KEEP_VERBATIM`).toBe(true);
+    }
+  });
 });
 
 describe('language picker', () => {
   /**
-   * The list is sorted by the endonym the user actually sees, with the collator
-   * pinned to English so switching language never reshuffles it — see the
-   * comment on LANGUAGES. Latin names come first, then the two CJK names in
-   * code-point order (简体 before 繁體).
+   * Order comes from the registry's ASCII English sort key, not from a
+   * collator — see the comment on LANGUAGES (report §7.2 v1.20). 'system' is a
+   * mode and stays pinned first; Chinese sorts first, so the two CJK names
+   * head the list and the Latin names keep their own alphabetical order.
    */
   it('offers the languages in a fixed alphabetical order after “system”', () => {
-    expect([...LANGUAGES]).toEqual(['system', 'en', 'es', 'fr', 'tr', 'zh', 'zh-tw']);
+    expect([...LANGUAGES]).toEqual(['system', 'zh', 'zh-tw', 'en', 'fr', 'es', 'tr']);
   });
 
   it('lists exactly the shipped dictionaries', () => {
@@ -74,20 +119,19 @@ describe('language picker', () => {
       '简体中文',
       '繁體中文',
     ]);
+    expect(pickerLabels).toEqual(['简体中文', '繁體中文', 'English', 'Français', 'Español', 'Türkçe']);
   });
 
-  it('the visible labels really are in collation order', () => {
-    const collator = new Intl.Collator('en', { sensitivity: 'base' });
-    expect([...pickerLabels].sort(collator.compare)).toEqual(pickerLabels);
-  });
-
-  it('the order does not follow the UI language', () => {
-    // Why the collator is pinned: sorted by pinyin — what a `zh` collator does
-    // — the two Chinese names jump to the top and swap places, so a Chinese
-    // user who switches to Français would watch the list rearrange under their
-    // cursor. LANGUAGES must not depend on the locale it is rendered in.
-    const byPinyin = new Intl.Collator('zh', { sensitivity: 'base' });
-    expect([...pickerLabels].sort(byPinyin.compare)).not.toEqual(pickerLabels);
+  it('is hand-owned order, not a collator’s opinion', () => {
+    // No ICU collation reproduces this list: `en`/`tr` keep the Latin names
+    // first, `zh` sorts by pinyin and swaps the two Chinese names. That is the
+    // point — a collator would let V8 and WebKit disagree between the dev
+    // server and the desktop WKWebView, and let the UI language move rows under
+    // the user's cursor.
+    for (const locale of ['en', 'zh', 'tr', 'es']) {
+      const collator = new Intl.Collator(locale, { sensitivity: 'base' });
+      expect([...pickerLabels].sort(collator.compare), locale).not.toEqual(pickerLabels);
+    }
   });
 });
 
