@@ -74,7 +74,8 @@ async fn install_update(pending: State<'_, PendingUpdate>) -> Result<(), String>
     Ok(())
 }
 
-/// UI strings per app language (zh-tw falls back to zh where wording matches).
+/// UI strings per app language (zh-tw carries its own wording rather than
+/// reusing zh; en/es/fr/tr/zh each get a table below).
 struct MenuLang {
     file: &'static str,
     edit: &'static str,
@@ -123,10 +124,55 @@ const ZH_TW: MenuLang = MenuLang {
     updates: "檢查更新…",
 };
 
+const ES: MenuLang = MenuLang {
+    file: "Archivo",
+    edit: "Edición",
+    import: "Importar…",
+    save: "Guardar sesión…",
+    share: "Compartir…",
+    png: "Exportar PNG…",
+    clear: "Vaciar sesión",
+    prefs: "Preferencias…",
+    updates: "Buscar actualizaciones…",
+};
+
+const FR: MenuLang = MenuLang {
+    file: "Fichier",
+    edit: "Édition",
+    import: "Importer…",
+    save: "Enregistrer la session…",
+    share: "Partager…",
+    png: "Exporter PNG…",
+    clear: "Effacer la session",
+    prefs: "Réglages…",
+    updates: "Rechercher les mises à jour…",
+};
+
+const TR: MenuLang = MenuLang {
+    file: "Dosya",
+    edit: "Düzen",
+    import: "İçe Aktar…",
+    save: "Oturumu Kaydet…",
+    share: "Paylaş…",
+    png: "PNG Dışa Aktar…",
+    clear: "Oturumu Temizle",
+    prefs: "Tercihler…",
+    updates: "Güncellemeleri Denetle…",
+};
+
+/// Every web dictionary has a menu table: `set_menu_language` used to fall
+/// through to English for anything but zh/zh-tw, so a Spanish or Turkish user
+/// got an English native menu next to a translated window. Adding a language
+/// on the web side without adding one here is now caught by
+/// `packages/web/test/i18n.test.ts`, which lists the expected codes.
 fn lang_of(lang: &str) -> &'static MenuLang {
     match lang {
+        "en" => &EN,
         "zh" => &ZH,
         "zh-tw" => &ZH_TW,
+        "es" => &ES,
+        "fr" => &FR,
+        "tr" => &TR,
         _ => &EN,
     }
 }
@@ -278,7 +324,7 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-/// Rebuild the native menu in the app language (zh / zh-tw / en); the web
+/// Rebuild the native menu in the app language (the web `Lang` codes); the web
 /// side calls this on startup and whenever the language preference changes.
 #[tauri::command]
 fn set_menu_language(app: AppHandle, state: State<MenuState>, lang: String) -> Result<(), String> {
