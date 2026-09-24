@@ -116,10 +116,24 @@ const ZH_TW: MenuLang = MenuLang {
     file: "檔案",
     edit: "編輯",
     import: "匯入…",
-    save: "儲存會話…",
+    save: "儲存工作階段…",
     share: "分享…",
     png: "匯出 PNG…",
-    clear: "清空會話",
+    clear: "清空工作階段",
+    prefs: "偏好設定…",
+    updates: "檢查更新…",
+};
+
+/// Hong Kong wording. Same script, a few terms and the session word differ
+/// from the Taiwan table; Macau reads this one too (report §7.2 v1.23).
+const ZH_HK: MenuLang = MenuLang {
+    file: "檔案",
+    edit: "編輯",
+    import: "匯入…",
+    save: "儲存工作階段…",
+    share: "分享…",
+    png: "匯出 PNG…",
+    clear: "清除工作階段",
     prefs: "偏好設定…",
     updates: "檢查更新…",
 };
@@ -169,6 +183,7 @@ fn lang_of(lang: &str) -> &'static MenuLang {
     match lang {
         "en" => &EN,
         "zh" => &ZH,
+        "zh-hk" => &ZH_HK,
         "zh-tw" => &ZH_TW,
         "es" => &ES,
         "fr" => &FR,
