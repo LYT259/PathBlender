@@ -143,6 +143,47 @@ describe('App import → fusion → collision flow', () => {
     expect(localStorage.getItem('ghpb.theme')).toBeNull();
   });
 
+  it('preferences: Save waits for a change and Cancel always gets you out', () => {
+    render(
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    );
+    const initialTheme = document.documentElement.dataset.theme;
+    const other = initialTheme === 'light' ? 'dark' : 'light';
+    const themeOf = (scope: HTMLElement) =>
+      within(scope).getByRole('combobox', { name: /theme|appearance/i }) as HTMLSelectElement;
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+    const dialog = screen.getByRole('dialog', { name: 'Preferences' });
+    const initialMode = themeOf(dialog).value;
+    const save = within(dialog).getByRole('button', { name: /^Save$/i });
+    // Untouched dialog: Save has nothing to save, and Cancel — which used to be
+    // the disabled one — is the way out (user report 2026-09-24).
+    expect(save).toBeDisabled();
+    fireEvent.click(within(dialog).getByRole('button', { name: /^Cancel$/i }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(document.documentElement.dataset.theme).toBe(initialTheme);
+
+    // After a change both are live, and Cancel throws the draft away rather
+    // than leaving it staged for the next time the dialog opens.
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+    const next = screen.getByRole('dialog', { name: 'Preferences' });
+    fireEvent.change(themeOf(next), { target: { value: other } });
+    expect(within(next).getByRole('button', { name: /^Save$/i })).toBeEnabled();
+    fireEvent.click(within(next).getByRole('button', { name: /^Cancel$/i }));
+    expect(document.documentElement.dataset.theme).toBe(initialTheme);
+    expect(localStorage.getItem('ghpb.theme')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+    const again = screen.getByRole('dialog', { name: 'Preferences' });
+    expect(themeOf(again).value).toBe(initialMode);
+    expect(within(again).getByRole('button', { name: /^Save$/i })).toBeDisabled();
+    // A disabled Save is not a hidden one: clicking it must not close the
+    // dialog either, so the row reads as "nothing to save yet".
+    fireEvent.click(within(again).getByRole('button', { name: /^Save$/i }));
+    expect(screen.getByRole('dialog', { name: 'Preferences' })).toBeInTheDocument();
+  });
+
   it('AI assistant stays withdrawn: no entry point in toolbar, inspector or preferences', async () => {
     render(<App />);
     dropFiles([file('ghostauto/side_lane.ghostauto')]);

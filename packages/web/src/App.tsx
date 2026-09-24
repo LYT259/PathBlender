@@ -139,8 +139,10 @@ function AppBody() {
   const [view3D, setView3D] = useState(false);
   const [showTrail, setShowTrail] = useState(true);
   const [showPrefs, setShowPrefs] = useState(false);
-  // Language is staged: picking one reveals Cancel/Save instead of applying
-  // instantly (other preferences keep their immediate-apply behavior).
+  // Language and theme are staged: picking one enables Save instead of applying
+  // instantly (the other preferences keep their immediate-apply behavior).
+  // `null` means "nothing staged", which is also the rule the dialog's Save
+  // button uses — see the prefs-row btns block.
   const [pendingLang, setPendingLang] = useState<LangChoice | null>(null);
   const [pendingTheme, setPendingTheme] = useState<ThemeMode | null>(null);
   const closePrefs = useCallback(() => {
@@ -1008,18 +1010,16 @@ function AppBody() {
               </div>
             )}
             <div className="prefs-row btns">
-              <button
-                className="btn small"
-                disabled={pendingLang == null && pendingTheme == null}
-                onClick={() => {
-                  setPendingLang(null);
-                  setPendingTheme(null);
-                }}
-              >
+              {/* Cancel is the always-available way out (user report 2026-09-24:
+                  it used to be the disabled one, so an untouched dialog had no
+                  working button on its left). It discards the drafts and closes. */}
+              <button className="btn small" onClick={closePrefs}>
                 {tr('prefs.cancel')}
               </button>
+              {/* Save only means something when there is something to save. */}
               <button
                 className="btn small accent"
+                disabled={pendingLang == null && pendingTheme == null}
                 onClick={() => {
                   if (pendingLang != null) setLang(pendingLang);
                   if (pendingTheme != null) setThemeMode(pendingTheme);
