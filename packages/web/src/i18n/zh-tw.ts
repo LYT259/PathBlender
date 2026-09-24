@@ -106,7 +106,7 @@ export const zhTw: Record<MessageKey, string> = {
   'robots.blue': '藍方',
   'robots.red': '紅方',
   'robots.delay': '起步延遲 (秒)',
-  'robots.bumper': '保險槓 (公尺)',
+  'robots.bumper': '保險桿 (公尺)',
   'robots.bumperDefault': '預設',
   'robots.length': '長',
   'robots.width': '寬',

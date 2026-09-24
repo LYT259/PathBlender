@@ -13,6 +13,10 @@
  * for a key addition or removal, edit zh-tw.ts by hand and keep this script for
  * bulk work only.
  *
+ * zh-hk.ts is not generated and must not be: it is an override table applied on
+ * top of zh-tw at import time, so regenerating zh-tw propagates to Hong Kong by
+ * itself except for the handful of keys zh-hk pins (units, 網絡, 詳細資料).
+ *
  * Two silent failures fixed on 2026-09-23: the value pattern only matched
  * single-quoted strings while both dictionaries use double quotes (so nothing
  * converted, and the script happily overwrote 繁體 with 简体 while reporting
@@ -24,6 +28,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 /** 两岸 FRC 术语校正（OpenCC 之后的字符串级替换）。 */
 const TERMS = [
   ['保險杠', '保險桿'], // bumper：台惯用「桿」
+  ['保險槓', '保險桿'], // …and the form OpenCC actually produces (杠→槓 first)
   ['檢測', '偵測'],
   ['視頻', '影片'],
   ['軟件', '軟體'],
