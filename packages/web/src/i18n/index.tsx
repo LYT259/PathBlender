@@ -37,14 +37,16 @@ const LANG_CODES = Object.keys(LANG_LABEL) as Lang[];
 
 /**
  * Picker order (report §7.2 asked for alphabetical): 'Follow system' pinned
- * first — it is a mode, and it stays where the user learned it — then the
- * endonyms compared with a collator **pinned to English**. Pinning is the
- * point: a collator that followed the UI locale would reshuffle the list under
- * the user's cursor every time they switched language (a `zh` collator sorts
- * 简体中文/繁體中文 by pinyin and pulls them in front of the Latin names), and
- * nobody can hit the same row twice in a row that way. Sorting the label the
- * user sees, instead of an English exonym table, means one rule that still
- * holds when P2 adds Português or עברית. Result in all six UI languages:
+ * first — it is a mode, not a language, and it stays where the user learned
+ * it — then the endonyms compared with a collator **pinned to English**.
+ * Pinning is the point: a collator that followed the UI locale would reshuffle
+ * the list under the user's cursor every time they switched language. Measured
+ * over these six labels: `en`/`es`/`fr`/`tr` agree, but `zh` sorts by pinyin
+ * and puts 繁體中文 · 简体中文 ahead of every Latin name — a Chinese user who
+ * picks Français would watch the two Chinese rows jump to the top. Nobody can
+ * hit the same row twice in a row that way. Sorting the label the user sees,
+ * instead of an English exonym table, keeps one rule that still holds when P2
+ * adds Português or עברית. Result in all six UI languages:
  * English · Español · Français · Türkçe · 简体中文 · 繁體中文.
  */
 const ENDONYM_ORDER = new Intl.Collator('en', { sensitivity: 'base' });
