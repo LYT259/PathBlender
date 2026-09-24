@@ -1,22 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { en } from '../src/i18n/en';
+import { en, type MessageKey } from '../src/i18n/en';
 import { es } from '../src/i18n/es';
 import { fr } from '../src/i18n/fr';
 import { tr } from '../src/i18n/tr';
 import { zh } from '../src/i18n/zh';
+import { zhHk, zhHkOverrides } from '../src/i18n/zh-hk';
 import { zhTw } from '../src/i18n/zh-tw';
 import { LANGUAGES, langLabel, langFromTags, type Lang } from '../src/i18n';
 
 /**
  * Every shipped dictionary. Adding a language means adding one row here (plus
- * `DICTS`/`LANG_LABEL` and a `langFromTags` branch in `src/i18n/index.tsx`);
- * these tests then hold it to the same bar as English. Each file is typed
+ * `DICTS`, a `LANG_META` row and a `langFromTags` branch in
+ * `src/i18n/index.tsx`, and a menu table in `packages/desktop`); these tests
+ * then hold it to the same bar as English. Each full dictionary is typed
  * `Record<MessageKey, string>`, so a missing key is a compile error too — the
  * runtime checks below cover the blanks and the placeholders a type cannot.
  */
-const DICTS: Record<string, Record<string, string>> = { en, es, fr, tr, zh, 'zh-tw': zhTw };
+const DICTS: Record<string, Record<string, string>> = {
+  en, es, fr, tr, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
+};
 const CODES = Object.keys(DICTS) as Lang[];
 const KEYS = Object.keys(en);
 /** What the picker shows, in the order it shows it ('system' is a mode). */
@@ -102,7 +106,7 @@ describe('language picker', () => {
    * head the list and the Latin names keep their own alphabetical order.
    */
   it('offers the languages in a fixed alphabetical order after “system”', () => {
-    expect([...LANGUAGES]).toEqual(['system', 'zh', 'zh-tw', 'en', 'fr', 'es', 'tr']);
+    expect([...LANGUAGES]).toEqual(['system', 'zh', 'zh-hk', 'zh-tw', 'en', 'fr', 'es', 'tr']);
   });
 
   it('lists exactly the shipped dictionaries', () => {
@@ -117,9 +121,18 @@ describe('language picker', () => {
       'Français',
       'Türkçe',
       '简体中文',
-      '繁體中文',
+      '繁體中文（中國香港）',
+      '繁體中文（中國台灣）',
     ]);
-    expect(pickerLabels).toEqual(['简体中文', '繁體中文', 'English', 'Français', 'Español', 'Türkçe']);
+    expect(pickerLabels).toEqual([
+      '简体中文',
+      '繁體中文（中國香港）',
+      '繁體中文（中國台灣）',
+      'English',
+      'Français',
+      'Español',
+      'Türkçe',
+    ]);
   });
 
   it('is hand-owned order, not a collator’s opinion', () => {
@@ -136,12 +149,10 @@ describe('language picker', () => {
 });
 
 describe('system language detection', () => {
-  it('maps the tags the P1 communities send', () => {
+  it('maps the tags the shipped communities send', () => {
     expect(langFromTags(['es-MX', 'es'])).toBe('es');
     expect(langFromTags(['fr-CA', 'en'])).toBe('fr');
     expect(langFromTags(['tr-TR'])).toBe('tr');
-    expect(langFromTags(['zh-TW'])).toBe('zh-tw');
-    expect(langFromTags(['zh-Hant-HK'])).toBe('zh-tw');
     expect(langFromTags(['zh-CN'])).toBe('zh');
     expect(langFromTags(['en-GB'])).toBe('en');
     // Anything unsupported still lands on English rather than undefined.
@@ -149,11 +160,73 @@ describe('system language detection', () => {
     expect(langFromTags([])).toBe('en');
   });
 
+  it('splits Traditional Chinese by region, with Macau reading Hong Kong', () => {
+    // Report §7.2 v1.23: 澳门不单开 locale，就近并入 zh-hk (same rule as
+    // es-AR → es-MX), and a bare `zh-Hant` carries no region so it takes the
+    // larger community's dictionary.
+    expect(langFromTags(['zh-HK'])).toBe('zh-hk');
+    expect(langFromTags(['zh-Hant-HK'])).toBe('zh-hk');
+    expect(langFromTags(['zh-MO'])).toBe('zh-hk');
+    expect(langFromTags(['zh-Hant-MO'])).toBe('zh-hk');
+    expect(langFromTags(['zh-TW'])).toBe('zh-tw');
+    expect(langFromTags(['zh-Hant-TW'])).toBe('zh-tw');
+    expect(langFromTags(['zh-Hant'])).toBe('zh-tw');
+    // Hans always wins over the region: a Simplified-Chrome install in Hong
+    // Kong (`zh-Hans-HK`) must not open in Traditional.
+    expect(langFromTags(['zh-Hans-HK'])).toBe('zh');
+    expect(langFromTags(['zh-Hans-MO'])).toBe('zh');
+    expect(langFromTags(['en-GB', 'zh-HK'])).toBe('en');
+  });
+
   it('honours the browser preference order instead of scanning for a favourite', () => {
     // Regression: 'en' had no branch at all, so ['en-US', 'zh-CN'] — a Chrome
     // list that means "English, then Chinese" — opened in Chinese.
     expect(langFromTags(['en-US', 'zh-CN'])).toBe('en');
     expect(langFromTags(['de-DE', 'fr-FR', 'en'])).toBe('fr');
+  });
+});
+
+describe('Hong Kong dictionary (override table)', () => {
+  const overrideKeys = Object.keys(zhHkOverrides);
+
+  it('inherits everything except its own rows', () => {
+    // The whole point of shipping an override table instead of a second copy:
+    // zh-tw and zh-hk may differ on exactly these keys and nothing else, so a
+    // wording change in zh-tw reaches Hong Kong without a second edit.
+    const differing = KEYS.filter((k) => zhHk[k as MessageKey] !== zhTw[k as keyof typeof zhTw]);
+    expect(differing.sort()).toEqual([...overrideKeys].sort());
+  });
+
+  it('is small, and every row actually changes the Taiwan wording', () => {
+    // A row that restates zh-tw is dead weight that reads like a difference.
+    for (const key of overrideKeys) {
+      expect(zhHkOverrides[key as keyof typeof zhHkOverrides]).not.toBe(
+        zhTw[key as keyof typeof zhTw],
+      );
+    }
+    // Growing past this needs a real HK-vs-TW term behind it, not a preference.
+    expect(overrideKeys.length).toBeLessThan(40);
+  });
+
+  /**
+   * "The two variants really are different" gate (report §7.2 v1.24 ②, from
+   * GHPaths v1.33): a count that merely stays above zero lets someone quietly
+   * delete rows and hand Hong Kong the Taiwan spellings back — the test above
+   * stays green, because it only compares against the override list. So pin the
+   * divergences by name (these three are what a Hong Kong reader notices first)
+   * and keep a floor under the total. GHPaths sees 32 of its 412 keys differ
+   * because that UI carries media vocabulary (影片/軟體); ours is a field tool,
+   * so 7 today with the floor at 5.
+   */
+  it('pins the named HK/TW divergences', () => {
+    expect(zhTw['robots.bumper' as MessageKey]).toContain('公尺');
+    expect(zhHk['robots.bumper']).toContain('米');
+    expect(zhHk['robots.bumper']).not.toContain('公尺');
+    expect(zhTw['updates.failed' as MessageKey]).toContain('網路');
+    expect(zhHk['updates.failed']).toContain('網絡');
+    expect(zhTw['robots.selectPrompt' as MessageKey]).toContain('詳細資訊');
+    expect(zhHk['robots.selectPrompt']).toContain('詳細資料');
+    expect(overrideKeys.length).toBeGreaterThanOrEqual(5);
   });
 });
 
