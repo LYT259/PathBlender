@@ -19,40 +19,46 @@ export type LangChoice = 'system' | Lang;
 const DICTS: Record<Lang, Record<MessageKey, string>> = { en, es, fr, tr, zh, 'zh-tw': zhTw };
 
 /**
- * Endonyms — each language in its own alphabet and wording, which is what the
- * language pickers show. 'system' is absent on purpose: it is a mode, not a
- * language, and both pickers label it through `prefs.langSystem` so it reads
- * like the rest of the surrounding UI.
+ * Language registry (report §7.2 v1.20): one row per language, holding the name
+ * it is sorted by and the name it is displayed by. `Record<Lang, …>` makes
+ * adding a code to `Lang` without adding a row a compile error.
+ *
+ * `englishName` is the **sort key**, and it is ASCII on purpose: the order then
+ * comes out of a plain string comparison instead of `Intl.Collator`, whose
+ * treatment of the two CJK labels differs between V8 and WebKit — precisely the
+ * dev-server-vs-desktop-shell drift the GHPaths v1.31 sync warned about.
+ * `endonym` is what the picker shows: a language is named in its own language,
+ * because a user who cannot read the UI cannot read an English exonym either.
  */
-const LANG_LABEL: Record<Lang, string> = {
-  en: 'English',
-  es: 'Español',
-  fr: 'Français',
-  tr: 'Türkçe',
-  zh: '简体中文',
-  'zh-tw': '繁體中文',
+const LANG_META: Record<Lang, { englishName: string; endonym: string }> = {
+  zh: { englishName: 'Chinese (Simplified)', endonym: '简体中文' },
+  'zh-tw': { englishName: 'Chinese (Traditional)', endonym: '繁體中文' },
+  en: { englishName: 'English', endonym: 'English' },
+  fr: { englishName: 'French', endonym: 'Français' },
+  es: { englishName: 'Spanish', endonym: 'Español' },
+  tr: { englishName: 'Turkish', endonym: 'Türkçe' },
 };
 const STORAGE_KEY = 'ghpb.lang';
-const LANG_CODES = Object.keys(LANG_LABEL) as Lang[];
+const LANG_CODES = Object.keys(LANG_META) as Lang[];
 
 /**
- * Picker order (report §7.2 asked for alphabetical): 'Follow system' pinned
- * first — it is a mode, not a language, and it stays where the user learned
- * it — then the endonyms compared with a collator **pinned to English**.
- * Pinning is the point: a collator that followed the UI locale would reshuffle
- * the list under the user's cursor every time they switched language. Measured
- * over these six labels: `en`/`es`/`fr`/`tr` agree, but `zh` sorts by pinyin
- * and puts 繁體中文 · 简体中文 ahead of every Latin name — a Chinese user who
- * picks Français would watch the two Chinese rows jump to the top. Nobody can
- * hit the same row twice in a row that way. Sorting the label the user sees,
- * instead of an English exonym table, keeps one rule that still holds when P2
- * adds Português or עברית. Result in all six UI languages:
- * English · Español · Français · Türkçe · 简体中文 · 繁體中文.
+ * Picker order: 'Follow system' pinned first — it is a mode, not a language,
+ * and it stays where the user learned it — then the registry sorted by its
+ * English key, which is stable across engines, builds and whichever UI
+ * language is active (a list that rearranges itself after a language switch
+ * cannot be clicked from memory). One consequence is worth stating: Chinese
+ * sorts first, so 简体中文 · 繁體中文 head the list — the pair our main
+ * audience reaches for — with the Latin names in their own alphabetical order
+ * behind them. Result in all six UI languages:
+ * 简体中文 · 繁體中文 · English · Français · Español · Türkçe.
  */
-const ENDONYM_ORDER = new Intl.Collator('en', { sensitivity: 'base' });
 export const LANGUAGES: readonly LangChoice[] = [
   'system',
-  ...[...LANG_CODES].sort((a, b) => ENDONYM_ORDER.compare(LANG_LABEL[a], LANG_LABEL[b])),
+  ...[...LANG_CODES].sort((a, b) => {
+    const ka = LANG_META[a].englishName;
+    const kb = LANG_META[b].englishName;
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  }),
 ];
 
 /**
@@ -147,4 +153,5 @@ export function useI18n(): I18nContextValue {
   return ctx;
 }
 
-export const langLabel = (l: Lang): string => LANG_LABEL[l];
+/** The name a language is listed under: its own, never an English exonym. */
+export const langLabel = (l: Lang): string => LANG_META[l].endonym;
