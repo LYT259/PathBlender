@@ -59,8 +59,33 @@
 - 省略号统一用 `…`（U+2026），不用三个句点。
 - 插值保持朴素 `{name}` 替换，不做复数形态（计划书 §7.2 v1.19 已判定西/法/土复数简单可接受）。
 
-## 5. 语言列表
+## 6. 港台分工（`zh-hk` 是覆盖表，不是第二份字典）
+
+`packages/web/src/i18n/zh-hk.ts` 只导出 `zhHkOverrides`，运行时 `{ ...zhTw, ...zhHkOverrides }` 合成。**规矩**：两岸共读同一写法的键一律不开覆盖——两份完整繁體必然随文案迭代互相漂移，而本工具的文案面差异本来就小。`i18n.test.ts` 的 `inherits everything except its own rows` 把"两边只允许在这些键上不同"钉成测试，加一个没有理由的覆盖键会直接红。
+
+当前覆盖（7 键）与理由：
+
+| 键 | zh-tw | zh-hk | 为什么 |
+|---|---|---|---|
+| `robots.bumper`、`robots.profileEntry`、`customField.margin`、`customField.length`、`customField.width` | 公尺 | **米** | 米是国际单位名，港澳教科书与政府文件都用；`公尺` 是台湾说法（生成器 `scripts/gen-zh-hant.mjs` 的 TERMS 专门把 米→公尺） |
+| `updates.failed` | 網路 | **網絡** | TERMS 里 `網絡→網路` 就是台式改写，HK 保留 網絡 |
+| `robots.selectPrompt` | 詳細資訊 | **詳細資料** | HK 界面（Microsoft zh-HK）用 詳細資料，TW 用 詳細資訊 |
+
+**澳门读 `zh-hk`**，不单开 locale（计划书 §7.2 v1.22「区域就近回退」/ v1.23 判定）：`langFromTags()` 把 `zh-HK`/`zh-MO`/`zh-Hant-HK`/`zh-Hant-MO` 都指到这里；`zh-Hans-HK`/`zh-Hans-MO` 仍走简体（Hans 压过地区——HK、澳门的 Chrome 常报 `zh-Hans-HK`，不写这条会把简体用户丢進繁體）。裸 `zh-Hant`（无地区）给台湾那份。
+
+**门禁**（计划书 §7.2 v1.24 第 ② 条）：只比"差异条数 > 0"不够——有人删掉几条覆盖，那条断言还是绿的。所以 `i18n.test.ts` 另钉三条**具名分歧**（公尺↔米、網路↔網絡、詳細資訊↔詳細資料）+ 覆盖条数下限 5，并保留"两边只允许在覆盖表那几条上不同"。**加覆盖键时同步补一条具名断言。**
+
+**为什么不做成"共享层 + 两个分区层"**（GHPaths 的三层结构）：本项目 `zh-tw.ts` 是手写包、不是 OpenCC 输出，台港一致的书面词本来就直接写在这份底里，分区差异只剩 7 条，再拆一层共享包只多一次跳转；等覆盖表长到几十条（接近 GHPaths 的 32/412）再考虑改结构。附带印证：GHPaths 实测 `cn→hk` 字形转换**只给字形不给词**（照样输出 默認/導出/文件/在線），这正说明本项目 `scripts/gen-zh-hant.mjs` 为什么必须带一张 TERMS 表（默認→預設、導入→匯入、文件→檔案……）——同一形态，我们早已如此。
+
+**已核过但故意不动的候选差异**（缺可靠依据，等港方使用者点名再补）：
+
+- `保險桿` / `保險槓`：两份现都用 `保險桿`。原 `zh-tw.ts` 里 `robots.bumper` 是 `保險槓`、其余是 `保險桿`——那是 OpenCC 把 `杠` 转成 `槓` 绕过 TERMS 规则留下的残迹，2026-09-24 已统一为 `保險桿` 并给 TERMS 补了 `保險槓→保險桿`；HK 汽车用语是否更偏 `保險槓` 未核，先不开覆盖。
+- `資料夾` / `檔案夾`：Microsoft zh-HK 用 資料夾、Apple zh-HK 用 檔案夾，两家不一致，跟随现值。
+- `布局` / `佈局`：TERMS 明确选了 `布局`（注释记为台惯用），这条对港台是否一致存疑，但它是既有决定，本轮不擅自翻案。
+
+## 7. 语言列表
 
 注册表在 `packages/web/src/i18n/index.tsx` 的 `LANG_META`：每语言一行 `{ englishName（排序键，纯 ASCII）, endonym（显示名） }`。
 显示用自称，**排序用英文键**，「跟随系统」钉顶不参与排序；不用 `Intl.Collator`（V8 与 WebKit 对 CJK 的排序表版本不一致，会让开发服务器与桌面壳排出不同顺序）。
-新增语言 = 加一行 `LANG_META` + 一份 `Record<MessageKey, string>` 字典 + `langFromTags()` 一条分支 + 桌面 `lib.rs` 一张菜单表（`i18n.test.ts` 会逐个断言）。
+新增语言 = 加一行 `LANG_META` + 一份 `Record<MessageKey, string>` 字典（同区域变体走第 6 节的覆盖表，不复制整份）+ `langFromTags()` 一条分支 + 桌面 `lib.rs` 一张菜单表（`i18n.test.ts` 会逐个断言，漏菜单表就红）。
+当前顺序（七个界面语言下恒定）：跟随系统 · 简体中文 · 繁體中文（中國香港） · 繁體中文（中國台灣） · English · Français · Español · Türkçe。
