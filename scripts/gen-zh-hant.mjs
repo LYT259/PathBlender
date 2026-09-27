@@ -4,6 +4,23 @@
  * FRC 術語表人工校對」). Dev-time tool — opencc-js never ships in the bundle.
  *
  * Usage: node scripts/gen-zh-hant.mjs   (run after editing packages/web/src/i18n/zh.ts)
+ *
+ * WARNING — read `git diff` before committing its output. packages/web/src/i18n/
+ * zh-tw.ts has drifted from what this script produces: it carries Taiwan wording
+ * that no rule here knows about (復原 for Undo, 同場回放, 資料夾 for folder,
+ * 詳細資訊…), which regeneration turns into 撤銷 / 同場播放 / 檔案夾 / 詳情.
+ * Adding those to TERMS is the way back to "regeneration is safe"; until then,
+ * for a key addition or removal, edit zh-tw.ts by hand and keep this script for
+ * bulk work only.
+ *
+ * zh-hk.ts is not generated and must not be: it is an override table applied on
+ * top of zh-tw at import time, so regenerating zh-tw propagates to Hong Kong by
+ * itself except for the handful of keys zh-hk pins (units, 網絡, 詳細資料).
+ *
+ * Two silent failures fixed on 2026-09-23: the value pattern only matched
+ * single-quoted strings while both dictionaries use double quotes (so nothing
+ * converted, and the script happily overwrote 繁體 with 简体 while reporting
+ * success), and there was no check that OpenCC had actually run.
  */
 import { Converter } from 'opencc-js';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -11,6 +28,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 /** 两岸 FRC 术语校正（OpenCC 之后的字符串级替换）。 */
 const TERMS = [
   ['保險杠', '保險桿'], // bumper：台惯用「桿」
+  ['保險槓', '保險桿'], // …and the form OpenCC actually produces (杠→槓 first)
   ['檢測', '偵測'],
   ['視頻', '影片'],
   ['軟件', '軟體'],
@@ -48,12 +66,28 @@ const converter = await Converter({ from: 'cn', to: 'hk' });
 const src = readFileSync('packages/web/src/i18n/zh.ts', 'utf-8');
 
 // Convert only value strings (containing CJK), leaving keys untouched.
-const out = src.replace(/'([^']*)'/g, (m, inner) => {
+// Both quote styles are matched: the dictionaries moved from '…' to "…" and a
+// single-quote-only pattern silently converted NOTHING — the script kept
+// reporting success while emitting simplified Chinese over the traditional
+// file. The check below (any CJK left after conversion) makes that failure
+// mode loud instead of silent.
+const out = src.replace(/(['"])([^'"]*)\1/g, (m, quote, inner) => {
   if (!/[\u4e00-\u9fff]/.test(inner)) return m;
   let s = converter(inner);
   for (const [from, to] of TERMS) s = s.split(from).join(to);
-  return `'${s}'`;
+  return `${quote}${s}${quote}`;
 });
+
+// Prove the converter actually runs before overwriting a traditional file with
+// simplified text. Per-value "did it change" checks misfire (繁简同形 words like
+// 接口地址), so test a sentinel that must differ.
+if (converter('路径') !== '路徑') {
+  console.error(
+    'gen-zh-hant: OpenCC returned the input unchanged (converter broken or wrong ' +
+    `locale): got ${JSON.stringify(converter('路径'))}. Refusing to write.`,
+  );
+  process.exit(1);
+}
 
 const header = `import type { MessageKey } from './en';
 

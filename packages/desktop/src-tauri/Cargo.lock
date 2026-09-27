@@ -2281,7 +2281,7 @@ dependencies = [
 
 [[package]]
 name = "pathblender-desktop"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -2290,7 +2290,6 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-process",
  "tauri-plugin-updater",
- "window-vibrancy",
 ]
 
 [[package]]

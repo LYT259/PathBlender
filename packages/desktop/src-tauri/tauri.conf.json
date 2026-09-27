@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "PathBlender",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "identifier": "org.gh-frc.pathblender",
   "build": {
     "beforeBuildCommand": "npm run build",
@@ -16,7 +16,7 @@
         "height": 900,
         "minWidth": 1024,
         "minHeight": 680,
-        "transparent": true,
+        "transparent": false,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
         "trafficLightPosition": {
@@ -51,7 +51,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDgzMTA2OThFQ0NDOTI2MTEKUldRUkpzbk1qbWtRZzRqZmxpQ2FEU2hQUTgyUDhnUXBzT1UxREJXd3NVUmxqdVU5bWJyVGFKSEwK",
       "endpoints": [
-        "https://github.com/GH-FRC/pathblender/releases/latest/download/latest.json"
+        "https://github.com/LYT259/pathblender/releases/latest/download/latest.json"
       ]
     }
   }

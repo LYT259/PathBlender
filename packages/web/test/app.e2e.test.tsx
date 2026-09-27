@@ -6,8 +6,8 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../src/App';
 import { ThemeProvider } from '../src/theme';
 
@@ -22,6 +22,13 @@ const file = (rel: string): File =>
 
 function dropFiles(files: File[]): void {
   fireEvent.drop(window, { dataTransfer: { files } });
+}
+
+beforeEach(() => localStorage.clear());
+
+function selectRobot(name: string): HTMLElement {
+  fireEvent.click(screen.getByText(name, { selector: '.robot-name' }));
+  return screen.getByRole('region', { name, exact: true });
 }
 
 describe('App import → fusion → collision flow', () => {
@@ -48,7 +55,7 @@ describe('App import → fusion → collision flow', () => {
     expect(screen.getByText('swerve', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByText('Stop And Score', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('Team 0001', { selector: '.robot-meta span' })).toBeInTheDocument();
+    expect(screen.getByText('#0001', { selector: '.robot-library-team' })).toBeInTheDocument();
 
     // Collisions: the tuned pair (straight_run × stop_and_score) plus the
     // Choreo swerve sample, which starts at (1,1) right next to Straight
@@ -78,13 +85,13 @@ describe('App import → fusion → collision flow', () => {
       },
     );
     const colors = Array.from(
-      document.querySelectorAll('.robot-card .band-dot'),
+      document.querySelectorAll('.robot-library-row .band-dot'),
     ).map((el) => (el as HTMLElement).style.background);
     expect(colors).toHaveLength(3);
     expect(new Set(colors).size).toBe(3);
   });
 
-  it('team numbers: extracted from .ghostauto, editable on the card', async () => {
+  it('team numbers: extracted from .ghostauto, editable in the selected robot inspector', async () => {
     render(<App />);
     dropFiles([file('ghostauto/straight_run.ghostauto')]);
     await waitFor(
@@ -92,13 +99,12 @@ describe('App import → fusion → collision flow', () => {
         expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument();
       },
     );
-    const input = document.querySelector(
-      '.robot-card input[inputmode="numeric"]',
-    ) as HTMLInputElement;
-    expect(input).not.toBeNull();
+    const inspector = selectRobot('Straight Run');
+    const input = within(inspector).getByRole('textbox', { name: /team/i }) as HTMLInputElement;
     expect(input.value).toBe('0001');
     fireEvent.change(input, { target: { value: '254' } });
     expect(input.value).toBe('254');
+    expect(screen.getByText('#254', { selector: '.robot-library-team' })).toBeInTheDocument();
   });
 
   it('the file picker has no extension filter (all formats selectable)', () => {
@@ -110,7 +116,7 @@ describe('App import → fusion → collision flow', () => {
     expect(input.getAttribute('accept')).toBeFalsy();
   });
 
-  it('theme: follows system by default, manual choice sticks', () => {
+  it('theme: stages a manual choice until Save and persists the saved choice', () => {
     render(
       <ThemeProvider>
         <App />
@@ -118,32 +124,77 @@ describe('App import → fusion → collision flow', () => {
     );
     // system default resolves to something and sets the attribute
     expect(['dark', 'light']).toContain(document.documentElement.dataset.theme);
-    fireEvent.click(screen.getByRole('button', { name: /Preferences|偏好设置/ }));
-    const selects = document.querySelectorAll('.prefs-modal select');
-    // order: language, theme, channel — theme is the second-to-last
-    const themeSelect = selects[1] as HTMLSelectElement; // language, theme, channel, then AI model selects
+    const initialTheme = document.documentElement.dataset.theme;
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+    const dialog = screen.getByRole('dialog', { name: 'Preferences' });
+    const themeSelect = within(dialog).getByRole('combobox', { name: /theme|appearance/i });
     fireEvent.change(themeSelect, { target: { value: 'light' } });
+    expect(document.documentElement.dataset.theme).toBe(initialTheme);
+    expect(localStorage.getItem('ghpb.theme')).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: /^Save$/i }));
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(localStorage.getItem('ghpb.theme')).toBe('light');
-    fireEvent.change(themeSelect, { target: { value: 'dark' } });
-    expect(document.documentElement.dataset.theme).toBe('dark');
-    fireEvent.change(themeSelect, { target: { value: 'system' } });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+    const nextDialog = screen.getByRole('dialog', { name: 'Preferences' });
+    fireEvent.change(within(nextDialog).getByRole('combobox', { name: /theme|appearance/i }), { target: { value: 'system' } });
+    fireEvent.click(within(nextDialog).getByRole('button', { name: /^Save$/i }));
     expect(localStorage.getItem('ghpb.theme')).toBeNull();
   });
 
-  it('AI panel opens on the new-chat view; gear opens Preferences with AI settings', async () => {
+  it('preferences: Save waits for a change and Cancel always gets you out', () => {
+    render(
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    );
+    const initialTheme = document.documentElement.dataset.theme;
+    const other = initialTheme === 'light' ? 'dark' : 'light';
+    const themeOf = (scope: HTMLElement) =>
+      within(scope).getByRole('combobox', { name: /theme|appearance/i }) as HTMLSelectElement;
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+    const dialog = screen.getByRole('dialog', { name: 'Preferences' });
+    const initialMode = themeOf(dialog).value;
+    const save = within(dialog).getByRole('button', { name: /^Save$/i });
+    // Untouched dialog: Save has nothing to save, and Cancel — which used to be
+    // the disabled one — is the way out (user report 2026-09-24).
+    expect(save).toBeDisabled();
+    fireEvent.click(within(dialog).getByRole('button', { name: /^Cancel$/i }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(document.documentElement.dataset.theme).toBe(initialTheme);
+
+    // After a change both are live, and Cancel throws the draft away rather
+    // than leaving it staged for the next time the dialog opens.
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+    const next = screen.getByRole('dialog', { name: 'Preferences' });
+    fireEvent.change(themeOf(next), { target: { value: other } });
+    expect(within(next).getByRole('button', { name: /^Save$/i })).toBeEnabled();
+    fireEvent.click(within(next).getByRole('button', { name: /^Cancel$/i }));
+    expect(document.documentElement.dataset.theme).toBe(initialTheme);
+    expect(localStorage.getItem('ghpb.theme')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+    const again = screen.getByRole('dialog', { name: 'Preferences' });
+    expect(themeOf(again).value).toBe(initialMode);
+    expect(within(again).getByRole('button', { name: /^Save$/i })).toBeDisabled();
+    // A disabled Save is not a hidden one: clicking it must not close the
+    // dialog either, so the row reads as "nothing to save yet".
+    fireEvent.click(within(again).getByRole('button', { name: /^Save$/i }));
+    expect(screen.getByRole('dialog', { name: 'Preferences' })).toBeInTheDocument();
+  });
+
+  it('AI assistant stays withdrawn: no entry point in toolbar, inspector or preferences', async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'AI Assistant', exact: true }));
-    // New-chat hero first; gear now opens the Preferences modal.
-    expect(document.querySelector('.ai-panel')).not.toBeNull();
-    expect(document.querySelector('.ai-hero')).not.toBeNull();
-    expect(document.querySelector('.ai-settings')).toBeNull();
-    // Gear is the last of the three top-bar icons (history, new chat, gear).
-    const topBtns = document.querySelectorAll('.ai-top .ai-icon-btn');
-    fireEvent.click(topBtns[topBtns.length - 1]!);
-    // Preferences modal shows the AI section (single settings entry).
+    dropFiles([file('ghostauto/side_lane.ghostauto')]);
+    await screen.findByText('Side Lane', { selector: '.robot-name' });
+    // 2026-09-20 retreat: every assistant surface is unreachable while
+    // AI_ENABLED is false (ai/availability.ts); the code itself remains.
+    expect(screen.queryByRole('button', { name: 'AI Assistant', exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Assistant', exact: true })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /preferences/i }));
     expect(document.querySelector('.prefs-modal')).not.toBeNull();
-    expect(document.querySelector('.prefs-ai')).not.toBeNull();
+    expect(document.querySelector('.prefs-ai')).toBeNull();
   });
 
   it('the what-if start delay resolves the collision', async () => {
@@ -158,20 +209,15 @@ describe('App import → fusion → collision flow', () => {
     });
     await waitFor(
       () => {
-      expect(
-        screen.getAllByText('collision', { selector: '.conflict-tag' }).length,
-      ).toBeGreaterThan(0);
+      expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
     });
 
-    // Find the delay input inside the Straight Run card and set 3.5 s.
-    const straightCard = screen
-      .getByText('Straight Run', { selector: '.robot-name' })
-      .closest('div.robot-card');
-    expect(straightCard).not.toBeNull();
-    const delayInput = straightCard!.querySelector(
-      'input[type="number"]',
-    ) as HTMLInputElement;
+    // Delay edits commit on blur, so incomplete typing never changes the plan.
+    const inspector = selectRobot('Straight Run');
+    const delayInput = within(inspector).getByRole('spinbutton', { name: /delay/i });
     fireEvent.change(delayInput, { target: { value: '3.5' } });
+    fireEvent.blur(delayInput);
+    fireEvent.click(screen.getByRole('button', { name: /^Checks/i }));
 
     await waitFor(
       () => {
@@ -226,20 +272,23 @@ describe('App import → fusion → collision flow', () => {
       { timeout: 10000 },
     );
     expect(screen.getByText('Example Auto', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getAllByText(/9\.22/, { selector: '.robot-meta span' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/9\.22/, { selector: '.robot-library-meta span' }).length).toBeGreaterThan(0);
   }, 30000);
 
-  it('exposes alliance switching, geometry editing, and session save on robot cards', async () => {
+  it('exposes alliance switching and session save while preserving file-supplied geometry', async () => {
     render(<App />);
     dropFiles([file('traj/v3_swerve.traj')]);
     await waitFor(
       () => {
       expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument();
     });
+    const inspector = selectRobot('swerve');
     expect(screen.getByRole('button', { name: 'Blue' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Red' })).toBeInTheDocument();
-    expect(screen.getByTitle('length')).toBeInTheDocument();
-    expect(screen.getByTitle('width')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Save session/i })).toBeEnabled();
+    expect(within(inspector).queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
+    expect(inspector.querySelector('.robot-dimensions')).toHaveTextContent('0.81 m');
+    // The responsive overflow menu contains a second Save action; jsdom
+    // does not apply the CSS breakpoint that chooses between the two.
+    expect(screen.getByText('Save session', { selector: '.toolbar > .save-action' })).toBeEnabled();
   });
 });

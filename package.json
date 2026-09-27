@@ -1,7 +1,7 @@
 {
   "name": "pathblender",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.2",
   "type": "module",
   "description": "Multi-source FRC autonomous path fusion viewer (Choreo .traj + .ghostauto, unified-timeline playback + collision checking)",
   "license": "Apache-2.0",
@@ -15,6 +15,7 @@
     "dev": "npm run dev -w @pathblender/web",
     "build": "npm run build -w @pathblender/core && npm run build -w @pathblender/web",
     "typecheck": "npm run typecheck -ws --if-present",
+    "version:check": "node scripts/check-version.mjs",
     "test": "npm run test -ws --if-present",
     "preview": "npm run preview -w @pathblender/web"
   },

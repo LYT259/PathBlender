@@ -2,7 +2,7 @@
 /// No sidecars, no backend, no telemetry. The only native behavior:
 /// a macOS-standard menu (app menu with About/Preferences/Check-for-Updates,
 /// a File menu for import/save/share/PNG/clear, an Edit menu) that follows
-/// the app language, plus a small preferences window on ?window=prefs.
+/// the app language, plus a preferences window on ?window=prefs.
 use std::sync::Mutex;
 use tauri::menu::{AboutMetadataBuilder, MenuBuilder, MenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
@@ -16,8 +16,8 @@ const PREFS_WINDOW: &str = "prefs";
 /// latest-beta.json onto GitHub releases). The channel choice cannot be
 /// made web-side: the updater plugin's JS `check()` has no endpoint
 /// override, so it is resolved here from the channel string.
-const FEED_STABLE: &str = "https://github.com/GH-FRC/pathblender/releases/latest/download/latest.json";
-const FEED_BETA: &str = "https://github.com/GH-FRC/pathblender/releases/latest/download/latest-beta.json";
+const FEED_STABLE: &str = "https://github.com/LYT259/pathblender/releases/latest/download/latest.json";
+const FEED_BETA: &str = "https://github.com/LYT259/pathblender/releases/latest/download/latest-beta.json";
 
 /// The update found by `check_update`, held until `install_update`
 /// consumes it (the webview drives both, mirroring the plugin's JS API).
@@ -74,7 +74,8 @@ async fn install_update(pending: State<'_, PendingUpdate>) -> Result<(), String>
     Ok(())
 }
 
-/// UI strings per app language (zh-tw falls back to zh where wording matches).
+/// UI strings per app language (zh-tw carries its own wording rather than
+/// reusing zh; en/es/fr/tr/zh each get a table below).
 struct MenuLang {
     file: &'static str,
     edit: &'static str,
@@ -115,18 +116,78 @@ const ZH_TW: MenuLang = MenuLang {
     file: "檔案",
     edit: "編輯",
     import: "匯入…",
-    save: "儲存會話…",
+    save: "儲存工作階段…",
     share: "分享…",
     png: "匯出 PNG…",
-    clear: "清空會話",
+    clear: "清空工作階段",
     prefs: "偏好設定…",
     updates: "檢查更新…",
 };
 
+/// Hong Kong wording. Same script, a few terms and the session word differ
+/// from the Taiwan table; Macau reads this one too (report §7.2 v1.23).
+const ZH_HK: MenuLang = MenuLang {
+    file: "檔案",
+    edit: "編輯",
+    import: "匯入…",
+    save: "儲存工作階段…",
+    share: "分享…",
+    png: "匯出 PNG…",
+    clear: "清除工作階段",
+    prefs: "偏好設定…",
+    updates: "檢查更新…",
+};
+
+const ES: MenuLang = MenuLang {
+    file: "Archivo",
+    edit: "Edición",
+    import: "Importar…",
+    save: "Guardar sesión…",
+    share: "Compartir…",
+    png: "Exportar PNG…",
+    clear: "Vaciar sesión",
+    prefs: "Preferencias…",
+    updates: "Buscar actualizaciones…",
+};
+
+const FR: MenuLang = MenuLang {
+    file: "Fichier",
+    edit: "Édition",
+    import: "Importer…",
+    save: "Enregistrer la session…",
+    share: "Partager…",
+    png: "Exporter PNG…",
+    clear: "Effacer la session",
+    prefs: "Réglages…",
+    updates: "Rechercher les mises à jour…",
+};
+
+const TR: MenuLang = MenuLang {
+    file: "Dosya",
+    edit: "Düzen",
+    import: "İçe Aktar…",
+    save: "Oturumu Kaydet…",
+    share: "Paylaş…",
+    png: "PNG Dışa Aktar…",
+    clear: "Oturumu Temizle",
+    prefs: "Tercihler…",
+    updates: "Güncellemeleri Denetle…",
+};
+
+/// Every web dictionary has a menu table: `set_menu_language` used to fall
+/// through to English for anything but zh/zh-tw, so a Spanish or Turkish user
+/// got an English native menu next to a translated window. Adding a language
+/// on the web side without adding one here is now caught by
+/// `packages/web/test/i18n.test.ts`, which lists the expected codes.
 fn lang_of(lang: &str) -> &'static MenuLang {
     match lang {
+        "en" => &EN,
         "zh" => &ZH,
+        "zh-hk" => &ZH_HK,
         "zh-tw" => &ZH_TW,
+        "es" => &ES,
+        "fr" => &FR,
+        "tr" => &TR,
         _ => &EN,
     }
 }
@@ -217,8 +278,9 @@ fn open_prefs(app: &AppHandle) {
         WebviewUrl::App("index.html?window=prefs".into()),
     )
     .title("Preferences")
-    .inner_size(420.0, 260.0)
-    .resizable(false)
+    .inner_size(640.0, 760.0)
+    .min_inner_size(520.0, 560.0)
+    .resizable(true)
     .build();
 }
 
@@ -239,16 +301,6 @@ pub fn run() {
         })
         .manage(PendingUpdate(Mutex::new(None)))
         .setup(|app| {
-            // Apple-style sidebar material behind the translucent panels
-            // (through the overlay title bar so the toolbar shares it).
-            if let Some(win) = app.get_webview_window("main") {
-                let _ = window_vibrancy::apply_vibrancy(
-                    &win,
-                    window_vibrancy::NSVisualEffectMaterial::Sidebar,
-                    None,
-                    None,
-                );
-            }
             let handle = app.handle().clone();
             *handle
                 .state::<MenuState>()
@@ -287,7 +339,7 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-/// Rebuild the native menu in the app language (zh / zh-tw / en); the web
+/// Rebuild the native menu in the app language (the web `Lang` codes); the web
 /// side calls this on startup and whenever the language preference changes.
 #[tauri::command]
 fn set_menu_language(app: AppHandle, state: State<MenuState>, lang: String) -> Result<(), String> {

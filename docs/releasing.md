@@ -7,6 +7,7 @@
 - [ ] **推送前门禁**：`scripts/pre-push-check.mjs`（git pre-push 钩子自动执行；新克隆后先跑 `scripts/install-hooks.sh`）——待推提交命中敏感词（账号/工单/内网 IP/真实姓名/密钥材料）一律中止。2026-09-02 教训：一次性扫描会随日志追加失效，门禁是唯一可靠形态。
 
 - [ ] `npm run typecheck` 零错误
+- [ ] `npm run version:check`（六处版本号同源：root / core / web / desktop 的 package.json + tauri.conf.json + Cargo.toml；SW 缓存名取 root 值）
 - [ ] `npm test` 全绿（core + web e2e）
 - [ ] `npm run build` 成功；`packages/web/dist` 体积合理（gzip JS < 300 KB 量级）
 - [ ] 本地 `npm run preview` 过一遍完整流程：四格式导入 → 回放 → 碰撞 → 延迟 what-if → 会话存/取 → Share link → PNG
@@ -22,13 +23,23 @@
 
 ## 隐私红线
 
-- [ ] 无任何网络上传/遥测/统计脚本（`grep -rn "fetch\|XMLHttpRequest\|sendBeacon" packages/web/src` 人工复核——唯一豁免：`packages/web/src/ai/client.ts` 的用户自配 AI 调用（报告 v1.4 §6.4 / AGENTS.md 红线增补口径）：默认关闭、仅当用户在面板配置并启用后才会向其自填 base URL 发请求；AI 测试全部 mock 网络）
+- [ ] 无任何网络上传/遥测/统计脚本（`grep -rn "fetch\|XMLHttpRequest\|sendBeacon" packages/web/src` 人工复核）。**豁免清单（当前全部出站请求，逐处核对，2026-09-18）**：
+  1. `packages/web/src/ai/client.ts` — 助手对话，仅向用户自填 base URL；`chatCompletion` 内硬拦 `enabled`（默认关闭，报告 v1.4 §6.4 / AGENTS.md 红线增补口径）；
+  2. 同文件的 `fetchAvailableModels` — 模型列表 GET，设置面板里用户点击才发；
+  3. `packages/web/src/components/AiSettingsSection.tsx` — 「测试连接」按钮，用户点一下才发一条不含会话数据的探测消息；
+  4. `packages/web/src/ai/actions.ts` 的 `web_fetch` 动作 — 默认关闭、需设置里显式开启，仅 http(s) 公网、拒环回/私网。
+  四者均为「用户自带 Key、主动发起」的调用，不带遥测、不落日志；除此之外出现任何新的 fetch 都要在本清单登记或删掉。AI 测试全部 mock 网络（见 `packages/web/test/ai-gate.test.tsx`）。
 - [ ] README 隐私声明与实际行为一致（文件本地解析、Share link 仅含会话数据本身）
 
 ## GitHub（发布操作纪律）
 
 - [ ] 推送 / PR / Pages 配置一律手动单发，不写自动重试循环；失败间隔 ≥60 秒再评估
-- [ ] Pages 部署优先走 Actions（`.github/workflows/deploy.yml`，push 到 stable 自动构建发布），避免高频手动操作
+- [ ] 网站上线（2026-09-09 起实际走 Cloudflare Pages 直传，报告 §7.1 的国内可达性方案即此渠道）：
+      `npx wrangler pages deploy packages/web/dist --project-name=pathblender --branch=stable`；
+      β 预览站另建 `pathblender-preview`（`--branch=beta` + `VITE_SITE_PREVIEW=1`）。
+      构建期 `VITE_VIEWER_ONLY=1` 出只读查看器版（网站不放编辑/导出/AI，见 `packages/web/src/viewer.ts`）。
+- [ ] GitHub Pages 工作流（`.github/workflows/deploy.yml`，push 到 stable 自动构建发布）仍在看管范围内，
+      但与上面的 Cloudflare 直传是**两条独立渠道**——发版时确认两边同版本，避免用户从两个域名拿到不同构建
 - [ ] 发布帖（Chief Delphi）中注明：PathPlanner 移植关系与 MIT 来源、Choreo 互操作定位、零上传承诺
 
 ## 更新签名密钥（tauri-plugin-updater，2026-08-30 集成）
@@ -38,8 +49,9 @@
   - 备份：离线/次要位置一份（本机 README 有恢复流程；保住 ~/.tauri 主副本即可）。
 - **红线**：私钥绝不进 git 仓库/截图/日志/会话文件（同 AI 密钥纪律）。
 - **本地构建**：`scripts/install-desktop.sh` 检测到 `~/.tauri` 密钥会自动导出 `TAURI_SIGNING_PRIVATE_KEY_PATH`，`createUpdaterArtifacts: true` 产出带签名的 `.app.tar.gz` + `.sig`。
-- **发版时**：CI/手工用同一密钥签名上传 `.app.tar.gz` 与 `.sig` 到 GitHub Release，并生成 `latest.json`（版本号、平台产物 URL、签名）。endpoint 已配置为
-  `https://github.com/GH-FRC/PathBlender/releases/latest/download/latest.json`。
+- **发版时**：CI/手工用同一密钥签名上传 `.app.tar.gz` 与 `.sig` 到 GitHub Release，并生成 `latest.json`（版本号、平台产物 URL、签名）。endpoint 与 `tauri.conf.json` 保持一致（仓库名小写）：
+  `https://github.com/LYT259/pathblender/releases/latest/download/latest.json`。
+- **β 渠道**：同目录下的 `latest-beta.json` 由 `scripts/gen-latest-json.mjs` 随每次发版生成，stable 标签才另存一份为 `latest.json`（stable 抬高 beta）。应用内切换渠道走 `check_update`（Rust 侧决定读哪个 feed——插件 JS 的 `check()` 不接受 endpoint 覆盖）。
 - **丢钥后果**：已分发用户永远收不到自动更新，只能手动重装——发版前确认两处副本齐全。
 - **应用内入口**：菜单「检查更新…」→ 有更新则下载安装并重启；404/离线显示「尚未上线」toast——发布渠道上线后自动变为真实行为。
 

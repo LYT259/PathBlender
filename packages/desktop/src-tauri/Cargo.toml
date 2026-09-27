@@ -1,6 +1,6 @@
 [package]
 name = "pathblender-desktop"
-version = "0.1.0"
+version = "0.1.2"
 description = "GHPathBlender — FRC alliance path fusion viewer (desktop shell)"
 edition = "2021"
 
@@ -14,7 +14,6 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
-window-vibrancy = "0.6"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }

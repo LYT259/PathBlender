@@ -17,6 +17,8 @@ export { parseTraj } from './traj';
 export { parseGhostAuto } from './ghostauto';
 export { parsePathPlannerPath } from './pathplanner-path';
 export { parsePathPlannerAuto } from './pathplanner-auto';
+export { parseRobotProfile } from './robot-profile';
+export type { RobotProfile } from './robot-profile';
 
 export type DetectedFormat =
   | 'choreo-traj'
