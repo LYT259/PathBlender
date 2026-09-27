@@ -35,10 +35,11 @@ anywhere.**
    your session — **no source file is ever modified**.
 3. **Path editing** (next section): when time can't be shifted, shift geometry.
 
-## Path editor (its own page)
+## Waypoint editing (on the field)
 
-Press **edit path** on a robot card (`.path` / `.traj` only; `.ghostauto`
-files carry no waypoints) — the whole window becomes an editing workspace:
+Press **edit path** on a robot (`.path` / `.traj` only; `.ghostauto`
+files carry no waypoints) — the field canvas switches to edit mode:
+other robots and collision checks keep running while you edit,
 
 - **Drag points** on the field; **double-click** a segment to insert,
   **right-click** a point to remove;
@@ -47,8 +48,8 @@ files carry no waypoints) — the whole window becomes an editing workspace:
   read-only);
 - every change regenerates the trajectory and recomputes collisions — when
   the red rings are gone, you're done. Edits are **derived copies** (the
-  header shows "adjusted" with a one-click full revert);
-- export **.path / .traj / .ghostauto** straight from the editor bar (file
+  robot carries an "adjusted" badge with a one-click full revert);
+- export **.path / .traj / .ghostauto** straight from the inspector (file
   name gets an `-adjusted` suffix) and send it back to the owning team.
   PathPlanner paths regenerate their timing; Choreo paths keep the original
   timing with remapped geometry (warned on the badge).
@@ -57,56 +58,14 @@ files carry no waypoints) — the whole window becomes an editing workspace:
 
 - The **3D** button in the header switches to the stereo view: **official
   field models for FRC 2022–2026** (welded and AndyMark constructions where
-  they differ) with free orbit. The little cube in the corner (**ViewCube**)
-  snaps the camera to standard views — click a face; the house button
-  returns home; **Fit** frames the current content.
+  they differ) with free orbit; **Fit** frames the current content and the
+  default-view button snaps the camera back home.
 - The 2D view stays the fast tactical overlay with each season's official
   AprilTag layout. 2018–2020 have no official 3D models; the 3D view uses
   simplified structures there.
 - The **Welded / AndyMark** selector appears next to the season picker only
   where the two constructions differ — pick whichever your event actually
   uses and the tag layout follows.
-
-## AI assistant (off by default)
-
-Open the panel with the **✦ button** in the canvas bar; the **gear** at the
-top-right opens settings: pick a provider (Zhipu Z.ai / Claude (Anthropic) /
-OpenAI / DeepSeek / local Ollama or custom), paste your API key, and manage
-a **model list per provider** (call name + display name + context size; add
-as many as you like, ● activates one, **Test** probes connectivity).
-
-Settings also offer: **API protocol** (OpenAI-compatible by default; the
-Anthropic preset automatically uses the native Messages API), **Fetch
-models** (pull the endpoint's model list and tick what to add), a
-**write-only key field** (saved keys show as `••••1234`), per-model
-**vision** declaration, **custom effort levels** (comma separated, first =
-off; a `T` toggle for thinks-by-default models sends
-`thinking:disabled` at off), and the **web fetch** switch (default off;
-when on the assistant may read one public page per call).
-
-The chat composer (mature-harness style):
-
-- type `/` for the **command menu** (the full whitelisted action set);
-- type `$` for **skills** (resolve all conflicts / check bounds / export all);
-- `+` attaches **path files or a whole folder** into the session;
-- inline controls: **permission** (standard = high-risk actions confirm
-  first; full access auto-approves — still whitelist-only), **context
-  gauge**, model switch, effort, and **send / stop**;
-- **history** (clock icon, top-right): conversations persist locally —
-  reopen to continue, delete, hover any of your messages and press **⎇ to
-  fork** a what-if line, or **⇪ carry a summary** into a new chat;
-- **image attachments**: the `+` menu sends images to models that declare
-  vision;
-- **reminders**: ask "remind me in N seconds…" — `schedule_create/list/
-  delete` set session-local reminders delivered as a follow-up message
-  when the assistant is idle. No system notification.
-
-Discipline: the key lives only on your machine and never enters session
-files, share links, or exports; the assistant can only run whitelisted
-commands, every action is undoable. Collision verdicts always come from the
-deterministic detector, never the model. While enabled, conversation data
-goes to the provider you configured — a local Ollama keeps it on your
-machine.
 
 ## Other things you'll use
 

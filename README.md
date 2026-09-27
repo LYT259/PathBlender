@@ -30,29 +30,25 @@ PathBlender fills that gap:
   out-of-bounds detection, and a minimum-separation report. **Auto-resolve**
   proposes the smallest set of start delays that clears every conflict;
 - **3D field view** — official field models for FRC 2022–2026 (welded and
-  AndyMark variants where they differ), free orbit with an Onshape-style
-  ViewCube in the corner to snap back to standard views. The 2D view
-  stays the fast tactical overlay;
-- **Path editor** — a dedicated workspace (Choreo/PathPlanner style):
-  drag waypoints on the field or edit exact numbers in the side panel;
-  every edit regenerates the trajectory and exports back to
+  AndyMark variants where they differ), free orbit with one-click fit and
+  default-view reset. The 2D view stays the fast tactical overlay;
+- **Waypoint editing on the field** — switch a robot into edit mode
+  and drag its waypoints right on the canvas while the rest of the
+  alliance keeps playing; the waypoint panel takes exact numbers, every
+  edit regenerates the trajectory, and results export back to
   `.path` / `.traj` / `.ghostauto`;
 
-  ![Path editor](docs/screenshots/editor.png)
+  ![Waypoint editing](docs/screenshots/editor.png)
 
-- **Optional AI assistant** — bring your own key (智谱 Z.ai /
-  Claude (Anthropic) / OpenAI / DeepSeek / local Ollama), default off.
-  Chat-style composer with a slash-command palette over the whitelisted
-  action set, one-shot skills, permission tiers (standard / full access),
-  per-model display names and context sizes, and a stop button. The
-  assistant never executes model-generated code — collision verdicts
-  always come from the deterministic detector;
+- **Route library** — import a whole folder from any team (their deploy
+  directory): bystander files are skipped, every route lands in a
+  library, and a picker beside each robot switches its active auto live
+  (undo restores the previous one); PathPlanner `settings.json` files
+  apply real bumper dimensions to any robot;
 
-  ![AI composer](docs/screenshots/ai-composer.png)
-
-- **Zero install, zero upload** — a pure static web app. Files are parsed
-  locally in your browser and never leave it (the AI calls above are the
-  only network feature, strictly user-configured and off by default);
+- **Zero install, zero upload** — a pure static web app. Files are
+  parsed locally in your browser and never leave it — the app ships zero
+  network calls;
 - **Also a desktop app** — the same build ships as a lightweight Tauri
   shell (no backend, no sidecars) with in-app auto-update: `npm run tauri
   build -w packages/desktop` produces PathBlender.app + .dmg. Windows and
@@ -60,16 +56,19 @@ PathBlender fills that gap:
 
 ## Quick start
 
-1. Open the app in any modern browser (link to be published at release).
+1. Get the desktop app from
+   [GitHub Releases](https://github.com/LYT259/pathblender/releases)
+   (a public web link will follow).
 2. Drag in path files from every alliance partner — `.traj`, `.ghostauto`,
-   `.path`, `.auto`, mixed freely. Multi-select works; bad files are
-   reported without stopping the good ones.
+   `.path`, `.auto`, mixed freely, one file or a whole folder. Bad files
+   are reported without stopping the good ones.
 3. Press **play**. Collisions show up as red rings on the field and as
    entries in the conflict panel — click one to jump the clock to that
    moment, or press **Auto-resolve** for the minimal-delay proposal.
 4. Fine-tune: **start delay** inputs (what-if only — source files are
-   never modified), per-robot alliance / geometry / team number, or open
-   the **path editor** for waypoint-level fixes.
+   never modified), per-robot alliance / geometry / team number, switch the
+   robot's route from the library, or enter **waypoint editing** for
+   path-level fixes.
 5. **Share** the result: save a session file, copy a share link (the whole
    session compressed into the URL — nothing is uploaded anywhere), or
    export a PNG for your alliance chat.
@@ -91,16 +90,15 @@ PathBlender fills that gap:
 Path files are parsed **entirely in your browser**. There is no backend,
 no account, no telemetry, and no analytics — the app ships zero network
 calls. Share links contain only the compressed session data itself (in
-the URL hash, which never leaves the page unless you copy it). API keys
-live in local storage only and never enter sessions, share links,
-exports, or logs.
+the URL hash, which never leaves the page unless you copy it).
 
 Also included: red/blue alliance normalization per robot, per-robot
 geometry editing and team-number annotations, eight season fields
 (2018–2020, 2022–2026 — 2021 has no public orthographic field asset)
 with official AprilTag overlays + custom field import with calibration
-(WPILib/PhotonVision JSON), and English / 简体中文 / 繁體中文 UI in light
-and dark themes (follows the system).
+(WPILib/PhotonVision JSON), and an eight-language UI — English / 简体中文 /
+繁體中文（台灣·香港）/ Français / Español / Türkçe — in light and dark
+themes (follows the system).
 
 ![Multi-robot fusion](docs/screenshots/multi-robot-fusion.png)
 ![Simplified Chinese UI](docs/screenshots/i18n-zh.png)
@@ -111,9 +109,9 @@ Full walkthrough per tool and an FAQ:
 
 ## Status
 
-Working MVP — everything above is implemented and regression-tested
-(automated tests + a real-browser walkthrough). Not yet deployed
-publicly.
+v0.1.2 — everything above is implemented and regression-tested
+(unit suites + a 62-check real-browser walkthrough). Desktop builds ship
+from [GitHub Releases](https://github.com/LYT259/pathblender/releases).
 
 ## License & attribution
 

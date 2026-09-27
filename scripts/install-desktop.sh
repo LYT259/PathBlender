@@ -20,7 +20,49 @@ fi
 BUNDLE=packages/desktop/src-tauri/target/release/bundle/macos/PathBlender.app
 [[ -d "$BUNDLE" ]] || { echo "bundle not found: $BUNDLE" >&2; exit 1; }
 
+# --- Seal the bundle before anything ships it (2026-09-27) ----------------
+# Tauri's macOS bundler leaves the app linker-signed only (no
+# _CodeSignature/CodeResources), which fails `codesign --verify --deep
+# --strict` ("code has no resources but signature indicates they must be
+# present"). Re-sign ad-hoc per the standing no-Apple-account decision, strip
+# sync-introduced xattrs first (GHPaths hit those too), and make strict
+# verification a hard gate.
+xattr -cr "$BUNDLE"
+codesign --force --deep --sign - "$BUNDLE"
+if ! codesign --verify --deep --strict "$BUNDLE"; then
+  echo "install-desktop.sh: strict codesign verification FAILED" >&2
+  exit 1
+fi
+
+# The updater archive tauri produced during build wraps the PRE-seal app.
+# Regenerate it (and its signature) from the sealed bundle whenever the
+# release key is on this machine — the updater feed must never point at an
+# unsealed build.
+if [[ -n "${TAURI_SIGNING_PRIVATE_KEY_PATH:-}" ]]; then
+  UPDATER="$BUNDLE.tar.gz"
+  rm -f "$UPDATER" "$UPDATER.sig"
+  (cd "$(dirname "$BUNDLE")" && tar -czf "$(basename "$UPDATER")" "$(basename "$BUNDLE")")
+  # env -u: the exported TAURI_SIGNING_PRIVATE_KEY (key content) conflicts
+  # with --private-key-path; the key itself is passwordless.
+  UPDATER_ABS="$PWD/$UPDATER" # resolve before the cd below ($PWD shifts inside)
+  (cd packages/desktop && env -u TAURI_SIGNING_PRIVATE_KEY \
+    npx tauri signer sign --private-key-path "$TAURI_SIGNING_PRIVATE_KEY_PATH" \
+    --password "" "$UPDATER_ABS")
+fi
+
+# Same story for the dmg: tauri's own dmg wraps the pre-seal app. Regenerate
+# it from the sealed bundle so every shipped artifact carries the seal.
+APP_VERSION="$(node -p "require('./package.json').version")"
+DMG="$(dirname "$BUNDLE")/PathBlender_${APP_VERSION}_aarch64.dmg"
+rm -f "$DMG" "$(dirname "$BUNDLE")"/*.dmg
+hdiutil create -volname PathBlender -srcfolder "$BUNDLE" -ov -format UDZO "$DMG" >/dev/null
+
 ditto "$BUNDLE" /Applications/PathBlender.app
+# Verify the INSTALLED copy too — ditto must preserve the seal intact.
+if ! codesign --verify --deep --strict /Applications/PathBlender.app; then
+  echo "install-desktop.sh: installed app failed strict verification" >&2
+  exit 1
+fi
 
 # Delete every staged .app under bundle/ — they are Spotlight-indexed
 # otherwise (the source of the duplicate search hits).
