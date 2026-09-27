@@ -32,14 +32,6 @@ PathBlender fills that gap:
 - **3D field view** — official field models for FRC 2022–2026 (welded and
   AndyMark variants where they differ), free orbit with one-click fit and
   default-view reset. The 2D view stays the fast tactical overlay;
-- **Waypoint editing on the field** — switch a robot into edit mode
-  and drag its waypoints right on the canvas while the rest of the
-  alliance keeps playing; the waypoint panel takes exact numbers, every
-  edit regenerates the trajectory, and results export back to
-  `.path` / `.traj` / `.ghostauto`;
-
-  ![Waypoint editing](docs/screenshots/editor.png)
-
 - **Route library** — import a whole folder from any team (their deploy
   directory): bystander files are skipped, every route lands in a
   library, and a picker beside each robot switches its active auto live
@@ -66,9 +58,8 @@ PathBlender fills that gap:
    entries in the conflict panel — click one to jump the clock to that
    moment, or press **Auto-resolve** for the minimal-delay proposal.
 4. Fine-tune: **start delay** inputs (what-if only — source files are
-   never modified), per-robot alliance / geometry / team number, switch the
-   robot's route from the library, or enter **waypoint editing** for
-   path-level fixes.
+   never modified), per-robot alliance / geometry / team number, or switch the
+   robot's route from the library.
 5. **Share** the result: save a session file, copy a share link (the whole
    session compressed into the URL — nothing is uploaded anywhere), or
    export a PNG for your alliance chat.
