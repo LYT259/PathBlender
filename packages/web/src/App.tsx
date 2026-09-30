@@ -145,16 +145,18 @@ function AppBody() {
   // button uses — see the prefs-row btns block.
   const [pendingLang, setPendingLang] = useState<LangChoice | null>(null);
   const [pendingTheme, setPendingTheme] = useState<ThemeMode | null>(null);
+  const [pendingChannel, setPendingChannel] = useState<UpdateChannel | null>(null);
   const closePrefs = useCallback(() => {
     setShowPrefs(false);
     setPendingLang(null);
     setPendingTheme(null);
+    setPendingChannel(null);
   }, []);
   const [cfOpen, setCfOpen] = useState(false);
-  const [toast, setToast] = useState('');
-  const flash = useCallback((msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(''), 2500);
+  const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'error' } | null>(null);
+  const flash = useCallback((msg: string, kind: 'ok' | 'error' = 'ok') => {
+    setToast({ msg, kind });
+    window.setTimeout(() => setToast(null), 2500);
   }, []);
   const importInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<FieldCanvasHandle>(null);
@@ -667,7 +669,7 @@ function AppBody() {
       // after the web app's address).
       setShareLink(location.protocol.startsWith('http') ? location.href : hash);
     } catch {
-      flash(tr('toast.shareFailed'));
+      flash(tr('toast.shareFailed'), 'error');
     }
   }, [robots, fieldId, field, flash, tr]);
 
@@ -686,7 +688,7 @@ function AppBody() {
       flash(tr('toast.pngOnly2d'));
       return;
     }
-    canvasRef.current?.exportPng((ok) => flash(tr(ok ? 'toast.pngSaved' : 'toast.pngFailed')));
+    canvasRef.current?.exportPng((ok) => flash(tr(ok ? 'toast.pngSaved' : 'toast.pngFailed'), ok ? 'ok' : 'error'));
   }, [view3D, flash, tr]);
 
   // Native "Check for Updates…" and channel switches. The Rust shell owns
@@ -699,7 +701,7 @@ function AppBody() {
       void runUpdateCheck(ch, (e) => {
         if (e.kind === 'found') flash(tr('updates.downloading', { v: e.version }));
         else if (e.kind === 'upToDate') flash(tr('updates.upToDate'));
-        else if (e.kind === 'failed') flash(tr('updates.failed'));
+        else if (e.kind === 'failed') flash(tr('updates.failed'), 'error');
         // 'installed' — the relaunch is already in flight; nothing left to say.
       });
     },
@@ -922,7 +924,7 @@ function AppBody() {
           setScene({ customField: f, customImageUrl: url, fieldId: CUSTOM_FIELD_ID });
         }}
       />}
-      {toast !== '' && <div className="toast" role="status">{toast}</div>}
+      {toast && <div className={toast.kind === 'error' ? 'toast error' : 'toast'} role="status">{toast.msg}</div>}
       {shareLink != null && (
         <Dialog title={tr('share.title')} onClose={() => setShareLink(null)}>
             <h3>{tr('share.title')}</h3>
@@ -933,8 +935,8 @@ function AppBody() {
                 className="btn small"
                 onClick={async () => {
                   const ok = await copyText(shareLink);
-                  setToast(ok ? tr('toast.copied') : tr('share.copyFailed'));
-                  window.setTimeout(() => setToast(''), 2500);
+                  setToast({ msg: ok ? tr('toast.copied') : tr('share.copyFailed'), kind: ok ? 'ok' : 'error' });
+                  window.setTimeout(() => setToast(null), 2500);
                 }}
               >
                 {tr('share.copy')}
@@ -989,11 +991,8 @@ function AppBody() {
               <label className="prefs-row">
                 <span>{tr('prefs.channel')}</span>
                 <select
-                  value={updateChannel}
-                  onChange={(e) => {
-                    const next = e.target.value as 'stable' | 'beta';
-                    setUpdateChannel(next);
-                  }}
+                  value={pendingChannel ?? updateChannel}
+                  onChange={(e) => setPendingChannel(e.target.value as UpdateChannel)}
                 >
                   <option value="stable">{tr('prefs.channel.stable')}</option>
                   <option value="beta">{tr('prefs.channel.beta')}</option>
@@ -1019,12 +1018,16 @@ function AppBody() {
               {/* Save only means something when there is something to save. */}
               <button
                 className="btn small accent"
-                disabled={pendingLang == null && pendingTheme == null}
+                disabled={pendingLang == null && pendingTheme == null && pendingChannel == null}
                 onClick={() => {
                   if (pendingLang != null) setLang(pendingLang);
                   if (pendingTheme != null) setThemeMode(pendingTheme);
+                  // Applying the channel broadcasts to every window (self
+                  // included), which re-checks the newly selected feed.
+                  if (pendingChannel != null) setUpdateChannel(pendingChannel);
                   setPendingLang(null);
                   setPendingTheme(null);
+                  setPendingChannel(null);
                   closePrefs();
                 }}
               >
