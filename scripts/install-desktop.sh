@@ -14,7 +14,11 @@ if [[ -f "$HOME/.tauri/pathblender-updater.key" ]]; then
 fi
 
 if [[ "${1:-}" != "--no-build" ]]; then
-  (cd packages/desktop && npx tauri build)
+  # --bundles app: tauri's own dmg step (create-dmg fork) has grown flaky on
+  # this machine (bails with a bogus ENOSPC while hdiutil works fine), and its
+  # dmg wrapped the pre-seal app anyway — we regenerate the dmg ourselves below.
+  # The updater artifacts (tar.gz + sig) still come out of the app bundle.
+  (cd packages/desktop && npx tauri build --bundles app)
 fi
 
 BUNDLE=packages/desktop/src-tauri/target/release/bundle/macos/PathBlender.app
