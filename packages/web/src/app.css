@@ -413,6 +413,9 @@ input[type="number"], input[type="text"] {
   background: var(--badge-ok-bg); color: var(--badge-ok-fg); border: 1px solid var(--ok);
   padding: 8px 18px; border-radius: 8px; font-size: 13px; z-index: 10;
 }
+.toast.error {
+  background: var(--badge-err-bg); color: var(--badge-err-fg); border-color: var(--danger);
+}
 
 /* custom field calibration panel */
 .cf-panel {
