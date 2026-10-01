@@ -10,9 +10,14 @@
 
 type PrefKey = 'lang' | 'theme' | 'updateChannel';
 
+// `__TAURI_INTERNALS__` covers Linux/Windows (http(s)-served webviews);
+// protocol-only detection would skip pref sync there (same check as
+// App.tsx / main.tsx / download.ts).
 const isDesktop =
   typeof window !== 'undefined' &&
-  (window.location.protocol === 'tauri:' || window.location.protocol === 'asset:');
+  ('__TAURI_INTERNALS__' in window ||
+    window.location.protocol === 'tauri:' ||
+    window.location.protocol === 'asset:');
 
 export function broadcastPref(key: PrefKey, value: string): void {
   if (!isDesktop) return;
