@@ -61,6 +61,11 @@ DMG="$(dirname "$BUNDLE")/PathBlender_${APP_VERSION}_aarch64.dmg"
 rm -f "$DMG" "$(dirname "$BUNDLE")"/*.dmg
 hdiutil create -volname PathBlender -srcfolder "$BUNDLE" -ov -format UDZO "$DMG" >/dev/null
 
+# Clean replace (2026-10-01): ditto onto an existing install leaves behind
+# files the new build no longer ships, so the installed app drifts from the
+# sealed bundle. Remove the old copy first — /Applications must match the
+# sealed build exactly (user instruction: 安装新软件前把旧软件删干净).
+rm -rf /Applications/PathBlender.app
 ditto "$BUNDLE" /Applications/PathBlender.app
 # Verify the INSTALLED copy too — ditto must preserve the seal intact.
 if ! codesign --verify --deep --strict /Applications/PathBlender.app; then
