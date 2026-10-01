@@ -29,7 +29,7 @@
 
 import * as THREE from 'three';
 import type { AprilTag, FieldPackage } from '@pathblender/core';
-import { fieldImageWorldRect } from '@pathblender/core';
+import { fieldById, fieldImageWorldRect } from '@pathblender/core';
 
 /** Field centre in meters — the render frame is centered on the playfield. */
 export function fieldCenter(field: FieldPackage): { cx: number; cy: number } {
@@ -150,6 +150,7 @@ export const FIELD3D_MODELS: Record<string, Field3DModelEntry> = {
     mirror: 'z',
     tagDecal: /FE-00083_ID(\d+)/,
   },
+
   'reefscape-2025': {
     welded: '2025-reefscape-welded',
     andymark: '2025-reefscape-andymark',
@@ -162,6 +163,41 @@ export const FIELD3D_MODELS: Record<string, Field3DModelEntry> = {
     tagDecal: /FE-00083-ID(\d+)-Vinyl/,
   },
 };
+
+/**
+ * Which tag list the 3D view mounts: the selected construction variant's
+ * layout when the shipped assets include a model OF that build, otherwise
+ * the layout of the model that will actually load.
+ *
+ * Why the fallback exists (2026 AndyMark, user report 2026-10-01): the
+ * official AndyMark layout moves the hub/trench tags ~(−14, −13) mm and the
+ * driver-station-wall tags ~−34 mm relative to welded, because the built
+ * structures themselves sit at those offsets — but AdvantageScopeAssets
+ * publishes exactly ONE 2026 model (welded; verified against its releases:
+ * 2025 ships Welded+AndyMark zips, 2026 does not). Ray-casting every hub
+ * tag's own normal on the welded model shows 9 of the 24 (ids 7, 9, 10,
+ * 12, 17, 19, 20, 22, 24) land 6.8–7.2 mm BEHIND the hub's structural
+ * panels (`GE-26305`/`GE-26308`/`GE-26327`) plus the blank tag vinyls —
+ * fully hidden from the front, which reads as "this face has no AprilTag".
+ * Mounting those coordinates is geometrically impossible on this model.
+ *
+ * So: 3D visualises the build it has a model of; the 2D overlay and every
+ * data path keep the user's selected variant's official layout untouched.
+ * Seasons without any official model (2018–2020, custom fields) always use
+ * the package's own list — there is no model to contradict it.
+ */
+export function modelTagLayout(
+  field: Pick<FieldPackage, 'id' | 'aprilTags'>,
+  variant: 'welded' | 'andymark',
+): AprilTag[] {
+  const entry = FIELD3D_MODELS[field.id];
+  if (entry && variant === 'andymark' && !entry.andymark) {
+    // The default (welded) package of the same season is where this model's
+    // own decals are (registration ≤ 2 mm; see the model test).
+    return fieldById(field.id).aprilTags ?? field.aprilTags ?? [];
+  }
+  return field.aprilTags ?? [];
+}
 
 /**
  * In-plane turn of the printed pattern about the plate's own normal.

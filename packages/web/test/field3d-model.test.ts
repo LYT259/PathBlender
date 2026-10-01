@@ -35,6 +35,7 @@ import {
   FIELD3D_MODELS,
   configMirrorAxis,
   fieldModelScale,
+  modelTagLayout,
 } from '../src/field3d-frame';
 import cfg2022 from '../public/fields3d/2022-rapidreact/config.json';
 import cfg2023 from '../public/fields3d/2023-chargedup/config.json';
@@ -223,5 +224,35 @@ describe('2025 uses the official enclosure frame', () => {
       expect(t.y).toBeGreaterThan(-0.01);
       expect(t.y).toBeLessThan(f.widthM + 0.01);
     }
+  });
+});
+
+describe('modelTagLayout: 3D tags follow the build of the model that loads', () => {
+  const swapped = {
+    ...fieldById('rebuilt-2026'),
+    aprilTags: fieldById('rebuilt-2026').aprilTagsAndyMark,
+  };
+
+  it('2026 AndyMark selection mounts the welded list — the only model ships welded', () => {
+    const mounted = modelTagLayout(swapped, 'andymark');
+    const welded = fieldById('rebuilt-2026').aprilTags!;
+    expect(mounted.map((t) => t.id)).toEqual(welded.map((t) => t.id));
+    // welded tag 13 x = 16.5333, andymark = 16.4993 — must be the former.
+    expect(mounted.find((t) => t.id === 13)!.x).toBeCloseTo(16.5333, 3);
+  });
+
+  it('2026 welded selection (and every modeled variant) mounts the selection', () => {
+    const weldedPkg = fieldById('rebuilt-2026');
+    expect(modelTagLayout(weldedPkg, 'welded')).toBe(weldedPkg.aprilTags);
+    // 2025 has a model per build — the andymark list mounts as-is.
+    const reef = { ...fieldById('reefscape-2025'), aprilTags: fieldById('reefscape-2025').aprilTagsAndyMark };
+    expect(modelTagLayout(reef, 'andymark')).toBe(reef.aprilTags);
+  });
+
+  it('seasons and custom fields without a model always use their own list', () => {
+    const custom = { id: 'custom', aprilTags: [{ id: 1, x: 1, y: 1 }] };
+    expect(modelTagLayout(custom, 'andymark')).toBe(custom.aprilTags);
+    const old = { ...fieldById('rapidreact-2022'), aprilTags: fieldById('rapidreact-2022').aprilTags };
+    expect(modelTagLayout(old, 'andymark')).toBe(old.aprilTags);
   });
 });
