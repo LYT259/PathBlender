@@ -37,6 +37,7 @@ export const en = {
   "workspace.togglePaths": "Show or hide path list",
   "workspace.toggleInspector": "Show or hide inspector",
   "workspace.closePanel": "Close inspector",
+  "workspace.closeRobotDetails": "Close robot details",
   "workspace.undo": "Undo",
   "workspace.redo": "Redo",
   "workspace.more": "More actions",

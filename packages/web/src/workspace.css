@@ -84,9 +84,9 @@ body.desktop .workspace-toolbar { padding-left: 86px; }
 .workspace-stage .canvas-slot { min-height: 140px; }
 .workspace-canvas-bar { background: var(--bar-bg); padding: 10px 14px; gap: 7px; min-height: 54px; align-content: center; }
 .field-options { display: flex; gap: 6px; align-items: center; min-width: 0; }
-.field-select { min-height: 30px; font-weight: 500; max-width: 190px; padding: 4px 7px; background: var(--bar-bg); border-color: transparent; }
-.field-select:hover { border-color: var(--border); }
-.field-variant { color: var(--fg-dim); font-size: 11px; max-width: 106px; }
+.field-select { min-height: 30px; font-weight: 500; max-width: 190px; padding: 4px 8px; background: var(--btn-bg); border: 1px solid var(--border); border-radius: 6px; appearance: auto; cursor: pointer; }
+.field-select:hover { background: var(--btn-bg-hover); }
+.field-variant { color: var(--fg); font-size: 12px; max-width: 120px; }
 .trails-control { padding-left: 3px; }
 .sw-text { font-size: 11px; }
 .workspace-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 32px; min-height: 0; overflow-y: auto; background: var(--bg-panel); }

@@ -73,37 +73,6 @@ export function Timeline({ robots, conflicts, bounds, duration, playback, select
     <section className="timeline timeline-workspace" aria-label={tr('timeline.title')}>
       <div className="timeline-toolbar">
         <h2>{tr('timeline.title')}</h2>
-        <div className="timeline-transport">
-          <button type="button" onClick={() => seek(0)} disabled={end === 0} aria-label={tr('timeline.rewind')} title={tr('timeline.rewind')}>
-            <TransportIcon kind="rewind" />
-          </button>
-          <button type="button" onClick={() => seek(currentT - 0.5)} disabled={end === 0 || currentT === 0} aria-label={tr('timeline.stepBack')} title={tr('timeline.stepBack')}>
-            <TransportIcon kind="back" />
-          </button>
-          <button
-            type="button"
-            className="timeline-play"
-            onClick={() => setPlaying(!playing)}
-            disabled={end === 0}
-            aria-label={tr(playing ? 'timeline.pause' : 'timeline.play')}
-            title={tr(playing ? 'timeline.pause' : 'timeline.play')}
-          >
-            <TransportIcon kind={playing ? 'pause' : 'play'} />
-          </button>
-          <button type="button" onClick={() => seek(currentT + 0.5)} disabled={end === 0 || currentT === end} aria-label={tr('timeline.stepForward')} title={tr('timeline.stepForward')}>
-            <TransportIcon kind="forward" />
-          </button>
-        </div>
-        <span className="clock timeline-clock">
-          {tr('timeline.clock', { t: currentT.toFixed(2), d: end.toFixed(2) })}
-        </span>
-        <div className="timeline-speeds" role="group" aria-label={tr('timeline.playbackSpeed')}>
-          {SPEEDS.map((s) => (
-            <button type="button" key={s} aria-pressed={s === speed} onClick={() => setSpeed(s)}>
-              {tr('timeline.speed', { n: s })}
-            </button>
-          ))}
-        </div>
         {robots.length > 0 && (
           <div className="timeline-legend">
             <span><i className="timeline-legend-collision" />{tr('timeline.collision')}</span>
@@ -113,7 +82,6 @@ export function Timeline({ robots, conflicts, bounds, duration, playback, select
         )}
       </div>
 
-      {guide}
       {robots.length === 0 ? <p className="timeline-empty">{tr('timeline.empty')}</p> : (
         <div className="timeline-scroller">
           <div className="timeline-surface">
@@ -210,6 +178,41 @@ export function Timeline({ robots, conflicts, bounds, duration, playback, select
           </div>
         </div>
       )}
+
+      {guide}
+      <div className="timeline-playback-bar">
+        <span className="clock timeline-clock">
+          {tr('timeline.clock', { t: currentT.toFixed(2), d: end.toFixed(2) })}
+        </span>
+        <div className="timeline-transport">
+          <button type="button" onClick={() => seek(0)} disabled={end === 0} aria-label={tr('timeline.rewind')} title={tr('timeline.rewind')}>
+            <TransportIcon kind="rewind" />
+          </button>
+          <button type="button" onClick={() => seek(currentT - 0.5)} disabled={end === 0 || currentT === 0} aria-label={tr('timeline.stepBack')} title={tr('timeline.stepBack')}>
+            <TransportIcon kind="back" />
+          </button>
+          <button
+            type="button"
+            className="timeline-play"
+            onClick={() => setPlaying(!playing)}
+            disabled={end === 0}
+            aria-label={tr(playing ? 'timeline.pause' : 'timeline.play')}
+            title={tr(playing ? 'timeline.pause' : 'timeline.play')}
+          >
+            <TransportIcon kind={playing ? 'pause' : 'play'} />
+          </button>
+          <button type="button" onClick={() => seek(currentT + 0.5)} disabled={end === 0 || currentT === end} aria-label={tr('timeline.stepForward')} title={tr('timeline.stepForward')}>
+            <TransportIcon kind="forward" />
+          </button>
+        </div>
+        <div className="timeline-speeds" role="group" aria-label={tr('timeline.playbackSpeed')}>
+          {SPEEDS.map((s) => (
+            <button type="button" key={s} aria-pressed={s === speed} onClick={() => setSpeed(s)}>
+              {tr('timeline.speed', { n: s })}
+            </button>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
