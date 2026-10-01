@@ -36,6 +36,24 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: cd packages/desktop && npx tauri build
+      - name: Inject dark-mode app icon + regenerate wrapped artifacts
+        # Tauri bundles a plain icns only; scripts/apply-dark-icon.sh adds the
+        # day+night Assets.car. Everything tauri wrapped during the build (the
+        # updater tar.gz + sig and the dmg) predates the injection, so rebuild
+        # them from the icon-complete app — the standalone signer reads
+        # TAURI_SIGNING_PRIVATE_KEY from the env set above.
+        run: |
+          APP=packages/desktop/src-tauri/target/release/bundle/macos/PathBlender.app
+          scripts/apply-dark-icon.sh "$APP"
+          APP_ABS="$PWD/$APP"
+          rm -f "$APP.tar.gz" "$APP.tar.gz.sig"
+          (cd "$(dirname "$APP")" && tar -czf "$(basename "$APP").tar.gz" "$(basename "$APP")")
+          (cd packages/desktop && npx tauri signer sign "$APP_ABS.tar.gz")
+          B=packages/desktop/src-tauri/target/release/bundle
+          rm -f "$B"/dmg/*.dmg
+          mkdir -p "$B/dmg"
+          hdiutil create -volname PathBlender -srcfolder "$APP" -ov \
+            -format UDZO "$B/dmg/PathBlender_${GITHUB_REF_NAME#v}_aarch64.dmg" >/dev/null
       - name: Stage artifacts
         run: |
           mkdir -p release
