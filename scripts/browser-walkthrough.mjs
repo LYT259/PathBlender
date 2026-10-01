@@ -268,11 +268,11 @@ check('season switch', true);
 await seasonSelect.selectOption('powerup-2018');
 await page.waitForTimeout(700);
 check('oldest season (2018) renders', errors.length === 0);
-// No official 3D model exists for 2018–2020 — the 3D option must be off
-// the table (user directive 2026-10-01: no hand-built stand-in 3D).
+// No official 3D model exists for 2018–2020 — the 2D/3D toggle must not
+// render at all (user directive 2026-10-01: no 3D offer, no stand-in 3D).
 check(
-  'model-less season disables the 3D option (2018)',
-  (await page.locator('.view-toggle button', { hasText: '3D' }).isDisabled()) === true,
+  'model-less season hides the 2D/3D toggle (2018)',
+  (await page.locator('.view-toggle').count()) === 0,
 );
 await page.screenshot({ path: `${SHOTS}/09b-2018.png` });
 await seasonSelect.selectOption('rebuilt-2026');
@@ -517,21 +517,20 @@ await page.waitForFunction(() => {
   check('revisited season keeps paths & camera', dynBack === dynBefore && JSON.stringify(camBack) === JSON.stringify(camBefore), `dynamic=${dynBack}, cam=${camBack}`);
 }
 
-// Switching to a model-less season while in 3D falls back to 2D (the 3D
-// toggle is disabled there); returning to a model season re-enables it.
-// Kept AFTER the camera-hold checks: leaving and re-entering 3D rebuilds
-// the scene and would reset the camera those compare against.
+// Switching to a model-less season while in 3D falls back to 2D and the
+// toggle disappears entirely; returning to a model season brings it back.
 await page.locator('.field-select').first().selectOption('powerup-2018');
 await page.waitForTimeout(600);
 check(
-  'model-less season in 3D view falls back to 2D',
-  (await page.locator('.view-toggle button', { hasText: '2D' }).getAttribute('aria-pressed')) === 'true',
+  'model-less season in 3D view falls back to 2D, toggle hidden',
+  (await page.locator('.view-toggle').count()) === 0 &&
+    (await page.locator('canvas.field-canvas').count()) === 1,
 );
 await page.locator('.field-select').first().selectOption('rebuilt-2026');
 await page.waitForTimeout(400);
 check(
-  'model season re-enables the 3D option',
-  (await page.locator('.view-toggle button', { hasText: '3D' }).isDisabled()) === false,
+  'model season restores the 2D/3D toggle',
+  (await page.locator('.view-toggle').count()) === 1,
 );
 
 // Field remembered across reload (AndyMark default).
