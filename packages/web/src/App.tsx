@@ -27,6 +27,7 @@ import { hashToSession, sessionToHash } from './share-url';
 import { copyText, saveText } from './download';
 import { useTheme, type ThemeMode } from './theme';
 import { fieldImageFor } from './field-images';
+import { FIELD3D_MODELS } from './field3d-models';
 import { FieldCanvas, type FieldCanvasHandle } from './components/FieldCanvas';
 import type { FieldCanvas3DHandle } from './components/FieldCanvas3D';
 const FieldCanvas3D = lazy(() => import('./components/FieldCanvas3D').then((module) => ({ default: module.FieldCanvas3D })));
@@ -141,6 +142,13 @@ function AppBody() {
     [baseField, fieldVariant],
   );
   const fieldImageUrl = fieldImageFor(fieldId, fieldVariant, customImageUrl);
+  // 3D exists only where an official model does (2022+). Model-less seasons
+  // (2018–2020) and custom fields offer no 3D at all — the hand-built
+  // stand-in 3D was removed by user directive (2026-10-01).
+  const field3dAvailable = !!FIELD3D_MODELS[fieldId];
+  useEffect(() => {
+    if (view3D && !field3dAvailable) setView3D(false);
+  }, [view3D, field3dAvailable]);
   // Field/variant memory is written ONLY from the user's own selects —
   // share-link and session-file restores must not overwrite it.
 
@@ -716,7 +724,7 @@ function AppBody() {
                 <span className="canvas-spacer" />
                 <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
                   <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
-                  <button aria-pressed={view3D} className={view3D ? 'on' : ''} onClick={() => setView3D(true)}>3D</button>
+                  <button aria-pressed={view3D} className={view3D ? 'on' : ''} disabled={!field3dAvailable} title={!field3dAvailable ? tr('canvas.no3d') : undefined} onClick={() => setView3D(true)}>3D</button>
                 </div>
                 {/* The rest of the bar needs a robot to act on, which the gate
                     above now guarantees. */}
