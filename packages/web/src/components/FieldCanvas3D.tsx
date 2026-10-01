@@ -25,6 +25,7 @@ import {
   fieldRenderBounds,
   headingToRender,
   modelTagLayout,
+  snapTagQuadsToDecalPlates,
   tagRenderPose,
   worldToRender,
   worldToRenderVec3,
@@ -616,6 +617,14 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       catcher.position.y = 0.002;
       catcher.receiveShadow = true;
       st.modelRoot.add(catcher, g);
+      // The overlay quads were posed from the layout plane the moment the
+      // field subtree built (usable field before the model streams in);
+      // now that the real surfaces exist, seat each quad on its tag's own
+      // decal plate — the two 2025 models mount plates at different depths
+      // off the layout plane, and a layout-plane quad ends up behind the
+      // welded plates (dark, shaded) while the AndyMark one shows crisp
+      // (user report 2026-10-01). See snapTagQuadsToDecalPlates.
+      snapTagQuadsToDecalPlates(st.fieldRoot, g);
       st.fallback.visible = false;
       st.dirty();
     };
