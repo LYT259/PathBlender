@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   autoResolveConflicts,
   deserializeSession,
+  REBUILT_2026,
   detectCollisions,
   detectFieldBounds,
   fieldById,
@@ -15,16 +16,17 @@ const names = { a: 'Example A', b: 'Example B' };
 
 describe('welcome example', () => {
   it('demonstrates one genuine collision that a start delay can resolve, without leaving the field', () => {
-    const { robots, fieldId } = createWelcomeExample(names);
+    const { robots } = createWelcomeExample(names);
+    const field = REBUILT_2026; // routes are field-agnostic; verify on the default field
     const conflicts = detectCollisions(robots);
     expect(conflicts).toHaveLength(1);
     expect(conflicts[0]!.startT).toBeGreaterThan(0);
     expect(conflicts[0]!.closestT).toBeCloseTo(4, 2);
     expect(conflicts[0]!.endT).toBeLessThan(sessionDuration(robots));
-    expect(detectFieldBounds(robots, fieldById(fieldId))).toEqual([]);
+    expect(detectFieldBounds(robots, field)).toEqual([]);
     const adjusted = autoResolveConflicts(robots);
     expect(detectCollisions(adjusted)).toEqual([]);
-    expect(detectFieldBounds(adjusted, fieldById(fieldId))).toEqual([]);
+    expect(detectFieldBounds(adjusted, field)).toEqual([]);
   });
 
   it('has finite, ordered samples, explicit geometry, and an eight-second playback', () => {

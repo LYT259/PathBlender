@@ -4,6 +4,10 @@ import {
   REBUILT_2026,
   type SessionTrajectory,
 } from '@pathblender/core';
+// Field-agnostic by construction: both routes cross at their own computed
+// centre (±1.5 m), safely inside every bundled season field. The caller
+// decides which field/variant to show it on — first run defaults to
+// AndyMark, then the remembered choice (see App's field pref).
 
 const DURATION_S = 8;
 const SAMPLE_COUNT = 161;
@@ -18,8 +22,6 @@ const BUMPER_M = 0.8;
  */
 export function createWelcomeExample(names: { a: string; b: string }): {
   robots: SessionTrajectory[];
-  fieldId: string;
-  fieldVariant: 'welded' | 'andymark';
 } {
   const centreX = REBUILT_2026.lengthM / 2;
   const centreY = REBUILT_2026.widthM / 2;
@@ -57,5 +59,5 @@ export function createWelcomeExample(names: { a: string; b: string }): {
     return makeSession(trajectory, index);
   });
 
-  return { robots, fieldId: REBUILT_2026.id, fieldVariant: 'welded' };
+  return { robots };
 }
