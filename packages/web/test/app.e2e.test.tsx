@@ -93,7 +93,7 @@ describe('App import → fusion → collision flow', () => {
     expect(new Set(colors).size).toBe(3);
   });
 
-  it('team numbers: extracted from .ghostauto, editable in the selected robot inspector', async () => {
+  it('team numbers: extracted from .ghostauto, shown read-only in the inspector', async () => {
     render(<App />);
     dropFiles([file('ghostauto/straight_run.ghostauto')]);
     await waitFor(
@@ -102,11 +102,9 @@ describe('App import → fusion → collision flow', () => {
       },
     );
     const inspector = selectRobot('Straight Run');
-    const input = within(inspector).getByRole('textbox', { name: /team/i }) as HTMLInputElement;
-    expect(input.value).toBe('0001');
-    fireEvent.change(input, { target: { value: '254' } });
-    expect(input.value).toBe('254');
-    expect(screen.getByText('#254', { selector: '.robot-library-team' })).toBeInTheDocument();
+    expect(within(inspector).getByText('0001')).toBeInTheDocument();
+    expect(within(inspector).queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('#0001', { selector: '.robot-library-team' })).toBeInTheDocument();
   });
 
   it('the file picker has no extension filter (all formats selectable)', () => {
@@ -199,7 +197,7 @@ describe('App import → fusion → collision flow', () => {
     expect(document.querySelector('.prefs-ai')).toBeNull();
   });
 
-  it('the what-if start delay resolves the collision', async () => {
+  it('conflicts stay visible and read-only — the viewer adjusts nothing for you', async () => {
     render(<App />);
     dropFiles([
       file('ghostauto/straight_run.ghostauto'),
@@ -207,24 +205,17 @@ describe('App import → fusion → collision flow', () => {
     ]);
     await waitFor(
       () => {
-      expect(screen.getByText(/Robots \(2\)/)).toBeInTheDocument();
-    });
+        expect(screen.getByText(/Robots \(2\)/)).toBeInTheDocument();
+      },
+    );
     await waitFor(
       () => {
-      expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
-    });
-
-    // Delay edits commit on blur, so incomplete typing never changes the plan.
+        expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
+      },
+    );
     const inspector = selectRobot('Straight Run');
-    const delayInput = within(inspector).getByRole('spinbutton', { name: /delay/i });
-    fireEvent.change(delayInput, { target: { value: '3.5' } });
-    fireEvent.blur(delayInput);
-    fireEvent.click(screen.getByRole('button', { name: /^Checks/i }));
-
-    await waitFor(
-      () => {
-      expect(screen.getByText('0', { selector: '.conflict-count' })).toBeInTheDocument();
-    });
+    expect(within(inspector).queryByRole('spinbutton')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /resolve|adjust/i })).not.toBeInTheDocument();
   });
 
   it('bad files produce an actionable error banner, good ones still import', async () => {
@@ -277,7 +268,7 @@ describe('App import → fusion → collision flow', () => {
     expect(screen.getAllByText(/9\.22/, { selector: '.robot-library-meta span' }).length).toBeGreaterThan(0);
   }, 30000);
 
-  it('exposes alliance switching and session save while preserving file-supplied geometry', async () => {
+  it('shows the file alliance read-only and saves sessions with file-supplied geometry', async () => {
     render(<App />);
     dropFiles([file('traj/v3_swerve.traj')]);
     await waitFor(
@@ -285,8 +276,10 @@ describe('App import → fusion → collision flow', () => {
       expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument();
     });
     const inspector = selectRobot('swerve');
-    expect(screen.getByRole('button', { name: 'Blue' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Red' })).toBeInTheDocument();
+    // Pure viewer (2026-09-30): alliance comes from the file; no toggle.
+    expect(within(inspector).queryByRole('button', { name: 'Blue' })).not.toBeInTheDocument();
+    expect(within(inspector).queryByRole('button', { name: 'Red' })).not.toBeInTheDocument();
+    expect(within(inspector).getByText(/blue|red/i)).toBeInTheDocument();
     expect(within(inspector).queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
     expect(inspector.querySelector('.robot-dimensions')).toHaveTextContent('0.81 m');
     // The responsive overflow menu contains a second Save action; jsdom
