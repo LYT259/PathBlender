@@ -448,6 +448,7 @@ await page.screenshot({ path: `${SHOTS}/14-3d.png` });
   check('3D renders official tag quads (2026: 32)', tagCount === 32, `count=${tagCount}`);
 }
 const dynBefore = await page.evaluate(() => window.__pb3d.scene.getObjectByName('pb-dynamic')?.children.length ?? -1);
+const camBefore = await page.evaluate(() => window.__pb3d.camera.position.toArray().map((v) => +v.toFixed(3)));
 await page.locator('.field-select').first().selectOption('reefscape-2025');
 await page.waitForFunction(
   () => document.querySelectorAll('.robot-library-row').length >= 1,
@@ -467,7 +468,10 @@ check('season switch with 3D open keeps robots', true);
     { timeout: 8000, polling: 120 },
   ).then((r) => r.jsonValue());
   check('3D paths & robots survive the in-3D season switch', dynAfter === dynBefore, `dynamic children ${dynBefore} → ${dynAfter}`);
+  const camAfter = await page.evaluate(() => window.__pb3d.camera.position.toArray().map((v) => +v.toFixed(3)));
+  check('camera keeps the user\'s exact viewpoint across the switch', JSON.stringify(camAfter) === JSON.stringify(camBefore), `${camBefore} → ${camAfter}`);
 }
+
 {
   const tagCount25 = await page.evaluate(() => {
     let n = 0;
@@ -475,6 +479,21 @@ check('season switch with 3D open keeps robots', true);
     return n;
   });
   check('3D tag quads follow season (2025: 22)', tagCount25 === 22, `count=${tagCount25}`);
+}
+// Back to the first season: the parsed model comes from the module cache —
+// tags return instantly, the camera STILL holds, and the cache is warm.
+await page.locator('.field-select').first().selectOption('rebuilt-2026');
+await page.waitForFunction(() => {
+  let n = 0;
+  window.__pb3d.scene.traverse((o) => { if (o.name.startsWith('apriltag-')) n++; });
+  return n === 32;
+}, undefined, { timeout: 20000, polling: 150 });
+{
+  const dynBack = await page.evaluate(() => window.__pb3d.scene.getObjectByName('pb-dynamic')?.children.length ?? -1);
+  const camBack = await page.evaluate(() => window.__pb3d.camera.position.toArray().map((v) => +v.toFixed(3)));
+  const cacheSize = await page.evaluate(() => window.__pb3d.modelCacheSize());
+  check('revisited season restores instantly from cache (tags 32)', true, `cache=${cacheSize}`);
+  check('revisited season keeps paths & camera', dynBack === dynBefore && JSON.stringify(camBack) === JSON.stringify(camBefore), `dynamic=${dynBack}, cam=${camBack}`);
 }
 
 // Field remembered across reload (AndyMark default).
@@ -484,7 +503,7 @@ await fileInput().setInputFiles([`${SAMPLES}/ghostauto/straight_run.ghostauto`])
 await page.waitForSelector('.field-canvas', { timeout: 10000 });
 await page.waitForTimeout(800);
 const restoredField = await page.locator('.field-select').first().inputValue();
-check('field selection remembered across reload', restoredField === 'reefscape-2025', restoredField);
+check('field selection remembered across reload', restoredField === 'rebuilt-2026', restoredField);
 const variantSelected = await page
   .locator('select option[value="andymark"]')
   .first()
