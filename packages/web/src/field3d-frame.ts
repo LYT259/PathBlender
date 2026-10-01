@@ -199,6 +199,94 @@ export function modelTagLayout(
   return field.aprilTags ?? [];
 }
 
+/** Name prefix of the tag decal plates baked into the official models
+ *  (`FE-00083_ID16_5` → tag 16, plate copy 5 of that tag). */
+export const TAG_DECAL_NAME_PREFIX = 'FE-00083_ID';
+
+/**
+ * How far the overlay quad floats off the model's own decal-plate centre,
+ * along the layout normal (field-side). The plates are ~1 mm thick, so 3 mm
+ * clears the printed face without a visible hover at any orbit distance.
+ */
+export const TAG_PLATE_FLOAT_M = 0.003;
+
+/** Furthest a plate centre may sit from the layout plane to count as that
+ *  tag's plate (registration is ≤ 15 mm in practice; this only rejects
+ *  garbage matches). */
+const TAG_PLATE_MAX_ALONG_M = 0.3;
+
+/**
+ * Repose the overlay tag quads onto the official model's own decal plates.
+ *
+ * Why: the two 2025 construction models mount their plates at different
+ * depths relative to the WPILib layout plane (welded 4–11 mm wall-side of
+ * it, AndyMark essentially flush), so a quad floated +1 mm off the layout
+ * plane lands BEHIND the welded plates — the model's own (lit, shaded)
+ * plate shows instead of the crisp unlit overlay, and the tag reads dark
+ * in one variant and bright in the other (user report 2026-10-01). The
+ * plate is the render-surface truth (measured, see the model test), so
+ * each quad moves to its tag's outermost plate centre plus
+ * `TAG_PLATE_FLOAT_M` along its own layout normal; orientation stays the
+ * layout's (validated ≤ 15 mm against every plate). Viewed from the field
+ * side both variants then show the same bright overlay; from behind the
+ * wall both are hidden by the plate — physically what a field-side tag
+ * does, and identical across variants either way.
+ *
+ * Name-matched (`FE-00083_ID{id}_*`), outermost copy wins (some tags carry
+ * several plates at different depths). Models without decals (2022/2023)
+ * and seasons without models keep the layout pose unchanged.
+ *
+ * @returns number of quads reposed.
+ */
+export function snapTagQuadsToDecalPlates(
+  tagRoot: THREE.Object3D,
+  model: THREE.Object3D,
+): number {
+  model.updateMatrixWorld(true);
+  // tag id → plate centres (world), via each mesh's geometry AABB centre —
+  // node origins sit at zero in these exports, so world positions lie.
+  const plates = new Map<number, THREE.Vector3[]>();
+  const box = new THREE.Box3();
+  const v = new THREE.Vector3();
+  model.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.name?.startsWith(TAG_DECAL_NAME_PREFIX)) return;
+    const m = /^FE-00083_ID(\d+)/.exec(mesh.name);
+    if (!m || !mesh.geometry) return;
+    mesh.geometry.computeBoundingBox();
+    if (!mesh.geometry.boundingBox) return;
+    box.copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld);
+    const centre = box.getCenter(new THREE.Vector3());
+    const list = plates.get(Number(m[1]));
+    if (list) list.push(centre);
+    else plates.set(Number(m[1]), [centre]);
+  });
+  if (plates.size === 0) return 0;
+  const normal = new THREE.Vector3();
+  let snapped = 0;
+  for (const quad of tagRoot.children) {
+    const m = /^apriltag-(\d+)$/.exec(quad.name ?? '');
+    if (!m) continue;
+    const candidates = plates.get(Number(m[1]));
+    if (!candidates?.length) continue;
+    normal.set(0, 0, 1).applyQuaternion(quad.quaternion);
+    // Outermost copy: furthest along the outward normal (field-side).
+    let best: THREE.Vector3 | undefined;
+    let bestAlong = -Infinity;
+    for (const c of candidates) {
+      const along = v.copy(c).sub(quad.position).dot(normal);
+      if (along > bestAlong) {
+        bestAlong = along;
+        best = c;
+      }
+    }
+    if (!best || Math.abs(bestAlong) > TAG_PLATE_MAX_ALONG_M) continue;
+    quad.position.copy(best).addScaledVector(normal, TAG_PLATE_FLOAT_M);
+    snapped += 1;
+  }
+  return snapped;
+}
+
 /**
  * In-plane turn of the printed pattern about the plate's own normal.
  *
