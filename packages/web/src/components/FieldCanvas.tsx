@@ -51,6 +51,9 @@ interface View {
   cy: number;
 }
 
+/** Season artwork decoded once and reused across switches. */
+const imageCache = new Map<string, HTMLImageElement>();
+
 export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCanvas(
   {
     field,
@@ -85,13 +88,23 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     if (frameRef.current != null) cancelAnimationFrame(frameRef.current);
     frameRef.current = null;
   }, []);
-  // (Re)load the field image when the season changes.
+  // (Re)load the field image when the season changes. Decoded images are
+  // cached module-level, so switching back to a recently viewed season
+  // paints instantly instead of re-fetching/decoding the multi-MB PNG.
   useEffect(() => {
     imgRef.current = null;
     setImgReady(false);
     if (!fieldImageUrl) return;
+    const hit = imageCache.get(fieldImageUrl);
+    if (hit) {
+      imgRef.current = hit;
+      setImgReady(true);
+      return;
+    }
     const img = new Image();
     img.onload = () => {
+      if (imageCache.size >= 12) imageCache.delete(imageCache.keys().next().value as string);
+      imageCache.set(fieldImageUrl, img);
       imgRef.current = img;
       setImgReady(true);
     };
