@@ -5,31 +5,17 @@ import { Dialog } from './components/Dialog';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { UsageTip, useUsageTip } from './components/UsageTip';
 import {
-  applyAllianceChange,
-  autoResolveConflicts,
   CUSTOM_FIELD_ID,
-  addChoreoWaypoint,
-  addPpWaypoint,
-  adjustedName,
   detectCollisions,
   detectFieldBounds,
   deserializeSession,
-  exportGhostAuto,
-  exportPathPlannerPath,
-  exportTraj,
   FIELDS,
   fieldById,
   minimumSeparation,
-  moveChoreoWaypoint,
-  movePpWaypoint,
   parsePathFile,
   parseRobotProfile,
   ParseError,
   REBUILT_2026,
-  reparameterize,
-  resetToOriginal,
-  removeChoreoWaypoint,
-  removePpWaypoint,
   serializeSession,
   sessionDuration,
 } from '@pathblender/core';
@@ -68,16 +54,10 @@ import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
 import { I18nProvider, LANGUAGES, langLabel, useI18n, type LangChoice } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
-import { AiPanel, SparkleIcon } from './components/AiPanel';
-import { AiSettingsSection } from './components/AiSettingsSection';
-import { WaypointPanel } from './components/WaypointPanel';
 import { UpdateChannelProvider, useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
 import { listenPrefs } from './pref-sync';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from './viewer';
-import type { ActionContext } from './ai/actions';
-import { loadAISettings, saveAISettings, type AISettings } from './ai/settings';
-import { AI_ENABLED } from './ai/availability';
 
 const SESSION_EXT = '.ghpb.json';
 // Switching a demo robot to a real library route keeps its stable id. That
@@ -136,11 +116,8 @@ function AppBody() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pathsOpen, setPathsOpen] = useState(() => window.innerWidth > 640);
   const [inspectorOpen, setInspectorOpen] = useState(true);
-  const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot' | 'ai'>('checks');
-  const [aiMounted, setAiMounted] = useState(false);
-  useEffect(() => { if (inspectorMode === 'ai') setAiMounted(true); }, [inspectorMode]);
+  const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot'>('checks');
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
-  const [aiSettings, setAiSettings] = useState<AISettings>(() => loadAISettings());
   const [view3D, setView3D] = useState(false);
   const [showTrail, setShowTrail] = useState(true);
   const [showPrefs, setShowPrefs] = useState(false);
@@ -362,14 +339,12 @@ function AppBody() {
     if (!route) return;
     // An in-progress waypoint edit belongs to the previous route; leave edit
     // mode rather than half-apply it to the new one.
-    setEditingId((cur) => (cur === robotId ? null : cur));
     setRobots((prev) =>
       prev.map((r) => {
         if (r.trajectory.id !== robotId) return r;
-        let traj = route.trajectory;
-        // Alliance is the robot's (user-chosen) property — bring the route
-        // into it rather than letting the file's origin flip the robot.
-        if (traj.alliance !== r.trajectory.alliance) traj = applyAllianceChange(traj, r.trajectory.alliance, field);
+        // A pure viewer: the route shows exactly as the file defines it,
+        // including its own alliance frame.
+        const traj = route.trajectory;
         return {
           ...r,
           trajectory: { ...traj, id: r.trajectory.id, name: displayName(traj) },
@@ -377,7 +352,7 @@ function AppBody() {
         };
       }),
     );
-  }, [libraryRoutes, field, setRobots]);
+  }, [libraryRoutes, setRobots]);
 
   const addRouteAsRobot = useCallback((routeId: string) => {
     const route = libraryRoutes.find((r) => r.id === routeId);
@@ -442,204 +417,20 @@ function AppBody() {
     setRobots((prev) => prev.map((r) => (r.trajectory.id === id ? { ...r, ...patch } : r)));
   }, []);
 
-  const setTeamNumber = useCallback((id: string, teamNumber: string) => {
-    setRobots((prev) =>
-      prev.map((r) =>
-        r.trajectory.id === id
-          ? { ...r, trajectory: { ...r.trajectory, teamNumber } }
-          : r,
-      ),
-    );
-  }, []);
-
-  // --- meditation editing (report v1.4 §6.3) ---
-  const [editingId, setEditingId] = useState<string | null>(null);
-
   const selectRobot = useCallback((id: string) => {
     setSelectedId(id);
     setInspectorMode('robot');
     setInspectorOpen(true);
     if (window.innerWidth <= 640) setPathsOpen(false);
-    setEditingId((current) => current === id ? current : null);
   }, []);
-  const toggleEdit = useCallback((id: string) => {
-    setEditingId((cur) => (cur === id ? null : id));
-    setSelectedId(id);
-    setInspectorMode('robot');
-    setInspectorOpen(true);
-    setView3D(false);
-    setShowTrail(true);
-    playback.setPlaying(false);
-    setRobots((previous) => previous.map((r) => r.trajectory.id === id && !r.visible ? { ...r, visible: true } : r));
-  }, [playback.setPlaying, setRobots]);
-
-  const editWaypoint = useCallback(
-    (
-      id: string,
-      idx: number,
-      pos: { x: number; y: number },
-      kind: 'anchor' | 'prevControl' | 'nextControl',
-    ) => {
-      setRobots((prev) =>
-        prev.map((r) => {
-          if (r.trajectory.id !== id) return r;
-          const tr = r.trajectory;
-          if (tr.editable?.kind === 'pathplanner') {
-            const part =
-              kind === 'anchor'
-                ? { anchor: pos }
-                : kind === 'prevControl'
-                  ? { prevControl: pos }
-                  : { nextControl: pos };
-            return { ...r, trajectory: reparameterize(movePpWaypoint(tr, idx, part)) };
-          }
-          if (tr.editable?.kind === 'choreo' && kind === 'anchor') {
-            return { ...r, trajectory: reparameterize(moveChoreoWaypoint(tr, idx, pos)) };
-          }
-          return r;
-        }),
-      );
-    },
-    [],
-  );
-
-  const addWaypoint = useCallback((id: string, afterIdx: number) => {
-    setRobots((prev) =>
-      prev.map((r) => {
-        if (r.trajectory.id !== id) return r;
-        const tr = r.trajectory;
-        if (tr.editable?.kind === 'pathplanner')
-          return { ...r, trajectory: reparameterize(addPpWaypoint(tr, afterIdx)) };
-        if (tr.editable?.kind === 'choreo')
-          return { ...r, trajectory: reparameterize(addChoreoWaypoint(tr, afterIdx)) };
-        return r;
-      }),
-    );
-  }, []);
-
-  const removeWaypoint = useCallback((id: string, idx: number) => {
-    setRobots((prev) =>
-      prev.map((r) => {
-        if (r.trajectory.id !== id) return r;
-        const tr = r.trajectory;
-        if (tr.editable?.kind === 'pathplanner')
-          return { ...r, trajectory: reparameterize(removePpWaypoint(tr, idx)) };
-        if (tr.editable?.kind === 'choreo')
-          return { ...r, trajectory: reparameterize(removeChoreoWaypoint(tr, idx)) };
-        return r;
-      }),
-    );
-  }, []);
-
-  const resetEdit = useCallback((id: string) => {
-    setRobots((prev) =>
-      prev.map((r) => (r.trajectory.id === id ? { ...r, trajectory: resetToOriginal(r.trajectory) } : r)),
-    );
-  }, []);
-
-  const exportRobot = useCallback(
-    (id: string, format: 'path' | 'traj' | 'ghostauto') => {
-      const r = robots.find((x) => x.trajectory.id === id);
-      if (!r) return;
-      let text: string;
-      let ext: string;
-      try {
-        if (format === 'path') {
-          text = exportPathPlannerPath(r.trajectory);
-          ext = 'path';
-        } else if (format === 'traj') {
-          text = exportTraj(r.trajectory);
-          ext = 'traj';
-        } else {
-          text = exportGhostAuto(r.trajectory);
-          ext = 'ghostauto';
-        }
-      } catch (e) {
-        setErrors([{ fileName: r.trajectory.name, message: e instanceof Error ? e.message : String(e) }]);
-        return;
-      }
-      void saveText(`${adjustedName(r.trajectory.name)}.${ext}`, ext, text);
-    },
-    [robots],
-  );
-
-  const editRobot = useMemo(
-    () => robots.find((r) => r.trajectory.id === editingId) ?? null,
-    [robots, editingId],
-  );
   const selectedRobot = robots.find((r) => r.trajectory.id === selectedId) ?? robots[0];
-  useEffect(() => {
-    if (editingId && !robots.some((r) => r.trajectory.id === editingId)) setEditingId(null);
-  }, [robots, editingId]);
 
 
 
 
-
-  const setAlliance = useCallback(
-    (id: string, alliance: 'blue' | 'red') => {
-      setRobots((prev) =>
-        prev.map((r) =>
-          r.trajectory.id === id
-            ? {
-                ...r,
-                trajectory: applyAllianceChange(r.trajectory, alliance, field),
-              }
-            : r,
-        ),
-      );
-    },
-    [field],
-  );
-
-  const setGeometry = useCallback(
-    (id: string, patch: Partial<RobotGeometry>) => {
-      setRobots((prev) =>
-        prev.map((r) =>
-          r.trajectory.id === id && r.trajectory.geometrySource !== 'file'
-            ? {
-                ...r,
-                trajectory: {
-                  ...r.trajectory,
-                  geometry: { ...r.trajectory.geometry, ...patch },
-                },
-              }
-            : r,
-        ),
-      );
-    },
-    [],
-  );
 
   const removeRobot = useCallback((id: string) => {
     setRobots((prev) => prev.filter((r) => r.trajectory.id !== id));
-  }, []);
-
-  // --- AI assistant plumbing (report v1.4 §6.4) ---
-  const setStartDelay = useCallback((id: string, seconds: number) => {
-    updateRobot(id, { startDelayS: Math.max(0, seconds) });
-  }, [updateRobot]);
-
-  const buildActionContext = useCallback((): ActionContext => {
-    return {
-      robots,
-      conflicts,
-      setStartDelay,
-      setAlliance,
-      setTeamNumber,
-      editWaypoint,
-      addWaypoint,
-      removeWaypoint,
-      removeRobot,
-      exportRobot,
-      // Every mutation is captured by the shared session history.
-      pushUndo: () => {},
-    };
-  }, [robots, conflicts, setStartDelay, setAlliance, setTeamNumber, editWaypoint, addWaypoint, removeWaypoint, removeRobot, exportRobot]);
-
-  const applyAiSettings = useCallback((next: AISettings) => {
-    setAiSettings(next);
-    saveAISettings(next);
   }, []);
 
   const saveSession = useCallback(() => {
@@ -749,7 +540,6 @@ function AppBody() {
     setErrors([]);
     setT(0);
     playback.setPlaying(false);
-    setEditingId(null);
     setSelectedId(null);
   }, [setT, setRobots, playback.setPlaying]);
   // Desktop: native menu commands and visible buttons share the same handlers.
@@ -785,7 +575,7 @@ function AppBody() {
   const hasExample = robots.some(isExampleRobot);
   const leftOpen = pathsOpen && hasRobots;
   const issueCount = conflicts.length + bounds.length;
-  const rightOpen = inspectorOpen && (hasRobots || inspectorMode === 'ai');
+  const rightOpen = inspectorOpen && hasRobots;
   const openImport = () => importInputRef.current?.click();
   const tryExample = async () => {
     const request = ++exampleRequest.current;
@@ -804,7 +594,6 @@ function AppBody() {
         customImageUrl: undefined,
       });
       setSelectedId(example.robots[0]?.trajectory.id ?? null);
-      setEditingId(null);
       setPathsOpen(window.innerWidth > 640);
       setInspectorMode('checks');
       setInspectorOpen(window.innerWidth > 900);
@@ -827,7 +616,6 @@ function AppBody() {
     if (!remaining.length && libraryRoutes.length) remaining.push(robotFromRoute(libraryRoutes[0]!, 0, crypto.randomUUID()));
     setRobots(remaining);
     setSelectedId(remaining[0]?.trajectory.id ?? null);
-    setEditingId(null);
     playback.setPlaying(false);
     setT(0);
   };
@@ -837,21 +625,11 @@ function AppBody() {
     setT(time);
     if (robotIds[0]) {
       setSelectedId(robotIds[0]);
-      setEditingId((current) => current === robotIds[0] ? current : null);
     }
     // A located problem must be visible even if its paths were hidden.
     if (robotIds.some((id) => robots.some((r) => r.trajectory.id === id && !r.visible)))
       setRobots((previous) => previous.map((r) => robotIds.includes(r.trajectory.id) ? { ...r, visible: true } : r));
   };
-  const resolveConflicts = () => {
-    playback.setPlaying(false);
-    const next = autoResolveConflicts(robots.map((r) => ({ ...r, visible: true })))
-      .map((r, i) => ({ ...r, visible: robots[i]!.visible }));
-    setRobots(next);
-    const remaining = detectCollisions(next).length;
-    flash(tr(remaining > 0 ? 'conflicts.autoResolvePartial' : 'checks.resolved', { n: remaining }));
-  };
-
   return (
     <div className="app">
       <header className="toolbar workspace-toolbar" data-tauri-drag-region="" aria-label="primary">
@@ -920,7 +698,6 @@ function AppBody() {
             {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
           </div>
         </details>}
-        {!VIEWER_ONLY && AI_ENABLED && !rightOpen && <button className="tool-btn square" aria-label={tr('ai.title')} title={tr('ai.title')} onClick={() => { setInspectorMode('ai'); setInspectorOpen(true); }}><SparkleIcon /></button>}
         <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={() => setShowPrefs(true)}><Icon name="settings" /></button>
         <button className="tool-btn square" aria-label={tr('help.title')} title={tr('help.title')} onClick={() => setShowHelp(true)}><Icon name="help" /></button>
         {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.toggleInspector')} aria-pressed={rightOpen} onClick={() => { setInspectorOpen(!inspectorOpen); if (!inspectorOpen && window.innerWidth <= 640) setPathsOpen(false); }}><Icon name="inspector" /></button>}
@@ -954,16 +731,15 @@ function AppBody() {
                 <span className="canvas-spacer" />
                 <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
                   <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
-                  <button aria-pressed={view3D} className={view3D ? 'on' : ''} disabled={!!editRobot} title={editRobot ? tr('workspace.edit2d') : undefined} onClick={() => setView3D(true)}>3D</button>
+                  <button aria-pressed={view3D} className={view3D ? 'on' : ''} onClick={() => setView3D(true)}>3D</button>
                 </div>
                 {/* The rest of the bar needs a robot to act on, which the gate
                     above now guarantees. */}
                 <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
                 {!view3D && <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>}
               </div>}
-              {editRobot && <div className="editing-banner"><div><strong>{tr('workspace.editing', { name: editRobot.trajectory.name })}</strong><span>{tr('canvas.editHint')}</span></div><button className="btn" onClick={() => setEditingId(null)}>{tr('robots.doneEdit')}</button></div>}
               {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} /></Suspense> :
-                <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} editRobot={editRobot} onBeginEdit={beginEdit} onEndEdit={endEdit} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}
+                <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); setInspectorOpen(true); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
             {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} duration={duration} playback={playback} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
@@ -972,11 +748,9 @@ function AppBody() {
             <div className="inspector-header"><div className="seg inspector-tabs" role="group" aria-label={tr('workspace.panels')}>
               <button className={inspectorMode === 'checks' ? 'on' : ''} aria-pressed={inspectorMode === 'checks'} onClick={() => setInspectorMode('checks')}>{tr('workspace.checks')}{issueCount > 0 && <span className="tab-count">{issueCount}</span>}</button>
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
-              {!VIEWER_ONLY && AI_ENABLED && <button className={inspectorMode === 'ai' ? 'on' : ''} aria-label={tr('ai.title')} aria-pressed={inspectorMode === 'ai'} onClick={() => setInspectorMode('ai')}><SparkleIcon />{tr('workspace.assistant')}</button>}
             </div><button className="tool-btn square inspector-close" title={tr('workspace.closePanel')} aria-label={tr('workspace.closePanel')} onClick={() => setInspectorOpen(false)}><Icon name="close" size={14} /></button></div>
-            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} onAdjust={selectRobot} onAutoResolve={resolveConflicts} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
-            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} editingId={editingId} onUpdate={updateRobot} onSetAlliance={setAlliance} onSetGeometry={setGeometry} onSetTeamNumber={setTeamNumber} onToggleEdit={toggleEdit} onResetEdit={resetEdit} onExport={exportRobot} onRemove={removeRobot} libraryProfiles={libraryProfiles} onApplyProfile={applyProfile} />{editRobot && <WaypointPanel key={editRobot.trajectory.id} robot={editRobot} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}</div>}
-            {aiMounted && !VIEWER_ONLY && AI_ENABLED && <div className="inspector-ai" hidden={inspectorMode !== 'ai'}><AiPanel settings={aiSettings} onSettings={applyAiSettings} buildContext={buildActionContext} undoLabel={canUndo ? tr('workspace.undo') : null} onUndo={undoSession} onAttachFiles={(files) => void importFiles(files)} onOpenSettings={() => setShowPrefs(true)} /></div>}
+            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
+            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} onRemove={removeRobot} libraryProfiles={libraryProfiles} onApplyProfile={applyProfile} /></div>}
           </aside>
         </main>
 
@@ -1072,15 +846,6 @@ function AppBody() {
                   <option value="beta">{tr('prefs.channel.beta')}</option>
                 </select>
               </label>
-            )}
-            {!VIEWER_ONLY && AI_ENABLED && (
-              <div className="prefs-ai">
-                <h4>{tr('prefs.ai')}</h4>
-                <AiSettingsSection
-                  settings={aiSettings}
-                  onSettings={applyAiSettings}
-                />
-              </div>
             )}
             <div className="prefs-row btns">
               {/* Cancel is the always-available way out (user report 2026-09-24:
