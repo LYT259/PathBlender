@@ -149,7 +149,6 @@ export const zhTw: Record<MessageKey, string> = {
   'site.previewNote': '預覽版——功能可能隨時變化。',
   'site.version': '版本',
   'canvas.view': '視圖',
-  'canvas.no3d': '此賽季無官方 3D 模型',
   'canvas.fit': '適配',
   'canvas.trails': '軌跡尾巴',
   'canvas.clock': 't = {t} 秒',

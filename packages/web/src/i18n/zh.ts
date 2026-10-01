@@ -145,7 +145,6 @@ export const zh: Record<MessageKey, string> = {
   'site.previewNote': '预览版——功能可能随时变化。',
   'site.version': '版本',
   'canvas.view': '视图',
-  'canvas.no3d': '此赛季无官方 3D 模型',
   'canvas.fit': '适配',
   'canvas.trails': '轨迹尾巴',
   'canvas.clock': 't = {t} 秒',

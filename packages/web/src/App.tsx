@@ -722,10 +722,12 @@ function AppBody() {
                   }} title={tr('field.variant')} aria-label={tr('field.variant')}><option value="andymark">AndyMark</option><option value="welded">Welded</option></select>}
                 </div>
                 <span className="canvas-spacer" />
-                <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
-                  <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
-                  <button aria-pressed={view3D} className={view3D ? 'on' : ''} disabled={!field3dAvailable} title={!field3dAvailable ? tr('canvas.no3d') : undefined} onClick={() => setView3D(true)}>3D</button>
-                </div>
+                {field3dAvailable && (
+                  <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
+                    <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
+                    <button aria-pressed={view3D} className={view3D ? 'on' : ''} onClick={() => setView3D(true)}>3D</button>
+                  </div>
+                )}
                 {/* The rest of the bar needs a robot to act on, which the gate
                     above now guarantees. */}
                 <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
