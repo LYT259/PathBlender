@@ -794,7 +794,15 @@ function AppBody() {
       const { createWelcomeExample } = await import('./welcome-example');
       if (request !== exampleRequest.current) return;
       const example = createWelcomeExample({ a: tr('welcome.exampleNameA'), b: tr('welcome.exampleNameB') });
-      setScene({ ...example, customField: undefined, customImageUrl: undefined });
+      // Show it on the field the user actually uses — first visit defaults
+      // to AndyMark, afterwards the remembered season + construction.
+      setScene({
+        robots: example.robots,
+        fieldId: initialFieldPref.id,
+        fieldVariant: initialFieldPref.variant,
+        customField: undefined,
+        customImageUrl: undefined,
+      });
       setSelectedId(example.robots[0]?.trajectory.id ?? null);
       setEditingId(null);
       setPathsOpen(window.innerWidth > 640);
