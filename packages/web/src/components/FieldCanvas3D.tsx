@@ -518,12 +518,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // the render frame by tagRenderPose (validated against the official
     // asset config). Geometry edge = black-square size × 10/8 (the texture
     // adds the quiet ring); the quad floats 1 mm off its surface along its
-    // own normal. The list comes from `modelTagLayout`: the selected
-    // variant's tags when a model of that build ships, else the loaded
-    // model's own build (2026 AndyMark coordinates are physically inside
-    // the welded-only model's hub panels — see field3d-frame). Beacon posts
-    // (for fields without an official model) are placed at the same foot
-    // point.
+    // own normal until the model lands and seats it on its decal plate
+    // (`snapTagQuadsToDecalPlates`). The list comes from `modelTagLayout`:
+    // the selected variant's tags when a model of that build ships, else
+    // the loaded model's own build (2026 AndyMark coordinates are
+    // physically inside the welded-only model's hub panels — see
+    // field3d-frame).
     for (const tag of modelTagLayout(field, variant)) {
       const z = Math.max(0.05, tag.z ?? 0.55);
       const { position: tagPos, quaternion: tagQuat } = tagRenderPose(tag, cx, cy);
@@ -538,26 +538,13 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         new THREE.Vector3(0, 0, 1).applyQuaternion(tagQuat).multiplyScalar(0.001),
       );
       fieldRoot.add(quad);
-      const post = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.025, 0.025, tagPos.z, 8),
-        track(
-          new THREE.MeshStandardMaterial({ color: cssToken('--3d-post', '#6a6a70'), roughness: 0.6 }),
-          '--3d-post',
-        ),
-      );
-      post.position.set(tagPos.x, tagPos.y, tagPos.z / 2);
-      post.castShadow = true;
-      fieldRoot.add(post);
     }
 
-    // Season structures for fields without official 3D models (2018–2020
-    // have none in AdvantageScopeAssets): recognizable silhouettes from the
-    // public game manuals, not CAD replicas.
-    const season = seasonStructures(field.id, cx, cy);
-    if (season) fallback.add(season);
-    // No flash of the flat fallback while an official model loads: seasons
-    // that have one keep the fallback hidden until (and unless) loading
-    // fails; model-less seasons show it right away.
+    // Model-less seasons (2018–2020, custom fields) never enter this view —
+    // the 3D option is disabled without an official model (user directive
+    // 2026-10-01) — so no hand-built season silhouettes here anymore. The
+    // slab/walls/outline below still serve as the loading and offline
+    // placeholder for model seasons.
     // The flat fallback stays visible until the official model (or its
     // cached clone) lands — a first load shows a usable field instead of
     // blank space while the GLB streams in.
@@ -762,92 +749,3 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   if (glFailed) return <div className="field-canvas-3d" aria-label="WebGL unavailable" />;
   return <div ref={hostRef} className="field-canvas-3d" />;
 });
-
-
-/** Recognizable season silhouettes for the no-official-model years.
- *  Field-frame (fx, fy) positions go through the scene's one mapping.
- *  Colors: neutral gray structure with red/blue alliance accents. */
-function seasonStructures(fieldId: string, cx: number, cy: number): THREE.Group | null {
-  const g = new THREE.Group();
-  const P = (fx: number, fy: number, h: number) => worldToRenderVec3(fx, fy, h, cx, cy);
-  const RED = 0xb03030;
-  const BLUE = 0x3050b0;
-  const WOOD = 0x9a8a70;
-  const GRAY = 0x8a8a90;
-  const box = (w: number, h: number, d: number, pos: THREE.Vector3, color: number) => {
-    const m = new THREE.Mesh(
-      new THREE.BoxGeometry(w, h, d),
-      new THREE.MeshStandardMaterial({ color, roughness: 0.7 }),
-    );
-    m.position.copy(pos);
-    m.castShadow = true;
-    m.receiveShadow = true;
-    g.add(m);
-    return m;
-  };
-  const cyl = (r: number, h: number, pos: THREE.Vector3, color: number) => {
-    const m = new THREE.Mesh(
-      new THREE.CylinderGeometry(r, r, h, 16),
-      new THREE.MeshStandardMaterial({ color, roughness: 0.7 }),
-    );
-    m.position.copy(pos);
-    m.castShadow = true;
-    g.add(m);
-    return m;
-  };
-
-  if (fieldId === 'powerup-2018') {
-    // Scales (tall balanced platforms, one per alliance) + switches (low).
-    for (const [fx, color] of [[2.8, BLUE], [13.7, RED]] as const) {
-      cyl(0.12, 1.75, P(fx, 4.11, 0.875), GRAY);
-      box(0.3, 0.3, 3.2, P(fx, 4.11, 1.75), color);
-      box(1.4, 0.1, 0.9, P(fx, 4.11, 1.9), color);
-    }
-    for (const [fx, color] of [[5.9, BLUE], [10.6, RED]] as const) {
-      box(1.5, 0.35, 3.0, P(fx, 4.11, 0.175), color);
-      box(0.25, 0.55, 3.0, P(fx, 4.11, 0.55), WOOD);
-    }
-    // Power cube piles flanking the scale zone.
-    for (const fy of [1.6, 6.6]) {
-      for (let i = 0; i < 3; i++) box(0.32, 0.32, 0.32, P(4.4 + i * 0.36, fy, 0.16), 0xd8c040);
-    }
-    return g;
-  }
-  if (fieldId === 'deepspace-2019') {
-    // Cargo ships along both long sides.
-    for (const fy of [1.15, 7.05]) {
-      box(5.4, 1.3, 1.25, P(8.23, fy, 0.65), WOOD);
-      box(5.4, 0.55, 1.35, P(8.23, fy, 1.55), GRAY);
-    }
-    // Rockets (angled towers) near each short end. The lean sign follows the
-    // frame's X reflection, so the towers tip away from their own wall.
-    for (const [fx, color] of [[2.3, BLUE], [14.1, RED]] as const) {
-      for (const fy of [2.2, 6.0]) {
-        box(1.4, 0.15, 1.4, P(fx, fy, 0.35), color);
-        const tower = box(1.1, 2.6, 0.18, P(fx + 0.25, fy, 1.65), color);
-        tower.rotation.z = 0.28;
-      }
-    }
-    // HAB climb platforms against the short walls.
-    for (const [fx, color] of [[0.75, BLUE], [15.7, RED]] as const) {
-      box(1.2, 0.18, 5.0, P(fx, 4.11, 0.09), color);
-      const ramp = box(1.4, 0.16, 2.6, P(fx + 1.1, 4.11, 0.22), color);
-      ramp.rotation.z = -0.17;
-    }
-    return g;
-  }
-  if (fieldId === 'infinitercharge-2020') {
-    // Control panel at center.
-    cyl(0.14, 0.5, P(8.23, 4.11, 0.25), GRAY);
-    cyl(0.5, 0.08, P(8.23, 4.11, 0.54), 0xd04040);
-    // Trench barriers along both long sides.
-    for (const fy of [1.55, 6.65]) box(6.5, 0.65, 0.16, P(8.23, fy, 0.325), GRAY);
-    // Sector targets (hex-ish towers) against each short wall + climb bars.
-    for (const [fx, color] of [[0.6, BLUE], [15.85, RED]] as const) {
-      box(0.5, 2.2, 3.4, P(fx, 4.11, 1.1), color);
-      cyl(0.06, 3.6, P(fx + 1.3, 4.11, 2.3), GRAY).rotation.z = Math.PI / 2;
-    }
-    return g;
-  }
-  return null;
-}

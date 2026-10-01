@@ -144,6 +144,7 @@ export const en = {
   'site.previewNote': 'Preview build — features may change at any time.',
   'site.version': 'Version',
   'canvas.view': 'View',
+  'canvas.no3d': 'No official 3D model for this season',
   'canvas.fit': 'Fit',
   'canvas.trails': 'trails',
   'canvas.clock': 't = {t} s',

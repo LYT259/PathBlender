@@ -154,6 +154,7 @@ export const es: Record<MessageKey, string> = {
   'site.previewNote': 'Versión de vista previa: las funciones pueden cambiar en cualquier momento.',
   'site.version': 'Versión',
   'canvas.view': 'Vista',
+  'canvas.no3d': 'Sin modelo 3D oficial para esta temporada',
   'canvas.fit': 'Ajustar',
   'canvas.trails': 'estelas',
   'canvas.clock': 't = {t} s',
