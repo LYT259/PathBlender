@@ -447,6 +447,7 @@ await page.screenshot({ path: `${SHOTS}/14-3d.png` });
   });
   check('3D renders official tag quads (2026: 32)', tagCount === 32, `count=${tagCount}`);
 }
+const dynBefore = await page.evaluate(() => window.__pb3d.scene.getObjectByName('pb-dynamic')?.children.length ?? -1);
 await page.locator('.field-select').first().selectOption('reefscape-2025');
 await page.waitForFunction(
   () => document.querySelectorAll('.robot-library-row').length >= 1,
@@ -454,6 +455,19 @@ await page.waitForFunction(
   { timeout: 20000, polling: 100 },
 );
 check('season switch with 3D open keeps robots', true);
+// Regression (2026-09-30 user report): switching the field while in 3D used
+// to leave the rebuilt scene without any path tubes or robot boxes.
+{
+  const dynAfter = await page.waitForFunction(
+    (before) => {
+      const n = window.__pb3d.scene.getObjectByName('pb-dynamic')?.children.length ?? -1;
+      return n >= before && before > 0 ? n : false;
+    },
+    dynBefore,
+    { timeout: 8000, polling: 120 },
+  ).then((r) => r.jsonValue());
+  check('3D paths & robots survive the in-3D season switch', dynAfter === dynBefore, `dynamic children ${dynBefore} → ${dynAfter}`);
+}
 {
   const tagCount25 = await page.evaluate(() => {
     let n = 0;
