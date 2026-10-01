@@ -18,6 +18,7 @@ import {
   REBUILT_2026,
   serializeSession,
   sessionDuration,
+  withFieldVariant,
 } from '@pathblender/core';
 import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } from '@pathblender/core';
 import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
@@ -25,25 +26,7 @@ import { displayName, robotFromRoute, type LibraryProfile, type LibraryRoute } f
 import { hashToSession, sessionToHash } from './share-url';
 import { copyText, saveText } from './download';
 import { useTheme, type ThemeMode } from './theme';
-import field2018 from '../../../assets/fields/powerup2018.png';
-import field2019 from '../../../assets/fields/deepspace2019.png';
-import field2020 from '../../../assets/fields/infinitercharge2020.png';
-import field2022 from '../../../assets/fields/rapidreact2022.png';
-import field2023 from '../../../assets/fields/chargedup2023.png';
-import field2024 from '../../../assets/fields/crescendo2024.png';
-import field2025 from '../../../assets/fields/reefscape2025.png';
-import field2026 from '../../../assets/fields/rebuilt2026.png';
-
-const FIELD_IMAGES: Record<string, string> = {
-  'powerup-2018': field2018,
-  'deepspace-2019': field2019,
-  'infinitercharge-2020': field2020,
-  'rapidreact-2022': field2022,
-  'chargedup-2023': field2023,
-  'crescendo-2024': field2024,
-  'reefscape-2025': field2025,
-  'rebuilt-2026': field2026,
-};
+import { fieldImageFor } from './field-images';
 import { FieldCanvas, type FieldCanvasHandle } from './components/FieldCanvas';
 import type { FieldCanvas3DHandle } from './components/FieldCanvas3D';
 const FieldCanvas3D = lazy(() => import('./components/FieldCanvas3D').then((module) => ({ default: module.FieldCanvas3D })));
@@ -151,11 +134,13 @@ function AppBody() {
   const canvasRef = useRef<FieldCanvasHandle>(null);
   const canvas3DRef = useRef<FieldCanvas3DHandle>(null);
   const baseField = fieldId === CUSTOM_FIELD_ID && customField ? customField : fieldById(fieldId);
-  // The 2D overlay / beacons follow the selected field construction.
-  const field = useMemo(() =>
-    fieldVariant === 'andymark' && baseField?.aprilTagsAndyMark
-      ? { ...baseField, aprilTags: baseField.aprilTagsAndyMark }
-      : baseField, [baseField, fieldVariant]);
+  // The 2D artwork, its calibration, the tag overlay and the 3D beacons all
+  // follow the selected field construction.
+  const field = useMemo(
+    () => (baseField ? withFieldVariant(baseField, fieldVariant) : baseField),
+    [baseField, fieldVariant],
+  );
+  const fieldImageUrl = fieldImageFor(fieldId, fieldVariant, customImageUrl);
   // Field/variant memory is written ONLY from the user's own selects —
   // share-link and session-file restores must not overwrite it.
 
@@ -738,8 +723,8 @@ function AppBody() {
                 <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
                 {!view3D && <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>}
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} /></Suspense> :
-                <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
+                <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); setInspectorOpen(true); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
             {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} duration={duration} playback={playback} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
