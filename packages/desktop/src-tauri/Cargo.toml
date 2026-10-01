@@ -1,7 +1,7 @@
 [package]
 name = "pathblender-desktop"
 version = "0.1.3"
-description = "GHPathBlender — FRC alliance path fusion viewer (desktop shell)"
+description = "PathBlender — FRC alliance path fusion viewer (desktop shell)"
 edition = "2021"
 
 [lib]
