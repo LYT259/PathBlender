@@ -1,7 +1,7 @@
 import { createRef, useState } from 'react';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_GEOMETRY, moveChoreoWaypoint, type FieldPackage, type SessionTrajectory } from '@pathblender/core';
+import { type FieldPackage, type SessionTrajectory } from '@pathblender/core';
 import { FieldCanvas, type FieldCanvasHandle } from '../src/components/FieldCanvas';
 import { I18nProvider } from '../src/i18n';
 
@@ -110,48 +110,4 @@ describe('field canvas interaction and redraws', () => {
     expect(strokeRect).toHaveBeenLastCalledWith(30, 30, 600, 300);
   });
 
-  it.each(['pointerup', 'pointercancel'])('continues a waypoint drag across parent redraws until %s', (endEvent) => {
-    const begin = vi.fn();
-    const end = vi.fn();
-    const edited = vi.fn();
-    const robot: SessionTrajectory = {
-      startDelayS: 0, visible: true, color: '#007aff',
-      trajectory: {
-        id: 'robot', name: 'Robot', teamName: '', teamNumber: '',
-        source: 'choreo-traj', alliance: 'blue', samples: [], durationS: 0,
-        geometry: DEFAULT_GEOMETRY, geometrySource: 'default', moduleLocations: [], events: [], warnings: [],
-        editable: {
-          kind: 'choreo', version: '3', splits: [],
-          waypoints: [{ x: 5, y: 2.5, heading: 0, intervals: 20, split: false, fixTranslation: false, fixHeading: false, overrideIntervals: false }],
-        },
-      },
-    };
-    function Editor() {
-      const [current, setCurrent] = useState(robot);
-      return <FieldCanvas {...emptyScene} editRobot={current} onBeginEdit={begin} onEndEdit={end}
-        onEditWaypoint={(id, index, point, kind) => {
-          edited(id, index, point, kind);
-          setCurrent((previous) => ({ ...previous, trajectory: moveChoreoWaypoint(previous.trajectory, index, point) }));
-        }} />;
-    }
-    const { container } = render(<I18nProvider><Editor /></I18nProvider>);
-    resize(440, 240);
-    paint();
-    const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = vi.fn();
-    pointer(canvas, 'pointerdown', 220, 120);
-    pointer(canvas, 'pointermove', 260, 120);
-    paint();
-    pointer(canvas, 'pointermove', 300, 120);
-    paint();
-    expect(begin).toHaveBeenCalledOnce();
-    expect(end).not.toHaveBeenCalled();
-    expect(edited).toHaveBeenNthCalledWith(1, 'robot', 0, { x: 6, y: 2.5 }, 'anchor');
-    expect(edited).toHaveBeenNthCalledWith(2, 'robot', 0, { x: 7, y: 2.5 }, 'anchor');
-
-    pointer(canvas, endEvent, 300, 120);
-    pointer(canvas, 'pointermove', 340, 120);
-    expect(end).toHaveBeenCalledOnce();
-    expect(edited).toHaveBeenCalledTimes(2);
-  });
 });

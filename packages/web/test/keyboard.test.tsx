@@ -45,10 +45,9 @@ describe('playback keyboard shortcuts', () => {
     await waitFor(() => {
       expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByRole('button', { name: /^#0001 Straight Run,/ }));
-    const delayInput = screen.getByRole('spinbutton', { name: 'delay (s)' });
-    delayInput.focus();
-    fireEvent.keyDown(delayInput, { code: 'ArrowRight', key: 'ArrowRight' });
+    fireEvent.click(screen.getByRole('button', { name: /preferences/i }));
+    const langSelect = screen.getAllByRole('combobox')[0];
+    fireEvent.keyDown(langSelect, { code: 'ArrowRight', key: 'ArrowRight' });
     expect(clock()).toBeCloseTo(0, 5);
   });
 });
