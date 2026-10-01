@@ -15,16 +15,20 @@ import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
 import { aprilTagTexture } from '../april-tag-texture';
 // One coordinate frame for the whole scene — tags, robots, trails, fallback
-// structures and the flat field image all map through these, so no layer can
-// drift into a mirrored copy of another. Derivation and the numeric per-tag
-// check live in `../field3d-frame` + `test/field3d-frame.test.ts`.
+// structures, the flat field image and the official field models all map
+// through these, so no layer can drift into a mirrored copy of another.
+// Derivation and the numeric per-tag checks live in `../field3d-frame` +
+// test/field3d-frame.test.ts + test/field3d-model.test.ts.
 import {
+  FIELD3D_MODELS,
+  fieldModelScale,
   fieldRenderBounds,
   headingToRender,
   tagRenderPose,
   worldToRender,
   worldToRenderVec3,
 } from '../field3d-frame';
+import type { FieldModelMirror } from '../field3d-frame';
 
 export interface FieldCanvas3DHandle {
   resetCam: () => void;
@@ -66,15 +70,6 @@ interface Scene3D {
 // which read as a tilted slab (strong perspective) rather than a field.
 const CAM_HOME: [number, number, number] = [0, 13.5, 10.5];
 
-/** Official 3D field models (AdvantageScopeAssets, BSD-3) per season and
- *  construction variant; 2018-2020 have none and keep the fallback. */
-const FIELD3D_MODELS: Record<string, { welded: string; andymark?: string }> = {
-  'rapidreact-2022': { welded: '2022-rapidreact' },
-  'chargedup-2023': { welded: '2023-chargedup' },
-  'crescendo-2024': { welded: '2024-crescendo' },
-  'reefscape-2025': { welded: '2025-reefscape-welded', andymark: '2025-reefscape-andymark' },
-  'rebuilt-2026': { welded: '2026-rebuilt' },
-};
 const WALL_H = 0.9;
 /** FRC official tag size (36h11 family, 6.5 in black square). */
 const TAG_SIZE_M = 0.1651;
@@ -110,7 +105,7 @@ function tokenColorHex(token: string, fallback: string): number {
 
 /**
  * Parsed-and-processed official models, keyed by asset dir. The processed
- * group (yaw/recenter/material tuning applied) is cached; mounts receive
+ * group (mirror mount + material tuning applied) is cached; mounts receive
  * `.clone(true)` — geometry and materials stay shared with the cache, which
  * is what makes a revisit instant (GPU buffers are reused, no re-parse).
  * A modest cap keeps long roaming sessions from hoarding every season.
@@ -120,6 +115,14 @@ const MODEL_CACHE_CAP = 6;
 const inflightModels = new Map<string, Promise<THREE.Group | null>>();
 let lastModelDir: string | undefined;
 
+/** Asset dir → mount mirror (both variants of a season share one). */
+const DIR_MIRROR = new Map<string, FieldModelMirror>(
+  Object.values(FIELD3D_MODELS).flatMap((e) => [
+    [e.welded, e.mirror] as const,
+    ...(e.andymark ? ([[e.andymark, e.mirror]] as const) : []),
+  ]),
+);
+
 function loadProcessedModel(dir: string): Promise<THREE.Group | null> {
   const hit = inflightModels.get(dir);
   if (hit) return hit;
@@ -127,18 +130,14 @@ function loadProcessedModel(dir: string): Promise<THREE.Group | null> {
     new GLTFLoader().load(
       `${import.meta.env.BASE_URL}fields3d/${dir}/model.glb`,
       (gltf) => {
-        // AdvantageScope's loadField applies the config rotation Rx(90°),
-        // and its scene then wraps everything in a group carrying
-        // Rx(−90°)·Ry(180°) — the NET model rotation is a plain 180° yaw:
-        // (x, y, z) → (−x, −y, z). We removed that yaw by accident in the
-        // "no rotation" pass, mirroring the field end-for-end so the tags
-        // (placed on the correct side of the coordinate frame) floated
-        // behind structures. Apply the 180° yaw and recenter: native Z is
-        // off-center (−4.12..6.44, fuel piles at +Z) → shift Z by +1.16
-        // after the yaw flips its sign; native floor at −0.13 → +0.13.
+        // Mount: one axis reflection, derived from the config.json shipped
+        // with the asset (see field3d-frame's model-placement block for the
+        // derivation and the per-tag registration numbers — every decal in
+        // the 2024–2026 models lands within ~1 cm of the WPILib layout).
+        // The old Ry(180°)+offset here was fitted to the retired Onshape
+        // model and missed by up to 16.8 m on these assets.
         const g = gltf.scene;
-        g.rotation.y = Math.PI;
-        g.position.set(0, 0.13, 1.16);
+        g.scale.copy(fieldModelScale(DIR_MIRROR.get(dir) ?? 'z'));
         g.traverse((o) => {
           const mesh = o as THREE.Mesh;
           if (!mesh.isMesh) return;
