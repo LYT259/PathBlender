@@ -24,6 +24,12 @@ fi
 BUNDLE=packages/desktop/src-tauri/target/release/bundle/macos/PathBlender.app
 [[ -d "$BUNDLE" ]] || { echo "bundle not found: $BUNDLE" >&2; exit 1; }
 
+# --- Dark-mode app icon (2026-10-01) ---------------------------------------
+# Inject the day+night AppIcon catalog before sealing: the seal below then
+# covers the injected Assets.car, and the updater archive + dmg regenerated
+# further down wrap the icon-complete bundle.
+scripts/apply-dark-icon.sh "$BUNDLE"
+
 # --- Seal the bundle before anything ships it (2026-09-27) ----------------
 # Tauri's macOS bundler leaves the app linker-signed only (no
 # _CodeSignature/CodeResources), which fails `codesign --verify --deep
