@@ -74,6 +74,10 @@ export interface FieldPackage {
   widthM: number;
   /** Calibration for the bundled field image, when present. */
   image?: FieldImageCalibration;
+  /** Calibration of the AndyMark-built-field image, when the season ships
+   *  a separate artwork for that construction variant (2025). Values may
+   *  equal `image` when one calibration serves both files. */
+  imageAndyMark?: FieldImageCalibration;
   /** AprilTag layout overlay (WPILib/PhotonVision JSON), when provided. */
   aprilTags?: AprilTag[];
   /** AndyMark-built-field tag layout, when it differs from the default
@@ -367,14 +371,28 @@ export const FIELDS: readonly FieldPackage[] = [
     // the 2025 coordinate frame spans the FULL enclosure — the alliance
     // walls are recessed ~0.5 m per end for the new driver stations, so the
     // playfield robots drive on sits inset, and the 180° red→blue flip must
-    // rotate about the ENCLOSURE centre (8.774, 4.026), not 16.5417/2. The
-    // bundled image (PathPlanner field25.png calibration: 3510×1610 @200
-    // px/m, margin 0) covers the same 17.55 × 8.05 m frame, so 2D placement
-    // is unchanged. AndyMark width is 8.042 — one constant serves both
-    // builds (5 mm per side, below any placement tolerance).
+    // rotate about the ENCLOSURE centre (8.774, 4.026), not 16.5417/2.
+    // AndyMark width is 8.042 — one constant serves both builds (5 mm per
+    // side, below any placement tolerance).
     lengthM: 17.548,
     widthM: 8.052,
-    image: { pixelWidth: 3510, pixelHeight: 1610, ppm: 200, marginM: 0 },
+    // Field art: the official construction-variant pair (AdvantageScopeAssets
+    // Field2d_2025FRCFieldWeldedV3 / AndyMarkV3, BSD-3; 3773×1528 each — the
+    // two artworks are pixel-identical except each coral station, drawn 12 px
+    // ≈ 7 cm toward centre on the AndyMark sheet, matching the tag deltas).
+    // Calibration (one set serves both sheets; AM enclosure 8.042 vs 8.052
+    // is 0.6 % of ppmY, below the artwork's own noise): carpet edges at
+    // columns 420/3351 and rows 73/1454 measured on the shipped PNGs map to
+    // the 17.548 × 8.052 frame → ppm 167.08, ppmY 171.49, blue corner 420 px
+    // from the left edge, 74 px from the bottom edge. Validated against all
+    // 22 AprilTag decals in each artwork: median offset (−0.5, +1.2) px — no
+    // systematic bias; per-tag scatter rms ≈ 12 px (≈ 7 cm) is the artwork's
+    // structure looseness (reef tag ring drawn ~8 cm large in radius, barge
+    // posts ±21 px, DS walls ~17 px inset), not calibration error. The
+    // AndyMark sheet's coral-station decals sit on the AndyMark tag
+    // coordinates to ≤ 1 px. (Previous art: PathPlanner field25.png.)
+    image: { pixelWidth: 3773, pixelHeight: 1528, ppm: 167.08, ppmY: 171.49, marginM: 0, originPx: { x: 420, y: 74 } },
+    imageAndyMark: { pixelWidth: 3773, pixelHeight: 1528, ppm: 167.08, ppmY: 171.49, marginM: 0, originPx: { x: 420, y: 74 } },
     aprilTags: TAGS_2025_WELDED,
     aprilTagsAndyMark: TAGS_2025_ANDYMARK,
   },
@@ -383,6 +401,26 @@ export const FIELDS: readonly FieldPackage[] = [
 
 export function fieldById(id: string): FieldPackage {
   return FIELDS.find((f) => f.id === id) ?? REBUILT_2026;
+}
+
+/**
+ * Resolve a field package for a construction variant: the AndyMark build
+ * swaps in its tag layout and (when the season ships separate art, 2025)
+ * its image calibration; every other selection returns the package itself.
+ * The id, name and playfield size never change across variants.
+ */
+export function withFieldVariant(
+  field: FieldPackage,
+  variant: 'welded' | 'andymark',
+): FieldPackage {
+  if (variant === 'andymark' && field.aprilTagsAndyMark) {
+    return {
+      ...field,
+      aprilTags: field.aprilTagsAndyMark,
+      image: field.imageAndyMark ?? field.image,
+    };
+  }
+  return field;
 }
 
 export const CUSTOM_FIELD_ID = 'custom';

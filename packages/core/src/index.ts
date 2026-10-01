@@ -24,6 +24,7 @@ export {
   fieldById,
   flipPoseToBlue,
   makeCustomField,
+  withFieldVariant,
 } from './field';
 export type { FieldImageCalibration, FieldPackage } from './field';
 export { fieldImageWorldRect } from './field';

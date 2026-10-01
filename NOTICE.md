@@ -21,7 +21,10 @@ works; each remains under its own license:
   The bundled 3D field models (`public/fields3d/`, FRC 2022–2026 incl.
   the 2025 welded/AndyMark variants) originate from this repository and
   are redistributed under its BSD-3-Clause terms; the models themselves
-  derive from FIRST field CAD (see the FIRST section below).
+  derive from FIRST field CAD (see the FIRST section below). The 2025
+  2D field sheets (`assets/fields/reefscape2025-{welded,andymark}.png`,
+  Field2d_2025FRCFieldWeldedV3 / …AndyMarkV3) come from the same
+  repository under the same terms, unmodified.
 - **WPILib** (BSD-3-Clause) — https://github.com/wpilibsuite/allwpilib
   Red/blue alliance transform semantics follow the official WPILib
   coordinate conventions, and the built-in 2022–2026 AprilTag layouts
