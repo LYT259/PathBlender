@@ -45,6 +45,7 @@ export const fr: Record<MessageKey, string> = {
   "workspace.togglePaths": "Afficher ou masquer la liste des parcours",
   "workspace.toggleInspector": "Afficher ou masquer l'inspecteur",
   "workspace.closePanel": "Fermer l'inspecteur",
+  "workspace.closeRobotDetails": "Fermer les détails du robot",
   "workspace.undo": "Annuler",
   "workspace.redo": "Rétablir",
   "workspace.more": "Autres actions",

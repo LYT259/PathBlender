@@ -39,6 +39,7 @@ export const zh: Record<MessageKey, string> = {
   "workspace.togglePaths": "显示或收起路径列表",
   "workspace.toggleInspector": "显示或收起检查器",
   "workspace.closePanel": "收起检查器",
+  "workspace.closeRobotDetails": "关闭机器人详情",
   "workspace.undo": "撤销",
   "workspace.redo": "重做",
   "workspace.more": "更多操作",

@@ -43,6 +43,7 @@ export const tr: Record<MessageKey, string> = {
   "workspace.togglePaths": "Yol listesini göster veya gizle",
   "workspace.toggleInspector": "Denetçiyi göster veya gizle",
   "workspace.closePanel": "Denetçiyi kapat",
+  "workspace.closeRobotDetails": "Robot ayrıntılarını kapat",
   "workspace.undo": "Geri al",
   "workspace.redo": "Yinele",
   "workspace.more": "Diğer işlemler",

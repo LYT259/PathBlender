@@ -43,6 +43,7 @@ export const zhTw: Record<MessageKey, string> = {
   "workspace.togglePaths": "顯示或收起路徑列表",
   "workspace.toggleInspector": "顯示或收起檢查器",
   "workspace.closePanel": "收起檢查器",
+  "workspace.closeRobotDetails": "關閉機器人詳細資訊",
   "workspace.undo": "復原",
   "workspace.redo": "重做",
   "workspace.more": "更多操作",
