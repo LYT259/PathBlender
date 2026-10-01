@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { CollisionInterval, OutOfBoundsInterval, SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { VIEWER_ONLY } from '../viewer';
@@ -11,9 +12,10 @@ interface Props {
   onJump: (t: number, robotIds?: string[]) => void;
   onAdjust: (id: string) => void;
   onAutoResolve: () => void;
+  guide?: ReactNode;
 }
 
-export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump, onAdjust, onAutoResolve }: Props) {
+export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump, onAdjust, onAutoResolve, guide }: Props) {
   const { t } = useI18n();
   const nameOf = (id: string) => robots.find((r) => r.trajectory.id === id)?.trajectory.name ?? '?';
   const issues = conflicts.length + bounds.length;
@@ -29,6 +31,7 @@ export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump
       {!!robots.length && <small>{t('workspace.analysisScope', { n: robots.length })}</small>}
       {hidden > 0 && <small>{t('checks.hidden', { n: hidden })}</small>}
     </div>
+    {guide}
     {estimated && <p className="check-data-note"><Icon name="warning" size={15} />{t('checks.estimated')}</p>}
     {!!robots.length && <h3 className="check-section-heading">{t('conflicts.title')}<span className={`conflict-count ${conflicts.length ? 'bad' : ''}`}>{conflicts.length}</span></h3>}
     {conflicts.length > 0 && <ul className="conflict-list">{conflicts.map((c) => <li key={`${c.aId}-${c.bId}-${c.startT}`} className="conflict-item">

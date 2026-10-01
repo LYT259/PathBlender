@@ -35,7 +35,9 @@ describe('App import → fusion → collision flow', () => {
   it('renders the empty state', () => {
     render(<App />);
     expect(document.querySelector('.toolbar')).not.toBeNull();
-    expect(screen.getByText(/Robots \(0\)/)).toBeInTheDocument();
+    expect(screen.queryByRole('complementary', { name: /Robots \(0\)/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Import path files', exact: true })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show or hide path list' })).not.toBeInTheDocument();
   });
 
   it('imports a Choreo .traj and a .ghostauto, reports their collision', async () => {

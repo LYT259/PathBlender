@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type {
   CollisionInterval,
   OutOfBoundsInterval,
@@ -28,6 +28,7 @@ interface Props {
   selectedId?: string;
   onSelect?: (id: string) => void;
   onJump?: (time: number, robotIds: string[]) => void;
+  guide?: ReactNode;
 }
 
 function TransportIcon({ kind }: { kind: 'rewind' | 'back' | 'play' | 'pause' | 'forward' }) {
@@ -42,7 +43,7 @@ function TransportIcon({ kind }: { kind: 'rewind' | 'back' | 'play' | 'pause' | 
   );
 }
 
-export function Timeline({ robots, conflicts, bounds, duration, playback, selectedId, onSelect, onJump }: Props) {
+export function Timeline({ robots, conflicts, bounds, duration, playback, selectedId, onSelect, onJump, guide }: Props) {
   const { t: tr } = useI18n();
   const { t, setT, playing, setPlaying, speed, setSpeed } = playback;
   const end = Number.isFinite(duration) ? Math.max(0, duration) : 0;
@@ -112,6 +113,7 @@ export function Timeline({ robots, conflicts, bounds, duration, playback, select
         )}
       </div>
 
+      {guide}
       {robots.length === 0 ? <p className="timeline-empty">{tr('timeline.empty')}</p> : (
         <div className="timeline-scroller">
           <div className="timeline-surface">
