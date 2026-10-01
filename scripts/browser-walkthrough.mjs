@@ -1,12 +1,11 @@
 /**
- * Real-browser end-to-end walkthrough against the production preview build,
- * rewritten for the workspace UI (2026-09-26): import → collision → playback
- * (0.5×) → language switch (8 locales) → share-link restore → field bounds →
- * season + variant persistence → custom field → inspector (alliance/geometry)
- * → route library (per-robot switch) → PathPlanner batch → waypoint editing +
- * exports → session save/restore → bulk stress → auto-resolve → PNG export →
- * service worker → 3D (render/theme/orbit/tags/season). Also asserts the AI
- * retreat (2026-09-20): no assistant surface anywhere.
+ * Real-browser end-to-end walkthrough against the production preview build.
+ * View-only edition (2026-09-30): import → collision → playback (0.5×) →
+ * language switch (8 locales) → share-link restore → field bounds → season +
+ * variant persistence → custom field → read-only inspector → route library →
+ * PathPlanner batch → session save/restore → bulk stress → PNG export →
+ * service worker → 3D. The app adjusts nothing: no editing, no delays, no
+ * auto-resolve, no AI anywhere.
  *
  * Screenshots land in /tmp/ghpb-shots. Usage: node scripts/browser-walkthrough.mjs
  * (expects `npm run preview` on :4173; system Chrome via channel, fallback bundled).
@@ -68,13 +67,9 @@ check(
 await page.screenshot({ path: `${SHOTS}/01-empty.png` });
 
 // --- AI retreat (2026-09-20): no assistant surface anywhere ---
-check(
-  'AI fully withdrawn (no toggle/panel/prefs section)',
-  (await page.locator('.ai-toggle, .ai-panel, .ai-hero, .sparkle, [aria-label="AI Assistant"], [aria-label="助手"]').count()) === 0,
-);
 await prefsGear().click();
 await page.waitForSelector('.prefs-modal');
-check('preferences show no AI settings', (await page.locator('.prefs-modal .ai-row, .prefs-modal .prefs-ai').count()) === 0);
+check('preferences carry no AI settings (code deleted)', (await page.locator('.prefs-modal .ai-row, .prefs-modal .prefs-ai').count()) === 0);
 await page.locator('.prefs-modal .btn.small:not(.accent)').first().click(); // Cancel
 
 // --- import two ghost files through the real file input ---
@@ -274,15 +269,17 @@ await page.locator('.cf-panel .btn.small').last().click();
 await seasonSelect.selectOption('rebuilt-2026');
 await page.waitForTimeout(300);
 
-// --- inspector: select a robot, toggle alliance, edit geometry ---
+// --- inspector: read-only everywhere (2026-09-30 pivot) ---
 await page.locator('.robot-library-row .robot-library-select').first().click();
 await page.waitForTimeout(400);
 const inspector = page.locator('.robot-inspector');
 await inspector.waitFor();
-await inspector.locator('.seg button').nth(1).click(); // Red
-check('alliance toggles to red', ((await inspector.locator('.seg button').nth(1).getAttribute('class')) ?? '').includes('on-red'));
-await inspector.locator('.seg button').nth(0).click();
-check('alliance toggles back to blue', ((await inspector.locator('.seg button').nth(0).getAttribute('class')) ?? '').includes('on-blue'));
+check(
+  'inspector is fully read-only (no spinbuttons/textboxes/toggles)',
+  (await inspector.locator('input, .seg button').count()) === 0,
+);
+check('file alliance shown as text', (await inspector.getByText(/blue|red/i, { exact: true }).count()) >= 1);
+
 // --- keyboard: Home rewinds, Space plays/pauses ---
 await page.evaluate(() => document.activeElement?.blur());
 await page.keyboard.press('Home');
@@ -311,44 +308,7 @@ await page.screenshot({ path: `${SHOTS}/11-pathplanner.png` });
 // --- waypoint editing on the canvas: enter, numeric edit, exports, leave ---
 await rowByName('Pickup').first().locator('.robot-library-select').click();
 await page.waitForTimeout(300);
-// Geometry editing only exists for robots whose data did NOT come from a file
-// (v1.14 lock) — Pickup is a .path with default geometry, so it's editable.
-const lenInput = page.locator('.robot-inspector input[aria-label="length"], .robot-inspector input[aria-label="长"], .robot-inspector input[aria-label="長"]');
-await lenInput.fill('1.2');
-await lenInput.press('Enter');
-check('geometry edit applies', (await lenInput.inputValue()) === '1.2');
-// Ghost geometry stays read-only (file-sourced): no spinbutton at all.
-await rowByName('Straight Run').first().locator('.robot-library-select').click();
-await page.waitForTimeout(300);
-check('file-sourced geometry stays read-only', (await page.locator('.robot-inspector input[aria-label="length"], .robot-inspector input[aria-label="长"], .robot-inspector input[aria-label="長"]').count()) === 0);
-await rowByName('Pickup').first().locator('.robot-library-select').click();
-await page.waitForTimeout(300);
-await page.locator('.robot-inspector .robot-inspector-edit').click();
-await page.waitForSelector('.editing-banner');
-await page.waitForSelector('.waypoint-panel');
-check('edit mode shows banner + waypoint panel', true);
-await page.waitForTimeout(800); // field image + initial fit
-await page.screenshot({ path: `${SHOTS}/13-editing.png` });
-const [pathDl] = await Promise.all([
-  page.waitForEvent('download', { timeout: 10000 }).catch(() => undefined),
-  page.locator('.robot-inspector .robot-export-options button', { hasText: '.path' }).click(),
-]);
-check('adjusted .path export downloads', pathDl !== undefined, pathDl?.suggestedFilename());
-const [ghostDl] = await Promise.all([
-  page.waitForEvent('download', { timeout: 10000 }).catch(() => undefined),
-  page.locator('.robot-inspector .robot-export-options button', { hasText: '.ghostauto' }).click(),
-]);
-check('adjusted .ghostauto export downloads', ghostDl !== undefined, ghostDl?.suggestedFilename());
-await page.locator('.wp-head').first().click();
-await page.waitForTimeout(200);
-const firstNum = page.locator('.waypoint-panel input').first();
-await firstNum.fill('2.5');
-await firstNum.press('Enter');
-await page.waitForTimeout(400);
-check('numeric waypoint edit marks adjusted', (await page.locator('.adjusted-badge').count()) >= 1);
-await page.locator('.editing-banner .btn').click(); // done editing
-await page.waitForTimeout(300);
-check('done editing clears the banner', (await page.locator('.editing-banner').count()) === 0);
+// (No waypoint editing / adjusted exports anymore — the app is a viewer.)
 
 // --- session save → remove one robot → restore through the file input ---
 const [download] = await Promise.all([
@@ -399,18 +359,6 @@ const stressRows = await page3.locator('.robot-library-row').count();
 check('bulk import all samples', stressRows >= 16 && stressErrors.length === 0, `rows=${stressRows}`);
 await page3.screenshot({ path: `${SHOTS}/12-bulk-stress.png` });
 await ctx3.close();
-
-// --- one-click conflict mediation ---
-const beforeCount = Number(await page.locator('.conflict-count').first().textContent());
-await page.locator('.resolve-action, .auto-resolve').first().click();
-await page.waitForFunction(
-  (n) => Number(document.querySelector('.conflict-count')?.textContent) < n,
-  beforeCount,
-  { timeout: 15000 },
-);
-const afterCount = await page.locator('.conflict-count').first().textContent();
-check('auto-resolve reduces conflicts', true, `${beforeCount} → ${afterCount}`);
-await page.screenshot({ path: `${SHOTS}/16-auto-resolved.png` });
 
 // --- PNG export via the more-menu; disabled in 3D ---
 await page.locator('.workspace-menu summary').click();

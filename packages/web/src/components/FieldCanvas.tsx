@@ -59,12 +59,6 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     currentT,
     conflicts,
     bounds,
-    editRobot = null,
-    onBeginEdit,
-    onEndEdit,
-    onEditWaypoint,
-    onAddWaypoint,
-    onRemoveWaypoint,
     showTrail = true,
   },
   ref,
@@ -78,7 +72,6 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   const viewRef = useRef<View>({ scale: 40, cx: field.lengthM / 2, cy: field.widthM / 2 });
   const sizeRef = useRef({ w: 0, h: 0 });
   const autoFitRef = useRef(true);
-  const dragRef = useRef<{ idx: number; kind: 'anchor' | 'prevControl' | 'nextControl' } | null>(null);
   const drawRef = useRef<() => void>(() => {});
   const frameRef = useRef<number | null>(null);
   const requestDraw = useCallback(() => {
@@ -92,11 +85,6 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     if (frameRef.current != null) cancelAnimationFrame(frameRef.current);
     frameRef.current = null;
   }, []);
-  useEffect(() => () => {
-    if (dragRef.current) onEndEdit?.();
-    dragRef.current = null;
-  }, [editRobot?.trajectory.id, onEndEdit]);
-
   // (Re)load the field image when the season changes.
   useEffect(() => {
     imgRef.current = null;
@@ -149,8 +137,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
 
   useLayoutEffect(() => { fit(); }, [fit]);
 
-  // Pointer pan + wheel zoom (anchored at the cursor); in edit mode a
-  // pointer-down on a waypoint captures the drag for the waypoint instead.
+  // Wheel + trackpad-pinch zoom (anchored at the cursor). The field itself
+  // is never panned (a panned-away field is easy to lose) and there is no
+  // edit mode anymore — the canvas is a pure view.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -164,81 +153,6 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       };
     };
 
-    type WpTarget = { idx: number; kind: 'anchor' | 'prevControl' | 'nextControl' };
-
-    const hitWaypoint = (wx: number, wy: number): WpTarget | null => {
-      const HIT_M = 12 / viewRef.current.scale; // constant screen-space grab radius
-      const e = editRobot?.trajectory.editable;
-      if (!e) return null;
-      if (e.kind === 'pathplanner') {
-        for (let i = e.path.waypoints.length - 1; i >= 0; i--) {
-          const wp = e.path.waypoints[i]!;
-          if (wp.nextControl && Math.hypot(wx - wp.nextControl.x, wy - wp.nextControl.y) < HIT_M)
-            return { idx: i, kind: 'nextControl' };
-          if (wp.prevControl && Math.hypot(wx - wp.prevControl.x, wy - wp.prevControl.y) < HIT_M)
-            return { idx: i, kind: 'prevControl' };
-          if (Math.hypot(wx - wp.anchor.x, wy - wp.anchor.y) < HIT_M)
-            return { idx: i, kind: 'anchor' };
-        }
-        return null;
-      }
-      for (let i = e.waypoints.length - 1; i >= 0; i--) {
-        const wp = e.waypoints[i]!;
-        if (Math.hypot(wx - wp.x, wy - wp.y) < HIT_M) return { idx: i, kind: 'anchor' };
-      }
-      return null;
-    };
-
-    const nearestSegment = (wx: number, wy: number): number => {
-      const e = editRobot?.trajectory.editable;
-      const pts =
-        e?.kind === 'pathplanner'
-          ? e.path.waypoints.map((w) => w.anchor)
-          : e?.kind === 'choreo'
-            ? e.waypoints.map((w) => ({ x: w.x, y: w.y }))
-            : [];
-      let best = -1;
-      let bestD = 0.35; // meters — double-click radius
-      for (let i = 0; i < pts.length - 1; i++) {
-        const a = pts[i]!;
-        const b = pts[i + 1]!;
-        const abx = b.x - a.x;
-        const aby = b.y - a.y;
-        const len2 = abx * abx + aby * aby;
-        const tt = len2 > 1e-9 ? Math.max(0, Math.min(1, ((wx - a.x) * abx + (wy - a.y) * aby) / len2)) : 0;
-        const d = Math.hypot(wx - (a.x + abx * tt), wy - (a.y + aby * tt));
-        if (d < bestD) {
-          bestD = d;
-          best = i;
-        }
-      }
-      return best;
-    };
-
-    const onDown = (e: PointerEvent) => {
-      // Edit-mode waypoint drags only — the field itself is never panned
-      // (a panned-away field is easy to lose; zoom stays anchored).
-      if (editRobot && e.button === 0) {
-        const w = world(e.offsetX, e.offsetY);
-        const hit = hitWaypoint(w.x, w.y);
-        if (hit) {
-          onBeginEdit?.();
-          dragRef.current = hit;
-          canvas.setPointerCapture(e.pointerId);
-          return;
-        }
-      }
-    };
-    const onMove = (e: PointerEvent) => {
-      const target = dragRef.current;
-      if (!target || !editRobot || !onEditWaypoint) return;
-      const w = world(e.offsetX, e.offsetY);
-      onEditWaypoint(editRobot.trajectory.id, target.idx, w, target.kind);
-    };
-    const onUp = () => {
-      if (dragRef.current) onEndEdit?.();
-      dragRef.current = null;
-    };
     // WebKit trackpad pinch fires gesture* events (not wheel+ctrlKey).
     let lastScale = 1;
     const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
@@ -267,45 +181,16 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       v.cy += before.y - after.y;
       requestDraw();
     };
-    const onDblClick = (e: MouseEvent) => {
-      if (!editRobot || !onAddWaypoint) return;
-      const w = world(e.offsetX, e.offsetY);
-      const seg = nearestSegment(w.x, w.y);
-      if (seg >= 0) onAddWaypoint(editRobot.trajectory.id, seg);
-    };
-    const onContextMenu = (e: MouseEvent) => {
-      if (!editRobot || !onRemoveWaypoint) return;
-      const w = world(e.offsetX, e.offsetY);
-      const hit = hitWaypoint(w.x, w.y);
-      if (hit) {
-        e.preventDefault();
-        onRemoveWaypoint(editRobot.trajectory.id, hit.idx);
-      }
-    };
 
-    canvas.addEventListener('pointerdown', onDown);
-    canvas.addEventListener('pointermove', onMove);
-    canvas.addEventListener('pointerup', onUp);
-    canvas.addEventListener('pointercancel', onUp);
-    canvas.addEventListener('lostpointercapture', onUp);
     canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('gesturestart', onGestureStart);
     canvas.addEventListener('gesturechange', onGestureChange);
-    canvas.addEventListener('dblclick', onDblClick);
-    canvas.addEventListener('contextmenu', onContextMenu);
     return () => {
-      canvas.removeEventListener('pointerdown', onDown);
-      canvas.removeEventListener('pointermove', onMove);
-      canvas.removeEventListener('pointerup', onUp);
-      canvas.removeEventListener('pointercancel', onUp);
-      canvas.removeEventListener('lostpointercapture', onUp);
       canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('gesturestart', onGestureStart);
       canvas.removeEventListener('gesturechange', onGestureChange);
-      canvas.removeEventListener('dblclick', onDblClick);
-      canvas.removeEventListener('contextmenu', onContextMenu);
     };
-  }, [editRobot, onEditWaypoint, onAddWaypoint, onRemoveWaypoint, onBeginEdit, onEndEdit, requestDraw]);
+  }, [requestDraw]);
 
   // Coalesce data, view, image and theme changes into one frame. Paused
   // scenes do no recurring work; playback schedules draws as time changes.
@@ -396,69 +281,6 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       }
     }
 
-    // Meditation-edit waypoint overlay for the robot in edit mode.
-    const eEdit = editRobot?.trajectory.editable;
-    if (eEdit) {
-      const color = editRobot.color;
-      if (eEdit.kind === 'pathplanner') {
-        // Control arms + points, then anchors on top.
-        ctx.strokeStyle = hexAlpha(color, 0.5);
-        ctx.setLineDash([4, 4]);
-        ctx.lineWidth = 1;
-        for (const wp of eEdit.path.waypoints) {
-          if (wp.prevControl) {
-            ctx.beginPath();
-            ctx.moveTo(sx(wp.anchor.x), sy(wp.anchor.y));
-            ctx.lineTo(sx(wp.prevControl.x), sy(wp.prevControl.y));
-            ctx.stroke();
-          }
-          if (wp.nextControl) {
-            ctx.beginPath();
-            ctx.moveTo(sx(wp.anchor.x), sy(wp.anchor.y));
-            ctx.lineTo(sx(wp.nextControl.x), sy(wp.nextControl.y));
-            ctx.stroke();
-          }
-        }
-        ctx.setLineDash([]);
-        ctx.fillStyle = hexAlpha(color, 0.8);
-        for (const wp of eEdit.path.waypoints) {
-          for (const c of [wp.prevControl, wp.nextControl]) {
-            if (!c) continue;
-            ctx.beginPath();
-            ctx.arc(sx(c.x), sy(c.y), 4, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-        ctx.fillStyle = cssVar('--fg', '#e6e6e8');
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        for (const wp of eEdit.path.waypoints) {
-          ctx.fillRect(sx(wp.anchor.x) - 5, sy(wp.anchor.y) - 5, 10, 10);
-          ctx.strokeRect(sx(wp.anchor.x) - 5, sy(wp.anchor.y) - 5, 10, 10);
-        }
-      } else {
-        ctx.fillStyle = cssVar('--fg', '#e6e6e8');
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        for (const wp of eEdit.waypoints) {
-          const px = sx(wp.x);
-          const py = sy(wp.y);
-          ctx.beginPath();
-          ctx.arc(px, py, 6, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-          // Heading tick.
-          ctx.beginPath();
-          ctx.moveTo(px, py);
-          ctx.lineTo(px + Math.cos(wp.heading) * 12, py - Math.sin(wp.heading) * 12);
-          ctx.stroke();
-        }
-      }
-      ctx.fillStyle = cssVar('--fg-dim', '#9a9aa0');
-      ctx.font = '11px ui-sans-serif, system-ui, sans-serif';
-      ctx.fillText(t('canvas.editHint'), 12, 36);
-    }
-
     // Conflict markers at closest approaches.
     for (const c of conflicts) {
       const px = sx((c.closestA.x + c.closestB.x) / 2);
@@ -508,7 +330,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     ctx.fillText(t('canvas.clock', { t: currentT.toFixed(2) }), 12, 20);
     };
     requestDraw();
-  }, [field, robots, currentT, conflicts, bounds, editRobot, showTrail, imgReady, theme, t, requestDraw]);
+  }, [field, robots, currentT, conflicts, bounds, showTrail, imgReady, theme, t, requestDraw]);
 
   useImperativeHandle(ref, () => ({
     exportPng: (onDone?: (ok: boolean) => void) => {

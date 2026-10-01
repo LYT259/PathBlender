@@ -86,64 +86,14 @@ describe('workspace workflow', () => {
     expect(conflictPair()).toBeInTheDocument();
   });
 
-  it('lets one Undo restore the original plan after automatic delay resolution and Redo reapply it', async () => {
+  it('conflicts are reported but never auto-adjusted — the viewer changes nothing', async () => {
     render(<App />);
     await importSamples('ghostauto/straight_run.ghostauto', 'ghostauto/stop_and_score.ghostauto');
     expect(conflictPair()).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Suggest start delays' }));
-    expect(screen.getByText('0', { selector: '.conflict-count' })).toBeInTheDocument();
-
-    const delays = ['Straight Run', 'Stop And Score'].map((name) => {
-      const inspector = selectRobot(name);
-      return Number((inspector.getByRole('spinbutton', { name: /delay/i }) as HTMLInputElement).value);
-    });
-    expect(delays.some((delay) => delay > 0)).toBe(true);
-
-    fireEvent.click(screen.getByRole('button', { name: /^Undo$/i }));
-    for (const name of ['Straight Run', 'Stop And Score']) {
-      expect(selectRobot(name).getByRole('spinbutton', { name: /delay/i })).toHaveValue(0);
-    }
-    openChecks();
-    expect(conflictPair()).toBeInTheDocument();
-    expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: /^Redo$/i }));
-    expect(screen.getByText('0', { selector: '.conflict-count' })).toBeInTheDocument();
-    expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2);
-  });
-
-  it('keeps comparison paths, playback and checks available while editing waypoints', async () => {
-    render(<App />);
-    await importSamples('traj/v3_swerve.traj', 'ghostauto/straight_run.ghostauto');
-    const inspector = selectRobot('swerve');
-    fireEvent.click(inspector.getByRole('button', { name: /edit path|adjust path/i }));
-
-    expect(document.querySelector('.waypoint-panel')).toBeInTheDocument();
-    expect(document.querySelector('.editing-banner')).toHaveTextContent('swerve');
-    expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2);
-    expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByRole('slider')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Play$/i })).toBeEnabled();
-    expect(screen.getByRole('button', { name: '3D', exact: true })).toBeDisabled();
-
-    openChecks();
-    expect(document.querySelector('.editing-banner')).toBeInTheDocument();
-    expect(screen.getByText(/swerve × Straight Run/, { selector: '.conflict-pair' })).toBeInTheDocument();
-    expect(screen.getByRole('slider')).toBeInTheDocument();
-    expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2);
-  });
-
-  it('does not resolve a conflict from an uncommitted delay draft, and supports undo after commit', async () => {
-    render(<App />);
-    await importSamples('ghostauto/straight_run.ghostauto', 'ghostauto/stop_and_score.ghostauto');
-    const delay = selectRobot('Straight Run').getByRole('spinbutton', { name: /delay/i });
-    fireEvent.change(delay, { target: { value: '3.5' } });
-    // The list remains an always-visible indication of the current analysis.
-    expect(document.querySelectorAll('.robot-library-conflict')).toHaveLength(2);
-    fireEvent.blur(delay);
-    expect(document.querySelectorAll('.robot-library-conflict')).toHaveLength(0);
-    fireEvent.click(screen.getByRole('button', { name: /^Undo$/i }));
-    expect(selectRobot('Straight Run').getByRole('spinbutton', { name: /delay/i })).toHaveValue(0);
+    // Pure viewer (2026-09-30): no suggest/resolve action, no delay inputs.
+    expect(screen.queryByRole('button', { name: /suggest|resolve|adjust/i })).not.toBeInTheDocument();
+    const inspector = selectRobot('Straight Run');
+    expect(inspector.queryByRole('spinbutton', { name: /delay/i })).not.toBeInTheDocument();
     expect(document.querySelectorAll('.robot-library-conflict')).toHaveLength(2);
   });
 
@@ -162,11 +112,7 @@ describe('workspace workflow', () => {
     expect(season).toHaveValue('reefscape-2025');
     expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
 
-    const originalDelay = selectRobot('Straight Run').getByRole('spinbutton', { name: /delay/i });
-    fireEvent.change(originalDelay, { target: { value: '0.5' } });
-    fireEvent.blur(originalDelay);
-
-    // Restore a different saved alliance, including its field and timing.
+    // Restore a different saved session, including its field and timing.
     const savedRobot = makeSession(parsePathFile(
       readFileSync(resolve(samples, 'ghostauto/stop_and_score.ghostauto'), 'utf8'),
       'stop_and_score.ghostauto',
@@ -181,34 +127,27 @@ describe('workspace workflow', () => {
     await screen.findByText('Stop And Score', { selector: '.robot-name' });
     expect(season).toHaveValue('chargedup-2023');
     expect(screen.queryByText('Straight Run', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(selectRobot('Stop And Score').getByRole('spinbutton', { name: /delay/i })).toHaveValue(1.25);
+    expect(selectRobot('Stop And Score').getByText('1.25 s')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(season).toHaveValue('reefscape-2025');
-    expect(selectRobot('Straight Run').getByRole('spinbutton', { name: /delay/i })).toHaveValue(0.5);
+    expect(selectRobot('Straight Run').getByText('0.00 s')).toBeInTheDocument();
     expect(screen.queryByText('Stop And Score', { selector: '.robot-name' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
     expect(season).toHaveValue('chargedup-2023');
-    expect(selectRobot('Stop And Score').getByRole('spinbutton', { name: /delay/i })).toHaveValue(1.25);
+    expect(selectRobot('Stop And Score').getByText('1.25 s')).toBeInTheDocument();
     expect(screen.queryByText('Straight Run', { selector: '.robot-name' })).not.toBeInTheDocument();
   });
 
-  it('preserves Redo when entering edit mode without changing a visible robot', async () => {
+  it('undo removes an import back to the welcome screen, redo restores it', async () => {
     render(<App />);
     await importSamples('traj/v3_swerve.traj');
-    const delay = selectRobot('swerve').getByRole('spinbutton', { name: /delay/i });
-    fireEvent.change(delay, { target: { value: '2' } });
-    fireEvent.blur(delay);
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    expect(delay).toHaveValue(0);
-    expect(screen.getByRole('button', { name: 'Redo' })).toBeEnabled();
+    await screen.findByRole('region', { name: 'Get started' });
 
-    fireEvent.click(selectRobot('swerve').getByRole('button', { name: /edit path|adjust path/i }));
-    expect(document.querySelector('.waypoint-panel')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Redo' })).toBeEnabled();
     fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
-    expect(screen.getByRole('spinbutton', { name: /delay/i })).toHaveValue(2);
-    expect(document.querySelector('.editing-banner')).toHaveTextContent('swerve');
+    await screen.findByText('swerve', { selector: '.robot-name' });
+    expect(screen.getByRole('combobox', { name: 'Game season' })).toHaveValue('rebuilt-2026');
   });
 });

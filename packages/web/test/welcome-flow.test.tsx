@@ -57,7 +57,7 @@ describe('welcome flow', () => {
     await screen.findByText('Straight Run', { selector: '.robot-name' });
     expect(screen.getByRole('combobox', { name: 'Game season' })).toHaveValue('chargedup-2023');
     fireEvent.click(screen.getByText('Straight Run', { selector: '.robot-name' }));
-    expect(within(screen.getByRole('region', { name: 'Straight Run', exact: true })).getByRole('spinbutton', { name: /delay/i })).toHaveValue(1.25);
+    expect(within(screen.getByRole('region', { name: 'Straight Run', exact: true })).getByText('1.25 s')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Get started' })).not.toBeInTheDocument();
   });
 
