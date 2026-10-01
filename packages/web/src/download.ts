@@ -1,13 +1,19 @@
 /**
  * Save-a-file helper that works in both hosts:
- * - Desktop (Tauri): WKWebView cannot run blob downloads, so bytes go to
- *   the Rust `save_file` command (native save dialog + fs write).
+ * - Desktop (Tauri): neither WKWebView (macOS) nor WebKitGTK (Linux) runs
+ *   blob downloads, so bytes go to the Rust `save_file` command (native
+ *   save dialog + fs write).
  * - Browser: the classic object-URL <a download> click.
  */
 
+// Protocol-only detection misses Linux/Windows, where Tauri serves the
+// frontend over http(s); `__TAURI_INTERNALS__` is injected into every
+// Tauri webview regardless of scheme (same check as App.tsx / main.tsx).
 const IS_DESKTOP =
   typeof window !== 'undefined' &&
-  (window.location.protocol === 'tauri:' || window.location.protocol === 'asset:');
+  ('__TAURI_INTERNALS__' in window ||
+    window.location.protocol === 'tauri:' ||
+    window.location.protocol === 'asset:');
 
 export async function saveBytes(
   suggestedName: string,
