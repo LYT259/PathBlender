@@ -361,9 +361,19 @@ export const FIELDS: readonly FieldPackage[] = [
     id: 'reefscape-2025',
     name: 'Reefscape',
     year: 2025,
-    // Official WPILib field constants (image includes blank canvas edge).
-    lengthM: 16.5417,
-    widthM: 8.0137,
+    // Official WPILib field constants, 2025 frame (allwpilib
+    // fields/src/main/native/resources/org/wpilib/fields/frc/
+    // 2025-reefscape-welded.json, "field-dimensions" 17.548 × 8.052, BSD-3):
+    // the 2025 coordinate frame spans the FULL enclosure — the alliance
+    // walls are recessed ~0.5 m per end for the new driver stations, so the
+    // playfield robots drive on sits inset, and the 180° red→blue flip must
+    // rotate about the ENCLOSURE centre (8.774, 4.026), not 16.5417/2. The
+    // bundled image (PathPlanner field25.png calibration: 3510×1610 @200
+    // px/m, margin 0) covers the same 17.55 × 8.05 m frame, so 2D placement
+    // is unchanged. AndyMark width is 8.042 — one constant serves both
+    // builds (5 mm per side, below any placement tolerance).
+    lengthM: 17.548,
+    widthM: 8.052,
     image: { pixelWidth: 3510, pixelHeight: 1610, ppm: 200, marginM: 0 },
     aprilTags: TAGS_2025_WELDED,
     aprilTagsAndyMark: TAGS_2025_ANDYMARK,
