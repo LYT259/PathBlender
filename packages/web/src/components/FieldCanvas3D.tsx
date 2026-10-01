@@ -54,6 +54,10 @@ interface Scene3D {
   modelRoot: THREE.Group;
   /** Hand-built slab/walls/beacons — visible only without a model. */
   fallback: THREE.Group;
+  /** Per-field rebuilt subtree (slab/walls/tags/structures). */
+  fieldRoot: THREE.Group;
+  /** The bootstrap's background entry — always leads the themed list. */
+  backgroundThemed: { color: THREE.Color; token: string };
   /** Theme-token colors with live refs, retinted when the theme flips. */
   themed: { color: THREE.Color; token: string }[];
 }
@@ -104,6 +108,71 @@ function tokenColorHex(token: string, fallback: string): number {
   );
 }
 
+/**
+ * Parsed-and-processed official models, keyed by asset dir. The processed
+ * group (yaw/recenter/material tuning applied) is cached; mounts receive
+ * `.clone(true)` — geometry and materials stay shared with the cache, which
+ * is what makes a revisit instant (GPU buffers are reused, no re-parse).
+ * A modest cap keeps long roaming sessions from hoarding every season.
+ */
+const modelCache = new Map<string, THREE.Group>();
+const MODEL_CACHE_CAP = 6;
+const inflightModels = new Map<string, Promise<THREE.Group | null>>();
+let lastModelDir: string | undefined;
+
+function loadProcessedModel(dir: string): Promise<THREE.Group | null> {
+  const hit = inflightModels.get(dir);
+  if (hit) return hit;
+  const p = new Promise<THREE.Group | null>((resolve) => {
+    new GLTFLoader().load(
+      `${import.meta.env.BASE_URL}fields3d/${dir}/model.glb`,
+      (gltf) => {
+        // AdvantageScope's loadField applies the config rotation Rx(90°),
+        // and its scene then wraps everything in a group carrying
+        // Rx(−90°)·Ry(180°) — the NET model rotation is a plain 180° yaw:
+        // (x, y, z) → (−x, −y, z). We removed that yaw by accident in the
+        // "no rotation" pass, mirroring the field end-for-end so the tags
+        // (placed on the correct side of the coordinate frame) floated
+        // behind structures. Apply the 180° yaw and recenter: native Z is
+        // off-center (−4.12..6.44, fuel piles at +Z) → shift Z by +1.16
+        // after the yaw flips its sign; native floor at −0.13 → +0.13.
+        const g = gltf.scene;
+        g.rotation.y = Math.PI;
+        g.position.set(0, 0.13, 1.16);
+        g.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          // Heavy model stays OUT of the shadow pass (a full second render
+          // of ~1M triangles froze the main thread); the catcher floor
+          // below still receives the robots' shadows cheaply.
+          mesh.castShadow = false;
+          mesh.receiveShadow = false;
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const m of mats) {
+            const std = m as THREE.MeshStandardMaterial;
+            std.side = THREE.DoubleSide;
+            // The field has no chrome: clamp PBR sliders so the official
+            // models read as carpet/wood/plastic under the studio env.
+            std.roughness = Math.max(std.roughness ?? 0.5, 0.55);
+            std.metalness = Math.min(std.metalness ?? 0, 0.05);
+            std.envMapIntensity = 0.55;
+          }
+        });
+        modelCache.set(dir, g);
+        while (modelCache.size > MODEL_CACHE_CAP) {
+          const oldest = modelCache.keys().next().value as string;
+          modelCache.delete(oldest);
+        }
+        resolve(g.clone(true));
+      },
+      undefined,
+      () => resolve(null),
+    );
+  }).finally(() => inflightModels.delete(dir));
+  inflightModels.set(dir, p);
+  return p;
+}
+
 export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function FieldCanvas3D(
   { field, fieldImageUrl, robots, currentT, variant = 'welded' },
   ref,
@@ -144,7 +213,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       return owner;
     };
     scene.background = new THREE.Color(cssToken('--canvas-bg', '#1c1c1e'));
-    themed.push({ color: scene.background as THREE.Color, token: '--canvas-bg' });
+    const backgroundThemed = { color: scene.background as THREE.Color, token: '--canvas-bg' };
+    themed.push(backgroundThemed);
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
     camera.position.set(...CAM_HOME);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -249,12 +319,123 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     sun.shadow.camera.far = 45;
     scene.add(sun);
 
-    const { cx, cy, width: w, depth: h } = fieldRenderBounds(field);
-
+    // Persistent containers, created once: the field effect below clears
+    // and refills them on every season switch, and the tube/box effect owns
+    // `dynamic`. The scaffold (camera included) outlives all of them.
+    const dynamic = new THREE.Group();
+    dynamic.name = 'pb-dynamic'; // reachable by the regression walkthrough
     const modelRoot = new THREE.Group();
     const fallback = new THREE.Group();
-    scene.add(modelRoot);
-    scene.add(fallback);
+    const fieldRoot = new THREE.Group();
+    scene.add(dynamic, modelRoot, fallback, fieldRoot);
+    sceneRef.current = {
+      renderer, scene, camera, controls,
+      cx: 0, cy: 0,
+      dynamic, boxes: [],
+      modelRoot, fallback, fieldRoot,
+      backgroundThemed,
+      dirty: markDirty, themed,
+    };
+
+
+
+    const resize = () => {
+      const wpx = host.clientWidth || 1;
+      const hpx = host.clientHeight || 1;
+      renderer.setSize(wpx, hpx);
+      camera.aspect = wpx / hpx;
+      camera.updateProjectionMatrix();
+    };
+    const ro = new ResizeObserver(resize);
+    ro.observe(host);
+    resize();
+
+    // WebKit trackpad pinch fires gesture* events, not wheel+ctrlKey —
+    // dolly the camera manually so pinch zoom works in the desktop shell.
+    let lastScale = 1;
+    const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
+    const onGestureStart = (e: Event) => {
+      lastScale = gestureScale(e);
+    };
+    const onGestureChange = (e: Event) => {
+      e.preventDefault();
+      const s = gestureScale(e);
+      if (s > 0 && lastScale > 0) {
+        const dir = camera.position.clone().sub(controls.target).multiplyScalar(1 / s);
+        if (dir.length() > 1.5) camera.position.copy(controls.target).add(dir);
+      }
+      lastScale = s;
+    };
+    renderer.domElement.addEventListener('gesturestart', onGestureStart);
+    renderer.domElement.addEventListener('gesturechange', onGestureChange);
+
+    // Draw only when the camera moved or something was marked dirty —
+    // the heavy field model made render-per-frame starve all macrotasks.
+    controls.addEventListener('change', markDirty);
+    const ro0 = new ResizeObserver(markDirty);
+    ro0.observe(host);
+
+    let raf = 0;
+    const loop = () => {
+      const moved = controls.update();
+      if (needsDraw || moved) {
+        needsDraw = false;
+        renderer.render(scene, camera);
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+
+    // Test/debug hook: orientation + camera state assertions.
+    (window as unknown as { __pb3d?: unknown }).__pb3d = { camera, controls, renderer, scene, modelCacheSize: () => modelCache.size };
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      ro0.disconnect();
+      controls.removeEventListener('change', markDirty);
+      renderer.domElement.removeEventListener('pointerdown', onDragDown);
+      renderer.domElement.removeEventListener('pointermove', onDragMove);
+      renderer.domElement.removeEventListener('pointerup', onDragUp);
+      renderer.domElement.removeEventListener('pointercancel', onDragUp);
+      renderer.domElement.removeEventListener('wheel', onWheelX);
+      renderer.domElement.removeEventListener('gesturestart', onGestureStart);
+      renderer.domElement.removeEventListener('gesturechange', onGestureChange);
+      controls.dispose();
+      renderer.dispose();
+      if (renderer.domElement.parentElement === host) host.removeChild(renderer.domElement);
+      sceneRef.current = null;
+    };
+  }, []);
+
+  // ---- Field-dependent subtree: slab/walls/tags/structures ----------------
+  // Rebuilt when the field (or its artwork) changes. The scaffold — and
+  // with it the camera — survives, so switching seasons keeps the user's
+  // exact viewpoint (user request 2026-09-30).
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    const disposeDeep = (obj: THREE.Object3D) => {
+      obj.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        mesh.geometry?.dispose?.();
+        const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+        else mat?.dispose?.();
+      });
+    };
+    disposeDeep(st.fieldRoot); // previous field's materials/geometries
+    st.fieldRoot.clear();
+    st.modelRoot.clear(); // clones share cache geometry — never disposed here
+    const { scene, fallback, fieldRoot } = st;
+    const themed: { color: THREE.Color; token: string }[] = [];
+    const track = <T extends { color: THREE.Color }>(owner: T, token: string): T => {
+      themed.push({ color: owner.color, token });
+      return owner;
+    };
+
+    const { cx, cy, width: w, depth: h } = fieldRenderBounds(field);
+
 
     if (fieldImageUrl) {
       const tex = new THREE.TextureLoader().load(fieldImageUrl);
@@ -351,7 +532,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       quad.position.add(
         new THREE.Vector3(0, 0, 1).applyQuaternion(tagQuat).multiplyScalar(0.001),
       );
-      scene.add(quad);
+      fieldRoot.add(quad);
       const post = new THREE.Mesh(
         new THREE.CylinderGeometry(0.025, 0.025, tagPos.z, 8),
         track(
@@ -361,7 +542,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       );
       post.position.set(tagPos.x, tagPos.y, tagPos.z / 2);
       post.castShadow = true;
-      scene.add(post);
+      fieldRoot.add(post);
     }
 
     // Season structures for fields without official 3D models (2018–2020
@@ -372,82 +553,22 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // No flash of the flat fallback while an official model loads: seasons
     // that have one keep the fallback hidden until (and unless) loading
     // fails; model-less seasons show it right away.
-    if (FIELD3D_MODELS[field.id]) fallback.visible = false;
+    // The flat fallback stays visible until the official model (or its
+    // cached clone) lands — a first load shows a usable field instead of
+    // blank space while the GLB streams in.
+    fallback.visible = true;
 
-    const dynamic = new THREE.Group();
-    // Named so tests (and the walkthrough) can reach the rebuilt content
-    // after a field switch — see the tube/box rebuild effect below.
-    dynamic.name = 'pb-dynamic';
-    scene.add(dynamic);
 
-    sceneRef.current = { renderer, scene, camera, controls, cx, cy, dynamic, boxes: [], modelRoot, fallback, dirty: markDirty, themed };
-
-    const resize = () => {
-      const wpx = host.clientWidth || 1;
-      const hpx = host.clientHeight || 1;
-      renderer.setSize(wpx, hpx);
-      camera.aspect = wpx / hpx;
-      camera.updateProjectionMatrix();
-    };
-    const ro = new ResizeObserver(resize);
-    ro.observe(host);
-    resize();
-
-    // WebKit trackpad pinch fires gesture* events, not wheel+ctrlKey —
-    // dolly the camera manually so pinch zoom works in the desktop shell.
-    let lastScale = 1;
-    const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
-    const onGestureStart = (e: Event) => {
-      lastScale = gestureScale(e);
-    };
-    const onGestureChange = (e: Event) => {
-      e.preventDefault();
-      const s = gestureScale(e);
-      if (s > 0 && lastScale > 0) {
-        const dir = camera.position.clone().sub(controls.target).multiplyScalar(1 / s);
-        if (dir.length() > 1.5) camera.position.copy(controls.target).add(dir);
-      }
-      lastScale = s;
-    };
-    renderer.domElement.addEventListener('gesturestart', onGestureStart);
-    renderer.domElement.addEventListener('gesturechange', onGestureChange);
-
-    // Draw only when the camera moved or something was marked dirty —
-    // the heavy field model made render-per-frame starve all macrotasks.
-    controls.addEventListener('change', markDirty);
-    const ro0 = new ResizeObserver(markDirty);
-    ro0.observe(host);
-
-    let raf = 0;
-    const loop = () => {
-      const moved = controls.update();
-      if (needsDraw || moved) {
-        needsDraw = false;
-        renderer.render(scene, camera);
-      }
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-
-    // Test/debug hook: orientation + camera state assertions.
-    (window as unknown as { __pb3d?: unknown }).__pb3d = { camera, controls, renderer, scene };
+    st.cx = cx;
+    st.cy = cy;
+    st.themed.length = 0;
+    st.themed.push(st.backgroundThemed, ...themed);
+    st.dirty();
 
     return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      ro0.disconnect();
-      controls.removeEventListener('change', markDirty);
-      renderer.domElement.removeEventListener('pointerdown', onDragDown);
-      renderer.domElement.removeEventListener('pointermove', onDragMove);
-      renderer.domElement.removeEventListener('pointerup', onDragUp);
-      renderer.domElement.removeEventListener('pointercancel', onDragUp);
-      renderer.domElement.removeEventListener('wheel', onWheelX);
-      renderer.domElement.removeEventListener('gesturestart', onGestureStart);
-      renderer.domElement.removeEventListener('gesturechange', onGestureChange);
-      controls.dispose();
-      renderer.dispose();
-      if (renderer.domElement.parentElement === host) host.removeChild(renderer.domElement);
-      sceneRef.current = null;
+      disposeDeep(st.fieldRoot);
+      st.fieldRoot.clear();
+      st.modelRoot.clear();
     };
   }, [field, fieldImageUrl]);
 
@@ -464,85 +585,81 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   }, [themeResolved]);
 
   // Official 3D field model (AdvantageScope assets, BSD-3): replaces the
-  // hand-built fallback. Transform validated against the WPILib 2026 tag
-  // layout: config rotation (x 90°) into the AS frame, then mirror X into
-  // our blue-origin frame (reflection → materials flipped to DoubleSide).
+  // hand-built fallback. Parsed models are cached module-level (processed
+  // once, cloned per mount) so revisiting a season is instant, and clones
+  // share geometry/materials with the cache — never dispose them here.
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
     const entry = FIELD3D_MODELS[field.id];
     const dir =
       entry && (variant === 'andymark' ? entry.andymark ?? entry.welded : entry.welded);
-    if (!dir) return; // no official model (2018-2020) — fallback stays
+    if (!dir) return; // no official model (2018–2020) — fallback stays visible
+    const prevDir = lastModelDir;
+    lastModelDir = dir;
     let disposed = false;
-    const url = `${import.meta.env.BASE_URL}fields3d/${dir}/model.glb`;
-    new GLTFLoader().load(
-      url,
-      (gltf) => {
+
+    const mount = (g: THREE.Object3D) => {
+      // A shadow-catcher under the robots, sized to this field (per-mount:
+      // cheap, and field.lengthM differs between seasons).
+      const catcher = new THREE.Mesh(
+        new THREE.PlaneGeometry(field.lengthM + 2, field.widthM + 2),
+        new THREE.ShadowMaterial({ opacity: 0.28 }),
+      );
+      catcher.rotation.x = -Math.PI / 2;
+      catcher.position.y = 0.002;
+      catcher.receiveShadow = true;
+      st.modelRoot.add(catcher, g);
+      st.fallback.visible = false;
+      st.dirty();
+    };
+
+    const cached = modelCache.get(dir);
+    if (cached) {
+      // Instant path: a clone of the already-parsed scene (geometry and
+      // materials are shared, so the GPU buffers are reused as-is).
+      modelCache.delete(dir);
+      modelCache.set(dir, cached); // LRU freshen
+      mount(cached.clone(true));
+    } else {
+      loadProcessedModel(dir).then((g) => {
         if (disposed) return;
-        const g = gltf.scene;
-        // AdvantageScope's loadField applies the config rotation Rx(90°),
-        // and its scene then wraps everything in a group carrying
-        // Rx(−90°)·Ry(180°) — the NET model rotation is a plain 180° yaw:
-        // (x, y, z) → (−x, −y, z). We removed that yaw by accident in the
-        // "no rotation" pass, mirroring the field end-for-end so the tags
-        // (placed on the correct side of the coordinate frame) floated
-        // behind structures. Apply the 180° yaw and recenter: native Z is
-        // off-center (−4.12..6.44, fuel piles at +Z) → shift Z by +1.16
-        // after the yaw flips its sign; native floor at −0.13 → +0.13.
-        g.rotation.y = Math.PI;
-        g.position.set(0, 0.13, 1.16);
-        g.traverse((o) => {
-          const mesh = o as THREE.Mesh;
-          if (!mesh.isMesh) return;
-          // Heavy model stays OUT of the shadow pass (a full second render
-          // of ~1M triangles froze the main thread); a shadow-catcher
-          // floor below still receives the robots' shadows cheaply.
-          mesh.castShadow = false;
-          mesh.receiveShadow = false;
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          for (const m of mats) {
-            const std = m as THREE.MeshStandardMaterial;
-            std.side = THREE.DoubleSide;
-            // The field has no chrome: clamp PBR sliders so the official
-            // models read as carpet/wood/plastic under the studio env.
-            std.roughness = Math.max(std.roughness ?? 0.5, 0.55);
-            std.metalness = Math.min(std.metalness ?? 0, 0.05);
-            std.envMapIntensity = 0.55;
-          }
-        });
-        const catcher = new THREE.Mesh(
-          new THREE.PlaneGeometry(field.lengthM + 2, field.widthM + 2),
-          new THREE.ShadowMaterial({ opacity: 0.28 }),
-        );
-        catcher.rotation.x = -Math.PI / 2;
-        catcher.position.y = 0.002;
-        catcher.receiveShadow = true;
-        st.modelRoot.add(catcher, g);
-        st.fallback.visible = false;
-        st.dirty();
-      },
-      undefined,
-      () => {
-        if (disposed) return;
-        // offline/missing model: the flat fallback takes over
-        st.fallback.visible = true;
-        st.dirty();
-      },
-    );
+        if (!g) {
+          // offline/missing model: the flat fallback takes over
+          st.fallback.visible = true;
+          st.dirty();
+          return;
+        }
+        mount(g);
+      });
+    }
+
+    // Idle prefetch of what a season-roaming user is most likely to open
+    // next: the sibling construction variant, and the field used before
+    // this one (A/B comparisons are the core loop of this app).
+    const idle =
+      typeof requestIdleCallback === 'function'
+        ? requestIdleCallback
+        : (cb: () => void) => setTimeout(cb, 600) as unknown as number;
+    const cancel =
+      typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout as (id: number) => void;
+    const sibling = entry
+      ? variant === 'andymark'
+        ? entry.welded
+        : entry.andymark ?? entry.welded
+      : undefined;
+    const idleId = idle(() => {
+      for (const d of [sibling, prevDir]) {
+        if (d && d !== dir && !modelCache.has(d)) void loadProcessedModel(d).catch(() => undefined);
+      }
+    });
+
     return () => {
       disposed = true;
-      st.modelRoot.traverse((o) => {
-        const mesh = o as THREE.Mesh;
-        mesh.geometry?.dispose?.();
-        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        for (const m of mats) m?.dispose?.();
-      });
-      st.modelRoot.clear();
-      // Visibility stays false for official-model seasons across the swap
-      // (restating it true here flashes the flat field for one frame).
+      cancel(idleId);
+      st.modelRoot.clear(); // clone shares cache geometry — no dispose
     };
-  }, [field.id, variant]);
+  }, [field.id, variant, field.lengthM, field.widthM]);
 
   // Rebuild path tubes + robot boxes when the robot set changes — AND when
   // the field changes: the scaffold effect tears the whole scene down and

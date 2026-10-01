@@ -82,6 +82,88 @@ export function headingToRender(headingRad: number): number {
 }
 
 /**
+ * Official-field-model placement (the fifth round of this file's history —
+ * see the header). The AdvantageScope assets are authored in a Y-up native
+ * frame whose origin is the WPILib field centre; AdvantageScope mounts them
+ * with the per-field `rotations` from the shipped `config.json` (verified in
+ * AdvantageScope @ main, `field3d/workers/loadField.ts`: each entry
+ * premultiplies, so [x 90°] → Rx(90°) and [x 90°, z 180°] →
+ * Rz(180°)·Rx(90°)). Our render frame is the config frame with the Y/Z swap
+ * `S(a,b,c) = (a,c,b)` (that swap is how the 2026 anchors relate the two —
+ * see the test), so the full native→render map is `S·R_config`:
+ *
+ *   Rx(90°)          → (x, y, −z)   reflect Z   (2023, 2024, 2026)
+ *   Rz(180°)·Rx(90°) → (−x, y, z)   reflect X   (2022, 2025)
+ *
+ * No rotation and no translation otherwise: the models are authored centred
+ * on their season's official field centre (2025's 17.548 × 8.052 enclosure
+ * frame — see `field.ts`), which `fieldRenderBounds` now reproduces. A
+ * reflection is improper, so the loader keeps every material DoubleSide
+ * (three.js flips shading normals for back faces under DoubleSide, which is
+ * what makes a mirrored model light correctly).
+ *
+ * Numeric registration (the guarantee the tests re-run): every tag decal
+ * mesh inside the four 2024–2026 models — `FE-00083_IDn` nodes, centres
+ * taken from accessor min/max — lands within 11 mm horizontally and
+ * 12/20 mm vertically of the WPILib layout mapped by `tagRenderPose`, with
+ * id-for-id pairing; the old hard-coded `Ry(180°) + (0, 0.13, 1.16)` (fitted
+ * to the retired Onshape model, engineering-log 2026.9.13) misses by up to
+ * 16.8 m.
+ */
+export type FieldModelMirror = 'x' | 'z';
+
+/** Derive the mirror axis from an AdvantageScope field config's rotations. */
+export function configMirrorAxis(
+  rotations: readonly { axis: string; degrees: number }[],
+): FieldModelMirror {
+  const turn = (deg: number) => ((deg % 360) + 360) % 360;
+  return rotations.some((r) => r.axis === 'z' && Math.abs(turn(r.degrees) - 180) < 1e-6)
+    ? 'x'
+    : 'z';
+}
+
+/** Render-frame scale vector that mounts a native asset-model. */
+export function fieldModelScale(mirror: FieldModelMirror): THREE.Vector3 {
+  return mirror === 'x' ? new THREE.Vector3(-1, 1, 1) : new THREE.Vector3(1, 1, -1);
+}
+
+/**
+ * Official 3D field models (AdvantageScopeAssets, BSD-3) per season and
+ * construction variant; 2018–2020 have none and keep the hand-built
+ * fallback. `mirror` is `configMirrorAxis` of the config.json shipped in
+ * each model directory (asserted by test — it cannot drift from the
+ * asset); `tagDecal` is the node-name pattern that identifies the model's
+ * own tag meshes for the registration test (2022/2023 ship none).
+ */
+export interface Field3DModelEntry {
+  welded: string;
+  andymark?: string;
+  mirror: FieldModelMirror;
+  tagDecal?: RegExp;
+}
+
+export const FIELD3D_MODELS: Record<string, Field3DModelEntry> = {
+  'rapidreact-2022': { welded: '2022-rapidreact', mirror: 'x' },
+  'chargedup-2023': { welded: '2023-chargedup', mirror: 'z' },
+  'crescendo-2024': {
+    welded: '2024-crescendo',
+    mirror: 'z',
+    tagDecal: /FE-00083_ID(\d+)/,
+  },
+  'reefscape-2025': {
+    welded: '2025-reefscape-welded',
+    andymark: '2025-reefscape-andymark',
+    mirror: 'x',
+    tagDecal: /FE-00083_ID(\d+)/,
+  },
+  'rebuilt-2026': {
+    welded: '2026-rebuilt',
+    mirror: 'z',
+    tagDecal: /FE-00083-ID(\d+)-Vinyl/,
+  },
+};
+
+/**
  * In-plane turn of the printed pattern about the plate's own normal.
  *
  * Zero is the only value that keeps a wall tag upright. Measured against the
