@@ -1,0 +1,111 @@
+.workspace-empty.start-screen {
+  justify-content: flex-start;
+  text-align: left;
+  padding: 32px;
+}
+
+.start-content {
+  width: 100%;
+  max-width: 480px;
+  flex-shrink: 0;
+  margin: auto 0;
+}
+
+.start-screen h1 {
+  margin: 0 0 20px;
+  font-size: 22px;
+  letter-spacing: -.025em;
+  line-height: 1.2;
+  font-weight: 650;
+}
+
+.start-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.start-action {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 64px;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.start-action-primary {
+  background: var(--bg-card);
+  border-color: var(--accent);
+}
+
+.start-action-primary > .ui-icon {
+  color: var(--accent);
+}
+
+.start-action:hover:not(:disabled) {
+  background: var(--bg-card);
+}
+
+.start-action:active:not(:disabled) {
+  background: var(--hover);
+}
+
+.start-action:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.start-action:disabled {
+  cursor: default;
+  opacity: .6;
+}
+
+.start-action-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: 3px;
+}
+
+.start-action-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.start-action-hint {
+  color: var(--fg-dim);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.start-row-arrow {
+  flex-shrink: 0;
+  color: var(--fg-dim);
+}
+
+.start-drop-hint {
+  margin: 12px 14px 0;
+  color: var(--fg-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.start-example {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 600px), (max-height: 560px) {
+  .workspace-empty.start-screen { padding: 24px; }
+}

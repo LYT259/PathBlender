@@ -2,6 +2,8 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useSessionHistory } from './session-history';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
+import { WelcomeScreen } from './components/WelcomeScreen';
+import { UsageTip, useUsageTip } from './components/UsageTip';
 import {
   applyAllianceChange,
   autoResolveConflicts,
@@ -78,6 +80,9 @@ import { loadAISettings, saveAISettings, type AISettings } from './ai/settings';
 import { AI_ENABLED } from './ai/availability';
 
 const SESSION_EXT = '.ghpb.json';
+// Switching a demo robot to a real library route keeps its stable id. That
+// robot now belongs to the user and must survive "End example".
+const isExampleRobot = (robot: SessionTrajectory) => robot.trajectory.id.startsWith('welcome-example-') && !robot.routeId;
 // The project's public home — the repo is private today; the link simply
 // starts resolving once it goes public.
 const GITHUB_URL = 'https://github.com/LYT259/pathblender';
@@ -139,6 +144,12 @@ function AppBody() {
   const [view3D, setView3D] = useState(false);
   const [showTrail, setShowTrail] = useState(true);
   const [showPrefs, setShowPrefs] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [exampleLoading, setExampleLoading] = useState(false);
+  // A file import wins over a pending example module load.
+  const exampleRequest = useRef(0);
+  const { visible: showPlayTip, dismiss: dismissPlayTip } = useUsageTip('play');
+  const { visible: showCheckTip, dismiss: dismissCheckTip } = useUsageTip('checks');
   // Language and theme are staged: picking one enables Save instead of applying
   // instantly (the other preferences keep their immediate-apply behavior).
   // `null` means "nothing staged", which is also the rule the dialog's Save
@@ -159,6 +170,7 @@ function AppBody() {
     window.setTimeout(() => setToast(null), 2500);
   }, []);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const sessionInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<FieldCanvasHandle>(null);
   const canvas3DRef = useRef<FieldCanvas3DHandle>(null);
   const baseField = fieldId === CUSTOM_FIELD_ID && customField ? customField : fieldById(fieldId);
@@ -173,8 +185,11 @@ function AppBody() {
   const duration = sessionDuration(robots);
   const playback = usePlayback(duration);
   const { t, setT } = playback;
-  const undoSession = useCallback(() => { playback.setPlaying(false); undo(); }, [playback.setPlaying, undo]);
-  const redoSession = useCallback(() => { playback.setPlaying(false); redo(); }, [playback.setPlaying, redo]);
+  useEffect(() => {
+    if ((playback.playing || t > 0) && showPlayTip) dismissPlayTip();
+  }, [playback.playing, t, showPlayTip, dismissPlayTip]);
+  const undoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); undo(); }, [playback.setPlaying, undo]);
+  const redoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); redo(); }, [playback.setPlaying, redo]);
 
   const visible = useMemo(() => robots.filter((r) => r.visible), [robots]);
   const conflicts = useMemo(
@@ -194,6 +209,8 @@ function AppBody() {
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   const importFiles = useCallback(async (files: FileList | File[] | IncomingFile[], opts?: { fromFolder?: boolean }) => {
+    exampleRequest.current += 1;
+    setExampleLoading(false);
     const nextErrors: { fileName: string; message: string }[] = [];
     const incoming = toIncoming(files);
     // A folder drop/pick is any import that carries paths below its root.
@@ -644,12 +661,11 @@ function AppBody() {
       const element = e.target instanceof Element ? e.target : null;
       if ((!e.metaKey && !e.ctrlKey) || e.key.toLowerCase() !== 'z' || e.altKey || element?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]') || document.querySelector('[aria-modal="true"]')) return;
       e.preventDefault();
-      playback.setPlaying(false);
-      if (e.shiftKey) redo(); else undo();
+      if (e.shiftKey) redoSession(); else undoSession();
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [undo, redo, playback.setPlaying]);
+  }, [undoSession, redoSession]);
 
   const [shareLink, setShareLink] = useState<string | null>(null);
   const shareUrl = useCallback(async () => {
@@ -727,6 +743,8 @@ function AppBody() {
   );
 
   const clearAll = useCallback(() => {
+    exampleRequest.current += 1;
+    setExampleLoading(false);
     setRobots([]);
     setErrors([]);
     setT(0);
@@ -764,10 +782,57 @@ function AppBody() {
   }, [lang]);
 
   const hasRobots = robots.length > 0;
+  const hasExample = robots.some(isExampleRobot);
+  const leftOpen = pathsOpen && hasRobots;
   const issueCount = conflicts.length + bounds.length;
   const rightOpen = inspectorOpen && (hasRobots || inspectorMode === 'ai');
   const openImport = () => importInputRef.current?.click();
+  const tryExample = async () => {
+    const request = ++exampleRequest.current;
+    setExampleLoading(true);
+    try {
+      const { createWelcomeExample } = await import('./welcome-example');
+      if (request !== exampleRequest.current) return;
+      const example = createWelcomeExample({ a: tr('welcome.exampleNameA'), b: tr('welcome.exampleNameB') });
+      // Show it on the field the user actually uses — first visit defaults
+      // to AndyMark, afterwards the remembered season + construction.
+      setScene({
+        robots: example.robots,
+        fieldId: initialFieldPref.id,
+        fieldVariant: initialFieldPref.variant,
+        customField: undefined,
+        customImageUrl: undefined,
+      });
+      setSelectedId(example.robots[0]?.trajectory.id ?? null);
+      setEditingId(null);
+      setPathsOpen(window.innerWidth > 640);
+      setInspectorMode('checks');
+      setInspectorOpen(window.innerWidth > 900);
+      setView3D(false);
+      setShowTrail(true);
+      setErrors([]);
+      playback.setPlaying(false);
+      setT(0);
+    } catch {
+      if (request === exampleRequest.current) flash(tr('welcome.exampleFailed'), 'error');
+    } finally {
+      if (request === exampleRequest.current) setExampleLoading(false);
+    }
+  };
+  const exitExample = () => {
+    // Keep any real paths the user added while exploring the example.
+    const remaining = robots.filter((robot) => !isExampleRobot(robot));
+    // Folder imports build a library without adding robots while the demo is
+    // on the field. Exiting must still expose that newly imported library.
+    if (!remaining.length && libraryRoutes.length) remaining.push(robotFromRoute(libraryRoutes[0]!, 0, crypto.randomUUID()));
+    setRobots(remaining);
+    setSelectedId(remaining[0]?.trajectory.id ?? null);
+    setEditingId(null);
+    playback.setPlaying(false);
+    setT(0);
+  };
   const jumpToIssue = (time: number, robotIds: string[] = []) => {
+    dismissCheckTip();
     playback.setPlaying(false);
     setT(time);
     if (robotIds[0]) {
@@ -790,17 +855,17 @@ function AppBody() {
   return (
     <div className="app">
       <header className="toolbar workspace-toolbar" data-tauri-drag-region="" aria-label="primary">
-        <button className="tool-btn square" aria-label={tr('workspace.togglePaths')} aria-pressed={pathsOpen} onClick={() => { setPathsOpen(!pathsOpen); if (!pathsOpen && window.innerWidth <= 640) setInspectorOpen(false); }}><Icon name="sidebar" /></button>
+        {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.togglePaths')} aria-pressed={leftOpen} onClick={() => { setPathsOpen(!pathsOpen); if (!pathsOpen && window.innerWidth <= 640) setInspectorOpen(false); }}><Icon name="sidebar" /></button>}
         <div className="workspace-brand" data-tauri-drag-region="">
           <strong data-tauri-drag-region="">PathBlender</strong>
-          <span data-tauri-drag-region="">{tr('workspace.subtitle')}</span>
+          {hasRobots && <span data-tauri-drag-region="">{tr('workspace.subtitle')}</span>}
         </div>
-        <span className="toolbar-divider" />
-        <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>
+        {hasRobots && <span className="toolbar-divider" />}
+        {hasRobots && <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>}
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
         {!VIEWER_ONLY && (
           <>
-            <button className="btn import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>
+            {hasRobots && <button className="btn import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>}
             <input
               ref={folderInputRef}
               type="file"
@@ -831,14 +896,21 @@ function AppBody() {
             />
           </>
         )}
-        <div className="history-controls">
+        <input ref={sessionInputRef} type="file" accept=".ghpb.json" hidden aria-label={tr('welcome.openSession')} onChange={(e) => {
+          const file = e.currentTarget.files?.[0];
+          e.currentTarget.value = '';
+          if (!file) return;
+          if (!file.name.endsWith(SESSION_EXT)) { setErrors([{ fileName: file.name, message: tr('import.notSession') }]); return; }
+          void importFiles([file]);
+        }} />
+        {(hasRobots || canUndo || canRedo) && <div className="history-controls">
           <button className="tool-btn square" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
           <button className="tool-btn square" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
-        </div>
+        </div>}
         <span className="toolbar-spacer" data-tauri-drag-region="" />
-        {!VIEWER_ONLY && <button className="tool-btn save-action" disabled={!hasRobots} onClick={saveSession} title={tr('actions.saveHint')}>{tr('actions.save')}</button>}
-        <button className="tool-btn share-action" disabled={!hasRobots} aria-label={tr('actions.share')} onClick={() => void shareUrl()}><Icon name="share" /><span>{tr('rail.share')}</span></button>
-        <details className="workspace-menu">
+        {!VIEWER_ONLY && hasRobots && <button className="tool-btn save-action" onClick={saveSession} title={tr('actions.saveHint')}>{tr('actions.save')}</button>}
+        {hasRobots && <button className="tool-btn share-action" aria-label={tr('actions.share')} onClick={() => void shareUrl()}><Icon name="share" /><span>{tr('rail.share')}</span></button>}
+        {hasRobots && <details className="workspace-menu">
           <summary className="tool-btn square" aria-label={tr('workspace.more')} title={tr('workspace.more')}><Icon name="more" /></summary>
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
             {!VIEWER_ONLY && <button className="menu-save-action" disabled={!hasRobots} onClick={saveSession}>{tr('actions.save')}</button>}
@@ -847,17 +919,19 @@ function AppBody() {
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub ↗</a>
             {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
           </div>
-        </details>
+        </details>}
         {!VIEWER_ONLY && AI_ENABLED && !rightOpen && <button className="tool-btn square" aria-label={tr('ai.title')} title={tr('ai.title')} onClick={() => { setInspectorMode('ai'); setInspectorOpen(true); }}><SparkleIcon /></button>}
         <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={() => setShowPrefs(true)}><Icon name="settings" /></button>
-        <button className="tool-btn square" aria-label={tr('workspace.toggleInspector')} aria-pressed={rightOpen} onClick={() => { setInspectorOpen(!inspectorOpen); if (!inspectorOpen && window.innerWidth <= 640) setPathsOpen(false); }} disabled={!hasRobots}><Icon name="inspector" /></button>
+        <button className="tool-btn square" aria-label={tr('help.title')} title={tr('help.title')} onClick={() => setShowHelp(true)}><Icon name="help" /></button>
+        {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.toggleInspector')} aria-pressed={rightOpen} onClick={() => { setInspectorOpen(!inspectorOpen); if (!inspectorOpen && window.innerWidth <= 640) setPathsOpen(false); }}><Icon name="inspector" /></button>}
       </header>
       {VIEWER_ONLY && SITE_PREVIEW && <div className="site-preview-banner" role="contentinfo"><span>{tr('site.previewNote')}</span><a href={SITE_URLS.stable}>{tr('site.backStable')}</a></div>}
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
-        <main className={`app-body workspace-body ${pathsOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
-          {pathsOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} libraryRoutes={libraryRoutes} libraryProfiles={libraryProfiles} onPickRoute={pickRoute} onAddRoute={addRouteAsRobot} />}
+        <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
+          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} libraryRoutes={libraryRoutes} libraryProfiles={libraryProfiles} onPickRoute={pickRoute} onAddRoute={addRouteAsRobot} />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
+            {hasExample && <div className="example-notice"><strong>{tr('welcome.exampleBadge')}</strong><span>{tr('welcome.exampleNotice')}</span><button className="btn small" onClick={exitExample}>{tr('welcome.exitExample')}</button></div>}
             <div className="canvas-slot">
               {/* The import page stays clean: the field picker, its construction
                   variant and the 2D/3D switch only become useful once there is
@@ -888,20 +962,11 @@ function AppBody() {
                 {!view3D && <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>}
               </div>}
               {editRobot && <div className="editing-banner"><div><strong>{tr('workspace.editing', { name: editRobot.trajectory.name })}</strong><span>{tr('canvas.editHint')}</span></div><button className="btn" onClick={() => setEditingId(null)}>{tr('robots.doneEdit')}</button></div>}
-              {!hasRobots ? <div className="workspace-empty">
-                <div className="welcome-mark"><Icon name="path" size={40} /></div>
-                <h1>{tr('workspace.emptyTitle')}</h1>
-                <p>{tr('workspace.emptyBody')}</p>
-                <div className="welcome-actions">
-                  <button className="btn accent welcome-import" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>
-                  {!VIEWER_ONLY && <button className="btn welcome-folder-import" onClick={() => folderInputRef.current?.click()}><Icon name="folder" />{tr('library.importFolder')}</button>}
-                </div>
-                <div className="welcome-steps">{(['workspace.importStep', 'workspace.compareStep', 'workspace.checkStep'] as const).map((key, i) => <span key={key}><b>{i + 1}</b>{tr(key)}</span>)}</div>
-              </div> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} /></Suspense> :
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} /></Suspense> :
                 <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} editRobot={editRobot} onBeginEdit={beginEdit} onEndEdit={endEdit} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); setInspectorOpen(true); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
-            {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} duration={duration} playback={playback} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} /></footer>}
+            {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} duration={duration} playback={playback} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
           </section>
           <aside className="workspace-inspector" hidden={!rightOpen}>
             <div className="inspector-header"><div className="seg inspector-tabs" role="group" aria-label={tr('workspace.panels')}>
@@ -909,7 +974,7 @@ function AppBody() {
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
               {!VIEWER_ONLY && AI_ENABLED && <button className={inspectorMode === 'ai' ? 'on' : ''} aria-label={tr('ai.title')} aria-pressed={inspectorMode === 'ai'} onClick={() => setInspectorMode('ai')}><SparkleIcon />{tr('workspace.assistant')}</button>}
             </div><button className="tool-btn square inspector-close" title={tr('workspace.closePanel')} aria-label={tr('workspace.closePanel')} onClick={() => setInspectorOpen(false)}><Icon name="close" size={14} /></button></div>
-            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} onAdjust={selectRobot} onAutoResolve={resolveConflicts} />}
+            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} onAdjust={selectRobot} onAutoResolve={resolveConflicts} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
             {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} editingId={editingId} onUpdate={updateRobot} onSetAlliance={setAlliance} onSetGeometry={setGeometry} onSetTeamNumber={setTeamNumber} onToggleEdit={toggleEdit} onResetEdit={resetEdit} onExport={exportRobot} onRemove={removeRobot} libraryProfiles={libraryProfiles} onApplyProfile={applyProfile} />{editRobot && <WaypointPanel key={editRobot.trajectory.id} robot={editRobot} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}</div>}
             {aiMounted && !VIEWER_ONLY && AI_ENABLED && <div className="inspector-ai" hidden={inspectorMode !== 'ai'}><AiPanel settings={aiSettings} onSettings={applyAiSettings} buildContext={buildActionContext} undoLabel={canUndo ? tr('workspace.undo') : null} onUndo={undoSession} onAttachFiles={(files) => void importFiles(files)} onOpenSettings={() => setShowPrefs(true)} /></div>}
           </aside>
@@ -947,6 +1012,15 @@ function AppBody() {
             </div>
         </Dialog>
       )}
+      {showHelp && <Dialog title={tr('help.title')} onClose={() => setShowHelp(false)}>
+        <h3>{tr('help.title')}</h3>
+        <div className="help-content">
+          <h4>{tr('help.importTitle')}</h4><p>{tr('help.importBody')}</p>
+          <h4>{tr('help.playTitle')}</h4><p>{tr('help.playBody')}</p>
+          <h4>{tr('help.checkTitle')}</h4><p>{tr(VIEWER_ONLY ? 'help.checkBodyViewer' : 'help.checkBody')}</p>
+        </div>
+        <div className="prefs-row btns"><button className="btn" onClick={() => setShowHelp(false)}>{tr('help.close')}</button></div>
+      </Dialog>}
       {showPrefs && (
         <Dialog title={tr('prefs.title')} onClose={closePrefs}>
             <h3>{tr('prefs.title')}</h3>
