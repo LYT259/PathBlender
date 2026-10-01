@@ -153,6 +153,7 @@ export const tr: Record<MessageKey, string> = {
   'site.previewNote': 'Önizleme derlemesi — özellikler her an değişebilir.',
   'site.version': 'Sürüm',
   'canvas.view': 'Görünüm',
+  'canvas.no3d': 'Bu sezon için resmî 3D model yok',
   'canvas.fit': 'Sığdır',
   'canvas.trails': 'izler',
   'canvas.clock': 't = {t} s',
