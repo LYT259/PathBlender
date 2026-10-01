@@ -268,6 +268,12 @@ check('season switch', true);
 await seasonSelect.selectOption('powerup-2018');
 await page.waitForTimeout(700);
 check('oldest season (2018) renders', errors.length === 0);
+// No official 3D model exists for 2018–2020 — the 3D option must be off
+// the table (user directive 2026-10-01: no hand-built stand-in 3D).
+check(
+  'model-less season disables the 3D option (2018)',
+  (await page.locator('.view-toggle button', { hasText: '3D' }).isDisabled()) === true,
+);
 await page.screenshot({ path: `${SHOTS}/09b-2018.png` });
 await seasonSelect.selectOption('rebuilt-2026');
 await page.waitForTimeout(400);
@@ -510,6 +516,23 @@ await page.waitForFunction(() => {
   check('revisited season restores instantly from cache (tags 32)', true, `cache=${cacheSize}`);
   check('revisited season keeps paths & camera', dynBack === dynBefore && JSON.stringify(camBack) === JSON.stringify(camBefore), `dynamic=${dynBack}, cam=${camBack}`);
 }
+
+// Switching to a model-less season while in 3D falls back to 2D (the 3D
+// toggle is disabled there); returning to a model season re-enables it.
+// Kept AFTER the camera-hold checks: leaving and re-entering 3D rebuilds
+// the scene and would reset the camera those compare against.
+await page.locator('.field-select').first().selectOption('powerup-2018');
+await page.waitForTimeout(600);
+check(
+  'model-less season in 3D view falls back to 2D',
+  (await page.locator('.view-toggle button', { hasText: '2D' }).getAttribute('aria-pressed')) === 'true',
+);
+await page.locator('.field-select').first().selectOption('rebuilt-2026');
+await page.waitForTimeout(400);
+check(
+  'model season re-enables the 3D option',
+  (await page.locator('.view-toggle button', { hasText: '3D' }).isDisabled()) === false,
+);
 
 // Field remembered across reload (AndyMark default).
 await page.goto(BASE, { waitUntil: 'domcontentloaded' });

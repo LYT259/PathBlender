@@ -325,3 +325,19 @@ describe('snapTagQuadsToDecalPlates', () => {
     expect(quad.position.z).toBe(4.026);
   });
 });
+
+describe('FIELD3D_MODELS availability gate', () => {
+  it('covers exactly the official-model seasons — model-less years offer no 3D', () => {
+    expect(Object.keys(FIELD3D_MODELS).sort()).toEqual([
+      'chargedup-2023',
+      'crescendo-2024',
+      'rapidreact-2022',
+      'rebuilt-2026',
+      'reefscape-2025',
+    ]);
+    for (const f of FIELDS) {
+      const hasModel = !!FIELD3D_MODELS[f.id];
+      expect(hasModel, f.id).toBe(f.year >= 2022);
+    }
+  });
+});
