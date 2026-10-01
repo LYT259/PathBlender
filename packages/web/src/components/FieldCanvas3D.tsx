@@ -375,6 +375,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     if (FIELD3D_MODELS[field.id]) fallback.visible = false;
 
     const dynamic = new THREE.Group();
+    // Named so tests (and the walkthrough) can reach the rebuilt content
+    // after a field switch — see the tube/box rebuild effect below.
+    dynamic.name = 'pb-dynamic';
     scene.add(dynamic);
 
     sceneRef.current = { renderer, scene, camera, controls, cx, cy, dynamic, boxes: [], modelRoot, fallback, dirty: markDirty, themed };
@@ -541,7 +544,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
   }, [field.id, variant]);
 
-  // Rebuild path tubes + robot boxes when the robot set changes.
+  // Rebuild path tubes + robot boxes when the robot set changes — AND when
+  // the field changes: the scaffold effect tears the whole scene down and
+  // hands sceneRef a fresh, EMPTY dynamic group; without `field` in the deps
+  // this effect never re-ran, so switching seasons in 3D left the field
+  // without any paths or robots (user report 2026-09-30). Declaration order
+  // guarantees the scaffold rebuilds first.
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
@@ -584,7 +592,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       st.boxes.push({ mesh, robot: r });
       st.dirty();
     }
-  }, [robots]);
+  }, [robots, field]);
 
   // Drive boxes along the shared clock.
   useEffect(() => {
@@ -598,7 +606,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       mesh.rotation.y = headingToRender(pose.heading);
       st.dirty();
     }
-  }, [currentT, robots]);
+  }, [currentT, robots, field]);
 
   useImperativeHandle(ref, () => ({
     // Fit the whole field into the vertical field of view from the current
