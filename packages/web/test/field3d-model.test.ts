@@ -36,6 +36,8 @@ import {
   configMirrorAxis,
   fieldModelScale,
   modelTagLayout,
+  snapTagQuadsToDecalPlates,
+  TAG_PLATE_FLOAT_M,
 } from '../src/field3d-frame';
 import cfg2022 from '../public/fields3d/2022-rapidreact/config.json';
 import cfg2023 from '../public/fields3d/2023-chargedup/config.json';
@@ -254,5 +256,72 @@ describe('modelTagLayout: 3D tags follow the build of the model that loads', () 
     expect(modelTagLayout(custom, 'andymark')).toBe(custom.aprilTags);
     const old = { ...fieldById('rapidreact-2022'), aprilTags: fieldById('rapidreact-2022').aprilTags };
     expect(modelTagLayout(old, 'andymark')).toBe(old.aprilTags);
+  });
+});
+
+describe('snapTagQuadsToDecalPlates', () => {
+  const quadAt = (id: number, z: number) => {
+    const q = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.2));
+    q.name = `apriltag-${id}`;
+    q.position.set(1, 1.3, z);
+    // outward normal (0,0,-1): identity quaternion rotated 180° about Y.
+    q.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+    return q;
+  };
+  const plateNamed = (name: string, z: number, w = 0.267) => {
+    // vertices carry the offset (like the real exports: node origin ~zero),
+    // so the AABB centre is the plate position — world position would lie.
+    const g = new THREE.BoxGeometry(w, w, 0.001);
+    g.translate(1, 1.3, z);
+    const m = new THREE.Mesh(g);
+    m.name = name;
+    return m;
+  };
+
+  it('seats the quad on the OUTERMOST plate, floated field-side', () => {
+    const root = new THREE.Group();
+    const quad = quadAt(16, 4.026);
+    root.add(quad);
+    const model = new THREE.Group();
+    model.add(plateNamed('FE-00083_ID16_5', 4.030));
+    model.add(plateNamed('FE-00083_ID16_3', 4.037)); // more wall-side
+    expect(snapTagQuadsToDecalPlates(root, model)).toBe(1);
+    expect(quad.position.z).toBeCloseTo(4.030 - TAG_PLATE_FLOAT_M, 4);
+    expect(quad.position.x).toBeCloseTo(1, 6);
+    expect(quad.position.y).toBeCloseTo(1.3, 6);
+  });
+
+  it('flush plates (AndyMark case) also land plate-centre + float', () => {
+    const root = new THREE.Group();
+    const quad = quadAt(16, 4.0119);
+    root.add(quad);
+    const model = new THREE.Group();
+    model.add(plateNamed('FE-00083_ID16_5', 4.0111));
+    expect(snapTagQuadsToDecalPlates(root, model)).toBe(1);
+    expect(quad.position.z).toBeCloseTo(4.0111 - TAG_PLATE_FLOAT_M, 4);
+  });
+
+  it('tags without plates (2022/2023 models) and non-tag children keep their pose', () => {
+    const root = new THREE.Group();
+    const quad = quadAt(7, -5.114);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1));
+    post.name = 'beacon';
+    post.position.set(1, 0.5, 4);
+    root.add(quad, post);
+    const model = new THREE.Group();
+    model.add(plateNamed('FE-00083_ID16_5', 4.03));
+    expect(snapTagQuadsToDecalPlates(root, model)).toBe(0);
+    expect(quad.position.z).toBe(-5.114);
+    expect(post.position.z).toBe(4);
+  });
+
+  it('rejects plate matches beyond the sanity bound', () => {
+    const root = new THREE.Group();
+    const quad = quadAt(16, 4.026);
+    root.add(quad);
+    const model = new THREE.Group();
+    model.add(plateNamed('FE-00083_ID16_5', 3.5)); // 0.5 m off — garbage
+    expect(snapTagQuadsToDecalPlates(root, model)).toBe(0);
+    expect(quad.position.z).toBe(4.026);
   });
 });
