@@ -71,11 +71,21 @@ hdiutil create -volname PathBlender -srcfolder "$BUNDLE" -ov -format UDZO "$DMG"
 # files the new build no longer ships, so the installed app drifts from the
 # sealed bundle. Remove the old copy first — /Applications must match the
 # sealed build exactly (user instruction: 安装新软件前把旧软件删干净).
+# Near-atomic swap (2026-10-01): stage the full copy beside the target first,
+# then remove the old app and move the staged one in back-to-back. Deleting
+# up front left a multi-minute window with NO installed app while ditto ran —
+# during a parallel-session rebuild that made Spotlight/Dock serve the stale
+# day-only icon from cache (user report 2026-10-01 19:19). The swap window is
+# now sub-second, too short for LaunchServices to notice.
+STAGED=/Applications/.PathBlender.app.staged
+rm -rf "$STAGED"
+ditto "$BUNDLE" "$STAGED"
 rm -rf /Applications/PathBlender.app
-ditto "$BUNDLE" /Applications/PathBlender.app
+mv "$STAGED" /Applications/PathBlender.app
 # Verify the INSTALLED copy too — ditto must preserve the seal intact.
 if ! codesign --verify --deep --strict /Applications/PathBlender.app; then
   echo "install-desktop.sh: installed app failed strict verification" >&2
+  rm -rf /Applications/PathBlender.app
   exit 1
 fi
 
