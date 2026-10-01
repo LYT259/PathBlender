@@ -249,6 +249,21 @@ const fieldAfterReload = await seasonSelect.inputValue();
 const variantAfterReload = await page.locator('.field-select').nth(1).inputValue();
 check('field + AndyMark variant survive reload', fieldAfterReload === 'reefscape-2025' && variantAfterReload === 'andymark', `field=${fieldAfterReload} variant=${variantAfterReload}`);
 await page.screenshot({ path: `${SHOTS}/09-reefscape.png` });
+// 2025 ships one artwork per construction variant (they differ only at the
+// coral stations): toggling the variant must repaint the 2D canvas, while
+// single-artwork seasons keep it byte-identical.
+{
+  const canvas2d = page.locator('canvas.field-canvas').first();
+  const snap = () => canvas2d.evaluate((c) => c.toDataURL('image/png'));
+  const am = await snap();
+  await page.locator('.field-select').nth(1).selectOption('welded');
+  await page.waitForTimeout(600);
+  const wd = await snap();
+  check('2025 2D artwork swaps with the construction variant', am !== wd);
+  await page.locator('.field-select').nth(1).selectOption('andymark');
+  await page.waitForTimeout(600);
+  check('2025 swap paints no console/HTTP errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+}
 check('season switch', true);
 await seasonSelect.selectOption('powerup-2018');
 await page.waitForTimeout(700);
