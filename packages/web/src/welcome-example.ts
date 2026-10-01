@@ -1,0 +1,61 @@
+import {
+  makeSession,
+  parseGhostAuto,
+  REBUILT_2026,
+  type SessionTrajectory,
+} from '@pathblender/core';
+
+const DURATION_S = 8;
+const SAMPLE_COUNT = 161;
+const HALF_ROUTE_M = 1.5;
+const BUMPER_M = 0.8;
+
+/**
+ * Fictional local teaching data, not a team's competition auto. Both robots
+ * cross the neutral-zone centre at four seconds. Coordinates derive from the
+ * bundled field dimensions; the short routes stay between the fixed hubs.
+ * The bumper size is an explicit property of these fictional robots.
+ */
+export function createWelcomeExample(names: { a: string; b: string }): {
+  robots: SessionTrajectory[];
+  fieldId: string;
+  fieldVariant: 'welded' | 'andymark';
+} {
+  const centreX = REBUILT_2026.lengthM / 2;
+  const centreY = REBUILT_2026.widthM / 2;
+  const robots = ([names.a, names.b] as const).map((name, index) => {
+    const vertical = index === 1;
+    const states = Array.from({ length: SAMPLE_COUNT }, (_, sampleIndex) => {
+      const u = sampleIndex / (SAMPLE_COUNT - 1);
+      // Smooth start/stop, with velocity matching the derivative of position.
+      const progress = u * u * (3 - 2 * u);
+      const offset = (2 * progress - 1) * HALF_ROUTE_M;
+      const speed = 2 * HALF_ROUTE_M * 6 * u * (1 - u) / DURATION_S;
+      return {
+        t: u * DURATION_S,
+        x: centreX + (vertical ? 0 : offset),
+        y: centreY + (vertical ? offset : 0),
+        rotation: vertical ? Math.PI / 2 : 0,
+        vx: vertical ? 0 : speed,
+        vy: vertical ? speed : 0,
+        omega: 0,
+      };
+    });
+    // Use the normal core import boundary, including geometry validation.
+    // Every call parses fresh objects, so edits never alter a future example.
+    const trajectory = parseGhostAuto(JSON.stringify({
+      version: '1.0',
+      name,
+      teamName: '',
+      bumperSize: { width: BUMPER_M, height: BUMPER_M },
+      bumperOffset: { x: 0, y: 0 },
+      holonomic: true,
+      moduleLocations: [],
+      states,
+    }), `welcome-example-${index === 0 ? 'a' : 'b'}.ghostauto`);
+    trajectory.id = `welcome-example-${index === 0 ? 'a' : 'b'}`;
+    return makeSession(trajectory, index);
+  });
+
+  return { robots, fieldId: REBUILT_2026.id, fieldVariant: 'welded' };
+}

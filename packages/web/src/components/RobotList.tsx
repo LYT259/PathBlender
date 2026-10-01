@@ -41,14 +41,13 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
     <aside className="robot-list robot-library" aria-label={t('robots.title', { n: robots.length })}>
       <div className="robot-library-heading">
         <h2>{t('robots.title', { n: robots.length })}</h2>
-        <button className="robot-library-add" onClick={onImport} title={t('robots.import')} aria-label={t('robots.import')}>
+        {robots.length > 0 && <button className="robot-library-add" onClick={onImport} title={t('robots.import')} aria-label={t('robots.import')}>
           <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M10 4v12M4 10h12" /></svg>
-        </button>
+        </button>}
       </div>
       {robots.length === 0 ? (
         <div className="robot-library-empty">
           <p>{t('robots.empty')}</p>
-          <button className="btn small" onClick={onImport}>{t('robots.import')}</button>
         </div>
       ) : (
         <ul className="robot-library-items">

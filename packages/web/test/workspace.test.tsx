@@ -38,7 +38,7 @@ describe('workspace workflow', () => {
     const openPicker = vi.spyOn(input, 'click').mockImplementation(() => undefined);
     const welcome = document.querySelector<HTMLElement>('.workspace-empty')!;
     expect(welcome).toBeInTheDocument();
-    fireEvent.click(within(welcome).getByRole('button', { name: 'Import paths' }));
+    fireEvent.click(within(welcome).getByRole('button', { name: 'Import path files' }));
     expect(openPicker).toHaveBeenCalledOnce();
     // User directive 2026-09-23: the season picker, its construction variant and
     // the 2D/3D switch are meaningless before anything is loaded, so the whole
@@ -47,21 +47,14 @@ describe('workspace workflow', () => {
     expect(screen.queryByRole('button', { name: '3D', exact: true })).toBeNull();
     expect(document.querySelector('.canvas-bar')).toBeNull();
     expect(document.querySelectorAll('.field-select')).toHaveLength(0);
-    // Nothing else sits on the import page either: both footnote lines were
-    // deleted on request (2026-09-23), along with their dictionary keys.
+    // Onboarding now gives explicit starting actions instead of a slogan and
+    // repeated numbered instructions. Workspace tools wait for imported paths.
     expect(within(welcome).queryByText('Files stay on this device')).toBeNull();
-    expect(within(welcome).queryByText(/saved session/i)).toBeNull();
+    expect(within(welcome).getByRole('button', { name: 'Open saved session' })).toBeInTheDocument();
     expect(welcome.textContent).not.toContain('.ghostauto');
-    expect(welcome.textContent).not.toMatch(/drop files anywhere/i);
-    // And the two import actions share one sizing rule (user complaint: the
-    // folder button sat shorter than the accent one). jsdom does not resolve
-    // the stylesheet, so assert the rule itself rather than a fake computed
-    // height: both buttons must be covered by the same selector.
-    const css = readFileSync(resolve(__dirname, '../src/workspace.css'), 'utf8');
-    expect(css).toMatch(/\.welcome-actions > \.btn \{[^}]*min-height[^}]*white-space: nowrap/);
-    expect(css).toMatch(/\.welcome-actions \{[^}]*align-items: stretch/);
-    expect(css).not.toMatch(/^\.welcome-import \{/m);
-    expect(screen.getByRole('button', { name: /^Undo$/i })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /^Undo$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show or hide path list' })).not.toBeInTheDocument();
+    expect(document.querySelector('.robot-library')).not.toBeInTheDocument();
     openPicker.mockRestore();
   });
 
