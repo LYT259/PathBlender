@@ -24,6 +24,7 @@ import {
   fieldModelScale,
   fieldRenderBounds,
   headingToRender,
+  modelTagLayout,
   tagRenderPose,
   worldToRender,
   worldToRenderVec3,
@@ -516,9 +517,13 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // the render frame by tagRenderPose (validated against the official
     // asset config). Geometry edge = black-square size × 10/8 (the texture
     // adds the quiet ring); the quad floats 1 mm off its surface along its
-    // own normal. Beacon posts (for fields without an official model) are
-    // placed at the same foot point.
-    for (const tag of field.aprilTags ?? []) {
+    // own normal. The list comes from `modelTagLayout`: the selected
+    // variant's tags when a model of that build ships, else the loaded
+    // model's own build (2026 AndyMark coordinates are physically inside
+    // the welded-only model's hub panels — see field3d-frame). Beacon posts
+    // (for fields without an official model) are placed at the same foot
+    // point.
+    for (const tag of modelTagLayout(field, variant)) {
       const z = Math.max(0.05, tag.z ?? 0.55);
       const { position: tagPos, quaternion: tagQuat } = tagRenderPose(tag, cx, cy);
       const quad = new THREE.Mesh(
@@ -569,7 +574,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       st.fieldRoot.clear();
       st.modelRoot.clear();
     };
-  }, [field, fieldImageUrl]);
+    // `variant` is explicit: the tag list comes from modelTagLayout(field,
+    // variant), which can change even when the field object does not.
+  }, [field, fieldImageUrl, variant]);
 
   // Theme flips retint the built-once scene: background/fog and every
   // token-backed structure material. React to the theme context —
