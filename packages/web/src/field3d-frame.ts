@@ -110,7 +110,9 @@ export function headingToRender(headingRad: number): number {
  * to the retired Onshape model, engineering-log 2026.9.13) misses by up to
  * 16.8 m.
  */
-export type FieldModelMirror = 'x' | 'z';
+export type { FieldModelMirror, Field3DModelEntry } from './field3d-models';
+export { FIELD3D_MODELS } from './field3d-models';
+import { FIELD3D_MODELS, type FieldModelMirror } from './field3d-models';
 
 /** Derive the mirror axis from an AdvantageScope field config's rotations. */
 export function configMirrorAxis(
@@ -126,43 +128,6 @@ export function configMirrorAxis(
 export function fieldModelScale(mirror: FieldModelMirror): THREE.Vector3 {
   return mirror === 'x' ? new THREE.Vector3(-1, 1, 1) : new THREE.Vector3(1, 1, -1);
 }
-
-/**
- * Official 3D field models (AdvantageScopeAssets, BSD-3) per season and
- * construction variant; 2018–2020 have none and keep the hand-built
- * fallback. `mirror` is `configMirrorAxis` of the config.json shipped in
- * each model directory (asserted by test — it cannot drift from the
- * asset); `tagDecal` is the node-name pattern that identifies the model's
- * own tag meshes for the registration test (2022/2023 ship none).
- */
-export interface Field3DModelEntry {
-  welded: string;
-  andymark?: string;
-  mirror: FieldModelMirror;
-  tagDecal?: RegExp;
-}
-
-export const FIELD3D_MODELS: Record<string, Field3DModelEntry> = {
-  'rapidreact-2022': { welded: '2022-rapidreact', mirror: 'x' },
-  'chargedup-2023': { welded: '2023-chargedup', mirror: 'z' },
-  'crescendo-2024': {
-    welded: '2024-crescendo',
-    mirror: 'z',
-    tagDecal: /FE-00083_ID(\d+)/,
-  },
-
-  'reefscape-2025': {
-    welded: '2025-reefscape-welded',
-    andymark: '2025-reefscape-andymark',
-    mirror: 'x',
-    tagDecal: /FE-00083_ID(\d+)/,
-  },
-  'rebuilt-2026': {
-    welded: '2026-rebuilt',
-    mirror: 'z',
-    tagDecal: /FE-00083-ID(\d+)-Vinyl/,
-  },
-};
 
 /**
  * Which tag list the 3D view mounts: the selected construction variant's
