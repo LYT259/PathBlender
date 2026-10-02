@@ -139,8 +139,14 @@ if (invokedDirectly) {
     let diff = '';
     try {
       diff = git('show', sha, '--format=', '--unified=0');
-    } catch {
-      continue;
+    } catch (e) {
+      // An unreadable commit must BLOCK the push, never skip it: the old
+      // `continue` silently passed such commits through (reproduced in the
+      // 2026-10-02 acceptance audit with a stub git whose `show` fails —
+      // the script exited 0 "clean"). If we cannot read it, we cannot
+      // clear it.
+      console.error(`pre-push-check: cannot read commit ${sha.slice(0, 8)} (${e.message.split('\n')[0]}) — refusing to clear it`);
+      process.exit(1);
     }
     for (const line of diff.split('\n')) {
       if (!line.startsWith('+') || line.startsWith('+++')) continue;
