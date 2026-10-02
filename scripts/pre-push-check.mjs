@@ -94,7 +94,14 @@ const invokedDirectly =
   process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (invokedDirectly) {
-  const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+  // maxBuffer 64 MB: a legitimate commit can carry a multi-MB diff (field
+  // art, models) — the default 1 MB made `git show` fail with ENOBUFS,
+  // which used to be silently skipped by the old catch-continue and now
+  // (correctly, but wrongly) blocks. Big-but-readable must pass; only
+  // genuinely unreadable commits block. First hit live on push of this
+  // very change (2026-10-02).
+  const git = (...args) =>
+    execFileSync('git', args, { encoding: 'utf8', maxBuffer: 1024 * 1024 * 64 }).trim();
 
   // Git pre-push sends ref lines on STDIN (argv gets remote name/URL). We
   // can't block on stdin when run manually, so only read it when the hook
