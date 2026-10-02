@@ -39,6 +39,11 @@
 /* The ruler rides below the track rows (user spec, 2026-10-02): the numbers
    row sits directly under the example paths, directly above the play bar. */
 .timeline-axis { height: 36px; align-items: start; margin-top: 4px; }
+/* The unit label that used to occupy the label column is gone (folded
+   into the final tick), so pin the ruler to the lane column explicitly —
+   auto-placement would drop it into the 144px label column and crush
+   the whole scale. */
+.timeline-axis .timeline-ruler { grid-column: 2; }
 .timeline-ruler { position: relative; height: 36px; min-width: 0; }
 .timeline-ticks { position: absolute; top: 0; left: 0; right: 0; height: 19px; border-bottom: 1px solid var(--border); }
 .timeline-tick { position: absolute; top: 0; bottom: 0; transform: translateX(-50%); font-size: 10px; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
