@@ -12,6 +12,7 @@
 import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const native = vi.hoisted(() => ({ invoke: vi.fn((_command: string, ..._args: unknown[]) => Promise.resolve()), close: vi.fn(() => Promise.resolve()) }));
 const emit = vi.hoisted(() => ({ checks: [] as string[] }));
 const menuHandlers = vi.hoisted(() => ({} as Record<string, (e: unknown) => void>));
 vi.mock('../src/update-check', () => ({
@@ -27,13 +28,16 @@ vi.mock('@tauri-apps/api/event', () => ({
     return Promise.resolve(() => undefined);
   },
 }));
-vi.mock('@tauri-apps/api/core', () => ({ invoke: () => Promise.resolve() }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: native.invoke }));
+vi.mock('@tauri-apps/api/window', () => ({ getCurrentWindow: () => ({ close: native.close }) }));
 
 beforeEach(() => {
   localStorage.clear();
+  native.invoke.mockClear();
+  native.close.mockClear();
   emit.checks.length = 0;
   Object.keys(menuHandlers).forEach((k) => delete menuHandlers[k]);
-  (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+  (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = { invoke: native.invoke };
 });
 afterEach(() => {
   cleanup();
@@ -58,45 +62,63 @@ async function renderApp() {
   );
 }
 
-const prefsModal = () => document.querySelector('.prefs-modal');
-const saveBtn = () => prefsModal()!.querySelector('.btn.small.accent') as HTMLButtonElement;
-const cancelBtn = () => prefsModal()!.querySelector('.prefs-row.btns .btn.small:not(.accent)') as HTMLButtonElement;
-// The channel select is the LAST one in the modal (after language & theme).
-const channelSelect = () => {
-  const all = prefsModal()!.querySelectorAll('select');
-  return all[all.length - 1] as HTMLSelectElement;
-};
-
-async function openPrefs() {
-  fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
-  await waitFor(() => expect(prefsModal()).not.toBeNull());
+async function renderPreferences() {
+  const [{ PrefsWindow }, { UpdateChannelProvider }, { ThemeProvider }, { I18nProvider }] = await Promise.all([
+    import('../src/prefs-window'), import('../src/update-channel'), import('../src/theme'), import('../src/i18n'),
+  ]);
+  return render(<ThemeProvider><UpdateChannelProvider><I18nProvider><PrefsWindow /></I18nProvider></UpdateChannelProvider></ThemeProvider>);
 }
 
-describe('update channel staging (user report 2026-09-30)', () => {
-  it('stages the channel: Save enables and applies, Cancel discards', async () => {
+function openUpdates() {
+  fireEvent.click(screen.getByRole('tab', { name: 'Updates' }));
+  return screen.getByRole('combobox', { name: 'Update channel' });
+}
+
+describe('shared desktop preferences', () => {
+  it('opens the native settings window from the toolbar', async () => {
     await renderApp();
-    await openPrefs();
+    fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
+    await vi.dynamicImportSettled();
+    await waitFor(() => expect(native.invoke.mock.calls.some((args) => args[0] === 'open_preferences')).toBe(true));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
 
-    // Default is stable; switching to beta must NOT write anything yet.
-    fireEvent.change(channelSelect(), { target: { value: 'beta' } });
+  it('stages the channel: Save applies, Cancel discards', async () => {
+    const first = await renderPreferences();
+    fireEvent.change(openUpdates(), { target: { value: 'beta' } });
     expect(localStorage.getItem('ghpb.updateChannel')).toBeNull();
-    expect(saveBtn().disabled).toBe(false);
-
-    // Cancel closes the modal and discards the draft.
-    fireEvent.click(cancelBtn());
-    await waitFor(() => expect(prefsModal()).toBeNull());
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(native.close).toHaveBeenCalledOnce());
+    first.unmount();
     expect(localStorage.getItem('ghpb.updateChannel')).toBeNull();
 
-    // Re-open: select shows the persisted stable, Save disabled again.
-    await openPrefs();
-    await waitFor(() => expect(channelSelect().value).toBe('stable'));
-    expect(saveBtn().disabled).toBe(true);
-
-    // Save applies the staged channel.
-    fireEvent.change(channelSelect(), { target: { value: 'beta' } });
-    fireEvent.click(saveBtn());
-    await waitFor(() => expect(prefsModal()).toBeNull());
+    await renderPreferences();
+    expect(openUpdates()).toHaveValue('stable');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Update channel' }), { target: { value: 'beta' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(native.close).toHaveBeenCalledTimes(2));
     expect(localStorage.getItem('ghpb.updateChannel')).toBe('beta');
+  });
+
+  it('retains appearance drafts across sections and applies only on Save', async () => {
+    await renderPreferences();
+    fireEvent.click(screen.getByRole('radio', { name: 'Dark', exact: true }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'zh' } });
+    const general = screen.getByRole('tab', { name: 'General' });
+    general.focus();
+    fireEvent.keyDown(general, { key: 'End' });
+    expect(screen.getByRole('tab', { name: 'About' })).toHaveFocus();
+    expect(screen.getByRole('heading', { name: 'Recent changes' })).toBeInTheDocument();
+    expect(localStorage.getItem('ghpb.theme')).toBeNull();
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'About' }), { key: 'Home' });
+    expect(screen.getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
+    expect(screen.getByRole('combobox', { name: 'Language' })).toHaveValue('zh');
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(native.close).toHaveBeenCalledOnce());
+    expect(localStorage.getItem('ghpb.theme')).toBe('dark');
+    expect(localStorage.getItem('ghpb.lang')).toBe('zh');
   });
 
   it('a failed update check shows the error toast, not the green success box', async () => {
