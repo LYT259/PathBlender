@@ -488,6 +488,36 @@ check(
   (await page.locator('.field-canvas-3d canvas').count()) >= 1 && errors.length === 0,
 );
 check('official 3D field model loaded', modelLoaded, modelLoaded ? 'fields3d glb fetched' : 'no model request');
+
+// Robots must actually PAINT in 3D — scene-graph node counts alone missed
+// the 2026-10-02 black-robot regression (rigs stranded at origin on CAD
+// template arrival + physical light units dimming lit meshes to black).
+// The field model is effectively unlit, so only a pixel scan catches it.
+await page.waitForTimeout(1200);
+const robotPaint = await page.evaluate(() => {
+  const st = window.__pb3d;
+  const cv = document.querySelector('.field-canvas-3d canvas');
+  if (!st?.renderer || !cv) return null;
+  st.renderer.render(st.scene, st.camera);
+  const off = document.createElement('canvas');
+  off.width = cv.width;
+  off.height = cv.height;
+  const g = off.getContext('2d', { willReadFrequently: true });
+  g.drawImage(cv, 0, 0);
+  const d = g.getImageData(0, 0, cv.width, cv.height).data;
+  let pink = 0, cyan = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], gg = d[i + 1], b = d[i + 2];
+    if (r > gg + 50 && b > gg + 30 && r > 140) pink++;
+    else if (b > r + 50 && gg > 90 && b > 140) cyan++;
+  }
+  return { pink, cyan };
+});
+check(
+  '3D robots are lit and painted (not black)',
+  !!robotPaint && robotPaint.pink > 40 && robotPaint.cyan > 20,
+  JSON.stringify(robotPaint),
+);
 const sample3dSky = () =>
   page.evaluate(() => {
     const st = window.__pb3d;

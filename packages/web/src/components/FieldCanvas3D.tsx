@@ -414,8 +414,16 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       needsDraw = true;
     };
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.6));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+    // AdvantageScope's lighting recipe: no tone mapping, no environment
+    // map, no fog — a hemisphere fill plus one shadow-casting key light.
+    // (The earlier ACES+studio-env stack overexposed the official models.)
+    // Intensities are π-scaled: three ≥r155 runs physical light units
+    // (useLegacyLights removed in r165), and the recipe's raw values
+    // (0.6 / 1.1) predate that switch — unscaled they left every lit mesh
+    // (robots, path tubes) rendering black on the unlit field model
+    // (user report 2026-10-02; verified via readPixels: ×π restores them).
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.6 * Math.PI));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.1 * Math.PI);
     sun.position.set(9, 16, 8);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -1008,7 +1016,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       }
       st.dirty();
     }
-  }, [currentT, robots, field]);
+    // `moduleTemplate` matters here too: when the CAD template resolves it
+    // rebuilds every rig at the origin — without re-driving the poses the
+    // fresh rigs stay buried under the field slab (robots vanish, user
+    // report 2026-10-02).
+  }, [currentT, robots, field, moduleTemplate]);
 
   useImperativeHandle(ref, () => ({
     // Fit the whole field into the vertical field of view from the current
