@@ -71,6 +71,67 @@ export function pinchZoomFactor(ratio: number): number {
   return Math.exp(ln * PINCH_GAIN);
 }
 
+/**
+ * Wheel suppression around WebKit pinches (user round 4, video evidence
+ * 2026-10-02): the diagnostic strip showed clean gesture streams
+ * (maxΔln ≈ 0.03-0.05, postEnd = 0) while the view still jumped after
+ * release — the gesture events are innocent. The remaining zoom source
+ * is the *scroll* burst macOS emits as lifting fingers drift across the
+ * glass at the end of a pinch: those wheel events keep dollying the
+ * view in the gesture's direction right after release. Wheel-driven
+ * zoom/rotate is suppressed while a gesture runs and for this long
+ * after it ends; a deliberate scroll or mouse wheel half a second later
+ * is unaffected.
+ */
+export const GESTURE_WHEEL_QUIET_MS = 350;
+
+let gestureActive = false;
+let suppressWheelUntil = 0;
+
+export function markGestureStart(): void {
+  gestureActive = true;
+}
+
+export function markGestureEnd(now: number = performance.now()): void {
+  gestureActive = false;
+  suppressWheelUntil = now + GESTURE_WHEEL_QUIET_MS;
+}
+
+/** True while a pinch runs and briefly after it ends (lift-drift guard). */
+export function wheelSuppressed(now = performance.now()): boolean {
+  return gestureActive || now < suppressWheelUntil;
+}
+
+/**
+ * Zoom chase smoothing (user round 5, 2026-10-02): WKWebView delivers
+ * gesture events in main-thread-congested batches (~12/s visible in the
+ * user's screen recording), so applying each event the moment it lands
+ * steps the view. Views now chase a target exponentially instead — events
+ * move the target, frames move the view. τ is the time constant: one τ
+ * closes ~63% of the remaining gap; ~5τ ≈ settled.
+ * Tunable feel constant, pending user trial.
+ */
+export const CHASE_TAU_MS = 100;
+
+/** Exponential approach: fraction of the remaining gap closed in `dt` ms. */
+export function chaseAlpha(dt: number, tau: number = CHASE_TAU_MS): number {
+  return 1 - Math.exp(-Math.max(0, dt) / tau);
+}
+
+/**
+ * Split a remaining multiplicative zoom into the step to apply this frame
+ * and what remains after it (log-space exponential approach), so a pinch
+ * converges to its target over ~5τ regardless of how the events batched.
+ */
+export function chaseStep(remaining: number, dt: number, tau: number = CHASE_TAU_MS): { step: number; remaining: number } {
+  if (!Number.isFinite(remaining) || remaining <= 0) return { step: 1, remaining: 1 };
+  const step = Math.pow(remaining, chaseAlpha(dt, tau));
+  const next = remaining / step;
+  // Settle: below ~0.2% the gap is invisible; finish it in one frame.
+  if (Math.abs(Math.log(next)) < 0.002) return { step: remaining, remaining: 1 };
+  return { step, remaining: next };
+}
+
 export function classifyWheelInput(deltaY: number, deltaMode: number): WheelInputKind {
   if (deltaMode !== WheelEvent.DOM_DELTA_PIXEL) return 'wheel'; // line/page modes
   return Math.abs(deltaY) >= WHEEL_MIN_NOTCH && Number.isInteger(deltaY) ? 'wheel' : 'trackpad';

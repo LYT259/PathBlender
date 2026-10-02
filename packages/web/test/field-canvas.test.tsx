@@ -134,11 +134,20 @@ describe('field canvas interaction and redraws', () => {
     expect(x + 0.7 * width).toBeCloseTo(300, 0);
   });
 
-  it('anchors pinch at the centroid, softens it, and ignores post-end events', () => {
+  // The pinch chase (round 5) reads the clock via performance.now; jsdom
+  // calls it for real, so a fast test sees ~0 ms frames and never settles.
+  // Advance 16 ms per call to emulate a steady 60 fps.
+  function steadyClock() {
+    let t = 0;
+    return vi.spyOn(performance, 'now').mockImplementation(() => (t += 16));
+  }
+
+  it('pinch chases smoothly, settles at the centroid-anchored target, ignores post-end noise', () => {
     const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
     resize(440, 240);
     paint();
     expect(strokeRect).toHaveBeenLastCalledWith(20, 20, 400, 200);
+    steadyClock();
 
     // GestureEvent fields are not standard init members — define them on
     // each instance. jsdom rects are 0, so clientX=300 → sx=300 (70%
@@ -153,12 +162,20 @@ describe('field canvas interaction and redraws', () => {
     const canvas = container.querySelector('canvas')!;
     fireEvent(canvas, gestureEvent('gesturestart', 1));
     // A realistic stream: two small steps of +5% finger separation each
-    // (per-event ln 0.049, below the end-of-gesture rate limit).
+    // (per-event ln 0.049, below the end-of-gesture rate limit). Target
+    // scale = 40 · (1.05^0.6)² ≈ 42.41 px/m.
     fireEvent(canvas, gestureEvent('gesturechange', 1.05));
     fireEvent(canvas, gestureEvent('gesturechange', 1.1025));
-    paint();
 
-    // Softened total = 1.05^0.6 applied twice ≈ 1.0603.
+    // First frames step PART of the way — the chase, not a jump (round 5).
+    paint(); // chase step
+    paint(); // draw
+    const partial = strokeRect.mock.lastCall![2];
+    expect(partial).toBeGreaterThan(401);
+    expect(partial).toBeLessThan(400 * Math.pow(1.05, 1.2) - 10);
+
+    // Let it settle (~5τ at 16 ms frames).
+    for (let i = 0; i < 80; i++) paint();
     const [x, , width] = strokeRect.mock.lastCall!;
     expect(width).toBeCloseTo(400 * Math.pow(1.05, 1.2), 0);
     // The world point under the fingers stays at screen x=300.
@@ -168,8 +185,37 @@ describe('field canvas interaction and redraws', () => {
     // the view must freeze at the release-moment zoom (user round 3).
     fireEvent(canvas, gestureEvent('gestureend', 1.1025));
     fireEvent(canvas, gestureEvent('gesturechange', 1.8));
-    paint();
+    // The lift-drift scroll burst (round 4): wheel events right after the
+    // pinch end are finger drift, not intent — they must not zoom either.
+    fireEvent.wheel(canvas, { deltaY: -38.4 });
+    fireEvent.wheel(canvas, { deltaY: -22.7 });
+    for (let i = 0; i < 8; i++) paint();
     expect(strokeRect.mock.lastCall![2]).toBeCloseTo(400 * Math.pow(1.05, 1.2), 0);
+  });
+
+  it('resumes wheel zoom after the post-gesture quiet window (wheel cancels mid-chase)', async () => {
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240);
+    paint();
+    steadyClock();
+    const canvas = container.querySelector('canvas')!;
+    const gestureEvent = (type: string, scale: number) => {
+      const ev = new Event(type, { cancelable: true });
+      Object.defineProperty(ev, 'scale', { value: scale });
+      return ev;
+    };
+    fireEvent(canvas, gestureEvent('gesturestart', 1));
+    fireEvent(canvas, gestureEvent('gesturechange', 1.05));
+    fireEvent(canvas, gestureEvent('gestureend', 1.05));
+    // Let the chase land first (the real app runs rAF during these 400 ms).
+    for (let i = 0; i < 80; i++) paint();
+
+    // The quiet window is 350 ms (mocked clock has long passed it).
+    await new Promise((r) => setTimeout(r, 10));
+    fireEvent.wheel(canvas, { deltaY: -120 });
+    paint();
+    // The gesture zoomed once (1.05^0.6), then the notch adds ×1.155.
+    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(400 * Math.pow(1.05, 0.6) * Math.exp(120 * 0.0012), 0);
   });
 
 });
