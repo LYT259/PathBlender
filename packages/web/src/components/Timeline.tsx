@@ -146,11 +146,14 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
               })}
             </div>
             <div className="timeline-axis">
-              <span className="timeline-unit">{tr('timeline.seconds')}</span>
               <div className="timeline-ruler">
                 <div className="timeline-ticks" aria-hidden="true">
                   {ticks.map((tick) => (
-                    <span key={tick} className="timeline-tick" style={{ left: percent(tick) }}>{tick}</span>
+                    // The unit rides with the final tick (chart-axis
+                    // convention) — e.g. "20 秒" / "20 seconds".
+                    <span key={tick} className="timeline-tick" style={{ left: percent(tick) }}>
+                      {tick}{tick === axisMax ? ` ${tr('timeline.seconds')}` : ''}
+                    </span>
                   ))}
                 </div>
                 <input
