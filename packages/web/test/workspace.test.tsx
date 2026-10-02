@@ -65,6 +65,28 @@ describe('workspace workflow', () => {
     expect(document.querySelector('.canvas-bar')).toBeInTheDocument();
   });
 
+  it('closes robot details back to checks without hiding the sidebar or removing a robot', async () => {
+    render(<App />);
+    await importSamples('ghostauto/straight_run.ghostauto', 'ghostauto/stop_and_score.ghostauto');
+    selectRobot('Straight Run');
+    fireEvent.click(screen.getByRole('button', { name: 'Close robot details' }));
+
+    expect(screen.queryByRole('region', { name: 'Straight Run', exact: true })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Checks/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Show or hide inspector' })).toHaveAttribute('aria-pressed', 'true');
+    expect(conflictPair()).toBeVisible();
+    expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+
+    // Selecting a robot again reopens its details; hiding the entire sidebar
+    // remains an explicit action on the toolbar.
+    selectRobot('Stop And Score');
+    expect(screen.getByRole('region', { name: 'Stop And Score', exact: true })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Show or hide inspector' }));
+    expect(screen.getByRole('button', { name: 'Show or hide inspector' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('region', { name: 'Stop And Score', exact: true })).not.toBeInTheDocument();
+  });
+
   it('keeps hidden robots in collision analysis, then reveals and pauses at a selected conflict', async () => {
     render(<App />);
     await importSamples('ghostauto/straight_run.ghostauto', 'ghostauto/stop_and_score.ghostauto');

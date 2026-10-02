@@ -2281,7 +2281,7 @@ dependencies = [
 
 [[package]]
 name = "pathblender-desktop"
-version = "0.1.3"
+version = "0.1.4-beta.1"
 dependencies = [
  "serde",
  "serde_json",
