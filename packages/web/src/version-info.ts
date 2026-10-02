@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.32';
+export const APP_VERSION = '0.1.6-beta.33';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.33', date: '2026-10-02', note: 'Ruler unit folds into the last tick ("20 秒" / "20 seconds"); stray label under the last path is gone / 刻度单位并入最后一个数字（20 秒），路径下方的孤立「秒」字移除' },
   { version: '0.1.6-beta.32', date: '2026-10-02', note: 'Ruler (0-20 s scale) moves below the example paths, above the play bar; clock back to its original spot beside the play button / 刻度尺（0-20 秒数字）移到示例路径下方、播放条上方；时钟放回播放键旁原位' },
   { version: '0.1.6-beta.31', date: '2026-10-02', note: 'MK5i modules rotated 90°: motors flank the sides / MK5i 模组转 90°：电机朝车身两侧' },
   { version: '0.1.6-beta.30', date: '2026-10-02', note: 'Clock sits on its own row between the tracks and the play controls, left-aligned / 时钟独占一行置于示例路径与播放条之间，靠左对齐' },
