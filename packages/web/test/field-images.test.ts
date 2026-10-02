@@ -1,9 +1,9 @@
 /**
- * Construction-variant field artwork (2025 Reefscape):
+ * Construction-variant and artwork-style field images (2025 Reefscape):
  *
- * 1. `fieldImageFor` resolves the artwork per variant — 2025 swaps between
- *    the official welded/AndyMark pair (AdvantageScopeAssets, BSD-3), every
- *    other season has a single artwork that both variants share.
+ * 1. `fieldImageFor` resolves the artwork per variant and style — the
+ *    schematic base key for every season, a rendered key for 2022–2026,
+ *    and the official welded/AndyMark rendered pair for 2025.
  * 2. The shipped PNGs match the calibrations in `@pathblender/core`
  *    (IHDR dimensions) — a guard against silent asset replacement.
  * 3. Registration check, in the spirit of `field3d-model.test.ts`: the
@@ -152,44 +152,97 @@ const median = (xs: number[]) => {
   return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
 };
 
-describe('fieldImageFor (variant-aware artwork registry)', () => {
-  it('2025 swaps artwork with the construction variant', () => {
-    const welded = fieldImageFor('reefscape-2025', 'welded', undefined);
-    const andymark = fieldImageFor('reefscape-2025', 'andymark', undefined);
-    expect(welded).toBeDefined();
-    expect(andymark).toBeDefined();
-    expect(welded).not.toBe(andymark);
-    // The variant-less key keeps pointing at the welded sheet.
-    expect(welded).toBe(FIELD_IMAGES['reefscape-2025']);
+describe('fieldImageFor (variant- and style-aware artwork registry)', () => {
+  it('schematic is the base key: one URL across variants and styles', () => {
+    for (const id of ['rapidreact-2022', 'chargedup-2023', 'crescendo-2024', 'reefscape-2025', 'rebuilt-2026']) {
+      expect(fieldImageFor(id, 'welded', 'schematic', undefined))
+        .toBe(fieldImageFor(id, 'andymark', 'schematic', undefined))
+        .toBe(FIELD_IMAGES[id]);
+    }
   });
 
-  it('single-artwork seasons keep one URL across variants', () => {
-    expect(fieldImageFor('rebuilt-2026', 'welded', undefined))
-      .toBe(fieldImageFor('rebuilt-2026', 'andymark', undefined));
-    expect(fieldImageFor('crescendo-2024', 'welded', undefined))
-      .toBe(fieldImageFor('crescendo-2024', 'andymark', undefined));
+  it('every 2022–2026 season resolves a rendered artwork under both variants', () => {
+    for (const id of ['rapidreact-2022', 'chargedup-2023', 'crescendo-2024', 'reefscape-2025', 'rebuilt-2026']) {
+      const welded = fieldImageFor(id, 'welded', 'rendered', undefined);
+      const andymark = fieldImageFor(id, 'andymark', 'rendered', undefined);
+      expect(welded, `${id} rendered`).toBeDefined();
+      expect(andymark, `${id} rendered/andymark`).toBeDefined();
+      expect(welded).toBe(FIELD_IMAGES[`${id}/rendered`]);
+    }
+  });
+
+  it('2025 rendered swaps artwork with the construction variant; only that season does', () => {
+    expect(fieldImageFor('reefscape-2025', 'welded', 'rendered', undefined))
+      .not.toBe(fieldImageFor('reefscape-2025', 'andymark', 'rendered', undefined));
+    for (const id of ['rebuilt-2026', 'crescendo-2024']) {
+      expect(fieldImageFor(id, 'welded', 'rendered', undefined))
+        .toBe(fieldImageFor(id, 'andymark', 'rendered', undefined));
+    }
+  });
+
+  it('2018–2020 have no rendered key — any style resolves their only artwork', () => {
+    for (const id of ['powerup-2018', 'deepspace-2019', 'infinitercharge-2020']) {
+      expect(FIELD_IMAGES[`${id}/rendered`]).toBeUndefined();
+      expect(fieldImageFor(id, 'welded', 'rendered', undefined)).toBe(FIELD_IMAGES[id]);
+      expect(fieldImageFor(id, 'welded', 'schematic', undefined)).toBe(FIELD_IMAGES[id]);
+    }
   });
 
   it('custom fields fall through to the user image', () => {
-    expect(fieldImageFor(CUSTOM_FIELD_ID, 'welded', 'blob:x')).toBe('blob:x');
+    expect(fieldImageFor(CUSTOM_FIELD_ID, 'welded', 'schematic', 'blob:x')).toBe('blob:x');
   });
 
-  it('the two 2025 sheets are different files with matching dimensions', () => {
+  it('the two 2025 rendered sheets are different files with matching dimensions', () => {
     const base = fieldById('reefscape-2025');
     const wFile = asset('reefscape2025-welded.png');
     const aFile = asset('reefscape2025-andymark.png');
     expect(readFileSync(wFile).equals(readFileSync(aFile))).toBe(false);
-    expect(decodePng(wFile).width).toBe(base.image!.pixelWidth);
-    expect(decodePng(wFile).height).toBe(base.image!.pixelHeight);
-    expect(decodePng(aFile).width).toBe(base.imageAndyMark!.pixelWidth);
-    expect(decodePng(aFile).height).toBe(base.imageAndyMark!.pixelHeight);
+    expect(decodePng(wFile).width).toBe(base.imageRendered!.pixelWidth);
+    expect(decodePng(wFile).height).toBe(base.imageRendered!.pixelHeight);
+    expect(decodePng(aFile).width).toBe(base.imageRenderedAndyMark!.pixelWidth);
+    expect(decodePng(aFile).height).toBe(base.imageRenderedAndyMark!.pixelHeight);
+  });
+
+  it('every registered PNG matches its calibration dimensions (IHDR guard)', () => {
+    const dims: Record<string, [number, number]> = {
+      'rapidreact-2022': [3240, 1620],
+      'chargedup-2023': [3256, 1578],
+      'crescendo-2024': [3256, 1616],
+      'rebuilt-2026': [3508, 1814],
+      'rapidreact-2022/rendered': [7045, 2934],
+      'reefscape-2025': [3510, 1610],
+      'chargedup-2023/rendered': [3608, 1462],
+      'crescendo-2024/rendered': [3840, 1554],
+      'rebuilt-2026/rendered': [3902, 1584],
+    };
+    const files: Record<string, string> = {
+      'rapidreact-2022': 'rapidreact2022.png',
+      'chargedup-2023': 'chargedup2023.png',
+      'crescendo-2024': 'crescendo2024.png',
+      'rebuilt-2026': 'rebuilt2026.png',
+      'rapidreact-2022/rendered': 'rapidreact2022-rendered.png',
+      'reefscape-2025': 'reefscape2025-schematic.png',
+      'chargedup-2023/rendered': 'chargedup2023-rendered.png',
+      'crescendo-2024/rendered': 'crescendo2024-rendered.png',
+      'rebuilt-2026/rendered': 'rebuilt2026-rendered.png',
+    };
+    for (const [key, [w, h]] of Object.entries(dims)) {
+      const png = decodePng(asset(files[key]!));
+      expect(png.width, `${key} width`).toBe(w);
+      expect(png.height, `${key} height`).toBe(h);
+      // And the core calibration for that style agrees.
+      const field = fieldById(key.split('/')[0]!);
+      const cal = key.endsWith('/rendered') ? field.imageRendered : field.image;
+      expect(cal!.pixelWidth).toBe(w);
+      expect(cal!.pixelHeight).toBe(h);
+    }
   });
 });
 
-describe('2025 artwork ↔ official tag layout registration', () => {
+describe('2025 rendered artwork ↔ official tag layout registration', () => {
   for (const variant of ['welded', 'andymark'] as const) {
     it(`${variant}: all 22 decals found, median offset ≤ 2 px, scatter ≤ 28 px`, () => {
-      const field = withFieldVariant(fieldById('reefscape-2025'), variant);
+      const field = withFieldVariant(fieldById('reefscape-2025'), variant, 'rendered');
       const file =
         variant === 'andymark' ? asset('reefscape2025-andymark.png') : asset('reefscape2025-welded.png');
       const png = decodePng(file);

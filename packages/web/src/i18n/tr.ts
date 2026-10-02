@@ -125,6 +125,12 @@ export const tr: Record<MessageKey, string> = {
   'vc.left': 'L',
   'vc.right': 'R',
   'field.variant': 'Saha yapımı (kaynaklı vs AndyMark)',
+
+  'field.style': 'Saha görsel stili (şematik vs gerçekçi)',
+
+  'field.style.schematic': 'Şematik',
+
+  'field.style.rendered': 'Gerçekçi',
   'conflicts.title': 'Çakışmalar',
   "conflicts.minSep":
     "en yakın mesafe {d} m, t={t} s ({a} × {b})",

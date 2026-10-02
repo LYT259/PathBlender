@@ -48,7 +48,9 @@ describe('parseRobotProfile (PathPlanner settings.json, both generations)', () =
   it('falls back to defaults for the missing dimension and unparseable modules', () => {
     const profile = parseRobotProfile(JSON.stringify({ robotConfig: { robotWidth: 0.7 } }), 'a/settings.json');
     expect(profile!.geometry.widthM).toBeCloseTo(0.7);
-    expect(profile!.geometry.lengthM).toBeCloseTo(0.9);
+    // Missing length falls back to DEFAULT_GEOMETRY (0.9652 m, the 2025
+    // rule-max placeholder — re-resolved per season at consumption time).
+    expect(profile!.geometry.lengthM).toBeCloseTo(0.9652);
     expect(profile!.moduleLocations).toEqual([]);
     expect(profile!.massKG).toBeUndefined();
   });

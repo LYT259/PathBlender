@@ -20,6 +20,7 @@ import {
   serializeSession,
   sessionDuration,
   withFieldVariant,
+  type FieldArtStyle,
   withSeasonGeometry,
 } from '@pathblender/core';
 import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } from '@pathblender/core';
@@ -55,9 +56,9 @@ const GITHUB_URL = 'https://github.com/LYT259/pathblender';
 // The field + variant survive refreshes (a custom field is not persisted —
 // its definition lives only in the session/share payload).
 const FIELD_PREF_KEY = 'ghpb.field';
-type FieldPref = { id: string; variant: 'welded' | 'andymark' };
+type FieldPref = { id: string; variant: 'welded' | 'andymark'; style: FieldArtStyle };
 function loadFieldPref(): FieldPref {
-  const fallback: FieldPref = { id: REBUILT_2026.id, variant: 'andymark' };
+  const fallback: FieldPref = { id: REBUILT_2026.id, variant: 'andymark', style: 'schematic' };
   try {
     const raw = localStorage.getItem(FIELD_PREF_KEY);
     if (!raw) return fallback;
@@ -67,15 +68,16 @@ function loadFieldPref(): FieldPref {
     return {
       id: f.id,
       variant: p.variant === 'andymark' && f.aprilTagsAndyMark ? 'andymark' : 'welded',
+      style: p.style === 'rendered' ? 'rendered' : 'schematic',
     };
   } catch {
     return fallback;
   }
 }
-function rememberFieldPrefs(id: string, variant: 'welded' | 'andymark') {
+function rememberFieldPrefs(id: string, variant: 'welded' | 'andymark', style: FieldArtStyle) {
   if (id === CUSTOM_FIELD_ID) return;
   try {
-    localStorage.setItem(FIELD_PREF_KEY, JSON.stringify({ id, variant }));
+    localStorage.setItem(FIELD_PREF_KEY, JSON.stringify({ id, variant, style }));
   } catch {
     /* private browsing — stickiness is best-effort */
   }
@@ -96,7 +98,7 @@ function AppBody() {
   const { lang, t: tr } = useI18n();
   const { channel: updateChannel } = useUpdateChannel();
   const [initialFieldPref] = useState(loadFieldPref);
-  const { robots, setRobots, setScene, fieldId, fieldVariant, customField, customImageUrl, undo, redo, beginEdit, endEdit, canUndo, canRedo } = useSessionHistory(initialFieldPref);
+  const { robots, setRobots, setScene, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, beginEdit, endEdit, canUndo, canRedo } = useSessionHistory(initialFieldPref);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pathsOpen, setPathsOpen] = useState(() => window.innerWidth > 640);
   const [inspectorOpen, setInspectorOpen] = useState(true);
@@ -130,10 +132,10 @@ function AppBody() {
   // The 2D artwork, its calibration, the tag overlay and the 3D beacons all
   // follow the selected field construction.
   const field = useMemo(
-    () => (baseField ? withFieldVariant(baseField, fieldVariant) : baseField),
-    [baseField, fieldVariant],
+    () => (baseField ? withFieldVariant(baseField, fieldVariant, fieldStyle) : baseField),
+    [baseField, fieldVariant, fieldStyle],
   );
-  const fieldImageUrl = fieldImageFor(fieldId, fieldVariant, customImageUrl);
+  const fieldImageUrl = fieldImageFor(fieldId, fieldVariant, fieldStyle, customImageUrl);
   // Per-season rule-max geometry (MK5i plan, 2026-10-02): default-geometry
   // robots are re-resolved against the selected field's season, so checks
   // and rendering follow the season switch; file-provided sizes always win.
@@ -615,6 +617,7 @@ function AppBody() {
         robots: example.robots,
         fieldId: initialFieldPref.id,
         fieldVariant: initialFieldPref.variant,
+        fieldStyle: initialFieldPref.style,
         customField: undefined,
         customImageUrl: undefined,
       });
@@ -737,15 +740,19 @@ function AppBody() {
                   <select className="field-select" aria-label={tr('workspace.season')} value={fieldId} onChange={(e) => {
                     if (e.target.value === CUSTOM_FIELD_ID) { setCfOpen(true); return; }
                     setScene({ fieldId: e.target.value });
-                    rememberFieldPrefs(e.target.value, fieldVariant);
+                    rememberFieldPrefs(e.target.value, fieldVariant, fieldStyle);
                   }}>
                     {FIELDS.map((f) => <option key={f.id} value={f.id}>{f.name} {f.year}</option>)}
                     <option value={CUSTOM_FIELD_ID}>{tr('customField.title')}</option>
                   </select>
                   {field.aprilTagsAndyMark && <select className="field-select field-variant" value={fieldVariant} onChange={(e) => {
                     const v = e.target.value as 'welded' | 'andymark'; setScene({ fieldVariant: v });
-                    if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, v);
+                    if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, v, fieldStyle);
                   }} title={tr('field.variant')} aria-label={tr('field.variant')}><option value="andymark">AndyMark</option><option value="welded">Welded</option></select>}
+                  {field.imageRendered && <select className="field-select field-style" value={fieldStyle} onChange={(e) => {
+                    const st = e.target.value as FieldArtStyle; setScene({ fieldStyle: st });
+                    if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, fieldVariant, st);
+                  }} title={tr('field.style')} aria-label={tr('field.style')}><option value="schematic">{tr('field.style.schematic')}</option><option value="rendered">{tr('field.style.rendered')}</option></select>}
                 </div>
                 <span className="canvas-spacer" />
                 {field3dAvailable && (
