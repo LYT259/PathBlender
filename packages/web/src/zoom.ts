@@ -71,6 +71,37 @@ export function pinchZoomFactor(ratio: number): number {
   return Math.exp(ln * PINCH_GAIN);
 }
 
+/**
+ * Wheel suppression around WebKit pinches (user round 4, video evidence
+ * 2026-10-02): the diagnostic strip showed clean gesture streams
+ * (maxΔln ≈ 0.03-0.05, postEnd = 0) while the view still jumped after
+ * release — the gesture events are innocent. The remaining zoom source
+ * is the *scroll* burst macOS emits as lifting fingers drift across the
+ * glass at the end of a pinch: those wheel events keep dollying the
+ * view in the gesture's direction right after release. Wheel-driven
+ * zoom/rotate is suppressed while a gesture runs and for this long
+ * after it ends; a deliberate scroll or mouse wheel half a second later
+ * is unaffected.
+ */
+export const GESTURE_WHEEL_QUIET_MS = 350;
+
+let gestureActive = false;
+let suppressWheelUntil = 0;
+
+export function markGestureStart(): void {
+  gestureActive = true;
+}
+
+export function markGestureEnd(now: number = performance.now()): void {
+  gestureActive = false;
+  suppressWheelUntil = now + GESTURE_WHEEL_QUIET_MS;
+}
+
+/** True while a pinch runs and briefly after it ends (lift-drift guard). */
+export function wheelSuppressed(now = performance.now()): boolean {
+  return gestureActive || now < suppressWheelUntil;
+}
+
 export function classifyWheelInput(deltaY: number, deltaMode: number): WheelInputKind {
   if (deltaMode !== WheelEvent.DOM_DELTA_PIXEL) return 'wheel'; // line/page modes
   return Math.abs(deltaY) >= WHEEL_MIN_NOTCH && Number.isInteger(deltaY) ? 'wheel' : 'trackpad';
