@@ -25,6 +25,8 @@ import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-
 import { displayName, robotFromRoute, type LibraryProfile, type LibraryRoute } from './route-library';
 import { hashToSession, sessionToHash } from './share-url';
 import { copyText, saveText } from './download';
+import { APP_VERSION, VERSION_NOTES } from './version-info';
+import { formatVersionDisplay } from './version';
 import { useTheme, type ThemeMode } from './theme';
 import { fieldImageFor } from './field-images';
 import { FIELD3D_MODELS } from './field3d-models';
@@ -743,7 +745,12 @@ function AppBody() {
             <div className="inspector-header"><div className="seg inspector-tabs" role="group" aria-label={tr('workspace.panels')}>
               <button className={inspectorMode === 'checks' ? 'on' : ''} aria-pressed={inspectorMode === 'checks'} onClick={() => setInspectorMode('checks')}>{tr('workspace.checks')}{issueCount > 0 && <span className="tab-count">{issueCount}</span>}</button>
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
-            </div><button className="tool-btn square inspector-close" title={tr('workspace.closePanel')} aria-label={tr('workspace.closePanel')} onClick={() => setInspectorOpen(false)}><Icon name="close" size={14} /></button></div>
+            </div><button className="tool-btn square inspector-close" title={tr(inspectorMode === 'robot' ? 'workspace.closeRobotDetails' : 'workspace.closePanel')} aria-label={tr(inspectorMode === 'robot' ? 'workspace.closeRobotDetails' : 'workspace.closePanel')} onClick={() => {
+              // Closing a robot detail page returns to checks. The toolbar's
+              // inspector toggle still controls the whole sidebar.
+              if (inspectorMode === 'robot') setInspectorMode('checks');
+              else setInspectorOpen(false);
+            }}><Icon name="close" size={14} /></button></div>
             {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
             {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} onRemove={removeRobot} libraryProfiles={libraryProfiles} onApplyProfile={applyProfile} /></div>}
           </aside>
@@ -842,6 +849,38 @@ function AppBody() {
                 </select>
               </label>
             )}
+            {/* About: the natural-facing version line ("0.1.4 · Beta 2"),
+                the full number, one-click copy, and the last few
+                user-readable change notes (versioning scheme 2026-10-01). */}
+            <div className="prefs-about">
+              <div className="prefs-row">
+                <span>{tr('about.version')}</span>
+                <span className="prefs-version-line">
+                  <strong>{formatVersionDisplay(APP_VERSION)}</strong>
+                  <code>{APP_VERSION}</code>
+                  <button
+                    className="btn small"
+                    onClick={() => {
+                      void copyText(
+                        `PathBlender ${APP_VERSION} (${IS_DESKTOP ? 'desktop' : 'web'})\n` +
+                          VERSION_NOTES.slice(0, 5)
+                            .map((n) => `${n.version} (${n.date}) — ${n.note}`)
+                            .join('\n'),
+                      ).then((ok) => flash(tr(ok ? 'about.copyDone' : 'share.copyFailed'), ok ? 'ok' : 'error'));
+                    }}
+                  >
+                    {tr('about.copy')}
+                  </button>
+                </span>
+              </div>
+              {VERSION_NOTES.length > 0 && (
+                <ul className="prefs-notes">
+                  {VERSION_NOTES.slice(0, 5).map((n) => (
+                    <li key={n.version}><b>{formatVersionDisplay(n.version)}</b> — {n.note}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <div className="prefs-row btns">
               {/* Cancel is the always-available way out (user report 2026-09-24:
                   it used to be the disabled one, so an untouched dialog had no

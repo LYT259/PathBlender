@@ -70,7 +70,7 @@ await page.screenshot({ path: `${SHOTS}/01-empty.png` });
 await prefsGear().click();
 await page.waitForSelector('.prefs-modal');
 check('preferences carry no AI settings (code deleted)', (await page.locator('.prefs-modal .ai-row, .prefs-modal .prefs-ai').count()) === 0);
-await page.locator('.prefs-modal .btn.small:not(.accent)').first().click(); // Cancel
+await page.locator('.prefs-modal .prefs-row.btns .btn.small:not(.accent)').first().click(); // Cancel (footer-scoped: the About copy button is also a .btn.small)
 
 // --- import two ghost files through the real file input ---
 await fileInput().setInputFiles([
@@ -147,6 +147,23 @@ const cancelBtn = page.locator('.prefs-modal .prefs-row.btns .btn.small:not(.acc
 await prefsGear().click();
 const langSelect = page.locator('.prefs-modal select').first();
 await langSelect.waitFor({ state: 'visible', timeout: 8000 });
+// About block: natural-facing version ("0.1.4 · Beta 2"), the full number,
+// one-click copy (versioning scheme 2026-10-01). The exact number drifts
+// with every merge by design — assert shape, not value.
+{
+  const display = (await page.locator('.prefs-version-line strong').textContent())?.trim() ?? '';
+  const full = (await page.locator('.prefs-version-line code').textContent())?.trim() ?? '';
+  check(
+    'About shows the version line + full number',
+    /^\d+\.\d+\.\d+( · Beta \d+)?$/.test(display) && /^\d+\.\d+\.\d+(-beta\.\d+)?$/.test(full),
+    `display="${display}" full="${full}"`,
+  );
+  const copyBtn = page.locator('.prefs-version-line button');
+  check('About offers one-click version copy', (await copyBtn.count()) === 1);
+  await copyBtn.click();
+  await page.waitForTimeout(300);
+  check('version copy reports success', (await page.locator('.toast').count()) === 1);
+}
 const optionCount = await langSelect.locator('option').count();
 check('language list has all 8 choices', optionCount === 8, `options=${optionCount}`);
 check('follow-system sits first', /Follow system|跟随系统|跟隨系統/i.test((await langSelect.locator('option').first().textContent()) ?? ''));

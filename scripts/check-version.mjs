@@ -24,6 +24,7 @@ const SOURCES = [
   ['packages/desktop/package.json', (t) => JSON.parse(t).version],
   ['packages/desktop/src-tauri/tauri.conf.json', (t) => JSON.parse(t).version],
   ['packages/desktop/src-tauri/Cargo.toml', (t) => /^version\s*=\s*"([^"]+)"/m.exec(t)?.[1]],
+  ['packages/web/src/version-info.ts', (t) => /^export const APP_VERSION = '([^']+)';/m.exec(t)?.[1]],
 ];
 
 const found = [];
