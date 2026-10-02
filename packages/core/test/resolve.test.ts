@@ -26,6 +26,21 @@ describe('autoResolveConflicts', () => {
     expect((delayed[0]!.startDelayS * 4) % 1).toBeCloseTo(0);
   });
 
+  it('respects the season auto period as the delay ceiling', () => {
+    const a = load('straight_run');
+    const b = load('stop_and_score');
+    expect(detectCollisions([a, b]).length).toBeGreaterThan(0);
+
+    // Default ceiling (current season, 20 s) separates the pair…
+    expect(detectCollisions(autoResolveConflicts([a, b]))).toHaveLength(0);
+
+    // …but a zero ceiling forbids every delay step, so the pair is declared
+    // unsolvable and returned untouched rather than pushed past the ceiling.
+    const capped = autoResolveConflicts([a, b], 0);
+    expect(capped.every((r) => r.startDelayS === 0)).toBe(true);
+    expect(detectCollisions(capped).length).toBeGreaterThan(0);
+  });
+
   it('does not touch an already-clean session', () => {
     const a = load('straight_run');
     const c = load('side_lane');
