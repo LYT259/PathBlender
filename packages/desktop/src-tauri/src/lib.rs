@@ -19,6 +19,12 @@ const PREFS_WINDOW: &str = "prefs";
 /// latest-beta.json onto GitHub releases). The channel choice cannot be
 /// made web-side: the updater plugin's JS `check()` has no endpoint
 /// override, so it is resolved here from the channel string.
+///
+/// `releases/latest` never resolves to a prerelease, yet the beta feed must
+/// track the NEWEST beta: release.yml therefore re-uploads latest-beta.json
+/// onto the current stable release with every beta tag (a live pointer, not
+/// a historical artifact) so this URL always serves the newest beta feed.
+/// Mechanism first shipped with the 2026-10-02 channel fix.
 const FEED_STABLE: &str = "https://github.com/LYT259/pathblender/releases/latest/download/latest.json";
 const FEED_BETA: &str = "https://github.com/LYT259/pathblender/releases/latest/download/latest-beta.json";
 
