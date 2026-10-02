@@ -21,6 +21,7 @@ import { buildChassis3D } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
 import { orbitZoomSpeedFor, pinchZoomFactor, wheelZoomFactor } from '../zoom';
+import { gestureEnded, noteGesture } from '../gesture-debug';
 import { aprilTagTexture } from '../april-tag-texture';
 // One coordinate frame for the whole scene — tags, robots, trails, fallback
 // structures, the flat field image and the official field models all map
@@ -393,15 +394,20 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // WebKit trackpad pinch fires gesture* events, not wheel+ctrlKey —
     // zoom toward the gesture centroid so the detail under the fingers is
     // what magnifies (user feedback round 2: pinch only ever magnified the
-    // orbit center), with the ratio softened via pinchZoomFactor.
+    // orbit center), with the ratio softened via pinchZoomFactor. Events
+    // after gestureend are ignored (user round 3: lagging events flushed
+    // at finger lift kept zooming after release).
     let lastScale = 1;
     const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
     const onGestureStart = (e: Event) => {
       lastScale = gestureScale(e);
+      noteGesture('start', lastScale);
     };
     const onGestureChange = (e: Event) => {
       e.preventDefault();
+      if (gestureEnded()) return; // stray post-end flush
       const s = gestureScale(e);
+      noteGesture('change', s);
       if (s > 0 && lastScale > 0 && s !== lastScale) {
         const factor = pinchZoomFactor(s / lastScale);
         if (factor !== 1) {
@@ -438,8 +444,13 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       }
       lastScale = s;
     };
+    const onGestureEnd = (e: Event) => {
+      noteGesture('end', gestureScale(e));
+      lastScale = 1;
+    };
     renderer.domElement.addEventListener('gesturestart', onGestureStart);
     renderer.domElement.addEventListener('gesturechange', onGestureChange);
+    renderer.domElement.addEventListener('gestureend', onGestureEnd);
 
     // Draw only when the camera moved or something was marked dirty —
     // the heavy field model made render-per-frame starve all macrotasks.
@@ -474,6 +485,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       host.removeEventListener('wheel', onWheelZoomSpeed, { capture: true });
       renderer.domElement.removeEventListener('gesturestart', onGestureStart);
       renderer.domElement.removeEventListener('gesturechange', onGestureChange);
+      renderer.domElement.removeEventListener('gestureend', onGestureEnd);
       controls.dispose();
       renderer.dispose();
       if (renderer.domElement.parentElement === host) host.removeChild(renderer.domElement);

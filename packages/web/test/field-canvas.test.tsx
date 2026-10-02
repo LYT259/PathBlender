@@ -134,31 +134,42 @@ describe('field canvas interaction and redraws', () => {
     expect(x + 0.7 * width).toBeCloseTo(300, 0);
   });
 
-  it('anchors pinch zoom at the gesture centroid and softens the ratio', () => {
+  it('anchors pinch at the centroid, softens it, and ignores post-end events', () => {
     const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
     resize(440, 240);
     paint();
     expect(strokeRect).toHaveBeenLastCalledWith(20, 20, 400, 200);
 
-    // WebKit GestureEvent fields are not standard init members either —
-    // define scale/clientX/clientY on the instances.
-    const start = new Event('gesturestart');
-    Object.defineProperty(start, 'scale', { value: 1 });
-    const change = new Event('gesturechange', { cancelable: true });
-    Object.defineProperty(change, 'scale', { value: 1.21 }); // fingers 21% wider
-    Object.defineProperty(change, 'clientX', { value: 300 }); // jsdom rects are 0 → sx=300
-    Object.defineProperty(change, 'clientY', { value: 120 });
+    // GestureEvent fields are not standard init members — define them on
+    // each instance. jsdom rects are 0, so clientX=300 → sx=300 (70%
+    // across the 10 m field, world x=7 m).
+    const gestureEvent = (type: string, scale: number, x = 300, y = 120) => {
+      const ev = new Event(type, { cancelable: true });
+      Object.defineProperty(ev, 'scale', { value: scale });
+      Object.defineProperty(ev, 'clientX', { value: x });
+      Object.defineProperty(ev, 'clientY', { value: y });
+      return ev;
+    };
     const canvas = container.querySelector('canvas')!;
-    fireEvent(canvas, start);
-    fireEvent(canvas, change);
+    fireEvent(canvas, gestureEvent('gesturestart', 1));
+    // A realistic stream: two small steps of +5% finger separation each
+    // (per-event ln 0.049, below the end-of-gesture rate limit).
+    fireEvent(canvas, gestureEvent('gesturechange', 1.05));
+    fireEvent(canvas, gestureEvent('gesturechange', 1.1025));
     paint();
 
-    // Softened factor = 1.21^0.6 ≈ 1.1212 (raw 1:1 would be 1.21).
+    // Softened total = 1.05^0.6 applied twice ≈ 1.0603.
     const [x, , width] = strokeRect.mock.lastCall!;
-    expect(width).toBeCloseTo(400 * Math.pow(1.21, 0.6), 0);
-    // The world point under the fingers (world x=7 m, 70% across) stays at
-    // screen x=300 — pinch magnifies the detail under the fingers.
+    expect(width).toBeCloseTo(400 * Math.pow(1.05, 1.2), 0);
+    // The world point under the fingers stays at screen x=300.
     expect(x + 0.7 * width).toBeCloseTo(300, 0);
+
+    // Release, then a lagging end-flush event arrives with a big ratio —
+    // the view must freeze at the release-moment zoom (user round 3).
+    fireEvent(canvas, gestureEvent('gestureend', 1.1025));
+    fireEvent(canvas, gestureEvent('gesturechange', 1.8));
+    paint();
+    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(400 * Math.pow(1.05, 1.2), 0);
   });
 
 });

@@ -21,6 +21,7 @@ import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
 import { pinchZoomFactor, wheelZoomFactor } from '../zoom';
+import { gestureEnded, noteGesture } from '../gesture-debug';
 
 export interface FieldCanvasHandle {
   exportPng: (onDone?: (ok: boolean) => void) => void;
@@ -192,15 +193,21 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     // WebKit trackpad pinch fires gesture* events (not wheel+ctrlKey); the
     // gesture centroid anchors the zoom just like the wheel cursor does.
     // The raw finger-separation ratio is softened via pinchZoomFactor —
-    // 1:1 mapping made small pinches feel violent (user round 2).
+    // 1:1 mapping made small pinches feel violent (user round 2). Events
+    // after gestureend are ignored: WKWebView can flush lagging events
+    // around finger lift, which showed up as the view zooming *further*
+    // the moment the user let go (user round 3).
     let lastScale = 1;
     const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
     const onGestureStart = (e: Event) => {
       lastScale = gestureScale(e);
+      noteGesture('start', lastScale);
     };
     const onGestureChange = (e: Event) => {
       e.preventDefault();
+      if (gestureEnded()) return; // stray post-end flush
       const scale = gestureScale(e);
+      noteGesture('change', scale);
       if (scale > 0 && lastScale > 0) {
         autoFitRef.current = false;
         const g = e as Event & { clientX?: number; clientY?: number };
@@ -214,6 +221,10 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       }
       lastScale = scale;
     };
+    const onGestureEnd = (e: Event) => {
+      noteGesture('end', gestureScale(e));
+      lastScale = 1;
+    };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       autoFitRef.current = false;
@@ -224,10 +235,12 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('gesturestart', onGestureStart);
     canvas.addEventListener('gesturechange', onGestureChange);
+    canvas.addEventListener('gestureend', onGestureEnd);
     return () => {
       canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('gesturestart', onGestureStart);
       canvas.removeEventListener('gesturechange', onGestureChange);
+      canvas.removeEventListener('gestureend', onGestureEnd);
     };
   }, [requestDraw]);
 
