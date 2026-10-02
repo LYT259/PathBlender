@@ -2,60 +2,32 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useSessionHistory } from './session-history';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
+import { PreferencesPanel } from './components/PreferencesPanel';
+import { WelcomeScreen } from './components/WelcomeScreen';
+import { UsageTip, useUsageTip } from './components/UsageTip';
 import {
-  applyAllianceChange,
-  autoResolveConflicts,
   CUSTOM_FIELD_ID,
-  addChoreoWaypoint,
-  addPpWaypoint,
-  adjustedName,
   detectCollisions,
   detectFieldBounds,
   deserializeSession,
-  exportGhostAuto,
-  exportPathPlannerPath,
-  exportTraj,
   FIELDS,
   fieldById,
   minimumSeparation,
-  moveChoreoWaypoint,
-  movePpWaypoint,
   parsePathFile,
   parseRobotProfile,
   ParseError,
   REBUILT_2026,
-  reparameterize,
-  resetToOriginal,
-  removeChoreoWaypoint,
-  removePpWaypoint,
   serializeSession,
   sessionDuration,
+  withFieldVariant,
 } from '@pathblender/core';
 import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } from '@pathblender/core';
 import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
 import { displayName, robotFromRoute, type LibraryProfile, type LibraryRoute } from './route-library';
 import { hashToSession, sessionToHash } from './share-url';
 import { copyText, saveText } from './download';
-import { useTheme, type ThemeMode } from './theme';
-import field2018 from '../../../assets/fields/powerup2018.png';
-import field2019 from '../../../assets/fields/deepspace2019.png';
-import field2020 from '../../../assets/fields/infinitercharge2020.png';
-import field2022 from '../../../assets/fields/rapidreact2022.png';
-import field2023 from '../../../assets/fields/chargedup2023.png';
-import field2024 from '../../../assets/fields/crescendo2024.png';
-import field2025 from '../../../assets/fields/reefscape2025.png';
-import field2026 from '../../../assets/fields/rebuilt2026.png';
-
-const FIELD_IMAGES: Record<string, string> = {
-  'powerup-2018': field2018,
-  'deepspace-2019': field2019,
-  'infinitercharge-2020': field2020,
-  'rapidreact-2022': field2022,
-  'chargedup-2023': field2023,
-  'crescendo-2024': field2024,
-  'reefscape-2025': field2025,
-  'rebuilt-2026': field2026,
-};
+import { fieldImageFor } from './field-images';
+import { FIELD3D_MODELS } from './field3d-models';
 import { FieldCanvas, type FieldCanvasHandle } from './components/FieldCanvas';
 import type { FieldCanvas3DHandle } from './components/FieldCanvas3D';
 const FieldCanvas3D = lazy(() => import('./components/FieldCanvas3D').then((module) => ({ default: module.FieldCanvas3D })));
@@ -64,20 +36,17 @@ import { RobotList, RobotInspector } from './components/RobotList';
 import { ConflictPanel } from './components/ConflictPanel';
 import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
-import { I18nProvider, LANGUAGES, langLabel, useI18n, type LangChoice } from './i18n';
+import { I18nProvider, useI18n } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
-import { AiPanel, SparkleIcon } from './components/AiPanel';
-import { AiSettingsSection } from './components/AiSettingsSection';
-import { WaypointPanel } from './components/WaypointPanel';
-import { UpdateChannelProvider, useUpdateChannel, type UpdateChannel } from './update-channel';
+import { useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
 import { listenPrefs } from './pref-sync';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from './viewer';
-import type { ActionContext } from './ai/actions';
-import { loadAISettings, saveAISettings, type AISettings } from './ai/settings';
-import { AI_ENABLED } from './ai/availability';
 
 const SESSION_EXT = '.ghpb.json';
+// Switching a demo robot to a real library route keeps its stable id. That
+// robot now belongs to the user and must survive "End example".
+const isExampleRobot = (robot: SessionTrajectory) => robot.trajectory.id.startsWith('welcome-example-') && !robot.routeId;
 // The project's public home — the repo is private today; the link simply
 // starts resolving once it goes public.
 const GITHUB_URL = 'https://github.com/LYT259/pathblender';
@@ -123,56 +92,65 @@ export function App() {
 }
 
 function AppBody() {
-  const { lang, langChoice, setLang, t: tr } = useI18n();
-  const { channel: updateChannel, setChannel: setUpdateChannel } = useUpdateChannel();
-  const { mode: themeMode, setMode: setThemeMode } = useTheme();
+  const { lang, t: tr } = useI18n();
+  const { channel: updateChannel } = useUpdateChannel();
   const [initialFieldPref] = useState(loadFieldPref);
   const { robots, setRobots, setScene, fieldId, fieldVariant, customField, customImageUrl, undo, redo, beginEdit, endEdit, canUndo, canRedo } = useSessionHistory(initialFieldPref);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pathsOpen, setPathsOpen] = useState(() => window.innerWidth > 640);
   const [inspectorOpen, setInspectorOpen] = useState(true);
-  const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot' | 'ai'>('checks');
-  const [aiMounted, setAiMounted] = useState(false);
-  useEffect(() => { if (inspectorMode === 'ai') setAiMounted(true); }, [inspectorMode]);
+  const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot'>('checks');
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
-  const [aiSettings, setAiSettings] = useState<AISettings>(() => loadAISettings());
   const [view3D, setView3D] = useState(false);
   const [showTrail, setShowTrail] = useState(true);
   const [showPrefs, setShowPrefs] = useState(false);
-  // Language and theme are staged: picking one enables Save instead of applying
-  // instantly (the other preferences keep their immediate-apply behavior).
-  // `null` means "nothing staged", which is also the rule the dialog's Save
-  // button uses — see the prefs-row btns block.
-  const [pendingLang, setPendingLang] = useState<LangChoice | null>(null);
-  const [pendingTheme, setPendingTheme] = useState<ThemeMode | null>(null);
-  const closePrefs = useCallback(() => {
-    setShowPrefs(false);
-    setPendingLang(null);
-    setPendingTheme(null);
-  }, []);
+  function openPreferences() {
+    if (!IS_DESKTOP) { setShowPrefs(true); return; }
+    void import('@tauri-apps/api/core')
+      .then(({ invoke }) => invoke('open_preferences'))
+      .catch(() => setShowPrefs(true));
+  }
+  const [exampleLoading, setExampleLoading] = useState(false);
+  // A file import wins over a pending example module load.
+  const exampleRequest = useRef(0);
+  const { visible: showPlayTip, dismiss: dismissPlayTip } = useUsageTip('play');
+  const { visible: showCheckTip, dismiss: dismissCheckTip } = useUsageTip('checks');
   const [cfOpen, setCfOpen] = useState(false);
-  const [toast, setToast] = useState('');
-  const flash = useCallback((msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(''), 2500);
+  const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'error' } | null>(null);
+  const flash = useCallback((msg: string, kind: 'ok' | 'error' = 'ok') => {
+    setToast({ msg, kind });
+    window.setTimeout(() => setToast(null), 2500);
   }, []);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const sessionInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<FieldCanvasHandle>(null);
   const canvas3DRef = useRef<FieldCanvas3DHandle>(null);
   const baseField = fieldId === CUSTOM_FIELD_ID && customField ? customField : fieldById(fieldId);
-  // The 2D overlay / beacons follow the selected field construction.
-  const field = useMemo(() =>
-    fieldVariant === 'andymark' && baseField?.aprilTagsAndyMark
-      ? { ...baseField, aprilTags: baseField.aprilTagsAndyMark }
-      : baseField, [baseField, fieldVariant]);
+  // The 2D artwork, its calibration, the tag overlay and the 3D beacons all
+  // follow the selected field construction.
+  const field = useMemo(
+    () => (baseField ? withFieldVariant(baseField, fieldVariant) : baseField),
+    [baseField, fieldVariant],
+  );
+  const fieldImageUrl = fieldImageFor(fieldId, fieldVariant, customImageUrl);
+  // 3D exists only where an official model does (2022+). Model-less seasons
+  // (2018–2020) and custom fields offer no 3D at all — the hand-built
+  // stand-in 3D was removed by user directive (2026-10-01).
+  const field3dAvailable = !!FIELD3D_MODELS[fieldId];
+  useEffect(() => {
+    if (view3D && !field3dAvailable) setView3D(false);
+  }, [view3D, field3dAvailable]);
   // Field/variant memory is written ONLY from the user's own selects —
   // share-link and session-file restores must not overwrite it.
 
   const duration = sessionDuration(robots);
   const playback = usePlayback(duration);
   const { t, setT } = playback;
-  const undoSession = useCallback(() => { playback.setPlaying(false); undo(); }, [playback.setPlaying, undo]);
-  const redoSession = useCallback(() => { playback.setPlaying(false); redo(); }, [playback.setPlaying, redo]);
+  useEffect(() => {
+    if ((playback.playing || t > 0) && showPlayTip) dismissPlayTip();
+  }, [playback.playing, t, showPlayTip, dismissPlayTip]);
+  const undoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); undo(); }, [playback.setPlaying, undo]);
+  const redoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); redo(); }, [playback.setPlaying, redo]);
 
   const visible = useMemo(() => robots.filter((r) => r.visible), [robots]);
   const conflicts = useMemo(
@@ -192,6 +170,8 @@ function AppBody() {
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   const importFiles = useCallback(async (files: FileList | File[] | IncomingFile[], opts?: { fromFolder?: boolean }) => {
+    exampleRequest.current += 1;
+    setExampleLoading(false);
     const nextErrors: { fileName: string; message: string }[] = [];
     const incoming = toIncoming(files);
     // A folder drop/pick is any import that carries paths below its root.
@@ -343,14 +323,12 @@ function AppBody() {
     if (!route) return;
     // An in-progress waypoint edit belongs to the previous route; leave edit
     // mode rather than half-apply it to the new one.
-    setEditingId((cur) => (cur === robotId ? null : cur));
     setRobots((prev) =>
       prev.map((r) => {
         if (r.trajectory.id !== robotId) return r;
-        let traj = route.trajectory;
-        // Alliance is the robot's (user-chosen) property — bring the route
-        // into it rather than letting the file's origin flip the robot.
-        if (traj.alliance !== r.trajectory.alliance) traj = applyAllianceChange(traj, r.trajectory.alliance, field);
+        // A pure viewer: the route shows exactly as the file defines it,
+        // including its own alliance frame.
+        const traj = route.trajectory;
         return {
           ...r,
           trajectory: { ...traj, id: r.trajectory.id, name: displayName(traj) },
@@ -358,7 +336,7 @@ function AppBody() {
         };
       }),
     );
-  }, [libraryRoutes, field, setRobots]);
+  }, [libraryRoutes, setRobots]);
 
   const addRouteAsRobot = useCallback((routeId: string) => {
     const route = libraryRoutes.find((r) => r.id === routeId);
@@ -423,204 +401,20 @@ function AppBody() {
     setRobots((prev) => prev.map((r) => (r.trajectory.id === id ? { ...r, ...patch } : r)));
   }, []);
 
-  const setTeamNumber = useCallback((id: string, teamNumber: string) => {
-    setRobots((prev) =>
-      prev.map((r) =>
-        r.trajectory.id === id
-          ? { ...r, trajectory: { ...r.trajectory, teamNumber } }
-          : r,
-      ),
-    );
-  }, []);
-
-  // --- meditation editing (report v1.4 §6.3) ---
-  const [editingId, setEditingId] = useState<string | null>(null);
-
   const selectRobot = useCallback((id: string) => {
     setSelectedId(id);
     setInspectorMode('robot');
     setInspectorOpen(true);
     if (window.innerWidth <= 640) setPathsOpen(false);
-    setEditingId((current) => current === id ? current : null);
   }, []);
-  const toggleEdit = useCallback((id: string) => {
-    setEditingId((cur) => (cur === id ? null : id));
-    setSelectedId(id);
-    setInspectorMode('robot');
-    setInspectorOpen(true);
-    setView3D(false);
-    setShowTrail(true);
-    playback.setPlaying(false);
-    setRobots((previous) => previous.map((r) => r.trajectory.id === id && !r.visible ? { ...r, visible: true } : r));
-  }, [playback.setPlaying, setRobots]);
-
-  const editWaypoint = useCallback(
-    (
-      id: string,
-      idx: number,
-      pos: { x: number; y: number },
-      kind: 'anchor' | 'prevControl' | 'nextControl',
-    ) => {
-      setRobots((prev) =>
-        prev.map((r) => {
-          if (r.trajectory.id !== id) return r;
-          const tr = r.trajectory;
-          if (tr.editable?.kind === 'pathplanner') {
-            const part =
-              kind === 'anchor'
-                ? { anchor: pos }
-                : kind === 'prevControl'
-                  ? { prevControl: pos }
-                  : { nextControl: pos };
-            return { ...r, trajectory: reparameterize(movePpWaypoint(tr, idx, part)) };
-          }
-          if (tr.editable?.kind === 'choreo' && kind === 'anchor') {
-            return { ...r, trajectory: reparameterize(moveChoreoWaypoint(tr, idx, pos)) };
-          }
-          return r;
-        }),
-      );
-    },
-    [],
-  );
-
-  const addWaypoint = useCallback((id: string, afterIdx: number) => {
-    setRobots((prev) =>
-      prev.map((r) => {
-        if (r.trajectory.id !== id) return r;
-        const tr = r.trajectory;
-        if (tr.editable?.kind === 'pathplanner')
-          return { ...r, trajectory: reparameterize(addPpWaypoint(tr, afterIdx)) };
-        if (tr.editable?.kind === 'choreo')
-          return { ...r, trajectory: reparameterize(addChoreoWaypoint(tr, afterIdx)) };
-        return r;
-      }),
-    );
-  }, []);
-
-  const removeWaypoint = useCallback((id: string, idx: number) => {
-    setRobots((prev) =>
-      prev.map((r) => {
-        if (r.trajectory.id !== id) return r;
-        const tr = r.trajectory;
-        if (tr.editable?.kind === 'pathplanner')
-          return { ...r, trajectory: reparameterize(removePpWaypoint(tr, idx)) };
-        if (tr.editable?.kind === 'choreo')
-          return { ...r, trajectory: reparameterize(removeChoreoWaypoint(tr, idx)) };
-        return r;
-      }),
-    );
-  }, []);
-
-  const resetEdit = useCallback((id: string) => {
-    setRobots((prev) =>
-      prev.map((r) => (r.trajectory.id === id ? { ...r, trajectory: resetToOriginal(r.trajectory) } : r)),
-    );
-  }, []);
-
-  const exportRobot = useCallback(
-    (id: string, format: 'path' | 'traj' | 'ghostauto') => {
-      const r = robots.find((x) => x.trajectory.id === id);
-      if (!r) return;
-      let text: string;
-      let ext: string;
-      try {
-        if (format === 'path') {
-          text = exportPathPlannerPath(r.trajectory);
-          ext = 'path';
-        } else if (format === 'traj') {
-          text = exportTraj(r.trajectory);
-          ext = 'traj';
-        } else {
-          text = exportGhostAuto(r.trajectory);
-          ext = 'ghostauto';
-        }
-      } catch (e) {
-        setErrors([{ fileName: r.trajectory.name, message: e instanceof Error ? e.message : String(e) }]);
-        return;
-      }
-      void saveText(`${adjustedName(r.trajectory.name)}.${ext}`, ext, text);
-    },
-    [robots],
-  );
-
-  const editRobot = useMemo(
-    () => robots.find((r) => r.trajectory.id === editingId) ?? null,
-    [robots, editingId],
-  );
   const selectedRobot = robots.find((r) => r.trajectory.id === selectedId) ?? robots[0];
-  useEffect(() => {
-    if (editingId && !robots.some((r) => r.trajectory.id === editingId)) setEditingId(null);
-  }, [robots, editingId]);
 
 
 
 
-
-  const setAlliance = useCallback(
-    (id: string, alliance: 'blue' | 'red') => {
-      setRobots((prev) =>
-        prev.map((r) =>
-          r.trajectory.id === id
-            ? {
-                ...r,
-                trajectory: applyAllianceChange(r.trajectory, alliance, field),
-              }
-            : r,
-        ),
-      );
-    },
-    [field],
-  );
-
-  const setGeometry = useCallback(
-    (id: string, patch: Partial<RobotGeometry>) => {
-      setRobots((prev) =>
-        prev.map((r) =>
-          r.trajectory.id === id && r.trajectory.geometrySource !== 'file'
-            ? {
-                ...r,
-                trajectory: {
-                  ...r.trajectory,
-                  geometry: { ...r.trajectory.geometry, ...patch },
-                },
-              }
-            : r,
-        ),
-      );
-    },
-    [],
-  );
 
   const removeRobot = useCallback((id: string) => {
     setRobots((prev) => prev.filter((r) => r.trajectory.id !== id));
-  }, []);
-
-  // --- AI assistant plumbing (report v1.4 §6.4) ---
-  const setStartDelay = useCallback((id: string, seconds: number) => {
-    updateRobot(id, { startDelayS: Math.max(0, seconds) });
-  }, [updateRobot]);
-
-  const buildActionContext = useCallback((): ActionContext => {
-    return {
-      robots,
-      conflicts,
-      setStartDelay,
-      setAlliance,
-      setTeamNumber,
-      editWaypoint,
-      addWaypoint,
-      removeWaypoint,
-      removeRobot,
-      exportRobot,
-      // Every mutation is captured by the shared session history.
-      pushUndo: () => {},
-    };
-  }, [robots, conflicts, setStartDelay, setAlliance, setTeamNumber, editWaypoint, addWaypoint, removeWaypoint, removeRobot, exportRobot]);
-
-  const applyAiSettings = useCallback((next: AISettings) => {
-    setAiSettings(next);
-    saveAISettings(next);
   }, []);
 
   const saveSession = useCallback(() => {
@@ -642,12 +436,11 @@ function AppBody() {
       const element = e.target instanceof Element ? e.target : null;
       if ((!e.metaKey && !e.ctrlKey) || e.key.toLowerCase() !== 'z' || e.altKey || element?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]') || document.querySelector('[aria-modal="true"]')) return;
       e.preventDefault();
-      playback.setPlaying(false);
-      if (e.shiftKey) redo(); else undo();
+      if (e.shiftKey) redoSession(); else undoSession();
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
-  }, [undo, redo, playback.setPlaying]);
+  }, [undoSession, redoSession]);
 
   const [shareLink, setShareLink] = useState<string | null>(null);
   const shareUrl = useCallback(async () => {
@@ -667,7 +460,7 @@ function AppBody() {
       // after the web app's address).
       setShareLink(location.protocol.startsWith('http') ? location.href : hash);
     } catch {
-      flash(tr('toast.shareFailed'));
+      flash(tr('toast.shareFailed'), 'error');
     }
   }, [robots, fieldId, field, flash, tr]);
 
@@ -686,7 +479,7 @@ function AppBody() {
       flash(tr('toast.pngOnly2d'));
       return;
     }
-    canvasRef.current?.exportPng((ok) => flash(tr(ok ? 'toast.pngSaved' : 'toast.pngFailed')));
+    canvasRef.current?.exportPng((ok) => flash(tr(ok ? 'toast.pngSaved' : 'toast.pngFailed'), ok ? 'ok' : 'error'));
   }, [view3D, flash, tr]);
 
   // Native "Check for Updates…" and channel switches. The Rust shell owns
@@ -699,7 +492,7 @@ function AppBody() {
       void runUpdateCheck(ch, (e) => {
         if (e.kind === 'found') flash(tr('updates.downloading', { v: e.version }));
         else if (e.kind === 'upToDate') flash(tr('updates.upToDate'));
-        else if (e.kind === 'failed') flash(tr('updates.failed'));
+        else if (e.kind === 'failed') flash(tr('updates.failed'), 'error');
         // 'installed' — the relaunch is already in flight; nothing left to say.
       });
     },
@@ -725,33 +518,67 @@ function AppBody() {
   );
 
   const clearAll = useCallback(() => {
+    exampleRequest.current += 1;
+    setExampleLoading(false);
     setRobots([]);
     setErrors([]);
     setT(0);
     playback.setPlaying(false);
-    setEditingId(null);
     setSelectedId(null);
   }, [setT, setRobots, playback.setPlaying]);
   // Desktop: native menu commands and visible buttons share the same handlers.
-  // The menu is rebuilt in the app language whenever it changes.
+  // The menu is rebuilt in the app language whenever it changes. The shell
+  // dispatches `ghpb-menu-*` DOM CustomEvents via eval (ADR-0003) — Tauri
+  // event `listen()` can silently lose the race against page load on
+  // WebKitGTK, leaving every menu command dead.
   useEffect(() => {
     if (!IS_DESKTOP) return;
-    let disposed = false;
-    const unbinds: (() => void)[] = [];
-    void import('@tauri-apps/api/event').then(({ listen }) => {
-      if (disposed) return;
-      void listen('menu-import', () => importInputRef.current?.click()).then((u) => { if (disposed) u(); else unbinds.push(u); });
-      void listen('menu-save', () => saveSession()).then((u) => { if (disposed) u(); else unbinds.push(u); });
-      void listen('menu-share', () => void shareUrl()).then((u) => { if (disposed) u(); else unbinds.push(u); });
-      void listen('menu-png', () => exportPng()).then((u) => { if (disposed) u(); else unbinds.push(u); });
-      void listen('menu-clear', () => clearAll()).then((u) => { if (disposed) u(); else unbinds.push(u); });
-      void listen('menu-check-update', () => void checkForUpdates()).then((u) => { if (disposed) u(); else unbinds.push(u); });
-    });
-    return () => {
-      disposed = true;
-      unbinds.forEach((u) => u());
+    const on = (name: string, fn: () => void) => {
+      const h = () => fn();
+      window.addEventListener(`ghpb-menu-${name}`, h);
+      return () => window.removeEventListener(`ghpb-menu-${name}`, h);
     };
+    const unbinds = [
+      on('import', () => importInputRef.current?.click()),
+      on('save', () => saveSession()),
+      on('share', () => void shareUrl()),
+      on('png', () => exportPng()),
+      on('clear', () => clearAll()),
+      on('check-update', () => void checkForUpdates()),
+    ];
+    return () => unbinds.forEach((u) => u());
   }, [saveSession, shareUrl, exportPng, clearAll, flash, tr, checkForUpdates]);
+
+  // Desktop open-with: the shell evals a `ghpb-open-files` CustomEvent with
+  // [name, base64] pairs (launch-argument files and native-picker imports
+  // both arrive here — push-only, no privileged channel; ADR-0003).
+  useEffect(() => {
+    const deliver = (pairs: unknown) => {
+      if (!Array.isArray(pairs)) return;
+      const files = pairs
+        .filter((p): p is [string, string] => Array.isArray(p) && typeof p[0] === 'string' && typeof p[1] === 'string')
+        .map(([name, b64]) => {
+          const bin = atob(b64);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          return new File([bytes], name);
+        });
+      if (files.length) void Promise.resolve(importFiles(files)).catch(() => undefined);
+    };
+    const onOpen = (e: Event) => {
+      delete (window as { __ghpbOpenPayload?: unknown }).__ghpbOpenPayload;
+      deliver((e as CustomEvent).detail);
+    };
+    window.addEventListener('ghpb-open-files', onOpen);
+    // The shell may have delivered before React mounted — consume the stash.
+    const w = window as { __ghpbOpenPayload?: unknown };
+    if (w.__ghpbOpenPayload) {
+      const stash = w.__ghpbOpenPayload;
+      delete w.__ghpbOpenPayload;
+      deliver(stash);
+    }
+    return () => window.removeEventListener('ghpb-open-files', onOpen);
+  }, [importFiles]);
 
   // Keep the native menu's language in sync with the in-app preference.
   useEffect(() => {
@@ -762,43 +589,73 @@ function AppBody() {
   }, [lang]);
 
   const hasRobots = robots.length > 0;
+  const hasExample = robots.some(isExampleRobot);
+  const leftOpen = pathsOpen && hasRobots;
   const issueCount = conflicts.length + bounds.length;
-  const rightOpen = inspectorOpen && (hasRobots || inspectorMode === 'ai');
+  const rightOpen = inspectorOpen && hasRobots;
   const openImport = () => importInputRef.current?.click();
+  const tryExample = async () => {
+    const request = ++exampleRequest.current;
+    setExampleLoading(true);
+    try {
+      const { createWelcomeExample } = await import('./welcome-example');
+      if (request !== exampleRequest.current) return;
+      const example = createWelcomeExample({ a: tr('welcome.exampleNameA'), b: tr('welcome.exampleNameB') });
+      // Show it on the field the user actually uses — first visit defaults
+      // to AndyMark, afterwards the remembered season + construction.
+      setScene({
+        robots: example.robots,
+        fieldId: initialFieldPref.id,
+        fieldVariant: initialFieldPref.variant,
+        customField: undefined,
+        customImageUrl: undefined,
+      });
+      setSelectedId(example.robots[0]?.trajectory.id ?? null);
+      setPathsOpen(window.innerWidth > 640);
+      setInspectorMode('checks');
+      setInspectorOpen(window.innerWidth > 900);
+      setView3D(false);
+      setShowTrail(true);
+      setErrors([]);
+      playback.setPlaying(false);
+      setT(0);
+    } catch {
+      if (request === exampleRequest.current) flash(tr('welcome.exampleFailed'), 'error');
+    } finally {
+      if (request === exampleRequest.current) setExampleLoading(false);
+    }
+  };
+  const exitExample = () => {
+    // Keep any real paths the user added while exploring the example.
+    const remaining = robots.filter((robot) => !isExampleRobot(robot));
+    // Folder imports build a library without adding robots while the demo is
+    // on the field. Exiting must still expose that newly imported library.
+    if (!remaining.length && libraryRoutes.length) remaining.push(robotFromRoute(libraryRoutes[0]!, 0, crypto.randomUUID()));
+    setRobots(remaining);
+    setSelectedId(remaining[0]?.trajectory.id ?? null);
+    playback.setPlaying(false);
+    setT(0);
+  };
   const jumpToIssue = (time: number, robotIds: string[] = []) => {
+    dismissCheckTip();
     playback.setPlaying(false);
     setT(time);
     if (robotIds[0]) {
       setSelectedId(robotIds[0]);
-      setEditingId((current) => current === robotIds[0] ? current : null);
     }
     // A located problem must be visible even if its paths were hidden.
     if (robotIds.some((id) => robots.some((r) => r.trajectory.id === id && !r.visible)))
       setRobots((previous) => previous.map((r) => robotIds.includes(r.trajectory.id) ? { ...r, visible: true } : r));
   };
-  const resolveConflicts = () => {
-    playback.setPlaying(false);
-    const next = autoResolveConflicts(robots.map((r) => ({ ...r, visible: true })))
-      .map((r, i) => ({ ...r, visible: robots[i]!.visible }));
-    setRobots(next);
-    const remaining = detectCollisions(next).length;
-    flash(tr(remaining > 0 ? 'conflicts.autoResolvePartial' : 'checks.resolved', { n: remaining }));
-  };
-
   return (
     <div className="app">
-      <header className="toolbar workspace-toolbar" data-tauri-drag-region="" aria-label="primary">
-        <button className="tool-btn square" aria-label={tr('workspace.togglePaths')} aria-pressed={pathsOpen} onClick={() => { setPathsOpen(!pathsOpen); if (!pathsOpen && window.innerWidth <= 640) setInspectorOpen(false); }}><Icon name="sidebar" /></button>
-        <div className="workspace-brand" data-tauri-drag-region="">
-          <strong data-tauri-drag-region="">PathBlender</strong>
-          <span data-tauri-drag-region="">{tr('workspace.subtitle')}</span>
-        </div>
-        <span className="toolbar-divider" />
-        <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>
+      <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label="primary">
+        {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.togglePaths')} aria-pressed={leftOpen} onClick={() => { setPathsOpen(!pathsOpen); if (!pathsOpen && window.innerWidth <= 640) setInspectorOpen(false); }}><Icon name="sidebar" /></button>}
+        {hasRobots && <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>}
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
         {!VIEWER_ONLY && (
           <>
-            <button className="btn import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>
+            {hasRobots && <button className="btn import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>}
             <input
               ref={folderInputRef}
               type="file"
@@ -829,14 +686,21 @@ function AppBody() {
             />
           </>
         )}
-        <div className="history-controls">
+        <input ref={sessionInputRef} type="file" accept=".ghpb.json" hidden aria-label={tr('welcome.openSession')} onChange={(e) => {
+          const file = e.currentTarget.files?.[0];
+          e.currentTarget.value = '';
+          if (!file) return;
+          if (!file.name.endsWith(SESSION_EXT)) { setErrors([{ fileName: file.name, message: tr('import.notSession') }]); return; }
+          void importFiles([file]);
+        }} />
+        {(hasRobots || canUndo || canRedo) && <div className="history-controls">
           <button className="tool-btn square" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
           <button className="tool-btn square" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
-        </div>
+        </div>}
         <span className="toolbar-spacer" data-tauri-drag-region="" />
-        {!VIEWER_ONLY && <button className="tool-btn save-action" disabled={!hasRobots} onClick={saveSession} title={tr('actions.saveHint')}>{tr('actions.save')}</button>}
-        <button className="tool-btn share-action" disabled={!hasRobots} aria-label={tr('actions.share')} onClick={() => void shareUrl()}><Icon name="share" /><span>{tr('rail.share')}</span></button>
-        <details className="workspace-menu">
+        {!VIEWER_ONLY && hasRobots && <button className="tool-btn save-action" onClick={saveSession} title={tr('actions.saveHint')}>{tr('actions.save')}</button>}
+        {hasRobots && <button className="tool-btn share-action" aria-label={tr('actions.share')} onClick={() => void shareUrl()}><Icon name="share" /><span>{tr('rail.share')}</span></button>}
+        {hasRobots && <details className="workspace-menu">
           <summary className="tool-btn square" aria-label={tr('workspace.more')} title={tr('workspace.more')}><Icon name="more" /></summary>
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
             {!VIEWER_ONLY && <button className="menu-save-action" disabled={!hasRobots} onClick={saveSession}>{tr('actions.save')}</button>}
@@ -845,17 +709,17 @@ function AppBody() {
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub ↗</a>
             {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
           </div>
-        </details>
-        {!VIEWER_ONLY && AI_ENABLED && !rightOpen && <button className="tool-btn square" aria-label={tr('ai.title')} title={tr('ai.title')} onClick={() => { setInspectorMode('ai'); setInspectorOpen(true); }}><SparkleIcon /></button>}
-        <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={() => setShowPrefs(true)}><Icon name="settings" /></button>
-        <button className="tool-btn square" aria-label={tr('workspace.toggleInspector')} aria-pressed={rightOpen} onClick={() => { setInspectorOpen(!inspectorOpen); if (!inspectorOpen && window.innerWidth <= 640) setPathsOpen(false); }} disabled={!hasRobots}><Icon name="inspector" /></button>
+        </details>}
+        <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={openPreferences}><Icon name="settings" /></button>
+        {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.toggleInspector')} aria-pressed={rightOpen} onClick={() => { setInspectorOpen(!inspectorOpen); if (!inspectorOpen && window.innerWidth <= 640) setPathsOpen(false); }}><Icon name="inspector" /></button>}
       </header>
       {VIEWER_ONLY && SITE_PREVIEW && <div className="site-preview-banner" role="contentinfo"><span>{tr('site.previewNote')}</span><a href={SITE_URLS.stable}>{tr('site.backStable')}</a></div>}
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
-        <main className={`app-body workspace-body ${pathsOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
-          {pathsOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} libraryRoutes={libraryRoutes} libraryProfiles={libraryProfiles} onPickRoute={pickRoute} onAddRoute={addRouteAsRobot} />}
+        <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
+          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} libraryRoutes={libraryRoutes} libraryProfiles={libraryProfiles} onPickRoute={pickRoute} onAddRoute={addRouteAsRobot} />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
+            {hasExample && <div className="example-notice"><strong>{tr('welcome.exampleBadge')}</strong><span>{tr('welcome.exampleNotice')}</span><button className="btn small" onClick={exitExample}>{tr('welcome.exitExample')}</button></div>}
             <div className="canvas-slot">
               {/* The import page stays clean: the field picker, its construction
                   variant and the 2D/3D switch only become useful once there is
@@ -876,40 +740,35 @@ function AppBody() {
                   }} title={tr('field.variant')} aria-label={tr('field.variant')}><option value="andymark">AndyMark</option><option value="welded">Welded</option></select>}
                 </div>
                 <span className="canvas-spacer" />
-                <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
-                  <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
-                  <button aria-pressed={view3D} className={view3D ? 'on' : ''} disabled={!!editRobot} title={editRobot ? tr('workspace.edit2d') : undefined} onClick={() => setView3D(true)}>3D</button>
-                </div>
+                {field3dAvailable && (
+                  <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
+                    <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
+                    <button aria-pressed={view3D} className={view3D ? 'on' : ''} onClick={() => setView3D(true)}>3D</button>
+                  </div>
+                )}
                 {/* The rest of the bar needs a robot to act on, which the gate
                     above now guarantees. */}
                 <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
                 {!view3D && <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>}
               </div>}
-              {editRobot && <div className="editing-banner"><div><strong>{tr('workspace.editing', { name: editRobot.trajectory.name })}</strong><span>{tr('canvas.editHint')}</span></div><button className="btn" onClick={() => setEditingId(null)}>{tr('robots.doneEdit')}</button></div>}
-              {!hasRobots ? <div className="workspace-empty">
-                <div className="welcome-mark"><Icon name="path" size={40} /></div>
-                <h1>{tr('workspace.emptyTitle')}</h1>
-                <p>{tr('workspace.emptyBody')}</p>
-                <div className="welcome-actions">
-                  <button className="btn accent welcome-import" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>
-                  {!VIEWER_ONLY && <button className="btn welcome-folder-import" onClick={() => folderInputRef.current?.click()}><Icon name="folder" />{tr('library.importFolder')}</button>}
-                </div>
-                <div className="welcome-steps">{(['workspace.importStep', 'workspace.compareStep', 'workspace.checkStep'] as const).map((key, i) => <span key={key}><b>{i + 1}</b>{tr(key)}</span>)}</div>
-              </div> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} /></Suspense> :
-                <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={FIELD_IMAGES[field.id] ?? customImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} editRobot={editRobot} onBeginEdit={beginEdit} onEndEdit={endEdit} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
+                <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); setInspectorOpen(true); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
-            {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} duration={duration} playback={playback} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} /></footer>}
+            {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} duration={duration} playback={playback} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
           </section>
           <aside className="workspace-inspector" hidden={!rightOpen}>
             <div className="inspector-header"><div className="seg inspector-tabs" role="group" aria-label={tr('workspace.panels')}>
               <button className={inspectorMode === 'checks' ? 'on' : ''} aria-pressed={inspectorMode === 'checks'} onClick={() => setInspectorMode('checks')}>{tr('workspace.checks')}{issueCount > 0 && <span className="tab-count">{issueCount}</span>}</button>
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
-              {!VIEWER_ONLY && AI_ENABLED && <button className={inspectorMode === 'ai' ? 'on' : ''} aria-label={tr('ai.title')} aria-pressed={inspectorMode === 'ai'} onClick={() => setInspectorMode('ai')}><SparkleIcon />{tr('workspace.assistant')}</button>}
-            </div><button className="tool-btn square inspector-close" title={tr('workspace.closePanel')} aria-label={tr('workspace.closePanel')} onClick={() => setInspectorOpen(false)}><Icon name="close" size={14} /></button></div>
-            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} onAdjust={selectRobot} onAutoResolve={resolveConflicts} />}
-            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} editingId={editingId} onUpdate={updateRobot} onSetAlliance={setAlliance} onSetGeometry={setGeometry} onSetTeamNumber={setTeamNumber} onToggleEdit={toggleEdit} onResetEdit={resetEdit} onExport={exportRobot} onRemove={removeRobot} libraryProfiles={libraryProfiles} onApplyProfile={applyProfile} />{editRobot && <WaypointPanel key={editRobot.trajectory.id} robot={editRobot} onEditWaypoint={editWaypoint} onAddWaypoint={addWaypoint} onRemoveWaypoint={removeWaypoint} />}</div>}
-            {aiMounted && !VIEWER_ONLY && AI_ENABLED && <div className="inspector-ai" hidden={inspectorMode !== 'ai'}><AiPanel settings={aiSettings} onSettings={applyAiSettings} buildContext={buildActionContext} undoLabel={canUndo ? tr('workspace.undo') : null} onUndo={undoSession} onAttachFiles={(files) => void importFiles(files)} onOpenSettings={() => setShowPrefs(true)} /></div>}
+            </div><button className="tool-btn square inspector-close" title={tr(inspectorMode === 'robot' ? 'workspace.closeRobotDetails' : 'workspace.closePanel')} aria-label={tr(inspectorMode === 'robot' ? 'workspace.closeRobotDetails' : 'workspace.closePanel')} onClick={() => {
+              // Closing a robot detail page returns to checks. The toolbar's
+              // inspector toggle still controls the whole sidebar.
+              if (inspectorMode === 'robot') setInspectorMode('checks');
+              else setInspectorOpen(false);
+            }}><Icon name="close" size={14} /></button></div>
+            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
+            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} onRemove={removeRobot} libraryProfiles={libraryProfiles} onApplyProfile={applyProfile} /></div>}
           </aside>
         </main>
 
@@ -922,7 +781,7 @@ function AppBody() {
           setScene({ customField: f, customImageUrl: url, fieldId: CUSTOM_FIELD_ID });
         }}
       />}
-      {toast !== '' && <div className="toast" role="status">{toast}</div>}
+      {toast && <div className={toast.kind === 'error' ? 'toast error' : 'toast'} role="status">{toast.msg}</div>}
       {shareLink != null && (
         <Dialog title={tr('share.title')} onClose={() => setShareLink(null)}>
             <h3>{tr('share.title')}</h3>
@@ -933,8 +792,8 @@ function AppBody() {
                 className="btn small"
                 onClick={async () => {
                   const ok = await copyText(shareLink);
-                  setToast(ok ? tr('toast.copied') : tr('share.copyFailed'));
-                  window.setTimeout(() => setToast(''), 2500);
+                  setToast({ msg: ok ? tr('toast.copied') : tr('share.copyFailed'), kind: ok ? 'ok' : 'error' });
+                  window.setTimeout(() => setToast(null), 2500);
                 }}
               >
                 {tr('share.copy')}
@@ -945,94 +804,9 @@ function AppBody() {
             </div>
         </Dialog>
       )}
-      {showPrefs && (
-        <Dialog title={tr('prefs.title')} onClose={closePrefs}>
-            <h3>{tr('prefs.title')}</h3>
-            <label className="prefs-row">
-              <span>{tr('prefs.language')}</span>
-              <select
-                value={pendingLang ?? langChoice}
-                onChange={(e) => setPendingLang(e.target.value as LangChoice)}
-              >
-                {LANGUAGES.map((l) => (
-                  <option key={l} value={l}>
-                    {l === 'system' ? tr('prefs.langSystem') : langLabel(l)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {VIEWER_ONLY && (
-              <label className="prefs-row">
-                <span>{tr('site.version')}</span>
-                <a
-                  className="prefs-link"
-                  href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {SITE_PREVIEW ? tr('site.backStable') : tr('site.tryPreview')} ↗
-                </a>
-              </label>
-            )}
-            <label className="prefs-row">
-              <span>{tr('prefs.theme')}</span>
-              <select
-                value={pendingTheme ?? themeMode}
-                onChange={(e) => setPendingTheme(e.target.value as ThemeMode)}
-              >
-                <option value="system">{tr('theme.system')}</option>
-                <option value="dark">{tr('theme.dark')}</option>
-                <option value="light">{tr('theme.light')}</option>
-              </select>
-            </label>
-            {IS_DESKTOP && (
-              <label className="prefs-row">
-                <span>{tr('prefs.channel')}</span>
-                <select
-                  value={updateChannel}
-                  onChange={(e) => {
-                    const next = e.target.value as 'stable' | 'beta';
-                    setUpdateChannel(next);
-                  }}
-                >
-                  <option value="stable">{tr('prefs.channel.stable')}</option>
-                  <option value="beta">{tr('prefs.channel.beta')}</option>
-                </select>
-              </label>
-            )}
-            {!VIEWER_ONLY && AI_ENABLED && (
-              <div className="prefs-ai">
-                <h4>{tr('prefs.ai')}</h4>
-                <AiSettingsSection
-                  settings={aiSettings}
-                  onSettings={applyAiSettings}
-                />
-              </div>
-            )}
-            <div className="prefs-row btns">
-              {/* Cancel is the always-available way out (user report 2026-09-24:
-                  it used to be the disabled one, so an untouched dialog had no
-                  working button on its left). It discards the drafts and closes. */}
-              <button className="btn small" onClick={closePrefs}>
-                {tr('prefs.cancel')}
-              </button>
-              {/* Save only means something when there is something to save. */}
-              <button
-                className="btn small accent"
-                disabled={pendingLang == null && pendingTheme == null}
-                onClick={() => {
-                  if (pendingLang != null) setLang(pendingLang);
-                  if (pendingTheme != null) setThemeMode(pendingTheme);
-                  setPendingLang(null);
-                  setPendingTheme(null);
-                  closePrefs();
-                }}
-              >
-                {tr('prefs.save')}
-              </button>
-            </div>
-        </Dialog>
-      )}
+      {showPrefs && <Dialog title={tr('prefs.title')} onClose={() => setShowPrefs(false)} className="preferences-dialog">
+        <PreferencesPanel desktop={IS_DESKTOP} onClose={() => setShowPrefs(false)} />
+      </Dialog>}
       </div>
     </div>
   );

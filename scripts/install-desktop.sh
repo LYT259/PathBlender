@@ -24,6 +24,12 @@ fi
 BUNDLE=packages/desktop/src-tauri/target/release/bundle/macos/PathBlender.app
 [[ -d "$BUNDLE" ]] || { echo "bundle not found: $BUNDLE" >&2; exit 1; }
 
+# --- Dark-mode app icon (2026-10-01) ---------------------------------------
+# Inject the day+night AppIcon catalog before sealing: the seal below then
+# covers the injected Assets.car, and the updater archive + dmg regenerated
+# further down wrap the icon-complete bundle.
+scripts/apply-dark-icon.sh "$BUNDLE"
+
 # --- Seal the bundle before anything ships it (2026-09-27) ----------------
 # Tauri's macOS bundler leaves the app linker-signed only (no
 # _CodeSignature/CodeResources), which fails `codesign --verify --deep
@@ -61,10 +67,25 @@ DMG="$(dirname "$BUNDLE")/PathBlender_${APP_VERSION}_aarch64.dmg"
 rm -f "$DMG" "$(dirname "$BUNDLE")"/*.dmg
 hdiutil create -volname PathBlender -srcfolder "$BUNDLE" -ov -format UDZO "$DMG" >/dev/null
 
-ditto "$BUNDLE" /Applications/PathBlender.app
+# Clean replace (2026-10-01): ditto onto an existing install leaves behind
+# files the new build no longer ships, so the installed app drifts from the
+# sealed bundle. Remove the old copy first — /Applications must match the
+# sealed build exactly (user instruction: 安装新软件前把旧软件删干净).
+# Near-atomic swap (2026-10-01): stage the full copy beside the target first,
+# then remove the old app and move the staged one in back-to-back. Deleting
+# up front left a multi-minute window with NO installed app while ditto ran —
+# during a parallel-session rebuild that made Spotlight/Dock serve the stale
+# day-only icon from cache (user report 2026-10-01 19:19). The swap window is
+# now sub-second, too short for LaunchServices to notice.
+STAGED=/Applications/.PathBlender.app.staged
+rm -rf "$STAGED"
+ditto "$BUNDLE" "$STAGED"
+rm -rf /Applications/PathBlender.app
+mv "$STAGED" /Applications/PathBlender.app
 # Verify the INSTALLED copy too — ditto must preserve the seal intact.
 if ! codesign --verify --deep --strict /Applications/PathBlender.app; then
   echo "install-desktop.sh: installed app failed strict verification" >&2
+  rm -rf /Applications/PathBlender.app
   exit 1
 fi
 

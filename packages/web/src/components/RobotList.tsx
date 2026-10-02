@@ -21,14 +21,6 @@ interface RobotListProps {
 
 interface RobotInspectorProps {
   robot: SessionTrajectory | undefined;
-  editingId: string | null;
-  onUpdate: (id: string, patch: Partial<SessionTrajectory>) => void;
-  onSetAlliance: (id: string, alliance: 'blue' | 'red') => void;
-  onSetGeometry: (id: string, patch: Partial<RobotGeometry>) => void;
-  onSetTeamNumber: (id: string, teamNumber: string) => void;
-  onToggleEdit: (id: string) => void;
-  onResetEdit: (id: string) => void;
-  onExport: (id: string, format: 'path' | 'traj' | 'ghostauto') => void;
   onRemove: (id: string) => void;
   libraryProfiles: LibraryProfile[];
   onApplyProfile: (robotId: string, profileId: string) => void;
@@ -41,14 +33,13 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
     <aside className="robot-list robot-library" aria-label={t('robots.title', { n: robots.length })}>
       <div className="robot-library-heading">
         <h2>{t('robots.title', { n: robots.length })}</h2>
-        <button className="robot-library-add" onClick={onImport} title={t('robots.import')} aria-label={t('robots.import')}>
+        {robots.length > 0 && <button className="robot-library-add" onClick={onImport} title={t('robots.import')} aria-label={t('robots.import')}>
           <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M10 4v12M4 10h12" /></svg>
-        </button>
+        </button>}
       </div>
       {robots.length === 0 ? (
         <div className="robot-library-empty">
           <p>{t('robots.empty')}</p>
-          <button className="btn small" onClick={onImport}>{t('robots.import')}</button>
         </div>
       ) : (
         <ul className="robot-library-items">
@@ -138,7 +129,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
   );
 }
 
-export function RobotInspector({ robot, editingId, onUpdate, onSetAlliance, onSetGeometry, onSetTeamNumber, onToggleEdit, onResetEdit, onExport, onRemove, libraryProfiles, onApplyProfile }: RobotInspectorProps) {
+export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfile }: RobotInspectorProps) {
   const { t } = useI18n();
   if (!robot) return <div className="robot-inspector-empty">{t('robots.selectPrompt')}</div>;
   const { trajectory } = robot;
@@ -150,23 +141,17 @@ export function RobotInspector({ robot, editingId, onUpdate, onSetAlliance, onSe
       <header className="robot-inspector-heading">
         <span className="band-dot" style={{ background: robot.color }} aria-hidden="true" />
         <h2>{trajectory.name}</h2>
-        {trajectory.edited && <span className="adjusted-badge">{t('robots.adjusted')}</span>}
       </header>
       <section className="robot-inspector-section">
         <h3>{t('robots.identity')}</h3>
         {trajectory.teamName && <p className="robot-inspector-team-name">{trajectory.teamName}</p>}
-        <label className="robot-inspector-row">
+        <div className="robot-inspector-row">
           <span>{t('robots.teamNumber')}</span>
-          <input type="text" inputMode="numeric" maxLength={5} placeholder="—" value={trajectory.teamNumber} onChange={(event) => onSetTeamNumber(id, event.target.value.replace(/\D/g, '').slice(0, 5))} />
-        </label>
+          <span>{trajectory.teamNumber || '—'}</span>
+        </div>
         <div className="robot-inspector-row">
           <span>{t('robots.alliance')}</span>
-          {VIEWER_ONLY ? <span>{t(trajectory.alliance === 'blue' ? 'robots.blue' : 'robots.red')}</span> : (
-            <div className="seg" role="group" aria-label={t('robots.alliance')}>
-              <button className={trajectory.alliance === 'blue' ? 'on-blue' : ''} aria-pressed={trajectory.alliance === 'blue'} onClick={() => onSetAlliance(id, 'blue')}>{t('robots.blue')}</button>
-              <button className={trajectory.alliance === 'red' ? 'on-red' : ''} aria-pressed={trajectory.alliance === 'red'} onClick={() => onSetAlliance(id, 'red')}>{t('robots.red')}</button>
-            </div>
-          )}
+          <span>{t(trajectory.alliance === 'blue' ? 'robots.blue' : 'robots.red')}</span>
         </div>
       </section>
 
@@ -174,11 +159,8 @@ export function RobotInspector({ robot, editingId, onUpdate, onSetAlliance, onSe
         <h3>{t('robots.timing')}</h3>
         <div className="robot-inspector-row">
           <span>{t('robots.delay')}</span>
-          {VIEWER_ONLY ? <span>{robot.startDelayS.toFixed(2)} s</span> : (
-            <NumberField label={t('robots.delay')} value={robot.startDelayS} min={0} step={0.1} onCommit={(value) => onUpdate(id, { startDelayS: value })} />
-          )}
+          <span>{robot.startDelayS.toFixed(2)} s</span>
         </div>
-        {!VIEWER_ONLY && <p className="robot-inspector-note">{t('robots.delayHint')}</p>}
       </section>
 
       <section className="robot-inspector-section">
@@ -187,17 +169,10 @@ export function RobotInspector({ robot, editingId, onUpdate, onSetAlliance, onSe
           <span className={`robot-data-source${fileGeometry ? '' : ' is-estimated'}`}>{t(fileGeometry ? 'robots.fromFile' : 'robots.bumperDefault')}</span>
         </div>
         <p className="robot-inspector-caption">{t('robots.bumper')}</p>
-        {fileGeometry || VIEWER_ONLY ? (
-          <dl className="robot-dimensions">
-            <div><dt>{t('robots.length')}</dt><dd>{trajectory.geometry.lengthM.toFixed(2)} m</dd></div>
-            <div><dt>{t('robots.width')}</dt><dd>{trajectory.geometry.widthM.toFixed(2)} m</dd></div>
-          </dl>
-        ) : (
-          <div className="robot-dimensions robot-dimensions-editable">
-            <label><span>{t('robots.length')}</span><NumberField label={t('robots.length')} value={trajectory.geometry.lengthM} min={0.2} max={2} step={0.01} onCommit={(value) => onSetGeometry(id, { lengthM: value })} /></label>
-            <label><span>{t('robots.width')}</span><NumberField label={t('robots.width')} value={trajectory.geometry.widthM} min={0.2} max={2} step={0.01} onCommit={(value) => onSetGeometry(id, { widthM: value })} /></label>
-          </div>
-        )}
+        <dl className="robot-dimensions">
+          <div><dt>{t('robots.length')}</dt><dd>{trajectory.geometry.lengthM.toFixed(2)} m</dd></div>
+          <div><dt>{t('robots.width')}</dt><dd>{trajectory.geometry.widthM.toFixed(2)} m</dd></div>
+        </dl>
         <p className="robot-inspector-note">{t(fileGeometry ? 'robots.fileDataNote' : 'robots.defaultDataNote')}</p>
         {libraryProfiles.length > 0 && (
           <label className="robot-inspector-row robot-inspector-profile">
@@ -228,40 +203,11 @@ export function RobotInspector({ robot, editingId, onUpdate, onSetAlliance, onSe
       {!VIEWER_ONLY && (
         <section className="robot-inspector-section robot-inspector-actions">
           <h3>{t('robots.actions')}</h3>
-          <button className="btn robot-inspector-edit" disabled={!trajectory.editable} title={trajectory.editable ? undefined : t('robots.editUnavailable')} onClick={() => onToggleEdit(id)}>
-            {t(editingId === id ? 'robots.doneEdit' : 'robots.editPath')}
-          </button>
-          {!trajectory.editable && <p className="robot-inspector-note">{t('robots.editUnavailable')}</p>}
-          {trajectory.edited && <button className="btn small" onClick={() => onResetEdit(id)}>{t('robots.resetEdit')}</button>}
-          <div className="robot-inspector-export">
-            <span>{t('robots.export')}</span>
-            <div className="robot-export-options" role="group" aria-label={t('robots.export')}>
-              <button className="btn small" disabled={trajectory.editable?.kind !== 'pathplanner'} title={trajectory.editable?.kind === 'pathplanner' ? undefined : t('robots.exportNoSource')} onClick={() => onExport(id, 'path')}>.path</button>
-              <button className="btn small" disabled={trajectory.editable?.kind !== 'choreo'} title={trajectory.editable?.kind === 'choreo' ? undefined : t('robots.exportNoSource')} onClick={() => onExport(id, 'traj')}>.traj</button>
-              <button className="btn small" onClick={() => onExport(id, 'ghostauto')}>.ghostauto</button>
-            </div>
-          </div>
           <button className="robot-inspector-remove" onClick={() => onRemove(id)}>{t('robots.removeFromSession')}</button>
         </section>
       )}
     </section>
   );
-}
-
-/** Keep incomplete numeric text local; commit only a complete, bounded value. */
-function NumberField({ label, value, min, max = Infinity, step, onCommit }: { label: string; value: number; min: number; max?: number; step: number; onCommit: (value: number) => void }) {
-  const [draft, setDraft] = useState(String(value));
-  useEffect(() => setDraft(String(value)), [value]);
-  const commit = () => {
-    const parsed = draft.trim() === '' ? NaN : Number(draft);
-    const next = Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : value;
-    setDraft(String(next));
-    if (next !== value) onCommit(next);
-  };
-  return <input type="number" aria-label={label} value={draft} min={min} max={Number.isFinite(max) ? max : undefined} step={step} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => {
-    if (event.key === 'Enter') event.currentTarget.blur();
-    if (event.key === 'Escape') setDraft(String(value));
-  }} />;
 }
 
 function EyeIcon({ visible }: { visible: boolean }) {

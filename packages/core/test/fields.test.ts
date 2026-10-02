@@ -4,7 +4,7 @@
  * topLeft/bottomRight pixel corners + inch sizes (see field.ts comments).
  */
 import { describe, expect, it } from 'vitest';
-import { FIELDS, fieldById, fieldImageWorldRect } from '../src';
+import { FIELDS, fieldById, fieldImageWorldRect, withFieldVariant } from '../src';
 
 describe('FIELDS registry', () => {
   it('covers 2018 through 2026 (2021 has no public orthographic asset)', () => {
@@ -44,5 +44,59 @@ describe('FIELDS registry', () => {
     // Field corner at (519, 78) px; 2801 px of field length.
     expect(img.ppm * f.lengthM).toBeCloseTo(3320 - 519, 1);
     expect((img.ppmY ?? img.ppm) * f.widthM).toBeCloseTo(1480 - 78, 1);
+  });
+});
+
+describe('withFieldVariant', () => {
+  it('welded (or a variant-less field) returns the package itself', () => {
+    const f = fieldById('reefscape-2025');
+    expect(withFieldVariant(f, 'welded')).toBe(f);
+    const older = fieldById('crescendo-2024');
+    expect(withFieldVariant(older, 'andymark')).toBe(older); // no AM data → identity
+  });
+
+  it('2025 AndyMark swaps the tag layout and the image calibration; id and playfield stay', () => {
+    const base = fieldById('reefscape-2025');
+    const am = withFieldVariant(base, 'andymark');
+    expect(am).not.toBe(base);
+    expect(am.id).toBe(base.id);
+    expect(am.lengthM).toBe(base.lengthM);
+    expect(am.widthM).toBe(base.widthM);
+    expect(am.aprilTags).toBe(base.aprilTagsAndyMark);
+    expect(am.image).toBe(base.imageAndyMark);
+    // The variant layouts really differ where the constructions do (the
+    // coral-station tags move ~7 cm along x; the reef tags are identical).
+    const w3 = base.aprilTags!.find((t) => t.id === 3)!;
+    const a3 = am.aprilTags!.find((t) => t.id === 3)!;
+    expect(Math.abs(w3.x - a3.x)).toBeGreaterThan(0.05);
+    const w7 = base.aprilTags!.find((t) => t.id === 7)!;
+    const a7 = am.aprilTags!.find((t) => t.id === 7)!;
+    expect(w7.x).toBeCloseTo(a7.x, 6);
+  });
+
+  it('2026 AndyMark swaps tags only — upstream ships a single artwork/model', () => {
+    const base = fieldById('rebuilt-2026');
+    const am = withFieldVariant(base, 'andymark');
+    expect(am.aprilTags).toBe(base.aprilTagsAndyMark);
+    expect(am.image).toBe(base.image); // same reference, no AM calibration
+  });
+
+  it('the 2025 artwork calibrations bracket the enclosure frame', () => {
+    const f = fieldById('reefscape-2025');
+    for (const img of [f.image, f.imageAndyMark]) {
+      expect(img).toBeDefined();
+      const rect = fieldImageWorldRect(img!, f.lengthM, f.widthM);
+      expect(rect.left).toBeLessThanOrEqual(0.001);
+      expect(rect.bottom).toBeLessThanOrEqual(0.001);
+      expect(rect.right).toBeGreaterThanOrEqual(f.lengthM - 0.001);
+      expect(rect.top).toBeGreaterThanOrEqual(f.widthM - 0.001);
+      // Generous outer margins (the artwork carries run-off floor), same
+      // budget as the 2018–2020 AdvantageScope renders.
+      expect(rect.right - f.lengthM).toBeLessThan(3.5);
+      expect(rect.top - f.widthM).toBeLessThan(3.5);
+      // Carpet edges land where the calibration was measured: blue corner
+      // 420 px from the left, 74 px from the bottom.
+      expect(img!.originPx).toEqual({ x: 420, y: 74 });
+    }
   });
 });

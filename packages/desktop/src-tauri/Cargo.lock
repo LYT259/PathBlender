@@ -2281,8 +2281,9 @@ dependencies = [
 
 [[package]]
 name = "pathblender-desktop"
-version = "0.1.2"
+version = "0.1.4"
 dependencies = [
+ "base64 0.22.1",
  "serde",
  "serde_json",
  "tauri",

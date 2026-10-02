@@ -21,7 +21,36 @@ permissions:
   contents: write
 
 jobs:
+  # Quality gate before any artifact is built: releases fire automatically
+  # (beta-channel pre-releases on batched beta.N tags), so the workflow itself
+  # must never package a tree that fails the repo's own checks — same gate
+  # deploy.yml runs before a Pages deploy.
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+          cache: npm
+      - run: npm ci
+      - run: npm run version:check
+      - run: npm run typecheck
+      - run: npm test
+      - name: Assert tag name matches tree version
+        # The tag IS the version users see — a tag/tree mismatch ships a
+        # mislabeled build and desyncs the updater (feed version vs app
+        # version). Caught by hand on 2026-10-02 when a beta.4 bump landed
+        # between tagging and CI; assert it in CI from now on.
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "${GITHUB_REF_NAME#v}" != "$VERSION" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json version $VERSION" >&2
+            exit 1
+          fi
+
   build-macos:
+    needs: [checks]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +65,29 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: cd packages/desktop && npx tauri build
+      - name: Inject dark-mode app icon + regenerate wrapped artifacts
+        # Tauri bundles a plain icns only; scripts/apply-dark-icon.sh adds the
+        # day+night Assets.car. Everything tauri wrapped during the build (the
+        # updater tar.gz + sig and the dmg) predates the injection, so rebuild
+        # them from the icon-complete app. Steps do NOT inherit each other's
+        # env, so the standalone signer needs the key vars declared here too —
+        # without them it tries key generation and aborts (first seen on the
+        # v0.1.4-beta.3 run).
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          APP=packages/desktop/src-tauri/target/release/bundle/macos/PathBlender.app
+          scripts/apply-dark-icon.sh "$APP"
+          APP_ABS="$PWD/$APP"
+          rm -f "$APP.tar.gz" "$APP.tar.gz.sig"
+          (cd "$(dirname "$APP")" && tar -czf "$(basename "$APP").tar.gz" "$(basename "$APP")")
+          (cd packages/desktop && npx tauri signer sign "$APP_ABS.tar.gz")
+          B=packages/desktop/src-tauri/target/release/bundle
+          rm -f "$B"/dmg/*.dmg
+          mkdir -p "$B/dmg"
+          hdiutil create -volname PathBlender -srcfolder "$APP" -ov \
+            -format UDZO "$B/dmg/PathBlender_${GITHUB_REF_NAME#v}_aarch64.dmg" >/dev/null
       - name: Stage artifacts
         run: |
           mkdir -p release
@@ -113,7 +165,11 @@ jobs:
           if [ "$CH" = "stable" ]; then
             cp release/latest-beta.json release/latest.json
           fi
-          cat release/latest-beta.json release/latest.json
+          cat release/latest-beta.json release/latest.json 2>/dev/null || true
+          # ^ debug printout only. A beta tag intentionally publishes just
+          # latest-beta.json (stable raises both), so latest.json may not
+          # exist here — `cat` must not kill the step under `bash -e`
+          # (first seen on the v0.1.4-beta.4 run).
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -29,7 +29,7 @@
 
 import * as THREE from 'three';
 import type { AprilTag, FieldPackage } from '@pathblender/core';
-import { fieldImageWorldRect } from '@pathblender/core';
+import { fieldById, fieldImageWorldRect } from '@pathblender/core';
 
 /** Field centre in meters — the render frame is centered on the playfield. */
 export function fieldCenter(field: FieldPackage): { cx: number; cy: number } {
@@ -79,6 +79,177 @@ export function worldToRenderVec3(
 /** Robot heading (WPILib radians) → `mesh.rotation.y` in the render frame. */
 export function headingToRender(headingRad: number): number {
   return Math.PI - headingRad;
+}
+
+/**
+ * Official-field-model placement (the fifth round of this file's history —
+ * see the header). The AdvantageScope assets are authored in a Y-up native
+ * frame whose origin is the WPILib field centre; AdvantageScope mounts them
+ * with the per-field `rotations` from the shipped `config.json` (verified in
+ * AdvantageScope @ main, `field3d/workers/loadField.ts`: each entry
+ * premultiplies, so [x 90°] → Rx(90°) and [x 90°, z 180°] →
+ * Rz(180°)·Rx(90°)). Our render frame is the config frame with the Y/Z swap
+ * `S(a,b,c) = (a,c,b)` (that swap is how the 2026 anchors relate the two —
+ * see the test), so the full native→render map is `S·R_config`:
+ *
+ *   Rx(90°)          → (x, y, −z)   reflect Z   (2023, 2024, 2026)
+ *   Rz(180°)·Rx(90°) → (−x, y, z)   reflect X   (2022, 2025)
+ *
+ * No rotation and no translation otherwise: the models are authored centred
+ * on their season's official field centre (2025's 17.548 × 8.052 enclosure
+ * frame — see `field.ts`), which `fieldRenderBounds` now reproduces. A
+ * reflection is improper, so the loader keeps every material DoubleSide
+ * (three.js flips shading normals for back faces under DoubleSide, which is
+ * what makes a mirrored model light correctly).
+ *
+ * Numeric registration (the guarantee the tests re-run): every tag decal
+ * mesh inside the four 2024–2026 models — `FE-00083_IDn` nodes, centres
+ * taken from accessor min/max — lands within 11 mm horizontally and
+ * 12/20 mm vertically of the WPILib layout mapped by `tagRenderPose`, with
+ * id-for-id pairing; the old hard-coded `Ry(180°) + (0, 0.13, 1.16)` (fitted
+ * to the retired Onshape model, engineering-log 2026.9.13) misses by up to
+ * 16.8 m.
+ */
+export type { FieldModelMirror, Field3DModelEntry } from './field3d-models';
+export { FIELD3D_MODELS } from './field3d-models';
+import { FIELD3D_MODELS, type FieldModelMirror } from './field3d-models';
+
+/** Derive the mirror axis from an AdvantageScope field config's rotations. */
+export function configMirrorAxis(
+  rotations: readonly { axis: string; degrees: number }[],
+): FieldModelMirror {
+  const turn = (deg: number) => ((deg % 360) + 360) % 360;
+  return rotations.some((r) => r.axis === 'z' && Math.abs(turn(r.degrees) - 180) < 1e-6)
+    ? 'x'
+    : 'z';
+}
+
+/** Render-frame scale vector that mounts a native asset-model. */
+export function fieldModelScale(mirror: FieldModelMirror): THREE.Vector3 {
+  return mirror === 'x' ? new THREE.Vector3(-1, 1, 1) : new THREE.Vector3(1, 1, -1);
+}
+
+/**
+ * Which tag list the 3D view mounts: the selected construction variant's
+ * layout when the shipped assets include a model OF that build, otherwise
+ * the layout of the model that will actually load.
+ *
+ * Why the fallback exists (2026 AndyMark, user report 2026-10-01): the
+ * official AndyMark layout moves the hub/trench tags ~(−14, −13) mm and the
+ * driver-station-wall tags ~−34 mm relative to welded, because the built
+ * structures themselves sit at those offsets — but AdvantageScopeAssets
+ * publishes exactly ONE 2026 model (welded; verified against its releases:
+ * 2025 ships Welded+AndyMark zips, 2026 does not). Ray-casting every hub
+ * tag's own normal on the welded model shows 9 of the 24 (ids 7, 9, 10,
+ * 12, 17, 19, 20, 22, 24) land 6.8–7.2 mm BEHIND the hub's structural
+ * panels (`GE-26305`/`GE-26308`/`GE-26327`) plus the blank tag vinyls —
+ * fully hidden from the front, which reads as "this face has no AprilTag".
+ * Mounting those coordinates is geometrically impossible on this model.
+ *
+ * So: 3D visualises the build it has a model of; the 2D overlay and every
+ * data path keep the user's selected variant's official layout untouched.
+ * Seasons without any official model (2018–2020, custom fields) always use
+ * the package's own list — there is no model to contradict it.
+ */
+export function modelTagLayout(
+  field: Pick<FieldPackage, 'id' | 'aprilTags'>,
+  variant: 'welded' | 'andymark',
+): AprilTag[] {
+  const entry = FIELD3D_MODELS[field.id];
+  if (entry && variant === 'andymark' && !entry.andymark) {
+    // The default (welded) package of the same season is where this model's
+    // own decals are (registration ≤ 2 mm; see the model test).
+    return fieldById(field.id).aprilTags ?? field.aprilTags ?? [];
+  }
+  return field.aprilTags ?? [];
+}
+
+/** Name prefix of the tag decal plates baked into the official models
+ *  (`FE-00083_ID16_5` → tag 16, plate copy 5 of that tag). */
+export const TAG_DECAL_NAME_PREFIX = 'FE-00083_ID';
+
+/**
+ * How far the overlay quad floats off the model's own decal-plate centre,
+ * along the layout normal (field-side). The plates are ~1 mm thick, so 3 mm
+ * clears the printed face without a visible hover at any orbit distance.
+ */
+export const TAG_PLATE_FLOAT_M = 0.003;
+
+/** Furthest a plate centre may sit from the layout plane to count as that
+ *  tag's plate (registration is ≤ 15 mm in practice; this only rejects
+ *  garbage matches). */
+const TAG_PLATE_MAX_ALONG_M = 0.3;
+
+/**
+ * Repose the overlay tag quads onto the official model's own decal plates.
+ *
+ * Why: the two 2025 construction models mount their plates at different
+ * depths relative to the WPILib layout plane (welded 4–11 mm wall-side of
+ * it, AndyMark essentially flush), so a quad floated +1 mm off the layout
+ * plane lands BEHIND the welded plates — the model's own (lit, shaded)
+ * plate shows instead of the crisp unlit overlay, and the tag reads dark
+ * in one variant and bright in the other (user report 2026-10-01). The
+ * plate is the render-surface truth (measured, see the model test), so
+ * each quad moves to its tag's outermost plate centre plus
+ * `TAG_PLATE_FLOAT_M` along its own layout normal; orientation stays the
+ * layout's (validated ≤ 15 mm against every plate). Viewed from the field
+ * side both variants then show the same bright overlay; from behind the
+ * wall both are hidden by the plate — physically what a field-side tag
+ * does, and identical across variants either way.
+ *
+ * Name-matched (`FE-00083_ID{id}_*`), outermost copy wins (some tags carry
+ * several plates at different depths). Models without decals (2022/2023)
+ * and seasons without models keep the layout pose unchanged.
+ *
+ * @returns number of quads reposed.
+ */
+export function snapTagQuadsToDecalPlates(
+  tagRoot: THREE.Object3D,
+  model: THREE.Object3D,
+): number {
+  model.updateMatrixWorld(true);
+  // tag id → plate centres (world), via each mesh's geometry AABB centre —
+  // node origins sit at zero in these exports, so world positions lie.
+  const plates = new Map<number, THREE.Vector3[]>();
+  const box = new THREE.Box3();
+  const v = new THREE.Vector3();
+  model.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.name?.startsWith(TAG_DECAL_NAME_PREFIX)) return;
+    const m = /^FE-00083_ID(\d+)/.exec(mesh.name);
+    if (!m || !mesh.geometry) return;
+    mesh.geometry.computeBoundingBox();
+    if (!mesh.geometry.boundingBox) return;
+    box.copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld);
+    const centre = box.getCenter(new THREE.Vector3());
+    const list = plates.get(Number(m[1]));
+    if (list) list.push(centre);
+    else plates.set(Number(m[1]), [centre]);
+  });
+  if (plates.size === 0) return 0;
+  const normal = new THREE.Vector3();
+  let snapped = 0;
+  for (const quad of tagRoot.children) {
+    const m = /^apriltag-(\d+)$/.exec(quad.name ?? '');
+    if (!m) continue;
+    const candidates = plates.get(Number(m[1]));
+    if (!candidates?.length) continue;
+    normal.set(0, 0, 1).applyQuaternion(quad.quaternion);
+    // Outermost copy: furthest along the outward normal (field-side).
+    let best: THREE.Vector3 | undefined;
+    let bestAlong = -Infinity;
+    for (const c of candidates) {
+      const along = v.copy(c).sub(quad.position).dot(normal);
+      if (along > bestAlong) {
+        bestAlong = along;
+        best = c;
+      }
+    }
+    if (!best || Math.abs(bestAlong) > TAG_PLATE_MAX_ALONG_M) continue;
+    quad.position.copy(best).addScaledVector(normal, TAG_PLATE_FLOAT_M);
+    snapped += 1;
+  }
+  return snapped;
 }
 
 /**

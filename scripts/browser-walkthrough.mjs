@@ -1,12 +1,11 @@
 /**
- * Real-browser end-to-end walkthrough against the production preview build,
- * rewritten for the workspace UI (2026-09-26): import → collision → playback
- * (0.5×) → language switch (8 locales) → share-link restore → field bounds →
- * season + variant persistence → custom field → inspector (alliance/geometry)
- * → route library (per-robot switch) → PathPlanner batch → waypoint editing +
- * exports → session save/restore → bulk stress → auto-resolve → PNG export →
- * service worker → 3D (render/theme/orbit/tags/season). Also asserts the AI
- * retreat (2026-09-20): no assistant surface anywhere.
+ * Real-browser end-to-end walkthrough against the production preview build.
+ * View-only edition (2026-09-30): import → collision → playback (0.5×) →
+ * language switch (8 locales) → share-link restore → field bounds → season +
+ * variant persistence → custom field → read-only inspector → route library →
+ * PathPlanner batch → session save/restore → bulk stress → PNG export →
+ * service worker → 3D. The app adjusts nothing: no editing, no delays, no
+ * auto-resolve, no AI anywhere.
  *
  * Screenshots land in /tmp/ghpb-shots. Usage: node scripts/browser-walkthrough.mjs
  * (expects `npm run preview` on :4173; system Chrome via channel, fallback bundled).
@@ -68,14 +67,10 @@ check(
 await page.screenshot({ path: `${SHOTS}/01-empty.png` });
 
 // --- AI retreat (2026-09-20): no assistant surface anywhere ---
-check(
-  'AI fully withdrawn (no toggle/panel/prefs section)',
-  (await page.locator('.ai-toggle, .ai-panel, .ai-hero, .sparkle, [aria-label="AI Assistant"], [aria-label="助手"]').count()) === 0,
-);
 await prefsGear().click();
 await page.waitForSelector('.prefs-modal');
-check('preferences show no AI settings', (await page.locator('.prefs-modal .ai-row, .prefs-modal .prefs-ai').count()) === 0);
-await page.locator('.prefs-modal .btn.small:not(.accent)').first().click(); // Cancel
+check('preferences carry no AI settings (code deleted)', (await page.locator('.prefs-modal .ai-row, .prefs-modal .prefs-ai').count()) === 0);
+await page.locator('.preferences-footer .btn:not(.accent)').first().click(); // Cancel — the prefs redesign (0.1.4-beta era) moved the footer to .preferences-footer with .btn / .btn.accent
 
 // --- import two ghost files through the real file input ---
 await fileInput().setInputFiles([
@@ -147,11 +142,34 @@ check('playback advances clock', midClock > 0.5, `clock=${midClock}`);
 await page.screenshot({ path: `${SHOTS}/04-playing.png` });
 
 // --- language switch via Preferences (staged save/cancel semantics) ---
-const saveBtn = page.locator('.prefs-modal .btn.small.accent');
-const cancelBtn = page.locator('.prefs-modal .prefs-row.btns .btn.small:not(.accent)');
+// The 0.1.4-beta prefs redesign: sectioned panel (.preferences-nav tabs),
+// footer .preferences-footer (.btn cancel / .btn.accent save), theme as
+// radios, About as a section carrying .preferences-product + copy status.
+const saveBtn = page.locator('.preferences-footer .btn.accent');
+const cancelBtn = page.locator('.preferences-footer .btn:not(.accent)');
+const langSelect = page.locator('.preferences-panel select').first();
 await prefsGear().click();
-const langSelect = page.locator('.prefs-modal select').first();
 await langSelect.waitFor({ state: 'visible', timeout: 8000 });
+// About block: natural-facing version ("0.1.4 · Beta N"), the full number,
+// one-click copy (versioning scheme 2026-10-01). The exact number drifts
+// with every merge by design — assert shape, not value.
+await page.locator('.preferences-nav [role=tab]', { hasText: /^About$/ }).click();
+{
+  const display = (await page.locator('.preferences-product span').textContent())?.trim() ?? '';
+  const full = (await page.locator('.preferences-product code').textContent())?.trim() ?? '';
+  check(
+    'About shows the version line + full number',
+    /^\d+\.\d+\.\d+( · Beta \d+)?$/.test(display) && /^\d+\.\d+\.\d+(-beta\.\d+)?$/.test(full),
+    `display="${display}" full="${full}"`,
+  );
+  const copyBtn = page.locator('.preferences-product button');
+  check('About offers one-click version copy', (await copyBtn.count()) === 1);
+  await copyBtn.click();
+  await page.waitForTimeout(300);
+  const copyStatus = (await page.locator('.preferences-copy-status').textContent()) ?? '';
+  check('version copy reports success', copyStatus.length > 0, `status="${copyStatus}"`);
+}
+await page.locator('.preferences-nav [role=tab]', { hasText: /^General$/ }).click();
 const optionCount = await langSelect.locator('option').count();
 check('language list has all 8 choices', optionCount === 8, `options=${optionCount}`);
 check('follow-system sits first', /Follow system|跟随系统|跟隨系統/i.test((await langSelect.locator('option').first().textContent()) ?? ''));
@@ -168,7 +186,7 @@ check(
   `modal=${await page.locator('.prefs-modal').count()} heading=${headingAfterCancel}`,
 );
 await prefsGear().click();
-await page.locator('.prefs-modal select').first().selectOption('zh');
+await page.locator('.preferences-panel select').first().selectOption('zh');
 await saveBtn.click();
 await page.waitForTimeout(300);
 check('save closes the preferences modal', (await page.locator('.prefs-modal').count()) === 0);
@@ -177,32 +195,31 @@ check('zh switch', /机器人/.test(zhText ?? ''), zhText ?? '');
 await page.screenshot({ path: `${SHOTS}/05-zh.png` });
 // fr as a representative of the P1 batch (es/fr/tr)
 await prefsGear().click();
-await page.locator('.prefs-modal select').first().selectOption('fr');
-await page.locator('.prefs-modal .btn.small.accent').click();
+await page.locator('.preferences-panel select').first().selectOption('fr');
+await saveBtn.click();
 await page.waitForTimeout(300);
 const frText = await page.locator('.robot-library-heading h2').first().textContent();
 check('fr switch (P1 language)', /Robots/.test(frText ?? ''), frText ?? '');
 await page.screenshot({ path: `${SHOTS}/05b-fr.png` });
 await prefsGear().click();
-await page.locator('.prefs-modal select').first().selectOption('en');
-await page.locator('.prefs-modal .btn.small.accent').click();
+await page.locator('.preferences-panel select').first().selectOption('en');
+await saveBtn.click();
 await page.waitForTimeout(300);
 
 // --- theme staged semantics (headless defaults light) ---
 await prefsGear().click();
-const themeSel = page.locator('.prefs-modal select').nth(1);
-await themeSel.selectOption('dark');
+const darkRadio = page.locator('.preferences-theme-choice input[value=dark]');
+await darkRadio.check();
 await page.waitForTimeout(150);
 check('theme staged before Save', (await page.evaluate(() => document.documentElement.dataset.theme)) === 'light');
-await themeSel.selectOption('light');
-await page.locator('.prefs-modal .btn.small.accent').click();
+await page.locator('.preferences-theme-choice input[value=light]').check();
+await saveBtn.click();
 await page.waitForTimeout(300);
 const htmlTheme = await page.evaluate(() => document.documentElement.dataset.theme);
 check('theme confirmed light on Save', htmlTheme === 'light', `data-theme=${htmlTheme}`);
 await prefsGear().click();
-await page.waitForSelector('.prefs-modal');
-await page.locator('.prefs-modal select').nth(1).selectOption('dark');
-await page.locator('.prefs-modal .btn.small.accent').click();
+await page.locator('.preferences-theme-choice input[value=dark]').check();
+await saveBtn.click();
 await page.waitForTimeout(300);
 
 // --- share link: dialog with the compressed session, then restore ---
@@ -254,10 +271,31 @@ const fieldAfterReload = await seasonSelect.inputValue();
 const variantAfterReload = await page.locator('.field-select').nth(1).inputValue();
 check('field + AndyMark variant survive reload', fieldAfterReload === 'reefscape-2025' && variantAfterReload === 'andymark', `field=${fieldAfterReload} variant=${variantAfterReload}`);
 await page.screenshot({ path: `${SHOTS}/09-reefscape.png` });
+// 2025 ships one artwork per construction variant (they differ only at the
+// coral stations): toggling the variant must repaint the 2D canvas, while
+// single-artwork seasons keep it byte-identical.
+{
+  const canvas2d = page.locator('canvas.field-canvas').first();
+  const snap = () => canvas2d.evaluate((c) => c.toDataURL('image/png'));
+  const am = await snap();
+  await page.locator('.field-select').nth(1).selectOption('welded');
+  await page.waitForTimeout(600);
+  const wd = await snap();
+  check('2025 2D artwork swaps with the construction variant', am !== wd);
+  await page.locator('.field-select').nth(1).selectOption('andymark');
+  await page.waitForTimeout(600);
+  check('2025 swap paints no console/HTTP errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+}
 check('season switch', true);
 await seasonSelect.selectOption('powerup-2018');
 await page.waitForTimeout(700);
 check('oldest season (2018) renders', errors.length === 0);
+// No official 3D model exists for 2018–2020 — the 2D/3D toggle must not
+// render at all (user directive 2026-10-01: no 3D offer, no stand-in 3D).
+check(
+  'model-less season hides the 2D/3D toggle (2018)',
+  (await page.locator('.view-toggle').count()) === 0,
+);
 await page.screenshot({ path: `${SHOTS}/09b-2018.png` });
 await seasonSelect.selectOption('rebuilt-2026');
 await page.waitForTimeout(400);
@@ -274,15 +312,17 @@ await page.locator('.cf-panel .btn.small').last().click();
 await seasonSelect.selectOption('rebuilt-2026');
 await page.waitForTimeout(300);
 
-// --- inspector: select a robot, toggle alliance, edit geometry ---
+// --- inspector: read-only everywhere (2026-09-30 pivot) ---
 await page.locator('.robot-library-row .robot-library-select').first().click();
 await page.waitForTimeout(400);
 const inspector = page.locator('.robot-inspector');
 await inspector.waitFor();
-await inspector.locator('.seg button').nth(1).click(); // Red
-check('alliance toggles to red', ((await inspector.locator('.seg button').nth(1).getAttribute('class')) ?? '').includes('on-red'));
-await inspector.locator('.seg button').nth(0).click();
-check('alliance toggles back to blue', ((await inspector.locator('.seg button').nth(0).getAttribute('class')) ?? '').includes('on-blue'));
+check(
+  'inspector is fully read-only (no spinbuttons/textboxes/toggles)',
+  (await inspector.locator('input, .seg button').count()) === 0,
+);
+check('file alliance shown as text', (await inspector.getByText(/blue|red/i, { exact: true }).count()) >= 1);
+
 // --- keyboard: Home rewinds, Space plays/pauses ---
 await page.evaluate(() => document.activeElement?.blur());
 await page.keyboard.press('Home');
@@ -311,44 +351,7 @@ await page.screenshot({ path: `${SHOTS}/11-pathplanner.png` });
 // --- waypoint editing on the canvas: enter, numeric edit, exports, leave ---
 await rowByName('Pickup').first().locator('.robot-library-select').click();
 await page.waitForTimeout(300);
-// Geometry editing only exists for robots whose data did NOT come from a file
-// (v1.14 lock) — Pickup is a .path with default geometry, so it's editable.
-const lenInput = page.locator('.robot-inspector input[aria-label="length"], .robot-inspector input[aria-label="长"], .robot-inspector input[aria-label="長"]');
-await lenInput.fill('1.2');
-await lenInput.press('Enter');
-check('geometry edit applies', (await lenInput.inputValue()) === '1.2');
-// Ghost geometry stays read-only (file-sourced): no spinbutton at all.
-await rowByName('Straight Run').first().locator('.robot-library-select').click();
-await page.waitForTimeout(300);
-check('file-sourced geometry stays read-only', (await page.locator('.robot-inspector input[aria-label="length"], .robot-inspector input[aria-label="长"], .robot-inspector input[aria-label="長"]').count()) === 0);
-await rowByName('Pickup').first().locator('.robot-library-select').click();
-await page.waitForTimeout(300);
-await page.locator('.robot-inspector .robot-inspector-edit').click();
-await page.waitForSelector('.editing-banner');
-await page.waitForSelector('.waypoint-panel');
-check('edit mode shows banner + waypoint panel', true);
-await page.waitForTimeout(800); // field image + initial fit
-await page.screenshot({ path: `${SHOTS}/13-editing.png` });
-const [pathDl] = await Promise.all([
-  page.waitForEvent('download', { timeout: 10000 }).catch(() => undefined),
-  page.locator('.robot-inspector .robot-export-options button', { hasText: '.path' }).click(),
-]);
-check('adjusted .path export downloads', pathDl !== undefined, pathDl?.suggestedFilename());
-const [ghostDl] = await Promise.all([
-  page.waitForEvent('download', { timeout: 10000 }).catch(() => undefined),
-  page.locator('.robot-inspector .robot-export-options button', { hasText: '.ghostauto' }).click(),
-]);
-check('adjusted .ghostauto export downloads', ghostDl !== undefined, ghostDl?.suggestedFilename());
-await page.locator('.wp-head').first().click();
-await page.waitForTimeout(200);
-const firstNum = page.locator('.waypoint-panel input').first();
-await firstNum.fill('2.5');
-await firstNum.press('Enter');
-await page.waitForTimeout(400);
-check('numeric waypoint edit marks adjusted', (await page.locator('.adjusted-badge').count()) >= 1);
-await page.locator('.editing-banner .btn').click(); // done editing
-await page.waitForTimeout(300);
-check('done editing clears the banner', (await page.locator('.editing-banner').count()) === 0);
+// (No waypoint editing / adjusted exports anymore — the app is a viewer.)
 
 // --- session save → remove one robot → restore through the file input ---
 const [download] = await Promise.all([
@@ -399,18 +402,6 @@ const stressRows = await page3.locator('.robot-library-row').count();
 check('bulk import all samples', stressRows >= 16 && stressErrors.length === 0, `rows=${stressRows}`);
 await page3.screenshot({ path: `${SHOTS}/12-bulk-stress.png` });
 await ctx3.close();
-
-// --- one-click conflict mediation ---
-const beforeCount = Number(await page.locator('.conflict-count').first().textContent());
-await page.locator('.resolve-action, .auto-resolve').first().click();
-await page.waitForFunction(
-  (n) => Number(document.querySelector('.conflict-count')?.textContent) < n,
-  beforeCount,
-  { timeout: 15000 },
-);
-const afterCount = await page.locator('.conflict-count').first().textContent();
-check('auto-resolve reduces conflicts', true, `${beforeCount} → ${afterCount}`);
-await page.screenshot({ path: `${SHOTS}/16-auto-resolved.png` });
 
 // --- PNG export via the more-menu; disabled in 3D ---
 await page.locator('.workspace-menu summary').click();
@@ -463,16 +454,16 @@ const skyDark = await sample3dSky();
 check('3D sky is dark before theme switch', isDarkSky(skyDark), JSON.stringify(skyDark));
 await prefsGear().click();
 await page.waitForSelector('.prefs-modal');
-await page.locator('.prefs-modal select').nth(1).selectOption('light');
-await page.locator('.prefs-modal .btn.small.accent').click();
+await page.locator('.preferences-theme-choice input[value=light]').check();
+await page.locator('.preferences-footer .btn.accent').click();
 await page.waitForTimeout(700);
 const skyLight = await sample3dSky();
 check('3D retints to light on hot-switch', isLightSky(skyLight), JSON.stringify(skyLight));
 await page.screenshot({ path: `${SHOTS}/14b-3d-light.png` });
 await prefsGear().click();
 await page.waitForSelector('.prefs-modal');
-await page.locator('.prefs-modal select').nth(1).selectOption('dark');
-await page.locator('.prefs-modal .btn.small.accent').click();
+await page.locator('.preferences-theme-choice input[value=dark]').check();
+await page.locator('.preferences-footer .btn.accent').click();
 await page.waitForTimeout(700);
 
 // Damped orbit settles after release (no endless drift).
@@ -499,6 +490,8 @@ await page.screenshot({ path: `${SHOTS}/14-3d.png` });
   });
   check('3D renders official tag quads (2026: 32)', tagCount === 32, `count=${tagCount}`);
 }
+const dynBefore = await page.evaluate(() => window.__pb3d.scene.getObjectByName('pb-dynamic')?.children.length ?? -1);
+const camBefore = await page.evaluate(() => window.__pb3d.camera.position.toArray().map((v) => +v.toFixed(3)));
 await page.locator('.field-select').first().selectOption('reefscape-2025');
 await page.waitForFunction(
   () => document.querySelectorAll('.robot-library-row').length >= 1,
@@ -506,6 +499,22 @@ await page.waitForFunction(
   { timeout: 20000, polling: 100 },
 );
 check('season switch with 3D open keeps robots', true);
+// Regression (2026-09-30 user report): switching the field while in 3D used
+// to leave the rebuilt scene without any path tubes or robot boxes.
+{
+  const dynAfter = await page.waitForFunction(
+    (before) => {
+      const n = window.__pb3d.scene.getObjectByName('pb-dynamic')?.children.length ?? -1;
+      return n >= before && before > 0 ? n : false;
+    },
+    dynBefore,
+    { timeout: 8000, polling: 120 },
+  ).then((r) => r.jsonValue());
+  check('3D paths & robots survive the in-3D season switch', dynAfter === dynBefore, `dynamic children ${dynBefore} → ${dynAfter}`);
+  const camAfter = await page.evaluate(() => window.__pb3d.camera.position.toArray().map((v) => +v.toFixed(3)));
+  check('camera keeps the user\'s exact viewpoint across the switch', JSON.stringify(camAfter) === JSON.stringify(camBefore), `${camBefore} → ${camAfter}`);
+}
+
 {
   const tagCount25 = await page.evaluate(() => {
     let n = 0;
@@ -514,6 +523,37 @@ check('season switch with 3D open keeps robots', true);
   });
   check('3D tag quads follow season (2025: 22)', tagCount25 === 22, `count=${tagCount25}`);
 }
+// Back to the first season: the parsed model comes from the module cache —
+// tags return instantly, the camera STILL holds, and the cache is warm.
+await page.locator('.field-select').first().selectOption('rebuilt-2026');
+await page.waitForFunction(() => {
+  let n = 0;
+  window.__pb3d.scene.traverse((o) => { if (o.name.startsWith('apriltag-')) n++; });
+  return n === 32;
+}, undefined, { timeout: 20000, polling: 150 });
+{
+  const dynBack = await page.evaluate(() => window.__pb3d.scene.getObjectByName('pb-dynamic')?.children.length ?? -1);
+  const camBack = await page.evaluate(() => window.__pb3d.camera.position.toArray().map((v) => +v.toFixed(3)));
+  const cacheSize = await page.evaluate(() => window.__pb3d.modelCacheSize());
+  check('revisited season restores instantly from cache (tags 32)', true, `cache=${cacheSize}`);
+  check('revisited season keeps paths & camera', dynBack === dynBefore && JSON.stringify(camBack) === JSON.stringify(camBefore), `dynamic=${dynBack}, cam=${camBack}`);
+}
+
+// Switching to a model-less season while in 3D falls back to 2D and the
+// toggle disappears entirely; returning to a model season brings it back.
+await page.locator('.field-select').first().selectOption('powerup-2018');
+await page.waitForTimeout(600);
+check(
+  'model-less season in 3D view falls back to 2D, toggle hidden',
+  (await page.locator('.view-toggle').count()) === 0 &&
+    (await page.locator('canvas.field-canvas').count()) === 1,
+);
+await page.locator('.field-select').first().selectOption('rebuilt-2026');
+await page.waitForTimeout(400);
+check(
+  'model season restores the 2D/3D toggle',
+  (await page.locator('.view-toggle').count()) === 1,
+);
 
 // Field remembered across reload (AndyMark default).
 await page.goto(BASE, { waitUntil: 'domcontentloaded' });
@@ -522,7 +562,7 @@ await fileInput().setInputFiles([`${SAMPLES}/ghostauto/straight_run.ghostauto`])
 await page.waitForSelector('.field-canvas', { timeout: 10000 });
 await page.waitForTimeout(800);
 const restoredField = await page.locator('.field-select').first().inputValue();
-check('field selection remembered across reload', restoredField === 'reefscape-2025', restoredField);
+check('field selection remembered across reload', restoredField === 'rebuilt-2026', restoredField);
 const variantSelected = await page
   .locator('select option[value="andymark"]')
   .first()

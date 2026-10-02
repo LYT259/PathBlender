@@ -13,18 +13,25 @@ import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import { samplePoseAt } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
+import { orbitZoomSpeedFor, wheelZoomFactor } from '../zoom';
 import { aprilTagTexture } from '../april-tag-texture';
 // One coordinate frame for the whole scene — tags, robots, trails, fallback
-// structures and the flat field image all map through these, so no layer can
-// drift into a mirrored copy of another. Derivation and the numeric per-tag
-// check live in `../field3d-frame` + `test/field3d-frame.test.ts`.
+// structures, the flat field image and the official field models all map
+// through these, so no layer can drift into a mirrored copy of another.
+// Derivation and the numeric per-tag checks live in `../field3d-frame` +
+// test/field3d-frame.test.ts + test/field3d-model.test.ts.
 import {
+  FIELD3D_MODELS,
+  fieldModelScale,
   fieldRenderBounds,
   headingToRender,
+  modelTagLayout,
+  snapTagQuadsToDecalPlates,
   tagRenderPose,
   worldToRender,
   worldToRenderVec3,
 } from '../field3d-frame';
+import type { FieldModelMirror } from '../field3d-frame';
 
 export interface FieldCanvas3DHandle {
   resetCam: () => void;
@@ -52,8 +59,18 @@ interface Scene3D {
   dirty: () => void;
   /** Official 3D field model (when available); replaces the fallback. */
   modelRoot: THREE.Group;
+  /** Field id of the model currently inside `modelRoot` (undefined = none).
+   *  A variant switch within one season keeps the outgoing model mounted
+   *  while the sibling streams in, so the view never drops to the flat
+   *  fallback (the "black blink" between AndyMark ↔ welded, user report
+   *  2026-10-01). */
+  modelFieldId?: string;
   /** Hand-built slab/walls/beacons — visible only without a model. */
   fallback: THREE.Group;
+  /** Per-field rebuilt subtree (slab/walls/tags/structures). */
+  fieldRoot: THREE.Group;
+  /** The bootstrap's background entry — always leads the themed list. */
+  backgroundThemed: { color: THREE.Color; token: string };
   /** Theme-token colors with live refs, retinted when the theme flips. */
   themed: { color: THREE.Color; token: string }[];
 }
@@ -62,15 +79,6 @@ interface Scene3D {
 // which read as a tilted slab (strong perspective) rather than a field.
 const CAM_HOME: [number, number, number] = [0, 13.5, 10.5];
 
-/** Official 3D field models (AdvantageScopeAssets, BSD-3) per season and
- *  construction variant; 2018-2020 have none and keep the fallback. */
-const FIELD3D_MODELS: Record<string, { welded: string; andymark?: string }> = {
-  'rapidreact-2022': { welded: '2022-rapidreact' },
-  'chargedup-2023': { welded: '2023-chargedup' },
-  'crescendo-2024': { welded: '2024-crescendo' },
-  'reefscape-2025': { welded: '2025-reefscape-welded', andymark: '2025-reefscape-andymark' },
-  'rebuilt-2026': { welded: '2026-rebuilt' },
-};
 const WALL_H = 0.9;
 /** FRC official tag size (36h11 family, 6.5 in black square). */
 const TAG_SIZE_M = 0.1651;
@@ -102,6 +110,75 @@ function tokenColorHex(token: string, fallback: string): number {
   return (
     (mix(parseFloat(m[1]!), 0) << 16) | (mix(parseFloat(m[2]!), 1) << 8) | mix(parseFloat(m[3]!), 2)
   );
+}
+
+/**
+ * Parsed-and-processed official models, keyed by asset dir. The processed
+ * group (mirror mount + material tuning applied) is cached; mounts receive
+ * `.clone(true)` — geometry and materials stay shared with the cache, which
+ * is what makes a revisit instant (GPU buffers are reused, no re-parse).
+ * A modest cap keeps long roaming sessions from hoarding every season.
+ */
+const modelCache = new Map<string, THREE.Group>();
+const MODEL_CACHE_CAP = 6;
+const inflightModels = new Map<string, Promise<THREE.Group | null>>();
+let lastModelDir: string | undefined;
+
+/** Asset dir → mount mirror (both variants of a season share one). */
+const DIR_MIRROR = new Map<string, FieldModelMirror>(
+  Object.values(FIELD3D_MODELS).flatMap((e) => [
+    [e.welded, e.mirror] as const,
+    ...(e.andymark ? ([[e.andymark, e.mirror]] as const) : []),
+  ]),
+);
+
+function loadProcessedModel(dir: string): Promise<THREE.Group | null> {
+  const hit = inflightModels.get(dir);
+  if (hit) return hit;
+  const p = new Promise<THREE.Group | null>((resolve) => {
+    new GLTFLoader().load(
+      `${import.meta.env.BASE_URL}fields3d/${dir}/model.glb`,
+      (gltf) => {
+        // Mount: one axis reflection, derived from the config.json shipped
+        // with the asset (see field3d-frame's model-placement block for the
+        // derivation and the per-tag registration numbers — every decal in
+        // the 2024–2026 models lands within ~1 cm of the WPILib layout).
+        // The old Ry(180°)+offset here was fitted to the retired Onshape
+        // model and missed by up to 16.8 m on these assets.
+        const g = gltf.scene;
+        g.scale.copy(fieldModelScale(DIR_MIRROR.get(dir) ?? 'z'));
+        g.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          // Heavy model stays OUT of the shadow pass (a full second render
+          // of ~1M triangles froze the main thread); the catcher floor
+          // below still receives the robots' shadows cheaply.
+          mesh.castShadow = false;
+          mesh.receiveShadow = false;
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const m of mats) {
+            const std = m as THREE.MeshStandardMaterial;
+            std.side = THREE.DoubleSide;
+            // The field has no chrome: clamp PBR sliders so the official
+            // models read as carpet/wood/plastic under the studio env.
+            std.roughness = Math.max(std.roughness ?? 0.5, 0.55);
+            std.metalness = Math.min(std.metalness ?? 0, 0.05);
+            std.envMapIntensity = 0.55;
+          }
+        });
+        modelCache.set(dir, g);
+        while (modelCache.size > MODEL_CACHE_CAP) {
+          const oldest = modelCache.keys().next().value as string;
+          modelCache.delete(oldest);
+        }
+        resolve(g.clone(true));
+      },
+      undefined,
+      () => resolve(null),
+    );
+  }).finally(() => inflightModels.delete(dir));
+  inflightModels.set(dir, p);
+  return p;
 }
 
 export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function FieldCanvas3D(
@@ -144,7 +221,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       return owner;
     };
     scene.background = new THREE.Color(cssToken('--canvas-bg', '#1c1c1e'));
-    themed.push({ color: scene.background as THREE.Color, token: '--canvas-bg' });
+    const backgroundThemed = { color: scene.background as THREE.Color, token: '--canvas-bg' };
+    themed.push(backgroundThemed);
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
     camera.position.set(...CAM_HOME);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -164,6 +242,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     controls.maxPolarAngle = 2.6;
     controls.minDistance = 2;
     controls.maxDistance = 60;
+    // Onshape-style wheel zoom (user request 2026-10-02): dollies down the
+    // pointer ray, so zooming in magnifies the detail under the cursor and
+    // zooming out lets the scene flow away from it.
+    controls.zoomToCursor = true;
     // Drag-orbit (original 3D-mode logic, Onshape-style): cursor down lifts
     // the camera so the field's top tilts into view — the same direction the
     // flat-field build used. Owned here (not OrbitControls) so the glide and
@@ -230,6 +312,19 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
     renderer.domElement.addEventListener('wheel', onWheelX, { passive: true });
 
+    // Route vertical wheel zoom through the shared device-aware curve
+    // (mouse notches keep a stepped feel; trackpad scrolls/deltas are
+    // continuous with a per-event cap — user request 2026-10-02).
+    // OrbitControls applies exp(-K·zoomSpeed·|δ|) per event, so we set
+    // zoomSpeed per event to reproduce our factor exactly and keep its
+    // damping, distance clamps and zoom-to-cursor. Capture phase on the
+    // host: OrbitControls' own wheel listener sits on the canvas (target
+    // phase, registration order) and must see the adjusted speed.
+    const onWheelZoomSpeed = (e: WheelEvent) => {
+      controls.zoomSpeed = orbitZoomSpeedFor(wheelZoomFactor(e.deltaY, e.deltaMode), e.deltaY);
+    };
+    host.addEventListener('wheel', onWheelZoomSpeed, { capture: true });
+
     // Render on demand (declared early — Scene3D.dirty exposes it).
     let needsDraw = true;
     const markDirty = () => {
@@ -249,12 +344,143 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     sun.shadow.camera.far = 45;
     scene.add(sun);
 
-    const { cx, cy, width: w, depth: h } = fieldRenderBounds(field);
-
+    // Persistent containers, created once: the field effect below clears
+    // and refills them on every season switch, and the tube/box effect owns
+    // `dynamic`. The scaffold (camera included) outlives all of them.
+    const dynamic = new THREE.Group();
+    dynamic.name = 'pb-dynamic'; // reachable by the regression walkthrough
     const modelRoot = new THREE.Group();
     const fallback = new THREE.Group();
-    scene.add(modelRoot);
-    scene.add(fallback);
+    const fieldRoot = new THREE.Group();
+    scene.add(dynamic, modelRoot, fallback, fieldRoot);
+    sceneRef.current = {
+      renderer, scene, camera, controls,
+      cx: 0, cy: 0,
+      dynamic, boxes: [],
+      modelRoot, fallback, fieldRoot,
+      backgroundThemed,
+      dirty: markDirty, themed,
+    };
+
+
+
+    const resize = () => {
+      const wpx = host.clientWidth || 1;
+      const hpx = host.clientHeight || 1;
+      renderer.setSize(wpx, hpx);
+      camera.aspect = wpx / hpx;
+      camera.updateProjectionMatrix();
+    };
+    const ro = new ResizeObserver(resize);
+    ro.observe(host);
+    resize();
+
+    // WebKit trackpad pinch fires gesture* events, not wheel+ctrlKey —
+    // dolly the camera manually so pinch zoom works in the desktop shell.
+    let lastScale = 1;
+    const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
+    const onGestureStart = (e: Event) => {
+      lastScale = gestureScale(e);
+    };
+    const onGestureChange = (e: Event) => {
+      e.preventDefault();
+      const s = gestureScale(e);
+      if (s > 0 && lastScale > 0) {
+        const dir = camera.position.clone().sub(controls.target).multiplyScalar(1 / s);
+        if (dir.length() > 1.5) camera.position.copy(controls.target).add(dir);
+      }
+      lastScale = s;
+    };
+    renderer.domElement.addEventListener('gesturestart', onGestureStart);
+    renderer.domElement.addEventListener('gesturechange', onGestureChange);
+
+    // Draw only when the camera moved or something was marked dirty —
+    // the heavy field model made render-per-frame starve all macrotasks.
+    controls.addEventListener('change', markDirty);
+    const ro0 = new ResizeObserver(markDirty);
+    ro0.observe(host);
+
+    let raf = 0;
+    const loop = () => {
+      const moved = controls.update();
+      if (needsDraw || moved) {
+        needsDraw = false;
+        renderer.render(scene, camera);
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+
+    // Test/debug hook: orientation + camera state assertions.
+    (window as unknown as { __pb3d?: unknown }).__pb3d = { camera, controls, renderer, scene, modelCacheSize: () => modelCache.size };
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      ro0.disconnect();
+      controls.removeEventListener('change', markDirty);
+      renderer.domElement.removeEventListener('pointerdown', onDragDown);
+      renderer.domElement.removeEventListener('pointermove', onDragMove);
+      renderer.domElement.removeEventListener('pointerup', onDragUp);
+      renderer.domElement.removeEventListener('pointercancel', onDragUp);
+      renderer.domElement.removeEventListener('wheel', onWheelX);
+      host.removeEventListener('wheel', onWheelZoomSpeed, { capture: true });
+      renderer.domElement.removeEventListener('gesturestart', onGestureStart);
+      renderer.domElement.removeEventListener('gesturechange', onGestureChange);
+      controls.dispose();
+      renderer.dispose();
+      if (renderer.domElement.parentElement === host) host.removeChild(renderer.domElement);
+      sceneRef.current = null;
+    };
+  }, []);
+
+  // ---- Field-dependent subtree: slab/walls/tags/structures ----------------
+  // Rebuilt when the field (or its artwork) changes. The scaffold — and
+  // with it the camera — survives, so switching seasons keeps the user's
+  // exact viewpoint (user request 2026-09-30).
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    const disposeDeep = (obj: THREE.Object3D) => {
+      obj.traverse((child) => {
+        const mesh = child as THREE.Mesh;
+        mesh.geometry?.dispose?.();
+        const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+        else mat?.dispose?.();
+      });
+    };
+    disposeDeep(st.fieldRoot); // previous field's materials/geometries
+    st.fieldRoot.clear();
+    // The fallback is rebuilt from scratch below on every switch, but it was
+    // never cleared here — each rebuild leaked its slab/walls (geometries,
+    // materials and the slab texture) into the group forever (+6 meshes per
+    // switch, measured; the leak is invisible only because a mounted model
+    // hides it). Slab/walls are created fresh each rebuild, so their maps are
+    // safe to dispose (the shared AprilTag textures live in fieldRoot).
+    st.fallback.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      mesh.geometry?.dispose?.();
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const m of mats) {
+        (m as THREE.MeshStandardMaterial)?.map?.dispose?.();
+        m?.dispose?.();
+      }
+    });
+    st.fallback.clear();
+    // The mounted model is NOT cleared: within one season (variant switch)
+    // it stays on screen while the sibling model streams in — the flat
+    // fallback only covers the window when nothing is mounted. The model
+    // effect swaps/replaces it on arrival.
+    const { scene, fallback, fieldRoot } = st;
+    const themed: { color: THREE.Color; token: string }[] = [];
+    const track = <T extends { color: THREE.Color }>(owner: T, token: string): T => {
+      themed.push({ color: owner.color, token });
+      return owner;
+    };
+
+    const { cx, cy, width: w, depth: h } = fieldRenderBounds(field);
+
 
     if (fieldImageUrl) {
       const tex = new THREE.TextureLoader().load(fieldImageUrl);
@@ -336,9 +562,13 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // the render frame by tagRenderPose (validated against the official
     // asset config). Geometry edge = black-square size × 10/8 (the texture
     // adds the quiet ring); the quad floats 1 mm off its surface along its
-    // own normal. Beacon posts (for fields without an official model) are
-    // placed at the same foot point.
-    for (const tag of field.aprilTags ?? []) {
+    // own normal until the model lands and seats it on its decal plate
+    // (`snapTagQuadsToDecalPlates`). The list comes from `modelTagLayout`:
+    // the selected variant's tags when a model of that build ships, else
+    // the loaded model's own build (2026 AndyMark coordinates are
+    // physically inside the welded-only model's hub panels — see
+    // field3d-frame).
+    for (const tag of modelTagLayout(field, variant)) {
       const z = Math.max(0.05, tag.z ?? 0.55);
       const { position: tagPos, quaternion: tagQuat } = tagRenderPose(tag, cx, cy);
       const quad = new THREE.Mesh(
@@ -351,102 +581,40 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       quad.position.add(
         new THREE.Vector3(0, 0, 1).applyQuaternion(tagQuat).multiplyScalar(0.001),
       );
-      scene.add(quad);
-      const post = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.025, 0.025, tagPos.z, 8),
-        track(
-          new THREE.MeshStandardMaterial({ color: cssToken('--3d-post', '#6a6a70'), roughness: 0.6 }),
-          '--3d-post',
-        ),
-      );
-      post.position.set(tagPos.x, tagPos.y, tagPos.z / 2);
-      post.castShadow = true;
-      scene.add(post);
+      fieldRoot.add(quad);
     }
 
-    // Season structures for fields without official 3D models (2018–2020
-    // have none in AdvantageScopeAssets): recognizable silhouettes from the
-    // public game manuals, not CAD replicas.
-    const season = seasonStructures(field.id, cx, cy);
-    if (season) fallback.add(season);
-    // No flash of the flat fallback while an official model loads: seasons
-    // that have one keep the fallback hidden until (and unless) loading
-    // fails; model-less seasons show it right away.
-    if (FIELD3D_MODELS[field.id]) fallback.visible = false;
+    // Model-less seasons (2018–2020, custom fields) never enter this view —
+    // the 3D option is disabled without an official model (user directive
+    // 2026-10-01) — so no hand-built season silhouettes here anymore. The
+    // slab/walls/outline below still serve as the loading and offline
+    // placeholder for model seasons.
+    // The flat fallback covers only the "nothing is mounted" window (first
+    // entry / season switch). On a variant switch the previous model of the
+    // SAME season stays on screen until the sibling arrives — showing the
+    // dark flat slab there was the "black blink" between variants (user
+    // report 2026-10-01; the 2025 sibling GLB is ~14 MB and its artwork
+    // differs, so the window also had to decode an unloaded texture = a
+    // near-black frame in dark theme).
+    fallback.visible = st.modelRoot.children.length === 0;
 
-    const dynamic = new THREE.Group();
-    scene.add(dynamic);
 
-    sceneRef.current = { renderer, scene, camera, controls, cx, cy, dynamic, boxes: [], modelRoot, fallback, dirty: markDirty, themed };
-
-    const resize = () => {
-      const wpx = host.clientWidth || 1;
-      const hpx = host.clientHeight || 1;
-      renderer.setSize(wpx, hpx);
-      camera.aspect = wpx / hpx;
-      camera.updateProjectionMatrix();
-    };
-    const ro = new ResizeObserver(resize);
-    ro.observe(host);
-    resize();
-
-    // WebKit trackpad pinch fires gesture* events, not wheel+ctrlKey —
-    // dolly the camera manually so pinch zoom works in the desktop shell.
-    let lastScale = 1;
-    const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
-    const onGestureStart = (e: Event) => {
-      lastScale = gestureScale(e);
-    };
-    const onGestureChange = (e: Event) => {
-      e.preventDefault();
-      const s = gestureScale(e);
-      if (s > 0 && lastScale > 0) {
-        const dir = camera.position.clone().sub(controls.target).multiplyScalar(1 / s);
-        if (dir.length() > 1.5) camera.position.copy(controls.target).add(dir);
-      }
-      lastScale = s;
-    };
-    renderer.domElement.addEventListener('gesturestart', onGestureStart);
-    renderer.domElement.addEventListener('gesturechange', onGestureChange);
-
-    // Draw only when the camera moved or something was marked dirty —
-    // the heavy field model made render-per-frame starve all macrotasks.
-    controls.addEventListener('change', markDirty);
-    const ro0 = new ResizeObserver(markDirty);
-    ro0.observe(host);
-
-    let raf = 0;
-    const loop = () => {
-      const moved = controls.update();
-      if (needsDraw || moved) {
-        needsDraw = false;
-        renderer.render(scene, camera);
-      }
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-
-    // Test/debug hook: orientation + camera state assertions.
-    (window as unknown as { __pb3d?: unknown }).__pb3d = { camera, controls, renderer, scene };
+    st.cx = cx;
+    st.cy = cy;
+    st.themed.length = 0;
+    st.themed.push(st.backgroundThemed, ...themed);
+    st.dirty();
 
     return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      ro0.disconnect();
-      controls.removeEventListener('change', markDirty);
-      renderer.domElement.removeEventListener('pointerdown', onDragDown);
-      renderer.domElement.removeEventListener('pointermove', onDragMove);
-      renderer.domElement.removeEventListener('pointerup', onDragUp);
-      renderer.domElement.removeEventListener('pointercancel', onDragUp);
-      renderer.domElement.removeEventListener('wheel', onWheelX);
-      renderer.domElement.removeEventListener('gesturestart', onGestureStart);
-      renderer.domElement.removeEventListener('gesturechange', onGestureChange);
-      controls.dispose();
-      renderer.dispose();
-      if (renderer.domElement.parentElement === host) host.removeChild(renderer.domElement);
-      sceneRef.current = null;
+      disposeDeep(st.fieldRoot);
+      st.fieldRoot.clear();
+      // modelRoot is deliberately left alone here (this cleanup also runs on
+      // every variant flip): the mounted model is the visual bridge until
+      // the model effect swaps it. Clearing it here was the black blink.
     };
-  }, [field, fieldImageUrl]);
+    // `variant` is explicit: the tag list comes from modelTagLayout(field,
+    // variant), which can change even when the field object does not.
+  }, [field, fieldImageUrl, variant]);
 
   // Theme flips retint the built-once scene: background/fog and every
   // token-backed structure material. React to the theme context —
@@ -461,87 +629,131 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   }, [themeResolved]);
 
   // Official 3D field model (AdvantageScope assets, BSD-3): replaces the
-  // hand-built fallback. Transform validated against the WPILib 2026 tag
-  // layout: config rotation (x 90°) into the AS frame, then mirror X into
-  // our blue-origin frame (reflection → materials flipped to DoubleSide).
+  // hand-built fallback. Parsed models are cached module-level (processed
+  // once, cloned per mount) so revisiting a season is instant, and clones
+  // share geometry/materials with the cache — never dispose them here.
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
     const entry = FIELD3D_MODELS[field.id];
     const dir =
       entry && (variant === 'andymark' ? entry.andymark ?? entry.welded : entry.welded);
-    if (!dir) return; // no official model (2018-2020) — fallback stays
+    if (!dir) return; // no official model (2018–2020) — fallback stays visible
+    const prevDir = lastModelDir;
+    lastModelDir = dir;
     let disposed = false;
-    const url = `${import.meta.env.BASE_URL}fields3d/${dir}/model.glb`;
-    new GLTFLoader().load(
-      url,
-      (gltf) => {
+
+    // Cross-SEASON switches replace what is mounted (the previous field's
+    // model would mislead while the next one streams in — the flat fallback
+    // covers that window, as before). Within one season (variant switch)
+    // the outgoing model stays on screen until the sibling arrives, so the
+    // view never drops to the dark flat slab (the "black blink").
+    if (st.modelFieldId !== undefined && st.modelFieldId !== field.id) {
+      st.modelRoot.clear(); // clones share cache geometry — never disposed
+      st.modelFieldId = undefined;
+      // The field effect already computed `fallback.visible` with the old
+      // model still mounted — re-cover the streaming window explicitly.
+      st.fallback.visible = true;
+      st.dirty();
+    }
+
+    const mount = (g: THREE.Object3D) => {
+      // Swap atomically in one tick: the outgoing mount (previous variant of
+      // this season, or a stale season's leftover) leaves in the same frame
+      // the new one enters. Only the catcher is disposed — it is created
+      // per-mount; the outgoing CLONE shares geometry with the module-level
+      // cache and must not be disposed (that would corrupt every later
+      // clone of that season).
+      for (const child of [...st.modelRoot.children]) {
+        const mesh = child as THREE.Mesh;
+        const mat = mesh.material;
+        if (mesh.isMesh && !Array.isArray(mat) && mat?.type === 'ShadowMaterial') {
+          mesh.geometry?.dispose?.();
+          mat.dispose();
+        }
+      }
+      st.modelRoot.clear();
+      // A shadow-catcher under the robots, sized to this field (per-mount:
+      // cheap, and field.lengthM differs between seasons).
+      const catcher = new THREE.Mesh(
+        new THREE.PlaneGeometry(field.lengthM + 2, field.widthM + 2),
+        new THREE.ShadowMaterial({ opacity: 0.28 }),
+      );
+      catcher.rotation.x = -Math.PI / 2;
+      catcher.position.y = 0.002;
+      catcher.receiveShadow = true;
+      st.modelRoot.add(catcher, g);
+      st.modelFieldId = field.id;
+      // The overlay quads were posed from the layout plane the moment the
+      // field subtree built (usable field before the model streams in);
+      // now that the real surfaces exist, seat each quad on its tag's own
+      // decal plate — the two 2025 models mount plates at different depths
+      // off the layout plane, and a layout-plane quad ends up behind the
+      // welded plates (dark, shaded) while the AndyMark one shows crisp
+      // (user report 2026-10-01). See snapTagQuadsToDecalPlates.
+      snapTagQuadsToDecalPlates(st.fieldRoot, g);
+      st.fallback.visible = false;
+      st.dirty();
+    };
+
+    const cached = modelCache.get(dir);
+    if (cached) {
+      // Instant path: a clone of the already-parsed scene (geometry and
+      // materials are shared, so the GPU buffers are reused as-is).
+      modelCache.delete(dir);
+      modelCache.set(dir, cached); // LRU freshen
+      mount(cached.clone(true));
+    } else {
+      loadProcessedModel(dir).then((g) => {
         if (disposed) return;
-        const g = gltf.scene;
-        // AdvantageScope's loadField applies the config rotation Rx(90°),
-        // and its scene then wraps everything in a group carrying
-        // Rx(−90°)·Ry(180°) — the NET model rotation is a plain 180° yaw:
-        // (x, y, z) → (−x, −y, z). We removed that yaw by accident in the
-        // "no rotation" pass, mirroring the field end-for-end so the tags
-        // (placed on the correct side of the coordinate frame) floated
-        // behind structures. Apply the 180° yaw and recenter: native Z is
-        // off-center (−4.12..6.44, fuel piles at +Z) → shift Z by +1.16
-        // after the yaw flips its sign; native floor at −0.13 → +0.13.
-        g.rotation.y = Math.PI;
-        g.position.set(0, 0.13, 1.16);
-        g.traverse((o) => {
-          const mesh = o as THREE.Mesh;
-          if (!mesh.isMesh) return;
-          // Heavy model stays OUT of the shadow pass (a full second render
-          // of ~1M triangles froze the main thread); a shadow-catcher
-          // floor below still receives the robots' shadows cheaply.
-          mesh.castShadow = false;
-          mesh.receiveShadow = false;
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          for (const m of mats) {
-            const std = m as THREE.MeshStandardMaterial;
-            std.side = THREE.DoubleSide;
-            // The field has no chrome: clamp PBR sliders so the official
-            // models read as carpet/wood/plastic under the studio env.
-            std.roughness = Math.max(std.roughness ?? 0.5, 0.55);
-            std.metalness = Math.min(std.metalness ?? 0, 0.05);
-            std.envMapIntensity = 0.55;
-          }
-        });
-        const catcher = new THREE.Mesh(
-          new THREE.PlaneGeometry(field.lengthM + 2, field.widthM + 2),
-          new THREE.ShadowMaterial({ opacity: 0.28 }),
-        );
-        catcher.rotation.x = -Math.PI / 2;
-        catcher.position.y = 0.002;
-        catcher.receiveShadow = true;
-        st.modelRoot.add(catcher, g);
-        st.fallback.visible = false;
-        st.dirty();
-      },
-      undefined,
-      () => {
-        if (disposed) return;
-        // offline/missing model: the flat fallback takes over
-        st.fallback.visible = true;
-        st.dirty();
-      },
-    );
+        if (!g) {
+          // offline/missing model: the flat fallback takes over
+          st.modelRoot.clear();
+          st.modelFieldId = undefined;
+          st.fallback.visible = true;
+          st.dirty();
+          return;
+        }
+        mount(g);
+      });
+    }
+
+    // Idle prefetch of what a season-roaming user is most likely to open
+    // next: the sibling construction variant, and the field used before
+    // this one (A/B comparisons are the core loop of this app).
+    const idle =
+      typeof requestIdleCallback === 'function'
+        ? requestIdleCallback
+        : (cb: () => void) => setTimeout(cb, 600) as unknown as number;
+    const cancel =
+      typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout as (id: number) => void;
+    const sibling = entry
+      ? variant === 'andymark'
+        ? entry.welded
+        : entry.andymark ?? entry.welded
+      : undefined;
+    const idleId = idle(() => {
+      for (const d of [sibling, prevDir]) {
+        if (d && d !== dir && !modelCache.has(d)) void loadProcessedModel(d).catch(() => undefined);
+      }
+    });
+
     return () => {
       disposed = true;
-      st.modelRoot.traverse((o) => {
-        const mesh = o as THREE.Mesh;
-        mesh.geometry?.dispose?.();
-        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        for (const m of mats) m?.dispose?.();
-      });
-      st.modelRoot.clear();
-      // Visibility stays false for official-model seasons across the swap
-      // (restating it true here flashes the flat field for one frame).
+      cancel(idleId);
+      // modelRoot is NOT cleared here: on a variant switch the outgoing
+      // model stays mounted as the visual bridge until the sibling arrives
+      // (mount() swaps atomically); a cross-season switch clears it in the
+      // next run's body. Unmounting the view takes the whole scene with it.
     };
-  }, [field.id, variant]);
+  }, [field.id, variant, field.lengthM, field.widthM]);
 
-  // Rebuild path tubes + robot boxes when the robot set changes.
+  // Rebuild path tubes + robot boxes when the robot set changes — AND when
+  // the field changes: the scaffold effect tears the whole scene down and
+  // hands sceneRef a fresh, EMPTY dynamic group; without `field` in the deps
+  // this effect never re-ran, so switching seasons in 3D left the field
+  // without any paths or robots (user report 2026-09-30). Declaration order
+  // guarantees the scaffold rebuilds first.
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
@@ -584,7 +796,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       st.boxes.push({ mesh, robot: r });
       st.dirty();
     }
-  }, [robots]);
+  }, [robots, field]);
 
   // Drive boxes along the shared clock.
   useEffect(() => {
@@ -598,7 +810,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       mesh.rotation.y = headingToRender(pose.heading);
       st.dirty();
     }
-  }, [currentT, robots]);
+  }, [currentT, robots, field]);
 
   useImperativeHandle(ref, () => ({
     // Fit the whole field into the vertical field of view from the current
@@ -622,92 +834,3 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   if (glFailed) return <div className="field-canvas-3d" aria-label="WebGL unavailable" />;
   return <div ref={hostRef} className="field-canvas-3d" />;
 });
-
-
-/** Recognizable season silhouettes for the no-official-model years.
- *  Field-frame (fx, fy) positions go through the scene's one mapping.
- *  Colors: neutral gray structure with red/blue alliance accents. */
-function seasonStructures(fieldId: string, cx: number, cy: number): THREE.Group | null {
-  const g = new THREE.Group();
-  const P = (fx: number, fy: number, h: number) => worldToRenderVec3(fx, fy, h, cx, cy);
-  const RED = 0xb03030;
-  const BLUE = 0x3050b0;
-  const WOOD = 0x9a8a70;
-  const GRAY = 0x8a8a90;
-  const box = (w: number, h: number, d: number, pos: THREE.Vector3, color: number) => {
-    const m = new THREE.Mesh(
-      new THREE.BoxGeometry(w, h, d),
-      new THREE.MeshStandardMaterial({ color, roughness: 0.7 }),
-    );
-    m.position.copy(pos);
-    m.castShadow = true;
-    m.receiveShadow = true;
-    g.add(m);
-    return m;
-  };
-  const cyl = (r: number, h: number, pos: THREE.Vector3, color: number) => {
-    const m = new THREE.Mesh(
-      new THREE.CylinderGeometry(r, r, h, 16),
-      new THREE.MeshStandardMaterial({ color, roughness: 0.7 }),
-    );
-    m.position.copy(pos);
-    m.castShadow = true;
-    g.add(m);
-    return m;
-  };
-
-  if (fieldId === 'powerup-2018') {
-    // Scales (tall balanced platforms, one per alliance) + switches (low).
-    for (const [fx, color] of [[2.8, BLUE], [13.7, RED]] as const) {
-      cyl(0.12, 1.75, P(fx, 4.11, 0.875), GRAY);
-      box(0.3, 0.3, 3.2, P(fx, 4.11, 1.75), color);
-      box(1.4, 0.1, 0.9, P(fx, 4.11, 1.9), color);
-    }
-    for (const [fx, color] of [[5.9, BLUE], [10.6, RED]] as const) {
-      box(1.5, 0.35, 3.0, P(fx, 4.11, 0.175), color);
-      box(0.25, 0.55, 3.0, P(fx, 4.11, 0.55), WOOD);
-    }
-    // Power cube piles flanking the scale zone.
-    for (const fy of [1.6, 6.6]) {
-      for (let i = 0; i < 3; i++) box(0.32, 0.32, 0.32, P(4.4 + i * 0.36, fy, 0.16), 0xd8c040);
-    }
-    return g;
-  }
-  if (fieldId === 'deepspace-2019') {
-    // Cargo ships along both long sides.
-    for (const fy of [1.15, 7.05]) {
-      box(5.4, 1.3, 1.25, P(8.23, fy, 0.65), WOOD);
-      box(5.4, 0.55, 1.35, P(8.23, fy, 1.55), GRAY);
-    }
-    // Rockets (angled towers) near each short end. The lean sign follows the
-    // frame's X reflection, so the towers tip away from their own wall.
-    for (const [fx, color] of [[2.3, BLUE], [14.1, RED]] as const) {
-      for (const fy of [2.2, 6.0]) {
-        box(1.4, 0.15, 1.4, P(fx, fy, 0.35), color);
-        const tower = box(1.1, 2.6, 0.18, P(fx + 0.25, fy, 1.65), color);
-        tower.rotation.z = 0.28;
-      }
-    }
-    // HAB climb platforms against the short walls.
-    for (const [fx, color] of [[0.75, BLUE], [15.7, RED]] as const) {
-      box(1.2, 0.18, 5.0, P(fx, 4.11, 0.09), color);
-      const ramp = box(1.4, 0.16, 2.6, P(fx + 1.1, 4.11, 0.22), color);
-      ramp.rotation.z = -0.17;
-    }
-    return g;
-  }
-  if (fieldId === 'infinitercharge-2020') {
-    // Control panel at center.
-    cyl(0.14, 0.5, P(8.23, 4.11, 0.25), GRAY);
-    cyl(0.5, 0.08, P(8.23, 4.11, 0.54), 0xd04040);
-    // Trench barriers along both long sides.
-    for (const fy of [1.55, 6.65]) box(6.5, 0.65, 0.16, P(8.23, fy, 0.325), GRAY);
-    // Sector targets (hex-ish towers) against each short wall + climb bars.
-    for (const [fx, color] of [[0.6, BLUE], [15.85, RED]] as const) {
-      box(0.5, 2.2, 3.4, P(fx, 4.11, 1.1), color);
-      cyl(0.06, 3.6, P(fx + 1.3, 4.11, 2.3), GRAY).rotation.z = Math.PI / 2;
-    }
-    return g;
-  }
-  return null;
-}

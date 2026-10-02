@@ -36,7 +36,7 @@ beforeEach(() => {
 });
 
 describe('robot workspace controls', () => {
-  it('keeps selection separate from field visibility and leaves parameter editing out of the list', () => {
+  it('keeps selection separate from field visibility', () => {
     const sample = robot();
     const onSelect = vi.fn();
     const onUpdate = vi.fn();
@@ -53,46 +53,24 @@ describe('robot workspace controls', () => {
     expect(onSelect).toHaveBeenCalledWith(sample.trajectory.id);
   });
 
-  it('never exposes dimensions from a file as editable controls', () => {
+  it('shows dimensions read-only for every source — the app is a pure viewer', () => {
     const sample = robot();
-    expect(sample.trajectory.geometrySource).toBe('file');
     render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
 
-    expect(screen.getByText('From file')).toBeInTheDocument();
-    expect(screen.queryByRole('spinbutton', { name: 'length' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('spinbutton', { name: 'width' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
     expect(screen.getAllByText(`${sample.trajectory.geometry.lengthM.toFixed(2)} m`).length).toBeGreaterThan(0);
-    expect(screen.getByRole('spinbutton', { name: 'delay (s)' })).toBeInTheDocument();
+    expect(screen.getAllByText(`${sample.trajectory.geometry.widthM.toFixed(2)} m`).length).toBeGreaterThan(0);
   });
 
-  it('commits complete bounded dimensions, leaving incomplete typing out of collision inputs', () => {
+  it('exposes no editing affordances anywhere on the card', () => {
     const sample = robot();
-    sample.trajectory.geometrySource = 'default';
-    const callbacks = inspectorCallbacks();
-    render(<I18nProvider><RobotInspector robot={sample} {...callbacks} /></I18nProvider>);
-    const length = screen.getByRole('spinbutton', { name: 'length' });
-    fireEvent.change(length, { target: { value: '' } });
-    expect(callbacks.onSetGeometry).not.toHaveBeenCalled();
-    fireEvent.blur(length);
-    expect(length).toHaveValue(sample.trajectory.geometry.lengthM);
-    fireEvent.change(length, { target: { value: '0.95' } });
-    expect(callbacks.onSetGeometry).not.toHaveBeenCalled();
-    fireEvent.blur(length);
-    expect(callbacks.onSetGeometry).toHaveBeenCalledWith(sample.trajectory.id, { lengthM: 0.95 });
-    fireEvent.change(length, { target: { value: '99' } });
-    fireEvent.blur(length);
-    expect(callbacks.onSetGeometry).toHaveBeenLastCalledWith(sample.trajectory.id, { lengthM: 2 });
-  });
-
-  it('drops an unfinished numeric draft when selecting a different robot', () => {
-    const first = robot();
-    const second = { ...robot(), startDelayS: 2, trajectory: { ...robot().trajectory, id: 'second' } };
-    const callbacks = inspectorCallbacks();
-    const view = render(<I18nProvider><RobotInspector robot={first} {...callbacks} /></I18nProvider>);
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'delay (s)' }), { target: { value: '7' } });
-    view.rerender(<I18nProvider><RobotInspector robot={second} {...callbacks} /></I18nProvider>);
-    expect(screen.getByRole('spinbutton', { name: 'delay (s)' })).toHaveValue(2);
-    expect(callbacks.onUpdate).not.toHaveBeenCalled();
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
+    // Pure viewer (2026-09-30): no team-number input, no alliance toggle,
+    // no delay/geometry spinbuttons, no edit/reset/export actions.
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /edit path/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^\.path$|\.traj$|\.ghostauto$/ })).not.toBeInTheDocument();
   });
 
   it('preserves viewer-only limits while showing robot data', () => {

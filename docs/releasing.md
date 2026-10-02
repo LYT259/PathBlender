@@ -7,11 +7,13 @@
 - [ ] **推送前门禁**：`scripts/pre-push-check.mjs`（git pre-push 钩子自动执行；新克隆后先跑 `scripts/install-hooks.sh`）——待推提交命中敏感词（账号/工单/内网 IP/真实姓名/密钥材料）一律中止。2026-09-02 教训：一次性扫描会随日志追加失效，门禁是唯一可靠形态。
 
 - [ ] `npm run typecheck` 零错误
-- [ ] `npm run version:check`（六处版本号同源：root / core / web / desktop 的 package.json + tauri.conf.json + Cargo.toml；SW 缓存名取 root 值）
+- [ ] `npm run version:check`（七处版本号同源：root / core / web / desktop 的 package.json + tauri.conf.json + Cargo.toml + web `version-info.ts`；SW 缓存名取 root 值）
+- [ ] 版本号生命周期（2026-10-01 定稿）：每次合 beta 经 `scripts/bump-version.mjs beta "说明"` 抬 `-beta.N`（附用户可懂说明，偏好设置「关于」展示/一键复制）；发版时 `bump-version.mjs release` 去后缀得正式号，再打 `v*` tag；**同一版本号永不对应两种内容**——有问题需重发时用新号，旧版安装包留在 Release 里可回退
 - [ ] `npm test` 全绿（core + web e2e）
 - [ ] `npm run build` 成功；`packages/web/dist` 体积合理（gzip JS < 300 KB 量级）
 - [ ] 本地 `npm run preview` 过一遍完整流程：四格式导入 → 回放 → 碰撞 → 延迟 what-if → 会话存/取 → Share link → PNG
 - [ ] 桌面版：`npm run tauri build -w packages/desktop` 出 .app/.dmg；ad-hoc 签名保留（`codesign -dv` 核对）；启动冒烟（进程存活）
+- [ ] **深浅色应用图标**：`packages/desktop/src-tauri/icons/AppIcon.icon`（日间红底 / 夜间黑底，第 14 轮定稿）经 `scripts/apply-dark-icon.sh` 注入 Assets.car + `CFBundleIconName`——本地 install-desktop.sh 与 release.yml 均已内置该步；抽查安装包 `Contents/Resources/Assets.car` 存在且 `assetutil --info` 含 `NSAppearanceNameDarkAqua`
 
 ## 许可证与素材
 

@@ -1,7 +1,7 @@
 import { createRef, useState } from 'react';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_GEOMETRY, moveChoreoWaypoint, type FieldPackage, type SessionTrajectory } from '@pathblender/core';
+import { type FieldPackage, type SessionTrajectory } from '@pathblender/core';
 import { FieldCanvas, type FieldCanvasHandle } from '../src/components/FieldCanvas';
 import { I18nProvider } from '../src/i18n';
 
@@ -97,10 +97,12 @@ describe('field canvas interaction and redraws', () => {
     paint();
     expect(strokeRect).toHaveBeenLastCalledWith(10, 10, 200, 100);
 
-    fireEvent.wheel(container.querySelector('canvas')!, { deltaY: -Math.log(2) / 0.0012 });
+    // Integer notch → mouse-wheel curve: one ±120 event scales by
+    // exp(120·0.0012) ≈ 1.155, so the fit scale of 20 px/m becomes ≈23.1.
+    fireEvent.wheel(container.querySelector('canvas')!, { deltaY: -120 });
     paint();
     const zoomedWidth = strokeRect.mock.lastCall![2];
-    expect(zoomedWidth).toBeCloseTo(400);
+    expect(zoomedWidth).toBeCloseTo(231, 0);
     resize(660, 360);
     paint();
     expect(strokeRect.mock.lastCall![2]).toBe(zoomedWidth);
@@ -110,48 +112,26 @@ describe('field canvas interaction and redraws', () => {
     expect(strokeRect).toHaveBeenLastCalledWith(30, 30, 600, 300);
   });
 
-  it.each(['pointerup', 'pointercancel'])('continues a waypoint drag across parent redraws until %s', (endEvent) => {
-    const begin = vi.fn();
-    const end = vi.fn();
-    const edited = vi.fn();
-    const robot: SessionTrajectory = {
-      startDelayS: 0, visible: true, color: '#007aff',
-      trajectory: {
-        id: 'robot', name: 'Robot', teamName: '', teamNumber: '',
-        source: 'choreo-traj', alliance: 'blue', samples: [], durationS: 0,
-        geometry: DEFAULT_GEOMETRY, geometrySource: 'default', moduleLocations: [], events: [], warnings: [],
-        editable: {
-          kind: 'choreo', version: '3', splits: [],
-          waypoints: [{ x: 5, y: 2.5, heading: 0, intervals: 20, split: false, fixTranslation: false, fixHeading: false, overrideIntervals: false }],
-        },
-      },
-    };
-    function Editor() {
-      const [current, setCurrent] = useState(robot);
-      return <FieldCanvas {...emptyScene} editRobot={current} onBeginEdit={begin} onEndEdit={end}
-        onEditWaypoint={(id, index, point, kind) => {
-          edited(id, index, point, kind);
-          setCurrent((previous) => ({ ...previous, trajectory: moveChoreoWaypoint(previous.trajectory, index, point) }));
-        }} />;
-    }
-    const { container } = render(<I18nProvider><Editor /></I18nProvider>);
+  it('anchors wheel zoom at the cursor (the world point under it stays put)', () => {
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
     resize(440, 240);
     paint();
-    const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = vi.fn();
-    pointer(canvas, 'pointerdown', 220, 120);
-    pointer(canvas, 'pointermove', 260, 120);
-    paint();
-    pointer(canvas, 'pointermove', 300, 120);
-    paint();
-    expect(begin).toHaveBeenCalledOnce();
-    expect(end).not.toHaveBeenCalled();
-    expect(edited).toHaveBeenNthCalledWith(1, 'robot', 0, { x: 6, y: 2.5 }, 'anchor');
-    expect(edited).toHaveBeenNthCalledWith(2, 'robot', 0, { x: 7, y: 2.5 }, 'anchor');
+    expect(strokeRect).toHaveBeenLastCalledWith(20, 20, 400, 200); // field spans x 20..420
 
-    pointer(canvas, endEvent, 300, 120);
-    pointer(canvas, 'pointermove', 340, 120);
-    expect(end).toHaveBeenCalledOnce();
-    expect(edited).toHaveBeenCalledTimes(2);
+    // Zoom in one notch with the cursor at screen x=300 — 70% across the
+    // 10 m field (world x=7 m). After the zoom that world point must still
+    // render at x=300 instead of drifting with the canvas center.
+    // (offsetX/Y are not WheelEventInit members, so they must be defined
+    // on the instance — same as the pointer() helper above.)
+    const wheel = new WheelEvent('wheel', { deltaY: -120 });
+    Object.defineProperty(wheel, 'offsetX', { value: 300 });
+    Object.defineProperty(wheel, 'offsetY', { value: 120 });
+    fireEvent(container.querySelector('canvas')!, wheel);
+    paint();
+    const [x, , width] = strokeRect.mock.lastCall!;
+    expect(width).toBeCloseTo(462, 0);
+    expect(x).toBeLessThan(20); // zooming in pushes the left edge away
+    expect(x + 0.7 * width).toBeCloseTo(300, 0);
   });
+
 });

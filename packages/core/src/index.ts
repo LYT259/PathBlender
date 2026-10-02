@@ -24,13 +24,12 @@ export {
   fieldById,
   flipPoseToBlue,
   makeCustomField,
+  withFieldVariant,
 } from './field';
 export type { FieldImageCalibration, FieldPackage } from './field';
 export { fieldImageWorldRect } from './field';
 
 export { lerpAngle, sampleTrajectory, wrapAngle } from './math';
-export { ActionRegistry, validateArgs } from './actions';
-export type { ActionContext, ActionResult, ActionRegistry as ActionRegistryType, ActionSpec, Args, RiskLevel } from './actions';
 export {
   addChoreoWaypoint,
   addPpWaypoint,

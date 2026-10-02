@@ -5,7 +5,7 @@ CLAUDE.md
 .cursor/
 
 # 依赖与构建产物
-node_modules/
+node_modules
 dist/
 coverage/
 *.tsbuildinfo
@@ -37,8 +37,17 @@ engineering-log/
 # 网站内部规格（2026-09-10 用户指令：与报告同等地位，不入库）
 PathBlender_网站规格.md
 
+# 底盘与队号实施方案（2026-10-02 用户指令：挂起的私有规格，不入库）
+PathBlender_底盘与队号方案.md
+
+# 官方资料本地档案：历年手册/场地图纸/AprilTag 布局 JSON（2026-10-02 用户指令，不入库）
+reference/
+
 # Cloudflare/wrangler 本地临时目录（直传部署用，不入库）
 .wrangler/
 
 # 一次性探测脚本：留本机复算，不进仓库（2026.9.12/9.13 三次清理的漏网之鱼）
 scripts/.probe-*.mjs
+
+# AI 协作工具私有清单（同 AGENTS.md 纪律，不入库）
+.zcodeignore
