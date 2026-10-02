@@ -10,16 +10,11 @@ interface WelcomeScreenProps {
 }
 
 function WelcomeIcon({ name }: { name: 'file' | 'folder' | 'session' | 'example' }) {
-  return <svg className="start-icon" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {name === 'file' && <><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z" /><path d="M14 3v5h5M12 17v-6m-3 3 3-3 3 3" /></>}
-    {name === 'folder' && <><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /><path d="M3 10h18" /></>}
-    {name === 'session' && <><path d="M10 20H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1M3 10h13" /><circle cx="17" cy="17" r="5" /><path d="M17 14v3h2" /></>}
-    {name === 'example' && <><circle cx="12" cy="12" r="9" /><path d="m10 8 6 4-6 4Z" fill="currentColor" stroke="none" /></>}
+  return <svg className="start-icon" width="32" height="32" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {name === 'file' && <><path d="M14 50H10a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5h20l6 5" /><path d="M43 13H22a5 5 0 0 0-5 5v39a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5V27Z" /><path d="M43 13v9a5 5 0 0 0 5 5h9M29 51c13 0 1-15 15-18" /><circle cx="27" cy="52" r="2.5" fill="var(--bg-panel)" /><circle cx="45" cy="32" r="2.5" fill="var(--bg-panel)" /></>}
+    {(name === 'folder' || name === 'session') && <><path d="M5 18a5 5 0 0 1 5-5h12a6 6 0 0 1 4 2l4 3h24a5 5 0 0 1 5 5v29a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5Z" /><path d="M5 26h54" /></>}
+    {name === 'example' && <><circle cx="32" cy="32" r="26" /><path d="m27 22 15 10-15 10Z" /></>}
   </svg>;
-}
-
-function RowArrow() {
-  return <svg className="start-row-arrow" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>;
 }
 
 export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryExample, exampleLoading = false }: WelcomeScreenProps) {
@@ -32,24 +27,20 @@ export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryEx
           <button type="button" className="start-action start-action-primary welcome-import" onClick={onImport} aria-label={t('welcome.importFile')} aria-description={t('welcome.importFileHint')}>
             <WelcomeIcon name="file" />
             <span className="start-action-title">{t('welcome.importFile')}</span>
-            <RowArrow />
           </button>
           {onImportFolder && <button type="button" className="start-action start-action-primary welcome-folder-import" onClick={onImportFolder} aria-label={t('library.importFolder')} aria-description={t('welcome.importFolderHint')}>
             <WelcomeIcon name="folder" />
             <span className="start-action-title">{t('library.importFolder')}</span>
-            <RowArrow />
           </button>}
         </div>
         <div className="start-secondary">
           <button type="button" className="start-action welcome-open-session" onClick={onOpenSession} aria-label={t('welcome.openSession')} aria-description={t('welcome.openSessionHint')}>
             <WelcomeIcon name="session" />
             <span className="start-action-title">{t('welcome.openSession')}</span>
-            <RowArrow />
           </button>
           <button type="button" className="start-action welcome-try-example" onClick={onTryExample} disabled={exampleLoading} aria-busy={exampleLoading} aria-label={t(exampleLoading ? 'welcome.loadingExample' : 'welcome.tryExample')} aria-description={t('welcome.exampleHint')}>
             <WelcomeIcon name="example" />
             <span className="start-action-title">{t(exampleLoading ? 'welcome.loadingExample' : 'welcome.tryExample')}</span>
-            <RowArrow />
           </button>
         </div>
       </div>

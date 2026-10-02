@@ -1,84 +1,125 @@
 .workspace-empty.start-screen {
-  --start-blue: #78b7ff;
-  --start-import-bg: #1e3047;
-  --start-import-hover: #263d59;
-  --start-import-pressed: #2d4869;
-  --start-divider: #344b65;
+  --start-blue: #0a84ff;
+  --start-secondary-fg: #b4b4bd;
+  --start-blue-hover: #2994ff;
+  --start-blue-pressed: #0070df;
   justify-content: flex-start;
-  text-align: left;
-  padding: 24px 32px 56px;
+  padding: 24px 32px;
   background: var(--bg);
 }
 
 [data-theme='light'] .start-screen {
-  --start-blue: #006cdb;
-  --start-import-bg: #eaf3ff;
-  --start-import-hover: #deecff;
-  --start-import-pressed: #cfe3ff;
-  --start-divider: #cbdff6;
+  --start-blue: #007aff;
+  --start-secondary-fg: #4b4b54;
+  --start-blue-hover: #006ee6;
+  --start-blue-pressed: #0062cc;
 }
 
 .start-content {
   width: 100%;
-  max-width: 640px;
+  max-width: 724px;
   flex-shrink: 0;
   margin: auto 0;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--bg-panel);
 }
 
-.start-imports, .start-secondary { display: flex; flex-direction: column; }
-.start-imports { border-bottom: 1px solid var(--start-divider); }
+.start-imports {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  min-height: 318px;
+}
 .start-action {
   display: flex;
   align-items: center;
-  width: 100%;
-  min-height: 100px;
-  gap: 32px;
-  padding: 22px 40px;
+  justify-content: center;
+  gap: 16px;
   border: 0;
-  border-radius: 0;
-  background: var(--bg-panel);
-  color: var(--fg);
-  text-align: left;
+  background: transparent;
+  color: var(--fg-dim);
   font: inherit;
-  font-size: 22px;
   line-height: 1.4;
   cursor: pointer;
 }
-.start-action + .start-action { border-top: 1px solid var(--border); }
-.start-action:hover:not(:disabled) { background: var(--bg-card); }
-.start-action:active:not(:disabled) { background: var(--hover); }
-.start-action:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -5px; }
+.start-action:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 5px; }
 .start-action:disabled { cursor: default; opacity: .6; }
-.start-action-title { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.start-icon { flex-shrink: 0; color: var(--fg-dim); }
-.start-row-arrow { flex-shrink: 0; color: var(--fg-dim); }
+.start-action-title { min-width: 0; overflow-wrap: anywhere; }
+.start-icon { flex-shrink: 0; }
 
 .start-action-primary {
-  min-height: 124px;
-  background: var(--start-import-bg);
+  flex-direction: column;
+  min-width: 0;
+  min-height: 318px;
+  gap: 24px;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg-panel);
+  box-shadow: 0 3px 12px rgb(0 0 0 / 5%);
   color: var(--start-blue);
   font-size: 24px;
-  font-weight: 600;
+  font-weight: 400;
+  text-align: center;
 }
-.start-action-primary + .start-action-primary { border-color: var(--start-divider); }
-.start-action-primary:hover:not(:disabled) { background: var(--start-import-hover); }
-.start-action-primary:active:not(:disabled) { background: var(--start-import-pressed); }
-.start-action-primary .start-icon, .start-action-primary .start-row-arrow { color: inherit; }
+.start-action-primary .start-icon { width: 128px; height: 128px; margin: auto; }
+.start-action-primary .start-action-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  min-height: 64px;
+  padding: 12px 14px;
+  border-radius: 15px;
+  background: var(--start-blue);
+  color: #fff;
+}
+.start-action-primary:hover:not(:disabled) .start-action-title { background: var(--start-blue-hover); }
+.start-action-primary:active:not(:disabled) .start-action-title { background: var(--start-blue-pressed); }
+
+.start-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 56px;
+}
+.start-secondary .start-icon { width: 36px; height: 36px; stroke-width: 4; }
+.start-secondary .start-action { color: var(--start-secondary-fg); min-height: 44px; padding: 4px 32px; border-radius: 8px; font-size: 20px; }
+.start-secondary .start-action + .start-action { position: relative; }
+.start-secondary .start-action + .start-action::before {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1px;
+  height: 30px;
+  background: var(--border);
+  content: '';
+  transform: translateY(-50%);
+}
+.start-secondary .start-action:hover:not(:disabled) { color: var(--fg); }
+.start-secondary .start-action:active:not(:disabled) { background: var(--hover); }
+
+/* Share both rows so translated button labels stay aligned across cards. */
+@supports (grid-template-rows: subgrid) {
+  .start-imports { grid-template-rows: 1fr auto; }
+  .start-action-primary { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: subgrid; grid-row: 1 / 3; }
+  .start-action-primary + .start-action-primary { grid-column: 2; }
+  .start-action-primary .start-icon { justify-self: center; }
+}
 
 @media (max-width: 640px) {
-  .workspace-empty.start-screen { padding: 24px 20px 48px; }
-  .start-content { border-radius: 14px; }
-  .start-action { min-height: 76px; padding: 18px 22px; gap: 20px; font-size: 17px; }
-  .start-action-primary { min-height: 92px; font-size: 18px; }
-  .start-icon { width: 32px; height: 32px; }
-  .start-row-arrow { width: 18px; height: 18px; }
+  .workspace-empty.start-screen { padding: 24px 20px; }
+  .start-imports { gap: 14px; min-height: 224px; }
+  .start-action-primary { min-height: 224px; padding: 16px; gap: 20px; border-radius: 16px; font-size: 16px; }
+  .start-action-primary .start-icon { width: 88px; height: 88px; }
+  .start-action-primary .start-action-title { min-height: 52px; padding: 10px 8px; border-radius: 10px; }
+  .start-secondary { margin-top: 32px; }
+  .start-secondary .start-action { padding: 4px 14px; gap: 8px; font-size: 14px; }
+  .start-secondary .start-icon { width: 24px; height: 24px; }
+  .start-secondary .start-action + .start-action::before { height: 24px; }
 }
-@media (max-height: 560px) {
+@media (max-height: 560px) and (min-width: 641px) {
   .workspace-empty.start-screen { padding-block: 20px; }
-  .start-action { min-height: 72px; padding-block: 16px; }
-  .start-action-primary { min-height: 84px; }
+  .start-imports { min-height: 248px; }
+  .start-action-primary { min-height: 248px; padding: 24px; gap: 16px; }
+  .start-action-primary .start-icon { width: 96px; height: 96px; }
+  .start-secondary { margin-top: 24px; }
 }
