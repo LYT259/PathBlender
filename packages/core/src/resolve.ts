@@ -15,13 +15,14 @@ import { detectCollisions } from './collision/detect';
 import { activeEndT } from './session';
 import type { SessionTrajectory } from './session';
 import type { CollisionInterval } from './collision/detect';
-import { AUTO_PERIOD_S } from './field';
 
 /** Delay increment per retry, seconds (report: what-if granularity). */
 const STEP_S = 0.25;
-/** Per-robot delay ceiling — beyond this the plan needs human judgement
- *  (a delay past the Autonomous Period is pointless by construction). */
-export const MAX_DELAY_S = AUTO_PERIOD_S;
+/** Default delay ceiling, seconds — the current season's Autonomous Period
+ *  (2026 REBUILT). Callers mediating an older season's plan should pass that
+ *  season's `FieldPackage.autoPeriodS` (15 s through 2025): a delay past the
+ *  Autonomous Period is pointless by construction. */
+export const MAX_DELAY_S = 20;
 /** Safety bound on total steps. */
 const MAX_ROUNDS = 4000;
 /** Stop early after this many rounds without a new global best. */
@@ -34,7 +35,9 @@ const involves = (c: CollisionInterval, a: string, b: string) =>
 
 export function autoResolveConflicts(
   robots: readonly SessionTrajectory[],
+  autoPeriodS: number = MAX_DELAY_S,
 ): SessionTrajectory[] {
+  const maxDelayS = autoPeriodS;
   let cur = robots.map((r) => ({ ...r }));
   const unsolvable = new Set<string>();
   const plateauStart = new Map<string, SessionTrajectory[]>();
@@ -70,12 +73,12 @@ export function autoResolveConflicts(
     const step = (target: SessionTrajectory) =>
       cur.map((r) =>
         r.trajectory.id === target.trajectory.id
-          ? { ...r, startDelayS: Math.min(MAX_DELAY_S, r.startDelayS + STEP_S) }
+          ? { ...r, startDelayS: Math.min(maxDelayS, r.startDelayS + STEP_S) }
           : r,
       );
 
     const options = [a, b]
-      .filter((x) => x.startDelayS < MAX_DELAY_S)
+      .filter((x) => x.startDelayS < maxDelayS)
       .map((cand) => ({ next: step(cand), pc: pairCount(step(cand)) }));
     const before = pairCount(cur);
 
@@ -91,7 +94,7 @@ export function autoResolveConflicts(
     // Plateau: push the longer trajectory's window past the shorter one.
     if (!plateauStart.has(key)) plateauStart.set(key, cur);
     const longer = duration(a) >= duration(b) ? a : b;
-    if (longer.startDelayS >= MAX_DELAY_S) {
+    if (longer.startDelayS >= maxDelayS) {
       // Hopeless by delay alone — undo this pair's plateau and move on.
       const snap = plateauStart.get(key);
       if (snap) cur = snap;
