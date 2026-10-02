@@ -23,7 +23,7 @@ async function openExample() {
 beforeEach(() => localStorage.clear());
 
 describe('welcome flow', () => {
-  it('explains each starting action and keeps the empty toolbar focused on preferences and help', () => {
+  it('explains each starting action and keeps the empty toolbar focused on preferences', () => {
     render(<App />);
     const welcome = screen.getByRole('region', { name: 'Get started' });
     expect(within(welcome).getAllByRole('button')).toHaveLength(4);
@@ -34,7 +34,9 @@ describe('welcome flow', () => {
     expect(within(welcome).getByRole('button', { name: 'Try an example' })).toHaveAccessibleDescription(/playback and collision checks/);
 
     const toolbar = within(document.querySelector<HTMLElement>('.toolbar')!);
-    expect(toolbar.getAllByRole('button').map((button) => button.getAttribute('aria-label') || button.textContent)).toEqual(['Preferences', 'How to use PathBlender']);
+    expect(toolbar.getAllByRole('button').map((button) => button.getAttribute('aria-label') || button.textContent)).toEqual(['Preferences']);
+    expect(toolbar.queryByText('PathBlender', { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'How to use PathBlender' })).not.toBeInTheDocument();
 
     const input = document.querySelector<HTMLInputElement>('input[webkitdirectory]')!;
     const picker = vi.spyOn(input, 'click').mockImplementation(() => undefined);
@@ -190,16 +192,14 @@ describe('welcome flow', () => {
     expect(screen.getByRole('button', { name: 'End example' })).toBeInTheDocument();
   });
 
-  it('opens accessible help on demand and returns keyboard focus when dismissed', () => {
+  it('opens accessible preferences and returns keyboard focus when dismissed', () => {
     render(<App />);
-    const help = screen.getByRole('button', { name: 'How to use PathBlender' });
+    const help = screen.getByRole('button', { name: 'Preferences' });
     help.focus();
     fireEvent.click(help);
-    const dialog = screen.getByRole('dialog', { name: 'How to use PathBlender' });
+    const dialog = screen.getByRole('dialog', { name: 'Preferences' });
     expect(dialog).toHaveFocus();
-    expect(within(dialog).getByRole('heading', { name: '1. Open paths' })).toBeInTheDocument();
-    expect(within(dialog).getByRole('heading', { name: '2. Replay and compare' })).toBeInTheDocument();
-    expect(within(dialog).getByRole('heading', { name: '3. Review issues' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('tab', { name: 'General' })).toHaveAttribute('aria-selected', 'true');
     fireEvent.keyDown(dialog, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(help).toHaveFocus();
