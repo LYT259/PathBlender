@@ -765,10 +765,13 @@ function AppBody() {
                     {FIELDS.map((f) => <option key={f.id} value={f.id}>{f.name} {f.year}</option>)}
                     <option value={CUSTOM_FIELD_ID}>{tr('customField.title')}</option>
                   </select>
-                  {field.aprilTagsAndyMark && <select className="field-select field-variant" value={fieldVariant} onChange={(e) => {
-                    const v = e.target.value as 'welded' | 'andymark'; setScene({ fieldVariant: v });
-                    if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, v, fieldStyle);
-                  }} title={tr('field.variant')} aria-label={tr('field.variant')}><option value="andymark">AndyMark</option><option value="welded">Welded</option></select>}
+                  {field.aprilTagsAndyMark && <div className="seg field-variant-toggle" role="group" aria-label={tr('field.variant')}>
+                    {(['andymark', 'welded'] as const).map((variant) => <button key={variant} type="button" aria-pressed={fieldVariant === variant} className={fieldVariant === variant ? 'on' : ''} onClick={() => {
+                      if (fieldVariant === variant) return;
+                      setScene({ fieldVariant: variant });
+                      if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, variant, fieldStyle);
+                    }}>{variant === 'andymark' ? 'AndyMark' : 'Welded'}</button>)}
+                  </div>}
                   {/* 2D-artwork switcher, hidden in 3D: the official field
                       model replaces the artwork plane entirely (the image
                       only feeds the no-model fallback), so both styles
@@ -779,7 +782,6 @@ function AppBody() {
                   }} title={tr('field.style')} aria-label={tr('field.style')}><option value="schematic">{tr('field.style.schematic')}</option><option value="rendered">{tr('field.style.rendered')}</option></select>}
                 </div>
                 <div className="session-alliance" role="group" aria-label={tr('robots.alliance')}>
-                  <span className="session-alliance-label">{tr('robots.alliance')}</span>
                   <div className="seg alliance-toggle">
                     {(['blue', 'red'] as const).map((side) => <button key={side} type="button" className={`alliance-${side}${alliance === side ? ' on' : ''}`} aria-pressed={alliance === side} onClick={() => {
                       if (alliance === side) return;
