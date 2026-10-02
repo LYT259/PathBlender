@@ -170,6 +170,36 @@ describe('field canvas interaction and redraws', () => {
     fireEvent(canvas, gestureEvent('gesturechange', 1.8));
     paint();
     expect(strokeRect.mock.lastCall![2]).toBeCloseTo(400 * Math.pow(1.05, 1.2), 0);
+
+    // The lift-drift scroll burst (round 4): wheel events right after the
+    // pinch end are finger drift, not intent — they must not zoom either.
+    fireEvent.wheel(canvas, { deltaY: -38.4 });
+    fireEvent.wheel(canvas, { deltaY: -22.7 });
+    paint();
+    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(400 * Math.pow(1.05, 1.2), 0);
+  });
+
+  it('resumes wheel zoom after the post-gesture quiet window', async () => {
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240);
+    paint();
+    const canvas = container.querySelector('canvas')!;
+    const gestureEvent = (type: string, scale: number) => {
+      const ev = new Event(type, { cancelable: true });
+      Object.defineProperty(ev, 'scale', { value: scale });
+      return ev;
+    };
+    fireEvent(canvas, gestureEvent('gesturestart', 1));
+    fireEvent(canvas, gestureEvent('gesturechange', 1.05));
+    fireEvent(canvas, gestureEvent('gestureend', 1.05));
+    paint();
+
+    // The quiet window is 350 ms real time; let it lapse.
+    await new Promise((r) => setTimeout(r, 400));
+    fireEvent.wheel(canvas, { deltaY: -120 });
+    paint();
+    // The gesture zoomed once (1.05^0.6), then the notch adds ×1.155.
+    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(400 * Math.pow(1.05, 0.6) * Math.exp(120 * 0.0012), 0);
   });
 
 });

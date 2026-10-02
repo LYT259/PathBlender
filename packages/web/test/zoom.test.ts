@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   classifyWheelInput,
+  GESTURE_WHEEL_QUIET_MS,
+  markGestureEnd,
+  markGestureStart,
   orbitZoomSpeedFor,
   PINCH_EVENT_LN_CAP,
   PINCH_GAIN,
@@ -8,6 +11,7 @@ import {
   TRACKPAD_EVENT_CAP,
   TRACKPAD_K,
   WHEEL_K,
+  wheelSuppressed,
   wheelZoomFactor,
 } from '../src/zoom';
 
@@ -129,5 +133,21 @@ describe('pinchZoomFactor', () => {
     let factor = 1;
     for (let i = 0; i < 8; i++) factor *= pinchZoomFactor(Math.pow(2, 1 / 8));
     expect(factor).toBeCloseTo(Math.pow(2, PINCH_GAIN), 2);
+  });
+});
+
+describe('wheelSuppressed (lift-drift guard)', () => {
+  it('suppresses wheels during a gesture and for a quiet window after it', () => {
+    // Injected clock keeps the state machine test hermetic.
+    let now = 10_000;
+    const t = () => now;
+    markGestureStart();
+    expect(wheelSuppressed(t())).toBe(true); // gesture active
+    markGestureEnd(now);
+    expect(wheelSuppressed(t())).toBe(true); // inside quiet window
+    now += GESTURE_WHEEL_QUIET_MS - 1;
+    expect(wheelSuppressed(t())).toBe(true);
+    now += 2;
+    expect(wheelSuppressed(t())).toBe(false); // deliberate scroll works again
   });
 });
