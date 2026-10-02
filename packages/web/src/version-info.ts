@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.4';
+export const APP_VERSION = '0.1.5';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,16 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.5', date: '2026-10-02', note: '' },
+  { version: '0.1.5-beta.9', date: '2026-10-02', note: 'Pinch release truly freezes the view: the finger-lift scroll burst is now ignored / 捏合松手真正定格：忽略抬指瞬间的滚动爆发' },
+  { version: '0.1.5-beta.8', date: '2026-10-02', note: 'Dock tile artwork pre-rounded (runtime icon was rendering square)' },
+  { version: '0.1.5-beta.7', date: '2026-10-02', note: 'Dock icon follows the in-app theme while running (dark→night artwork)' },
+  { version: '0.1.5-beta.6', date: '2026-10-02', note: 'Pinch freezes at release: late gesture events are ignored and single-frame spikes rate-limited (temporary on-screen gesture diagnostics) / 捏合松手即定格：忽略收尾残留事件并限制单帧跳变（附带临时手势诊断显示）' },
+  { version: '0.1.5-beta.5', date: '2026-10-02', note: 'Dual artwork styles for every 2022-2026 field: schematic default, rendered selectable / 2022-2026 全部赛季内置双风格底图：示意图为默认，可切换渲染图' },
+  { version: '0.1.5-beta.4', date: '2026-10-02', note: 'MK5i-style robots: layered chassis with steered swerve wheels in 2D/3D, sized per season\'s rules / MK5i 式机器人：2D/3D 呈现带转向轮组的分层底盘，按赛季规则取最大尺寸' },
+  { version: '0.1.5-beta.3', date: '2026-10-02', note: 'Pinch zoom now follows your fingers: magnifies the spot under them with a gentler response / 捏合缩放跟随手指：放大手指处的细节，响应更柔和' },
+  { version: '0.1.5-beta.2', date: '2026-10-02', note: 'Desktop install script survives a bundle dir with no dmg files' },
+  { version: '0.1.5-beta.1', date: '2026-10-02', note: 'Auto period follows the season: 15 s for 2018-2025 fields, 20 s for 2026' },
   { version: '0.1.4', date: '2026-10-02', note: '正式版 0.1.4：汇集 0.1.3 以来全部改进 / Stable v0.1.4: everything since v0.1.3' },
   { version: '0.1.4-beta.5', date: '2026-10-02', note: '修复桌面版保存会话/导出 PNG 无反应（命令参数命名）' },
   { version: '0.1.4-beta.4', date: '2026-10-02', note: '修复 Linux 桌面版保存/导出/分享菜单，支持双击路径文件直接打开' },

@@ -16,7 +16,6 @@ export type {
 export { DEFAULT_GEOMETRY, teamNumberFromName, trajectoryDuration } from './types';
 
 export {
-  AUTO_PERIOD_S,
   CUSTOM_FIELD_ID,
   FIELDS,
   REBUILT_2026,
@@ -26,7 +25,7 @@ export {
   makeCustomField,
   withFieldVariant,
 } from './field';
-export type { FieldImageCalibration, FieldPackage } from './field';
+export type { FieldArtStyle, FieldImageCalibration, FieldPackage } from './field';
 export { fieldImageWorldRect } from './field';
 
 export { lerpAngle, sampleTrajectory, wrapAngle } from './math';
@@ -93,7 +92,18 @@ export {
   deserializeSession,
   makeSession,
   samplePoseAt,
+  sampleStateAt,
   serializeSession,
   sessionDuration,
 } from './session';
 export type { SessionFileV1, SessionTrajectory } from './session';
+
+export {
+  STEERING_STATIC_MPS,
+  chassisModules,
+  moduleSteeringAngles,
+  robotVisualGeometry,
+  seasonRobotProfile,
+  withSeasonGeometry,
+} from './robot-geometry';
+export type { MotionState, RobotVisualGeometry, SeasonRobotProfile } from './robot-geometry';

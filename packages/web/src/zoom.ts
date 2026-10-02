@@ -42,6 +42,66 @@ export const TRACKPAD_K = 0.004;
  */
 export const TRACKPAD_EVENT_CAP = 1.08;
 
+/**
+ * Pinch softening (user feedback round 2, 2026-10-02): WebKit gesture
+ * events report the raw finger-separation ratio, and applying it 1:1 made
+ * a small pinch feel violent. The per-event factor is the ratio raised to
+ * this gain instead: doubling the finger separation zooms 2^0.6 ≈ 1.52×.
+ * Tunable — single constant, pending user trial.
+ */
+export const PINCH_GAIN = 0.6;
+
+/**
+ * Per-event log-ratio rate limit for pinch (user feedback round 3): on
+ * release, WKWebView flushes lagging gesturechange events whose single
+ * ratios are far larger than any live per-frame finger motion — the view
+ * then jumps *further* in the gesture's direction ("松手后进一步放大").
+ * Real gestures move ≤ ~0.08 per frame even at their fastest; anything
+ * beyond this cap in ONE event is end-of-gesture backlog, rate-limited
+ * here. Multiplicative, so a genuine fast pinch only spreads over the
+ * following frames — nothing is lost, only the per-frame jump is bounded
+ * (≤ ~7.5% per event after the gain).
+ */
+export const PINCH_EVENT_LN_CAP = 0.12;
+
+/** Zoom factor for one gesturechange step (ratio = scale / lastScale). */
+export function pinchZoomFactor(ratio: number): number {
+  if (!Number.isFinite(ratio) || ratio <= 0) return 1;
+  const ln = Math.min(PINCH_EVENT_LN_CAP, Math.max(-PINCH_EVENT_LN_CAP, Math.log(ratio)));
+  return Math.exp(ln * PINCH_GAIN);
+}
+
+/**
+ * Wheel suppression around WebKit pinches (user round 4, video evidence
+ * 2026-10-02): the diagnostic strip showed clean gesture streams
+ * (maxΔln ≈ 0.03-0.05, postEnd = 0) while the view still jumped after
+ * release — the gesture events are innocent. The remaining zoom source
+ * is the *scroll* burst macOS emits as lifting fingers drift across the
+ * glass at the end of a pinch: those wheel events keep dollying the
+ * view in the gesture's direction right after release. Wheel-driven
+ * zoom/rotate is suppressed while a gesture runs and for this long
+ * after it ends; a deliberate scroll or mouse wheel half a second later
+ * is unaffected.
+ */
+export const GESTURE_WHEEL_QUIET_MS = 350;
+
+let gestureActive = false;
+let suppressWheelUntil = 0;
+
+export function markGestureStart(): void {
+  gestureActive = true;
+}
+
+export function markGestureEnd(now: number = performance.now()): void {
+  gestureActive = false;
+  suppressWheelUntil = now + GESTURE_WHEEL_QUIET_MS;
+}
+
+/** True while a pinch runs and briefly after it ends (lift-drift guard). */
+export function wheelSuppressed(now = performance.now()): boolean {
+  return gestureActive || now < suppressWheelUntil;
+}
+
 export function classifyWheelInput(deltaY: number, deltaMode: number): WheelInputKind {
   if (deltaMode !== WheelEvent.DOM_DELTA_PIXEL) return 'wheel'; // line/page modes
   return Math.abs(deltaY) >= WHEEL_MIN_NOTCH && Number.isInteger(deltaY) ? 'wheel' : 'trackpad';

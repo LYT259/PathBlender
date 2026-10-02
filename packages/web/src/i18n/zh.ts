@@ -118,6 +118,12 @@ export const zh: Record<MessageKey, string> = {
   'vc.left': '左',
   'vc.right': '右',
   'field.variant': '场地结构（Welded=焊接场 / AndyMark=拼装场）',
+
+  'field.style': '底图风格（示意图 / 渲染图）',
+
+  'field.style.schematic': '示意图',
+
+  'field.style.rendered': '渲染图',
   'conflicts.title': '冲突',
   'conflicts.minSep': '最近间距 {d} 米，t={t} 秒（{a} × {b}）',
   'conflicts.item': '{start}–{end} 秒 · 最近 {d} 米 @ ({x}, {y})',

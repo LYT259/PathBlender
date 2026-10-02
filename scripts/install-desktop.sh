@@ -3,6 +3,11 @@
 # Spotlight/Launchpad only ever show the /Applications entry.
 # Usage: scripts/install-desktop.sh [--no-build]
 set -euo pipefail
+# null_glob: the dmg/app cleanup globs below legally match nothing (e.g. a
+# --bundles app build leaves no dmg); without this zsh aborts the script on
+# "no matches found" before rm even runs (hit 2026-10-02: install stopped
+# between the updater-sign step and the /Applications swap).
+setopt null_glob
 cd "$(dirname "$0")/.."
 
 # Sign the updater artifacts whenever the release key is on this machine
@@ -62,10 +67,18 @@ fi
 
 # Same story for the dmg: tauri's own dmg wraps the pre-seal app. Regenerate
 # it from the sealed bundle so every shipped artifact carries the seal.
+# Best-effort since 2026-10-02: hdiutil on this machine intermittently bails
+# with a bogus "No space left on device" while accessing the staged binary
+# (30 GB actually free; the tauri dmg step showed the same signature before).
+# The dmg is a manual-distribution byproduct — CI builds the release dmg on
+# tag — so a local failure must not block the /Applications install.
 APP_VERSION="$(node -p "require('./package.json').version")"
 DMG="$(dirname "$BUNDLE")/PathBlender_${APP_VERSION}_aarch64.dmg"
 rm -f "$DMG" "$(dirname "$BUNDLE")"/*.dmg
-hdiutil create -volname PathBlender -srcfolder "$BUNDLE" -ov -format UDZO "$DMG" >/dev/null
+if ! hdiutil create -volname PathBlender -srcfolder "$BUNDLE" -ov -format UDZO "$DMG" >/dev/null 2>&1; then
+  rm -f "$DMG"
+  echo "warn: local dmg skipped (hdiutil flaky here; CI builds the release dmg)"
+fi
 
 # Clean replace (2026-10-01): ditto onto an existing install leaves behind
 # files the new build no longer ships, so the installed app drifts from the

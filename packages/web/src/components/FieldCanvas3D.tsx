@@ -10,10 +10,18 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
-import { samplePoseAt } from '@pathblender/core';
+import {
+  chassisModules,
+  moduleSteeringAngles,
+  robotVisualGeometry,
+  samplePoseAt,
+  sampleStateAt,
+} from '@pathblender/core';
+import { buildChassis3D } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
-import { orbitZoomSpeedFor, wheelZoomFactor } from '../zoom';
+import { markGestureEnd, markGestureStart, orbitZoomSpeedFor, pinchZoomFactor, wheelSuppressed, wheelZoomFactor } from '../zoom';
+import { gestureEnded, noteGesture, notePostEndWheel } from '../gesture-debug';
 import { aprilTagTexture } from '../april-tag-texture';
 // One coordinate frame for the whole scene — tags, robots, trails, fallback
 // structures, the flat field image and the official field models all map
@@ -54,7 +62,15 @@ interface Scene3D {
   cx: number;
   cy: number;
   dynamic: THREE.Group;
-  boxes: { mesh: THREE.Mesh; robot: SessionTrajectory }[];
+  /** Procedural MK5i-style chassis rigs, one per robot. */
+  rigs: {
+    root: THREE.Group;
+    robot: SessionTrajectory;
+    pods: THREE.Group[];
+    /** Last applied steering angle per pod (radians, robot frame). */
+    steer: number[];
+    modules: { x: number; y: number }[];
+  }[];
   /** Render-on-demand: a frame is drawn only when something changed. */
   dirty: () => void;
   /** Official 3D field model (when available); replaces the fallback. */
@@ -319,8 +335,18 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // zoomSpeed per event to reproduce our factor exactly and keep its
     // damping, distance clamps and zoom-to-cursor. Capture phase on the
     // host: OrbitControls' own wheel listener sits on the canvas (target
-    // phase, registration order) and must see the adjusted speed.
+    // phase, registration order) and must see the adjusted speed. The same
+    // capture position lets us swallow the lift-drift scroll burst after a
+    // pinch (round 4): stopping propagation keeps OrbitControls (and the
+    // horizontal-rotate handler) from acting on it, freezing the view at
+    // the release-moment zoom.
     const onWheelZoomSpeed = (e: WheelEvent) => {
+      if (wheelSuppressed()) {
+        e.preventDefault();
+        e.stopPropagation();
+        notePostEndWheel(e.deltaY);
+        return;
+      }
       controls.zoomSpeed = orbitZoomSpeedFor(wheelZoomFactor(e.deltaY, e.deltaMode), e.deltaY);
     };
     host.addEventListener('wheel', onWheelZoomSpeed, { capture: true });
@@ -356,7 +382,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     sceneRef.current = {
       renderer, scene, camera, controls,
       cx: 0, cy: 0,
-      dynamic, boxes: [],
+      dynamic, rigs: [],
       modelRoot, fallback, fieldRoot,
       backgroundThemed,
       dirty: markDirty, themed,
@@ -376,23 +402,67 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     resize();
 
     // WebKit trackpad pinch fires gesture* events, not wheel+ctrlKey —
-    // dolly the camera manually so pinch zoom works in the desktop shell.
+    // zoom toward the gesture centroid so the detail under the fingers is
+    // what magnifies (user feedback round 2: pinch only ever magnified the
+    // orbit center), with the ratio softened via pinchZoomFactor. Events
+    // after gestureend are ignored (user round 3: lagging events flushed
+    // at finger lift kept zooming after release).
     let lastScale = 1;
     const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
     const onGestureStart = (e: Event) => {
       lastScale = gestureScale(e);
+      markGestureStart();
+      noteGesture('start', lastScale);
     };
     const onGestureChange = (e: Event) => {
       e.preventDefault();
+      if (gestureEnded()) return; // stray post-end flush
       const s = gestureScale(e);
-      if (s > 0 && lastScale > 0) {
-        const dir = camera.position.clone().sub(controls.target).multiplyScalar(1 / s);
-        if (dir.length() > 1.5) camera.position.copy(controls.target).add(dir);
+      noteGesture('change', s);
+      if (s > 0 && lastScale > 0 && s !== lastScale) {
+        const factor = pinchZoomFactor(s / lastScale);
+        if (factor !== 1) {
+          const g = e as Event & { clientX?: number; clientY?: number };
+          const rect = renderer.domElement.getBoundingClientRect();
+          const nx = (((g.clientX ?? rect.left + rect.width / 2) - rect.left) / rect.width) * 2 - 1;
+          const ny = -((((g.clientY ?? rect.top + rect.height / 2) - rect.top) / rect.height) * 2 - 1);
+          // Mirror OrbitControls' own wheel-zoom path: aim the dolly at the
+          // centroid, then let update() apply damping, distance clamps and
+          // target placement exactly like a wheel notch at that point.
+          // three is pinned (0.185.x); if the internals ever rename, the
+          // fallback below keeps pinch working (center-anchored).
+          const oc = controls as unknown as {
+            _mouse?: THREE.Vector2;
+            _dollyDirection?: THREE.Vector3;
+            _performCursorZoom?: boolean;
+            _scale?: number;
+          };
+          if (oc._mouse && oc._dollyDirection && oc._scale !== undefined && oc._performCursorZoom !== undefined) {
+            oc._mouse.set(nx, ny);
+            oc._dollyDirection.set(nx, ny, 1).unproject(camera).sub(camera.position).normalize();
+            oc._performCursorZoom = true;
+            oc._scale *= 1 / factor; // camera radius moves opposite to view zoom
+            controls.update();
+            markDirty();
+          } else {
+            const dir = camera.position.clone().sub(controls.target).multiplyScalar(1 / factor);
+            dir.setLength(THREE.MathUtils.clamp(dir.length(), controls.minDistance, controls.maxDistance));
+            camera.position.copy(controls.target).add(dir);
+            camera.lookAt(controls.target);
+            markDirty();
+          }
+        }
       }
       lastScale = s;
     };
+    const onGestureEnd = (e: Event) => {
+      noteGesture('end', gestureScale(e));
+      markGestureEnd();
+      lastScale = 1;
+    };
     renderer.domElement.addEventListener('gesturestart', onGestureStart);
     renderer.domElement.addEventListener('gesturechange', onGestureChange);
+    renderer.domElement.addEventListener('gestureend', onGestureEnd);
 
     // Draw only when the camera moved or something was marked dirty —
     // the heavy field model made render-per-frame starve all macrotasks.
@@ -427,6 +497,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       host.removeEventListener('wheel', onWheelZoomSpeed, { capture: true });
       renderer.domElement.removeEventListener('gesturestart', onGestureStart);
       renderer.domElement.removeEventListener('gesturechange', onGestureChange);
+      renderer.domElement.removeEventListener('gestureend', onGestureEnd);
       controls.dispose();
       renderer.dispose();
       if (renderer.domElement.parentElement === host) host.removeChild(renderer.domElement);
@@ -768,7 +839,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
     disposeDeep(st.dynamic);
     st.dynamic.clear();
-    st.boxes = [];
+    st.rigs = [];
     for (const r of robots) {
       const color = new THREE.Color(r.color);
       const pts = r.trajectory.samples.map((s) =>
@@ -784,30 +855,49 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         );
         st.dynamic.add(tube);
       }
-      const L = r.trajectory.geometry.lengthM;
-      const W = r.trajectory.geometry.widthM;
-      const H = 0.45;
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(L, H, W),
-        new THREE.MeshStandardMaterial({ color, roughness: 0.45 }),
-      );
-      mesh.castShadow = true;
-      st.dynamic.add(mesh);
-      st.boxes.push({ mesh, robot: r });
+      // Procedural MK5i-style chassis (bumper skirt + frame deck + swerve
+      // pods), sized by this robot's season-resolved two-layer geometry.
+      const vis = robotVisualGeometry(r.trajectory, field.year);
+      const modules = chassisModules(r.trajectory, vis.chassis);
+      const chassis = buildChassis3D(vis, modules, r.color);
+      st.dynamic.add(chassis.group);
+      st.rigs.push({
+        root: chassis.group,
+        robot: r,
+        pods: chassis.pods,
+        steer: modules.map(() => 0),
+        modules,
+      });
       st.dirty();
     }
   }, [robots, field]);
 
-  // Drive boxes along the shared clock.
+  // Drive the chassis rigs along the shared clock: pose from the shared
+  // sampler, plus per-pod steering from each wheel's ground velocity
+  // (pods hold their last pointing while the robot stands still).
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
-    for (const { mesh, robot } of st.boxes) {
-      const pose = samplePoseAt(robot, currentT);
-      mesh.position.copy(worldToRenderVec3(pose.x, pose.y, 0.225, st.cx, st.cy));
+    for (const rig of st.rigs) {
+      const state = sampleStateAt(rig.robot, currentT);
+      const pose = state
+        ? { x: state.x, y: state.y, heading: state.heading }
+        : samplePoseAt(rig.robot, currentT);
+      rig.root.position.copy(worldToRenderVec3(pose.x, pose.y, 0, st.cx, st.cy));
       // The render frame reflects X, so the heading reflects with it —
       // leaving it raw would have every robot drive sideways.
-      mesh.rotation.y = headingToRender(pose.heading);
+      rig.root.rotation.y = headingToRender(pose.heading);
+      if (state) {
+        const angles = moduleSteeringAngles(state, rig.modules);
+        if (rig.steer.length !== angles.length) rig.steer = rig.modules.map(() => 0);
+        for (let i = 0; i < rig.pods.length; i++) {
+          const a = angles[i]!;
+          if (a !== null) rig.steer[i] = a;
+          // Robot-frame yaw maps to render yaw with the opposite sign
+          // (see the frame notes in chassis3d.ts).
+          rig.pods[i]!.rotation.y = -rig.steer[i]!;
+        }
+      }
       st.dirty();
     }
   }, [currentT, robots, field]);

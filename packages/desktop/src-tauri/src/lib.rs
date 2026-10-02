@@ -339,6 +339,54 @@ fn push_menu_event<R: tauri::Runtime>(app: &AppHandle<R>, name: &str) {
     }
 }
 
+/// Mirror the in-app theme onto the running app's Dock tile (macOS only).
+/// The bundle's icon catalog already tracks the OS appearance; this runtime
+/// override (`setApplicationIconImage` with explicit artwork) makes the
+/// running tile track the app's own theme choice instead, bypassing the
+/// appearance-rendering pipeline entirely. Missing artwork or a non-macOS
+/// host is a quiet no-op — the catalog remains the fallback there.
+#[tauri::command]
+fn set_dock_icon(app: AppHandle, dark: bool) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        let name = if dark { "icon-night.png" } else { "icon-day.png" };
+        let path = app
+            .path()
+            .resource_dir()
+            .map_err(|e| e.to_string())?
+            .join("icons")
+            .join(name);
+        if !path.is_file() {
+            return Ok(());
+        }
+        app.run_on_main_thread(move || apply_dock_icon(&path))
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = (app, dark);
+    Ok(())
+}
+
+/// AppKit calls must stay on the main thread; the marker proves we're there
+/// and carries `alloc` (objc2 0.6 ties allocation to the main-thread marker).
+#[cfg(target_os = "macos")]
+fn apply_dock_icon(path: &std::path::Path) {
+    use objc2::MainThreadMarker;
+    use objc2_app_kit::{NSApplication, NSImage};
+    use objc2_foundation::NSString;
+    let Some(mtm) = MainThreadMarker::new() else {
+        return;
+    };
+    let ns_path = NSString::from_str(&path.to_string_lossy());
+    let allocated = mtm.alloc::<NSImage>();
+    let image = NSImage::initWithContentsOfFile(allocated, &ns_path);
+    if let Some(image) = image {
+        unsafe {
+            NSApplication::sharedApplication(mtm).setApplicationIconImage(Some(&image));
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Open-with: files passed on the command line (double-click / "open
@@ -356,6 +404,7 @@ pub fn run() {
             save_file,
             set_menu_language,
             open_preferences,
+            set_dock_icon,
             check_update,
             install_update
         ])

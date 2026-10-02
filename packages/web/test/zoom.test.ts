@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   classifyWheelInput,
+  GESTURE_WHEEL_QUIET_MS,
+  markGestureEnd,
+  markGestureStart,
   orbitZoomSpeedFor,
+  PINCH_EVENT_LN_CAP,
+  PINCH_GAIN,
+  pinchZoomFactor,
   TRACKPAD_EVENT_CAP,
   TRACKPAD_K,
   WHEEL_K,
+  wheelSuppressed,
   wheelZoomFactor,
 } from '../src/zoom';
 
@@ -89,5 +96,58 @@ describe('orbitZoomSpeedFor', () => {
     // A factor pointing against the delta's direction must never invert
     // the zoom — fall back instead.
     expect(orbitZoomSpeedFor(1.155, 120)).toBe(1);
+  });
+});
+
+describe('pinchZoomFactor', () => {
+  it('is neutral for identity and invalid ratios', () => {
+    expect(pinchZoomFactor(1)).toBe(1);
+    expect(pinchZoomFactor(0)).toBe(1);
+    expect(pinchZoomFactor(Number.NaN)).toBe(1);
+  });
+
+  it('softens live per-event ratios (below the rate limit)', () => {
+    // Real gesturechange streams carry tiny per-event ratios; those take
+    // the raw gain. 1:1 mapping was reported as violent (user round 2).
+    expect(pinchZoomFactor(1.05)).toBeCloseTo(Math.pow(1.05, PINCH_GAIN));
+    expect(pinchZoomFactor(0.95)).toBeCloseTo(Math.pow(0.95, PINCH_GAIN));
+  });
+
+  it('zooms in for spreading, out for closing', () => {
+    expect(pinchZoomFactor(1.05)).toBeGreaterThan(1);
+    expect(pinchZoomFactor(0.95)).toBeLessThan(1);
+  });
+
+  it('rate-limits single-event ratio spikes (end-of-gesture backlog)', () => {
+    // Releasing mid-pinch flushed lagging events as huge one-event ratios
+    // that kept zooming after the fingers lifted (user round 3). A spike
+    // may move the view at most exp(±cap·gain) ≈ ±7.5%.
+    expect(pinchZoomFactor(2)).toBeCloseTo(Math.exp(PINCH_EVENT_LN_CAP * PINCH_GAIN));
+    expect(pinchZoomFactor(1 / 2)).toBeCloseTo(Math.exp(-PINCH_EVENT_LN_CAP * PINCH_GAIN));
+    expect(pinchZoomFactor(1.5)).toBeCloseTo(pinchZoomFactor(3)); // clamped alike
+  });
+
+  it('keeps a fast pinch total — the clamp spreads, never loses', () => {
+    // A violent double-separation in ~130 ms at 60 Hz: 8 events, per-event
+    // ln ratio 0.087 < cap, so the full softened total still lands.
+    let factor = 1;
+    for (let i = 0; i < 8; i++) factor *= pinchZoomFactor(Math.pow(2, 1 / 8));
+    expect(factor).toBeCloseTo(Math.pow(2, PINCH_GAIN), 2);
+  });
+});
+
+describe('wheelSuppressed (lift-drift guard)', () => {
+  it('suppresses wheels during a gesture and for a quiet window after it', () => {
+    // Injected clock keeps the state machine test hermetic.
+    let now = 10_000;
+    const t = () => now;
+    markGestureStart();
+    expect(wheelSuppressed(t())).toBe(true); // gesture active
+    markGestureEnd(now);
+    expect(wheelSuppressed(t())).toBe(true); // inside quiet window
+    now += GESTURE_WHEEL_QUIET_MS - 1;
+    expect(wheelSuppressed(t())).toBe(true);
+    now += 2;
+    expect(wheelSuppressed(t())).toBe(false); // deliberate scroll works again
   });
 });
