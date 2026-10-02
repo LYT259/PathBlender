@@ -4,12 +4,23 @@
  * topLeft/bottomRight pixel corners + inch sizes (see field.ts comments).
  */
 import { describe, expect, it } from 'vitest';
-import { FIELDS, fieldById, fieldImageWorldRect, withFieldVariant } from '../src';
+import { FIELDS, REBUILT_2026, fieldById, fieldImageWorldRect, makeCustomField, withFieldVariant } from '../src';
 
 describe('FIELDS registry', () => {
   it('covers 2018 through 2026 (2021 has no public orthographic asset)', () => {
     const years = FIELDS.map((f) => f.year);
     expect(years).toEqual([2018, 2019, 2020, 2022, 2023, 2024, 2025, 2026]);
+  });
+
+  it('Autonomous Period follows the season — 15 s through 2025, 20 s in 2026', () => {
+    for (const f of FIELDS) {
+      expect(f.autoPeriodS).toBe(f.year === 2026 ? 20 : 15);
+    }
+    expect(REBUILT_2026.autoPeriodS).toBe(20);
+    // Custom fields default to the long-standing 15 s unless overridden.
+    const base = { lengthM: 16, widthM: 8, ppm: 100, marginM: 0, pixelWidth: 1600, pixelHeight: 800 };
+    expect(makeCustomField(base).autoPeriodS).toBe(15);
+    expect(makeCustomField({ ...base, autoPeriodS: 20 }).autoPeriodS).toBe(20);
   });
 
   it('older seasons carry corner calibrations that bracket the playfield', () => {
