@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSessionHistory } from './session-history';
+import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
 import { PreferencesPanel } from './components/PreferencesPanel';
@@ -120,7 +121,7 @@ function AppBody() {
   const { lang, t: tr } = useI18n();
   const { channel: updateChannel } = useUpdateChannel();
   const [initialFieldPref] = useState(loadFieldPref);
-  const { robots, setRobots, setScene, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, beginEdit, endEdit, canUndo, canRedo } = useSessionHistory(initialFieldPref);
+  const { robots: sourceRobots, alliance, setRobots, setScene, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, beginEdit, endEdit, canUndo, canRedo } = useSessionHistory(initialFieldPref);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pathsOpen, setPathsOpen] = useState(() => window.innerWidth > 640);
   const [inspectorOpen, setInspectorOpen] = useState(true);
@@ -157,6 +158,9 @@ function AppBody() {
     () => (baseField ? withFieldVariant(baseField, fieldVariant, fieldStyle) : baseField),
     [baseField, fieldVariant, fieldStyle],
   );
+  // Keep source paths in their original blue-side frame. Both renderers,
+  // analysis, inspectors and session exports consume the same alliance view.
+  const robots = useMemo(() => robotsForAlliance(sourceRobots, alliance, field), [sourceRobots, alliance, field]);
   const fieldImageUrl = fieldImageFor(fieldId, fieldVariant, fieldStyle, customImageUrl);
   // Per-season rule-max geometry (MK5i plan, 2026-10-02): default-geometry
   // robots are re-resolved against the selected field's season, so checks
@@ -224,7 +228,7 @@ function AppBody() {
       if (relPath.endsWith(SESSION_EXT)) {
         try {
           const restored = deserializeSession(text);
-          setScene({ robots: restored.robots, fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
+          setScene({ ...restoreSessionAlliance(restored), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
           setSelectedId(restored.robots[0]?.trajectory.id ?? null);
           setInspectorMode('checks');
           setInspectorOpen(window.innerWidth > 900);
@@ -353,13 +357,10 @@ function AppBody() {
   const pickRoute = useCallback((robotId: string, routeId: string) => {
     const route = libraryRoutes.find((r) => r.id === routeId);
     if (!route) return;
-    // An in-progress waypoint edit belongs to the previous route; leave edit
-    // mode rather than half-apply it to the new one.
     setRobots((prev) =>
       prev.map((r) => {
         if (r.trajectory.id !== robotId) return r;
-        // A pure viewer: the route shows exactly as the file defines it,
-        // including its own alliance frame.
+        // The shared alliance view is derived after picking the source route.
         const traj = route.trajectory;
         return {
           ...r,
@@ -501,7 +502,7 @@ function AppBody() {
     if (!location.hash.startsWith('#s=')) return;
     void hashToSession(location.hash).then((restored) => {
       if (restored && restored.robots.length > 0) {
-        setScene({ robots: restored.robots, fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
+        setScene({ ...restoreSessionAlliance(restored), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
       }
     });
   }, []);
@@ -660,7 +661,7 @@ function AppBody() {
   };
   const exitExample = () => {
     // Keep any real paths the user added while exploring the example.
-    const remaining = robots.filter((robot) => !isExampleRobot(robot));
+    const remaining = sourceRobots.filter((robot) => !isExampleRobot(robot));
     // Folder imports build a library without adding robots while the demo is
     // on the field. Exiting must still expose that newly imported library.
     if (!remaining.length && libraryRoutes.length) remaining.push(robotFromRoute(libraryRoutes[0]!, 0, crypto.randomUUID()));
@@ -779,6 +780,16 @@ function AppBody() {
                     const st = e.target.value as FieldArtStyle; setScene({ fieldStyle: st });
                     if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, fieldVariant, st);
                   }} title={tr('field.style')} aria-label={tr('field.style')}><option value="schematic">{tr('field.style.schematic')}</option><option value="rendered">{tr('field.style.rendered')}</option></select>}
+                </div>
+                <div className="session-alliance" role="group" aria-label={tr('robots.alliance')}>
+                  <span className="session-alliance-label">{tr('robots.alliance')}</span>
+                  <div className="seg alliance-toggle">
+                    {(['blue', 'red'] as const).map((side) => <button key={side} type="button" className={`alliance-${side}${alliance === side ? ' on' : ''}`} aria-pressed={alliance === side} onClick={() => {
+                      if (alliance === side) return;
+                      playback.setPlaying(false);
+                      setScene({ alliance: side });
+                    }}>{tr(side === 'blue' ? 'robots.blue' : 'robots.red')}</button>)}
+                  </div>
                 </div>
                 <span className="canvas-spacer" />
                 {field3dAvailable && (
