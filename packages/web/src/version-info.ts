@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.23';
+export const APP_VERSION = '0.1.6-beta.24';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.24', date: '2026-10-02', note: 'Crisper toast text (e.g. the export-failed notice after canceling a save) / 提示条文字更清晰（如导出取消后的失败提示）' },
   { version: '0.1.6-beta.23', date: '2026-10-02', note: 'Center the welcome action divider below the import-card gap / 首页辅助操作竖线与导入卡片间隙居中对齐' },
   { version: '0.1.6-beta.22', date: '2026-10-02', note: 'README and user guide now match the shipped viewer; bilingual feedback template / README 与使用指南对齐当前查看器；新增双语反馈模板' },
   { version: '0.1.6-beta.21', date: '2026-10-02', note: 'Center the clock above the playback controls and extend the example to a full 20 s auto / 时间读数移至播放键上方居中，示例路径扩展为完整 20 秒' },
