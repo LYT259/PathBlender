@@ -75,7 +75,7 @@ fi
 APP_VERSION="$(node -p "require('./package.json').version")"
 DMG="$(dirname "$BUNDLE")/PathBlender_${APP_VERSION}_aarch64.dmg"
 rm -f "$DMG" "$(dirname "$BUNDLE")"/*.dmg
-if ! hdiutil create -volname PathBlender -srcfolder "$BUNDLE" -ov -format UDZO "$DMG" >/dev/null 2>&1; then
+if ! scripts/make-dmg.sh "$BUNDLE" "$DMG"; then
   rm -f "$DMG"
   echo "warn: local dmg skipped (hdiutil flaky here; CI builds the release dmg)"
 fi
