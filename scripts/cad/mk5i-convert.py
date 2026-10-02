@@ -95,9 +95,14 @@ def smallest_eigen_axis(m):
 axle = smallest_eigen_axis(cov)
 axle.z = 0.0
 axle.normalize()
-roll = Vector((-axle.y, axle.x, 0.0))  # horizontal, perpendicular to axle
+# ROLL_SWAP: the covariance axle/roll split was ambiguous for this wheel
+# mesh (variance ratio only 1.5×) and the first build came out 90° off
+# (user report 2026-10-02) — the axle direction was actually the rolling
+# direction. True until a measurement says otherwise.
+ROLL_SWAP = True
+roll = Vector((axle.x, axle.y, 0.0)) if ROLL_SWAP else Vector((-axle.y, axle.x, 0.0))
 ang = math.atan2(roll.y, roll.x)       # rolling direction vs +X
-print(f"[axle] direction=({axle.x:.3f},{axle.y:.3f},0) roll_angle={math.degrees(ang):.1f} deg")
+print(f"[axle] direction=({axle.x:.3f},{axle.y:.3f},0) roll_angle={math.degrees(ang):.1f} deg swap={ROLL_SWAP}")
 
 # Bake: rotate about world Z so rolling -> +X, then move the steering
 # axis to the origin and the floor to z=0 — all in one vertex transform.
@@ -129,6 +134,25 @@ for group in by_mat.values():
         bpy.context.view_layer.objects.active = group[0]
         bpy.ops.object.join()
     joined.append(bpy.context.view_layer.objects.active)
+
+# Mute garish marker colors from the source model (user report 2026-10-02:
+# the module top read yellowish): high-saturation yellow→green hues
+# (#ffff00, #aaff1c, #fabe3d, #00ff00 — Onshape marker defaults) become
+# neutral grays of the same luminance; grays/blacks/steel and the small
+# red/blue accents stay untouched.
+import colorsys
+for mat in bpy.data.materials:
+    if not mat.use_nodes:
+        continue
+    bsdf = next((n for n in mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+    if bsdf is None:
+        continue
+    c = bsdf.inputs['Base Color'].default_value
+    h, s, v = colorsys.rgb_to_hsv(c[0], c[1], c[2])
+    hue_deg = h * 360
+    if s > 0.45 and 30.0 <= hue_deg <= 170.0:
+        bsdf.inputs['Base Color'].default_value = (v, v, v, c[3])
+        print(f"[mute] {mat.name}: hue {hue_deg:.0f} sat {s:.2f} -> gray {v:.2f}")
 for idx, o in enumerate(joined):
     mod = o.modifiers.new("dec", "DECIMATE")
     mod.ratio = DECIMATE_RATIO
