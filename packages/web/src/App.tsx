@@ -58,7 +58,9 @@ const GITHUB_URL = 'https://github.com/LYT259/pathblender';
 const FIELD_PREF_KEY = 'ghpb.field';
 type FieldPref = { id: string; variant: 'welded' | 'andymark'; style: FieldArtStyle };
 function loadFieldPref(): FieldPref {
-  const fallback: FieldPref = { id: REBUILT_2026.id, variant: 'andymark', style: 'schematic' };
+  // First-run defaults (user directive 2026-10-02): the current season,
+  // welded construction, schematic artwork, 2D view.
+  const fallback: FieldPref = { id: REBUILT_2026.id, variant: 'welded', style: 'schematic' };
   try {
     const raw = localStorage.getItem(FIELD_PREF_KEY);
     if (!raw) return fallback;
@@ -83,6 +85,26 @@ function rememberFieldPrefs(id: string, variant: 'welded' | 'andymark', style: F
   }
 }
 
+// The 2D/3D choice survives app restarts too (user directive 2026-10-02):
+// leaving in 3D means the next launch opens in 3D. Only the user's own
+// toggles are written — the model-less-season auto-fallback must not erase
+// the stored preference.
+const VIEW3D_KEY = 'ghpb.view3d';
+function loadView3D(): boolean {
+  try {
+    return localStorage.getItem(VIEW3D_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function rememberView3D(on: boolean) {
+  try {
+    localStorage.setItem(VIEW3D_KEY, on ? '1' : '0');
+  } catch {
+    /* best-effort */
+  }
+}
+
 // Native menus supplement the same visible workspace actions.
 const IS_DESKTOP = '__TAURI_INTERNALS__' in window || location.protocol === 'tauri:' || location.protocol === 'asset:';
 
@@ -104,7 +126,7 @@ function AppBody() {
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot'>('checks');
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
-  const [view3D, setView3D] = useState(false);
+  const [view3D, setView3D] = useState(loadView3D);
   const [showTrail, setShowTrail] = useState(true);
   const [showPrefs, setShowPrefs] = useState(false);
   function openPreferences() {
@@ -757,8 +779,8 @@ function AppBody() {
                 <span className="canvas-spacer" />
                 {field3dAvailable && (
                   <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
-                    <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
-                    <button aria-pressed={view3D} className={view3D ? 'on' : ''} onClick={() => setView3D(true)}>3D</button>
+                    <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => { setView3D(false); rememberView3D(false); }}>2D</button>
+                    <button aria-pressed={view3D} className={view3D ? 'on' : ''} onClick={() => { setView3D(true); rememberView3D(true); }}>3D</button>
                   </div>
                 )}
                 {/* The rest of the bar needs a robot to act on, which the gate
