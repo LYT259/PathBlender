@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.12';
+export const APP_VERSION = '0.1.6-beta.13';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.13', date: '2026-10-02', note: 'Simplify welcome actions and unify the title bar background / 首页采用分组操作列表，统一顶部与页面背景' },
   { version: '0.1.6-beta.12', date: '2026-10-02', note: 'Make file and folder imports equally prominent on the welcome screen / 首页文件与文件夹导入采用同级蓝色入口' },
   { version: '0.1.6-beta.11', date: '2026-10-02', note: 'MK5i module direction fix, floor deck removed, garish colors muted / MK5i 模组转向修正、移除底板、艳色压灰' },
   { version: '0.1.6-beta.10', date: '2026-10-02', note: 'Pinch responds instantly and zooms further per swipe / 捏合即时响应，一次滑动放大更多' },
