@@ -122,6 +122,12 @@ export const zhTw: Record<MessageKey, string> = {
   'vc.left': '左',
   'vc.right': '右',
   'field.variant': '場地結構（Welded=焊接場 / AndyMark=拼裝場）',
+
+  'field.style': '底圖風格（示意圖 / 渲染圖）',
+
+  'field.style.schematic': '示意圖',
+
+  'field.style.rendered': '渲染圖',
   'conflicts.title': '衝突',
   'conflicts.minSep': '最近間距 {d} 米，t={t} 秒（{a} × {b}）',
   'conflicts.item': '{start}–{end} 秒 · 最近 {d} 米 @ ({x}, {y})',

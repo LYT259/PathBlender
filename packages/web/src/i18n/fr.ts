@@ -127,6 +127,12 @@ export const fr: Record<MessageKey, string> = {
   'vc.left': 'L',
   'vc.right': 'R',
   'field.variant': 'Construction du terrain (soudée vs AndyMark)',
+
+  'field.style': 'Style du terrain (schématique vs rendu)',
+
+  'field.style.schematic': 'Schématique',
+
+  'field.style.rendered': 'Rendu',
   'conflicts.title': 'Conflits',
   "conflicts.minSep": "approche minimale {d} m à t={t} s ({a} × {b})",
   'conflicts.item': '{start}–{end} s · minimum {d} m @ ({x}, {y})',

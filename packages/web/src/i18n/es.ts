@@ -126,6 +126,12 @@ export const es: Record<MessageKey, string> = {
   'vc.left': 'L',
   'vc.right': 'R',
   'field.variant': 'Construcción del campo (soldada vs AndyMark)',
+
+  'field.style': 'Estilo del campo (esquemático vs renderizado)',
+
+  'field.style.schematic': 'Esquemático',
+
+  'field.style.rendered': 'Renderizado',
   'conflicts.title': 'Conflictos',
   'conflicts.minSep':
     'acercamiento mínimo {d} m en t={t} s ({a} × {b})',

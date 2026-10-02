@@ -84,7 +84,7 @@ body.desktop .workspace-toolbar { padding-left: 100px; }
 .field-options { display: flex; gap: 6px; align-items: center; min-width: 0; }
 .field-select { min-height: 30px; font-weight: 500; max-width: 190px; padding: 4px 8px; background: var(--btn-bg); border: 1px solid var(--border); border-radius: 6px; appearance: auto; cursor: pointer; }
 .field-select:hover { background: var(--btn-bg-hover); }
-.field-variant { color: var(--fg); font-size: 12px; max-width: 120px; }
+.field-variant, .field-style { color: var(--fg); font-size: 12px; max-width: 120px; }
 .trails-control { padding-left: 3px; }
 .sw-text { font-size: 11px; }
 .workspace-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 32px; min-height: 0; overflow-y: auto; background: var(--bg-panel); }
