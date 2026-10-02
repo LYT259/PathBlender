@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App';
 import { ThemeProvider } from '../src/theme';
 
@@ -32,6 +32,26 @@ function selectRobot(name: string): HTMLElement {
 }
 
 describe('App import → fusion → collision flow', () => {
+  it('cancels a pending import notice when the app is closed', async () => {
+    const timeout = vi.spyOn(window, 'setTimeout');
+    const clear = vi.spyOn(window, 'clearTimeout');
+    const app = render(<App />);
+    try {
+      const route = file('ghostauto/straight_run.ghostauto');
+      Object.defineProperty(route, 'webkitRelativePath', { value: 'routes/straight_run.ghostauto' });
+      dropFiles([route]);
+      await waitFor(() => expect(timeout.mock.calls.some((call) => call[1] === 2500)).toBe(true));
+      const index = timeout.mock.calls.findIndex((call) => call[1] === 2500);
+      const timer = timeout.mock.results[index].value;
+      app.unmount();
+      expect(clear).toHaveBeenCalledWith(timer);
+    } finally {
+      app.unmount();
+      timeout.mockRestore();
+      clear.mockRestore();
+    }
+  });
+
   it('renders the empty state', () => {
     render(<App />);
     expect(document.querySelector('.toolbar')).not.toBeNull();
