@@ -48,7 +48,7 @@ PathBlender 補上這個空缺：
 
 ## 取得方式
 
-- **macOS 桌面版**（Apple Silicon，macOS 13+）——從 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 下載 `PathBlender_<版本號>_aarch64.dmg`，打開後把 PathBlender 拖入「應用程式」。更新：選單 **PathBlender → 檢查更新…**（Beta 版先在 **偏好設定 → 更新** 開啟 Beta 通道）。Windows 與 Linux 安裝包尚未提供——程式碼跨平台，已在計畫中。
+- **macOS 桌面版**（Apple Silicon，macOS 13+）——從 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 下載 `PathBlender_<版本號>_aarch64.dmg`，打開後把 PathBlender 拖入「應用程式」。更新：選單 **PathBlender → 檢查更新…**（Beta 版先在 **偏好設定 → 更新** 開啟 Beta 通道）。Windows 與 Linux 安裝包尚未提供——程式碼跨平台，已在計畫中。發布頁上的其它檔案（`.tar.gz`、`.sig`、`.json`）是更新器內部檔案，無需下載。
 - **網頁版**（檢視器建構：匯入、回放與檢查；無工作階段儲存/PNG 匯出/資料夾匯入）——[pathblender.pages.dev](https://pathblender.pages.dev)，預覽通道 [pathblender-preview.pages.dev](https://pathblender-preview.pages.dev)。
 
 ## 隱私

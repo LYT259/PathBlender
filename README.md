@@ -95,7 +95,8 @@ calibration and a WPILib/PhotonVision AprilTag layout JSON.
   **PathBlender → Check for Updates…** (beta builds: enable the beta
   channel in **Preferences → Updates** first). Windows and Linux
   installers are not provided yet — the code is cross-platform and they
-  are planned.
+  are planned. The release page's other assets (`.tar.gz`, `.sig`,
+  `.json`) are updater internals — you don't need them.
 - **Web app** (viewer build: import, playback and checking; no session
   save / PNG export / folder import) —
   [pathblender.pages.dev](https://pathblender.pages.dev), with a preview
