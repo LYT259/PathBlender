@@ -61,19 +61,37 @@ esac
 });
 
 describe('install-hooks.sh (worktree-compatible)', () => {
-  it('installs into the shared hooks dir and survives being run from a worktree', () => {
-    // This test itself runs from a worktree checkout — the exact context
-    // where the old script wrote to `.git/hooks/` (a FILE) and failed
-    // silently.
-    const res = run('zsh', [INSTALL]);
-    expect(res.code).toBe(0);
-    const hooksDir = run('git', ['rev-parse', '--git-path', 'hooks']).out.trim();
-    // resolve() handles both relative (".git/hooks") and absolute forms
-    const hook = resolve(ROOT, hooksDir) + '/pre-push';
-    expect(existsSync(hook)).toBe(true);
-    const hookSrc = readFileSync(hook, 'utf8');
-    // The hook resolves the script from the pushing worktree's root at run
-    // time — one shared hook serves every worktree.
-    expect(hookSrc).toContain('$PWD/scripts/pre-push-check.mjs');
+  // The live run needs zsh (the script's interpreter) — present on the
+  // dev machines (macOS), ABSENT on the Linux CI runner. There the test
+  // falls back to the static contract (first caught by the v0.1.6-beta.35
+  // tag run: `zsh INSTALL` exited ENOENT and killed the release checks).
+  const hasZsh = run('which', ['zsh']).code === 0;
+  const script = readFileSync(INSTALL, 'utf8');
+
+  (hasZsh ? it : it.skip)(
+    'installs into the shared hooks dir and survives being run from a worktree',
+    () => {
+      // This test itself runs from a worktree checkout — the exact context
+      // where the old script wrote to `.git/hooks/` (a FILE) and failed
+      // silently.
+      const res = run('zsh', [INSTALL]);
+      expect(res.code).toBe(0);
+      const hooksDir = run('git', ['rev-parse', '--git-path', 'hooks']).out.trim();
+      // resolve() handles both relative (".git/hooks") and absolute forms
+      const hook = resolve(ROOT, hooksDir) + '/pre-push';
+      expect(existsSync(hook)).toBe(true);
+      const hookSrc = readFileSync(hook, 'utf8');
+      // The hook resolves the script from the pushing worktree's root at
+      // run time — one shared hook serves every worktree.
+      expect(hookSrc).toContain('$PWD/scripts/pre-push-check.mjs');
+    },
+  );
+
+  it('static contract (everywhere): git-resolved hooks dir, fail-fast, cwd-based hook', () => {
+    expect(script).toContain('git rev-parse --git-path hooks');
+    expect(script).toContain('set -euo pipefail');
+    expect(script).toContain('$PWD/scripts/pre-push-check.mjs');
+    // the literal-path write that failed in worktrees must be gone
+    expect(script).not.toContain('>.git/hooks');
   });
 });
