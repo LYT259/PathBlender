@@ -615,23 +615,25 @@ check(
   (await page.locator('.view-toggle').count()) === 1,
 );
 
-// The 2D/3D choice survives a reload (user directive 2026-10-02).
+// The 2D/3D choice survives a reload (user directive 2026-10-02) — with
+// the autosaved session restoring, no re-import is needed anymore.
 await page.locator('.view-toggle button', { hasText: '3D' }).click();
 await page.waitForSelector('.field-canvas-3d canvas', { timeout: 15000 });
 await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-await page.waitForSelector('.workspace-empty');
-await fileInput().setInputFiles([`${SAMPLES}/ghostauto/straight_run.ghostauto`]);
 await page.waitForSelector('.field-canvas-3d canvas', { timeout: 15000 });
 check('3D view restored after reload', true);
 await page.locator('.view-toggle button', { hasText: '2D' }).click();
 await page.waitForSelector('.field-canvas:not(.field-canvas-3d)', { timeout: 10000 });
 
-// Field remembered across reload (explicit earlier choices).
+// Launch continuity (user 2026-10-02: quitting in 3D reopened to the
+// welcome page). The autosaved session comes back on reload — robots,
+// field, and variant, with no fresh import.
 await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-await page.waitForSelector('.workspace-empty');
-await fileInput().setInputFiles([`${SAMPLES}/ghostauto/straight_run.ghostauto`]);
 await page.waitForSelector('.field-canvas', { timeout: 10000 });
+await page.waitForSelector('.robot-library-row', { timeout: 10000 });
 await page.waitForTimeout(800);
+const rowsAfterReload = await page.locator('.robot-library-row').count();
+check('last session restored on reload (no re-import)', rowsAfterReload > 0, `rows=${rowsAfterReload}`);
 const restoredField = await page.locator('.field-select').first().inputValue();
 check('field selection remembered across reload', restoredField === 'rebuilt-2026', restoredField);
 const variantSelected = await page
