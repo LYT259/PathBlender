@@ -26,6 +26,63 @@ interface RobotInspectorProps {
   onApplyProfile: (robotId: string, profileId: string) => void;
 }
 
+/**
+ * Team-number chip + pencil on each robot row: click to edit inline.
+ * Restores metadata editing per the 2026-10-02 user request (the viewer
+ * pivot removed PATH editing — this only annotates identity; the number
+ * also prints on the robot's bumper). Digits only, max 5, Enter/blur
+ * commits, Escape discards.
+ */
+function TeamNumberCell({ robot, onUpdate }: {
+  robot: SessionTrajectory;
+  onUpdate: (id: string, patch: Partial<SessionTrajectory>) => void;
+}) {
+  const { t } = useI18n();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(robot.trajectory.teamNumber);
+  if (!editing) {
+    return (
+      <button
+        className="robot-team-chip"
+        title={t('robots.teamNumberEdit')}
+        aria-label={t('robots.teamNumberEdit')}
+        onClick={() => {
+          setDraft(robot.trajectory.teamNumber);
+          setEditing(true);
+        }}
+      >
+        {robot.trajectory.teamNumber ? `#${robot.trajectory.teamNumber}` : (
+          <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M13.5 3.5l3 3L7 16l-3.8.8L4 13z" /></svg>
+        )}
+      </button>
+    );
+  }
+  const commit = () => {
+    setEditing(false);
+    const v = draft.replace(/\D/g, '').slice(0, 5);
+    if (v !== robot.trajectory.teamNumber) {
+      onUpdate(robot.trajectory.id, { trajectory: { ...robot.trajectory, teamNumber: v } });
+    }
+  };
+  return (
+    <input
+      className="robot-team-input"
+      value={draft}
+      inputMode="numeric"
+      maxLength={5}
+      autoFocus
+      aria-label={t('robots.teamNumberEdit')}
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => setDraft(e.target.value.replace(/\D/g, '').slice(0, 5))}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') commit();
+        if (e.key === 'Escape') setEditing(false);
+      }}
+    />
+  );
+}
+
 /** Selection lives in the workspace so the list, field and inspector agree. */
 export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, libraryRoutes, libraryProfiles, onPickRoute, onAddRoute }: RobotListProps) {
   const { t } = useI18n();
@@ -86,6 +143,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     ))}
                   </select>
                 )}
+                <TeamNumberCell robot={robot} onUpdate={onUpdate} />
                 <button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
                   <EyeIcon visible={robot.visible} />
                 </button>
