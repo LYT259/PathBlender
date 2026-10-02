@@ -93,7 +93,18 @@ export {
   deserializeSession,
   makeSession,
   samplePoseAt,
+  sampleStateAt,
   serializeSession,
   sessionDuration,
 } from './session';
 export type { SessionFileV1, SessionTrajectory } from './session';
+
+export {
+  STEERING_STATIC_MPS,
+  chassisModules,
+  moduleSteeringAngles,
+  robotVisualGeometry,
+  seasonRobotProfile,
+  withSeasonGeometry,
+} from './robot-geometry';
+export type { MotionState, RobotVisualGeometry, SeasonRobotProfile } from './robot-geometry';

@@ -43,11 +43,14 @@ export interface RobotGeometry {
 }
 
 export const DEFAULT_GEOMETRY: RobotGeometry = {
-  // Covers the common FRC drivetrain range; user-adjustable in the UI.
-  // FRC frame perimeter rule caps ~112 in of perimeter; most chassis are
-  // 28–33 in squares.
-  lengthM: 0.9,
-  widthM: 0.9,
+  // Placeholder baked by parsers when the file carries no size — the
+  // 2025 rule-max profile (R104 120 in perimeter → 30 in square frame,
+  // R403 4 in bumper → 38 in = 0.9652 m outer). The UI re-resolves
+  // default-geometry robots per selected season at consumption time
+  // (seasonRobotProfile/withSeasonGeometry in robot-geometry.ts); this
+  // constant is only what a session file round-trips before that.
+  lengthM: 0.9652,
+  widthM: 0.9652,
   offsetX: 0,
   offsetY: 0,
 };
