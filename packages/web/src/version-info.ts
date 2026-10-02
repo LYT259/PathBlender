@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.8';
+export const APP_VERSION = '0.1.6-beta.9';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.9', date: '2026-10-02', note: '3D robots now carry the real MK5i CAD module with motors, wheels steer / 3D 机器人换装真实 MK5i CAD 模组（含电机），轮组随行驶转向' },
   { version: '0.1.6-beta.8', date: '2026-10-02', note: 'The schematic/rendered artwork switcher now hides in 3D view (both look identical there) / 3D 视图下隐藏示意图/渲染图切换（两者画面相同）' },
   { version: '0.1.6-beta.7', date: '2026-10-02', note: 'First-run view: 2026 welded schematic in 2D; the 2D/3D choice is remembered across launches / 首次进入：2026 焊接场+示意图+2D；2D/3D 选择跨启动记忆' },
   { version: '0.1.6-beta.6', date: '2026-10-02', note: 'Silky pinch zoom: the view glides to the target and 3D drops to a lighter render while interacting / 捏合丝滑缩放：画面平滑滑向目标，3D 交互期间自动轻量渲染' },
