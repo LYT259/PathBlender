@@ -8,16 +8,17 @@ import type { MessageKey } from './en';
  * i18n.test.ts enforces the key set, the placeholders and non-empty values.
  */
 export const fr: Record<MessageKey, string> = {
-  'welcome.title': 'Commencer',
+  'welcome.title': 'Importez des trajectoires pour commencer',
+  'welcome.description': 'Rejouez les trajectoires ensemble et repérez les interférences.',
+  'welcome.folderAdvice': 'Importez un dossier complet pour changer de trajet en cas de conflit.',
   'welcome.importFile': 'Importer des fichiers de parcours',
   'welcome.importFileHint': 'Choisissez des parcours exportés depuis Choreo ou PathPlanner',
-  'welcome.importFolderHint': 'Chargez un dossier de parcours et choisissez ceux à rejouer',
+  'welcome.importFolderHint': 'Chargez plusieurs trajets et choisissez celui à rejouer',
   'welcome.openSession': 'Ouvrir une session enregistrée',
   'welcome.openSessionHint': 'Ouvrez une analyse précédemment enregistrée',
   'welcome.tryExample': 'Essayer un exemple',
   'welcome.exampleHint': 'Découvrez la lecture et la détection des collisions avec des parcours de démonstration.',
   'welcome.loadingExample': 'Ouverture de l’exemple…',
-  'welcome.dropHint': 'Vous pouvez aussi déposer des fichiers ou un dossier dans cette fenêtre',
   'welcome.exampleFailed': 'Impossible d’ouvrir l’exemple. Veuillez réessayer.',
   'welcome.exampleNameA': 'Parcours d’exemple A',
   'welcome.exampleNameB': 'Parcours d’exemple B',

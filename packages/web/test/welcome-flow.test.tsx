@@ -23,26 +23,52 @@ async function openExample() {
 beforeEach(() => localStorage.clear());
 
 describe('welcome flow', () => {
-  it('explains each starting action and keeps the empty toolbar focused on preferences', () => {
+  it('shows only the starting actions while retaining accessible descriptions', () => {
     render(<App />);
-    const welcome = screen.getByRole('region', { name: 'Get started' });
+    const welcome = screen.getByRole('region', { name: 'Import paths to get started' });
     expect(within(welcome).getAllByRole('button')).toHaveLength(4);
+    expect(within(welcome).queryByRole('heading')).not.toBeInTheDocument();
+    expect(welcome.textContent).toBe('Import path filesImport folderOpen saved sessionTry an example');
     expect(within(welcome).getByRole('button', { name: 'Import path files' })).toHaveAccessibleDescription(/Choreo or PathPlanner/);
     const folder = within(welcome).getByRole('button', { name: 'Import folder' });
-    expect(folder).toHaveAccessibleDescription(/folder of routes.*choose which to replay/);
+    expect(folder).toHaveAccessibleDescription(/several routes.*choose which to replay/);
     expect(within(welcome).getByRole('button', { name: 'Open saved session' })).toHaveAccessibleDescription(/previously saved analysis/);
     expect(within(welcome).getByRole('button', { name: 'Try an example' })).toHaveAccessibleDescription(/playback and collision checks/);
+    expect(within(welcome).queryByText('You can also drop files or a folder into this window')).not.toBeInTheDocument();
 
     const toolbar = within(document.querySelector<HTMLElement>('.toolbar')!);
     expect(toolbar.getAllByRole('button').map((button) => button.getAttribute('aria-label') || button.textContent)).toEqual(['Preferences']);
     expect(toolbar.queryByText('PathBlender', { exact: true })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'How to use PathBlender' })).not.toBeInTheDocument();
+  });
 
-    const input = document.querySelector<HTMLInputElement>('input[webkitdirectory]')!;
-    const picker = vi.spyOn(input, 'click').mockImplementation(() => undefined);
-    fireEvent.click(folder);
-    expect(picker).toHaveBeenCalledOnce();
-    picker.mockRestore();
+  it('opens the corresponding picker from each import action, with files first', () => {
+    render(<App />);
+    const welcome = within(screen.getByRole('region', { name: 'Import paths to get started' }));
+    const folder = welcome.getByRole('button', { name: 'Import folder' });
+    const files = welcome.getByRole('button', { name: 'Import path files' });
+    expect(welcome.getAllByRole('button').slice(0, 2)).toEqual([files, folder]);
+
+    const fileInput = document.querySelector<HTMLInputElement>('input[type="file"][multiple]:not([webkitdirectory])')!;
+    const folderInput = document.querySelector<HTMLInputElement>('input[webkitdirectory]')!;
+    const filePicker = vi.spyOn(fileInput, 'click').mockImplementation(() => undefined);
+    const folderPicker = vi.spyOn(folderInput, 'click').mockImplementation(() => undefined);
+    const savedPicker = vi.spyOn(sessionInput(), 'click').mockImplementation(() => undefined);
+    try {
+      fireEvent.click(folder);
+      expect(folderPicker).toHaveBeenCalledOnce();
+      expect(filePicker).not.toHaveBeenCalled();
+      expect(savedPicker).not.toHaveBeenCalled();
+
+      fireEvent.click(files);
+      expect(filePicker).toHaveBeenCalledOnce();
+      expect(folderPicker).toHaveBeenCalledOnce();
+      expect(savedPicker).not.toHaveBeenCalled();
+    } finally {
+      filePicker.mockRestore();
+      folderPicker.mockRestore();
+      savedPicker.mockRestore();
+    }
   });
 
   it('opens a saved session through its own picker and restores its field and timing', async () => {
@@ -60,7 +86,7 @@ describe('welcome flow', () => {
     expect(screen.getByRole('combobox', { name: 'Game season' })).toHaveValue('chargedup-2023');
     fireEvent.click(screen.getByText('Straight Run', { selector: '.robot-name' }));
     expect(within(screen.getByRole('region', { name: 'Straight Run', exact: true })).getByText('1.25 s')).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Get started' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Import paths to get started' })).not.toBeInTheDocument();
   });
 
   it('loads a paused 2D example and teaches playback and collision navigation using the working controls', async () => {
@@ -124,7 +150,7 @@ describe('welcome flow', () => {
     render(<App />);
     await openExample();
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
-    expect(screen.getByRole('region', { name: 'Get started' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Import paths to get started' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Show or hide path list' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Undo', exact: true }));
     expect(screen.getByText('Example path A', { selector: '.robot-name' })).toBeInTheDocument();
