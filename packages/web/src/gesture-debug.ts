@@ -58,11 +58,28 @@ export function noteGesture(phase: 'start' | 'change' | 'end', scale: number): v
   if (phase === 'start') {
     samples = [];
     ended = false;
+    postEndWheels = 0;
+    postEndWheelDelta = 0;
   }
   if (phase === 'end') ended = true;
   samples.push({ t: performance.now(), phase, scale });
   (window as unknown as { __pbGestureTrace?: GestureSample[] }).__pbGestureTrace = [...samples];
   render(gestureSummary(samples));
+}
+
+// Round 4: the jump after release turned out to be the scroll burst macOS
+// emits as lifting fingers drift across the glass — invisible to the
+// gesture-only strip above. Count wheels (and their δY) arriving after
+// gestureend to confirm the mechanism live.
+let postEndWheels = 0;
+let postEndWheelDelta = 0;
+
+export function notePostEndWheel(deltaY: number): void {
+  if (!ended) return;
+  postEndWheels += 1;
+  postEndWheelDelta += deltaY;
+  const suffix = ` wheels=${postEndWheels} ΣδY=${postEndWheelDelta.toFixed(0)}`;
+  render(gestureSummary(samples) + suffix);
 }
 
 /** Whether the current gesture has ended (stray late events are ignored). */
