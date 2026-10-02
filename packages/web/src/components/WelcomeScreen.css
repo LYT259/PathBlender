@@ -1,111 +1,145 @@
 .workspace-empty.start-screen {
+  --start-blue: #0a84ff;
+  --start-secondary-fg: #b4b4bd;
+  --start-blue-hover: #2994ff;
+  --start-blue-pressed: #0070df;
   justify-content: flex-start;
-  text-align: left;
-  padding: 32px;
+  padding: 24px 32px;
+  background: var(--bg);
+}
+
+[data-theme='light'] .start-screen {
+  --start-blue: #007aff;
+  --start-secondary-fg: #4b4b54;
+  --start-blue-hover: #006ee6;
+  --start-blue-pressed: #0062cc;
 }
 
 .start-content {
   width: 100%;
-  max-width: 480px;
+  max-width: 496px;
   flex-shrink: 0;
   margin: auto 0;
 }
 
-.start-screen h1 {
-  margin: 0 0 20px;
-  font-size: 22px;
-  letter-spacing: -.025em;
-  line-height: 1.2;
-  font-weight: 650;
-}
-
-.start-actions {
+.start-brand {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  margin-bottom: 40px;
 }
+.start-brand-icon { width: 136px; height: 136px; display: block; }
+.start-brand h1 { margin: 0; color: var(--fg); font-size: 32px; font-weight: 600; line-height: 1.25; letter-spacing: -.8px; }
 
+.start-imports {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  min-height: 218px;
+}
 .start-action {
   display: flex;
   align-items: center;
-  width: 100%;
-  min-height: 64px;
-  gap: 14px;
-  padding: 12px 14px;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  justify-content: center;
+  gap: 16px;
+  border: 0;
   background: transparent;
-  color: var(--fg);
-  text-align: left;
-  font-size: 13px;
-  line-height: 1.5;
+  color: var(--fg-dim);
+  font: inherit;
+  line-height: 1.4;
   cursor: pointer;
 }
+.start-action:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 5px; }
+.start-action:disabled { cursor: default; opacity: .6; }
+.start-action-title { min-width: 0; overflow-wrap: anywhere; }
+.start-icon { flex-shrink: 0; }
 
 .start-action-primary {
-  background: var(--bg-card);
-  border-color: var(--accent);
-}
-
-.start-action-primary > .ui-icon {
-  color: var(--accent);
-}
-
-.start-action:hover:not(:disabled) {
-  background: var(--bg-card);
-}
-
-.start-action:active:not(:disabled) {
-  background: var(--hover);
-}
-
-.start-action:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 3px;
-}
-
-.start-action:disabled {
-  cursor: default;
-  opacity: .6;
-}
-
-.start-action-copy {
-  display: flex;
-  flex: 1;
   flex-direction: column;
   min-width: 0;
-  gap: 3px;
+  min-height: 218px;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-panel);
+  box-shadow: 0 3px 12px rgb(0 0 0 / 5%);
+  color: var(--start-blue);
+  font-size: 16px;
+  font-weight: 400;
+  text-align: center;
+}
+.start-action-primary .start-icon { width: 86px; height: 86px; margin: auto; }
+.start-action-primary .start-action-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  min-height: 44px;
+  padding: 10px 11px;
+  border-radius: 10px;
+  background: var(--start-blue);
+  color: #fff;
+}
+.start-action-primary:hover:not(:disabled) .start-action-title { background: var(--start-blue-hover); }
+.start-action-primary:active:not(:disabled) .start-action-title { background: var(--start-blue-pressed); }
+
+.start-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 35px;
+}
+.start-secondary .start-icon { width: 22px; height: 22px; stroke-width: 4; }
+.start-secondary .start-action { color: var(--start-secondary-fg); min-height: 44px; padding: 4px 19px; gap: 10px; border-radius: 8px; font-size: 13px; }
+.start-secondary .start-action + .start-action { position: relative; }
+.start-secondary .start-action + .start-action::before {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  content: '';
+  transform: translateY(-50%);
+}
+.start-secondary .start-action:hover:not(:disabled) { color: var(--fg); }
+.start-secondary .start-action:active:not(:disabled) { background: var(--hover); }
+
+/* Share both rows so translated button labels stay aligned across cards. */
+@supports (grid-template-rows: subgrid) {
+  .start-imports { grid-template-rows: 1fr auto; }
+  .start-action-primary { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: subgrid; grid-row: 1 / 3; }
+  .start-action-primary + .start-action-primary { grid-column: 2; }
+  .start-action-primary .start-icon { justify-self: center; }
 }
 
-.start-action-title {
-  font-weight: 600;
-  overflow-wrap: anywhere;
+@media (max-width: 640px) {
+  .workspace-empty.start-screen { padding: 24px 20px; }
+  .start-content { max-width: 496px; }
+  .start-brand { margin-bottom: 28px; }
+  .start-brand-icon { width: 100px; height: 100px; }
+  .start-brand h1 { font-size: 26px; }
+  .start-imports { gap: 14px; min-height: 196px; }
+  .start-action-primary { min-height: 196px; padding: 14px; gap: 16px; border-radius: 14px; font-size: 14px; }
+  .start-action-primary .start-icon { width: 76px; height: 76px; }
+  .start-action-primary .start-action-title { min-height: 44px; padding: 10px 8px; border-radius: 10px; }
+  .start-secondary { margin-top: 28px; }
+  .start-secondary .start-action { padding: 4px 14px; gap: 8px; font-size: 13px; }
+  .start-secondary .start-icon { width: 22px; height: 22px; }
+  .start-secondary .start-action + .start-action::before { height: 24px; }
+}
+@media (max-height: 560px) and (min-width: 641px) {
+  .workspace-empty.start-screen { padding-block: 20px; }
+  .start-brand { margin-bottom: 20px; }
+  .start-brand-icon { width: 80px; height: 80px; }
+  .start-brand h1 { font-size: 24px; }
+  .start-imports { min-height: 196px; }
+  .start-action-primary { min-height: 196px; padding: 18px; gap: 16px; }
+  .start-action-primary .start-icon { width: 76px; height: 76px; }
+  .start-secondary { margin-top: 24px; }
 }
 
-.start-action-hint {
-  color: var(--fg-dim);
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-
-.start-row-arrow {
-  flex-shrink: 0;
-  color: var(--fg-dim);
-}
-
-.start-drop-hint {
-  margin: 12px 14px 0;
-  color: var(--fg-dim);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.start-example {
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px solid var(--border);
-}
-
-@media (max-width: 600px), (max-height: 560px) {
-  .workspace-empty.start-screen { padding: 24px; }
+@media (min-height: 760px) and (min-width: 641px) {
+  .workspace-empty.start-screen { padding-bottom: 183px; }
 }
