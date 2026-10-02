@@ -226,3 +226,35 @@ describe('field canvas interaction and redraws', () => {
   });
 
 });
+
+describe('zoom range limits', () => {
+  it('zooms in much deeper than before, and never lets the field shrink below half the canvas', () => {
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240);
+    paint();
+    expect(strokeRect).toHaveBeenLastCalledWith(20, 20, 400, 200); // fit scale 40 px/m
+    const canvas = container.querySelector('canvas')!;
+
+    // Zoom IN: 40 notches × 1.155 ≈ 80× — the view must stop at the cap
+    // (1000 px/m → 10,000 px wide), not run away.
+    for (let i = 0; i < 40; i++) fireEvent.wheel(canvas, { deltaY: -120 });
+    paint();
+    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(10000, 0);
+
+    // The zoom-out floor is covered by the next test with a fresh fit.
+  });
+
+  it('holds the zoom-out floor at half the fitted scale', () => {
+    const ref = createRef<FieldCanvasHandle>();
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} ref={ref} /></I18nProvider>);
+    resize(440, 240);
+    paint();
+    act(() => ref.current!.fit());
+    paint();
+    const canvas = container.querySelector('canvas')!;
+    for (let i = 0; i < 60; i++) fireEvent.wheel(canvas, { deltaY: 120 });
+    paint();
+    // Fit 40 px/m → floor 20 px/m → field width 200 px.
+    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(200, 0);
+  });
+});
