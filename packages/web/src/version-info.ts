@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.4';
+export const APP_VERSION = '0.1.6-beta.5';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.5', date: '2026-10-02', note: 'App menu Hide/Quit items also follow the app language' },
   { version: '0.1.6-beta.4', date: '2026-10-02', note: 'App menu About item follows the app language (was always English)' },
   { version: '0.1.6-beta.3', date: '2026-10-02', note: 'Preferences: natural-width footer buttons; Save keeps the window open' },
   { version: '0.1.6-beta.2', date: '2026-10-02', note: 'Installer hard gates: refuses non-beta trees, audits the installed version, single install at a time / 安装器三道闸：拒绝非 beta 树、核验装机版本、装机互斥' },
