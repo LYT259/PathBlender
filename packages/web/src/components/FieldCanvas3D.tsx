@@ -163,13 +163,13 @@ function loadMk5iTemplate(): Promise<THREE.Group | null> {
       `${import.meta.env.BASE_URL}models/mk5i-module.glb`,
       (gltf) => {
         const g = gltf.scene;
-        // Handedness correction, same reason the field models mount with a
-        // one-axis mirror (fieldModelScale): the render frame reflects, so
-        // an asset mounted without its own negative scale appears as its
-        // mirror image — the MK5i's asymmetric motor layout showed up
-        // flipped until this (user report 2026-10-02). Z flip keeps +X
-        // (rolling) and up intact.
-        g.scale.set(1, 1, -1);
+        // NO mount mirror here. The earlier scale(1,1,-1) "handedness
+        // correction" (PR #74) actually flipped the module upside down —
+        // its origin is ON the floor, so the body went below the carpet
+        // (user demonstrated the flip on the comparison sheet 2026-10-02:
+        // the mirrored renders showed motors-and-wheel from below). The
+        // field models' mirror comes from their AdvantageScope authoring
+        // convention, not from this scene.
         g.traverse((o) => {
           const mesh = o as THREE.Mesh;
           if (!mesh.isMesh) return;
