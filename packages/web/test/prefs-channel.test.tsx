@@ -91,8 +91,11 @@ describe('shared desktop preferences', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
     fireEvent.change(screen.getByRole('combobox', { name: 'Update channel' }), { target: { value: 'beta' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(native.close).toHaveBeenCalledTimes(2));
-    expect(localStorage.getItem('ghpb.updateChannel')).toBe('beta');
+    // Save applies but KEEPS the window open (user request 2026-10-02):
+    // still only the one close from the Cancel above.
+    await waitFor(() => expect(localStorage.getItem('ghpb.updateChannel')).toBe('beta'));
+    expect(native.close).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
   it('retains appearance drafts across sections and applies only on Save', async () => {
@@ -109,9 +112,10 @@ describe('shared desktop preferences', () => {
     expect(screen.getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
     expect(screen.getByRole('combobox', { name: 'Language' })).toHaveValue('zh');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(native.close).toHaveBeenCalledOnce());
-    expect(localStorage.getItem('ghpb.theme')).toBe('dark');
+    await waitFor(() => expect(localStorage.getItem('ghpb.theme')).toBe('dark'));
     expect(localStorage.getItem('ghpb.lang')).toBe('zh');
+    // Save applies without closing the settings window.
+    expect(native.close).not.toHaveBeenCalled();
   });
 
   it('a failed update check shows the error toast, not the green success box', async () => {

@@ -133,6 +133,9 @@ describe('App import → fusion → collision flow', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: /^Save$/i }));
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(localStorage.getItem('ghpb.theme')).toBe('light');
+    // Save keeps the dialog open (user request 2026-10-02); Cancel closes it.
+    expect(screen.getByRole('dialog', { name: 'Preferences' })).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: /^Cancel$/i }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
