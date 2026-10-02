@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.4-beta.5';
+export const APP_VERSION = '0.1.4';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.4', date: '2026-10-02', note: '正式版 0.1.4：汇集 0.1.3 以来全部改进 / Stable v0.1.4: everything since v0.1.3' },
   { version: '0.1.4-beta.5', date: '2026-10-02', note: '修复桌面版保存会话/导出 PNG 无反应（命令参数命名）' },
   { version: '0.1.4-beta.4', date: '2026-10-02', note: '修复 Linux 桌面版保存/导出/分享菜单，支持双击路径文件直接打开' },
   { version: '0.1.4-beta.3', date: '2026-10-02', note: 'Smooth Onshape-style zoom: trackpad responds immediately without runaway zoom, wheel zooms at the cursor / Onshape 风格缩放：触控板即时响应不再失控，滚轮按指针位置缩放' },
