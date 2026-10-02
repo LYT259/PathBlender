@@ -1,8 +1,9 @@
 import { useCallback, useReducer, useRef } from 'react';
-import type { FieldArtStyle, FieldPackage, SessionTrajectory } from '@pathblender/core';
+import type { Alliance, FieldArtStyle, FieldPackage, SessionTrajectory } from '@pathblender/core';
 
 type RobotUpdate = SessionTrajectory[] | ((previous: SessionTrajectory[]) => SessionTrajectory[]);
 interface Scene {
+  alliance: Alliance;
   fieldId: string;
   fieldVariant: 'welded' | 'andymark';
   fieldStyle: FieldArtStyle;
@@ -32,7 +33,7 @@ function reduce(state: History, action: Action): History {
   const next = action.update(state.present);
   const previous = state.present;
   const sameRobots = next.robots.length === previous.robots.length && next.robots.every((robot, i) => robot === previous.robots[i]);
-  if (sameRobots && next.fieldId === previous.fieldId && next.fieldVariant === previous.fieldVariant && next.fieldStyle === previous.fieldStyle && next.customField === previous.customField && next.customImageUrl === previous.customImageUrl) return state;
+  if (sameRobots && next.alliance === previous.alliance && next.fieldId === previous.fieldId && next.fieldVariant === previous.fieldVariant && next.fieldStyle === previous.fieldStyle && next.customField === previous.customField && next.customImageUrl === previous.customImageUrl) return state;
   // A continuous waypoint drag is one change; unrelated commands never merge.
   const continuous = action.group != null && action.group === state.group;
   return { past: continuous ? state.past : [...state.past, previous].slice(-LIMIT), present: next, future: [], group: action.group };
@@ -40,7 +41,7 @@ function reduce(state: History, action: Action): History {
 
 /** Undo restores field and robots together, including whole-session imports. */
 export function useSessionHistory(initial: { id: string; variant: 'welded' | 'andymark'; style: FieldArtStyle }) {
-  const [state, dispatch] = useReducer(reduce, { past: [], present: { robots: [], fieldId: initial.id, fieldVariant: initial.variant, fieldStyle: initial.style }, future: [] });
+  const [state, dispatch] = useReducer(reduce, { past: [], present: { robots: [], alliance: 'blue' as Alliance, fieldId: initial.id, fieldVariant: initial.variant, fieldStyle: initial.style }, future: [] });
   const groupSequence = useRef(0);
   const activeGroup = useRef<number | undefined>(undefined);
   const beginEdit = useCallback(() => { activeGroup.current = ++groupSequence.current; }, []);
