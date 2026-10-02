@@ -771,7 +771,11 @@ function AppBody() {
                     const v = e.target.value as 'welded' | 'andymark'; setScene({ fieldVariant: v });
                     if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, v, fieldStyle);
                   }} title={tr('field.variant')} aria-label={tr('field.variant')}><option value="andymark">AndyMark</option><option value="welded">Welded</option></select>}
-                  {field.imageRendered && <select className="field-select field-style" value={fieldStyle} onChange={(e) => {
+                  {/* 2D-artwork switcher, hidden in 3D: the official field
+                      model replaces the artwork plane entirely (the image
+                      only feeds the no-model fallback), so both styles
+                      render the same scene there (user request 2026-10-02). */}
+                  {!view3D && field.imageRendered && <select className="field-select field-style" value={fieldStyle} onChange={(e) => {
                     const st = e.target.value as FieldArtStyle; setScene({ fieldStyle: st });
                     if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, fieldVariant, st);
                   }} title={tr('field.style')} aria-label={tr('field.style')}><option value="schematic">{tr('field.style.schematic')}</option><option value="rendered">{tr('field.style.rendered')}</option></select>}
