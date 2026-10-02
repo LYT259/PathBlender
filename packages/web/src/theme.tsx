@@ -14,7 +14,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { broadcastPref, listenPrefs } from './pref-sync';
+import { broadcastPref, isDesktop, listenPrefs } from './pref-sync';
+import { syncDockIcon } from './dock-icon';
 
 export type ThemeMode = 'system' | 'dark' | 'light';
 
@@ -56,6 +57,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // before the browser paints (no wrong-theme flash on mount).
   useLayoutEffect(() => {
     document.documentElement.dataset.theme = resolved;
+  }, [resolved]);
+
+  // Desktop: the running Dock tile follows the resolved theme (explicit
+  // artwork via dock-icon.ts). Both windows mount this provider, so a
+  // change converges with the same value from both — idempotent.
+  useEffect(() => {
+    syncDockIcon(resolved, isDesktop);
   }, [resolved]);
 
   const setMode = useCallback((m: ThemeMode) => {
