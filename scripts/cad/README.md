@@ -1,75 +1,59 @@
 # MK5i module CAD → glTF pipeline (private; not shipped)
 
-Builds `packages/web/public/models/mk5i-module.glb` — the official
-Swerve Drive Specialties MK5i module, instanced 4× per robot in the 3D
-view. User decision 2026-10-02: the 3D modules must be the real CAD; a
-hand-modeled approximation looks wrong when zoomed in.
+Builds `packages/web/public/models/mk5i-module.glb` — the 3D swerve
+module instanced 4× per robot. User decision 2026-10-02: the modules
+must be real CAD; a hand-modeled approximation looks wrong when zoomed
+in. Same-day follow-up decision: use the **FRC Designs Onshape
+re-creation** (it models the two Kraken X60 motors, which the official
+SDS export does not — SDS never ships motors).
 
 ## Provenance
 
-- Source: the official SDS product page
-  <https://www.swervedrivespecialties.com/products/mk5i-swerve-module>
-  → "CAD Model" link (Google Drive) → `mk5i.x_t` — a Parasolid text
-  transmit exported from SOLIDWORKS 2022 (header date 2025-09-02),
-  3,701,437 bytes. Downloaded 2026-10-02; local copy `~/Downloads/mk5i.x_t`.
-- SDS publishes no STEP and states no CAD license terms on the page.
-  The repo is private, so bundling the derived GLB is fine today, but
-  **every public release must re-check SDS's terms for redistribution**
-  (release-checklist item, AGENTS.md red line 2).
-- Parasolid has no open-source reader, so the one-time x_t → STEP hop
-  happens in a CAD app that has a Siemens kernel (Fusion 360 /
-  SolidWorks / Onshape — any of them opens x_t directly). Everything
-  after STEP is automated below.
+- **Shipped geometry** — "MK5i DesignApp.step" (FRC Designs Onshape
+  module, exported by the user 2026-10-02):
+  sha256 `8ee3d6af0843d0a62502dc38c04e0d80b0dd948d36a2f0d9cb4dbf2cc9deac1a`.
+  It is a community re-creation, not SDS's own geometry; core
+  dimensions match the official layout drawing (module height
+  6.16–6.17 in both; 18 named parts incl. 2× Kraken X60, turret,
+  molded wheel, L plate, fasteners). **frcdesigns.com was unreachable
+  (HTTP 521) at decision time — its license terms are UNVERIFIED.
+  Any public release must verify them first** (release-checklist
+  item, AGENTS.md red line 2).
+- **Reference geometry kept for audit** — the official SDS Parasolid
+  `mk5i.x_t` (product page → "CAD Model" Google Drive link;
+  `attachment; filename="MK5i.x_t"`), sha256
+  `b9a36e6bb3a948c04217f2f55293cf283b91d8151bd1ad5e7d789cff7008d203`,
+  byte-identical across two downloads and the user's copy. Its Onshape
+  STEP re-export ("MK5i Official.step") measured 7.45×7.45 in plan ×
+  6.16 in high — used to cross-check the FRC Designs core dims.
+- Parasolid has no open-source reader, so both STEP hops went through
+  Onshape (user-side); everything after STEP is automated below.
 
-## One-time chain
+## Rebuild (deterministic)
 
-1. **x_t → STEP (manual, any CAD app)**: open `~/Downloads/mk5i.x_t`,
-   export STEP (AP214) → `~/Downloads/mk5i.step`.
-2. **STEP → normalized GLB (automated)**:
+```sh
+blender --background --python scripts/cad/mk5i-convert.py -- \
+  ~/Downloads/MK5i\ DesignApp.step packages/web/public/models/mk5i-module.glb
+```
 
-   ```sh
-   blender --background --python scripts/cad/mk5i-convert.py -- \
-     ~/Downloads/mk5i.step packages/web/public/models/mk5i-module.glb
-   ```
+Calibration is measured from the mesh (steering axis = turret bbox
+center, floor = wheel bottom, rolling dir = wheel axle ⊥), baked into
+vertices — no operator semantics, byte-reproducible runs.
 
-   The script normalizes to the runtime contract, decimates, joins by
-   material, and prints its bounding box for the check below.
-3. **Numeric acceptance** (official layout drawing
-   `~/Downloads/mk5i-layout-drawing.pdf`, dimensions in inches):
-   overall height 7.45, plate 6.25 × 6.25 (wheel-to-wheel plan ≈ this
-   class). After normalize+scale the printed bbox must be ≈ 0.159 ×
-   0.159 × 0.189 m (6.25/6.25/7.45 in). The runtime loader also
-   sanity-checks height (0.10–0.35 m) and falls back to the procedural
-   module if it fails, so a bad asset can never mis-render the field.
-4. Commit the GLB (it is small: decimated, joined); never commit the
-   raw x_t/STEP sources.
+## Acceptance (checked 2026-10-02 build)
+
+- bbox after normalize: `[-0.0916, -0.1082, 0] .. [0.0926, 0.1084, 0.1564]`
+  — floor exactly z=0, steering axis straddles the origin, height
+  0.1564 m ≈ 6.16 in vs official drawing 6.17 in (decimation loss
+  0.0007 m), plan 0.184×0.217 m (motors flank the rolling axis ±Y).
+- 55,141 triangles in 2 meshes (~24 material primitives).
+- Runtime loader sanity-checks height 0.10–0.35 m and falls back to the
+  procedural module if it ever fails.
 
 ## Runtime contract (mirrored in web/src/chassis3d.ts)
 
 - meters, +Y up, single scene root;
 - origin = steering axis ∩ floor; +X = the wheel's rolling direction
   (steering 0 = straight ahead);
-- ≤ 5 meshes, ≤ ~60k triangles total (4 pods × N robots are cloned from
-  one template; geometry/materials stay shared on the GPU).
-
-## Provenance evidence (verified 2026-10-02, twice)
-
-- Download URL = the official product page's own "CAD Model" link
-  (Google Drive id `1WCN-hDwU_AilFH5X-7swBz2U0_n4Wpnf`); the Drive
-  response headers name the file `attachment; filename="MK5i.x_t"`.
-- Two independent downloads are **byte-identical**, and the copy the
-  user renamed in ~/Downloads matches too:
-  size 3,701,437 bytes, sha256
-  `b9a36e6bb3a948c04217f2f55293cf283b91d8151bd1ad5e7d789cff7008d203`
-  (network truncation ruled out — this link truncated other files).
-- Internal Parasolid header: `KEY=FILEMK5i .x_t`,
-  `APPL=SOLIDWORKS 2022-2029`, Parasolid 33.1, export date 2025-09-02
-  — consistent with the product's layout-drawing REV date 2025-07-28.
-- This x_t is the native SolidWorks kernel export — the *master*
-  geometry, strictly higher fidelity than any STEP/mesh derived from
-  it (exact B-rep surfaces, no tessellation loss). It is the only CAD
-  artifact the official page publishes; the per-part store pages are
-  subsets of this assembly, and MK5n is a different product.
-- Final acceptance gates: the exporter should see the complete module
-  assembly (~7.45 in tall, wheel + gearbox + motor) in their CAD, and
-  the convert script must print a bbox of ≈ 0.159 × 0.159 × 0.189 m.
+- small enough to clone 4× per robot with shared GPU buffers
+  (a few meshes / tens of thousands of triangles).
