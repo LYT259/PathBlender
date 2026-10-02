@@ -70,7 +70,7 @@ await page.screenshot({ path: `${SHOTS}/01-empty.png` });
 await prefsGear().click();
 await page.waitForSelector('.prefs-modal');
 check('preferences carry no AI settings (code deleted)', (await page.locator('.prefs-modal .ai-row, .prefs-modal .prefs-ai').count()) === 0);
-await page.locator('.prefs-modal .prefs-row.btns .btn.small:not(.accent)').first().click(); // Cancel (footer-scoped: the About copy button is also a .btn.small)
+await page.locator('.preferences-footer .btn:not(.accent)').first().click(); // Cancel — the prefs redesign (0.1.4-beta era) moved the footer to .preferences-footer with .btn / .btn.accent
 
 // --- import two ghost files through the real file input ---
 await fileInput().setInputFiles([
@@ -142,28 +142,34 @@ check('playback advances clock', midClock > 0.5, `clock=${midClock}`);
 await page.screenshot({ path: `${SHOTS}/04-playing.png` });
 
 // --- language switch via Preferences (staged save/cancel semantics) ---
-const saveBtn = page.locator('.prefs-modal .btn.small.accent');
-const cancelBtn = page.locator('.prefs-modal .prefs-row.btns .btn.small:not(.accent)');
+// The 0.1.4-beta prefs redesign: sectioned panel (.preferences-nav tabs),
+// footer .preferences-footer (.btn cancel / .btn.accent save), theme as
+// radios, About as a section carrying .preferences-product + copy status.
+const saveBtn = page.locator('.preferences-footer .btn.accent');
+const cancelBtn = page.locator('.preferences-footer .btn:not(.accent)');
+const langSelect = page.locator('.preferences-panel select').first();
 await prefsGear().click();
-const langSelect = page.locator('.prefs-modal select').first();
 await langSelect.waitFor({ state: 'visible', timeout: 8000 });
-// About block: natural-facing version ("0.1.4 · Beta 2"), the full number,
+// About block: natural-facing version ("0.1.4 · Beta N"), the full number,
 // one-click copy (versioning scheme 2026-10-01). The exact number drifts
 // with every merge by design — assert shape, not value.
+await page.locator('.preferences-nav [role=tab]', { hasText: /^About$/ }).click();
 {
-  const display = (await page.locator('.prefs-version-line strong').textContent())?.trim() ?? '';
-  const full = (await page.locator('.prefs-version-line code').textContent())?.trim() ?? '';
+  const display = (await page.locator('.preferences-product span').textContent())?.trim() ?? '';
+  const full = (await page.locator('.preferences-product code').textContent())?.trim() ?? '';
   check(
     'About shows the version line + full number',
     /^\d+\.\d+\.\d+( · Beta \d+)?$/.test(display) && /^\d+\.\d+\.\d+(-beta\.\d+)?$/.test(full),
     `display="${display}" full="${full}"`,
   );
-  const copyBtn = page.locator('.prefs-version-line button');
+  const copyBtn = page.locator('.preferences-product button');
   check('About offers one-click version copy', (await copyBtn.count()) === 1);
   await copyBtn.click();
   await page.waitForTimeout(300);
-  check('version copy reports success', (await page.locator('.toast').count()) === 1);
+  const copyStatus = (await page.locator('.preferences-copy-status').textContent()) ?? '';
+  check('version copy reports success', copyStatus.length > 0, `status="${copyStatus}"`);
 }
+await page.locator('.preferences-nav [role=tab]', { hasText: /^General$/ }).click();
 const optionCount = await langSelect.locator('option').count();
 check('language list has all 8 choices', optionCount === 8, `options=${optionCount}`);
 check('follow-system sits first', /Follow system|跟随系统|跟隨系統/i.test((await langSelect.locator('option').first().textContent()) ?? ''));
@@ -180,7 +186,7 @@ check(
   `modal=${await page.locator('.prefs-modal').count()} heading=${headingAfterCancel}`,
 );
 await prefsGear().click();
-await page.locator('.prefs-modal select').first().selectOption('zh');
+await page.locator('.preferences-panel select').first().selectOption('zh');
 await saveBtn.click();
 await page.waitForTimeout(300);
 check('save closes the preferences modal', (await page.locator('.prefs-modal').count()) === 0);
@@ -189,32 +195,31 @@ check('zh switch', /机器人/.test(zhText ?? ''), zhText ?? '');
 await page.screenshot({ path: `${SHOTS}/05-zh.png` });
 // fr as a representative of the P1 batch (es/fr/tr)
 await prefsGear().click();
-await page.locator('.prefs-modal select').first().selectOption('fr');
-await page.locator('.prefs-modal .btn.small.accent').click();
+await page.locator('.preferences-panel select').first().selectOption('fr');
+await saveBtn.click();
 await page.waitForTimeout(300);
 const frText = await page.locator('.robot-library-heading h2').first().textContent();
 check('fr switch (P1 language)', /Robots/.test(frText ?? ''), frText ?? '');
 await page.screenshot({ path: `${SHOTS}/05b-fr.png` });
 await prefsGear().click();
-await page.locator('.prefs-modal select').first().selectOption('en');
-await page.locator('.prefs-modal .btn.small.accent').click();
+await page.locator('.preferences-panel select').first().selectOption('en');
+await saveBtn.click();
 await page.waitForTimeout(300);
 
 // --- theme staged semantics (headless defaults light) ---
 await prefsGear().click();
-const themeSel = page.locator('.prefs-modal select').nth(1);
-await themeSel.selectOption('dark');
+const darkRadio = page.locator('.preferences-theme-choice input[value=dark]');
+await darkRadio.check();
 await page.waitForTimeout(150);
 check('theme staged before Save', (await page.evaluate(() => document.documentElement.dataset.theme)) === 'light');
-await themeSel.selectOption('light');
-await page.locator('.prefs-modal .btn.small.accent').click();
+await page.locator('.preferences-theme-choice input[value=light]').check();
+await saveBtn.click();
 await page.waitForTimeout(300);
 const htmlTheme = await page.evaluate(() => document.documentElement.dataset.theme);
 check('theme confirmed light on Save', htmlTheme === 'light', `data-theme=${htmlTheme}`);
 await prefsGear().click();
-await page.waitForSelector('.prefs-modal');
-await page.locator('.prefs-modal select').nth(1).selectOption('dark');
-await page.locator('.prefs-modal .btn.small.accent').click();
+await page.locator('.preferences-theme-choice input[value=dark]').check();
+await saveBtn.click();
 await page.waitForTimeout(300);
 
 // --- share link: dialog with the compressed session, then restore ---
@@ -449,16 +454,16 @@ const skyDark = await sample3dSky();
 check('3D sky is dark before theme switch', isDarkSky(skyDark), JSON.stringify(skyDark));
 await prefsGear().click();
 await page.waitForSelector('.prefs-modal');
-await page.locator('.prefs-modal select').nth(1).selectOption('light');
-await page.locator('.prefs-modal .btn.small.accent').click();
+await page.locator('.preferences-theme-choice input[value=light]').check();
+await page.locator('.preferences-footer .btn.accent').click();
 await page.waitForTimeout(700);
 const skyLight = await sample3dSky();
 check('3D retints to light on hot-switch', isLightSky(skyLight), JSON.stringify(skyLight));
 await page.screenshot({ path: `${SHOTS}/14b-3d-light.png` });
 await prefsGear().click();
 await page.waitForSelector('.prefs-modal');
-await page.locator('.prefs-modal select').nth(1).selectOption('dark');
-await page.locator('.prefs-modal .btn.small.accent').click();
+await page.locator('.preferences-theme-choice input[value=dark]').check();
+await page.locator('.preferences-footer .btn.accent').click();
 await page.waitForTimeout(700);
 
 // Damped orbit settles after release (no endless drift).
