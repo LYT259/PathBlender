@@ -95,11 +95,13 @@ def smallest_eigen_axis(m):
 axle = smallest_eigen_axis(cov)
 axle.z = 0.0
 axle.normalize()
-# ROLL_SWAP: the covariance axle/roll split was ambiguous for this wheel
-# mesh (variance ratio only 1.5×) and the first build came out 90° off
-# (user report 2026-10-02) — the axle direction was actually the rolling
-# direction. True until a measurement says otherwise.
-ROLL_SWAP = True
+# ROLL_SWAP: False = rolling is perpendicular to the covariance axle
+# (the original calibration). Measured against the real app render
+# 2026-10-02: with the swap the motor overhang ran parallel to travel;
+# real chassis install motors to the SIDES (vendors sell L/R mirror
+# variants for exactly that), so overhang must be perpendicular — swap
+# off.
+ROLL_SWAP = False
 roll = Vector((axle.x, axle.y, 0.0)) if ROLL_SWAP else Vector((-axle.y, axle.x, 0.0))
 ang = math.atan2(roll.y, roll.x)       # rolling direction vs +X
 print(f"[axle] direction=({axle.x:.3f},{axle.y:.3f},0) roll_angle={math.degrees(ang):.1f} deg swap={ROLL_SWAP}")
