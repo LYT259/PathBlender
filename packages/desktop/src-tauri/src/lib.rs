@@ -80,6 +80,7 @@ async fn install_update(pending: State<'_, PendingUpdate>) -> Result<(), String>
 /// UI strings per app language (zh-tw carries its own wording rather than
 /// reusing zh; en/es/fr/tr/zh each get a table below).
 struct MenuLang {
+    about: &'static str,
     file: &'static str,
     edit: &'static str,
     import: &'static str,
@@ -89,9 +90,16 @@ struct MenuLang {
     clear: &'static str,
     prefs: &'static str,
     updates: &'static str,
+    hide: &'static str,
+    hide_others: &'static str,
+    quit: &'static str,
 }
 
 const EN: MenuLang = MenuLang {
+    hide: "Hide PathBlender",
+    hide_others: "Hide Others",
+    quit: "Quit PathBlender",
+    about: "About PathBlender",
     file: "File",
     edit: "Edit",
     import: "Import…",
@@ -104,6 +112,10 @@ const EN: MenuLang = MenuLang {
 };
 
 const ZH: MenuLang = MenuLang {
+    hide: "隐藏 PathBlender",
+    hide_others: "隐藏其他",
+    quit: "退出 PathBlender",
+    about: "关于 PathBlender",
     file: "文件",
     edit: "编辑",
     import: "导入…",
@@ -116,6 +128,10 @@ const ZH: MenuLang = MenuLang {
 };
 
 const ZH_TW: MenuLang = MenuLang {
+    hide: "隱藏 PathBlender",
+    hide_others: "隱藏其他",
+    quit: "結束 PathBlender",
+    about: "關於 PathBlender",
     file: "檔案",
     edit: "編輯",
     import: "匯入…",
@@ -130,6 +146,10 @@ const ZH_TW: MenuLang = MenuLang {
 /// Hong Kong wording. Same script, a few terms and the session word differ
 /// from the Taiwan table; Macau reads this one too (report §7.2 v1.23).
 const ZH_HK: MenuLang = MenuLang {
+    hide: "隱藏 PathBlender",
+    hide_others: "隱藏其他",
+    quit: "結束 PathBlender",
+    about: "關於 PathBlender",
     file: "檔案",
     edit: "編輯",
     import: "匯入…",
@@ -142,6 +162,10 @@ const ZH_HK: MenuLang = MenuLang {
 };
 
 const ES: MenuLang = MenuLang {
+    hide: "Ocultar PathBlender",
+    hide_others: "Ocultar otros",
+    quit: "Salir de PathBlender",
+    about: "Acerca de PathBlender",
     file: "Archivo",
     edit: "Edición",
     import: "Importar…",
@@ -154,6 +178,10 @@ const ES: MenuLang = MenuLang {
 };
 
 const FR: MenuLang = MenuLang {
+    hide: "Masquer PathBlender",
+    hide_others: "Masquer les autres",
+    quit: "Quitter PathBlender",
+    about: "À propos de PathBlender",
     file: "Fichier",
     edit: "Édition",
     import: "Importer…",
@@ -166,6 +194,10 @@ const FR: MenuLang = MenuLang {
 };
 
 const TR: MenuLang = MenuLang {
+    hide: "PathBlender'i Gizle",
+    hide_others: "Diğerlerini Gizle",
+    quit: "PathBlender'dan Çık",
+    about: "PathBlender Hakkında",
     file: "Dosya",
     edit: "Düzen",
     import: "İçe Aktar…",
@@ -203,7 +235,7 @@ fn build_menu(app: &AppHandle, lang: &str) -> tauri::Result<tauri::menu::Menu<ta
     let l = lang_of(lang);
 
     let app_submenu = SubmenuBuilder::new(app, "PathBlender")
-        .about(Some(
+        .about_with_text(l.about, Some(
             AboutMetadataBuilder::new()
                 .name(Some("PathBlender".to_string()))
                 .version(Some(env!("CARGO_PKG_VERSION").to_string()))
@@ -226,9 +258,9 @@ fn build_menu(app: &AppHandle, lang: &str) -> tauri::Result<tauri::menu::Menu<ta
             None::<&str>,
         )?)
         .separator()
-        .hide()
-        .hide_others()
-        .quit()
+        .hide_with_text(l.hide)
+        .hide_others_with_text(l.hide_others)
+        .quit_with_text(l.quit)
         .build()?;
 
     let file_submenu = SubmenuBuilder::new(app, l.file)
