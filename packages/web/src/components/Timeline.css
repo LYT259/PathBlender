@@ -7,12 +7,9 @@
 
 .timeline-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; min-height: 24px; }
 .timeline-toolbar h2 { margin: 0; font-size: 12px; font-weight: 600; }
-/* The clock rides centered directly above the transport column, so the
-   readout and the play button share one axis. */
 .timeline-playback-bar {
-  display: grid; grid-template-areas: '. clock .' '. transport speeds';
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto auto;
-  align-items: center; gap: 4px 16px;
+  display: grid; grid-template-areas: 'clock transport speeds';
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px 16px;
   margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
 }
 .timeline-transport { grid-area: transport; display: flex; align-items: center; justify-content: center; gap: 3px; }
@@ -24,7 +21,7 @@
 .timeline-transport button.timeline-play { color: var(--accent-fg); background: var(--accent); }
 .timeline-transport button.timeline-play:hover:enabled { background: var(--accent); opacity: .9; }
 .timeline-transport button:disabled { opacity: .32; cursor: default; }
-.timeline-workspace .timeline-clock { grid-area: clock; justify-self: center; margin-left: 0; color: var(--fg); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.timeline-workspace .timeline-clock { grid-area: clock; margin-left: 0; color: var(--fg); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .timeline-speeds { grid-area: speeds; justify-self: end; display: flex; align-items: center; padding: 2px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); }
 .timeline-speeds button { min-width: 39px; padding: 3px 7px; border: 0; border-radius: 4px; color: var(--fg-dim); background: transparent; font: inherit; font-size: 11px; cursor: pointer; }
 .timeline-speeds button[aria-pressed='true'] { color: var(--fg); background: var(--bg-panel); box-shadow: 0 1px 2px var(--shadow); }
@@ -84,6 +81,5 @@
 }
 
 @media (max-width: 640px) {
-  .timeline-playback-bar { grid-template-areas: 'clock' 'transport' 'speeds'; grid-template-columns: minmax(0, 1fr); }
-  .timeline-speeds { justify-self: center; }
+  .timeline-playback-bar { grid-template-areas: 'clock speeds' 'transport transport'; grid-template-columns: minmax(0, 1fr) auto; }
 }
