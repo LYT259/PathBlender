@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 
 /** Shared modal: move focus in, keep keyboard navigation inside, return it on close. */
-export function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Dialog({ title, onClose, children, className = '' }: { title: string; onClose: () => void; children: ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
@@ -10,7 +10,7 @@ export function Dialog({ title, onClose, children }: { title: string; onClose: (
     return () => previous?.focus();
   }, []);
   return <div className="prefs-overlay" onClick={onClose}>
-    <div ref={ref} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} className="prefs-modal" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => {
+    <div ref={ref} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} className={`prefs-modal ${className}`} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => {
       if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
       if (e.key !== 'Tab') return;
       const elements = [...(ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]') ?? [])].filter((el) => !el.hidden && el.getAttribute('aria-hidden') !== 'true');

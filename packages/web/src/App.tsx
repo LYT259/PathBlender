@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useSessionHistory } from './session-history';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
+import { PreferencesPanel } from './components/PreferencesPanel';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { UsageTip, useUsageTip } from './components/UsageTip';
 import {
@@ -25,9 +26,6 @@ import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-
 import { displayName, robotFromRoute, type LibraryProfile, type LibraryRoute } from './route-library';
 import { hashToSession, sessionToHash } from './share-url';
 import { copyText, saveText } from './download';
-import { APP_VERSION, VERSION_NOTES } from './version-info';
-import { formatVersionDisplay } from './version';
-import { useTheme, type ThemeMode } from './theme';
 import { fieldImageFor } from './field-images';
 import { FIELD3D_MODELS } from './field3d-models';
 import { FieldCanvas, type FieldCanvasHandle } from './components/FieldCanvas';
@@ -38,9 +36,9 @@ import { RobotList, RobotInspector } from './components/RobotList';
 import { ConflictPanel } from './components/ConflictPanel';
 import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
-import { I18nProvider, LANGUAGES, langLabel, useI18n, type LangChoice } from './i18n';
+import { I18nProvider, useI18n } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
-import { UpdateChannelProvider, useUpdateChannel, type UpdateChannel } from './update-channel';
+import { useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
 import { listenPrefs } from './pref-sync';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from './viewer';
@@ -94,9 +92,8 @@ export function App() {
 }
 
 function AppBody() {
-  const { lang, langChoice, setLang, t: tr } = useI18n();
-  const { channel: updateChannel, setChannel: setUpdateChannel } = useUpdateChannel();
-  const { mode: themeMode, setMode: setThemeMode } = useTheme();
+  const { lang, t: tr } = useI18n();
+  const { channel: updateChannel } = useUpdateChannel();
   const [initialFieldPref] = useState(loadFieldPref);
   const { robots, setRobots, setScene, fieldId, fieldVariant, customField, customImageUrl, undo, redo, beginEdit, endEdit, canUndo, canRedo } = useSessionHistory(initialFieldPref);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -107,25 +104,17 @@ function AppBody() {
   const [view3D, setView3D] = useState(false);
   const [showTrail, setShowTrail] = useState(true);
   const [showPrefs, setShowPrefs] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
+  function openPreferences() {
+    if (!IS_DESKTOP) { setShowPrefs(true); return; }
+    void import('@tauri-apps/api/core')
+      .then(({ invoke }) => invoke('open_preferences'))
+      .catch(() => setShowPrefs(true));
+  }
   const [exampleLoading, setExampleLoading] = useState(false);
   // A file import wins over a pending example module load.
   const exampleRequest = useRef(0);
   const { visible: showPlayTip, dismiss: dismissPlayTip } = useUsageTip('play');
   const { visible: showCheckTip, dismiss: dismissCheckTip } = useUsageTip('checks');
-  // Language and theme are staged: picking one enables Save instead of applying
-  // instantly (the other preferences keep their immediate-apply behavior).
-  // `null` means "nothing staged", which is also the rule the dialog's Save
-  // button uses — see the prefs-row btns block.
-  const [pendingLang, setPendingLang] = useState<LangChoice | null>(null);
-  const [pendingTheme, setPendingTheme] = useState<ThemeMode | null>(null);
-  const [pendingChannel, setPendingChannel] = useState<UpdateChannel | null>(null);
-  const closePrefs = useCallback(() => {
-    setShowPrefs(false);
-    setPendingLang(null);
-    setPendingTheme(null);
-    setPendingChannel(null);
-  }, []);
   const [cfOpen, setCfOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'error' } | null>(null);
   const flash = useCallback((msg: string, kind: 'ok' | 'error' = 'ok') => {
@@ -627,13 +616,8 @@ function AppBody() {
   };
   return (
     <div className="app">
-      <header className="toolbar workspace-toolbar" data-tauri-drag-region="" aria-label="primary">
+      <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label="primary">
         {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.togglePaths')} aria-pressed={leftOpen} onClick={() => { setPathsOpen(!pathsOpen); if (!pathsOpen && window.innerWidth <= 640) setInspectorOpen(false); }}><Icon name="sidebar" /></button>}
-        <div className="workspace-brand" data-tauri-drag-region="">
-          <strong data-tauri-drag-region="">PathBlender</strong>
-          {hasRobots && <span data-tauri-drag-region="">{tr('workspace.subtitle')}</span>}
-        </div>
-        {hasRobots && <span className="toolbar-divider" />}
         {hasRobots && <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>}
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
         {!VIEWER_ONLY && (
@@ -693,8 +677,7 @@ function AppBody() {
             {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
           </div>
         </details>}
-        <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={() => setShowPrefs(true)}><Icon name="settings" /></button>
-        <button className="tool-btn square" aria-label={tr('help.title')} title={tr('help.title')} onClick={() => setShowHelp(true)}><Icon name="help" /></button>
+        <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={openPreferences}><Icon name="settings" /></button>
         {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.toggleInspector')} aria-pressed={rightOpen} onClick={() => { setInspectorOpen(!inspectorOpen); if (!inspectorOpen && window.innerWidth <= 640) setPathsOpen(false); }}><Icon name="inspector" /></button>}
       </header>
       {VIEWER_ONLY && SITE_PREVIEW && <div className="site-preview-banner" role="contentinfo"><span>{tr('site.previewNote')}</span><a href={SITE_URLS.stable}>{tr('site.backStable')}</a></div>}
@@ -788,127 +771,9 @@ function AppBody() {
             </div>
         </Dialog>
       )}
-      {showHelp && <Dialog title={tr('help.title')} onClose={() => setShowHelp(false)}>
-        <h3>{tr('help.title')}</h3>
-        <div className="help-content">
-          <h4>{tr('help.importTitle')}</h4><p>{tr('help.importBody')}</p>
-          <h4>{tr('help.playTitle')}</h4><p>{tr('help.playBody')}</p>
-          <h4>{tr('help.checkTitle')}</h4><p>{tr(VIEWER_ONLY ? 'help.checkBodyViewer' : 'help.checkBody')}</p>
-        </div>
-        <div className="prefs-row btns"><button className="btn" onClick={() => setShowHelp(false)}>{tr('help.close')}</button></div>
+      {showPrefs && <Dialog title={tr('prefs.title')} onClose={() => setShowPrefs(false)} className="preferences-dialog">
+        <PreferencesPanel desktop={IS_DESKTOP} onClose={() => setShowPrefs(false)} />
       </Dialog>}
-      {showPrefs && (
-        <Dialog title={tr('prefs.title')} onClose={closePrefs}>
-            <h3>{tr('prefs.title')}</h3>
-            <label className="prefs-row">
-              <span>{tr('prefs.language')}</span>
-              <select
-                value={pendingLang ?? langChoice}
-                onChange={(e) => setPendingLang(e.target.value as LangChoice)}
-              >
-                {LANGUAGES.map((l) => (
-                  <option key={l} value={l}>
-                    {l === 'system' ? tr('prefs.langSystem') : langLabel(l)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {VIEWER_ONLY && (
-              <label className="prefs-row">
-                <span>{tr('site.version')}</span>
-                <a
-                  className="prefs-link"
-                  href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {SITE_PREVIEW ? tr('site.backStable') : tr('site.tryPreview')} ↗
-                </a>
-              </label>
-            )}
-            <label className="prefs-row">
-              <span>{tr('prefs.theme')}</span>
-              <select
-                value={pendingTheme ?? themeMode}
-                onChange={(e) => setPendingTheme(e.target.value as ThemeMode)}
-              >
-                <option value="system">{tr('theme.system')}</option>
-                <option value="dark">{tr('theme.dark')}</option>
-                <option value="light">{tr('theme.light')}</option>
-              </select>
-            </label>
-            {IS_DESKTOP && (
-              <label className="prefs-row">
-                <span>{tr('prefs.channel')}</span>
-                <select
-                  value={pendingChannel ?? updateChannel}
-                  onChange={(e) => setPendingChannel(e.target.value as UpdateChannel)}
-                >
-                  <option value="stable">{tr('prefs.channel.stable')}</option>
-                  <option value="beta">{tr('prefs.channel.beta')}</option>
-                </select>
-              </label>
-            )}
-            {/* About: the natural-facing version line ("0.1.4 · Beta 2"),
-                the full number, one-click copy, and the last few
-                user-readable change notes (versioning scheme 2026-10-01). */}
-            <div className="prefs-about">
-              <div className="prefs-row">
-                <span>{tr('about.version')}</span>
-                <span className="prefs-version-line">
-                  <strong>{formatVersionDisplay(APP_VERSION)}</strong>
-                  <code>{APP_VERSION}</code>
-                  <button
-                    className="btn small"
-                    onClick={() => {
-                      void copyText(
-                        `PathBlender ${APP_VERSION} (${IS_DESKTOP ? 'desktop' : 'web'})\n` +
-                          VERSION_NOTES.slice(0, 5)
-                            .map((n) => `${n.version} (${n.date}) — ${n.note}`)
-                            .join('\n'),
-                      ).then((ok) => flash(tr(ok ? 'about.copyDone' : 'share.copyFailed'), ok ? 'ok' : 'error'));
-                    }}
-                  >
-                    {tr('about.copy')}
-                  </button>
-                </span>
-              </div>
-              {VERSION_NOTES.length > 0 && (
-                <ul className="prefs-notes">
-                  {VERSION_NOTES.slice(0, 5).map((n) => (
-                    <li key={n.version}><b>{formatVersionDisplay(n.version)}</b> — {n.note}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="prefs-row btns">
-              {/* Cancel is the always-available way out (user report 2026-09-24:
-                  it used to be the disabled one, so an untouched dialog had no
-                  working button on its left). It discards the drafts and closes. */}
-              <button className="btn small" onClick={closePrefs}>
-                {tr('prefs.cancel')}
-              </button>
-              {/* Save only means something when there is something to save. */}
-              <button
-                className="btn small accent"
-                disabled={pendingLang == null && pendingTheme == null && pendingChannel == null}
-                onClick={() => {
-                  if (pendingLang != null) setLang(pendingLang);
-                  if (pendingTheme != null) setThemeMode(pendingTheme);
-                  // Applying the channel broadcasts to every window (self
-                  // included), which re-checks the newly selected feed.
-                  if (pendingChannel != null) setUpdateChannel(pendingChannel);
-                  setPendingLang(null);
-                  setPendingTheme(null);
-                  setPendingChannel(null);
-                  closePrefs();
-                }}
-              >
-                {tr('prefs.save')}
-              </button>
-            </div>
-        </Dialog>
-      )}
       </div>
     </div>
   );

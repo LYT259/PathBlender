@@ -10,7 +10,7 @@ import './workspace.css';
 
 // Desktop ⌘, Preferences opens a second webview on the same bundle,
 // distinguished only by the ?window=prefs query param. It renders its own
-// small card set — language / theme / update channel — see prefs-window.tsx.
+// shared settings interface — see prefs-window.tsx.
 const isPrefsWindow = new URLSearchParams(location.search).get('window') === 'prefs';
 
 // Desktop (Tauri) shell marker: the overlay title bar's traffic lights sit
