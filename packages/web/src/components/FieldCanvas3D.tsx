@@ -13,6 +13,7 @@ import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import { samplePoseAt } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
+import { orbitZoomSpeedFor, wheelZoomFactor } from '../zoom';
 import { aprilTagTexture } from '../april-tag-texture';
 // One coordinate frame for the whole scene — tags, robots, trails, fallback
 // structures, the flat field image and the official field models all map
@@ -241,6 +242,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     controls.maxPolarAngle = 2.6;
     controls.minDistance = 2;
     controls.maxDistance = 60;
+    // Onshape-style wheel zoom (user request 2026-10-02): dollies down the
+    // pointer ray, so zooming in magnifies the detail under the cursor and
+    // zooming out lets the scene flow away from it.
+    controls.zoomToCursor = true;
     // Drag-orbit (original 3D-mode logic, Onshape-style): cursor down lifts
     // the camera so the field's top tilts into view — the same direction the
     // flat-field build used. Owned here (not OrbitControls) so the glide and
@@ -306,6 +311,19 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       markDirty();
     };
     renderer.domElement.addEventListener('wheel', onWheelX, { passive: true });
+
+    // Route vertical wheel zoom through the shared device-aware curve
+    // (mouse notches keep a stepped feel; trackpad scrolls/deltas are
+    // continuous with a per-event cap — user request 2026-10-02).
+    // OrbitControls applies exp(-K·zoomSpeed·|δ|) per event, so we set
+    // zoomSpeed per event to reproduce our factor exactly and keep its
+    // damping, distance clamps and zoom-to-cursor. Capture phase on the
+    // host: OrbitControls' own wheel listener sits on the canvas (target
+    // phase, registration order) and must see the adjusted speed.
+    const onWheelZoomSpeed = (e: WheelEvent) => {
+      controls.zoomSpeed = orbitZoomSpeedFor(wheelZoomFactor(e.deltaY, e.deltaMode), e.deltaY);
+    };
+    host.addEventListener('wheel', onWheelZoomSpeed, { capture: true });
 
     // Render on demand (declared early — Scene3D.dirty exposes it).
     let needsDraw = true;
@@ -406,6 +424,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       renderer.domElement.removeEventListener('pointerup', onDragUp);
       renderer.domElement.removeEventListener('pointercancel', onDragUp);
       renderer.domElement.removeEventListener('wheel', onWheelX);
+      host.removeEventListener('wheel', onWheelZoomSpeed, { capture: true });
       renderer.domElement.removeEventListener('gesturestart', onGestureStart);
       renderer.domElement.removeEventListener('gesturechange', onGestureChange);
       controls.dispose();
