@@ -59,7 +59,6 @@ export function buildChassis3D(
 
   const tint = new THREE.Color(color);
   const bumperMat = new THREE.MeshStandardMaterial({ color: tint, roughness: 0.85 });
-  const frameMat = new THREE.MeshStandardMaterial({ color: tint, roughness: 0.45, metalness: 0.25 });
   const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.8 });
   const podMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3c, roughness: 0.55, metalness: 0.35 });
 
@@ -81,6 +80,9 @@ export function buildChassis3D(
   };
 
   // Bumper skirt: four boxes forming the ring at the outer footprint.
+  // No floor deck by design (user directive 2026-10-02: bumper + 4 CAD
+  // modules only) — the real metal frame arrives later as its own CAD
+  // asset and slots in beside this ring.
   const L = vis.outer.lengthM;
   const W = vis.outer.widthM;
   const d = vis.bumperDepthM;
@@ -88,11 +90,6 @@ export function buildChassis3D(
   add(body, L, BUMPER_H_M, d, 0, BUMPER_Y_M, -(W - d) / 2, bumperMat);
   add(body, d, BUMPER_H_M, W - 2 * d, (L - d) / 2, BUMPER_Y_M, 0, bumperMat);
   add(body, d, BUMPER_H_M, W - 2 * d, -(L - d) / 2, BUMPER_Y_M, 0, bumperMat);
-
-  // Frame deck between the rails, at chassis size (belt line of a tub).
-  const cdx = vis.chassis.offsetX - vis.outer.offsetX;
-  const cdz = vis.chassis.offsetY - vis.outer.offsetY;
-  add(body, vis.chassis.lengthM, 0.03, vis.chassis.widthM, cdx, 0.095, cdz, frameMat);
 
   // Swerve pods at module positions (robot frame, relative to the pose).
   const pods: THREE.Group[] = [];
