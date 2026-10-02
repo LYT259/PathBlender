@@ -134,4 +134,31 @@ describe('field canvas interaction and redraws', () => {
     expect(x + 0.7 * width).toBeCloseTo(300, 0);
   });
 
+  it('anchors pinch zoom at the gesture centroid and softens the ratio', () => {
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240);
+    paint();
+    expect(strokeRect).toHaveBeenLastCalledWith(20, 20, 400, 200);
+
+    // WebKit GestureEvent fields are not standard init members either —
+    // define scale/clientX/clientY on the instances.
+    const start = new Event('gesturestart');
+    Object.defineProperty(start, 'scale', { value: 1 });
+    const change = new Event('gesturechange', { cancelable: true });
+    Object.defineProperty(change, 'scale', { value: 1.21 }); // fingers 21% wider
+    Object.defineProperty(change, 'clientX', { value: 300 }); // jsdom rects are 0 → sx=300
+    Object.defineProperty(change, 'clientY', { value: 120 });
+    const canvas = container.querySelector('canvas')!;
+    fireEvent(canvas, start);
+    fireEvent(canvas, change);
+    paint();
+
+    // Softened factor = 1.21^0.6 ≈ 1.1212 (raw 1:1 would be 1.21).
+    const [x, , width] = strokeRect.mock.lastCall!;
+    expect(width).toBeCloseTo(400 * Math.pow(1.21, 0.6), 0);
+    // The world point under the fingers (world x=7 m, 70% across) stays at
+    // screen x=300 — pinch magnifies the detail under the fingers.
+    expect(x + 0.7 * width).toBeCloseTo(300, 0);
+  });
+
 });

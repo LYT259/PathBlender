@@ -20,7 +20,7 @@ import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
-import { wheelZoomFactor } from '../zoom';
+import { pinchZoomFactor, wheelZoomFactor } from '../zoom';
 
 export interface FieldCanvasHandle {
   exportPng: (onDone?: (ok: boolean) => void) => void;
@@ -191,6 +191,8 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
 
     // WebKit trackpad pinch fires gesture* events (not wheel+ctrlKey); the
     // gesture centroid anchors the zoom just like the wheel cursor does.
+    // The raw finger-separation ratio is softened via pinchZoomFactor —
+    // 1:1 mapping made small pinches feel violent (user round 2).
     let lastScale = 1;
     const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
     const onGestureStart = (e: Event) => {
@@ -206,7 +208,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         zoomAt(
           (g.clientX ?? rect.left + rect.width / 2) - rect.left,
           (g.clientY ?? rect.top + rect.height / 2) - rect.top,
-          scale / lastScale,
+          pinchZoomFactor(scale / lastScale),
         );
         requestDraw();
       }

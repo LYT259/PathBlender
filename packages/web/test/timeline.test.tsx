@@ -24,7 +24,7 @@ describe('unified timeline', () => {
   it('uses one time domain for the ruler, scrubber, delayed activity, events, and playhead', () => {
     const { container } = render(
       <I18nProvider>
-        <Timeline robots={[delayedRobot]} conflicts={[]} bounds={[]} duration={8} playback={playback()} />
+        <Timeline robots={[delayedRobot]} conflicts={[]} bounds={[]} autoPeriodS={20} duration={8} playback={playback()} />
       </I18nProvider>,
     );
     const scrubber = screen.getByRole('slider', { name: 'Playback position' });
@@ -46,7 +46,7 @@ describe('unified timeline', () => {
           robots={[delayedRobot]}
           conflicts={[]}
           bounds={[{ robotId: 'robot-a', startT: 5, endT: 5.4, maxPenetrationM: 0.1, edges: ['near'], worstPose: { x: 0, y: 0, heading: 0 } }]}
-          duration={8}
+          autoPeriodS={20} duration={8}
           playback={state}
           onSelect={onSelect}
         />
@@ -64,7 +64,7 @@ describe('unified timeline', () => {
     const state = playback(7.8);
     render(
       <I18nProvider>
-        <Timeline robots={[delayedRobot]} conflicts={[]} bounds={[]} duration={8} playback={state} />
+        <Timeline robots={[delayedRobot]} conflicts={[]} bounds={[]} autoPeriodS={20} duration={8} playback={state} />
       </I18nProvider>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Forward 0.5 seconds' }));
@@ -96,7 +96,7 @@ describe('unified timeline', () => {
             closestA: { x: 1, y: 1, heading: 0 }, closestB: { x: 1.2, y: 1, heading: 0 },
           }]}
           bounds={[{ robotId: 'robot-b', startT: 7, endT: 7.2, maxPenetrationM: 0.1, edges: ['near'], worstPose: { x: 0, y: 0, heading: 0 } }]}
-          duration={8}
+          autoPeriodS={20} duration={8}
           playback={state}
           onJump={onJump}
         />
@@ -111,10 +111,30 @@ describe('unified timeline', () => {
     expect(state.setT).not.toHaveBeenCalled();
   });
 
+  it('scales the ruler floor to the season auto period (15 s seasons)', () => {
+    const { unmount } = render(
+      <I18nProvider>
+        <Timeline robots={[delayedRobot]} conflicts={[]} bounds={[]} autoPeriodS={15} duration={8} playback={playback()} />
+      </I18nProvider>,
+    );
+    const scrubber = screen.getByRole('slider', { name: 'Playback position' });
+    expect(scrubber).toHaveAttribute('max', '15');
+    expect(screen.getByText('15', { selector: '.timeline-tick' })).toBeInTheDocument();
+    expect(screen.getByText('6', { selector: '.timeline-tick' })).toHaveStyle({ left: '40%' });
+    // A session running past the autonomous period keeps its own end.
+    unmount();
+    render(
+      <I18nProvider>
+        <Timeline robots={[delayedRobot]} conflicts={[]} bounds={[]} autoPeriodS={15} duration={18} playback={playback()} />
+      </I18nProvider>,
+    );
+    expect(screen.getByRole('slider', { name: 'Playback position' })).toHaveAttribute('max', '18');
+  });
+
   it('disables playback for an empty session', () => {
     render(
       <I18nProvider>
-        <Timeline robots={[]} conflicts={[]} bounds={[]} duration={0} playback={{ ...playback(), playing: false }} />
+        <Timeline robots={[]} conflicts={[]} bounds={[]} autoPeriodS={20} duration={0} playback={{ ...playback(), playing: false }} />
       </I18nProvider>,
     );
     expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled();
