@@ -5,7 +5,7 @@ CLAUDE.md
 .cursor/
 
 # 依赖与构建产物
-node_modules/
+node_modules
 dist/
 coverage/
 *.tsbuildinfo
