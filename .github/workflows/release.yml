@@ -86,8 +86,8 @@ jobs:
           B=packages/desktop/src-tauri/target/release/bundle
           rm -f "$B"/dmg/*.dmg
           mkdir -p "$B/dmg"
-          hdiutil create -volname PathBlender -srcfolder "$APP" -ov \
-            -format UDZO "$B/dmg/PathBlender_${GITHUB_REF_NAME#v}_aarch64.dmg" >/dev/null
+          scripts/make-dmg.sh "$APP" \
+            "$B/dmg/PathBlender_${GITHUB_REF_NAME#v}_aarch64.dmg"
       - name: Stage artifacts
         run: |
           mkdir -p release
