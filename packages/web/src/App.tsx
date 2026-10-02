@@ -21,6 +21,7 @@ import {
   sessionDuration,
   withFieldVariant,
   type FieldArtStyle,
+  withSeasonGeometry,
 } from '@pathblender/core';
 import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } from '@pathblender/core';
 import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
@@ -135,6 +136,13 @@ function AppBody() {
     [baseField, fieldVariant, fieldStyle],
   );
   const fieldImageUrl = fieldImageFor(fieldId, fieldVariant, fieldStyle, customImageUrl);
+  // Per-season rule-max geometry (MK5i plan, 2026-10-02): default-geometry
+  // robots are re-resolved against the selected field's season, so checks
+  // and rendering follow the season switch; file-provided sizes always win.
+  const seasonRobots = useMemo(
+    () => robots.map((r) => withSeasonGeometry(r, field.year)),
+    [robots, field],
+  );
   // 3D exists only where an official model does (2022+). Model-less seasons
   // (2018–2020) and custom fields offer no 3D at all — the hand-built
   // stand-in 3D was removed by user directive (2026-10-01).
@@ -154,13 +162,13 @@ function AppBody() {
   const undoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); undo(); }, [playback.setPlaying, undo]);
   const redoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); redo(); }, [playback.setPlaying, redo]);
 
-  const visible = useMemo(() => robots.filter((r) => r.visible), [robots]);
+  const visible = useMemo(() => seasonRobots.filter((r) => r.visible), [seasonRobots]);
   const conflicts = useMemo(
-    () => detectCollisions(robots),
-    [robots],
+    () => detectCollisions(seasonRobots),
+    [seasonRobots],
   );
-  const bounds = useMemo(() => detectFieldBounds(robots, field), [robots, field]);
-  const minSep = useMemo(() => minimumSeparation(robots), [robots]);
+  const bounds = useMemo(() => detectFieldBounds(seasonRobots, field), [seasonRobots, field]);
+  const minSep = useMemo(() => minimumSeparation(seasonRobots), [seasonRobots]);
 
   // .path texts stay available so later .auto imports can resolve their
   // pathName references (within the same batch or across this session).
