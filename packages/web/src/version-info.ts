@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.5-beta.7';
+export const APP_VERSION = '0.1.5-beta.8';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.5-beta.8', date: '2026-10-02', note: 'Dock tile artwork pre-rounded (runtime icon was rendering square)' },
   { version: '0.1.5-beta.7', date: '2026-10-02', note: 'Dock icon follows the in-app theme while running (dark→night artwork)' },
   { version: '0.1.5-beta.6', date: '2026-10-02', note: 'Pinch freezes at release: late gesture events are ignored and single-frame spikes rate-limited (temporary on-screen gesture diagnostics) / 捏合松手即定格：忽略收尾残留事件并限制单帧跳变（附带临时手势诊断显示）' },
   { version: '0.1.5-beta.5', date: '2026-10-02', note: 'Dual artwork styles for every 2022-2026 field: schematic default, rendered selectable / 2022-2026 全部赛季内置双风格底图：示意图为默认，可切换渲染图' },
