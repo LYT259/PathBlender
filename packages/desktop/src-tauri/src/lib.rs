@@ -278,10 +278,15 @@ fn open_prefs(app: &AppHandle) {
         WebviewUrl::App("index.html?window=prefs".into()),
     )
     .title("Preferences")
-    .inner_size(640.0, 760.0)
-    .min_inner_size(520.0, 560.0)
+    .inner_size(780.0, 580.0)
+    .min_inner_size(640.0, 480.0)
     .resizable(true)
     .build();
+}
+
+#[tauri::command]
+fn open_preferences(app: AppHandle) {
+    open_prefs(&app);
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -293,6 +298,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             save_file,
             set_menu_language,
+            open_preferences,
             check_update,
             install_update
         ])

@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.4-beta.1';
+export const APP_VERSION = '0.1.4-beta.2';
 
 export interface VersionNote {
   version: string;
@@ -13,5 +13,6 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.4-beta.2', date: '2026-10-02', note: 'Improve window dragging and settings, simplify the toolbar / 改善窗口拖动与偏好设置，精简工具栏' },
   { version: '0.1.4-beta.1', date: '2026-10-01', note: '版本系统上线：每次合入 Beta 自动升号、附更新说明；关于页可查看与一键复制版本信息。本版汇集 0.1.3 以来改动：开始页四入口与示例、纯查看器模式、日夜随系统的新图标、2025 场地双底图随构造切换、AprilTag 贴合修复、无官方模型赛季不再提供 3D、切换地图更快' },
 ];

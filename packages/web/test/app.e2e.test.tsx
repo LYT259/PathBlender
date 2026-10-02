@@ -127,8 +127,7 @@ describe('App import → fusion → collision flow', () => {
     const initialTheme = document.documentElement.dataset.theme;
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
     const dialog = screen.getByRole('dialog', { name: 'Preferences' });
-    const themeSelect = within(dialog).getByRole('combobox', { name: /theme|appearance/i });
-    fireEvent.change(themeSelect, { target: { value: 'light' } });
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Light', exact: true }));
     expect(document.documentElement.dataset.theme).toBe(initialTheme);
     expect(localStorage.getItem('ghpb.theme')).toBeNull();
     fireEvent.click(within(dialog).getByRole('button', { name: /^Save$/i }));
@@ -138,7 +137,7 @@ describe('App import → fusion → collision flow', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
     const nextDialog = screen.getByRole('dialog', { name: 'Preferences' });
-    fireEvent.change(within(nextDialog).getByRole('combobox', { name: /theme|appearance/i }), { target: { value: 'system' } });
+    fireEvent.click(within(nextDialog).getByRole('radio', { name: 'Follow system', exact: true }));
     fireEvent.click(within(nextDialog).getByRole('button', { name: /^Save$/i }));
     expect(localStorage.getItem('ghpb.theme')).toBeNull();
   });
@@ -152,7 +151,7 @@ describe('App import → fusion → collision flow', () => {
     const initialTheme = document.documentElement.dataset.theme;
     const other = initialTheme === 'light' ? 'dark' : 'light';
     const themeOf = (scope: HTMLElement) =>
-      within(scope).getByRole('combobox', { name: /theme|appearance/i }) as HTMLSelectElement;
+      within(scope).getByRole('radio', { checked: true }) as HTMLInputElement;
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
     const dialog = screen.getByRole('dialog', { name: 'Preferences' });
     const initialMode = themeOf(dialog).value;
@@ -168,7 +167,7 @@ describe('App import → fusion → collision flow', () => {
     // than leaving it staged for the next time the dialog opens.
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
     const next = screen.getByRole('dialog', { name: 'Preferences' });
-    fireEvent.change(themeOf(next), { target: { value: other } });
+    fireEvent.click(within(next).getByRole('radio', { name: other === 'dark' ? 'Dark' : 'Light', exact: true }));
     expect(within(next).getByRole('button', { name: /^Save$/i })).toBeEnabled();
     fireEvent.click(within(next).getByRole('button', { name: /^Cancel$/i }));
     expect(document.documentElement.dataset.theme).toBe(initialTheme);

@@ -70,6 +70,7 @@ describe('i18n dictionaries', () => {
     'vc.top', 'vc.bottom', 'vc.front', 'vc.back', 'vc.left', 'vc.right',
     // Words that genuinely coincide with English in at least one shipped
     // language (fr 'Assistant'/'Pause'/'Vision', tr 'model', es/… 'Robot').
+    'prefs.section.general', // Spanish 'General' is identical.
     'workspace.assistant', 'workspace.details', 'robots.identity', 'robots.title',
     'robots.collision', 'robots.alliance', 'timeline.pause', 'timeline.collision',
     'site.version', 'about.version', 'ai.model', 'ai.vision', 'ai.placeholder', 'ai.permission',
