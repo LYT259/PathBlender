@@ -11,7 +11,7 @@
 - [ ] 版本号生命周期（2026-10-01 定稿）：每次合 beta 经 `scripts/bump-version.mjs beta "说明"` 抬 `-beta.N`（附用户可懂说明，偏好设置「关于」展示/一键复制）；发版时 `bump-version.mjs release` 去后缀得正式号，再打 `v*` tag；**同一版本号永不对应两种内容**——有问题需重发时用新号，旧版安装包留在 Release 里可回退
 - [ ] `npm test` 全绿（core + web e2e）
 - [ ] `npm run build` 成功；`packages/web/dist` 体积合理（gzip JS < 300 KB 量级）
-- [ ] 本地 `npm run preview` 过一遍完整流程：四格式导入 → 回放 → 碰撞 → 会话存/取 → Share link → PNG
+- [ ] 本地 `npm run preview` 过一遍完整流程：四格式导入 → 回放 → 碰撞 → 会话存/取 → PNG
 - [ ] 桌面版：`npm run tauri build -w packages/desktop` 出 .app/.dmg；ad-hoc 签名保留（`codesign -dv` 核对）；启动冒烟（进程存活）
 - [ ] **深浅色应用图标**：`packages/desktop/src-tauri/icons/AppIcon.icon`（日间红底 / 夜间黑底，第 14 轮定稿）经 `scripts/apply-dark-icon.sh` 注入 Assets.car + `CFBundleIconName`——本地 install-desktop.sh 与 release.yml 均已内置该步；抽查安装包 `Contents/Resources/Assets.car` 存在且 `assetutil --info` 含 `NSAppearanceNameDarkAqua`
 
@@ -30,7 +30,7 @@
       桌面版仅「检查更新」按用户点击访问 GitHub Releases（feed JSON + 更新包，见 src-tauri/src/lib.rs 的
       FEED_STABLE/FEED_BETA 白名单）——除此之外出现任何新的网络调用都要在本清单登记或删掉。
 
-- [ ] README 隐私声明与实际行为一致（文件本地解析、Share link 仅含会话数据本身）
+- [ ] README 隐私声明与实际行为一致（文件本地解析）
 
 ## GitHub（发布操作纪律）
 
