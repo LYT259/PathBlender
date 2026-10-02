@@ -28,9 +28,13 @@ export async function saveBytes(
 ): Promise<boolean> {
   if (IS_DESKTOP) {
     const bytes = data instanceof Uint8Array ? data : new Uint8Array(await data.arrayBuffer());
+    // Tauri v2 maps command arguments camelCase by default — snake_case
+    // keys are silently "missing" and the invoke rejects with
+    // `missing required key suggestedName` (this is why desktop saves
+    // produced no dialog on any platform; found on Linux 2026-10-02).
     const saved = await invoke<string | null>('save_file', {
-      suggested_name: suggestedName,
-      filter_ext: filterExt,
+      suggestedName,
+      filterExt: filterExt,
       data: bytes,
     });
     return saved != null;
