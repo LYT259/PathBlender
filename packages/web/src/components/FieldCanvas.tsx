@@ -20,8 +20,14 @@ import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
-import { pinchZoomFactor, wheelZoomFactor } from '../zoom';
-import { gestureEnded, noteGesture } from '../gesture-debug';
+import {
+  chaseAlpha,
+  markGestureEnd,
+  markGestureStart,
+  pinchZoomFactor,
+  wheelSuppressed,
+  wheelZoomFactor,
+} from '../zoom';
 
 export interface FieldCanvasHandle {
   exportPng: (onDone?: (ok: boolean) => void) => void;
@@ -190,6 +196,54 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       v.cy += before.y - after.y;
     };
 
+    // Pinch chase (round 5): WKWebView batches gesture events under main-
+    // thread congestion (~12/s in the user's recording), so applying each
+    // event on arrival steps the view. Pinch events now move a TARGET view;
+    // a rAF loop eases the real view toward it exponentially (zoom.ts
+    // chaseAlpha). Wheel zoom stays instant (discrete notches read crisper)
+    // and cancels any running chase.
+    let chaseTarget: View | null = null;
+    let chaseRaf = 0;
+    let lastChaseT = 0;
+    const stopChase = () => {
+      chaseTarget = null;
+      if (chaseRaf) cancelAnimationFrame(chaseRaf);
+      chaseRaf = 0;
+    };
+    const zoomAtView = (v: View, sx: number, sy: number, factor: number): View => {
+      const { w, h } = sizeRef.current;
+      const wx = v.cx + (sx - w / 2) / v.scale;
+      const wy = v.cy - (sy - h / 2) / v.scale;
+      const scale = Math.min(400, Math.max(8, v.scale * factor));
+      return { scale, cx: wx - (sx - w / 2) / scale, cy: wy + (sy - h / 2) / scale };
+    };
+    const chaseStepFrame = () => {
+      chaseRaf = 0;
+      const t = chaseTarget;
+      // Fit/resize reclaims the view (autoFit on) — snap to it, stop chasing.
+      if (!t || autoFitRef.current) { stopChase(); return; }
+      const v = viewRef.current;
+      const now = performance.now();
+      const a = chaseAlpha(Math.min(64, now - lastChaseT));
+      lastChaseT = now;
+      v.scale += (t.scale - v.scale) * a;
+      v.cx += (t.cx - v.cx) * a;
+      v.cy += (t.cy - v.cy) * a;
+      const settled = Math.abs(Math.log(t.scale / v.scale)) < 0.001 &&
+        Math.abs(t.cx - v.cx) < 0.05 && Math.abs(t.cy - v.cy) < 0.05;
+      if (settled) {
+        v.scale = t.scale; v.cx = t.cx; v.cy = t.cy;
+        chaseTarget = null;
+      } else {
+        chaseRaf = requestAnimationFrame(chaseStepFrame);
+      }
+      requestDraw();
+    };
+    const requestChase = () => {
+      lastChaseT = performance.now();
+      if (!chaseRaf) chaseRaf = requestAnimationFrame(chaseStepFrame);
+    };
+
     // WebKit trackpad pinch fires gesture* events (not wheel+ctrlKey); the
     // gesture centroid anchors the zoom just like the wheel cursor does.
     // The raw finger-separation ratio is softened via pinchZoomFactor —
@@ -198,35 +252,44 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     // around finger lift, which showed up as the view zooming *further*
     // the moment the user let go (user round 3).
     let lastScale = 1;
+    let gestureDone = false;
     const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
     const onGestureStart = (e: Event) => {
       lastScale = gestureScale(e);
-      noteGesture('start', lastScale);
+      gestureDone = false;
+      markGestureStart();
     };
     const onGestureChange = (e: Event) => {
       e.preventDefault();
-      if (gestureEnded()) return; // stray post-end flush
+      if (gestureDone) return; // stray post-end flush
       const scale = gestureScale(e);
-      noteGesture('change', scale);
       if (scale > 0 && lastScale > 0) {
         autoFitRef.current = false;
         const g = e as Event & { clientX?: number; clientY?: number };
         const rect = canvas.getBoundingClientRect();
-        zoomAt(
+        const v = viewRef.current;
+        chaseTarget = zoomAtView(
+          chaseTarget ?? { scale: v.scale, cx: v.cx, cy: v.cy },
           (g.clientX ?? rect.left + rect.width / 2) - rect.left,
           (g.clientY ?? rect.top + rect.height / 2) - rect.top,
           pinchZoomFactor(scale / lastScale),
         );
-        requestDraw();
+        requestChase();
       }
       lastScale = scale;
     };
     const onGestureEnd = (e: Event) => {
-      noteGesture('end', gestureScale(e));
+      gestureDone = true;
+      markGestureEnd();
       lastScale = 1;
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      // Lifting fingers off a pinch drift across the glass and arrive as a
+      // scroll burst — suppressing it is what freezes the zoom at release
+      // (round 4; the gesture stream itself proved clean on video).
+      if (wheelSuppressed()) return;
+      stopChase(); // wheel is instant; don't fight a running chase
       autoFitRef.current = false;
       zoomAt(e.offsetX, e.offsetY, wheelZoomFactor(e.deltaY, e.deltaMode));
       requestDraw();
@@ -237,6 +300,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     canvas.addEventListener('gesturechange', onGestureChange);
     canvas.addEventListener('gestureend', onGestureEnd);
     return () => {
+      stopChase();
       canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('gesturestart', onGestureStart);
       canvas.removeEventListener('gesturechange', onGestureChange);

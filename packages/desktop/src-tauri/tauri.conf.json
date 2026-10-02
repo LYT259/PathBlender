@@ -1,7 +1,11 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "PathBlender",
+<<<<<<< HEAD
   "version": "0.1.5-beta.7",
+=======
+  "version": "0.1.6-beta.8",
+>>>>>>> origin/beta
   "identifier": "org.gh-frc.pathblender",
   "build": {
     "beforeBuildCommand": "npm run build",
@@ -45,7 +49,11 @@
       "minimumSystemVersion": "13.0",
       "infoPlist": "Info.plist"
     },
-    "createUpdaterArtifacts": true
+    "createUpdaterArtifacts": true,
+    "resources": {
+      "icons/dock/icon-day-rounded.png": "icons/icon-day.png",
+      "icons/dock/icon-night-rounded.png": "icons/icon-night.png"
+    }
   },
   "plugins": {
     "updater": {

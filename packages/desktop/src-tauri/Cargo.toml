@@ -1,6 +1,10 @@
 [package]
 name = "pathblender-desktop"
+<<<<<<< HEAD
 version = "0.1.5-beta.7"
+=======
+version = "0.1.6-beta.8"
+>>>>>>> origin/beta
 description = "PathBlender — FRC alliance path fusion viewer (desktop shell)"
 edition = "2021"
 
@@ -19,6 +23,13 @@ tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# Same versions as the existing lockfile entries (transitive via tauri on
+# macOS) — declared directly for the Dock-icon override; no new downloads.
+objc2 = "=0.6.4"
+objc2-app-kit = { version = "=0.3.2", features = ["NSApplication", "NSImage"] }
+objc2-foundation = { version = "=0.3.2", features = ["NSString"] }
 
 [profile.release]
 # ad-hoc 签名保留（沿用 GHPaths ADR-0007 v2 红线：禁止剥离签名配置）
