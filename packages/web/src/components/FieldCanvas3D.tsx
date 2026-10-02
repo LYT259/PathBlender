@@ -163,6 +163,13 @@ function loadMk5iTemplate(): Promise<THREE.Group | null> {
       `${import.meta.env.BASE_URL}models/mk5i-module.glb`,
       (gltf) => {
         const g = gltf.scene;
+        // Handedness correction, same reason the field models mount with a
+        // one-axis mirror (fieldModelScale): the render frame reflects, so
+        // an asset mounted without its own negative scale appears as its
+        // mirror image — the MK5i's asymmetric motor layout showed up
+        // flipped until this (user report 2026-10-02). Z flip keeps +X
+        // (rolling) and up intact.
+        g.scale.set(1, 1, -1);
         g.traverse((o) => {
           const mesh = o as THREE.Mesh;
           if (!mesh.isMesh) return;
