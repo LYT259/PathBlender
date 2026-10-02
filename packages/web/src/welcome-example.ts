@@ -9,16 +9,19 @@ import {
 // decides which field/variant to show it on — first run defaults to
 // AndyMark, then the remembered choice (see App's field pref).
 
-const DURATION_S = 8;
-const SAMPLE_COUNT = 161;
+// Matches REBUILT_2026.autoPeriodS (20 s), so the first-run ruler is filled
+// by the demo end to end.
+const DURATION_S = 20;
+const SAMPLE_COUNT = 401;
 const HALF_ROUTE_M = 1.5;
 const BUMPER_M = 0.8;
 
 /**
  * Fictional local teaching data, not a team's competition auto. Both robots
- * cross the neutral-zone centre at four seconds. Coordinates derive from the
- * bundled field dimensions; the short routes stay between the fixed hubs.
- * The bumper size is an explicit property of these fictional robots.
+ * cross the neutral-zone centre at half the run (ten seconds). Coordinates
+ * derive from the bundled field dimensions; the short routes stay between
+ * the fixed hubs. The bumper size is an explicit property of these
+ * fictional robots.
  */
 export function createWelcomeExample(names: { a: string; b: string }): {
   robots: SessionTrajectory[];
