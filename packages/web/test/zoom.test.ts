@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   chaseAlpha,
   chaseStep,
+  CHASE_INSTANT_SHARE,
   CHASE_TAU_MS,
   classifyWheelInput,
   GESTURE_WHEEL_QUIET_MS,
@@ -11,6 +12,7 @@ import {
   PINCH_EVENT_LN_CAP,
   PINCH_GAIN,
   pinchZoomFactor,
+  splitInstant,
   TRACKPAD_EVENT_CAP,
   TRACKPAD_K,
   WHEEL_K,
@@ -194,5 +196,24 @@ describe('zoom chase helpers', () => {
     expect(chaseStep(0, 16)).toEqual({ step: 1, remaining: 1 });
     expect(chaseStep(Number.NaN, 16)).toEqual({ step: 1, remaining: 1 });
     expect(chaseStep(Number.POSITIVE_INFINITY, 16)).toEqual({ step: 1, remaining: 1 });
+  });
+});
+
+describe('splitInstant', () => {
+  it('composes back to the full factor', () => {
+    for (const f of [2, 1.74, 1.05, 0.5, 0.93]) {
+      const { instant, deferred } = splitInstant(f);
+      expect(instant * deferred).toBeCloseTo(f, 12);
+    }
+  });
+
+  it('splits in log space at the configured share', () => {
+    const { instant } = splitInstant(2);
+    expect(instant).toBeCloseTo(Math.pow(2, CHASE_INSTANT_SHARE), 12);
+  });
+
+  it('guards degenerate factors', () => {
+    expect(splitInstant(0)).toEqual({ instant: 1, deferred: 1 });
+    expect(splitInstant(Number.NaN)).toEqual({ instant: 1, deferred: 1 });
   });
 });
