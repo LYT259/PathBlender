@@ -448,13 +448,6 @@ input[type="number"], input[type="text"] {
 .prefs-only { height: 100%; display: grid; place-items: center; background: var(--bg); }
 .prefs-modal.static { box-shadow: none; }
 
-/* ---------- share dialog ---------- */
-.share-box {
-  width: 100%; resize: none; font: 11.5px ui-monospace, monospace;
-  background: var(--bg); color: var(--fg); border: 1px solid var(--border);
-  border-radius: 8px; padding: 8px; word-break: break-all;
-}
-
 /* ---------- editor page (round 9: editing is its own workspace) ---------- */
 .editor { display: flex; flex-direction: column; height: 100%; }
 .editor-bar {
