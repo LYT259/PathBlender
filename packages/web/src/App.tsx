@@ -727,7 +727,7 @@ function AppBody() {
           if (!file.name.endsWith(SESSION_EXT)) { setErrors([{ fileName: file.name, message: tr('import.notSession') }]); return; }
           void importFiles([file]);
         }} />
-        {(hasRobots || canUndo || canRedo) && <div className="history-controls">
+        {hasRobots && <div className="history-controls">
           <button className="tool-btn square" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
           <button className="tool-btn square" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
         </div>}
