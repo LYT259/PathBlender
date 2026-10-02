@@ -1,7 +1,7 @@
 /// PathBlender desktop shell — minimal static host (report v1.6 §7.1).
 /// No sidecars, no backend, no telemetry. The only native behavior:
 /// a macOS-standard menu (app menu with About/Preferences/Check-for-Updates,
-/// a File menu for import/save/share/PNG/clear, an Edit menu) that follows
+/// a File menu for import/save/PNG/clear, an Edit menu) that follows
 /// the app language, plus a preferences window on ?window=prefs.
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -91,7 +91,6 @@ struct MenuLang {
     edit: &'static str,
     import: &'static str,
     save: &'static str,
-    share: &'static str,
     png: &'static str,
     clear: &'static str,
     prefs: &'static str,
@@ -110,7 +109,6 @@ const EN: MenuLang = MenuLang {
     edit: "Edit",
     import: "Import…",
     save: "Save Session…",
-    share: "Share…",
     png: "Export PNG…",
     clear: "Clear Session",
     prefs: "Preferences…",
@@ -126,7 +124,6 @@ const ZH: MenuLang = MenuLang {
     edit: "编辑",
     import: "导入…",
     save: "保存会话…",
-    share: "分享…",
     png: "导出 PNG…",
     clear: "清空会话",
     prefs: "偏好设置…",
@@ -142,7 +139,6 @@ const ZH_TW: MenuLang = MenuLang {
     edit: "編輯",
     import: "匯入…",
     save: "儲存工作階段…",
-    share: "分享…",
     png: "匯出 PNG…",
     clear: "清空工作階段",
     prefs: "偏好設定…",
@@ -160,7 +156,6 @@ const ZH_HK: MenuLang = MenuLang {
     edit: "編輯",
     import: "匯入…",
     save: "儲存工作階段…",
-    share: "分享…",
     png: "匯出 PNG…",
     clear: "清除工作階段",
     prefs: "偏好設定…",
@@ -176,7 +171,6 @@ const ES: MenuLang = MenuLang {
     edit: "Edición",
     import: "Importar…",
     save: "Guardar sesión…",
-    share: "Compartir…",
     png: "Exportar PNG…",
     clear: "Vaciar sesión",
     prefs: "Preferencias…",
@@ -192,7 +186,6 @@ const FR: MenuLang = MenuLang {
     edit: "Édition",
     import: "Importer…",
     save: "Enregistrer la session…",
-    share: "Partager…",
     png: "Exporter PNG…",
     clear: "Effacer la session",
     prefs: "Réglages…",
@@ -208,7 +201,6 @@ const TR: MenuLang = MenuLang {
     edit: "Düzen",
     import: "İçe Aktar…",
     save: "Oturumu Kaydet…",
-    share: "Paylaş…",
     png: "PNG Dışa Aktar…",
     clear: "Oturumu Temizle",
     prefs: "Tercihler…",
@@ -285,7 +277,6 @@ fn build_menu(app: &AppHandle, lang: &str) -> tauri::Result<tauri::menu::Menu<ta
             Some("CmdOrCtrl+S"),
         )?)
         .separator()
-        .item(&MenuItem::with_id(app, "share", l.share, true, None::<&str>)?)
         .item(&MenuItem::with_id(app, "png", l.png, true, None::<&str>)?)
         .separator()
         .item(&MenuItem::with_id(app, "clear", l.clear, true, None::<&str>)?)
@@ -366,7 +357,7 @@ fn push_open_files<R: tauri::Runtime>(app: &AppHandle<R>, pairs: &[(String, Stri
     }
 }
 
-/// Menu commands drive web-state actions (save/share/PNG/clear/update).
+/// Menu commands drive web-state actions (save/PNG/clear/update).
 /// Dispatch them as DOM CustomEvents via eval instead of Tauri events: the
 /// web-side `listen()` registration can silently lose the race against
 /// page load on WebKitGTK, leaving the menu dead (ADR-0003).
@@ -503,7 +494,6 @@ pub fn run() {
                     });
                 }
                 "save" => push_menu_event(app, "save"),
-                "share" => push_menu_event(app, "share"),
                 "png" => push_menu_event(app, "png"),
                 "clear" => push_menu_event(app, "clear"),
                 "check-update" => push_menu_event(app, "check-update"),

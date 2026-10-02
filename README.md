@@ -65,9 +65,8 @@ PathBlender fills that gap:
    alliance view, or step the clock. When you know what has to change,
    make the change in the owning team's tool, re-export, and drop the new
    file in — the session updates in place.
-5. **Share** the result: copy a share link (the whole session compressed
-   into the URL — nothing is uploaded anywhere), save a session file, or
-   export a PNG for your alliance chat (last two: desktop app).
+5. **Share** the result: save a session file, or export a PNG for your
+   alliance chat (desktop app).
 
 ![Collision report](docs/screenshots/collision-report.png)
 
@@ -108,8 +107,6 @@ Path files are parsed **entirely on your machine**. There is no backend,
 no account, no telemetry, and no analytics. The web build ships zero
 network calls; the desktop app contacts the network only for the update
 check you trigger (GitHub Releases) — path files never leave the app.
-Share links contain only the compressed session data itself (in the URL
-hash, which never leaves the page unless you copy it).
 
 Also included: a session-level red/blue alliance view, per-robot team
 number annotations, the season fields above with official AprilTag
