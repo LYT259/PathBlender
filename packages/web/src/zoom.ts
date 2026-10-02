@@ -47,17 +47,28 @@ export const TRACKPAD_EVENT_CAP = 1.08;
  * events report the raw finger-separation ratio, and applying it 1:1 made
  * a small pinch feel violent. The per-event factor is the ratio raised to
  * this gain instead: doubling the finger separation zooms 2^0.6 ≈ 1.52×.
- * No per-event cap (unlike the wheel curves): gesturechange fires at
- * display cadence with tiny per-event ratios, and a large single ratio is
- * a legitimate fast pinch, not a momentum burst.
  * Tunable — single constant, pending user trial.
  */
 export const PINCH_GAIN = 0.6;
 
+/**
+ * Per-event log-ratio rate limit for pinch (user feedback round 3): on
+ * release, WKWebView flushes lagging gesturechange events whose single
+ * ratios are far larger than any live per-frame finger motion — the view
+ * then jumps *further* in the gesture's direction ("松手后进一步放大").
+ * Real gestures move ≤ ~0.08 per frame even at their fastest; anything
+ * beyond this cap in ONE event is end-of-gesture backlog, rate-limited
+ * here. Multiplicative, so a genuine fast pinch only spreads over the
+ * following frames — nothing is lost, only the per-frame jump is bounded
+ * (≤ ~7.5% per event after the gain).
+ */
+export const PINCH_EVENT_LN_CAP = 0.12;
+
 /** Zoom factor for one gesturechange step (ratio = scale / lastScale). */
 export function pinchZoomFactor(ratio: number): number {
   if (!Number.isFinite(ratio) || ratio <= 0) return 1;
-  return Math.pow(ratio, PINCH_GAIN);
+  const ln = Math.min(PINCH_EVENT_LN_CAP, Math.max(-PINCH_EVENT_LN_CAP, Math.log(ratio)));
+  return Math.exp(ln * PINCH_GAIN);
 }
 
 export function classifyWheelInput(deltaY: number, deltaMode: number): WheelInputKind {
