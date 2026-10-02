@@ -7,6 +7,8 @@
  * reports status; the UI maps events to toasts.
  */
 
+import { invoke } from '@tauri-apps/api/core';
+import { relaunch } from '@tauri-apps/plugin-process';
 import type { UpdateChannel } from './update-channel';
 
 export type UpdateEvent =
@@ -20,7 +22,6 @@ export async function runUpdateCheck(
   onEvent: (e: UpdateEvent) => void,
 ): Promise<void> {
   try {
-    const { invoke } = await import('@tauri-apps/api/core');
     // null = the channel's feed is reachable and we're current; a rejected
     // promise = feed unreachable (offline, 404) — surfaced as 'failed', never
     // lied away as "up to date".
@@ -31,7 +32,6 @@ export async function runUpdateCheck(
     }
     onEvent({ kind: 'found', version: meta.version });
     await invoke('install_update');
-    const { relaunch } = await import('@tauri-apps/plugin-process');
     // On Windows the installer exits the app itself, so the relaunch call may
     // never resolve — best effort only.
     await relaunch().catch(() => undefined);

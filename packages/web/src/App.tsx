@@ -527,25 +527,58 @@ function AppBody() {
     setSelectedId(null);
   }, [setT, setRobots, playback.setPlaying]);
   // Desktop: native menu commands and visible buttons share the same handlers.
-  // The menu is rebuilt in the app language whenever it changes.
+  // The menu is rebuilt in the app language whenever it changes. The shell
+  // dispatches `ghpb-menu-*` DOM CustomEvents via eval (ADR-0003) — Tauri
+  // event `listen()` can silently lose the race against page load on
+  // WebKitGTK, leaving every menu command dead.
   useEffect(() => {
     if (!IS_DESKTOP) return;
-    let disposed = false;
-    const unbinds: (() => void)[] = [];
-    void import('@tauri-apps/api/event').then(({ listen }) => {
-      if (disposed) return;
-      void listen('menu-import', () => importInputRef.current?.click()).then((u) => { if (disposed) u(); else unbinds.push(u); });
-      void listen('menu-save', () => saveSession()).then((u) => { if (disposed) u(); else unbinds.push(u); });
-      void listen('menu-share', () => void shareUrl()).then((u) => { if (disposed) u(); else unbinds.push(u); });
-      void listen('menu-png', () => exportPng()).then((u) => { if (disposed) u(); else unbinds.push(u); });
-      void listen('menu-clear', () => clearAll()).then((u) => { if (disposed) u(); else unbinds.push(u); });
-      void listen('menu-check-update', () => void checkForUpdates()).then((u) => { if (disposed) u(); else unbinds.push(u); });
-    });
-    return () => {
-      disposed = true;
-      unbinds.forEach((u) => u());
+    const on = (name: string, fn: () => void) => {
+      const h = () => fn();
+      window.addEventListener(`ghpb-menu-${name}`, h);
+      return () => window.removeEventListener(`ghpb-menu-${name}`, h);
     };
+    const unbinds = [
+      on('import', () => importInputRef.current?.click()),
+      on('save', () => saveSession()),
+      on('share', () => void shareUrl()),
+      on('png', () => exportPng()),
+      on('clear', () => clearAll()),
+      on('check-update', () => void checkForUpdates()),
+    ];
+    return () => unbinds.forEach((u) => u());
   }, [saveSession, shareUrl, exportPng, clearAll, flash, tr, checkForUpdates]);
+
+  // Desktop open-with: the shell evals a `ghpb-open-files` CustomEvent with
+  // [name, base64] pairs (launch-argument files and native-picker imports
+  // both arrive here — push-only, no privileged channel; ADR-0003).
+  useEffect(() => {
+    const deliver = (pairs: unknown) => {
+      if (!Array.isArray(pairs)) return;
+      const files = pairs
+        .filter((p): p is [string, string] => Array.isArray(p) && typeof p[0] === 'string' && typeof p[1] === 'string')
+        .map(([name, b64]) => {
+          const bin = atob(b64);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          return new File([bytes], name);
+        });
+      if (files.length) void Promise.resolve(importFiles(files)).catch(() => undefined);
+    };
+    const onOpen = (e: Event) => {
+      delete (window as { __ghpbOpenPayload?: unknown }).__ghpbOpenPayload;
+      deliver((e as CustomEvent).detail);
+    };
+    window.addEventListener('ghpb-open-files', onOpen);
+    // The shell may have delivered before React mounted — consume the stash.
+    const w = window as { __ghpbOpenPayload?: unknown };
+    if (w.__ghpbOpenPayload) {
+      const stash = w.__ghpbOpenPayload;
+      delete w.__ghpbOpenPayload;
+      deliver(stash);
+    }
+    return () => window.removeEventListener('ghpb-open-files', onOpen);
+  }, [importFiles]);
 
   // Keep the native menu's language in sync with the in-app preference.
   useEffect(() => {
