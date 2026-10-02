@@ -61,6 +61,8 @@ export function fieldImageWorldRect(
   };
 }
 
+export type FieldArtStyle = 'schematic' | 'rendered';
+
 export interface FieldPackage {
   id: string;
   name: string;
@@ -72,12 +74,16 @@ export interface FieldPackage {
   /** Playfield size excluding margins (the coordinate space of paths). */
   lengthM: number;
   widthM: number;
-  /** Calibration for the bundled field image, when present. */
+  /** Primary artwork — the flat schematic style (PathPlanner) for the
+   *  seasons that have one (2022–2026); the only artwork for 2018–2020
+   *  (AdvantageScope renders, no schematic exists upstream). */
   image?: FieldImageCalibration;
-  /** Calibration of the AndyMark-built-field image, when the season ships
-   *  a separate artwork for that construction variant (2025). Values may
-   *  equal `image` when one calibration serves both files. */
-  imageAndyMark?: FieldImageCalibration;
+  /** Semi-realistic rendered artwork (AdvantageScope/Chief Delphi renders),
+   *  when the season has one alongside the schematic. */
+  imageRendered?: FieldImageCalibration;
+  /** AndyMark-built variant of the rendered artwork, when the season ships
+   *  one (the 2025 official construction pair). */
+  imageRenderedAndyMark?: FieldImageCalibration;
   /** AprilTag layout overlay (WPILib/PhotonVision JSON), when provided. */
   aprilTags?: AprilTag[];
   /** AndyMark-built-field tag layout, when it differs from the default
@@ -283,6 +289,16 @@ export const REBUILT_2026: FieldPackage = {
   { id: 31, x: 0.0081, y: 3.7457, z: 0.5524, rotRad: 0, quat: [0, 0, 0, 1] },
   { id: 32, x: 0.0081, y: 4.1775, z: 0.5524, rotRad: 0, quat: [0, 0, 0, 1] },
   ],
+  // Rendered artwork (AdvantageScopeAssets Field2d_2026FRCFieldV2, BSD-3;
+  // source render: Chief Delphi high-resolution field image), 3902×1584.
+  // Corner calibration from its config (topLeft [524,95], bottomRight
+  // [3378,1489] over 651.22″×317.677″) mapped onto this package's 16.54×8.07
+  // constants → 2854 px of length at 172.55 px/m, blue corner 524 px from
+  // the left edge, 95 px from the bottom edge. Tag-decal probe vs the
+  // AndyMark layout: median 15 px (≈ 9 cm), no systematic bias; the
+  // welded/AndyMark deltas (≤ 34 mm ≈ 6 px) are below the artwork's own
+  // scatter, so one sheet serves both variants.
+  imageRendered: { pixelWidth: 3902, pixelHeight: 1584, ppm: 172.55, ppmY: 172.74, marginM: 0, originPx: { x: 524, y: 95 } },
   aprilTagsAndyMark: TAGS_2026_ANDYMARK,
 };
 
@@ -346,6 +362,14 @@ export const FIELDS: readonly FieldPackage[] = [
     lengthM: 3240 / 196.85,
     widthM: 1620 / 196.85,
     image: { pixelWidth: 3240, pixelHeight: 1620, ppm: 196.85, marginM: 0 },
+    // Rendered artwork (AdvantageScopeAssets Field2d_2022FRCFieldV3, BSD-3;
+    // source render: Chief Delphi 2022 top-down field renders), 7045×2934.
+    // Corner calibration from its config (topLeft [884,148], bottomRight
+    // [6160,2786] over 648″×324″ — exactly this package's constants). The
+    // render draws the WPILib 2022 offseason tag set: decal probe vs
+    // TAGS_2022 gives median 7.7 px (≈ 2.4 cm), no systematic bias; the
+    // four hangar-ring decals scatter ±33 px (≈ 10 cm, drawn loose).
+    imageRendered: { pixelWidth: 7045, pixelHeight: 2934, ppm: 320.55, ppmY: 320.55, marginM: 0, originPx: { x: 884, y: 148 } },
     aprilTags: TAGS_2022,
   },
   {
@@ -356,6 +380,15 @@ export const FIELDS: readonly FieldPackage[] = [
     lengthM: 3256 / 196.85,
     widthM: 1578 / 196.85,
     image: { pixelWidth: 3256, pixelHeight: 1578, ppm: 196.85, marginM: 0 },
+    // Rendered artwork (AdvantageScopeAssets Field2d_2023FRCFieldV4, BSD-3;
+    // source render: Chief Delphi top-down field renders). Corner calibration
+    // from its config (topLeft [482,89], bottomRight [3126,1373] over the
+    // 651.25″×315.5″ span) mapped onto this package's constants → 2644 px of
+    // field length at 159.85 px/m, blue corner 482 px from the left edge,
+    // 89 px from the bottom edge. Tag-decal probe: residuals up to ±35 px in
+    // a symmetric bow (mid-wall decals drawn inset on both walls) — artwork
+    // looseness, no global bias.
+    imageRendered: { pixelWidth: 3608, pixelHeight: 1462, ppm: 159.85, ppmY: 160.16, marginM: 0, originPx: { x: 482, y: 89 } },
     aprilTags: TAGS_2023,
   },
   {
@@ -366,6 +399,13 @@ export const FIELDS: readonly FieldPackage[] = [
     lengthM: 3256 / 196.85,
     widthM: 1616 / 196.85,
     image: { pixelWidth: 3256, pixelHeight: 1616, ppm: 196.85, marginM: 0 },
+    // Rendered artwork (AdvantageScopeAssets Field2d_2024FRCFieldV3, BSD-3;
+    // source render: Chief Delphi). Corner calibration from its config
+    // (topLeft [513,78], bottomRight [3327,1475] over 651.25″×323.25″)
+    // mapped onto this package's constants. Tag-decal probe: median 26 px
+    // scatter grouped per structure (same-wall decals disagree) — artwork
+    // looseness, no consistent global bias.
+    imageRendered: { pixelWidth: 3840, pixelHeight: 1554, ppm: 158.96, ppmY: 159.42, marginM: 0, originPx: { x: 513, y: 79 } },
     aprilTags: TAGS_2024,
   },
   {
@@ -384,23 +424,37 @@ export const FIELDS: readonly FieldPackage[] = [
     // side, below any placement tolerance).
     lengthM: 17.548,
     widthM: 8.052,
-    // Field art: the official construction-variant pair (AdvantageScopeAssets
-    // Field2d_2025FRCFieldWeldedV3 / AndyMarkV3, BSD-3; 3773×1528 each — the
-    // two artworks are pixel-identical except each coral station, drawn 12 px
-    // ≈ 7 cm toward centre on the AndyMark sheet, matching the tag deltas).
-    // Calibration (one set serves both sheets; AM enclosure 8.042 vs 8.052
-    // is 0.6 % of ppmY, below the artwork's own noise): carpet edges at
-    // columns 420/3351 and rows 73/1454 measured on the shipped PNGs map to
-    // the 17.548 × 8.052 frame → ppm 167.08, ppmY 171.49, blue corner 420 px
-    // from the left edge, 74 px from the bottom edge. Validated against all
-    // 22 AprilTag decals in each artwork: median offset (−0.5, +1.2) px — no
-    // systematic bias; per-tag scatter rms ≈ 12 px (≈ 7 cm) is the artwork's
-    // structure looseness (reef tag ring drawn ~8 cm large in radius, barge
-    // posts ±21 px, DS walls ~17 px inset), not calibration error. The
-    // AndyMark sheet's coral-station decals sit on the AndyMark tag
-    // coordinates to ≤ 1 px. (Previous art: PathPlanner field25.png.)
-    image: { pixelWidth: 3773, pixelHeight: 1528, ppm: 167.08, ppmY: 171.49, marginM: 0, originPx: { x: 420, y: 74 } },
-    imageAndyMark: { pixelWidth: 3773, pixelHeight: 1528, ppm: 167.08, ppmY: 171.49, marginM: 0, originPx: { x: 420, y: 74 } },
+    // Schematic (default) artwork: PathPlanner field25.png (MIT), 3510×1610.
+    // Calibration is the artist's own (uniform 200 px/m, zero margin — the
+    // canvas spans the enclosure; PathPlanner renders on it with exactly
+    // this). Verified on the shipped PNG: the enclosure walls are drawn AT
+    // the canvas edges, and both coral-station
+    // decals clip at the canvas edges exactly where margin-0 predicts them
+    // (half-cut at top/bottom). High-mounted decals (DS-wall tags and the
+    // reef-slope tops, z ≈ 1.5–1.9 m) carry a uniform ≈ 20 cm inward
+    // displacement — pseudo-3D height offset in the artwork, same looseness
+    // class as the AS sheets' structure offsets, not a grid shift. Both
+    // construction variants share this single artwork — tags-only
+    // switching, exactly like 2026.
+    image: { pixelWidth: 3510, pixelHeight: 1610, ppm: 200, marginM: 0 },
+    // Rendered artwork: the official construction-variant pair
+    // (AdvantageScopeAssets Field2d_2025FRCFieldWeldedV3 / AndyMarkV3,
+    // BSD-3; 3773×1528 each — the two artworks are pixel-identical except
+    // each coral station, drawn 12 px ≈ 7 cm toward centre on the AndyMark
+    // sheet, matching the tag deltas). Calibration (one set serves both
+    // sheets; AM enclosure 8.042 vs 8.052 is 0.6 % of ppmY, below the
+    // artwork's own noise): carpet edges at columns 420/3351 and rows
+    // 73/1454 measured on the shipped PNGs map to the 17.548 × 8.052 frame
+    // → ppm 167.08, ppmY 171.49, blue corner 420 px from the left edge,
+    // 74 px from the bottom edge. Validated against all 22 AprilTag decals
+    // in each artwork: median offset (−0.5, +1.2) px — no systematic bias;
+    // per-tag scatter rms ≈ 12 px (≈ 7 cm) is the artwork's structure
+    // looseness (reef tag ring drawn ~8 cm large in radius, barge posts
+    // ±21 px, DS walls ~17 px inset), not calibration error. The AndyMark
+    // sheet's coral-station decals sit on the AndyMark tag coordinates
+    // to ≤ 1 px.
+    imageRendered: { pixelWidth: 3773, pixelHeight: 1528, ppm: 167.08, ppmY: 171.49, marginM: 0, originPx: { x: 420, y: 74 } },
+    imageRenderedAndyMark: { pixelWidth: 3773, pixelHeight: 1528, ppm: 167.08, ppmY: 171.49, marginM: 0, originPx: { x: 420, y: 74 } },
     aprilTags: TAGS_2025_WELDED,
     aprilTagsAndyMark: TAGS_2025_ANDYMARK,
   },
@@ -412,23 +466,30 @@ export function fieldById(id: string): FieldPackage {
 }
 
 /**
- * Resolve a field package for a construction variant: the AndyMark build
- * swaps in its tag layout and (when the season ships separate art, 2025)
- * its image calibration; every other selection returns the package itself.
- * The id, name and playfield size never change across variants.
+ * Resolve a field package for a construction variant and an artwork style.
+ * The AndyMark build always swaps in its official tag layout when one
+ * exists; the artwork follows the style — 'rendered' takes the
+ * AdvantageScope artwork (2025 additionally takes its AndyMark sheet of the
+ * official pair), 'schematic' (or a style the season lacks) takes the
+ * primary artwork, which for 2018–2020 IS the render. The id, name and
+ * playfield size never change.
  */
 export function withFieldVariant(
   field: FieldPackage,
   variant: 'welded' | 'andymark',
+  style: FieldArtStyle = 'schematic',
 ): FieldPackage {
-  if (variant === 'andymark' && field.aprilTagsAndyMark) {
-    return {
-      ...field,
-      aprilTags: field.aprilTagsAndyMark,
-      image: field.imageAndyMark ?? field.image,
-    };
+  const aprilTags =
+    variant === 'andymark' && field.aprilTagsAndyMark ? field.aprilTagsAndyMark : field.aprilTags;
+  let image = field.image;
+  if (style === 'rendered' && field.imageRendered) {
+    image =
+      variant === 'andymark' && field.imageRenderedAndyMark
+        ? field.imageRenderedAndyMark
+        : field.imageRendered;
   }
-  return field;
+  if (aprilTags === field.aprilTags && image === field.image) return field;
+  return { ...field, aprilTags, image };
 }
 
 export const CUSTOM_FIELD_ID = 'custom';

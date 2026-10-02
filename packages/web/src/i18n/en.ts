@@ -116,6 +116,12 @@ export const en = {
   'vc.left': 'L',
   'vc.right': 'R',
   'field.variant': 'Field construction (welded vs AndyMark-built)',
+
+  'field.style': 'Field artwork style (schematic vs rendered)',
+
+  'field.style.schematic': 'Schematic',
+
+  'field.style.rendered': 'Rendered',
   'conflicts.title': 'Conflicts',
   'conflicts.minSep':
     'closest approach {d} m at t={t} s ({a} × {b})',
