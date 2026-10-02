@@ -92,6 +92,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   const steerRef = useRef(new Map<string, number[]>());
   const [imgReady, setImgReady] = useState(false);
   const viewRef = useRef<View>({ scale: 40, cx: field.lengthM / 2, cy: field.widthM / 2 });
+  // Last fitted px/m — anchors the zoom-out floor (field stays ≥ half the
+  // canvas) and updates on every fit/resize.
+  const fitScaleRef = useRef(40);
   const sizeRef = useRef({ w: 0, h: 0 });
   const autoFitRef = useRef(true);
   const drawRef = useRef<() => void>(() => {});
@@ -145,6 +148,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       cx: field.lengthM / 2,
       cy: field.widthM / 2,
     };
+    fitScaleRef.current = viewRef.current.scale;
     requestDraw();
   }, [field, requestDraw]);
 
@@ -187,11 +191,18 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
 
     // Zoom by `factor` keeping the world point under (sx, sy) fixed —
     // Onshape-style zoom-to-cursor (user request 2026-10-02). The
-    // before/after diff stays exact even when the scale clamps at 8/400.
+    // before/after diff stays exact even when the scale clamps.
+    // Range (user round 9): the top lets a robot's bumper fill the screen
+    // (~1.2 m of field visible); the bottom keeps the field spanning at
+    // least half the canvas — the old static 8 px/m floor let it shrink
+    // to a thumbnail, which the user explicitly did not want.
+    const MAX_SCALE = 1000;
+    const clampScale = (s: number) =>
+      Math.min(MAX_SCALE, Math.max(Math.max(8, fitScaleRef.current * 0.5), s));
     const zoomAt = (sx: number, sy: number, factor: number) => {
       const v = viewRef.current;
       const before = world(sx, sy);
-      v.scale = Math.min(400, Math.max(8, v.scale * factor));
+      v.scale = clampScale(v.scale * factor);
       const after = world(sx, sy);
       v.cx += before.x - after.x;
       v.cy += before.y - after.y;
@@ -215,7 +226,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       const { w, h } = sizeRef.current;
       const wx = v.cx + (sx - w / 2) / v.scale;
       const wy = v.cy - (sy - h / 2) / v.scale;
-      const scale = Math.min(400, Math.max(8, v.scale * factor));
+      const scale = clampScale(v.scale * factor);
       return { scale, cx: wx - (sx - w / 2) / scale, cy: wy + (sy - h / 2) / scale };
     };
     const chaseStepFrame = () => {

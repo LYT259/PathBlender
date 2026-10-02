@@ -312,8 +312,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // model because the slab is thin and the near wall occludes.
     controls.minPolarAngle = 0.15;
     controls.maxPolarAngle = 2.6;
-    controls.minDistance = 2;
-    controls.maxDistance = 60;
+    // Dolly range (user round 9): 1 m lets a bumper fill the view (was 2 m —
+    // "can't zoom in particularly large"); 32 m keeps the field spanning
+    // most of the view from the home distance (~17 m) — the old 60 m let it
+    // shrink to a corner, which the user explicitly did not want.
+    controls.minDistance = 1;
+    controls.maxDistance = 32;
     // Onshape-style wheel zoom (user request 2026-10-02): dollies down the
     // pointer ray, so zooming in magnifies the detail under the cursor and
     // zooming out lets the scene flow away from it.

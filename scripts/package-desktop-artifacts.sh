@@ -92,8 +92,15 @@ else
 fi
 
 # --- 4. dmg from the sealed bundle -------------------------------------------
-DMG="$(dirname "$APP")/PathBlender_${VERSION}_aarch64.dmg"
+# Output goes to bundle/dmg/ — the path release.yml collects from. v0.1.6-
+# beta.22 shipped the PRE-seal dmg because this script wrote to bundle/macos/
+# while the workflow collected tauri's own untouched dmg from bundle/dmg/.
+# The whole dmg dir is rebuilt so no stale tauri-era image can survive.
+DMG_DIR="$(dirname "$(dirname "$APP")")/dmg"
 rm -f "$(dirname "$APP")"/*.dmg
+rm -rf "$DMG_DIR"
+mkdir -p "$DMG_DIR"
+DMG="$DMG_DIR/PathBlender_${VERSION}_aarch64.dmg"
 if ! scripts/make-dmg.sh "$APP" "$DMG"; then
   rm -f "$DMG"
   if [[ "$DMG_MODE" == best-effort ]]; then
@@ -104,4 +111,32 @@ if ! scripts/make-dmg.sh "$APP" "$DMG"; then
   fi
 fi
 
-echo "packaged: sealed app + updater artifacts + dmg for v$VERSION"
+# --- 5. Verify the dmg that will actually be downloaded ----------------------
+# The beta.22 release looked green because nothing ever OPENED the uploaded
+# image. Mount the finished dmg and hard-gate on the seal and the dark-mode
+# icon catalog before anyone can collect it (same checks the local install
+# gate runs on /Applications).
+if [[ -f "$DMG" ]]; then
+  MNT="$(mktemp -d)/pb-dmg-verify"
+  if ! hdiutil attach -nobrowse -readonly -mountpoint "$MNT" "$DMG" >/dev/null 2>&1; then
+    echo "package-desktop-artifacts.sh: cannot mount the finished dmg to verify it" >&2
+    exit 1
+  fi
+  set +e
+  codesign --verify --deep --strict "$MNT/PathBlender.app"
+  SEAL_RC=$?
+  [[ -f "$MNT/PathBlender.app/Contents/Resources/Assets.car" ]]
+  ICON_RC=$?
+  set -e
+  hdiutil detach "$MNT" >/dev/null 2>&1 || true
+  if (( SEAL_RC != 0 )); then
+    echo "package-desktop-artifacts.sh: dmg content failed strict codesign verification" >&2
+    exit 1
+  fi
+  if (( ICON_RC != 0 )); then
+    echo "package-desktop-artifacts.sh: dmg content is missing the day+night icon catalog (Assets.car)" >&2
+    exit 1
+  fi
+fi
+
+echo "packaged: sealed app + updater artifacts + verified dmg for v$VERSION"

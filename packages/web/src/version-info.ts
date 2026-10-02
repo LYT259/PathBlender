@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.35';
+export const APP_VERSION = '0.1.6-beta.36';
 
 export interface VersionNote {
   version: string;
@@ -13,7 +13,8 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.6-beta.35', date: '2026-10-02', note: 'Team numbers edit in place and print on the bumper — 2D rails and 3D side decals / 队号行内铅笔编辑，印刷在防撞条上——2D 导轨与 3D 侧面贴片' },
+  { version: '0.1.6-beta.36', date: '2026-10-02', note: 'Align workspace controls and simplify field construction selection / 统一工作区控件高度并简化场地结构切换' },
+  { version: '0.1.6-beta.35', date: '2026-10-02', note: 'Zoom range retuned: zoom in ~2.5x deeper, and the field can no longer shrink to a thumbnail / 缩放范围重调：放大更深约 2.5 倍，场地不再能缩成一小块' },
   { version: '0.1.6-beta.34', date: '2026-10-02', note: 'Ruler restored to full width under the example paths / 刻度尺恢复全宽（修复并入单位后掉入标签列被压扁的问题）' },
   { version: '0.1.6-beta.33', date: '2026-10-02', note: 'Ruler unit folds into the last tick ("20 秒" / "20 seconds"); stray label under the last path is gone / 刻度单位并入最后一个数字（20 秒），路径下方的孤立「秒」字移除' },
   { version: '0.1.6-beta.32', date: '2026-10-02', note: 'Ruler (0-20 s scale) moves below the example paths, above the play bar; clock back to its original spot beside the play button / 刻度尺（0-20 秒数字）移到示例路径下方、播放条上方；时钟放回播放键旁原位' },
