@@ -144,9 +144,17 @@ function AppBody() {
   const { visible: showCheckTip, dismiss: dismissCheckTip } = useUsageTip('checks');
   const [cfOpen, setCfOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'error' } | null>(null);
+  const toastTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
+  }, []);
   const flash = useCallback((msg: string, kind: 'ok' | 'error' = 'ok') => {
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
     setToast({ msg, kind });
-    window.setTimeout(() => setToast(null), 2500);
+    toastTimer.current = window.setTimeout(() => {
+      toastTimer.current = null;
+      setToast(null);
+    }, 2500);
   }, []);
   const importInputRef = useRef<HTMLInputElement>(null);
   const sessionInputRef = useRef<HTMLInputElement>(null);
