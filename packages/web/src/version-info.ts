@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.5-beta.5';
+export const APP_VERSION = '0.1.5-beta.6';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.5-beta.6', date: '2026-10-02', note: 'Pinch freezes at release: late gesture events are ignored and single-frame spikes rate-limited (temporary on-screen gesture diagnostics) / 捏合松手即定格：忽略收尾残留事件并限制单帧跳变（附带临时手势诊断显示）' },
   { version: '0.1.5-beta.5', date: '2026-10-02', note: 'Dual artwork styles for every 2022-2026 field: schematic default, rendered selectable / 2022-2026 全部赛季内置双风格底图：示意图为默认，可切换渲染图' },
   { version: '0.1.5-beta.4', date: '2026-10-02', note: 'MK5i-style robots: layered chassis with steered swerve wheels in 2D/3D, sized per season\'s rules / MK5i 式机器人：2D/3D 呈现带转向轮组的分层底盘，按赛季规则取最大尺寸' },
   { version: '0.1.5-beta.3', date: '2026-10-02', note: 'Pinch zoom now follows your fingers: magnifies the spot under them with a gentler response / 捏合缩放跟随手指：放大手指处的细节，响应更柔和' },

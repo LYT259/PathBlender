@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   classifyWheelInput,
   orbitZoomSpeedFor,
+  PINCH_EVENT_LN_CAP,
   PINCH_GAIN,
   pinchZoomFactor,
   TRACKPAD_EVENT_CAP,
@@ -101,12 +102,11 @@ describe('pinchZoomFactor', () => {
     expect(pinchZoomFactor(Number.NaN)).toBe(1);
   });
 
-  it('softens the raw finger-separation ratio', () => {
-    // A full doubling of finger separation no longer doubles the view —
-    // 1:1 mapping was reported as violent for small pinches.
-    expect(pinchZoomFactor(2)).toBeCloseTo(Math.pow(2, PINCH_GAIN));
-    expect(pinchZoomFactor(2)).toBeLessThan(1.6);
-    expect(pinchZoomFactor(1 / 2)).toBeCloseTo(Math.pow(0.5, PINCH_GAIN));
+  it('softens live per-event ratios (below the rate limit)', () => {
+    // Real gesturechange streams carry tiny per-event ratios; those take
+    // the raw gain. 1:1 mapping was reported as violent (user round 2).
+    expect(pinchZoomFactor(1.05)).toBeCloseTo(Math.pow(1.05, PINCH_GAIN));
+    expect(pinchZoomFactor(0.95)).toBeCloseTo(Math.pow(0.95, PINCH_GAIN));
   });
 
   it('zooms in for spreading, out for closing', () => {
@@ -114,18 +114,20 @@ describe('pinchZoomFactor', () => {
     expect(pinchZoomFactor(0.95)).toBeLessThan(1);
   });
 
-  it('does not cap large single-event ratios (fast pinches are legitimate)', () => {
-    // Unlike wheel momentum, a big ratio in one gesturechange is a real
-    // fast pinch, not a burst to tame.
-    expect(pinchZoomFactor(3)).toBeCloseTo(Math.pow(3, PINCH_GAIN));
-    expect(pinchZoomFactor(1 / 3)).toBeCloseTo(Math.pow(1 / 3, PINCH_GAIN));
+  it('rate-limits single-event ratio spikes (end-of-gesture backlog)', () => {
+    // Releasing mid-pinch flushed lagging events as huge one-event ratios
+    // that kept zooming after the fingers lifted (user round 3). A spike
+    // may move the view at most exp(±cap·gain) ≈ ±7.5%.
+    expect(pinchZoomFactor(2)).toBeCloseTo(Math.exp(PINCH_EVENT_LN_CAP * PINCH_GAIN));
+    expect(pinchZoomFactor(1 / 2)).toBeCloseTo(Math.exp(-PINCH_EVENT_LN_CAP * PINCH_GAIN));
+    expect(pinchZoomFactor(1.5)).toBeCloseTo(pinchZoomFactor(3)); // clamped alike
   });
 
-  it('compounds a steady pinch to the softened total', () => {
-    // Doubling the separation across many small events (how gesturechange
-    // actually fires) must equal one big softened ratio.
+  it('keeps a fast pinch total — the clamp spreads, never loses', () => {
+    // A violent double-separation in ~130 ms at 60 Hz: 8 events, per-event
+    // ln ratio 0.087 < cap, so the full softened total still lands.
     let factor = 1;
-    for (let i = 0; i < 40; i++) factor *= pinchZoomFactor(Math.pow(2, 1 / 40));
+    for (let i = 0; i < 8; i++) factor *= pinchZoomFactor(Math.pow(2, 1 / 8));
     expect(factor).toBeCloseTo(Math.pow(2, PINCH_GAIN), 2);
   });
 });
