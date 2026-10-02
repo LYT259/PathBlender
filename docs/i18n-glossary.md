@@ -1,6 +1,7 @@
 # i18n 术语契约（对照表 + keep-verbatim 白名单）
 
-> 依据：《PathBlender_产品计划书》§7.2 v1.20（GHPaths 报告 v1.31 反向同步第 ④ 条）——六份字典已各自取舍，没有一张表就会各说各话。
+> Source: PathBlender Red Book (formerly Product Plan), §7.2 v1.20; GHPaths report v1.31, reverse-sync item ④. This table keeps terminology consistent across the six dictionaries.
+> 依据：《PathBlender_红皮书》（原《PathBlender_产品计划书》）§7.2 v1.20（GHPaths 报告 v1.31 反向同步第 ④ 条）——六份字典已各自取舍，没有一张表就会各说各话。
 > **规矩：新术语先补本表，再往字典里写。** 表里没定的词不要由某一份字典单独决定。
 
 字典位置：`packages/web/src/i18n/{en,zh,zh-tw,es,fr,tr}.ts`（`en.ts` 是键源与源文案）。
