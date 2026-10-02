@@ -54,10 +54,21 @@ Runtime dependencies of the shipped app, each under its own license:
   Traditional-Chinese dictionary at build time).
 
 FRC field visuals and game names/terms are owned by FIRST. The bundled
-season field images originate from the AdvantageScope asset set
-(https://github.com/Mechanical-Advantage/AdvantageScope), whose
-community-tool precedent we follow; use of season field materials is
-rechecked against the current season's terms before every public release.
+season field artwork comes from the community-tool ecosystem, per package:
+
+- **Schematic artwork** (the default 2D look for 2022–2026:
+  `rapidreact2022.png`, `chargedup2023.png`, `crescendo2024.png`,
+  `reefscape2025-schematic.png`, `rebuilt2026.png`) — PathPlanner
+  (MIT), drawn by its author Michael Jansen; redistributed unmodified.
+- **Rendered artwork** (2018–2020's only art, and the selectable
+  "Rendered" style for 2022–2026) — AdvantageScopeAssets archive
+  (BSD-3-Clause, https://github.com/Mechanical-Advantage/AdvantageScopeAssets),
+  including the official 2025 welded/AndyMark pair; several source renders
+  originate from Chief Delphi community posts (per the packages' own
+  `sourceUrl`). Redistributed unmodified.
+
+Use of season field materials is rechecked against the current season's
+terms before every public release.
 
 ## FIRST trademark disclaimer
 

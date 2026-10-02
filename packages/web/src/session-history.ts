@@ -1,10 +1,11 @@
 import { useCallback, useReducer, useRef } from 'react';
-import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
+import type { FieldArtStyle, FieldPackage, SessionTrajectory } from '@pathblender/core';
 
 type RobotUpdate = SessionTrajectory[] | ((previous: SessionTrajectory[]) => SessionTrajectory[]);
 interface Scene {
   fieldId: string;
   fieldVariant: 'welded' | 'andymark';
+  fieldStyle: FieldArtStyle;
   customField?: FieldPackage;
   customImageUrl?: string;
 }
@@ -31,15 +32,15 @@ function reduce(state: History, action: Action): History {
   const next = action.update(state.present);
   const previous = state.present;
   const sameRobots = next.robots.length === previous.robots.length && next.robots.every((robot, i) => robot === previous.robots[i]);
-  if (sameRobots && next.fieldId === previous.fieldId && next.fieldVariant === previous.fieldVariant && next.customField === previous.customField && next.customImageUrl === previous.customImageUrl) return state;
+  if (sameRobots && next.fieldId === previous.fieldId && next.fieldVariant === previous.fieldVariant && next.fieldStyle === previous.fieldStyle && next.customField === previous.customField && next.customImageUrl === previous.customImageUrl) return state;
   // A continuous waypoint drag is one change; unrelated commands never merge.
   const continuous = action.group != null && action.group === state.group;
   return { past: continuous ? state.past : [...state.past, previous].slice(-LIMIT), present: next, future: [], group: action.group };
 }
 
 /** Undo restores field and robots together, including whole-session imports. */
-export function useSessionHistory(initial: { id: string; variant: 'welded' | 'andymark' }) {
-  const [state, dispatch] = useReducer(reduce, { past: [], present: { robots: [], fieldId: initial.id, fieldVariant: initial.variant }, future: [] });
+export function useSessionHistory(initial: { id: string; variant: 'welded' | 'andymark'; style: FieldArtStyle }) {
+  const [state, dispatch] = useReducer(reduce, { past: [], present: { robots: [], fieldId: initial.id, fieldVariant: initial.variant, fieldStyle: initial.style }, future: [] });
   const groupSequence = useRef(0);
   const activeGroup = useRef<number | undefined>(undefined);
   const beginEdit = useCallback(() => { activeGroup.current = ++groupSequence.current; }, []);

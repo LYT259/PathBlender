@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.5-beta.3';
+export const APP_VERSION = '0.1.5-beta.4';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.5-beta.4', date: '2026-10-02', note: 'Dual artwork styles for every 2022-2026 field: schematic default, rendered selectable' },
   { version: '0.1.5-beta.3', date: '2026-10-02', note: 'Pinch zoom now follows your fingers: magnifies the spot under them with a gentler response / 捏合缩放跟随手指：放大手指处的细节，响应更柔和' },
   { version: '0.1.5-beta.2', date: '2026-10-02', note: 'Desktop install script survives a bundle dir with no dmg files' },
   { version: '0.1.5-beta.1', date: '2026-10-02', note: 'Auto period follows the season: 15 s for 2018-2025 fields, 20 s for 2026' },
