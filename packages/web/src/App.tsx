@@ -28,6 +28,7 @@ import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } fro
 import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
 import { displayName, robotFromRoute, type LibraryProfile, type LibraryRoute } from './route-library';
 import { hashToSession, sessionToHash } from './share-url';
+import { loadAutosave, saveAutosave } from './autosave';
 import { copyText, saveText } from './download';
 import { fieldImageFor } from './field-images';
 import { FIELD3D_MODELS } from './field3d-models';
@@ -506,6 +507,31 @@ function AppBody() {
       }
     });
   }, []);
+
+  // Launch continuity (user report 2026-10-02: quitting in 3D reopened to
+  // the welcome page — the 3D pref was honored but only after a fresh
+  // import). Restore the autosaved session once on mount — an explicit
+  // share-link wins (handled above), and a desktop open-with file that
+  // arrives later simply replaces whatever this restored.
+  useEffect(() => {
+    if (location.hash.startsWith('#s=')) return;
+    const restored = loadAutosave();
+    if (restored) {
+      setScene({ ...restoreSessionAlliance(restored), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
+      setSelectedId(restored.robots[0]?.trajectory.id ?? null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
+  }, []);
+
+  // Keep the autosave current (debounced; removing the last robot clears
+  // the slot so the next launch opens on the welcome page again).
+  useEffect(() => {
+    const id = setTimeout(
+      () => saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined),
+      600,
+    );
+    return () => clearTimeout(id);
+  }, [robots, fieldId, field]);
 
   const exportPng = useCallback(() => {
     if (view3D) {
