@@ -42,6 +42,24 @@ export const TRACKPAD_K = 0.004;
  */
 export const TRACKPAD_EVENT_CAP = 1.08;
 
+/**
+ * Pinch softening (user feedback round 2, 2026-10-02): WebKit gesture
+ * events report the raw finger-separation ratio, and applying it 1:1 made
+ * a small pinch feel violent. The per-event factor is the ratio raised to
+ * this gain instead: doubling the finger separation zooms 2^0.6 ≈ 1.52×.
+ * No per-event cap (unlike the wheel curves): gesturechange fires at
+ * display cadence with tiny per-event ratios, and a large single ratio is
+ * a legitimate fast pinch, not a momentum burst.
+ * Tunable — single constant, pending user trial.
+ */
+export const PINCH_GAIN = 0.6;
+
+/** Zoom factor for one gesturechange step (ratio = scale / lastScale). */
+export function pinchZoomFactor(ratio: number): number {
+  if (!Number.isFinite(ratio) || ratio <= 0) return 1;
+  return Math.pow(ratio, PINCH_GAIN);
+}
+
 export function classifyWheelInput(deltaY: number, deltaMode: number): WheelInputKind {
   if (deltaMode !== WheelEvent.DOM_DELTA_PIXEL) return 'wheel'; // line/page modes
   return Math.abs(deltaY) >= WHEEL_MIN_NOTCH && Number.isInteger(deltaY) ? 'wheel' : 'trackpad';
