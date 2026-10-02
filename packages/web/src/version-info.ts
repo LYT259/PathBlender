@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.5';
+export const APP_VERSION = '0.1.6-beta.6';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.6', date: '2026-10-02', note: 'Silky pinch zoom: the view glides to the target and 3D drops to a lighter render while interacting / 捏合丝滑缩放：画面平滑滑向目标，3D 交互期间自动轻量渲染' },
   { version: '0.1.6-beta.5', date: '2026-10-02', note: 'App menu Hide/Quit items also follow the app language' },
   { version: '0.1.6-beta.4', date: '2026-10-02', note: 'App menu About item follows the app language (was always English)' },
   { version: '0.1.6-beta.3', date: '2026-10-02', note: 'Preferences: natural-width footer buttons; Save keeps the window open' },
