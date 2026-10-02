@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   classifyWheelInput,
   orbitZoomSpeedFor,
+  PINCH_GAIN,
+  pinchZoomFactor,
   TRACKPAD_EVENT_CAP,
   TRACKPAD_K,
   WHEEL_K,
@@ -89,5 +91,41 @@ describe('orbitZoomSpeedFor', () => {
     // A factor pointing against the delta's direction must never invert
     // the zoom — fall back instead.
     expect(orbitZoomSpeedFor(1.155, 120)).toBe(1);
+  });
+});
+
+describe('pinchZoomFactor', () => {
+  it('is neutral for identity and invalid ratios', () => {
+    expect(pinchZoomFactor(1)).toBe(1);
+    expect(pinchZoomFactor(0)).toBe(1);
+    expect(pinchZoomFactor(Number.NaN)).toBe(1);
+  });
+
+  it('softens the raw finger-separation ratio', () => {
+    // A full doubling of finger separation no longer doubles the view —
+    // 1:1 mapping was reported as violent for small pinches.
+    expect(pinchZoomFactor(2)).toBeCloseTo(Math.pow(2, PINCH_GAIN));
+    expect(pinchZoomFactor(2)).toBeLessThan(1.6);
+    expect(pinchZoomFactor(1 / 2)).toBeCloseTo(Math.pow(0.5, PINCH_GAIN));
+  });
+
+  it('zooms in for spreading, out for closing', () => {
+    expect(pinchZoomFactor(1.05)).toBeGreaterThan(1);
+    expect(pinchZoomFactor(0.95)).toBeLessThan(1);
+  });
+
+  it('does not cap large single-event ratios (fast pinches are legitimate)', () => {
+    // Unlike wheel momentum, a big ratio in one gesturechange is a real
+    // fast pinch, not a burst to tame.
+    expect(pinchZoomFactor(3)).toBeCloseTo(Math.pow(3, PINCH_GAIN));
+    expect(pinchZoomFactor(1 / 3)).toBeCloseTo(Math.pow(1 / 3, PINCH_GAIN));
+  });
+
+  it('compounds a steady pinch to the softened total', () => {
+    // Doubling the separation across many small events (how gesturechange
+    // actually fires) must equal one big softened ratio.
+    let factor = 1;
+    for (let i = 0; i < 40; i++) factor *= pinchZoomFactor(Math.pow(2, 1 / 40));
+    expect(factor).toBeCloseTo(Math.pow(2, PINCH_GAIN), 2);
   });
 });

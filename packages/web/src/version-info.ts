@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.5-beta.1';
+export const APP_VERSION = '0.1.5-beta.3';
 
 export interface VersionNote {
   version: string;
@@ -13,7 +13,9 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.5-beta.1', date: '2026-10-02', note: 'MK5i-style robots: real chassis + bumper look in 2D and 3D, steered wheels, per-season rule-max size' },
+  { version: '0.1.5-beta.3', date: '2026-10-02', note: 'Pinch zoom now follows your fingers: magnifies the spot under them with a gentler response / 捏合缩放跟随手指：放大手指处的细节，响应更柔和' },
+  { version: '0.1.5-beta.2', date: '2026-10-02', note: 'Desktop install script survives a bundle dir with no dmg files' },
+  { version: '0.1.5-beta.1', date: '2026-10-02', note: 'Auto period follows the season: 15 s for 2018-2025 fields, 20 s for 2026' },
   { version: '0.1.4', date: '2026-10-02', note: '正式版 0.1.4：汇集 0.1.3 以来全部改进 / Stable v0.1.4: everything since v0.1.3' },
   { version: '0.1.4-beta.5', date: '2026-10-02', note: '修复桌面版保存会话/导出 PNG 无反应（命令参数命名）' },
   { version: '0.1.4-beta.4', date: '2026-10-02', note: '修复 Linux 桌面版保存/导出/分享菜单，支持双击路径文件直接打开' },

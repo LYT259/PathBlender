@@ -20,7 +20,7 @@ import {
 import { buildChassis3D } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
-import { orbitZoomSpeedFor, wheelZoomFactor } from '../zoom';
+import { orbitZoomSpeedFor, pinchZoomFactor, wheelZoomFactor } from '../zoom';
 import { aprilTagTexture } from '../april-tag-texture';
 // One coordinate frame for the whole scene — tags, robots, trails, fallback
 // structures, the flat field image and the official field models all map
@@ -391,7 +391,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     resize();
 
     // WebKit trackpad pinch fires gesture* events, not wheel+ctrlKey —
-    // dolly the camera manually so pinch zoom works in the desktop shell.
+    // zoom toward the gesture centroid so the detail under the fingers is
+    // what magnifies (user feedback round 2: pinch only ever magnified the
+    // orbit center), with the ratio softened via pinchZoomFactor.
     let lastScale = 1;
     const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
     const onGestureStart = (e: Event) => {
@@ -400,9 +402,39 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const onGestureChange = (e: Event) => {
       e.preventDefault();
       const s = gestureScale(e);
-      if (s > 0 && lastScale > 0) {
-        const dir = camera.position.clone().sub(controls.target).multiplyScalar(1 / s);
-        if (dir.length() > 1.5) camera.position.copy(controls.target).add(dir);
+      if (s > 0 && lastScale > 0 && s !== lastScale) {
+        const factor = pinchZoomFactor(s / lastScale);
+        if (factor !== 1) {
+          const g = e as Event & { clientX?: number; clientY?: number };
+          const rect = renderer.domElement.getBoundingClientRect();
+          const nx = (((g.clientX ?? rect.left + rect.width / 2) - rect.left) / rect.width) * 2 - 1;
+          const ny = -((((g.clientY ?? rect.top + rect.height / 2) - rect.top) / rect.height) * 2 - 1);
+          // Mirror OrbitControls' own wheel-zoom path: aim the dolly at the
+          // centroid, then let update() apply damping, distance clamps and
+          // target placement exactly like a wheel notch at that point.
+          // three is pinned (0.185.x); if the internals ever rename, the
+          // fallback below keeps pinch working (center-anchored).
+          const oc = controls as unknown as {
+            _mouse?: THREE.Vector2;
+            _dollyDirection?: THREE.Vector3;
+            _performCursorZoom?: boolean;
+            _scale?: number;
+          };
+          if (oc._mouse && oc._dollyDirection && oc._scale !== undefined && oc._performCursorZoom !== undefined) {
+            oc._mouse.set(nx, ny);
+            oc._dollyDirection.set(nx, ny, 1).unproject(camera).sub(camera.position).normalize();
+            oc._performCursorZoom = true;
+            oc._scale *= 1 / factor; // camera radius moves opposite to view zoom
+            controls.update();
+            markDirty();
+          } else {
+            const dir = camera.position.clone().sub(controls.target).multiplyScalar(1 / factor);
+            dir.setLength(THREE.MathUtils.clamp(dir.length(), controls.minDistance, controls.maxDistance));
+            camera.position.copy(controls.target).add(dir);
+            camera.lookAt(controls.target);
+            markDirty();
+          }
+        }
       }
       lastScale = s;
     };
