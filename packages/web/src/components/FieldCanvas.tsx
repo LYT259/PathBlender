@@ -25,6 +25,7 @@ import {
   markGestureEnd,
   markGestureStart,
   pinchZoomFactor,
+  splitInstant,
   wheelSuppressed,
   wheelZoomFactor,
 } from '../zoom';
@@ -267,14 +268,25 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         autoFitRef.current = false;
         const g = e as Event & { clientX?: number; clientY?: number };
         const rect = canvas.getBoundingClientRect();
+        const sx = (g.clientX ?? rect.left + rect.width / 2) - rect.left;
+        const sy = (g.clientY ?? rect.top + rect.height / 2) - rect.top;
         const v = viewRef.current;
-        chaseTarget = zoomAtView(
-          chaseTarget ?? { scale: v.scale, cx: v.cx, cy: v.cy },
-          (g.clientX ?? rect.left + rect.width / 2) - rect.left,
-          (g.clientY ?? rect.top + rect.height / 2) - rect.top,
-          pinchZoomFactor(scale / lastScale),
-        );
+        const factor = pinchZoomFactor(scale / lastScale);
+        // Round 7 ("takes too long to show"): apply half of every event
+        // immediately, chase only the rest — an instant visible response
+        // with a short glide tail instead of a 15%-per-frame ramp.
+        const { instant, deferred } = splitInstant(factor);
+        const live = zoomAtView(v, sx, sy, instant);
+        v.scale = live.scale; v.cx = live.cx; v.cy = live.cy;
+        // Target advances by the event's full factor. With no chase
+        // running, seed from the post-instant live view — either way the
+        // target equals the pre-event view composed with the full factor
+        // (applying `instant` again here would double it).
+        chaseTarget = chaseTarget
+          ? zoomAtView(zoomAtView(chaseTarget, sx, sy, instant), sx, sy, deferred)
+          : zoomAtView({ scale: v.scale, cx: v.cx, cy: v.cy }, sx, sy, deferred);
         requestChase();
+        requestDraw();
       }
       lastScale = scale;
     };
