@@ -13,7 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.6-beta.19', date: '2026-10-02', note: 'Reopening the app restores your last session — paths, field, and the 2D/3D view / 重开 App 自动恢复上次的会话——路径、场地与 2D/3D 视图' },
+  { version: '0.1.6-beta.19', date: '2026-10-02', note: 'Update channel + release packaging reliability: beta channel finds new betas, downloads are sealed / 更新通道与发布产物可靠性：Beta 通道能发现新版本，下载包密封校验' },
   { version: '0.1.6-beta.18', date: '2026-10-02', note: 'Make homepage import cards and secondary actions more compact / 缩小首页导入卡片及辅助操作' },
   { version: '0.1.6-beta.17', date: '2026-10-02', note: 'Add a theme-aware homepage logo and hide homepage history buttons / 首页增加随主题切换的品牌图标并隐藏历史按钮' },
   { version: '0.1.6-beta.16', date: '2026-10-02', note: 'Choose one alliance for every route in the session / 新增会话统一红蓝方切换，所有路径跟随联盟设置' },
