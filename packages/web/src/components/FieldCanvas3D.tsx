@@ -26,6 +26,7 @@ import {
   markGestureStart,
   orbitZoomSpeedFor,
   pinchZoomFactor,
+  splitInstant,
   wheelSuppressed,
   wheelZoomFactor,
 } from '../zoom';
@@ -482,7 +483,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
           const rect = renderer.domElement.getBoundingClientRect();
           pinchChase.nx = (((g.clientX ?? rect.left + rect.width / 2) - rect.left) / rect.width) * 2 - 1;
           pinchChase.ny = -((((g.clientY ?? rect.top + rect.height / 2) - rect.top) / rect.height) * 2 - 1);
-          pinchChase.factor *= factor; // remaining view zoom to apply
+          // Round 7 ("takes too long to show"): apply half of every event
+          // immediately, chase only the rest — instant response with a
+          // short glide tail instead of a slow ramp.
+          const { instant, deferred } = splitInstant(factor);
+          applyPinchStep(instant);
+          pinchChase.factor *= deferred; // remaining view zoom to apply
           noteInteraction();
           markDirty();
         }
