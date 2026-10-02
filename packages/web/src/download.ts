@@ -15,13 +15,18 @@ const IS_DESKTOP =
     window.location.protocol === 'tauri:' ||
     window.location.protocol === 'asset:');
 
+// Statically imported: a dynamic import() of the API chunk can silently
+// lose the race against page load on WebKitGTK, leaving saves dead
+// (ADR-0003). The module itself is inert in plain browser builds — invoke
+// is only ever called on the IS_DESKTOP branch.
+import { invoke } from '@tauri-apps/api/core';
+
 export async function saveBytes(
   suggestedName: string,
   filterExt: string,
   data: Blob | Uint8Array,
 ): Promise<boolean> {
   if (IS_DESKTOP) {
-    const { invoke } = await import('@tauri-apps/api/core');
     const bytes = data instanceof Uint8Array ? data : new Uint8Array(await data.arrayBuffer());
     const saved = await invoke<string | null>('save_file', {
       suggested_name: suggestedName,
