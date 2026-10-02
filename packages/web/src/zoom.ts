@@ -46,10 +46,11 @@ export const TRACKPAD_EVENT_CAP = 1.08;
  * Pinch softening (user feedback round 2, 2026-10-02): WebKit gesture
  * events report the raw finger-separation ratio, and applying it 1:1 made
  * a small pinch feel violent. The per-event factor is the ratio raised to
- * this gain instead: doubling the finger separation zooms 2^0.6 ≈ 1.52×.
+ * this gain instead. Raised 0.6 → 0.8 (user round 7: "one swipe should
+ * zoom in more"): doubling the finger separation now zooms 2^0.8 ≈ 1.74×.
  * Tunable — single constant, pending user trial.
  */
-export const PINCH_GAIN = 0.6;
+export const PINCH_GAIN = 0.8;
 
 /**
  * Per-event log-ratio rate limit for pinch (user feedback round 3): on
@@ -111,7 +112,26 @@ export function wheelSuppressed(now = performance.now()): boolean {
  * closes ~63% of the remaining gap; ~5τ ≈ settled.
  * Tunable feel constant, pending user trial.
  */
-export const CHASE_TAU_MS = 100;
+export const CHASE_TAU_MS = 80;
+
+/**
+ * Instant share of each pinch event (user round 7: "a swipe takes too
+ * long to show"). Pure chasing ramped small swipes in 15%-per-frame
+ * steps, which read as dead-then-moving. Each event now applies this
+ * fraction of its zoom IMMEDIATELY and chases only the remainder — an
+ * immediate visible response with a short glide tail (Figma-style).
+ */
+export const CHASE_INSTANT_SHARE = 0.5;
+
+/**
+ * Split one pinch factor into the instant part and the deferred part
+ * (log space): instant = factor^share, deferred = factor^(1-share);
+ * instant · deferred === factor.
+ */
+export function splitInstant(factor: number, share: number = CHASE_INSTANT_SHARE): { instant: number; deferred: number } {
+  if (!Number.isFinite(factor) || factor <= 0) return { instant: 1, deferred: 1 };
+  return { instant: Math.pow(factor, share), deferred: Math.pow(factor, 1 - share) };
+}
 
 /** Exponential approach: fraction of the remaining gap closed in `dt` ms. */
 export function chaseAlpha(dt: number, tau: number = CHASE_TAU_MS): number {
