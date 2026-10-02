@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.10';
+export const APP_VERSION = '0.1.6-beta.11';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.11', date: '2026-10-02', note: 'MK5i module direction fix, floor deck removed, garish colors muted / MK5i 模组转向修正、移除底板、艳色压灰' },
   { version: '0.1.6-beta.10', date: '2026-10-02', note: 'Pinch responds instantly and zooms further per swipe / 捏合即时响应，一次滑动放大更多' },
   { version: '0.1.6-beta.9', date: '2026-10-02', note: '3D robots now carry the real MK5i CAD module with motors, wheels steer / 3D 机器人换装真实 MK5i CAD 模组（含电机），轮组随行驶转向' },
   { version: '0.1.6-beta.8', date: '2026-10-02', note: 'The schematic/rendered artwork switcher now hides in 3D view (both look identical there) / 3D 视图下隐藏示意图/渲染图切换（两者画面相同）' },
