@@ -23,12 +23,12 @@ async function openExample() {
 beforeEach(() => localStorage.clear());
 
 describe('welcome flow', () => {
-  it('shows only the starting actions while retaining accessible descriptions', () => {
+  it('shows the brand and starting actions while retaining accessible descriptions', () => {
     render(<App />);
     const welcome = screen.getByRole('region', { name: 'Import paths to get started' });
     expect(within(welcome).getAllByRole('button')).toHaveLength(4);
-    expect(within(welcome).queryByRole('heading')).not.toBeInTheDocument();
-    expect(welcome.textContent).toBe('Import path filesImport folderOpen saved sessionTry an example');
+    expect(within(welcome).getByRole('heading', { name: 'PathBlender' })).toBeInTheDocument();
+    expect(welcome.textContent).toBe('PathBlenderImport path filesImport folderOpen saved sessionTry an example');
     expect(within(welcome).getByRole('button', { name: 'Import path files' })).toHaveAccessibleDescription(/Choreo or PathPlanner/);
     const folder = within(welcome).getByRole('button', { name: 'Import folder' });
     expect(folder).toHaveAccessibleDescription(/several routes.*choose which to replay/);
@@ -146,13 +146,15 @@ describe('welcome flow', () => {
     expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
   });
 
-  it('returns to the welcome screen after ending the example while retaining usable undo', async () => {
+  it('hides history buttons on return to welcome while retaining keyboard undo', async () => {
     render(<App />);
     await openExample();
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
     expect(screen.getByRole('region', { name: 'Import paths to get started' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Show or hide path list' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Undo', exact: true }));
+    expect(screen.queryByRole('button', { name: 'Undo', exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Redo', exact: true })).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'z', metaKey: true });
     expect(screen.getByText('Example path A', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'End example' })).toBeInTheDocument();
   });
@@ -199,7 +201,7 @@ describe('welcome flow', () => {
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Undo', exact: true }));
+      fireEvent.keyDown(window, { key: 'z', metaKey: true });
       await vi.dynamicImportSettled();
     });
 
