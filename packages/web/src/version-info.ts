@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.11';
+export const APP_VERSION = '0.1.6-beta.18';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,13 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.18', date: '2026-10-02', note: 'Make homepage import cards and secondary actions more compact / 缩小首页导入卡片及辅助操作' },
+  { version: '0.1.6-beta.17', date: '2026-10-02', note: 'Add a theme-aware homepage logo and hide homepage history buttons / 首页增加随主题切换的品牌图标并隐藏历史按钮' },
+  { version: '0.1.6-beta.16', date: '2026-10-02', note: 'Choose one alliance for every route in the session / 新增会话统一红蓝方切换，所有路径跟随联盟设置' },
+  { version: '0.1.6-beta.15', date: '2026-10-02', note: 'Make welcome cards, icons and typography more compact / 缩小首页卡片、图标和文字，优化整体比例' },
+  { version: '0.1.6-beta.14', date: '2026-10-02', note: 'Match the supplied welcome design with two import cards / 按确认图片改为左右导入卡片与蓝色按钮' },
+  { version: '0.1.6-beta.13', date: '2026-10-02', note: 'Simplify welcome actions and unify the title bar background / 首页采用分组操作列表，统一顶部与页面背景' },
+  { version: '0.1.6-beta.12', date: '2026-10-02', note: 'Make file and folder imports equally prominent on the welcome screen / 首页文件与文件夹导入采用同级蓝色入口' },
   { version: '0.1.6-beta.11', date: '2026-10-02', note: 'MK5i module direction fix, floor deck removed, garish colors muted / MK5i 模组转向修正、移除底板、艳色压灰' },
   { version: '0.1.6-beta.10', date: '2026-10-02', note: 'Pinch responds instantly and zooms further per swipe / 捏合即时响应，一次滑动放大更多' },
   { version: '0.1.6-beta.9', date: '2026-10-02', note: '3D robots now carry the real MK5i CAD module with motors, wheels steer / 3D 机器人换装真实 MK5i CAD 模组（含电机），轮组随行驶转向' },

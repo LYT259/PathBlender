@@ -1,6 +1,7 @@
-import { useId } from 'react';
 import { useI18n } from '../i18n';
-import { Icon } from './Icon';
+import { useTheme } from '../theme';
+import dayIcon from '../assets/app-icon-day.png';
+import nightIcon from '../assets/app-icon-night.png';
 import './WelcomeScreen.css';
 
 interface WelcomeScreenProps {
@@ -11,53 +12,43 @@ interface WelcomeScreenProps {
   exampleLoading?: boolean;
 }
 
-function RowArrow() {
-  return <svg className="start-row-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>;
+function WelcomeIcon({ name }: { name: 'file' | 'folder' | 'session' | 'example' }) {
+  return <svg className="start-icon" width="32" height="32" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {name === 'file' && <><path d="M14 50H10a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5h20l6 5" /><path d="M43 13H22a5 5 0 0 0-5 5v39a5 5 0 0 0 5 5h30a5 5 0 0 0 5-5V27Z" /><path d="M43 13v9a5 5 0 0 0 5 5h9M29 51c13 0 1-15 15-18" /><circle cx="27" cy="52" r="2.5" fill="var(--bg-panel)" /><circle cx="45" cy="32" r="2.5" fill="var(--bg-panel)" /></>}
+    {(name === 'folder' || name === 'session') && <><path d="M5 18a5 5 0 0 1 5-5h12a6 6 0 0 1 4 2l4 3h24a5 5 0 0 1 5 5v29a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5Z" /><path d="M5 26h54" /></>}
+    {name === 'example' && <><circle cx="32" cy="32" r="26" /><path d="m27 22 15 10-15 10Z" /></>}
+  </svg>;
 }
 
 export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryExample, exampleLoading = false }: WelcomeScreenProps) {
   const { t } = useI18n();
-  const id = useId();
+  const { resolved } = useTheme();
 
   return (
-    <section className="workspace-empty start-screen" aria-labelledby={`${id}-title`}>
+    <section className="workspace-empty start-screen" aria-label={t('welcome.title')}>
       <div className="start-content">
-        <h1 id={`${id}-title`}>{t('welcome.title')}</h1>
-        <div className="start-actions">
-          <button type="button" className="start-action start-action-primary welcome-import" onClick={onImport} aria-label={t('welcome.importFile')} aria-describedby={`${id}-file-hint`}>
-            <Icon name="import" size={22} />
-            <span className="start-action-copy">
-              <span className="start-action-title">{t('welcome.importFile')}</span>
-              <span className="start-action-hint" id={`${id}-file-hint`}>{t('welcome.importFileHint')}</span>
-            </span>
-            <RowArrow />
+        <header className="start-brand">
+          <img className="start-brand-icon" src={resolved === 'dark' ? nightIcon : dayIcon} alt="" width="136" height="136" draggable={false} />
+          <h1>PathBlender</h1>
+        </header>
+        <div className="start-imports">
+          <button type="button" className="start-action start-action-primary welcome-import" onClick={onImport} aria-label={t('welcome.importFile')} aria-description={t('welcome.importFileHint')}>
+            <WelcomeIcon name="file" />
+            <span className="start-action-title">{t('welcome.importFile')}</span>
           </button>
-          {onImportFolder && <button type="button" className="start-action welcome-folder-import" onClick={onImportFolder} aria-label={t('library.importFolder')} aria-describedby={`${id}-folder-hint`}>
-            <Icon name="folder" size={22} />
-            <span className="start-action-copy">
-              <span className="start-action-title">{t('library.importFolder')}</span>
-              <span className="start-action-hint" id={`${id}-folder-hint`}>{t('welcome.importFolderHint')}</span>
-            </span>
-            <RowArrow />
+          {onImportFolder && <button type="button" className="start-action start-action-primary welcome-folder-import" onClick={onImportFolder} aria-label={t('library.importFolder')} aria-description={t('welcome.importFolderHint')}>
+            <WelcomeIcon name="folder" />
+            <span className="start-action-title">{t('library.importFolder')}</span>
           </button>}
-          <button type="button" className="start-action welcome-open-session" onClick={onOpenSession} aria-label={t('welcome.openSession')} aria-describedby={`${id}-session-hint`}>
-            <svg className="ui-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z" /><path d="M14 3v5h5M9 12h6M9 16h6" /></svg>
-            <span className="start-action-copy">
-              <span className="start-action-title">{t('welcome.openSession')}</span>
-              <span className="start-action-hint" id={`${id}-session-hint`}>{t('welcome.openSessionHint')}</span>
-            </span>
-            <RowArrow />
-          </button>
         </div>
-        <p className="start-drop-hint">{t('welcome.dropHint')}</p>
-        <div className="start-example">
-          <button type="button" className="start-action welcome-try-example" onClick={onTryExample} disabled={exampleLoading} aria-busy={exampleLoading} aria-label={t(exampleLoading ? 'welcome.loadingExample' : 'welcome.tryExample')} aria-describedby={`${id}-example-hint`}>
-            <svg className="ui-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m10 8 6 4-6 4Z" /></svg>
-            <span className="start-action-copy">
-              <span className="start-action-title">{t(exampleLoading ? 'welcome.loadingExample' : 'welcome.tryExample')}</span>
-              <span className="start-action-hint" id={`${id}-example-hint`}>{t('welcome.exampleHint')}</span>
-            </span>
-            <RowArrow />
+        <div className="start-secondary">
+          <button type="button" className="start-action welcome-open-session" onClick={onOpenSession} aria-label={t('welcome.openSession')} aria-description={t('welcome.openSessionHint')}>
+            <WelcomeIcon name="session" />
+            <span className="start-action-title">{t('welcome.openSession')}</span>
+          </button>
+          <button type="button" className="start-action welcome-try-example" onClick={onTryExample} disabled={exampleLoading} aria-busy={exampleLoading} aria-label={t(exampleLoading ? 'welcome.loadingExample' : 'welcome.tryExample')} aria-description={t('welcome.exampleHint')}>
+            <WelcomeIcon name="example" />
+            <span className="start-action-title">{t(exampleLoading ? 'welcome.loadingExample' : 'welcome.tryExample')}</span>
           </button>
         </div>
       </div>

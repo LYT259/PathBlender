@@ -6,16 +6,17 @@ import type { MessageKey } from './en';
  * placeholders stay byte-identical to English (i18n.test.ts).
  */
 export const tr: Record<MessageKey, string> = {
-  'welcome.title': 'Başlayın',
+  'welcome.title': 'Başlamak için yolları içe aktarın',
+  'welcome.description': 'Yolları birlikte oynatın ve çakışmaları kontrol edin.',
+  'welcome.folderAdvice': 'Bir çakışma olduğunda rota değiştirebilmek için klasörün tamamını içe aktarın.',
   'welcome.importFile': 'Yol dosyalarını içe aktar',
   'welcome.importFileHint': 'Choreo veya PathPlanner’dan dışa aktarılan yolları seçin',
-  'welcome.importFolderHint': 'Yolların bulunduğu bir klasörü yükleyin ve oynatılacak yolları seçin',
+  'welcome.importFolderHint': 'Birden fazla rota yükleyin ve oynatılacak rotayı seçin',
   'welcome.openSession': 'Kayıtlı oturumu aç',
   'welcome.openSessionHint': 'Daha önce kaydedilmiş bir analizi açın',
   'welcome.tryExample': 'Bir örnek deneyin',
   'welcome.exampleHint': 'Örnek yollarla oynatma ve çarpışma denetimlerini keşfedin.',
   'welcome.loadingExample': 'Örnek açılıyor…',
-  'welcome.dropHint': 'Dosyaları veya bir klasörü bu pencereye de sürükleyebilirsiniz',
   'welcome.exampleFailed': 'Örnek açılamadı. Lütfen tekrar deneyin.',
   'welcome.exampleNameA': 'Örnek yol A',
   'welcome.exampleNameB': 'Örnek yol B',

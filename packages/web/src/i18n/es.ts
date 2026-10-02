@@ -7,16 +7,17 @@ import type { MessageKey } from './en';
  * English; i18n.test.ts enforces both.
  */
 export const es: Record<MessageKey, string> = {
-  'welcome.title': 'Comenzar',
+  'welcome.title': 'Importa trayectorias para empezar',
+  'welcome.description': 'Reproduce las trayectorias juntas y detecta interferencias.',
+  'welcome.folderAdvice': 'Importa una carpeta completa para cambiar de ruta si aparece un conflicto.',
   'welcome.importFile': 'Importar archivos de rutas',
   'welcome.importFileHint': 'Elige rutas exportadas desde Choreo o PathPlanner',
-  'welcome.importFolderHint': 'Carga una carpeta de rutas y elige cuáles reproducir',
+  'welcome.importFolderHint': 'Carga varias rutas y elige cuál reproducir',
   'welcome.openSession': 'Abrir una sesión guardada',
   'welcome.openSessionHint': 'Abre un análisis guardado anteriormente',
   'welcome.tryExample': 'Probar un ejemplo',
   'welcome.exampleHint': 'Explora la reproducción y la detección de colisiones con rutas de ejemplo.',
   'welcome.loadingExample': 'Abriendo ejemplo…',
-  'welcome.dropHint': 'También puedes arrastrar archivos o una carpeta a esta ventana',
   'welcome.exampleFailed': 'No se pudo abrir el ejemplo. Vuelve a intentarlo.',
   'welcome.exampleNameA': 'Ruta de ejemplo A',
   'welcome.exampleNameB': 'Ruta de ejemplo B',
