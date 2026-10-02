@@ -57,9 +57,10 @@ hand-modeled approximation looks wrong when zoomed in.
 - Download URL = the official product page's own "CAD Model" link
   (Google Drive id `1WCN-hDwU_AilFH5X-7swBz2U0_n4Wpnf`); the Drive
   response headers name the file `attachment; filename="MK5i.x_t"`.
-- Two independent downloads are **byte-identical**:
+- Two independent downloads are **byte-identical**, and the copy the
+  user renamed in ~/Downloads matches too:
   size 3,701,437 bytes, sha256
-  `b9a36e6bb3a948c04217f2f55293cf2858206ed9862b4050fa1ef3ba736893af`
+  `b9a36e6bb3a948c04217f2f55293cf283b91d8151bd1ad5e7d789cff7008d203`
   (network truncation ruled out — this link truncated other files).
 - Internal Parasolid header: `KEY=FILEMK5i .x_t`,
   `APPL=SOLIDWORKS 2022-2029`, Parasolid 33.1, export date 2025-09-02
