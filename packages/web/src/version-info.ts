@@ -13,7 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.6-beta.4', date: '2026-10-02', note: 'Silky pinch zoom: the view glides to the target and 3D drops to a lighter render while interacting / 捏合丝滑缩放：画面平滑滑向目标，3D 交互期间自动轻量渲染' },
+  { version: '0.1.6-beta.4', date: '2026-10-02', note: 'App menu About item follows the app language (was always English)' },
   { version: '0.1.6-beta.3', date: '2026-10-02', note: 'Preferences: natural-width footer buttons; Save keeps the window open' },
   { version: '0.1.6-beta.2', date: '2026-10-02', note: 'Installer hard gates: refuses non-beta trees, audits the installed version, single install at a time / 安装器三道闸：拒绝非 beta 树、核验装机版本、装机互斥' },
   { version: '0.1.6-beta.1', date: '2026-10-02', note: 'Runtime Dock icon sized to the standard macOS icon grid (was rendering a ring larger)' },
