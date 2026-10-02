@@ -5,7 +5,7 @@
  */
 // CACHE is rewritten by scripts/set-sw-version.mjs on every build
 // so each release ships a fresh cache namespace automatically.
-const CACHE = 'pb-0.1.6-beta.4-202610020715';
+const CACHE = 'pb-0.1.6-beta.22-202610021115';
 const CORE = ['./', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {

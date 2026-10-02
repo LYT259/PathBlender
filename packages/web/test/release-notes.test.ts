@@ -85,6 +85,9 @@ describe('release-notes-for.mjs', () => {
     expect(out.stdout).toContain('PathBlender_0.2.0-beta.2_aarch64.dmg');
     expect(out.stdout).toContain('## Known issues & limitations');
     expect(out.stdout).toContain('KEEPOUT zone stale in v9');
+    expect(out.stdout).not.toContain('Maintenance note');
+    // no doubled section heading from the embedded file's own H1
+    expect(out.stdout.match(/Known issues & limitations/g)).toHaveLength(1);
     expect(out.stdout).toContain('## How to update');
     expect(out.stdout).toContain('Check for Updates');
   });
@@ -104,6 +107,9 @@ describe('release-notes-for.mjs', () => {
 function fixtureKnownIssues(): string {
   const dir = mkdtempSync(join(tmpdir(), 'pb-ki-'));
   const file = join(dir, 'known-issues.md');
-  writeFileSync(file, '- KEEPOUT zone stale in v9 (fixture)\n');
+  writeFileSync(
+    file,
+    '# Known issues & limitations / 已知问题与限制\n\n> Maintenance note: internal guidance that must NOT appear in release bodies.\n\n- KEEPOUT zone stale in v9 (fixture)\n',
+  );
   return file;
 }

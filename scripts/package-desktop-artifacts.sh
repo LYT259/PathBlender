@@ -70,13 +70,19 @@ UPDATER_ABS="$PWD/$UPDATER"
 if [[ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" || -n "${TAURI_SIGNING_PRIVATE_KEY_PATH:-}" ]]; then
   rm -f "$UPDATER" "$UPDATER.sig"
   (cd "$(dirname "$UPDATER")" && tar -czf "$(basename "$UPDATER")" "$(basename "$APP")")
-  if [[ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ]]; then
-    (cd packages/desktop && npx tauri signer sign "$UPDATER_ABS")
-  else
-    # env -u: the content-form env (if also set) conflicts with --private-key-path.
+  # Only ONE key form may reach the signer: install-desktop.sh exports BOTH
+  # (content + path), and the tauri CLI turns each env var into an implicit
+  # flag — together they abort with "--private-key cannot be used with
+  # --private-key-path" (local install, 2026-10-02). env -u whichever form
+  # we are NOT using. Path form wins when both exist (matches the original
+  # install-desktop.sh behavior).
+  if [[ -n "${TAURI_SIGNING_PRIVATE_KEY_PATH:-}" ]]; then
     (cd packages/desktop && env -u TAURI_SIGNING_PRIVATE_KEY \
       npx tauri signer sign --private-key-path "$TAURI_SIGNING_PRIVATE_KEY_PATH" \
       --password "${TAURI_SIGNING_PRIVATE_KEY_PASSWORD:-}" "$UPDATER_ABS")
+  else
+    (cd packages/desktop && env -u TAURI_SIGNING_PRIVATE_KEY_PATH \
+      npx tauri signer sign "$UPDATER_ABS")
   fi
 elif [[ "$UPDATER_MODE" == auto ]]; then
   echo "warn: no updater signing key on this machine — keeping tauri's build-time updater artifacts (unsigned re-wrap skipped)" >&2

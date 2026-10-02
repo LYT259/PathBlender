@@ -90,7 +90,15 @@ const changesBlock =
 
 const knownIssuesPath = process.env.PB_KNOWN_ISSUES ? resolve(process.env.PB_KNOWN_ISSUES) : join(root, 'docs/release-notes/known-issues.md');
 const knownIssues = existsSync(knownIssuesPath)
-  ? readFileSync(knownIssuesPath, 'utf-8').trim()
+  ? readFileSync(knownIssuesPath, 'utf-8')
+      // The file carries its own H1 and a maintainer-facing blockquote note;
+      // the release body already provides the section heading, and the
+      // maintenance note is not for users. Skip both (first seen doubled in
+      // the v0.1.6-beta.22 release body).
+      .split('\n')
+      .filter((l) => !l.startsWith('# ') && !l.startsWith('> '))
+      .join('\n')
+      .trim()
   : '(none / 暂无)';
 
 const dmg = `PathBlender_${version}_aarch64.dmg`;
