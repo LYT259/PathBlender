@@ -47,11 +47,22 @@ const fileInput = () => page.locator('input[type="file"][multiple]').first();
 const rowByName = (name) => rows().filter({ has: page.locator('.robot-name', { hasText: name }) });
 
 // The gear's aria-label follows the UI language — match every locale we ship.
-const prefsGear = () => page.locator(
+const gearLocator = page.locator(
   ['.tool-btn[aria-label="Preferences"]', '.tool-btn[aria-label="Preferencias"]',
    '.tool-btn[aria-label="Tercihler"]', '.tool-btn[aria-label="Préférences"]',
    '.tool-btn[aria-label="偏好设置"]', '.tool-btn[aria-label="偏好設定"]'].join(', '),
 ).first();
+// Since PR #65 Save keeps the window open; several sections below end with
+// a Save. Opening the gear self-heals: close any open panel first so a
+// leftover overlay can never block the click.
+const prefsGear = async () => {
+  if (await page.locator('.prefs-modal').count()) {
+    await page.locator('.preferences-footer .btn:not(.accent)').click();
+    await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+    await page.waitForTimeout(200);
+  }
+  return gearLocator;
+};
 const clockText = () => page.locator('.clock').textContent().then((t) => parseFloat(t ?? '0'));
 
 await page.goto(BASE, { waitUntil: 'domcontentloaded' });
@@ -67,7 +78,7 @@ check(
 await page.screenshot({ path: `${SHOTS}/01-empty.png` });
 
 // --- AI retreat (2026-09-20): no assistant surface anywhere ---
-await prefsGear().click();
+await (await prefsGear()).click();
 await page.waitForSelector('.prefs-modal');
 check('preferences carry no AI settings (code deleted)', (await page.locator('.prefs-modal .ai-row, .prefs-modal .prefs-ai').count()) === 0);
 await page.locator('.preferences-footer .btn:not(.accent)').first().click(); // Cancel — the prefs redesign (0.1.4-beta era) moved the footer to .preferences-footer with .btn / .btn.accent
@@ -80,6 +91,18 @@ await fileInput().setInputFiles([
 await page.waitForSelector('.robot-library-row', { timeout: 10000 });
 await page.waitForSelector('.field-canvas');
 check('starts in 2D (toggle pressed)', (await page.locator('.view-toggle button', { hasText: '2D' }).first().getAttribute('aria-pressed')) === 'true');
+// First-run defaults (fresh profile): current season, welded construction,
+// schematic artwork, 2D view.
+{
+  const season = await page.locator('.field-select').first().inputValue();
+  const welded = await page.locator('select.field-variant option[value="welded"]').first().evaluate((o) => o.selected);
+  const schematic = await page.locator('select.field-style option[value="schematic"]').first().evaluate((o) => o.selected);
+  check(
+    'first-run defaults: 2026 + welded + schematic',
+    season === 'rebuilt-2026' && welded && schematic,
+    `season=${season} welded=${welded} schematic=${schematic}`,
+  );
+}
 await page.waitForFunction(
   () => document.querySelector('.conflict-count')?.textContent === '1',
   undefined,
@@ -121,6 +144,11 @@ await page.screenshot({ path: `${SHOTS}/03-jumped.png` });
 
 // --- playback: play/pause, 0.5× slows, only 0.25/0.5/1 offered ---
 const playBtn = page.locator('.timeline-play');
+// Rewind first: the wall-clock steps above vary run to run, and measuring
+// the 0.5× rate near the trajectory's end trips the end-of-play rewind and
+// reads as a backward jump.
+await page.locator('.timeline-transport button').first().click();
+await page.waitForTimeout(300);
 await playBtn.click();
 await page.waitForTimeout(1500);
 await playBtn.click();
@@ -148,7 +176,7 @@ await page.screenshot({ path: `${SHOTS}/04-playing.png` });
 const saveBtn = page.locator('.preferences-footer .btn.accent');
 const cancelBtn = page.locator('.preferences-footer .btn:not(.accent)');
 const langSelect = page.locator('.preferences-panel select').first();
-await prefsGear().click();
+await (await prefsGear()).click();
 await langSelect.waitFor({ state: 'visible', timeout: 8000 });
 // About block: natural-facing version ("0.1.4 · Beta N"), the full number,
 // one-click copy (versioning scheme 2026-10-01). The exact number drifts
@@ -185,29 +213,40 @@ check(
   (await page.locator('.prefs-modal').count()) === 0 && /Robots/.test(headingAfterCancel ?? ''),
   `modal=${await page.locator('.prefs-modal').count()} heading=${headingAfterCancel}`,
 );
-await prefsGear().click();
+await (await prefsGear()).click();
 await page.locator('.preferences-panel select').first().selectOption('zh');
 await saveBtn.click();
 await page.waitForTimeout(300);
-check('save closes the preferences modal', (await page.locator('.prefs-modal').count()) === 0);
+// Since PR #65 Save keeps the window open (drafts apply in place); closing
+// is via Cancel/Esc — close explicitly between language rounds.
+check('save keeps the preferences window open (PR #65)', (await page.locator('.prefs-modal').count()) === 1);
 const zhText = await page.locator('.robot-library-heading h2').first().textContent();
 check('zh switch', /机器人/.test(zhText ?? ''), zhText ?? '');
 await page.screenshot({ path: `${SHOTS}/05-zh.png` });
+await cancelBtn.click();
+await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+await page.waitForTimeout(200);
 // fr as a representative of the P1 batch (es/fr/tr)
-await prefsGear().click();
+await (await prefsGear()).click();
 await page.locator('.preferences-panel select').first().selectOption('fr');
 await saveBtn.click();
 await page.waitForTimeout(300);
 const frText = await page.locator('.robot-library-heading h2').first().textContent();
 check('fr switch (P1 language)', /Robots/.test(frText ?? ''), frText ?? '');
 await page.screenshot({ path: `${SHOTS}/05b-fr.png` });
-await prefsGear().click();
+await cancelBtn.click();
+await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+await page.waitForTimeout(200);
+await (await prefsGear()).click();
 await page.locator('.preferences-panel select').first().selectOption('en');
 await saveBtn.click();
 await page.waitForTimeout(300);
+await cancelBtn.click();
+await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+await page.waitForTimeout(200);
 
 // --- theme staged semantics (headless defaults light) ---
-await prefsGear().click();
+await (await prefsGear()).click();
 const darkRadio = page.locator('.preferences-theme-choice input[value=dark]');
 await darkRadio.check();
 await page.waitForTimeout(150);
@@ -217,10 +256,13 @@ await saveBtn.click();
 await page.waitForTimeout(300);
 const htmlTheme = await page.evaluate(() => document.documentElement.dataset.theme);
 check('theme confirmed light on Save', htmlTheme === 'light', `data-theme=${htmlTheme}`);
-await prefsGear().click();
+await (await prefsGear()).click();
 await page.locator('.preferences-theme-choice input[value=dark]').check();
 await saveBtn.click();
 await page.waitForTimeout(300);
+await cancelBtn.click();
+await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+await page.waitForTimeout(200);
 
 // --- share link: dialog with the compressed session, then restore ---
 await page.locator('.share-action').click();
@@ -464,7 +506,7 @@ const isDarkSky = (px) => Array.isArray(px) && px.every((v) => v < 60);
 const isLightSky = (px) => Array.isArray(px) && px.every((v) => v > 210);
 const skyDark = await sample3dSky();
 check('3D sky is dark before theme switch', isDarkSky(skyDark), JSON.stringify(skyDark));
-await prefsGear().click();
+await (await prefsGear()).click();
 await page.waitForSelector('.prefs-modal');
 await page.locator('.preferences-theme-choice input[value=light]').check();
 await page.locator('.preferences-footer .btn.accent').click();
@@ -472,11 +514,17 @@ await page.waitForTimeout(700);
 const skyLight = await sample3dSky();
 check('3D retints to light on hot-switch', isLightSky(skyLight), JSON.stringify(skyLight));
 await page.screenshot({ path: `${SHOTS}/14b-3d-light.png` });
-await prefsGear().click();
+await cancelBtn.click();
+await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+await page.waitForTimeout(200);
+await (await prefsGear()).click();
 await page.waitForSelector('.prefs-modal');
 await page.locator('.preferences-theme-choice input[value=dark]').check();
 await page.locator('.preferences-footer .btn.accent').click();
 await page.waitForTimeout(700);
+await cancelBtn.click();
+await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+await page.waitForTimeout(200);
 
 // Damped orbit settles after release (no endless drift).
 {
@@ -567,7 +615,18 @@ check(
   (await page.locator('.view-toggle').count()) === 1,
 );
 
-// Field remembered across reload (AndyMark default).
+// The 2D/3D choice survives a reload (user directive 2026-10-02).
+await page.locator('.view-toggle button', { hasText: '3D' }).click();
+await page.waitForSelector('.field-canvas-3d canvas', { timeout: 15000 });
+await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+await page.waitForSelector('.workspace-empty');
+await fileInput().setInputFiles([`${SAMPLES}/ghostauto/straight_run.ghostauto`]);
+await page.waitForSelector('.field-canvas-3d canvas', { timeout: 15000 });
+check('3D view restored after reload', true);
+await page.locator('.view-toggle button', { hasText: '2D' }).click();
+await page.waitForSelector('.field-canvas:not(.field-canvas-3d)', { timeout: 10000 });
+
+// Field remembered across reload (explicit earlier choices).
 await page.goto(BASE, { waitUntil: 'domcontentloaded' });
 await page.waitForSelector('.workspace-empty');
 await fileInput().setInputFiles([`${SAMPLES}/ghostauto/straight_run.ghostauto`]);
@@ -579,7 +638,7 @@ const variantSelected = await page
   .locator('select option[value="andymark"]')
   .first()
   .evaluate((opt) => opt.selected);
-check('variant defaults to AndyMark', variantSelected === true);
+check('explicit AndyMark choice survives reload', variantSelected === true);
 
 check('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 
