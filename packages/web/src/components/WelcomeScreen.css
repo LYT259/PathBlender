@@ -85,23 +85,27 @@
 .start-action-primary:active:not(:disabled) .start-action-title { background: var(--start-blue-pressed); }
 
 .start-secondary {
-  display: flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
-  justify-content: center;
   margin-top: 35px;
 }
 .start-secondary .start-icon { width: 22px; height: 22px; stroke-width: 4; }
-.start-secondary .start-action { color: var(--start-secondary-fg); min-height: 44px; padding: 4px 19px; gap: 10px; border-radius: 8px; font-size: 13px; }
-.start-secondary .start-action + .start-action { position: relative; }
-.start-secondary .start-action + .start-action::before {
+.start-secondary .start-action { color: var(--start-secondary-fg); min-width: 0; max-width: 100%; min-height: 44px; padding: 4px 19px; gap: 10px; border-radius: 8px; font-size: 13px; }
+.start-secondary .start-action:first-child { justify-self: end; }
+.start-secondary .start-action + .start-action { justify-self: start; }
+/* Match the import grid's center independently of translated label widths. */
+.start-secondary::before {
   position: absolute;
-  left: 0;
+  left: 50%;
   top: 50%;
   width: 1px;
   height: 20px;
   background: var(--border);
   content: '';
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 .start-secondary .start-action:hover:not(:disabled) { color: var(--fg); }
 .start-secondary .start-action:active:not(:disabled) { background: var(--hover); }
@@ -127,7 +131,7 @@
   .start-secondary { margin-top: 28px; }
   .start-secondary .start-action { padding: 4px 14px; gap: 8px; font-size: 13px; }
   .start-secondary .start-icon { width: 22px; height: 22px; }
-  .start-secondary .start-action + .start-action::before { height: 24px; }
+  .start-secondary::before { height: 24px; }
 }
 @media (max-height: 560px) and (min-width: 641px) {
   .workspace-empty.start-screen { padding-block: 20px; }
