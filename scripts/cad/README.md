@@ -51,3 +51,24 @@ hand-modeled approximation looks wrong when zoomed in.
   (steering 0 = straight ahead);
 - ≤ 5 meshes, ≤ ~60k triangles total (4 pods × N robots are cloned from
   one template; geometry/materials stay shared on the GPU).
+
+## Provenance evidence (verified 2026-10-02, twice)
+
+- Download URL = the official product page's own "CAD Model" link
+  (Google Drive id `1WCN-hDwU_AilFH5X-7swBz2U0_n4Wpnf`); the Drive
+  response headers name the file `attachment; filename="MK5i.x_t"`.
+- Two independent downloads are **byte-identical**:
+  size 3,701,437 bytes, sha256
+  `b9a36e6bb3a948c04217f2f55293cf2858206ed9862b4050fa1ef3ba736893af`
+  (network truncation ruled out — this link truncated other files).
+- Internal Parasolid header: `KEY=FILEMK5i .x_t`,
+  `APPL=SOLIDWORKS 2022-2029`, Parasolid 33.1, export date 2025-09-02
+  — consistent with the product's layout-drawing REV date 2025-07-28.
+- This x_t is the native SolidWorks kernel export — the *master*
+  geometry, strictly higher fidelity than any STEP/mesh derived from
+  it (exact B-rep surfaces, no tessellation loss). It is the only CAD
+  artifact the official page publishes; the per-part store pages are
+  subsets of this assembly, and MK5n is a different product.
+- Final acceptance gates: the exporter should see the complete module
+  assembly (~7.45 in tall, wheel + gearbox + motor) in their CAD, and
+  the convert script must print a bbox of ≈ 0.159 × 0.159 × 0.189 m.
