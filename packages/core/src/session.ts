@@ -4,7 +4,7 @@
  * start delay (what-if adjustment that never mutates the parsed file).
  */
 
-import type { Pose2d, RobotGeometry, Trajectory } from './types';
+import type { Pose2d, RobotGeometry, Trajectory, TrajectorySample } from './types';
 import { sampleTrajectory } from './math';
 import { makeCustomField } from './field';
 
@@ -48,6 +48,16 @@ export function samplePoseAt(st: SessionTrajectory, globalT: number): Pose2d {
   const s = sampleTrajectory(st.trajectory.samples, localT);
   if (!s) return { x: 0, y: 0, heading: 0 };
   return { x: s.x, y: s.y, heading: s.heading };
+}
+
+/**
+ * Full interpolated state (pose + velocities) on the global clock —
+ * same clamping semantics as samplePoseAt. The MK5i wheel-steering
+ * rendering needs each robot's vx/vy/ω, not just the pose. Returns
+ * undefined for trajectories with no samples.
+ */
+export function sampleStateAt(st: SessionTrajectory, globalT: number): TrajectorySample | undefined {
+  return sampleTrajectory(st.trajectory.samples, globalT - st.startDelayS);
 }
 
 export function activeStartT(st: SessionTrajectory): number {
