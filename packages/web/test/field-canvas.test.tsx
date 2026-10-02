@@ -97,10 +97,12 @@ describe('field canvas interaction and redraws', () => {
     paint();
     expect(strokeRect).toHaveBeenLastCalledWith(10, 10, 200, 100);
 
-    fireEvent.wheel(container.querySelector('canvas')!, { deltaY: -Math.log(2) / 0.0012 });
+    // Integer notch → mouse-wheel curve: one ±120 event scales by
+    // exp(120·0.0012) ≈ 1.155, so the fit scale of 20 px/m becomes ≈23.1.
+    fireEvent.wheel(container.querySelector('canvas')!, { deltaY: -120 });
     paint();
     const zoomedWidth = strokeRect.mock.lastCall![2];
-    expect(zoomedWidth).toBeCloseTo(400);
+    expect(zoomedWidth).toBeCloseTo(231, 0);
     resize(660, 360);
     paint();
     expect(strokeRect.mock.lastCall![2]).toBe(zoomedWidth);
@@ -108,6 +110,28 @@ describe('field canvas interaction and redraws', () => {
     act(() => ref.current!.fit());
     paint();
     expect(strokeRect).toHaveBeenLastCalledWith(30, 30, 600, 300);
+  });
+
+  it('anchors wheel zoom at the cursor (the world point under it stays put)', () => {
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240);
+    paint();
+    expect(strokeRect).toHaveBeenLastCalledWith(20, 20, 400, 200); // field spans x 20..420
+
+    // Zoom in one notch with the cursor at screen x=300 — 70% across the
+    // 10 m field (world x=7 m). After the zoom that world point must still
+    // render at x=300 instead of drifting with the canvas center.
+    // (offsetX/Y are not WheelEventInit members, so they must be defined
+    // on the instance — same as the pointer() helper above.)
+    const wheel = new WheelEvent('wheel', { deltaY: -120 });
+    Object.defineProperty(wheel, 'offsetX', { value: 300 });
+    Object.defineProperty(wheel, 'offsetY', { value: 120 });
+    fireEvent(container.querySelector('canvas')!, wheel);
+    paint();
+    const [x, , width] = strokeRect.mock.lastCall!;
+    expect(width).toBeCloseTo(462, 0);
+    expect(x).toBeLessThan(20); // zooming in pushes the left edge away
+    expect(x + 0.7 * width).toBeCloseTo(300, 0);
   });
 
 });
