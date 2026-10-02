@@ -21,7 +21,25 @@ permissions:
   contents: write
 
 jobs:
+  # Quality gate before any artifact is built: releases fire automatically
+  # (beta-channel pre-releases on batched beta.N tags), so the workflow itself
+  # must never package a tree that fails the repo's own checks — same gate
+  # deploy.yml runs before a Pages deploy.
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+          cache: npm
+      - run: npm ci
+      - run: npm run version:check
+      - run: npm run typecheck
+      - run: npm test
+
   build-macos:
+    needs: [checks]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
