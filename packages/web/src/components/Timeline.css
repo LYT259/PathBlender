@@ -39,11 +39,16 @@
 /* The ruler rides below the track rows (user spec, 2026-10-02): the numbers
    row sits directly under the example paths, directly above the play bar. */
 .timeline-axis { height: 36px; align-items: start; margin-top: 4px; }
-.timeline-unit { color: var(--fg-dim); font-size: 10px; padding-top: 1px; }
 .timeline-ruler { position: relative; height: 36px; min-width: 0; }
 .timeline-ticks { position: absolute; top: 0; left: 0; right: 0; height: 19px; border-bottom: 1px solid var(--border); }
 .timeline-tick { position: absolute; top: 0; bottom: 0; transform: translateX(-50%); font-size: 10px; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
 .timeline-tick::after { content: ''; position: absolute; height: 4px; width: 1px; background: var(--border); bottom: -1px; left: 50%; }
+/* The final tick carries the unit ("20 秒" / "20 seconds") and is
+   right-anchored so the wider label cannot overflow the scale's end;
+   its tick line moves with it to stay on the true axis-max position.
+   Latin unit words read better lowercase next to a number. */
+.timeline-tick:last-child { transform: translateX(-100%); padding-right: 4px; text-transform: lowercase; }
+.timeline-tick:last-child::after { left: auto; right: 0; }
 
 /* Native thumbs travel between half-thumb insets. Extending the input by
    one thumb width aligns the thumb center with the ruler and all lanes. */
