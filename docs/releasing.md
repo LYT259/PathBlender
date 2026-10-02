@@ -40,6 +40,11 @@
       β 预览站另建 `pathblender-preview`（`--branch=beta` + `VITE_SITE_PREVIEW=1`）。
       **部署后核对线上版本与本次发版一致**（2026-10-02 审计发现线上仍挂着转型前含编辑功能的旧构建）。
 - [ ] GitHub Pages 工作流已于 2026-10-02 移除：私有 Free 仓库无法启用 Pages，deploy.yml 在每次 stable 推送上稳定失败（5/5），唯一网页渠道是上面的 Cloudflare 直传。仓库转公开后若要恢复 Pages 再评估。
+- [ ] **转公开日清单（用户决定 2026-10-02：仓库暂不转公开；转公开之后才有 Demo 网站）**——按序执行，防止 README 的站点链接先于 Demo 上线：
+      ① 给 stable 打分支保护（常设授权：禁强推+禁删除+含管理员，命令存档见记忆 stable-branch-protection-recommendation）；
+      ② 从当期 release tag 构建 + `VITE_VIEWER_ONLY=1` 重新部署 Cloudflare 两站（stable 与 preview），部署后核对线上版本串与 release 一致（当前线上仍是转型前含编辑功能的旧构建，2026-10-02 审计实录）；
+      ③ 核对 README 三语的「获取方式」链接与真实可达状态一致；更新 feed / Release 资产对未认证用户转可达（无需改动——端点本就是 GitHub 公网 URL）；
+      ④ 在 Release/README 公布反馈渠道 URL（模板已就位：docs/community/feedback-template.md）。
 
 - [ ] 发布帖（Chief Delphi）中注明：PathPlanner 移植关系与 MIT 来源、Choreo 互操作定位、零上传承诺
 
