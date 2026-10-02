@@ -35,7 +35,6 @@
 | undo / redo | undo / redo | 撤销 / 重做 | 復原 / 重做 | deshacer / rehacer | annuler / rétablir | geri al / yinele | fr 的 Annuler 同时承担"撤销"和对话框"取消"，靠上下文区分；zh-tw 用 復原（不用 撤銷） |
 | preferences | preferences | 偏好设置 | 偏好設定 | preferencias | préférences | tercihler | 桌面原生菜单与网页弹窗同源 |
 | prefs（工具栏短标签） | prefs | 设置 | 設定 | ajustes | réglages | ayarlar | 与上一行区分：竖排按钮位只放两字/单词 |
-| share link | share link | 分享链接 | 分享連結 | enlace para compartir | lien de partage | paylaşım bağlantısı | |
 
 ## 2. 不翻的东西（keep-verbatim）
 
@@ -49,7 +48,7 @@
 ## 3. 数据与文案的分界
 
 - **文案翻**：界面标签、提示、错误说明。
-- **数据不翻、不改写**：用户导入的文件名、路线名、机器人名、队号，以及写进导出文件（`.ghpb.json`、分享链接、PNG 文件名）的内容——任何语言下都保持原文。
+- **数据不翻、不改写**：用户导入的文件名、路线名、机器人名、队号，以及写进导出文件（`.ghpb.json`、PNG 文件名）的内容——任何语言下都保持原文。
 - 内置场地/赛季名属**文案**，需要本地化时按本节补表（当前实现仍显示官方英文名，未本地化——见计划书 §7.2 v1.20 第 ⑤ 条，待办）。
 
 ## 4. 数字与排版
