@@ -2283,6 +2283,7 @@ dependencies = [
 name = "pathblender-desktop"
 version = "0.1.4-beta.3"
 dependencies = [
+ "base64 0.22.1",
  "serde",
  "serde_json",
  "tauri",

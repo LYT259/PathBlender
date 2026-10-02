@@ -3,9 +3,12 @@
 /// a macOS-standard menu (app menu with About/Preferences/Check-for-Updates,
 /// a File menu for import/save/share/PNG/clear, an Edit menu) that follows
 /// the app language, plus a preferences window on ?window=prefs.
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
+use base64::Engine as _;
 use tauri::menu::{AboutMetadataBuilder, MenuBuilder, MenuItem, SubmenuBuilder};
-use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_updater::{Update, UpdaterExt};
 
@@ -289,8 +292,62 @@ fn open_preferences(app: AppHandle) {
     open_prefs(&app);
 }
 
+/// (file name, base64 bytes) pairs — the payload shape of the web side's
+/// `ghpb-open-files` CustomEvent (ADR-0003).
+fn read_open_pairs(paths: impl IntoIterator<Item = PathBuf>) -> Vec<(String, String)> {
+    paths
+        .into_iter()
+        .filter_map(|path| {
+            if !path.is_file() {
+                return None;
+            }
+            let name = path.file_name()?.to_string_lossy().into_owned();
+            let bytes = std::fs::read(&path).ok()?;
+            Some((
+                name,
+                base64::engine::general_purpose::STANDARD.encode(bytes),
+            ))
+        })
+        .collect()
+}
+
+/// Push files into the page as a DOM CustomEvent via eval — push-only, no
+/// Tauri event listener involved, so nothing can race page load (ADR-0003).
+fn push_open_files<R: tauri::Runtime>(app: &AppHandle<R>, pairs: &[(String, String)]) {
+    if pairs.is_empty() {
+        return;
+    }
+    let json = serde_json::to_string(pairs).expect("serialize open-with files");
+    let js = format!(
+        "window.__ghpbOpenPayload={json};\
+         window.dispatchEvent(new CustomEvent('ghpb-open-files',\
+         {{detail:window.__ghpbOpenPayload}}))"
+    );
+    if let Some(win) = app.get_webview_window("main") {
+        let _ = win.eval(&js);
+    }
+}
+
+/// Menu commands drive web-state actions (save/share/PNG/clear/update).
+/// Dispatch them as DOM CustomEvents via eval instead of Tauri events: the
+/// web-side `listen()` registration can silently lose the race against
+/// page load on WebKitGTK, leaving the menu dead (ADR-0003).
+fn push_menu_event<R: tauri::Runtime>(app: &AppHandle<R>, name: &str) {
+    let js = format!("window.dispatchEvent(new CustomEvent('ghpb-menu-{name}'))");
+    if let Some(win) = app.get_webview_window("main") {
+        let _ = win.eval(&js);
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Open-with: files passed on the command line (double-click / "open
+    // with") are read locally and pushed into the page once loading
+    // finishes — same `ghpb-open-files` channel the native import picker
+    // uses (ADR-0003).
+    let opened = read_open_pairs(std::env::args().skip(1).map(PathBuf::from));
+    let delivered = AtomicBool::new(false);
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -317,27 +374,52 @@ pub fn run() {
             app.set_menu(menu)?;
             Ok(())
         })
+        .on_page_load(move |webview, payload| {
+            if payload.event() != tauri::webview::PageLoadEvent::Finished
+                || opened.is_empty()
+                || delivered.swap(true, Ordering::SeqCst)
+            {
+                return;
+            }
+            let json = serde_json::to_string(&opened).expect("serialize argv files");
+            let js = format!(
+                "window.__ghpbOpenPayload={json};\
+                 window.dispatchEvent(new CustomEvent('ghpb-open-files',\
+                 {{detail:window.__ghpbOpenPayload}}))"
+            );
+            let _ = webview.eval(&js);
+        })
         .on_menu_event(|app, event| {
             match event.id().as_ref() {
                 "preferences" => open_prefs(app),
                 "import" => {
-                    let _ = app.emit("menu-import", ());
+                    // The shell owns the picker and pushes the chosen files
+                    // through the open-with channel — the web-side hidden
+                    // <input>.click() path loses the listener race on
+                    // WebKitGTK (ADR-0003). Blocking dialogs must run off
+                    // the main thread, hence the dedicated thread.
+                    let handle = app.clone();
+                    std::thread::spawn(move || {
+                        if let Some(paths) = handle
+                            .dialog()
+                            .file()
+                            .add_filter(
+                                "Autonomous paths & sessions",
+                                &["traj", "ghostauto", "path", "auto", "wpilog", "json"],
+                            )
+                            .blocking_pick_files()
+                        {
+                            let pairs =
+                                read_open_pairs(paths.into_iter().filter_map(|p| p.into_path().ok()));
+                            push_open_files(&handle, &pairs);
+                        }
+                    });
                 }
-                "save" => {
-                    let _ = app.emit("menu-save", ());
-                }
-                "share" => {
-                    let _ = app.emit("menu-share", ());
-                }
-                "png" => {
-                    let _ = app.emit("menu-png", ());
-                }
-                "clear" => {
-                    let _ = app.emit("menu-clear", ());
-                }
-                "check-update" => {
-                    let _ = app.emit("menu-check-update", ());
-                }
+                "save" => push_menu_event(app, "save"),
+                "share" => push_menu_event(app, "share"),
+                "png" => push_menu_event(app, "png"),
+                "clear" => push_menu_event(app, "clear"),
+                "check-update" => push_menu_event(app, "check-update"),
                 _ => {}
             }
         })
@@ -361,7 +443,10 @@ fn set_menu_language(app: AppHandle, state: State<MenuState>, lang: String) -> R
 }
 
 /// Native save dialog + write. WKWebView cannot run blob downloads, so the
-/// frontend hands the bytes here instead of clicking <a download>.
+/// frontend hands the bytes here instead of clicking <a download>. The
+/// blocking dialog runs on a dedicated thread: on GTK it dispatches to the
+/// main loop, and blocking inside the async command can strand the worker
+/// (ADR-0003).
 #[tauri::command]
 async fn save_file(
     app: AppHandle,
@@ -370,12 +455,17 @@ async fn save_file(
     data: Vec<u8>,
 ) -> Result<Option<String>, String> {
     let filter_name = filter_ext.to_uppercase();
-    let path = app
-        .dialog()
-        .file()
-        .set_file_name(suggested_name)
-        .add_filter(&filter_name, &[&filter_ext])
-        .blocking_save_file();
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let path = app
+            .dialog()
+            .file()
+            .set_file_name(suggested_name)
+            .add_filter(&filter_name, &[&filter_ext])
+            .blocking_save_file();
+        let _ = tx.send(path);
+    });
+    let path = rx.recv().map_err(|e| e.to_string())?;
     match path {
         None => Ok(None),
         Some(p) => {
