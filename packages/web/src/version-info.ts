@@ -13,7 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.6-beta.30', date: '2026-10-02', note: 'MK5i modules rotated 90°: motors now flank the sides like a real chassis install / MK5i 模组转 90°：电机朝车身两侧，贴近真实底盘安装' },
+  { version: '0.1.6-beta.30', date: '2026-10-02', note: 'Clock sits on its own row between the tracks and the play controls, left-aligned / 时钟独占一行置于示例路径与播放条之间，靠左对齐' },
   { version: '0.1.6-beta.29', date: '2026-10-02', note: 'Pin the autosave test clock — kills a 1-ms flake that broke release CI / 钉住自动保存测试时钟，消除曾打断发版流水线的毫秒级竞态' },
   { version: '0.1.6-beta.28', date: '2026-10-02', note: '3D robots visible again: re-drive poses after CAD template lands; pi-scale scene lights for three physical units' },
   { version: '0.1.6-beta.27', date: '2026-10-02', note: 'Restore the clock to the left of the playback bar / 时钟恢复到播放条左侧原位' },
