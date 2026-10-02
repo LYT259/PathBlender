@@ -117,7 +117,7 @@ xdotool windowfocus --sync "$WID" 2>/dev/null || true
 xdotool key --clearmodifiers ctrl+s 2>/dev/null
 sleep 3
 import -window root "$OUT/04-save-dialog.png" 2>/dev/null || true
-[ -s "$OUT/04-save-dialog.png" ] && [ "$(wc -c <"$OUT/04-save-dialog.png")" -gt 130000 ]   || die "save dialog did not appear (screenshot gate)"
+xdotool search --onlyvisible --name '(Save|save|保存|儲存)' 2>/dev/null | grep -q . || die "save dialog did not appear (window gate)"
 xdotool key --clearmodifiers Escape 2>/dev/null
 sleep 1
 say "save dialog opens (GUI confirm needs a WM — see note above)"
@@ -128,7 +128,7 @@ sleep 1.5
 xdotool mousemove 162 122 click 1  # Export PNG…
 sleep 2.5
 import -window root "$OUT/05-png-dialog.png" 2>/dev/null || true
-[ -s "$OUT/05-png-dialog.png" ] && [ "$(wc -c <"$OUT/05-png-dialog.png")" -gt 130000 ]   || die "PNG save dialog did not appear"
+xdotool search --onlyvisible --name '(Save|save|保存|儲存)' 2>/dev/null | grep -q . || die "PNG save dialog did not appear (window gate)"
 xdotool key --clearmodifiers Escape 2>/dev/null
 sleep 1
 say "PNG export dialog opens (GUI confirm needs a WM)"
