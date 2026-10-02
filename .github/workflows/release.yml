@@ -58,8 +58,13 @@ jobs:
         # Tauri bundles a plain icns only; scripts/apply-dark-icon.sh adds the
         # day+night Assets.car. Everything tauri wrapped during the build (the
         # updater tar.gz + sig and the dmg) predates the injection, so rebuild
-        # them from the icon-complete app — the standalone signer reads
-        # TAURI_SIGNING_PRIVATE_KEY from the env set above.
+        # them from the icon-complete app. Steps do NOT inherit each other's
+        # env, so the standalone signer needs the key vars declared here too —
+        # without them it tries key generation and aborts (first seen on the
+        # v0.1.4-beta.3 run).
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           APP=packages/desktop/src-tauri/target/release/bundle/macos/PathBlender.app
           scripts/apply-dark-icon.sh "$APP"
