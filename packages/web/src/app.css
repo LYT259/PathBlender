@@ -407,9 +407,11 @@ input[type="number"], input[type="text"] {
   padding: 3px 8px; font-size: 12px;
 }
 .toast {
-  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  /* Layout-level centering (not left:50% + translateX): a transform can land
+     the pill on a fractional pixel, which softens text on 1× displays. */
+  position: fixed; bottom: 90px; left: 0; right: 0; margin: 0 auto; width: fit-content;
   background: var(--badge-ok-bg); color: var(--badge-ok-fg); border: 1px solid var(--ok);
-  padding: 8px 18px; border-radius: 8px; font-size: 13px; z-index: 10;
+  padding: 8px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; z-index: 10;
 }
 .toast.error {
   background: var(--badge-err-bg); color: var(--badge-err-fg); border-color: var(--danger);
