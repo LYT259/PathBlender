@@ -17,7 +17,7 @@ import {
   samplePoseAt,
   sampleStateAt,
 } from '@pathblender/core';
-import { buildChassis3D } from '../chassis3d';
+import { buildChassis3D, validateModuleTemplate } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
 import { orbitZoomSpeedFor, pinchZoomFactor, wheelZoomFactor } from '../zoom';
@@ -140,6 +140,38 @@ const MODEL_CACHE_CAP = 6;
 const inflightModels = new Map<string, Promise<THREE.Group | null>>();
 let lastModelDir: string | undefined;
 
+/**
+ * The official MK5i CAD module (scripts/cad/README.md) — loaded once per
+ * page, cloned per swerve pod. Resolves null when the asset is missing
+ * or fails its height sanity check, and every rig then keeps the
+ * procedural module renderer. Same lifetime rule as the field models:
+ * the parsed template is never disposed (the app has exactly one).
+ */
+let mk5iTemplatePromise: Promise<THREE.Group | null> | undefined;
+function loadMk5iTemplate(): Promise<THREE.Group | null> {
+  if (mk5iTemplatePromise) return mk5iTemplatePromise;
+  mk5iTemplatePromise = new Promise((resolve) => {
+    new GLTFLoader().load(
+      `${import.meta.env.BASE_URL}models/mk5i-module.glb`,
+      (gltf) => {
+        const g = gltf.scene;
+        g.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          // Same shadow policy as the heavy field models: robots keep the
+          // cheap procedural shadows, the detailed instanced meshes stay
+          // out of the second render pass.
+          mesh.castShadow = false;
+        });
+        resolve(validateModuleTemplate(g));
+      },
+      undefined,
+      () => resolve(null),
+    );
+  });
+  return mk5iTemplatePromise;
+}
+
 /** Asset dir → mount mirror (both variants of a season share one). */
 const DIR_MIRROR = new Map<string, FieldModelMirror>(
   Object.values(FIELD3D_MODELS).flatMap((e) => [
@@ -207,6 +239,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   // Environments without WebGL (jsdom, locked-down webviews) fall back to a
   // quiet empty pane instead of crashing the app.
   const [glFailed, setGlFailed] = useState(false);
+  // Official MK5i CAD module (null = not yet loaded / fell back) — the
+  // rig-build effect re-runs when it arrives so existing views upgrade.
+  const [moduleTemplate, setModuleTemplate] = useState<THREE.Group | null>(null);
+  useEffect(() => {
+    void loadMk5iTemplate().then(setModuleTemplate);
+  }, []);
 
   // Scene scaffold: renderer/camera/controls/lights/ground — per field.
   useEffect(() => {
@@ -843,11 +881,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         );
         st.dynamic.add(tube);
       }
-      // Procedural MK5i-style chassis (bumper skirt + frame deck + swerve
-      // pods), sized by this robot's season-resolved two-layer geometry.
+      // MK5i-style chassis (bumper skirt + frame deck + swerve pods),
+      // sized by this robot's season-resolved two-layer geometry; pods use
+      // the official CAD module when its template has loaded.
       const vis = robotVisualGeometry(r.trajectory, field.year);
       const modules = chassisModules(r.trajectory, vis.chassis);
-      const chassis = buildChassis3D(vis, modules, r.color);
+      const chassis = buildChassis3D(vis, modules, r.color, moduleTemplate);
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,
@@ -858,7 +897,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       });
       st.dirty();
     }
-  }, [robots, field]);
+  }, [robots, field, moduleTemplate]);
 
   // Drive the chassis rigs along the shared clock: pose from the shared
   // sampler, plus per-pod steering from each wheel's ground velocity
