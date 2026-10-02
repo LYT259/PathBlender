@@ -55,10 +55,19 @@ describe('saveAutosave / loadAutosave', () => {
   });
 
   it('stores exactly what serializeSession produces', () => {
-    const rs = robots();
-    saveAutosave(rs, 'rebuilt-2026');
-    expect(localStorage.getItem('ghpb.autosave.v1')).toBe(
-      serializeSession(rs, 'rebuilt-2026', undefined),
-    );
+    // savedAt is stamped from the wall clock on every serializeSession
+    // call; pin Date so a millisecond tick between the write and the
+    // expected string cannot make the byte comparison flaky.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-02T12:00:00.000Z'));
+    try {
+      const rs = robots();
+      saveAutosave(rs, 'rebuilt-2026');
+      expect(localStorage.getItem('ghpb.autosave.v1')).toBe(
+        serializeSession(rs, 'rebuilt-2026', undefined),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
