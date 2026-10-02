@@ -7,8 +7,15 @@ import {
   useRef,
   useState,
 } from 'react';
-import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
-import { fieldImageWorldRect, samplePoseAt } from '@pathblender/core';
+import type { FieldPackage, ModuleLocation, RobotVisualGeometry, SessionTrajectory } from '@pathblender/core';
+import {
+  chassisModules,
+  fieldImageWorldRect,
+  moduleSteeringAngles,
+  robotVisualGeometry,
+  samplePoseAt,
+  sampleStateAt,
+} from '@pathblender/core';
 import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { useI18n } from '../i18n';
@@ -72,6 +79,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  // Last drawn wheel-steering angles per robot (radians, robot frame) —
+  // MK5i-style pods hold their pointing when the robot stands still.
+  const steerRef = useRef(new Map<string, number[]>());
   const [imgReady, setImgReady] = useState(false);
   const viewRef = useRef<View>({ scale: 40, cx: field.lengthM / 2, cy: field.widthM / 2 });
   const sizeRef = useRef({ w: 0, h: 0 });
@@ -340,16 +350,39 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
 
     // Robots at currentT.
     for (const r of robots) {
-      const pose = samplePoseAt(r, currentT);
+      const state = sampleStateAt(r, currentT);
+      const pose = state
+        ? { x: state.x, y: state.y, heading: state.heading }
+        : samplePoseAt(r, currentT);
+      const vis = robotVisualGeometry(r.trajectory, field.year);
+      const modules = chassisModules(r.trajectory, vis.chassis);
+      const id = r.trajectory.id;
+      let last = steerRef.current.get(id);
+      if (!last || last.length !== modules.length) {
+        last = modules.map(() => 0);
+        steerRef.current.set(id, last);
+      }
+      const angles = moduleSteeringAngles(
+        state ?? { heading: pose.heading, vx: 0, vy: 0, omega: 0 },
+        modules,
+      );
+      const wheels = angles.map((a, i) => {
+        const angle = a ?? last![i]!;
+        last![i] = angle;
+        return angle;
+      });
       drawRobot(
         ctx,
         sx,
         sy,
         pose,
         r,
+        vis,
+        modules,
+        wheels,
         v.scale,
-        inCollisionNow.has(r.trajectory.id),
-        outOfBoundsNow.has(r.trajectory.id),
+        inCollisionNow.has(id),
+        outOfBoundsNow.has(id),
       );
     }
 
@@ -408,28 +441,66 @@ function drawRobot(
   sy: (y: number) => number,
   pose: { x: number; y: number; heading: number },
   r: SessionTrajectory,
+  vis: RobotVisualGeometry,
+  modules: ModuleLocation[],
+  wheels: number[],
   scale: number,
   collided: boolean,
   outOfBounds: boolean,
 ) {
-  const { geometry, moduleLocations } = r.trajectory;
+  const { outer, chassis } = vis;
   ctx.save();
   ctx.translate(sx(pose.x), sy(pose.y));
   // Screen y is flipped relative to world y, so rotate by -heading.
   ctx.rotate(-pose.heading);
 
-  // Bumper rectangle in robot frame.
-  const L = geometry.lengthM * scale;
-  const W = geometry.widthM * scale;
-  const ox = geometry.offsetX * scale;
-  const oy = geometry.offsetY * scale;
-  ctx.fillStyle = hexAlpha(r.color, 0.28);
+  // Bumper ring (the collision footprint — highlight rides on it).
+  const L = outer.lengthM * scale;
+  const W = outer.widthM * scale;
+  const ox = outer.offsetX * scale;
+  const oy = outer.offsetY * scale;
+  ctx.fillStyle = hexAlpha(r.color, 0.22);
   ctx.strokeStyle = collided ? '#ff3b30' : outOfBounds ? '#ffa726' : r.color;
   ctx.lineWidth = collided || outOfBounds ? 3 : 2;
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
   ctx.fill();
   ctx.stroke();
+
+  // Chassis frame inside the bumper ring.
+  const cL = chassis.lengthM * scale;
+  const cW = chassis.widthM * scale;
+  const cox = chassis.offsetX * scale;
+  const coy = chassis.offsetY * scale;
+  ctx.fillStyle = hexAlpha(r.color, 0.45);
+  ctx.strokeStyle = hexAlpha(r.color, 0.9);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.rect(cox - cL / 2, -coy - cW / 2, cL, cW);
+  ctx.fill();
+  ctx.stroke();
+
+  // MK5i-style wheel pods: each roller points along its own steering
+  // angle (swerve kinematics; degenerates to heading-aligned wheels for
+  // differential drives). Drawn at chassis scale with a pixel floor so
+  // they stay visible when the whole field is on screen.
+  for (let i = 0; i < modules.length; i++) {
+    const m = modules[i]!;
+    const angle = wheels[i] ?? 0;
+    const wl = Math.max(0.17 * scale, 5);
+    const ww = Math.max(0.05 * scale, 2.5);
+    ctx.save();
+    ctx.translate(m.x * scale, -m.y * scale);
+    ctx.rotate(-angle);
+    ctx.fillStyle = cssVar('--fg', '#e6e6e8');
+    roundedRect(ctx, -wl / 2, -ww / 2, wl, ww, ww / 2);
+    ctx.fill();
+    ctx.fillStyle = r.color;
+    ctx.beginPath();
+    ctx.arc(0, 0, ww * 0.62, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
 
   // Heading wedge on the +x end.
   ctx.fillStyle = r.color;
@@ -439,12 +510,6 @@ function drawRobot(
   ctx.lineTo(ox + L / 2 - 6, 5);
   ctx.closePath();
   ctx.fill();
-
-  // Wheel modules, when the file provided them.
-  ctx.fillStyle = r.color;
-  for (const m of moduleLocations) {
-    ctx.fillRect(m.x * scale - 3, -m.y * scale - 3, 6, 6);
-  }
   ctx.restore();
 
   // Team number annotation, drawn upright so it stays readable at any
@@ -452,7 +517,7 @@ function drawRobot(
   if (r.trajectory.teamNumber) {
     ctx.save();
     ctx.translate(sx(pose.x), sy(pose.y));
-    ctx.font = `bold ${Math.max(11, Math.round(0.26 * geometry.lengthM * scale))}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.font = `bold ${Math.max(11, Math.round(0.26 * outer.lengthM * scale))}px ui-sans-serif, system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.lineWidth = 3;
@@ -464,6 +529,25 @@ function drawRobot(
     ctx.fillText(r.trajectory.teamNumber, 0, 0);
     ctx.restore();
   }
+}
+
+/** Rounded-rect path without relying on CanvasRenderingContext2D.roundRect. */
+function roundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  radius: number,
+) {
+  const rr = Math.min(radius, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
 }
 
 function hexAlpha(hex: string, alpha: number): string {
