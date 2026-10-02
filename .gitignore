@@ -37,6 +37,9 @@ engineering-log/
 # 网站内部规格（2026-09-10 用户指令：与报告同等地位，不入库）
 PathBlender_网站规格.md
 
+# 底盘与队号实施方案（2026-10-02 用户指令：挂起的私有规格，不入库）
+PathBlender_底盘与队号方案.md
+
 # Cloudflare/wrangler 本地临时目录（直传部署用，不入库）
 .wrangler/
 
