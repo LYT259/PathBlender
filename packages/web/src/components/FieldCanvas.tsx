@@ -13,6 +13,7 @@ import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
+import { wheelZoomFactor } from '../zoom';
 
 export interface FieldCanvasHandle {
   exportPng: (onDone?: (ok: boolean) => void) => void;
@@ -166,7 +167,20 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       };
     };
 
-    // WebKit trackpad pinch fires gesture* events (not wheel+ctrlKey).
+    // Zoom by `factor` keeping the world point under (sx, sy) fixed —
+    // Onshape-style zoom-to-cursor (user request 2026-10-02). The
+    // before/after diff stays exact even when the scale clamps at 8/400.
+    const zoomAt = (sx: number, sy: number, factor: number) => {
+      const v = viewRef.current;
+      const before = world(sx, sy);
+      v.scale = Math.min(400, Math.max(8, v.scale * factor));
+      const after = world(sx, sy);
+      v.cx += before.x - after.x;
+      v.cy += before.y - after.y;
+    };
+
+    // WebKit trackpad pinch fires gesture* events (not wheel+ctrlKey); the
+    // gesture centroid anchors the zoom just like the wheel cursor does.
     let lastScale = 1;
     const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
     const onGestureStart = (e: Event) => {
@@ -177,8 +191,13 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       const scale = gestureScale(e);
       if (scale > 0 && lastScale > 0) {
         autoFitRef.current = false;
-        const v = viewRef.current;
-        v.scale = Math.min(400, Math.max(8, v.scale * (scale / lastScale)));
+        const g = e as Event & { clientX?: number; clientY?: number };
+        const rect = canvas.getBoundingClientRect();
+        zoomAt(
+          (g.clientX ?? rect.left + rect.width / 2) - rect.left,
+          (g.clientY ?? rect.top + rect.height / 2) - rect.top,
+          scale / lastScale,
+        );
         requestDraw();
       }
       lastScale = scale;
@@ -186,12 +205,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       autoFitRef.current = false;
-      const v = viewRef.current;
-      const before = world(e.offsetX, e.offsetY);
-      v.scale = Math.min(400, Math.max(8, v.scale * Math.exp(-e.deltaY * 0.0012)));
-      const after = world(e.offsetX, e.offsetY);
-      v.cx += before.x - after.x;
-      v.cy += before.y - after.y;
+      zoomAt(e.offsetX, e.offsetY, wheelZoomFactor(e.deltaY, e.deltaMode));
       requestDraw();
     };
 
