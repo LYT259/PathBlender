@@ -3,7 +3,6 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { deserializeSession, detectCollisions, fieldById, makeCustomField, makeSession, parsePathFile, REBUILT_2026, serializeSession } from '@pathblender/core';
 import { robotsForAlliance, restoreSessionAlliance } from '../src/session-alliance';
-import { hashToSession, sessionToHash } from '../src/share-url';
 
 const robot = (name: string) => makeSession(parsePathFile(readFileSync(resolve(__dirname, '../../../samples/ghostauto', name), 'utf8'), name));
 const sources = [robot('straight_run.ghostauto'), robot('stop_and_score.ghostauto')];
@@ -50,7 +49,7 @@ describe('shared alliance view', () => {
     }
   });
 
-  it('restores red session files and share links without double-flipping and keeps other robot settings', async () => {
+  it('restores red session files without double-flipping and keeps other robot settings', () => {
     const configured = [{ ...sources[0]!, visible: false, startDelayS: 1.5 }, sources[1]!];
     const red = robotsForAlliance(configured, 'red', REBUILT_2026);
     const restored = deserializeSession(serializeSession(red, REBUILT_2026.id));
@@ -60,8 +59,6 @@ describe('shared alliance view', () => {
     expect(scene.robots[0]!.startDelayS).toBe(1.5);
     const shown = robotsForAlliance(scene.robots, scene.alliance, REBUILT_2026);
     shown.forEach((r, i) => expect(r.trajectory.samples[0]!.x).toBeCloseTo(red[i]!.trajectory.samples[0]!.x, 10));
-    const shared = await hashToSession(await sessionToHash(red, REBUILT_2026.id));
-    expect(restoreSessionAlliance(shared!).alliance).toBe('red');
   });
 
   it('uses saved custom-field dimensions when restoring and handles legacy blue and empty sessions', () => {

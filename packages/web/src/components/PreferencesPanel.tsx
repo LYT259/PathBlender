@@ -101,7 +101,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
           <div className="preferences-product"><strong>PathBlender</strong><span>{formatVersionDisplay(APP_VERSION)}</span><code>{APP_VERSION}</code>
             <button className="btn" type="button" onClick={() => {
               void copyText(`PathBlender ${APP_VERSION} (${desktop ? 'desktop' : 'web'})\n` + VERSION_NOTES.slice(0, 5).map((note) => `${note.version} (${note.date}) — ${note.note}`).join('\n'))
-                .then((ok) => setCopyStatus(t(ok ? 'about.copyDone' : 'share.copyFailed')));
+                .then((ok) => setCopyStatus(t(ok ? 'about.copyDone' : 'about.copyFailed')));
             }}>{t('about.copy')}</button>
             <p className="preferences-copy-status" role="status">{copyStatus}</p>
           </div>

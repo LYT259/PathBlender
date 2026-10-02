@@ -8,7 +8,6 @@ const paths = {
   inspector: <><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/></>,
   undo: <><path d="m8 5-5 5 5 5M3 10h10a6 6 0 0 1 6 6v2"/></>,
   redo: <><path d="m16 5 5 5-5 5m5-5h-10a6 6 0 0 0-6 6v2"/></>,
-  share: <><path d="M12 15V3m-4 4 4-4 4 4M7 10H5v11h14V10h-2"/></>,
   settings: <><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="9" cy="18" r="2"/></>,
   more: <><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></>,
   fit: <><path d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6"/></>,

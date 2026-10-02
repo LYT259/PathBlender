@@ -162,7 +162,6 @@ body.desktop .workspace-toolbar { padding-left: 100px; }
 @media (max-width: 640px) {
   .workspace-toolbar { flex-wrap: wrap; min-height: 56px; }
   .history-controls { margin-left: 0; }
-  .share-action span { display: none; }
   .import-action, .import-folder-action { padding-inline: 8px; }
   .app-body.workspace-body.with-paths, .app-body.workspace-body.with-paths.with-inspector { grid-template-columns: minmax(0, 1fr); }
   .workspace-body > .robot-library { position: absolute; inset: 0 auto 0 0; width: 224px; z-index: 21; box-shadow: 8px 0 24px var(--shadow); }

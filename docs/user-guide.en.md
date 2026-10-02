@@ -69,12 +69,10 @@ rest of the alliance.
 
 - **Alliance view**: one red/blue toggle for the whole session mirrors
   every path drawn from the other perspective into the unified frame;
-- **Sharing** (web + desktop): **Share** packs the whole session into
-  the URL — send the link, the recipient sees exactly your field
-  (nothing is uploaded anywhere);
-- **Session file & PNG** (desktop): save/open a `.ghpb.json` session;
-  export a PNG of the current 2D view for the alliance chat. Everything
-  also lives in the PathBlender menu;
+- **Session file & PNG** (desktop): save/open a `.ghpb.json` session to
+  hand the exact field to the next strategy meeting; export a PNG of the
+  current 2D view for the alliance chat. Everything also lives in the
+  PathBlender menu;
 - **Appearance & languages**: light/dark/follow-system in Preferences
   (⌘, on desktop); the UI ships in English, 简体中文, 繁體中文（台灣）,
   繁體中文（中國香港）, Français, Español, Türkçe;
@@ -86,7 +84,6 @@ rest of the alliance.
 | | Web | Desktop (macOS) |
 |---|---|---|
 | Import / playback / collision checking | ✓ | ✓ |
-| Share link | ✓ | ✓ |
 | Save & open session files | open only | ✓ |
 | PNG export | — | ✓ |
 | Folder import / route library | — | ✓ |
@@ -115,8 +112,8 @@ robot's band shows its own true start and end.
 **Q: Is my data safe?**
 Yes: no backend, no accounts, no telemetry. Web builds make no network
 requests at all; the desktop app only contacts GitHub Releases when you
-ask it to check for updates. Parsing happens in local memory; share-link
-data only leaves the page when you copy it.
+ask it to check for updates. Parsing happens in local memory; session
+data leaves the app only when you save or export it yourself.
 
 **Q: A file fails to import?**
 See [the feedback template](community/feedback-template.md) — format

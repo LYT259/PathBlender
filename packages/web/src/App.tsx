@@ -27,9 +27,8 @@ import {
 import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } from '@pathblender/core';
 import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
 import { displayName, robotFromRoute, type LibraryProfile, type LibraryRoute } from './route-library';
-import { hashToSession, sessionToHash } from './share-url';
 import { loadAutosave, saveAutosave } from './autosave';
-import { copyText, saveText } from './download';
+import { saveText } from './download';
 import { fieldImageFor } from './field-images';
 import { FIELD3D_MODELS } from './field3d-models';
 import { FieldCanvas, type FieldCanvasHandle } from './components/FieldCanvas';
@@ -56,7 +55,7 @@ const isExampleRobot = (robot: SessionTrajectory) => robot.trajectory.id.startsW
 const GITHUB_URL = 'https://github.com/LYT259/pathblender';
 
 // The field + variant survive refreshes (a custom field is not persisted —
-// its definition lives only in the session/share payload).
+// its definition lives only in the session payload).
 const FIELD_PREF_KEY = 'ghpb.field';
 type FieldPref = { id: string; variant: 'welded' | 'andymark'; style: FieldArtStyle };
 function loadFieldPref(): FieldPref {
@@ -186,7 +185,7 @@ function AppBody() {
     if (view3D && !field3dAvailable) setView3D(false);
   }, [view3D, field3dAvailable]);
   // Field/variant memory is written ONLY from the user's own selects —
-  // share-link and session-file restores must not overwrite it.
+  // session-file restores must not overwrite it.
 
   const duration = sessionDuration(robots);
   const playback = usePlayback(duration);
@@ -484,45 +483,11 @@ function AppBody() {
     return () => window.removeEventListener('keydown', key);
   }, [undoSession, redoSession]);
 
-  const [shareLink, setShareLink] = useState<string | null>(null);
-  const shareUrl = useCallback(async () => {
-    try {
-      const hash = await sessionToHash(
-        robots,
-        fieldId,
-        fieldId === CUSTOM_FIELD_ID ? field : undefined,
-      );
-      try {
-        history.replaceState(null, '', hash);
-      } catch {
-        // Custom protocols (desktop) may refuse replaceState — the payload
-        // itself still goes to the dialog below.
-      }
-      // Web: full URL; desktop: the #s=… payload itself (recipient pastes it
-      // after the web app's address).
-      setShareLink(location.protocol.startsWith('http') ? location.href : hash);
-    } catch {
-      flash(tr('toast.shareFailed'), 'error');
-    }
-  }, [robots, fieldId, field, flash, tr]);
-
-  // Restore a shared session from the URL hash on first load.
-  useEffect(() => {
-    if (!location.hash.startsWith('#s=')) return;
-    void hashToSession(location.hash).then((restored) => {
-      if (restored && restored.robots.length > 0) {
-        setScene({ ...restoreSessionAlliance(restored), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
-      }
-    });
-  }, []);
-
   // Launch continuity (user report 2026-10-02: quitting in 3D reopened to
   // the welcome page — the 3D pref was honored but only after a fresh
-  // import). Restore the autosaved session once on mount — an explicit
-  // share-link wins (handled above), and a desktop open-with file that
-  // arrives later simply replaces whatever this restored.
+  // import). Restore the autosaved session once on mount; a desktop
+  // open-with file that arrives later simply replaces whatever this restored.
   useEffect(() => {
-    if (location.hash.startsWith('#s=')) return;
     const restored = loadAutosave();
     if (restored) {
       setScene({ ...restoreSessionAlliance(restored), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
@@ -608,13 +573,12 @@ function AppBody() {
     const unbinds = [
       on('import', () => importInputRef.current?.click()),
       on('save', () => saveSession()),
-      on('share', () => void shareUrl()),
       on('png', () => exportPng()),
       on('clear', () => clearAll()),
       on('check-update', () => void checkForUpdates()),
     ];
     return () => unbinds.forEach((u) => u());
-  }, [saveSession, shareUrl, exportPng, clearAll, flash, tr, checkForUpdates]);
+  }, [saveSession, exportPng, clearAll, flash, tr, checkForUpdates]);
 
   // Desktop open-with: the shell evals a `ghpb-open-files` CustomEvent with
   // [name, base64] pairs (launch-argument files and native-picker imports
@@ -767,7 +731,6 @@ function AppBody() {
         </div>}
         <span className="toolbar-spacer" data-tauri-drag-region="" />
         {!VIEWER_ONLY && hasRobots && <button className="tool-btn save-action" onClick={saveSession} title={tr('actions.saveHint')}>{tr('actions.save')}</button>}
-        {hasRobots && <button className="tool-btn share-action" aria-label={tr('actions.share')} onClick={() => void shareUrl()}><Icon name="share" /><span>{tr('rail.share')}</span></button>}
         {hasRobots && <details className="workspace-menu">
           <summary className="tool-btn square" aria-label={tr('workspace.more')} title={tr('workspace.more')}><Icon name="more" /></summary>
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
@@ -868,28 +831,6 @@ function AppBody() {
         }}
       />}
       {toast && <div className={toast.kind === 'error' ? 'toast error' : 'toast'} role="status">{toast.msg}</div>}
-      {shareLink != null && (
-        <Dialog title={tr('share.title')} onClose={() => setShareLink(null)}>
-            <h3>{tr('share.title')}</h3>
-            <textarea aria-label={tr('share.title')} className="share-box" readOnly value={shareLink} rows={3} />
-            <p className="prefs-note">{tr('share.note')}</p>
-            <div className="prefs-row btns">
-              <button
-                className="btn small"
-                onClick={async () => {
-                  const ok = await copyText(shareLink);
-                  setToast({ msg: ok ? tr('toast.copied') : tr('share.copyFailed'), kind: ok ? 'ok' : 'error' });
-                  window.setTimeout(() => setToast(null), 2500);
-                }}
-              >
-                {tr('share.copy')}
-              </button>
-              <button className="btn small" onClick={() => setShareLink(null)}>
-                {tr('prefs.done')}
-              </button>
-            </div>
-        </Dialog>
-      )}
       {showPrefs && <Dialog title={tr('prefs.title')} onClose={() => setShowPrefs(false)} className="preferences-dialog">
         <PreferencesPanel desktop={IS_DESKTOP} onClose={() => setShowPrefs(false)} />
       </Dialog>}
