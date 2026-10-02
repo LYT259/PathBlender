@@ -72,7 +72,7 @@ describe('i18n dictionaries', () => {
     // language (fr 'Assistant'/'Pause'/'Vision', tr 'model', es/… 'Robot').
     'workspace.assistant', 'workspace.details', 'robots.identity', 'robots.title',
     'robots.collision', 'robots.alliance', 'timeline.pause', 'timeline.collision',
-    'site.version', 'ai.model', 'ai.vision', 'ai.placeholder', 'ai.permission',
+    'site.version', 'about.version', 'ai.model', 'ai.vision', 'ai.placeholder', 'ai.permission',
     'ai.perm.standard', 'ai.effort', 'ai.stop',
     // Tokens sent to the provider or the OS unchanged.
     'ai.effort.auto', 'ai.testOk', 'prefs.channel.stable', 'prefs.channel.beta',
