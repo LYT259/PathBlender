@@ -168,7 +168,8 @@ describe('workspace workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     await screen.findByRole('region', { name: 'Import paths to get started' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect(screen.queryByRole('button', { name: 'Redo' })).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'z', metaKey: true, shiftKey: true });
     await screen.findByText('swerve', { selector: '.robot-name' });
     expect(screen.getByRole('combobox', { name: 'Game season' })).toHaveValue('rebuilt-2026');
   });

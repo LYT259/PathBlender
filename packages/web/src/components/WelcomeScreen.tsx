@@ -1,4 +1,7 @@
 import { useI18n } from '../i18n';
+import { useTheme } from '../theme';
+import dayIcon from '../assets/app-icon-day.png';
+import nightIcon from '../assets/app-icon-night.png';
 import './WelcomeScreen.css';
 
 interface WelcomeScreenProps {
@@ -19,10 +22,15 @@ function WelcomeIcon({ name }: { name: 'file' | 'folder' | 'session' | 'example'
 
 export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryExample, exampleLoading = false }: WelcomeScreenProps) {
   const { t } = useI18n();
+  const { resolved } = useTheme();
 
   return (
     <section className="workspace-empty start-screen" aria-label={t('welcome.title')}>
       <div className="start-content">
+        <header className="start-brand">
+          <img className="start-brand-icon" src={resolved === 'dark' ? nightIcon : dayIcon} alt="" width="136" height="136" draggable={false} />
+          <h1>PathBlender</h1>
+        </header>
         <div className="start-imports">
           <button type="button" className="start-action start-action-primary welcome-import" onClick={onImport} aria-label={t('welcome.importFile')} aria-description={t('welcome.importFileHint')}>
             <WelcomeIcon name="file" />
