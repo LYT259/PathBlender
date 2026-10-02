@@ -20,8 +20,8 @@ import {
 import { buildChassis3D } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
-import { orbitZoomSpeedFor, pinchZoomFactor, wheelZoomFactor } from '../zoom';
-import { gestureEnded, noteGesture } from '../gesture-debug';
+import { markGestureEnd, markGestureStart, orbitZoomSpeedFor, pinchZoomFactor, wheelSuppressed, wheelZoomFactor } from '../zoom';
+import { gestureEnded, noteGesture, notePostEndWheel } from '../gesture-debug';
 import { aprilTagTexture } from '../april-tag-texture';
 // One coordinate frame for the whole scene — tags, robots, trails, fallback
 // structures, the flat field image and the official field models all map
@@ -335,8 +335,18 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // zoomSpeed per event to reproduce our factor exactly and keep its
     // damping, distance clamps and zoom-to-cursor. Capture phase on the
     // host: OrbitControls' own wheel listener sits on the canvas (target
-    // phase, registration order) and must see the adjusted speed.
+    // phase, registration order) and must see the adjusted speed. The same
+    // capture position lets us swallow the lift-drift scroll burst after a
+    // pinch (round 4): stopping propagation keeps OrbitControls (and the
+    // horizontal-rotate handler) from acting on it, freezing the view at
+    // the release-moment zoom.
     const onWheelZoomSpeed = (e: WheelEvent) => {
+      if (wheelSuppressed()) {
+        e.preventDefault();
+        e.stopPropagation();
+        notePostEndWheel(e.deltaY);
+        return;
+      }
       controls.zoomSpeed = orbitZoomSpeedFor(wheelZoomFactor(e.deltaY, e.deltaMode), e.deltaY);
     };
     host.addEventListener('wheel', onWheelZoomSpeed, { capture: true });
@@ -401,6 +411,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
     const onGestureStart = (e: Event) => {
       lastScale = gestureScale(e);
+      markGestureStart();
       noteGesture('start', lastScale);
     };
     const onGestureChange = (e: Event) => {
@@ -446,6 +457,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
     const onGestureEnd = (e: Event) => {
       noteGesture('end', gestureScale(e));
+      markGestureEnd();
       lastScale = 1;
     };
     renderer.domElement.addEventListener('gesturestart', onGestureStart);

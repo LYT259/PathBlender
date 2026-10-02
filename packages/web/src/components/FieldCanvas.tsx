@@ -20,8 +20,8 @@ import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
-import { pinchZoomFactor, wheelZoomFactor } from '../zoom';
-import { gestureEnded, noteGesture } from '../gesture-debug';
+import { markGestureEnd, markGestureStart, pinchZoomFactor, wheelSuppressed, wheelZoomFactor } from '../zoom';
+import { gestureEnded, noteGesture, notePostEndWheel } from '../gesture-debug';
 
 export interface FieldCanvasHandle {
   exportPng: (onDone?: (ok: boolean) => void) => void;
@@ -201,6 +201,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
     const onGestureStart = (e: Event) => {
       lastScale = gestureScale(e);
+      markGestureStart();
       noteGesture('start', lastScale);
     };
     const onGestureChange = (e: Event) => {
@@ -223,10 +224,18 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     };
     const onGestureEnd = (e: Event) => {
       noteGesture('end', gestureScale(e));
+      markGestureEnd();
       lastScale = 1;
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      // Lifting fingers off a pinch drift across the glass and arrive as a
+      // scroll burst — suppressing it is what freezes the zoom at release
+      // (round 4; the gesture stream itself proved clean on video).
+      if (wheelSuppressed()) {
+        notePostEndWheel(e.deltaY);
+        return;
+      }
       autoFitRef.current = false;
       zoomAt(e.offsetX, e.offsetY, wheelZoomFactor(e.deltaY, e.deltaMode));
       requestDraw();
