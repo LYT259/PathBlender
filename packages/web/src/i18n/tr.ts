@@ -104,6 +104,7 @@ export const tr: Record<MessageKey, string> = {
   'robots.remove': 'Kaldır',
   'robots.collision': 'çarpışma',
   'robots.teamNumber': 'takım no',
+  'robots.teamNumberEdit': 'Takım numarasını düzenle',
   'robots.alliance': 'ittifak',
   'robots.blue': 'Mavi',
   'robots.red': 'Kırmızı',

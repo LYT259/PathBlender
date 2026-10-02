@@ -975,7 +975,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // the official CAD module when its template has loaded.
       const vis = robotVisualGeometry(r.trajectory, field.year);
       const modules = chassisModules(r.trajectory, vis.chassis);
-      const chassis = buildChassis3D(vis, modules, r.color, moduleTemplate);
+      const chassis = buildChassis3D(vis, modules, r.color, moduleTemplate, r.trajectory.teamNumber || undefined);
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,
