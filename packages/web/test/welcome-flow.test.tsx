@@ -23,10 +23,12 @@ async function openExample() {
 beforeEach(() => localStorage.clear());
 
 describe('welcome flow', () => {
-  it('explains each starting action and keeps the empty toolbar focused on preferences', () => {
+  it('shows only the starting actions while retaining accessible descriptions', () => {
     render(<App />);
     const welcome = screen.getByRole('region', { name: 'Import paths to get started' });
     expect(within(welcome).getAllByRole('button')).toHaveLength(4);
+    expect(within(welcome).queryByRole('heading')).not.toBeInTheDocument();
+    expect(welcome.textContent).toBe('Import path filesImport folderOpen saved sessionTry an example');
     expect(within(welcome).getByRole('button', { name: 'Import path files' })).toHaveAccessibleDescription(/Choreo or PathPlanner/);
     const folder = within(welcome).getByRole('button', { name: 'Import folder' });
     expect(folder).toHaveAccessibleDescription(/several routes.*choose which to replay/);
@@ -40,12 +42,12 @@ describe('welcome flow', () => {
     expect(screen.queryByRole('button', { name: 'How to use PathBlender' })).not.toBeInTheDocument();
   });
 
-  it('opens the corresponding picker from each import action, with folders first', () => {
+  it('opens the corresponding picker from each import action, with files first', () => {
     render(<App />);
     const welcome = within(screen.getByRole('region', { name: 'Import paths to get started' }));
     const folder = welcome.getByRole('button', { name: 'Import folder' });
     const files = welcome.getByRole('button', { name: 'Import path files' });
-    expect(welcome.getAllByRole('button').slice(0, 2)).toEqual([folder, files]);
+    expect(welcome.getAllByRole('button').slice(0, 2)).toEqual([files, folder]);
 
     const fileInput = document.querySelector<HTMLInputElement>('input[type="file"][multiple]:not([webkitdirectory])')!;
     const folderInput = document.querySelector<HTMLInputElement>('input[webkitdirectory]')!;

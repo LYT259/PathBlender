@@ -681,7 +681,7 @@ function AppBody() {
       setRobots((previous) => previous.map((r) => robotIds.includes(r.trajectory.id) ? { ...r, visible: true } : r));
   };
   return (
-    <div className="app">
+    <div className={`app${hasRobots ? '' : ' is-welcome'}`}>
       <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label="primary">
         {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.togglePaths')} aria-pressed={leftOpen} onClick={() => { setPathsOpen(!pathsOpen); if (!pathsOpen && window.innerWidth <= 640) setInspectorOpen(false); }}><Icon name="sidebar" /></button>}
         {hasRobots && <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>}
