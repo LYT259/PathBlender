@@ -58,6 +58,12 @@ interface Scene3D {
   dirty: () => void;
   /** Official 3D field model (when available); replaces the fallback. */
   modelRoot: THREE.Group;
+  /** Field id of the model currently inside `modelRoot` (undefined = none).
+   *  A variant switch within one season keeps the outgoing model mounted
+   *  while the sibling streams in, so the view never drops to the flat
+   *  fallback (the "black blink" between AndyMark ↔ welded, user report
+   *  2026-10-01). */
+  modelFieldId?: string;
   /** Hand-built slab/walls/beacons — visible only without a model. */
   fallback: THREE.Group;
   /** Per-field rebuilt subtree (slab/walls/tags/structures). */
@@ -427,7 +433,26 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
     disposeDeep(st.fieldRoot); // previous field's materials/geometries
     st.fieldRoot.clear();
-    st.modelRoot.clear(); // clones share cache geometry — never disposed here
+    // The fallback is rebuilt from scratch below on every switch, but it was
+    // never cleared here — each rebuild leaked its slab/walls (geometries,
+    // materials and the slab texture) into the group forever (+6 meshes per
+    // switch, measured; the leak is invisible only because a mounted model
+    // hides it). Slab/walls are created fresh each rebuild, so their maps are
+    // safe to dispose (the shared AprilTag textures live in fieldRoot).
+    st.fallback.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      mesh.geometry?.dispose?.();
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const m of mats) {
+        (m as THREE.MeshStandardMaterial)?.map?.dispose?.();
+        m?.dispose?.();
+      }
+    });
+    st.fallback.clear();
+    // The mounted model is NOT cleared: within one season (variant switch)
+    // it stays on screen while the sibling model streams in — the flat
+    // fallback only covers the window when nothing is mounted. The model
+    // effect swaps/replaces it on arrival.
     const { scene, fallback, fieldRoot } = st;
     const themed: { color: THREE.Color; token: string }[] = [];
     const track = <T extends { color: THREE.Color }>(owner: T, token: string): T => {
@@ -545,10 +570,14 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // 2026-10-01) — so no hand-built season silhouettes here anymore. The
     // slab/walls/outline below still serve as the loading and offline
     // placeholder for model seasons.
-    // The flat fallback stays visible until the official model (or its
-    // cached clone) lands — a first load shows a usable field instead of
-    // blank space while the GLB streams in.
-    fallback.visible = true;
+    // The flat fallback covers only the "nothing is mounted" window (first
+    // entry / season switch). On a variant switch the previous model of the
+    // SAME season stays on screen until the sibling arrives — showing the
+    // dark flat slab there was the "black blink" between variants (user
+    // report 2026-10-01; the 2025 sibling GLB is ~14 MB and its artwork
+    // differs, so the window also had to decode an unloaded texture = a
+    // near-black frame in dark theme).
+    fallback.visible = st.modelRoot.children.length === 0;
 
 
     st.cx = cx;
@@ -560,7 +589,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     return () => {
       disposeDeep(st.fieldRoot);
       st.fieldRoot.clear();
-      st.modelRoot.clear();
+      // modelRoot is deliberately left alone here (this cleanup also runs on
+      // every variant flip): the mounted model is the visual bridge until
+      // the model effect swaps it. Clearing it here was the black blink.
     };
     // `variant` is explicit: the tag list comes from modelTagLayout(field,
     // variant), which can change even when the field object does not.
@@ -593,7 +624,36 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     lastModelDir = dir;
     let disposed = false;
 
+    // Cross-SEASON switches replace what is mounted (the previous field's
+    // model would mislead while the next one streams in — the flat fallback
+    // covers that window, as before). Within one season (variant switch)
+    // the outgoing model stays on screen until the sibling arrives, so the
+    // view never drops to the dark flat slab (the "black blink").
+    if (st.modelFieldId !== undefined && st.modelFieldId !== field.id) {
+      st.modelRoot.clear(); // clones share cache geometry — never disposed
+      st.modelFieldId = undefined;
+      // The field effect already computed `fallback.visible` with the old
+      // model still mounted — re-cover the streaming window explicitly.
+      st.fallback.visible = true;
+      st.dirty();
+    }
+
     const mount = (g: THREE.Object3D) => {
+      // Swap atomically in one tick: the outgoing mount (previous variant of
+      // this season, or a stale season's leftover) leaves in the same frame
+      // the new one enters. Only the catcher is disposed — it is created
+      // per-mount; the outgoing CLONE shares geometry with the module-level
+      // cache and must not be disposed (that would corrupt every later
+      // clone of that season).
+      for (const child of [...st.modelRoot.children]) {
+        const mesh = child as THREE.Mesh;
+        const mat = mesh.material;
+        if (mesh.isMesh && !Array.isArray(mat) && mat?.type === 'ShadowMaterial') {
+          mesh.geometry?.dispose?.();
+          mat.dispose();
+        }
+      }
+      st.modelRoot.clear();
       // A shadow-catcher under the robots, sized to this field (per-mount:
       // cheap, and field.lengthM differs between seasons).
       const catcher = new THREE.Mesh(
@@ -604,6 +664,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       catcher.position.y = 0.002;
       catcher.receiveShadow = true;
       st.modelRoot.add(catcher, g);
+      st.modelFieldId = field.id;
       // The overlay quads were posed from the layout plane the moment the
       // field subtree built (usable field before the model streams in);
       // now that the real surfaces exist, seat each quad on its tag's own
@@ -628,6 +689,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         if (disposed) return;
         if (!g) {
           // offline/missing model: the flat fallback takes over
+          st.modelRoot.clear();
+          st.modelFieldId = undefined;
           st.fallback.visible = true;
           st.dirty();
           return;
@@ -659,7 +722,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     return () => {
       disposed = true;
       cancel(idleId);
-      st.modelRoot.clear(); // clone shares cache geometry — no dispose
+      // modelRoot is NOT cleared here: on a variant switch the outgoing
+      // model stays mounted as the visual bridge until the sibling arrives
+      // (mount() swaps atomically); a cross-season switch clears it in the
+      // next run's body. Unmounting the view takes the whole scene with it.
     };
   }, [field.id, variant, field.lengthM, field.widthM]);
 
