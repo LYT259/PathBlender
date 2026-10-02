@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.3';
+export const APP_VERSION = '0.1.6-beta.4';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.4', date: '2026-10-02', note: 'First-run view: 2026 welded schematic in 2D; the 2D/3D choice is remembered across launches / 首次进入：2026 焊接场+示意图+2D；2D/3D 选择跨启动记忆' },
   { version: '0.1.6-beta.3', date: '2026-10-02', note: 'Preferences: natural-width footer buttons; Save keeps the window open' },
   { version: '0.1.6-beta.2', date: '2026-10-02', note: 'Installer hard gates: refuses non-beta trees, audits the installed version, single install at a time / 安装器三道闸：拒绝非 beta 树、核验装机版本、装机互斥' },
   { version: '0.1.6-beta.1', date: '2026-10-02', note: 'Runtime Dock icon sized to the standard macOS icon grid (was rendering a ring larger)' },
