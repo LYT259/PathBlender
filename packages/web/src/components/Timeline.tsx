@@ -88,36 +88,6 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
       {robots.length === 0 ? <p className="timeline-empty">{tr('timeline.empty')}</p> : (
         <div className="timeline-scroller">
           <div className="timeline-surface">
-            <div className="timeline-axis">
-              <span className="timeline-unit">{tr('timeline.seconds')}</span>
-              <div className="timeline-ruler">
-                <div className="timeline-ticks" aria-hidden="true">
-                  {ticks.map((tick) => (
-                    <span key={tick} className="timeline-tick" style={{ left: percent(tick) }}>{tick}</span>
-                  ))}
-                </div>
-                <input
-                  className="timeline-scrubber"
-                  type="range"
-                  min={0}
-                  max={axisMax}
-                  step={0.01}
-                  value={currentT}
-                  disabled={end === 0}
-                  aria-label={tr('timeline.position')}
-                  aria-valuetext={tr('timeline.clock', { t: currentT.toFixed(2), d: end.toFixed(2) })}
-                  onChange={(e) => seek(Number(e.target.value))}
-                  onKeyDown={(e) => {
-                    // End goes to the actual session end even when the ruler
-                    // still includes the remainder of the autonomous period.
-                    if (e.key === 'End') {
-                      e.preventDefault();
-                      seek(end);
-                    }
-                  }}
-                />
-              </div>
-            </div>
             <div className="timeline-rows">
               {robots.map((robot) => {
                 const { trajectory } = robot;
@@ -174,6 +144,36 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
                   </div>
                 );
               })}
+            </div>
+            <div className="timeline-axis">
+              <span className="timeline-unit">{tr('timeline.seconds')}</span>
+              <div className="timeline-ruler">
+                <div className="timeline-ticks" aria-hidden="true">
+                  {ticks.map((tick) => (
+                    <span key={tick} className="timeline-tick" style={{ left: percent(tick) }}>{tick}</span>
+                  ))}
+                </div>
+                <input
+                  className="timeline-scrubber"
+                  type="range"
+                  min={0}
+                  max={axisMax}
+                  step={0.01}
+                  value={currentT}
+                  disabled={end === 0}
+                  aria-label={tr('timeline.position')}
+                  aria-valuetext={tr('timeline.clock', { t: currentT.toFixed(2), d: end.toFixed(2) })}
+                  onChange={(e) => seek(Number(e.target.value))}
+                  onKeyDown={(e) => {
+                    // End goes to the actual session end even when the ruler
+                    // still includes the remainder of the autonomous period.
+                    if (e.key === 'End') {
+                      e.preventDefault();
+                      seek(end);
+                    }
+                  }}
+                />
+              </div>
             </div>
             <div className="timeline-playhead-plane" aria-hidden="true">
               <div className="timeline-playhead" style={{ left: percent(currentT) }} />
