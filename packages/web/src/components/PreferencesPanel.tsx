@@ -43,7 +43,9 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
     if (language !== langChoice) setLang(language);
     if (theme !== mode) setMode(theme);
     if (updateChannel !== channel) setChannel(updateChannel);
-    onClose();
+    // Save keeps the window open (user request 2026-10-02): drafts become
+    // current, dirty clears, and the user closes via Cancel/Escape/⌘W when
+    // done — matching System Settings' persist-in-place behavior.
   }
 
   return <div className="preferences-panel" onKeyDown={(event) => {
