@@ -80,6 +80,7 @@ async fn install_update(pending: State<'_, PendingUpdate>) -> Result<(), String>
 /// UI strings per app language (zh-tw carries its own wording rather than
 /// reusing zh; en/es/fr/tr/zh each get a table below).
 struct MenuLang {
+    about: &'static str,
     file: &'static str,
     edit: &'static str,
     import: &'static str,
@@ -92,6 +93,7 @@ struct MenuLang {
 }
 
 const EN: MenuLang = MenuLang {
+    about: "About PathBlender",
     file: "File",
     edit: "Edit",
     import: "Import…",
@@ -104,6 +106,7 @@ const EN: MenuLang = MenuLang {
 };
 
 const ZH: MenuLang = MenuLang {
+    about: "关于 PathBlender",
     file: "文件",
     edit: "编辑",
     import: "导入…",
@@ -116,6 +119,7 @@ const ZH: MenuLang = MenuLang {
 };
 
 const ZH_TW: MenuLang = MenuLang {
+    about: "關於 PathBlender",
     file: "檔案",
     edit: "編輯",
     import: "匯入…",
@@ -130,6 +134,7 @@ const ZH_TW: MenuLang = MenuLang {
 /// Hong Kong wording. Same script, a few terms and the session word differ
 /// from the Taiwan table; Macau reads this one too (report §7.2 v1.23).
 const ZH_HK: MenuLang = MenuLang {
+    about: "關於 PathBlender",
     file: "檔案",
     edit: "編輯",
     import: "匯入…",
@@ -142,6 +147,7 @@ const ZH_HK: MenuLang = MenuLang {
 };
 
 const ES: MenuLang = MenuLang {
+    about: "Acerca de PathBlender",
     file: "Archivo",
     edit: "Edición",
     import: "Importar…",
@@ -154,6 +160,7 @@ const ES: MenuLang = MenuLang {
 };
 
 const FR: MenuLang = MenuLang {
+    about: "À propos de PathBlender",
     file: "Fichier",
     edit: "Édition",
     import: "Importer…",
@@ -166,6 +173,7 @@ const FR: MenuLang = MenuLang {
 };
 
 const TR: MenuLang = MenuLang {
+    about: "PathBlender Hakkında",
     file: "Dosya",
     edit: "Düzen",
     import: "İçe Aktar…",
@@ -203,7 +211,7 @@ fn build_menu(app: &AppHandle, lang: &str) -> tauri::Result<tauri::menu::Menu<ta
     let l = lang_of(lang);
 
     let app_submenu = SubmenuBuilder::new(app, "PathBlender")
-        .about(Some(
+        .about_with_text(l.about, Some(
             AboutMetadataBuilder::new()
                 .name(Some("PathBlender".to_string()))
                 .version(Some(env!("CARGO_PKG_VERSION").to_string()))
