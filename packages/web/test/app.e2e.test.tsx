@@ -52,6 +52,26 @@ describe('App import → fusion → collision flow', () => {
     }
   });
 
+  it('switches field construction with mutually exclusive buttons and remembers the choice', async () => {
+    const app = render(<App />);
+    dropFiles([file('ghostauto/straight_run.ghostauto')]);
+    const group = await screen.findByRole('group', { name: 'Field construction (welded vs AndyMark-built)' });
+    const andymark = within(group).getByRole('button', { name: 'AndyMark' });
+    const welded = within(group).getByRole('button', { name: 'Welded' });
+    fireEvent.click(andymark);
+    expect(andymark).toHaveAttribute('aria-pressed', 'true');
+    expect(welded).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(welded);
+    expect(welded).toHaveAttribute('aria-pressed', 'true');
+    expect(andymark).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(andymark);
+    app.unmount();
+    render(<App />);
+    dropFiles([file('ghostauto/straight_run.ghostauto')]);
+    const restored = await screen.findByRole('group', { name: 'Field construction (welded vs AndyMark-built)' });
+    expect(within(restored).getByRole('button', { name: 'AndyMark' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
   it('renders the empty state', () => {
     render(<App />);
     expect(document.querySelector('.toolbar')).not.toBeNull();
