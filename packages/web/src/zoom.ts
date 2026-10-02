@@ -102,6 +102,36 @@ export function wheelSuppressed(now = performance.now()): boolean {
   return gestureActive || now < suppressWheelUntil;
 }
 
+/**
+ * Zoom chase smoothing (user round 5, 2026-10-02): WKWebView delivers
+ * gesture events in main-thread-congested batches (~12/s visible in the
+ * user's screen recording), so applying each event the moment it lands
+ * steps the view. Views now chase a target exponentially instead — events
+ * move the target, frames move the view. τ is the time constant: one τ
+ * closes ~63% of the remaining gap; ~5τ ≈ settled.
+ * Tunable feel constant, pending user trial.
+ */
+export const CHASE_TAU_MS = 100;
+
+/** Exponential approach: fraction of the remaining gap closed in `dt` ms. */
+export function chaseAlpha(dt: number, tau: number = CHASE_TAU_MS): number {
+  return 1 - Math.exp(-Math.max(0, dt) / tau);
+}
+
+/**
+ * Split a remaining multiplicative zoom into the step to apply this frame
+ * and what remains after it (log-space exponential approach), so a pinch
+ * converges to its target over ~5τ regardless of how the events batched.
+ */
+export function chaseStep(remaining: number, dt: number, tau: number = CHASE_TAU_MS): { step: number; remaining: number } {
+  if (!Number.isFinite(remaining) || remaining <= 0) return { step: 1, remaining: 1 };
+  const step = Math.pow(remaining, chaseAlpha(dt, tau));
+  const next = remaining / step;
+  // Settle: below ~0.2% the gap is invisible; finish it in one frame.
+  if (Math.abs(Math.log(next)) < 0.002) return { step: remaining, remaining: 1 };
+  return { step, remaining: next };
+}
+
 export function classifyWheelInput(deltaY: number, deltaMode: number): WheelInputKind {
   if (deltaMode !== WheelEvent.DOM_DELTA_PIXEL) return 'wheel'; // line/page modes
   return Math.abs(deltaY) >= WHEEL_MIN_NOTCH && Number.isInteger(deltaY) ? 'wheel' : 'trackpad';

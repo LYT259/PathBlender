@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  chaseAlpha,
+  chaseStep,
+  CHASE_TAU_MS,
   classifyWheelInput,
   GESTURE_WHEEL_QUIET_MS,
   markGestureEnd,
@@ -149,5 +152,47 @@ describe('wheelSuppressed (lift-drift guard)', () => {
     expect(wheelSuppressed(t())).toBe(true);
     now += 2;
     expect(wheelSuppressed(t())).toBe(false); // deliberate scroll works again
+  });
+});
+
+describe('zoom chase helpers', () => {
+  it('chaseAlpha closes ~63% of the gap per tau and clamps negative dt', () => {
+    expect(chaseAlpha(CHASE_TAU_MS)).toBeCloseTo(1 - Math.exp(-1), 6);
+    expect(chaseAlpha(0)).toBe(0);
+    expect(chaseAlpha(-5)).toBe(0);
+  });
+
+  it('chaseStep converges monotonically in ~5-8 tau without overshoot', () => {
+    for (const start of [2, 0.5]) {
+      let remaining = start;
+      let frames = 0;
+      while (remaining !== 1 && frames < 200) {
+        const r = chaseStep(remaining, 16); // one 60 fps frame
+        if (start > 1) {
+          expect(r.step).toBeGreaterThan(1);
+          expect(r.step).toBeLessThanOrEqual(remaining + 1e-12);
+        } else {
+          expect(r.step).toBeLessThan(1);
+          expect(r.step).toBeGreaterThanOrEqual(remaining - 1e-12);
+        }
+        remaining = r.remaining;
+        frames += 1;
+      }
+      expect(remaining).toBe(1);
+      const ms = frames * 16;
+      expect(ms).toBeGreaterThan(4 * CHASE_TAU_MS); // not instant
+      expect(ms).toBeLessThan(12 * CHASE_TAU_MS); // not laggy
+    }
+  });
+
+  it('chaseStep finishes sub-visible remainders in one frame', () => {
+    expect(chaseStep(1.001, 16)).toEqual({ step: 1.001, remaining: 1 });
+    expect(chaseStep(0.999, 16)).toEqual({ step: 0.999, remaining: 1 });
+  });
+
+  it('chaseStep guards degenerate remainders', () => {
+    expect(chaseStep(0, 16)).toEqual({ step: 1, remaining: 1 });
+    expect(chaseStep(Number.NaN, 16)).toEqual({ step: 1, remaining: 1 });
+    expect(chaseStep(Number.POSITIVE_INFINITY, 16)).toEqual({ step: 1, remaining: 1 });
   });
 });
