@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.5-beta.9';
+export const APP_VERSION = '0.1.5';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.5', date: '2026-10-02', note: '' },
   { version: '0.1.5-beta.9', date: '2026-10-02', note: 'Pinch release truly freezes the view: the finger-lift scroll burst is now ignored / 捏合松手真正定格：忽略抬指瞬间的滚动爆发' },
   { version: '0.1.5-beta.8', date: '2026-10-02', note: 'Dock tile artwork pre-rounded (runtime icon was rendering square)' },
   { version: '0.1.5-beta.7', date: '2026-10-02', note: 'Dock icon follows the in-app theme while running (dark→night artwork)' },
