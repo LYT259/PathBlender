@@ -1,110 +1,124 @@
 # PathBlender User Guide (for alliance strategy groups)
 
-A pre-match coordination tool: put every team's exported autonomous path files
-onto one field, replay them on a shared timeline, and automatically check for
-collisions. **All files are parsed inside your browser — nothing is uploaded
-anywhere.**
+A pre-match coordination tool: put every team's exported autonomous path
+files onto one field, replay them on a shared timeline, and automatically
+check for collisions. **All files are parsed on your machine — nothing is
+uploaded anywhere.** PathBlender is a viewer: it shows you the problem;
+the fix happens in the tool that owns the path.
 
 ## Three steps
 
-1. **Open the link** (see the README for the URL; Safari / Chrome / Edge all
-   work), or launch the desktop app.
-2. **Drag files onto the window** — multi-select and mixed formats are fine:
-   Choreo `.traj`, PathPlanner `.path` / `.auto`, and Team 103 Collaborative
-   fork `.ghostauto`. Broken files report why they failed without blocking the rest.
+1. **Open the app** — the desktop app, or the web app at
+   [pathblender.pages.dev](https://pathblender.pages.dev) (Safari /
+   Chrome / Edge all work). No files yet? Press **Try the example** on
+   the welcome screen first.
+2. **Import path files** — multi-select and mixed formats are fine:
+   Choreo `.traj`, PathPlanner `.path` / `.auto`, and Team 103
+   Collaborative fork `.ghostauto`. Broken files report why they failed
+   without blocking the rest. On the desktop app you can also import a
+   whole folder (see the route library below).
 3. **Press play.** Collision risks show up as red rings on the field, red
-   segments on the timeline, and entries in the conflict panel (who, when,
-   where) — click one to jump the clock straight to that moment.
+   segments on the timeline, and entries in the conflict panel (who,
+   when, where) — click one to jump the clock straight to that moment.
 
 ## How each team exports
 
 | Team's tool | File(s) | How |
 |---|---|---|
 | Choreo | `.traj` | Export the trajectory from Choreo |
-| PathPlanner | `.path` + `.auto` | Take the files from the project folder; **every `.path` referenced by an `.auto` must be dragged in the same batch** |
+| PathPlanner | `.path` + `.auto` | Take the files from the project folder; **every `.path` referenced by an `.auto` must be imported in the same batch** |
+| PathPlanner (bonus) | `settings.json` | Import it too and every robot gets the project's real bumper size |
 | 103 Collaborative fork | `.ghostauto` | Export a ghost from the fork — it carries the robot size and team name |
 
-## Three ways to resolve a conflict
+## What to do when a conflict appears
 
-1. **Auto-resolve** (top of the conflict panel): finds the **smallest set of
-   start delays** that clears every conflict (0.25 s steps, deferring the
-   earlier starter). If some conflicts can't be cleared by delays alone (e.g.
-   a path entered twice), it says so honestly and leaves them for you.
-2. **Manual start delays (what-if)**: the delay input on a robot card, 1–3 s
-   is usually enough; the conflict panel refreshes live. Delays live only in
-   your session — **no source file is ever modified**.
-3. **Path editing** (next section): when time can't be shifted, shift geometry.
+1. **Read the report**: the conflict panel says which two robots, at what
+   time, and where on the field; out-of-bounds moments are marked on the
+   timeline, and a minimum-separation report flags near misses.
+2. **Inspect**: click a conflict to jump the clock to it; scrub the
+   timeline; flip the red/blue alliance view if a partner exported from
+   the other perspective; switch a robot's route from the library to
+   compare alternatives.
+3. **Fix in the source tool**: PathBlender deliberately does not edit
+   paths — the team that owns the path changes it in Choreo /
+   PathPlanner, re-exports, and you drop the new file into the open
+   session. Re-check. Repeat until the timeline is clean.
 
-## Waypoint editing (on the field)
+## Route library (desktop app)
 
-Press **edit path** on a robot (`.path` / `.traj` only; `.ghostauto`
-files carry no waypoints) — the field canvas switches to edit mode:
-other robots and collision checks keep running while you edit,
-
-- **Drag points** on the field; **double-click** a segment to insert,
-  **right-click** a point to remove;
-- the **waypoint panel** edits exact numbers: PathPlanner rows expand to
-  anchor + prev/next control points, Choreo rows edit x/y (heading is
-  read-only);
-- every change regenerates the trajectory and recomputes collisions — when
-  the red rings are gone, you're done. Edits are **derived copies** (the
-  robot carries an "adjusted" badge with a one-click full revert);
-- export **.path / .traj / .ghostauto** straight from the inspector (file
-  name gets an `-adjusted` suffix) and send it back to the owning team.
-  PathPlanner paths regenerate their timing; Choreo paths keep the original
-  timing with remapped geometry (warned on the badge).
+**Import folder** ingests a team's whole deploy directory: bystander
+files are skipped and every route lands in a library. A picker beside
+each robot switches its active auto live (undo restores the previous
+one) — the fastest way to compare "their plan A vs plan B" against the
+rest of the alliance.
 
 ## 3D view & fields
 
-- The **3D** button in the header switches to the stereo view: **official
-  field models for FRC 2022–2026** (welded and AndyMark constructions where
-  they differ) with free orbit; **Fit** frames the current content and the
-  default-view button snaps the camera back home.
-- The 2D view stays the fast tactical overlay with each season's official
-  AprilTag layout. 2018–2020 have no official 3D models; the 3D view uses
-  simplified structures there.
-- The **Welded / AndyMark** selector appears next to the season picker only
-  where the two constructions differ — pick whichever your event actually
-  uses and the tag layout follows.
+- The **2D / 3D** toggle in the header appears for seasons with an
+  official 3D model — **FRC 2022–2026** (welded and AndyMark
+  constructions where they differ; 2025 has both). 2018–2020 are 2D-only.
+- The 3D view has free orbit, one-click **Fit** to frame the content,
+  and a default-view button to snap the camera home.
+- The 2D view offers a **schematic** and a **rendered** artwork style
+  per season, with the official AprilTag layout overlaid.
+- Seasons: 2018–2020 and 2022–2026 built in; 2021 reused the 2020 field
+  and has no public asset of its own. Custom field images can be
+  imported (calibration + an AprilTag layout JSON).
 
 ## Other things you'll use
 
-- **Red/blue alliance**: a partner's path drawn from the red perspective?
-  Toggle Red on the robot card and it is mirrored into the unified frame;
-- **Seasons & custom fields**: 2018–2026 in the header; custom field images
-  can be imported (calibration + an AprilTag layout JSON);
-- **Sharing**: Share packs the whole session into the URL (no server);
-  Save session produces a `.ghpb.json` file; PNG export for the alliance
-  chat. Desktop: everything lives in the PathBlender menu;
+- **Alliance view**: one red/blue toggle for the whole session mirrors
+  every path drawn from the other perspective into the unified frame;
+- **Sharing** (web + desktop): **Share** packs the whole session into
+  the URL — send the link, the recipient sees exactly your field
+  (nothing is uploaded anywhere);
+- **Session file & PNG** (desktop): save/open a `.ghpb.json` session;
+  export a PNG of the current 2D view for the alliance chat. Everything
+  also lives in the PathBlender menu;
 - **Appearance & languages**: light/dark/follow-system in Preferences
-  (⌘, on desktop), 简体中文 / 繁體中文 / English;
-- **Install as an app** (web): Safari "Add to Dock" / Chrome "Install";
-  desktop builds download as a dmg with in-app update checks.
+  (⌘, on desktop); the UI ships in English, 简体中文, 繁體中文（台灣）,
+  繁體中文（中國香港）, Français, Español, Türkçe;
+- **Updates** (desktop): menu **PathBlender → Check for Updates…**;
+  Preferences → Updates switches between the stable and beta channels.
+
+## Web app vs desktop app
+
+| | Web | Desktop (macOS) |
+|---|---|---|
+| Import / playback / collision checking | ✓ | ✓ |
+| Share link | ✓ | ✓ |
+| Save & open session files | open only | ✓ |
+| PNG export | — | ✓ |
+| Folder import / route library | — | ✓ |
+| In-app updates | — | ✓ |
 
 ## FAQ
 
-**Q: Importing a `.path` says "generated with default robot config — timing is an estimate"?**
-`.path` files store waypoints only; the trajectory is regenerated in your
-browser using generic robot parameters (mass/motors). The timeline is an
-approximation (typically within a few hundred milliseconds) — treat collision
-verdicts as advisory and double-check timing-critical calls with both teams.
+**Q: Importing a `.path` says "generated with default robot config —
+timing is an estimate"?**
+`.path` files store waypoints only; the trajectory is regenerated
+locally using a generic robot profile unless the project's
+`settings.json` is imported. The timeline is an approximation (typically
+within a few hundred milliseconds) — treat near-miss collision verdicts
+as advisory and double-check timing-critical calls with both teams.
 
-**Q: An `.auto` import says "routine references path … — import the matching .path file too"?**
-An `.auto` is a routine (path references + waits/commands). Drag the matching
-`.path` files **in the same batch** as the `.auto`.
-
-**Q: Auto-resolve left some conflicts behind?**
-Delay-only resolution can't fix structural overlaps — most often the same
-path imported twice. Check for duplicates, remove one, and run it again.
+**Q: An `.auto` import says "routine references path … — import the
+matching .path file too"?**
+An `.auto` is a routine (path references + waits/commands). Import the
+matching `.path` files **in the same batch** as the `.auto`.
 
 **Q: The auto period is 15 s but the timeline is longer/shorter?**
-Timeline length = the longest trajectory including delays. Each robot's band
-shows its own true start and end.
+The 2026 season runs a 20 s autonomous; earlier seasons 15 s. Timeline
+length = the longest trajectory including imported start delays. Each
+robot's band shows its own true start and end.
 
 **Q: Is my data safe?**
-Pure static page: no backend, no accounts, no telemetry. Parsing happens in
-your browser's memory; share-link data only leaves the page when you copy it.
+Yes: no backend, no accounts, no telemetry. Web builds make no network
+requests at all; the desktop app only contacts GitHub Releases when you
+ask it to check for updates. Parsing happens in local memory; share-link
+data only leaves the page when you copy it.
 
 **Q: A file fails to import?**
-Post the error (or the file) in the release thread — format-drift reports are
-exactly the feedback we need.
+See [the feedback template](community/feedback-template.md) — format
+drift reports (tool + version + the error text) are exactly what we
+need. You are never required to post your path files.
