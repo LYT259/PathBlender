@@ -86,56 +86,15 @@ fi
 BUNDLE=packages/desktop/src-tauri/target/release/bundle/macos/PathBlender.app
 [[ -d "$BUNDLE" ]] || { echo "bundle not found: $BUNDLE" >&2; exit 1; }
 
-# --- Dark-mode app icon (2026-10-01) ---------------------------------------
-# Inject the day+night AppIcon catalog before sealing: the seal below then
-# covers the injected Assets.car, and the updater archive + dmg regenerated
-# further down wrap the icon-complete bundle.
-scripts/apply-dark-icon.sh "$BUNDLE"
-
-# --- Seal the bundle before anything ships it (2026-09-27) ----------------
-# Tauri's macOS bundler leaves the app linker-signed only (no
-# _CodeSignature/CodeResources), which fails `codesign --verify --deep
-# --strict` ("code has no resources but signature indicates they must be
-# present"). Re-sign ad-hoc per the standing no-Apple-account decision, strip
-# sync-introduced xattrs first (GHPaths hit those too), and make strict
-# verification a hard gate.
-xattr -cr "$BUNDLE"
-codesign --force --deep --sign - "$BUNDLE"
-if ! codesign --verify --deep --strict "$BUNDLE"; then
-  echo "install-desktop.sh: strict codesign verification FAILED" >&2
-  exit 1
-fi
-
-# The updater archive tauri produced during build wraps the PRE-seal app.
-# Regenerate it (and its signature) from the sealed bundle whenever the
-# release key is on this machine — the updater feed must never point at an
-# unsealed build.
-if [[ -n "${TAURI_SIGNING_PRIVATE_KEY_PATH:-}" ]]; then
-  UPDATER="$BUNDLE.tar.gz"
-  rm -f "$UPDATER" "$UPDATER.sig"
-  (cd "$(dirname "$BUNDLE")" && tar -czf "$(basename "$UPDATER")" "$(basename "$BUNDLE")")
-  # env -u: the exported TAURI_SIGNING_PRIVATE_KEY (key content) conflicts
-  # with --private-key-path; the key itself is passwordless.
-  UPDATER_ABS="$PWD/$UPDATER" # resolve before the cd below ($PWD shifts inside)
-  (cd packages/desktop && env -u TAURI_SIGNING_PRIVATE_KEY \
-    npx tauri signer sign --private-key-path "$TAURI_SIGNING_PRIVATE_KEY_PATH" \
-    --password "" "$UPDATER_ABS")
-fi
-
-# Same story for the dmg: tauri's own dmg wraps the pre-seal app. Regenerate
-# it from the sealed bundle so every shipped artifact carries the seal.
-# Best-effort since 2026-10-02: hdiutil on this machine intermittently bails
-# with a bogus "No space left on device" while accessing the staged binary
-# (30 GB actually free; the tauri dmg step showed the same signature before).
-# The dmg is a manual-distribution byproduct — CI builds the release dmg on
-# tag — so a local failure must not block the /Applications install.
+# --- Shared packaging pipeline (2026-10-02) ----------------------------------
+# Icon injection → ad-hoc seal → strict verify → updater tar.gz + sig → dmg,
+# the exact same script release.yml runs in CI: every shipped artifact takes
+# one path, so a locally installed app and a downloaded release build can no
+# longer diverge in how they are sealed. dmg is best-effort here (hdiutil is
+# intermittently flaky on this machine; CI builds the release dmg) and the
+# updater signature is regenerated whenever the release key is present.
 APP_VERSION="$(node -p "require('./package.json').version")"
-DMG="$(dirname "$BUNDLE")/PathBlender_${APP_VERSION}_aarch64.dmg"
-rm -f "$DMG" "$(dirname "$BUNDLE")"/*.dmg
-if ! scripts/make-dmg.sh "$BUNDLE" "$DMG"; then
-  rm -f "$DMG"
-  echo "warn: local dmg skipped (hdiutil flaky here; CI builds the release dmg)"
-fi
+scripts/package-desktop-artifacts.sh "$APP_VERSION" --dmg best-effort --updater auto
 
 # Clean replace (2026-10-01): ditto onto an existing install leaves behind
 # files the new build no longer ships, so the installed app drifts from the
