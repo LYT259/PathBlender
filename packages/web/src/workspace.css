@@ -50,6 +50,8 @@ button:disabled { cursor: default; }
 body.desktop .workspace-toolbar { padding-left: 100px; }
 .workspace-toolbar { user-select: none; -webkit-user-select: none; }
 .workspace-toolbar .toolbar-spacer { align-self: stretch; min-width: 24px; }
+.app.is-welcome > .workspace-toolbar { background: var(--bg); border-bottom: 0; }
+.app.is-welcome .workspace-stage { background: var(--bg); }
 .tool-btn { min-height: 32px; border-radius: 7px; font-size: 12px; color: var(--fg); gap: 6px; }
 .tool-btn.square { width: 32px; padding: 0; flex: none; }
 .tool-btn[aria-pressed='true'] { background: var(--seg-bg); }
@@ -85,6 +87,12 @@ body.desktop .workspace-toolbar { padding-left: 100px; }
 .field-select { min-height: 30px; font-weight: 500; max-width: 190px; padding: 4px 8px; background: var(--btn-bg); border: 1px solid var(--border); border-radius: 6px; appearance: auto; cursor: pointer; }
 .field-select:hover { background: var(--btn-bg-hover); }
 .field-variant, .field-style { color: var(--fg); font-size: 12px; max-width: 120px; }
+.session-alliance { display: flex; align-items: center; gap: 7px; flex: none; }
+.session-alliance-label { font-size: 12px; color: var(--fg-dim); }
+.alliance-toggle { border: 1px solid var(--border); background: var(--seg-bg); }
+.alliance-toggle button { min-width: 44px; font-size: 12px; }
+.alliance-toggle button.alliance-blue.on { background: #006cdb; color: #fff; }
+.alliance-toggle button.alliance-red.on { background: #ce3340; color: #fff; }
 .trails-control { padding-left: 3px; }
 .sw-text { font-size: 11px; }
 .workspace-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 32px; min-height: 0; overflow-y: auto; background: var(--bg-panel); }
