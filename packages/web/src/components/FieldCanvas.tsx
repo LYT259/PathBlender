@@ -612,21 +612,38 @@ function drawRobot(
   ctx.fill();
   ctx.restore();
 
-  // Team number annotation, drawn upright so it stays readable at any
-  // robot heading (report v1.4 §6.1: color = path = legend = number).
+  // Team number ON the bumper, like a real robot (user request
+  // 2026-10-02, replacing the old center annotation): one number per
+  // side rail, baseline along the rail so it rotates with the robot.
+  // Font sized to the rail band with a legibility floor; halo keeps it
+  // readable on any artwork, in both themes.
   if (r.trajectory.teamNumber) {
+    const num = r.trajectory.teamNumber;
+    const d = vis.bumperDepthM * scale;
+    const railPrintable = Math.max((L - 2.4 * d) * 0.95, 8);
+    let fs = Math.max(d * 1.15, 9);
     ctx.save();
     ctx.translate(sx(pose.x), sy(pose.y));
-    ctx.font = `bold ${Math.max(11, Math.round(0.26 * outer.lengthM * scale))}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.rotate(-pose.heading);
+    ctx.font = `bold ${fs}px ui-sans-serif, system-ui, sans-serif`;
+    const wide = ctx.measureText(num).width;
+    if (wide > railPrintable) {
+      fs = Math.max((fs * railPrintable) / wide, 6);
+      ctx.font = `bold ${fs}px ui-sans-serif, system-ui, sans-serif`;
+    }
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.lineWidth = 3;
-    // Halo in the page background color keeps the number readable on any
-    // field artwork, in both themes (fg text + bg halo).
     ctx.strokeStyle = cssVar('--canvas-bg', '#1c1c1e');
-    ctx.strokeText(r.trajectory.teamNumber, 0, 0);
     ctx.fillStyle = cssVar('--fg', '#e6e6e8');
-    ctx.fillText(r.trajectory.teamNumber, 0, 0);
+    for (const side of [1, -1]) {
+      // Robot-frame rail center y = ±(W/2 − d/2); screen y is flipped.
+      ctx.save();
+      ctx.translate(ox, -oy - side * (W / 2 - d / 2));
+      ctx.strokeText(num, 0, 0);
+      ctx.fillText(num, 0, 0);
+      ctx.restore();
+    }
     ctx.restore();
   }
 }

@@ -100,6 +100,7 @@ export const zh: Record<MessageKey, string> = {
   'robots.remove': '移除',
   'robots.collision': '碰撞',
   'robots.teamNumber': '队号',
+  'robots.teamNumberEdit': '修改队号',
   'robots.alliance': '联盟',
   'robots.blue': '蓝方',
   'robots.red': '红方',
