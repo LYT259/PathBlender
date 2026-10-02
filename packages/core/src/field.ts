@@ -12,10 +12,6 @@ import type { Alliance, Pose2d, Trajectory } from './types';
 import { wrapAngle } from './math';
 import type { AprilTag } from './april-tags';
 
-/** Autonomous Period length, seconds — 2026 REBUILT made it 20 s
- *  (15 s through 2025). Timeline floor and delay ceilings derive from it. */
-export const AUTO_PERIOD_S = 20;
-
 export interface FieldImageCalibration {
   /** Image pixel size. */
   pixelWidth: number;
@@ -69,6 +65,10 @@ export interface FieldPackage {
   id: string;
   name: string;
   year: number;
+  /** Autonomous Period length that season's game ran, seconds — the
+   *  timeline floor and mediation delay ceilings derive from it. 2026
+   *  REBUILT is 20 s; every bundled earlier season (2018–2025) was 15 s. */
+  autoPeriodS: number;
   /** Playfield size excluding margins (the coordinate space of paths). */
   lengthM: number;
   widthM: number;
@@ -242,6 +242,7 @@ export const REBUILT_2026: FieldPackage = {
   id: 'rebuilt-2026',
   name: 'REBUILT',
   year: 2026,
+    autoPeriodS: 20,
   lengthM: 16.54,
   widthM: 8.07,
   image: { pixelWidth: 3508, pixelHeight: 1814, ppm: 200, marginM: 0.5 },
@@ -296,6 +297,7 @@ export const FIELDS: readonly FieldPackage[] = [
     id: 'powerup-2018',
     name: 'POWER UP',
     year: 2018,
+    autoPeriodS: 15,
     lengthM: (648 * 0.0254),
     widthM: (324 * 0.0254),
     image: {
@@ -310,6 +312,7 @@ export const FIELDS: readonly FieldPackage[] = [
     id: 'deepspace-2019',
     name: 'DEEP SPACE',
     year: 2019,
+    autoPeriodS: 15,
     lengthM: (648 * 0.0254),
     widthM: (324 * 0.0254),
     image: {
@@ -324,6 +327,7 @@ export const FIELDS: readonly FieldPackage[] = [
     id: 'infinitercharge-2020',
     name: 'INFINITE RECHARGE',
     year: 2020,
+    autoPeriodS: 15,
     lengthM: (629.25 * 0.0254),
     widthM: (323.25 * 0.0254),
     image: {
@@ -338,6 +342,7 @@ export const FIELDS: readonly FieldPackage[] = [
     id: 'rapidreact-2022',
     name: 'Rapid React',
     year: 2022,
+    autoPeriodS: 15,
     lengthM: 3240 / 196.85,
     widthM: 1620 / 196.85,
     image: { pixelWidth: 3240, pixelHeight: 1620, ppm: 196.85, marginM: 0 },
@@ -347,6 +352,7 @@ export const FIELDS: readonly FieldPackage[] = [
     id: 'chargedup-2023',
     name: 'Charged Up',
     year: 2023,
+    autoPeriodS: 15,
     lengthM: 3256 / 196.85,
     widthM: 1578 / 196.85,
     image: { pixelWidth: 3256, pixelHeight: 1578, ppm: 196.85, marginM: 0 },
@@ -356,6 +362,7 @@ export const FIELDS: readonly FieldPackage[] = [
     id: 'crescendo-2024',
     name: 'Crescendo',
     year: 2024,
+    autoPeriodS: 15,
     lengthM: 3256 / 196.85,
     widthM: 1616 / 196.85,
     image: { pixelWidth: 3256, pixelHeight: 1616, ppm: 196.85, marginM: 0 },
@@ -365,6 +372,7 @@ export const FIELDS: readonly FieldPackage[] = [
     id: 'reefscape-2025',
     name: 'Reefscape',
     year: 2025,
+    autoPeriodS: 15,
     // Official WPILib field constants, 2025 frame (allwpilib
     // fields/src/main/native/resources/org/wpilib/fields/frc/
     // 2025-reefscape-welded.json, "field-dimensions" 17.548 × 8.052, BSD-3):
@@ -440,11 +448,16 @@ export function makeCustomField(cal: {
   pixelWidth: number;
   pixelHeight: number;
   aprilTags?: AprilTag[];
+  autoPeriodS?: number;
 }): FieldPackage {
   return {
     id: CUSTOM_FIELD_ID,
     name: cal.name ?? 'Custom',
     year: 0,
+    // Custom images are usually a variant of a recent season's field; 15 s
+    // was the Autonomous Period every season through 2025 (2026 REBUILT is
+    // the first 20 s game).
+    autoPeriodS: cal.autoPeriodS ?? 15,
     lengthM: cal.lengthM,
     widthM: cal.widthM,
     image: {

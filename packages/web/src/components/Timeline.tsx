@@ -4,7 +4,7 @@ import type {
   OutOfBoundsInterval,
   SessionTrajectory,
 } from '@pathblender/core';
-import { AUTO_PERIOD_S, activeEndT } from '@pathblender/core';
+import { activeEndT } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import './Timeline.css';
 
@@ -23,6 +23,9 @@ interface Props {
   robots: SessionTrajectory[];
   conflicts: CollisionInterval[];
   bounds: OutOfBoundsInterval[];
+  /** Current season's Autonomous Period (FieldPackage.autoPeriodS) — the
+   *  ruler's floor so an empty/short session still spans the whole auto. */
+  autoPeriodS: number;
   duration: number;
   playback: Playback;
   selectedId?: string;
@@ -43,13 +46,13 @@ function TransportIcon({ kind }: { kind: 'rewind' | 'back' | 'play' | 'pause' | 
   );
 }
 
-export function Timeline({ robots, conflicts, bounds, duration, playback, selectedId, onSelect, onJump, guide }: Props) {
+export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, playback, selectedId, onSelect, onJump, guide }: Props) {
   const { t: tr } = useI18n();
   const { t, setT, playing, setPlaying, speed, setSpeed } = playback;
   const end = Number.isFinite(duration) ? Math.max(0, duration) : 0;
   const currentT = Math.min(end, Math.max(0, t));
   // Ruler, range, activity, markers, and playhead all share this domain.
-  const axisMax = Math.max(AUTO_PERIOD_S, Math.ceil(end));
+  const axisMax = Math.max(autoPeriodS, Math.ceil(end));
   const tickStep = Math.max(1, Math.ceil(axisMax / 20));
   const ticks = Array.from({ length: Math.floor(axisMax / tickStep) + 1 }, (_, i) => i * tickStep);
   if (ticks[ticks.length - 1] !== axisMax) ticks.push(axisMax);
