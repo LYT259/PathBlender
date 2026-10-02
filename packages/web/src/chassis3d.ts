@@ -1,13 +1,13 @@
 /**
- * MK5i-style chassis for the 3D view. Two module renderers:
- *
- * 1. Official CAD template (preferred, user decision 2026-10-02: the real
- *    model must be used because a hand-modeled approximation looks wrong
- *    at close range): `public/models/mk5i-module.glb`, built from the
- *    official SDS Parasolid file by scripts/cad/README.md. Loaded once
- *    and cloned per module — geometry and GPU buffers are shared.
- * 2. Procedural fallback (roller wheel + gearbox block) when the asset is
- *    absent or fails its sanity check, so the 3D view always has robots.
+ * MK5i-style chassis for the 3D view. The swerve modules use real CAD:
+ * `public/models/mk5i-module.glb`, the FRC Designs Onshape re-creation
+ * of the MK5i (user decision 2026-10-02 — preferred over the official
+ * SDS Parasolid export because it includes the two Kraken X60 motors;
+ * core dimensions match the official layout drawing: height 6.16–6.17 in
+ * both). Built by scripts/cad/README.md. Loaded once and cloned per
+ * module — geometry and GPU buffers are shared. The procedural roller
+ * wheel + gearbox block remains as the fallback when the asset is
+ * absent or fails its sanity check, so the 3D view always has robots.
  *
  * The bumper skirt and frame deck stay procedural by design: they are
  * per-season rule rectangles tinted with the robot's identity color, not
@@ -21,7 +21,7 @@
  * CAD template contract (enforced by the conversion script, validated at
  * load): meters, +Y up, origin at the steering axis on the floor, +X the
  * wheel's rolling direction (steering angle 0 = straight ahead), overall
- * height ≈ 0.19 m (7.45 in, the official layout drawing).
+ * height ≈ 0.156 m (6.16 in, the official layout drawing).
  */
 
 import * as THREE from 'three';
@@ -33,8 +33,9 @@ const WHEEL_WIDTH_M = 0.04;
 /** Bumper skirt cross-section: 5 in tall, at real bumper height. */
 const BUMPER_H_M = 0.127;
 const BUMPER_Y_M = 0.115;
-/** Official MK5i overall height (layout drawing: 7.45 in). */
-const MK5I_HEIGHT_M = 7.45 * 0.0254;
+/** Official MK5i overall height (layout drawing: 6.17 in; the shipped
+ *  decimated mesh measures 6.16 in). */
+const MK5I_HEIGHT_M = 6.17 * 0.0254;
 
 export interface Chassis3D {
   group: THREE.Group;

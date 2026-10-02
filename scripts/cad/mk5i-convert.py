@@ -1,129 +1,143 @@
-# MK5i STEP → normalized GLB (one-time pipeline step; see README.md).
+# MK5i module STEP -> normalized GLB (see README.md).
 # Run:
 #   blender --background --python scripts/cad/mk5i-convert.py -- \
 #     <input.step> <output.glb>
 #
-# Normalizes to the runtime contract in web/src/chassis3d.ts: meters,
-# +Y up (Blender's Z-up is converted by the glTF exporter), origin at
-# the steering axis on the floor, +X the wheel's rolling direction.
+# Source of truth for the geometry (user decision 2026-10-02): the FRC
+# Designs Onshape MK5i re-creation exported as STEP ("MK5i DesignApp.step"
+# in ~/Downloads) — chosen over the official SDS x_t export because it
+# includes the two Kraken X60 motors; core dimensions match the official
+# layout drawing (module height 6.16-6.17 in both).
 #
-# Calibration knobs: on the first run, keep STEERING_AXIS_XY = None and
-# ROLL_DEG = 0.0 — the script prints the raw bbox and wheel-cylinder
-# candidates; set the knobs from that report and re-run.
+# Every transform is baked straight into mesh vertices (mesh.transform)
+# — no object-matrix or operator semantics in the loop, so runs are
+# byte-reproducible. Calibration is measured from the mesh itself:
+#   - steering axis  = turret bbox center in XY,
+#   - floor          = wheel bbox bottom,
+#   - rolling axis   = the wheel's axle (smallest-variance horizontal
+#     direction of its vertices); +X after the bake = rolling direction.
+# Runtime contract (web/src/chassis3d.ts): meters, +Y up after export,
+# origin = steering axis on the floor, +X = rolling direction.
 
 import bpy
 import math
 import sys
 from collections import defaultdict
+from mathutils import Matrix, Vector
 
-# The STEP importer is a Blender extension, not core — factory settings
-# would drop it, so: empty default scene (keeps user prefs + extensions)
-# and an explicit enable for robustness.
 import addon_utils
-addon_utils.enable('bl_ext.blender_org.step_importer')
 
-# --- knobs (first run reports, second run finalizes) -------------------
-STEERING_AXIS_XY = None  # e.g. (0.0, 0.0) — translation putting the
-                         # steering axis at the XY origin
-ROLL_DEG = 0.0           # rotation about Z so the rolling dir = +X
-TARGET_HEIGHT_M = 7.45 * 0.0254  # official layout drawing, overall height
-DECIMATE_RATIO = 0.12    # keep ~12% of CAD triangles (target ≤ ~60k)
-# -----------------------------------------------------------------------
+DECIMATE_RATIO = 0.35  # 158k -> ~55k tris; small fasteners survive fine
+WHEEL_NAME = "Molded Wheel"
 
-argv = sys.argv[sys.argv.index("--") + 1:]
+argv = sys.argv[sys.argv.index('--') + 1:]
 src, dst = argv[0], argv[1]
 
-# Fresh scene (user prefs kept — the STEP extension lives there).
 bpy.ops.wm.read_homefile(use_empty=True)
+addon_utils.enable('bl_ext.blender_org.step_importer', default_set=True)
+bpy.ops.import_scene.step(filepath=src)
 
-# STEP import via the official extension (bl_ext.blender_org.step_importer,
-# which registers bpy.ops.import_scene.step; enable it once per user config,
-# or pass --factory-startup off).
-importer = getattr(bpy.ops.import_scene, "step", None) or getattr(
-    bpy.ops.wm, "import_step", None
-)
-if importer is None:
-    raise SystemExit("No STEP importer in this Blender build (need 4.5+)")
-importer(filepath=src)
-
-objs = [o for o in bpy.data.objects if o.type == "MESH"]
+objs = [o for o in bpy.data.objects if o.type == 'MESH']
 if not objs:
     raise SystemExit("No mesh objects after STEP import")
 
+# Bake import transforms: after this, local vertices == world coordinates.
+for o in objs:
+    o.data.transform(o.matrix_world)
+    o.matrix_world.identity()
+bpy.context.view_layer.update()
 
-def bbox_report(tag):
-    lo = min((o.matrix_world @ v.co.copy() for o in objs for v in o.data.vertices))
-    hi = max((o.matrix_world @ v.co.copy() for o in objs for v in o.data.vertices))
-    print(f"[{tag}] bbox min {tuple(round(c, 5) for c in lo)} max {tuple(round(c, 5) for c in hi)}")
+wheel = next(o for o in objs if WHEEL_NAME in o.name)
+turret = next(o for o in objs if "Turret" in o.name)
+
+
+def bbox(o):
+    lo = [min(v.co[k] for v in o.data.vertices) for k in range(3)]
+    hi = [max(v.co[k] for v in o.data.vertices) for k in range(3)]
     return lo, hi
 
 
-lo, hi = bbox_report("raw")
+wlo, whi = bbox(wheel)
+tlo, thi = bbox(turret)
+axis_xy = ((tlo[0] + thi[0]) / 2, (tlo[1] + thi[1]) / 2)
+floor_z = wlo[2]
+print(f"[turret] bbox center XY=({axis_xy[0]:.4f},{axis_xy[1]:.4f})")
+print(f"[wheel]  bbox center XY=({(wlo[0]+whi[0])/2:.4f},{(wlo[1]+whi[1])/2:.4f}) floor={floor_z:.4f}")
 
-# Wheel candidates for calibration: near-cylinders whose minor dimension
-# matches a 3–4 in wheel.
-wheel_diams = defaultdict(int)
+# Axle = smallest-variance horizontal direction of the wheel's vertices.
+wc = Vector((0.0, 0.0, 0.0))
+n = len(wheel.data.vertices)
+for v in wheel.data.vertices:
+    wc += v.co
+wc /= n
+cov = [[0.0] * 3 for _ in range(3)]
+for v in wheel.data.vertices:
+    w = v.co - wc
+    for i in range(3):
+        for j in range(3):
+            cov[i][j] += w[i] * w[j]
+
+
+def smallest_eigen_axis(m):
+    # Power iteration on (trace*I - m): its dominant eigenvector is the
+    # smallest-eigenvalue direction of m. Fine for one clean axis.
+    q = Vector((0.2673, 0.5345, 0.8018))
+    for _ in range(64):
+        q = Vector((
+            (m[0][0] + m[1][1] + m[2][2]) * q.x - sum(m[0][j] * q[j] for j in range(3)),
+            (m[0][0] + m[1][1] + m[2][2]) * q.y - sum(m[1][j] * q[j] for j in range(3)),
+            (m[0][0] + m[1][1] + m[2][2]) * q.z - sum(m[2][j] * q[j] for j in range(3)),
+        ))
+        q.normalize()
+    return q
+
+
+axle = smallest_eigen_axis(cov)
+axle.z = 0.0
+axle.normalize()
+roll = Vector((-axle.y, axle.x, 0.0))  # horizontal, perpendicular to axle
+ang = math.atan2(roll.y, roll.x)       # rolling direction vs +X
+print(f"[axle] direction=({axle.x:.3f},{axle.y:.3f},0) roll_angle={math.degrees(ang):.1f} deg")
+
+# Bake: rotate about world Z so rolling -> +X, then move the steering
+# axis to the origin and the floor to z=0 — all in one vertex transform.
+R = Matrix.Rotation(-ang, 4, 'Z')
+a = Vector((axis_xy[0], axis_xy[1], 0.0))
+axis2 = (R @ a).xy
+T = Matrix.Translation(Vector((-axis2.x, -axis2.y, -floor_z)))
+W = T @ R
 for o in objs:
-    s = sorted(o.dimensions)
-    if s[0] < 0.15 and 0.06 < s[1] < 0.13:
-        wheel_diams[round(s[1], 3)] += 1
-print("[probe] wheel-candidate minor diameters (m):", dict(wheel_diams))
-
-# Apply user calibration.
-if STEERING_AXIS_XY:
-    for o in objs:
-        o.location.x -= STEERING_AXIS_XY[0]
-        o.location.y -= STEERING_AXIS_XY[1]
-if ROLL_DEG:
-    bpy.ops.object.select_all(action="SELECT")
-    bpy.ops.transform.rotate(
-        value=math.radians(ROLL_DEG), orient_axis="Z", center_override=(0, 0, 0),
-    )
+    o.data.transform(W)
 bpy.context.view_layer.update()
-lo, hi = bbox_report("calibrated")
 
-# Uniform scale from the official height, then floor at z=0, centered XY.
-s = TARGET_HEIGHT_M / (hi.z - lo.z)
-for o in objs:
-    o.scale *= s
-bpy.context.view_layer.update()
-lo, hi = bbox_report("scaled")
-for o in objs:
-    o.location.x -= (lo.x + hi.x) / 2
-    o.location.y -= (lo.y + hi.y) / 2
-    o.location.z -= lo.z
-bpy.ops.object.select_all(action="SELECT")
-bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-objs = [o for o in bpy.data.objects if o.type == "MESH"]
-lo, hi = bbox_report("final")
-print(f"[final] extents (m): x={hi.x - lo.x:.4f} y={hi.y - lo.y:.4f} z={hi.z - lo.z:.4f}")
-print(f"[check] expected ≈ x=0.1588 y=0.1588 z={TARGET_HEIGHT_M:.4f} (6.25/6.25/7.45 in)")
+lo = [min(min(v.co[k] for v in o.data.vertices) for o in objs) for k in range(3)]
+hi = [max(max(v.co[k] for v in o.data.vertices) for o in objs) for k in range(3)]
+print(f"[final] bbox min {[round(c,4) for c in lo]} max {[round(c,4) for c in hi]}")
+print(f"[final] extents (m): X={hi[0]-lo[0]:.4f} Y={hi[1]-lo[1]:.4f} Z(height)={hi[2]-lo[2]:.4f}")
+print(f"[check] z must start at 0; height ≈ 0.1564-0.1570 (6.16-6.17 in); plan ≤ ~0.21 (motor overhang)")
 
-# Join per material → few draw calls per instance.
+# Join per material, decimate, rename.
 by_mat = defaultdict(list)
 for o in objs:
-    key = o.active_material.name if o.active_material else ""
-    by_mat[key].append(o)
+    by_mat[o.active_material.name if o.active_material else '(none)'].append(o)
 joined = []
 for group in by_mat.values():
     if len(group) > 1:
-        bpy.ops.object.select_all(action="DESELECT")
+        bpy.ops.object.select_all(action='DESELECT')
         for o in group:
             o.select_set(True)
         bpy.context.view_layer.objects.active = group[0]
         bpy.ops.object.join()
     joined.append(bpy.context.view_layer.objects.active)
-
-# Decimate each joined mesh.
-for o in joined:
+for idx, o in enumerate(joined):
     mod = o.modifiers.new("dec", "DECIMATE")
     mod.ratio = DECIMATE_RATIO
     bpy.context.view_layer.objects.active = o
     bpy.ops.object.modifier_apply(modifier=mod.name)
-    print(f"[mesh] {o.name}: {len(o.data.polygons)} tris after decimate")
-
-tris = sum(len(o.data.polygons) for o in joined)
-print(f"[total] {tris} triangles")
+    o.name = f"mk5i-{chr(97 + idx)}"
+    o.data.name = o.name  # glTF mesh names come from the data block
+    print(f"[mesh] {o.name}: {len(o.data.polygons)} tris")
+print(f"[total] {sum(len(o.data.polygons) for o in joined)} triangles")
 
 bpy.ops.export_scene.gltf(filepath=dst, export_format="GLB", export_yup=True)
 print(f"[done] wrote {dst}")
