@@ -166,7 +166,7 @@ describe('workspace workflow', () => {
     render(<App />);
     await importSamples('traj/v3_swerve.traj');
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    await screen.findByRole('region', { name: 'Get started' });
+    await screen.findByRole('region', { name: 'Import paths to get started' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
     await screen.findByText('swerve', { selector: '.robot-name' });

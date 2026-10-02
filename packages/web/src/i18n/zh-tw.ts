@@ -6,16 +6,17 @@ import type { MessageKey } from './en';
  * （人工覆寫會在下一次生成時丟失）。
  */
 export const zhTw: Record<MessageKey, string> = {
-  'welcome.title': '開始',
+  'welcome.title': '從匯入路徑開始',
+  'welcome.description': '一起重播路徑，查看機器人之間是否有干涉。',
+  'welcome.folderAdvice': '建議匯入整個路徑資料夾，發現干涉時可以快速切換路線。',
   'welcome.importFile': '匯入路徑檔案',
-  'welcome.importFileHint': '選擇 Choreo 或 PathPlanner 匯出的路徑',
-  'welcome.importFolderHint': '載入資料夾中的路線，選擇要回放的路徑',
+  'welcome.importFileHint': 'Choreo 或 PathPlanner 路徑檔案',
+  'welcome.importFolderHint': '一次載入多條路線，選擇要重播的路徑',
   'welcome.openSession': '開啟已儲存的工作階段',
   'welcome.openSessionHint': '開啟先前儲存的分析',
   'welcome.tryExample': '體驗範例',
   'welcome.exampleHint': '無需準備檔案，用範例路徑了解回放和衝突檢查。',
   'welcome.loadingExample': '正在開啟範例…',
-  'welcome.dropHint': '也可以將檔案或資料夾拖曳到視窗中',
   'welcome.exampleFailed': '無法開啟範例，請重試。',
   'welcome.exampleNameA': '範例路徑 A',
   'welcome.exampleNameB': '範例路徑 B',
