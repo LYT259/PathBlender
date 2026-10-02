@@ -2,16 +2,17 @@ import type { MessageKey } from './en';
 
 /** 简体中文。 */
 export const zh: Record<MessageKey, string> = {
-  'welcome.title': '开始',
+  'welcome.title': '从导入路径开始',
+  'welcome.description': '一起回放路径，查看机器人之间是否有干涉。',
+  'welcome.folderAdvice': '建议导入整个路径文件夹，发现干涉时可以快速切换路线。',
   'welcome.importFile': '导入路径文件',
-  'welcome.importFileHint': '选择 Choreo 或 PathPlanner 导出的路径',
-  'welcome.importFolderHint': '加载文件夹中的路线，选择要回放的路径',
+  'welcome.importFileHint': 'Choreo 或 PathPlanner 路径文件',
+  'welcome.importFolderHint': '一次载入多条路线，选择要回放的路径',
   'welcome.openSession': '打开已保存的会话',
   'welcome.openSessionHint': '打开之前保存的分析',
   'welcome.tryExample': '体验示例',
   'welcome.exampleHint': '无需准备文件，用示例路径了解回放和冲突检查。',
   'welcome.loadingExample': '正在打开示例…',
-  'welcome.dropHint': '也可以将文件或文件夹拖到窗口中',
   'welcome.exampleFailed': '示例打开失败，请重试。',
   'welcome.exampleNameA': '示例路径 A',
   'welcome.exampleNameB': '示例路径 B',
