@@ -10,7 +10,14 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
-import { samplePoseAt } from '@pathblender/core';
+import {
+  chassisModules,
+  moduleSteeringAngles,
+  robotVisualGeometry,
+  samplePoseAt,
+  sampleStateAt,
+} from '@pathblender/core';
+import { buildChassis3D } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
 import { orbitZoomSpeedFor, pinchZoomFactor, wheelZoomFactor } from '../zoom';
@@ -54,7 +61,15 @@ interface Scene3D {
   cx: number;
   cy: number;
   dynamic: THREE.Group;
-  boxes: { mesh: THREE.Mesh; robot: SessionTrajectory }[];
+  /** Procedural MK5i-style chassis rigs, one per robot. */
+  rigs: {
+    root: THREE.Group;
+    robot: SessionTrajectory;
+    pods: THREE.Group[];
+    /** Last applied steering angle per pod (radians, robot frame). */
+    steer: number[];
+    modules: { x: number; y: number }[];
+  }[];
   /** Render-on-demand: a frame is drawn only when something changed. */
   dirty: () => void;
   /** Official 3D field model (when available); replaces the fallback. */
@@ -356,7 +371,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     sceneRef.current = {
       renderer, scene, camera, controls,
       cx: 0, cy: 0,
-      dynamic, boxes: [],
+      dynamic, rigs: [],
       modelRoot, fallback, fieldRoot,
       backgroundThemed,
       dirty: markDirty, themed,
@@ -800,7 +815,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
     disposeDeep(st.dynamic);
     st.dynamic.clear();
-    st.boxes = [];
+    st.rigs = [];
     for (const r of robots) {
       const color = new THREE.Color(r.color);
       const pts = r.trajectory.samples.map((s) =>
@@ -816,30 +831,49 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         );
         st.dynamic.add(tube);
       }
-      const L = r.trajectory.geometry.lengthM;
-      const W = r.trajectory.geometry.widthM;
-      const H = 0.45;
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(L, H, W),
-        new THREE.MeshStandardMaterial({ color, roughness: 0.45 }),
-      );
-      mesh.castShadow = true;
-      st.dynamic.add(mesh);
-      st.boxes.push({ mesh, robot: r });
+      // Procedural MK5i-style chassis (bumper skirt + frame deck + swerve
+      // pods), sized by this robot's season-resolved two-layer geometry.
+      const vis = robotVisualGeometry(r.trajectory, field.year);
+      const modules = chassisModules(r.trajectory, vis.chassis);
+      const chassis = buildChassis3D(vis, modules, r.color);
+      st.dynamic.add(chassis.group);
+      st.rigs.push({
+        root: chassis.group,
+        robot: r,
+        pods: chassis.pods,
+        steer: modules.map(() => 0),
+        modules,
+      });
       st.dirty();
     }
   }, [robots, field]);
 
-  // Drive boxes along the shared clock.
+  // Drive the chassis rigs along the shared clock: pose from the shared
+  // sampler, plus per-pod steering from each wheel's ground velocity
+  // (pods hold their last pointing while the robot stands still).
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
-    for (const { mesh, robot } of st.boxes) {
-      const pose = samplePoseAt(robot, currentT);
-      mesh.position.copy(worldToRenderVec3(pose.x, pose.y, 0.225, st.cx, st.cy));
+    for (const rig of st.rigs) {
+      const state = sampleStateAt(rig.robot, currentT);
+      const pose = state
+        ? { x: state.x, y: state.y, heading: state.heading }
+        : samplePoseAt(rig.robot, currentT);
+      rig.root.position.copy(worldToRenderVec3(pose.x, pose.y, 0, st.cx, st.cy));
       // The render frame reflects X, so the heading reflects with it —
       // leaving it raw would have every robot drive sideways.
-      mesh.rotation.y = headingToRender(pose.heading);
+      rig.root.rotation.y = headingToRender(pose.heading);
+      if (state) {
+        const angles = moduleSteeringAngles(state, rig.modules);
+        if (rig.steer.length !== angles.length) rig.steer = rig.modules.map(() => 0);
+        for (let i = 0; i < rig.pods.length; i++) {
+          const a = angles[i]!;
+          if (a !== null) rig.steer[i] = a;
+          // Robot-frame yaw maps to render yaw with the opposite sign
+          // (see the frame notes in chassis3d.ts).
+          rig.pods[i]!.rotation.y = -rig.steer[i]!;
+        }
+      }
       st.dirty();
     }
   }, [currentT, robots, field]);
