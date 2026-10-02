@@ -3,6 +3,11 @@
 # Spotlight/Launchpad only ever show the /Applications entry.
 # Usage: scripts/install-desktop.sh [--no-build]
 set -euo pipefail
+# null_glob: the dmg/app cleanup globs below legally match nothing (e.g. a
+# --bundles app build leaves no dmg); without this zsh aborts the script on
+# "no matches found" before rm even runs (hit 2026-10-02: install stopped
+# between the updater-sign step and the /Applications swap).
+setopt null_glob
 cd "$(dirname "$0")/.."
 
 # Sign the updater artifacts whenever the release key is on this machine
