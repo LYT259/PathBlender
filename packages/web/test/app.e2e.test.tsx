@@ -133,6 +133,9 @@ describe('App import → fusion → collision flow', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: /^Save$/i }));
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(localStorage.getItem('ghpb.theme')).toBe('light');
+    // Save keeps the dialog open (user request 2026-10-02); Cancel closes it.
+    expect(screen.getByRole('dialog', { name: 'Preferences' })).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: /^Cancel$/i }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
@@ -284,5 +287,23 @@ describe('App import → fusion → collision flow', () => {
     // The responsive overflow menu contains a second Save action; jsdom
     // does not apply the CSS breakpoint that chooses between the two.
     expect(screen.getByText('Save session', { selector: '.toolbar > .save-action' })).toBeEnabled();
+  });
+});
+
+describe('artwork style switcher vs 3D', () => {
+  it('shows the schematic/rendered switcher in 2D but hides it in 3D (identical scene)', async () => {
+    render(<App />);
+    dropFiles([file('ghostauto/straight_run.ghostauto')]);
+    await waitFor(() => expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument());
+
+    // Default field (2026) has both artwork styles and a 3D model.
+    const style = () => document.querySelector('select.field-style');
+    expect(style()).not.toBeNull(); // 2D: switchable
+
+    fireEvent.click(screen.getByRole('button', { name: '3D', exact: true }));
+    expect(style()).toBeNull(); // 3D: official model replaces the artwork
+
+    fireEvent.click(screen.getByRole('button', { name: '2D', exact: true }));
+    expect(style()).not.toBeNull(); // back to 2D: the choice returns
   });
 });

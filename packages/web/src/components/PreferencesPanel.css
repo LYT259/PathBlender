@@ -53,7 +53,6 @@
 .preferences-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
 .preferences-save-hint { font-size: 11px; color: var(--fg-dim); }
 .preferences-footer > div { display: flex; gap: 8px; margin-left: auto; }
-.preferences-footer .btn { min-width: 72px; }
 .prefs-only.preferences-window { display: block; height: 100%; overflow: hidden; }
 @media (max-width: 640px) {
   .preferences-panel { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }

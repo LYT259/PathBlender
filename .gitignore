@@ -52,3 +52,5 @@ scripts/.probe-*.mjs
 
 # AI 协作工具私有清单（同 AGENTS.md 纪律，不入库）
 .zcodeignore
+# matches build dirs AND worktree symlinks (slash-less)
+packages/desktop/src-tauri/target
