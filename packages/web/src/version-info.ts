@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.28';
+export const APP_VERSION = '0.1.6-beta.29';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.29', date: '2026-10-02', note: 'Pin the autosave test clock — kills a 1-ms flake that broke release CI / 钉住自动保存测试时钟，消除曾打断发版流水线的毫秒级竞态' },
   { version: '0.1.6-beta.28', date: '2026-10-02', note: '3D robots visible again: re-drive poses after CAD template lands; pi-scale scene lights for three physical units' },
   { version: '0.1.6-beta.27', date: '2026-10-02', note: 'Restore the clock to the left of the playback bar / 时钟恢复到播放条左侧原位' },
   { version: '0.1.6-beta.26', date: '2026-10-02', note: 'MK5i modules: mirror removed (it flipped them below the floor) / MK5i 模组撤销镜像（其效果是把模组翻到地面以下）' },
