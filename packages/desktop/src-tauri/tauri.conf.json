@@ -47,8 +47,8 @@
     },
     "createUpdaterArtifacts": true,
     "resources": {
-      "icons/AppIcon.icon/Assets/icon-day.png": "icons/icon-day.png",
-      "icons/AppIcon.icon/Assets/icon-night.png": "icons/icon-night.png"
+      "icons/dock/icon-day-rounded.png": "icons/icon-day.png",
+      "icons/dock/icon-night-rounded.png": "icons/icon-night.png"
     }
   },
   "plugins": {
