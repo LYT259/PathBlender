@@ -37,6 +37,17 @@ jobs:
       - run: npm run version:check
       - run: npm run typecheck
       - run: npm test
+      - name: Assert tag name matches tree version
+        # The tag IS the version users see — a tag/tree mismatch ships a
+        # mislabeled build and desyncs the updater (feed version vs app
+        # version). Caught by hand on 2026-10-02 when a beta.4 bump landed
+        # between tagging and CI; assert it in CI from now on.
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "${GITHUB_REF_NAME#v}" != "$VERSION" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json version $VERSION" >&2
+            exit 1
+          fi
 
   build-macos:
     needs: [checks]
@@ -154,7 +165,11 @@ jobs:
           if [ "$CH" = "stable" ]; then
             cp release/latest-beta.json release/latest.json
           fi
-          cat release/latest-beta.json release/latest.json
+          cat release/latest-beta.json release/latest.json 2>/dev/null || true
+          # ^ debug printout only. A beta tag intentionally publishes just
+          # latest-beta.json (stable raises both), so latest.json may not
+          # exist here — `cat` must not kill the step under `bash -e`
+          # (first seen on the v0.1.4-beta.4 run).
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
