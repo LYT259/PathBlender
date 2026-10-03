@@ -192,6 +192,8 @@ export const nl: Record<MessageKey, string> = {
   'rail.png': 'PNG',
   'rail.prefs': 'Voorkeuren',
   'rail.clear': 'Wissen',
+  "prefs.section.controls": "Bediening",
+  "prefs.description.controls": "Kies de muisbediening en lengte-eenheden.",
   "prefs.section.general": "Algemeen",
   "prefs.section.updates": "Updates",
   "prefs.section.about": "Info",

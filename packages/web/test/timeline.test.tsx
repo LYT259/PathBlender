@@ -21,6 +21,14 @@ function playback(t = 6) {
 }
 
 describe('unified timeline', () => {
+  it('uses the edited team number without changing the imported route name', () => {
+    const robot = { ...delayedRobot, trajectory: { ...delayedRobot.trajectory, teamNumber: '2910' } };
+    render(<I18nProvider><Timeline robots={[robot]} conflicts={[]} bounds={[]} autoPeriodS={20} duration={8} playback={playback()} /></I18nProvider>);
+    expect(screen.getByText('#2910')).toBeInTheDocument();
+    expect(screen.queryByText('Robot A')).not.toBeInTheDocument();
+    expect(robot.trajectory.name).toBe('Robot A');
+  });
+
   it('uses one time domain for the ruler, scrubber, delayed activity, events, and playhead', () => {
     const { container } = render(
       <I18nProvider>

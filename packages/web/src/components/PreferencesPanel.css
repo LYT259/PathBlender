@@ -83,8 +83,8 @@
 .preferences-theme-choice input:focus-visible + .preferences-icon-preview { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 .preferences-icon-hint { margin: 12px 0 0; font-size: 12px; line-height: 1.65; color: var(--fg-dim); }
 
-.preferences-mouse-group { margin-block: 24px 16px; }
-.mouse-controls-diagram { position: relative; margin: 0 16px 16px; aspect-ratio: 2 / 1; }
+.preferences-mouse-group { margin-block: 0 16px; }
+.mouse-controls-diagram { position: relative; width: calc(100% - 32px); max-width: 400px; margin: 0 auto 12px; aspect-ratio: 2 / 1; }
 .mouse-controls-drawing { display: block; width: 100%; height: 100%; }
 .mouse-shell { fill: var(--bg); stroke: var(--fg-dim); stroke-width: 1.5; }
 .mouse-seam { fill: none; stroke: var(--border); stroke-width: 1.5; }
@@ -108,3 +108,5 @@
   .mouse-callout span { font-size: 10px; }
 }
 .preferences-update-check .update-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.mouse-scroll-arrows { fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }

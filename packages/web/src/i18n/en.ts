@@ -181,6 +181,8 @@ export const en = {
   'rail.png': 'PNG',
   'rail.prefs': 'Prefs',
   'rail.clear': 'Clear',
+  "prefs.section.controls": "Controls",
+  "prefs.description.controls": "Choose mouse controls and measurement units.",
   "prefs.section.general": "General",
   "prefs.section.updates": "Updates",
   "prefs.section.about": "About",
