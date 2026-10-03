@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.55';
+export const APP_VERSION = '0.1.6-beta.56';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.56', date: '2026-10-03', note: 'Walkthrough: wait out autosave debounce at 3D-restore step' },
   { version: '0.1.6-beta.55', date: '2026-10-03', note: 'Zoom calibrated to measured Onshape behavior — much deeper zoom-in, zoom-out stops at the opening fit view / 缩放按 Onshape 实测校准——放大更深，缩小不越过打开时的适应视图' },
   { version: '0.1.6-beta.54', date: '2026-10-03', note: 'Desktop CSP hardened: page code can no longer open outbound connections — paths stay on-device by mechanism / 桌面端安全策略收紧：页面无法发起外发连接——路径不出机由机制保证' },
   { version: '0.1.6-beta.53', date: '2026-10-03', note: 'Module template rebuilt on the correct rolling axis — wheels point exactly along travel, parked pose matches the chassis CAD / 模组模板修正到正确滚向轴——轮子精确对准运动方向，静止姿态与车架 CAD 一致' },
