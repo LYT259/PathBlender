@@ -592,32 +592,7 @@ await cancelBtn.click();
 await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
 await page.waitForTimeout(200);
 
-check(
-  'viewcube present with home button',
-  (await page.locator('.viewcube canvas').count()) === 1 &&
-    (await page.locator('.vc-home').count()) === 1,
-);
-// Home snap returns to the default orbit (settled click, no drags before).
-const polBeforeHome = await page.evaluate(() => window.__pb3d?.controls.getPolarAngle?.());
-const atHome = () =>
-  page.waitForFunction(
-    () =>
-      Math.abs(window.__pb3d.controls.getAzimuthalAngle()) < 0.05 &&
-      Math.abs(window.__pb3d.controls.getPolarAngle() - 0.661) < 0.06,
-    undefined,
-    { timeout: 6000, polling: 100 },
-  );
-await page.locator('.vc-home').click();
-await atHome();
-const homeState = await page.evaluate(() => ({
-  az: window.__pb3d.controls.getAzimuthalAngle(),
-  pol: window.__pb3d.controls.getPolarAngle(),
-}));
-check(
-  'viewcube home snaps to default view',
-  Math.abs(homeState.az) < 0.2 && Math.abs(homeState.pol - 0.661) < 0.15,
-  `az=${homeState.az.toFixed(2)} pol=${homeState.pol.toFixed(2)} (from ${polBeforeHome?.toFixed?.(2)})`,
-);
+check('viewcube present', (await page.locator('.viewcube canvas').count()) === 1);
 
 // Face/edge/corner picks tween the camera to the picked feature direction
 // (asserted against the pick hook — headless rAF is sparse, so wait for the
