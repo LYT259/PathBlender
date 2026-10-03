@@ -17,7 +17,6 @@ export const ko: Record<MessageKey, string> = {
   'prefs.installUpdate': "설치하고 다시 시작",
   'prefs.checkSavedChannel': "업데이트 확인에는 저장된 채널을 사용합니다: {channel}.",
   'prefs.appIcon': "앱 아이콘",
-  'prefs.appIconHint': "앱이 실행되는 동안 Dock 아이콘에 적용됩니다. Finder와 Launchpad는 항상 시스템 모양을 따릅니다.",
   'welcome.title': '경로를 가져와 시작하세요',
   'welcome.description': '경로를 함께 재생하고 간섭을 확인합니다.',
   'welcome.folderAdvice': '폴더 전체를 가져오면 간섭이 나타났을 때 경로를 전환할 수 있습니다.',
