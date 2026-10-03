@@ -48,6 +48,8 @@ export function createWelcomeExample(names: { a: string; b: string }): {
     });
     // Use the normal core import boundary, including geometry validation.
     // Every call parses fresh objects, so edits never alter a future example.
+    // Names and bumper numbers are plain team numbers (user request
+    // 2026-10-03: the demo reads as two real robots, not "示例路径 A/B").
     const trajectory = parseGhostAuto(JSON.stringify({
       version: '1.0',
       name,
@@ -59,6 +61,7 @@ export function createWelcomeExample(names: { a: string; b: string }): {
       states,
     }), `welcome-example-${index === 0 ? 'a' : 'b'}.ghostauto`);
     trajectory.id = `welcome-example-${index === 0 ? 'a' : 'b'}`;
+    trajectory.teamNumber = index === 0 ? '00001' : '00002';
     return makeSession(trajectory, index);
   });
 

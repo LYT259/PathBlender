@@ -16,8 +16,8 @@ function sessionInput() {
 
 async function openExample() {
   fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-  await screen.findByText('Example path A', { selector: '.robot-name' });
-  expect(screen.getByText('Example path B', { selector: '.robot-name' })).toBeInTheDocument();
+  await screen.findByText('00001', { selector: '.robot-name' });
+  expect(screen.getByText('00002', { selector: '.robot-name' })).toBeInTheDocument();
 }
 
 beforeEach(() => localStorage.clear());
@@ -105,7 +105,7 @@ describe('welcome flow', () => {
     expect(screen.queryByText(playHint)).not.toBeInTheDocument();
     expect(localStorage.getItem('ghpb.tip.play.v1')).toBe('done');
 
-    fireEvent.click(screen.getByText('Example path A × Example path B', { selector: '.conflict-pair' }).closest('button')!);
+    fireEvent.click(screen.getByText('00001 × 00002', { selector: '.conflict-pair' }).closest('button')!);
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
     expect(Number((screen.getByRole('slider') as HTMLInputElement).value)).toBeCloseTo(10);
     expect(screen.queryByText(checkHint)).not.toBeInTheDocument();
@@ -135,8 +135,8 @@ describe('welcome flow', () => {
     fireEvent.drop(window, { dataTransfer: { files: [new File([sampleText], 'straight_run.ghostauto')] } });
     await screen.findByText('Straight Run', { selector: '.robot-name' });
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
-    expect(screen.queryByText('Example path A', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Example path B', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('00001', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('00002', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.queryByText('Fictional paths for exploring the app.')).not.toBeInTheDocument();
   });
@@ -147,15 +147,15 @@ describe('welcome flow', () => {
     const route = new File([sampleText], 'straight_run.ghostauto');
     Object.defineProperty(route, 'webkitRelativePath', { value: 'routes/straight_run.ghostauto' });
     fireEvent.drop(window, { dataTransfer: { files: [route] } });
-    const picker = await screen.findByRole('combobox', { name: 'Active route for Example path A' });
+    const picker = await screen.findByRole('combobox', { name: 'Active route for 00001' });
     const importedOption = within(picker).getByRole('option', { name: /Straight Run/ }) as HTMLOptionElement;
     fireEvent.change(picker, { target: { value: importedOption.value } });
     expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('Example path B', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('00002', { selector: '.robot-name' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
     expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.queryByText('Example path B', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('00002', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'End example' })).not.toBeInTheDocument();
   });
 
@@ -165,13 +165,13 @@ describe('welcome flow', () => {
     const route = new File([sampleText], 'straight_run.ghostauto');
     Object.defineProperty(route, 'webkitRelativePath', { value: 'routes/straight_run.ghostauto' });
     fireEvent.drop(window, { dataTransfer: { files: [route] } });
-    await screen.findByRole('combobox', { name: 'Active route for Example path A' });
+    await screen.findByRole('combobox', { name: 'Active route for 00001' });
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
 
     expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByText('Route library (1)')).toBeInTheDocument();
-    expect(screen.queryByText('Example path A', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Example path B', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('00001', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('00002', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'End example' })).not.toBeInTheDocument();
   });
 
@@ -180,8 +180,8 @@ describe('welcome flow', () => {
     await openExample();
     fireEvent.change(sessionInput(), { target: { files: [new File(['{"app":"not-a-session"}'], 'broken.ghpb.json')] } });
     await waitFor(() => expect(document.querySelector('.import-banner')).toHaveTextContent('broken.ghpb.json'));
-    expect(screen.getByText('Example path A', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('Example path B', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('00001', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('00002', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'End example' })).toBeInTheDocument();
   });
 

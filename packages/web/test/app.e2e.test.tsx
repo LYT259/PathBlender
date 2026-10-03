@@ -337,7 +337,7 @@ describe('artwork style switcher vs 3D', () => {
     await waitFor(() => expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument());
 
     // Default field (2026) has both artwork styles and a 3D model.
-    const style = () => document.querySelector('select.field-style');
+    const style = () => document.querySelector('.field-style-toggle');
     expect(style()).not.toBeNull(); // 2D: switchable
 
     fireEvent.click(screen.getByRole('button', { name: '3D', exact: true }));
