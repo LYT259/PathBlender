@@ -690,6 +690,14 @@ check(
 // the autosaved session restoring, no re-import is needed anymore.
 await page.locator('.view-toggle button', { hasText: '3D' }).click();
 await page.waitForSelector('.field-canvas-3d canvas', { timeout: 15000 });
+// The autosave is debounced 600ms — wait until the rebuilt-2026 field choice
+// has actually been persisted before reloading, otherwise the restore comes
+// back on the model-less powerup-2018 (selected moments earlier), which
+// legitimately stays 2D with the toggle hidden and the wait below times out.
+await page.waitForFunction(
+  () => (localStorage.getItem('pb.autosave.v1') ?? '').includes('rebuilt-2026'),
+  { timeout: 5000 },
+);
 await page.goto(BASE, { waitUntil: 'domcontentloaded' });
 await page.waitForSelector('.field-canvas-3d canvas', { timeout: 15000 });
 check('3D view restored after reload', true);
