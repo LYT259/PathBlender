@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.7-beta.1';
+export const APP_VERSION = '0.1.7-beta.2';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.2', date: '2026-10-03', note: 'Remove the 2018 POWER UP season — app covers 2019–2026 / 移除 2018 赛季，App 覆盖 2019–2026' },
   { version: '0.1.7-beta.1', date: '2026-10-03', note: '3D Fit button returns to the exact open-app camera — position, zoom and viewing angle all reset' },
   { version: '0.1.6', date: '2026-10-03', note: '' },
   { version: '0.1.6-beta.67', date: '2026-10-03', note: 'Trackpad zoom glides again — continuous scroll and pinch answer instantly then ease, mouse notches stay crisp' },
