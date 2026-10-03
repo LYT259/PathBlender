@@ -23,6 +23,9 @@ if (typeof HTMLCanvasElement !== 'undefined') {
     {
       get: (_t, prop) => {
         if (prop === 'canvas') return {};
+        // measureText must return metrics, not undefined — the team-number
+        // rail sizing reads `.width` off it.
+        if (prop === 'measureText') return () => ({ width: 0 });
         // Every method call (fillRect, setTransform, beginPath…) is a no-op.
         return () => undefined;
       },

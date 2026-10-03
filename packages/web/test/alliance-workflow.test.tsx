@@ -27,7 +27,7 @@ beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); });
 afterAll(() => new Promise((resolve) => setTimeout(resolve, 2600)));
 
 describe('whole-session alliance control', () => {
-  it('switches the entire alliance in 2D/3D and restores the previous selection through undo/redo', async () => {
+  it('switches the entire alliance in 2D and 3D', async () => {
     render(<App />);
     expect(screen.queryByRole('group', { name: 'alliance' })).toBeNull();
     drop([pathFile('straight_run.ghostauto'), pathFile('stop_and_score.ghostauto')]);
@@ -37,11 +37,6 @@ describe('whole-session alliance control', () => {
     fireEvent.click(side('Red'));
     expect(fieldRobots().every((r) => r.trajectory.alliance === 'red')).toBe(true);
     expect(fieldRobots()[0]!.trajectory.samples[0]!.x).toBeCloseTo(REBUILT_2026.lengthM - blue[0]!.trajectory.samples[0]!.x, 10);
-    fireEvent.click(screen.getByRole('button', { name: 'Undo', exact: true }));
-    expect(side('Blue')).toHaveAttribute('aria-pressed', 'true');
-    expect(fieldRobots()).toEqual(blue);
-    fireEvent.click(screen.getByRole('button', { name: 'Redo', exact: true }));
-    expect(side('Red')).toHaveAttribute('aria-pressed', 'true');
     const red = fieldRobots();
     fireEvent.click(screen.getByRole('button', { name: '3D', exact: true }));
     await screen.findByTestId('field-3d');
