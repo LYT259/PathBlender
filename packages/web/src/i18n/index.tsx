@@ -3,22 +3,24 @@
  * localStorage preference, browser-language default (ADR-0002).
  */
 
-import { createContext, useContext, useMemo, useState, type ReactNode , useEffect} from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { broadcastPref, listenPrefs } from '../pref-sync';
 import { en, type MessageKey } from './en';
 import { es } from './es';
 import { fr } from './fr';
+import { he } from './he';
+import { ptBR } from './pt-br';
 import { tr } from './tr';
 import { zh } from './zh';
 import { zhHk } from './zh-hk';
 import { zhTw } from './zh-tw';
 
-export type Lang = 'en' | 'es' | 'fr' | 'tr' | 'zh' | 'zh-hk' | 'zh-tw';
+export type Lang = 'en' | 'es' | 'fr' | 'he' | 'pt-BR' | 'tr' | 'zh' | 'zh-hk' | 'zh-tw';
 /** User choice: 'system' follows the OS language live (first visit uses it). */
 export type LangChoice = 'system' | Lang;
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = {
-  en, es, fr, tr, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  en, es, fr, he, 'pt-BR': ptBR, tr, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
 };
 
 /**
@@ -44,6 +46,8 @@ const LANG_META: Record<Lang, { englishName: string; endonym: string }> = {
   'zh-tw': { englishName: 'Chinese (Traditional, Taiwan)', endonym: '繁體中文（中國台灣）' },
   en: { englishName: 'English', endonym: 'English' },
   fr: { englishName: 'French', endonym: 'Français' },
+  he: { englishName: 'Hebrew', endonym: 'עברית' },
+  'pt-BR': { englishName: 'Portuguese (Brazilian)', endonym: 'Português (Brasil)' },
   es: { englishName: 'Spanish', endonym: 'Español' },
   tr: { englishName: 'Turkish', endonym: 'Türkçe' },
 };
@@ -58,9 +62,9 @@ const LANG_CODES = Object.keys(LANG_META) as Lang[];
  * cannot be clicked from memory). One consequence is worth stating: Chinese
  * sorts first, so the three CJK rows head the list — the group our main
  * audience reaches for — with the Latin names in their own alphabetical order
- * behind them. Result in all seven UI languages:
+ * behind them. Result in all nine UI languages:
  * 简体中文 · 繁體中文（中國香港） · 繁體中文（中國台灣） · English · Français ·
- * Español · Türkçe.
+ * עברית · Português (Brasil) · Español · Türkçe.
  */
 export const LANGUAGES: readonly LangChoice[] = [
   'system',
@@ -80,12 +84,20 @@ export const LANGUAGES: readonly LangChoice[] = [
  * Inside Chinese, Hans beats Hant only after the region check, and the region
  * decides *which* Traditional dictionary: HK and MO share one, TW and a bare
  * `zh-Hant` (no region — the largest user group) get the Taiwan one.
+ *
+ * Portuguese ships only the Brazilian dictionary, so every `pt*` tag — a
+ * bare `pt` or an unshipped region like `pt-PT` — lands on it (a Portuguese
+ * speaker is far better served by Brazilian wording than by English).
+ * Hebrew matches its historical `iw` alias too: some browsers and OS locales
+ * still send the pre-2004 code.
  */
 export function langFromTags(tags: readonly string[]): Lang {
   for (const l of tags) {
     if (/^zh-(hant-(hk|mo)|hk|mo)/i.test(l)) return 'zh-hk';
     if (/^zh-(hant(-tw)?|tw)/i.test(l)) return 'zh-tw';
     if (/^zh/i.test(l)) return 'zh';
+    if (/^(he|iw)/i.test(l)) return 'he';
+    if (/^pt/i.test(l)) return 'pt-BR';
     if (/^es/i.test(l)) return 'es';
     if (/^fr/i.test(l)) return 'fr';
     if (/^tr/i.test(l)) return 'tr';
@@ -93,6 +105,14 @@ export function langFromTags(tags: readonly string[]): Lang {
   }
   return 'en';
 }
+
+/**
+ * Languages that read right-to-left. The set is checked against the registry
+ * at type level (`RTL_LANGS` is `Lang[]`), so a language cannot flip the UI
+ * without an explicit entry here.
+ */
+export const RTL_LANGS: readonly Lang[] = ['he'];
+export const isRtl = (l: Lang): boolean => RTL_LANGS.includes(l);
 
 function systemLang(): Lang {
   return langFromTags(navigator.languages ?? [navigator.language]);
@@ -159,6 +179,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       }),
     [],
   );
+  // Document-level text direction. The `dir` attribute flips only what CSS
+  // reads as direction-sensitive (block start, bidi ordering); the field
+  // canvases draw their own pixels, and the physical containers — timeline
+  // axis, numeric inputs, pairing labels — pin `direction: ltr` /
+  // `unicode-bidi: isolate` in app.css, so geometry never mirrors. Runs in
+  // every window (main + desktop prefs), each with its own document.
+  useEffect(() => {
+    document.documentElement.setAttribute('dir', isRtl(lang) ? 'rtl' : 'ltr');
+    document.documentElement.setAttribute('lang', lang);
+  }, [lang]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 

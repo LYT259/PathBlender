@@ -207,6 +207,40 @@ const TR: MenuLang = MenuLang {
     updates: "Güncellemeleri Denetle…",
 };
 
+/// Brazilian Portuguese wording (first batch of the language expansion plan).
+const PT_BR: MenuLang = MenuLang {
+    hide: "Ocultar PathBlender",
+    hide_others: "Ocultar Outros",
+    quit: "Sair do PathBlender",
+    about: "Sobre o PathBlender",
+    file: "Arquivo",
+    edit: "Editar",
+    import: "Importar…",
+    save: "Salvar Sessão…",
+    png: "Exportar PNG…",
+    clear: "Limpar Sessão",
+    prefs: "Preferências…",
+    updates: "Verificar Atualizações…",
+};
+
+/// Hebrew wording. macOS renders the native menu bar itself, so the strings
+/// stay plain Hebrew text and need no RTL markup here — the web content is
+/// where dir=rtl applies.
+const HE: MenuLang = MenuLang {
+    hide: "הסתר את PathBlender",
+    hide_others: "הסתר את האחרים",
+    quit: "יציאה מ-PathBlender",
+    about: "אודות PathBlender",
+    file: "קובץ",
+    edit: "עריכה",
+    import: "ייבוא…",
+    save: "שמירת הפעלה…",
+    png: "ייצוא PNG…",
+    clear: "ניקוי הפעלה",
+    prefs: "העדפות…",
+    updates: "בדיקת עדכונים…",
+};
+
 /// Every web dictionary has a menu table: `set_menu_language` used to fall
 /// through to English for anything but zh/zh-tw, so a Spanish or Turkish user
 /// got an English native menu next to a translated window. Adding a language
@@ -221,6 +255,8 @@ fn lang_of(lang: &str) -> &'static MenuLang {
         "es" => &ES,
         "fr" => &FR,
         "tr" => &TR,
+        "pt-BR" => &PT_BR,
+        "he" => &HE,
         _ => &EN,
     }
 }

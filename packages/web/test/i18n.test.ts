@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest';
+import { render } from '@testing-library/react';
+import { createElement } from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { en, type MessageKey } from '../src/i18n/en';
 import { es } from '../src/i18n/es';
 import { fr } from '../src/i18n/fr';
+import { he } from '../src/i18n/he';
+import { ptBR } from '../src/i18n/pt-br';
 import { tr } from '../src/i18n/tr';
 import { zh } from '../src/i18n/zh';
 import { zhHk, zhHkOverrides } from '../src/i18n/zh-hk';
 import { zhTw } from '../src/i18n/zh-tw';
-import { LANGUAGES, langLabel, langFromTags, type Lang } from '../src/i18n';
+import { I18nProvider, isRtl, LANGUAGES, langLabel, langFromTags, type Lang } from '../src/i18n';
 
 /**
  * Every shipped dictionary. Adding a language means adding one row here (plus
@@ -19,7 +23,7 @@ import { LANGUAGES, langLabel, langFromTags, type Lang } from '../src/i18n';
  * runtime checks below cover the blanks and the placeholders a type cannot.
  */
 const DICTS: Record<string, Record<string, string>> = {
-  en, es, fr, tr, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  en, es, fr, he, 'pt-BR': ptBR, tr, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
 };
 const CODES = Object.keys(DICTS) as Lang[];
 const KEYS = Object.keys(en);
@@ -72,14 +76,13 @@ describe('i18n dictionaries', () => {
     // keeps the English letters (only the CJK ones use single ideographs).
     'vc.top', 'vc.bottom', 'vc.front', 'vc.back', 'vc.left', 'vc.right',
     // Words that genuinely coincide with English in at least one shipped
-    // language (fr 'Assistant'/'Pause'/'Vision', tr 'model', es/… 'Robot').
+    // language (fr 'Pause'/'Collision'/'alliance', es 'Robot'/'General').
     'prefs.section.general', // Spanish 'General' is identical.
-    'workspace.assistant', 'workspace.details', 'robots.identity', 'robots.title',
+    'workspace.details', 'robots.identity', 'robots.title',
     'robots.collision', 'robots.alliance', 'timeline.pause', 'timeline.collision',
-    'site.version', 'about.version', 'ai.model', 'ai.vision', 'ai.placeholder', 'ai.permission',
-    'ai.perm.standard', 'ai.effort', 'ai.stop',
-    // Tokens sent to the provider or the OS unchanged.
-    'ai.effort.auto', 'ai.testOk', 'prefs.channel.stable', 'prefs.channel.beta',
+    'site.version', 'about.version',
+    // Tokens sent to the OS unchanged.
+    'prefs.channel.stable', 'prefs.channel.beta',
   ]);
 
   it('nothing is left sitting on the English text', () => {
@@ -94,8 +97,12 @@ describe('i18n dictionaries', () => {
 
   it('the verbatim whitelist does not carry dead entries', () => {
     // A key that stopped being identical to English should leave the list, or
-    // the gate silently allows a future regression on it.
+    // the gate silently allows a future regression on it. A key that left the
+    // source dictionary (the retired ai.* set) is just as dead — the `key in
+    // en` check used to let it ride, because an absent key compared to an
+    // absent key is `undefined === undefined`.
     for (const key of KEEP_VERBATIM) {
+      expect(KEYS, `en:${key} is no longer a source key; drop it from KEEP_VERBATIM`).toContain(key);
       const stillVerbatim = CODES.some((c) => c !== 'en' && DICTS[c]![key] === en[key as keyof typeof en]);
       expect(stillVerbatim, `en:${key} is translated everywhere; drop it from KEEP_VERBATIM`).toBe(true);
     }
@@ -110,7 +117,7 @@ describe('language picker', () => {
    * head the list and the Latin names keep their own alphabetical order.
    */
   it('offers the languages in a fixed alphabetical order after “system”', () => {
-    expect([...LANGUAGES]).toEqual(['system', 'zh', 'zh-hk', 'zh-tw', 'en', 'fr', 'es', 'tr']);
+    expect([...LANGUAGES]).toEqual(['system', 'zh', 'zh-hk', 'zh-tw', 'en', 'fr', 'he', 'pt-BR', 'es', 'tr']);
   });
 
   it('lists exactly the shipped dictionaries', () => {
@@ -123,6 +130,8 @@ describe('language picker', () => {
       'English',
       'Español',
       'Français',
+      'עברית',
+      'Português (Brasil)',
       'Türkçe',
       '简体中文',
       '繁體中文（中國香港）',
@@ -134,6 +143,8 @@ describe('language picker', () => {
       '繁體中文（中國台灣）',
       'English',
       'Français',
+      'עברית',
+      'Português (Brasil)',
       'Español',
       'Türkçe',
     ]);
@@ -159,9 +170,25 @@ describe('system language detection', () => {
     expect(langFromTags(['tr-TR'])).toBe('tr');
     expect(langFromTags(['zh-CN'])).toBe('zh');
     expect(langFromTags(['en-GB'])).toBe('en');
+    expect(langFromTags(['pt-BR'])).toBe('pt-BR');
+    expect(langFromTags(['he-IL'])).toBe('he');
     // Anything unsupported still lands on English rather than undefined.
     expect(langFromTags(['de-DE', 'ja-JP'])).toBe('en');
     expect(langFromTags([])).toBe('en');
+  });
+
+  it('routes every Portuguese tag to the one shipped Portuguese dictionary', () => {
+    // Only Brazilian Portuguese ships, so a bare `pt` or an unshipped region
+    // like `pt-PT` lands on it — Portuguese wording beats English for a
+    // Portuguese speaker.
+    expect(langFromTags(['pt'])).toBe('pt-BR');
+    expect(langFromTags(['pt-PT', 'en'])).toBe('pt-BR');
+  });
+
+  it('matches Hebrew under its historical iw alias too', () => {
+    // Pre-2004 browsers/OS locales still send `iw` for Hebrew.
+    expect(langFromTags(['iw-IL'])).toBe('he');
+    expect(langFromTags(['iw'])).toBe('he');
   });
 
   it('splits Traditional Chinese by region, with Macau reading Hong Kong', () => {
@@ -187,6 +214,27 @@ describe('system language detection', () => {
     // list that means "English, then Chinese" — opened in Chinese.
     expect(langFromTags(['en-US', 'zh-CN'])).toBe('en');
     expect(langFromTags(['de-DE', 'fr-FR', 'en'])).toBe('fr');
+  });
+});
+
+describe('RTL (Hebrew)', () => {
+  it('flags Hebrew and nothing else', () => {
+    expect(isRtl('he')).toBe(true);
+    for (const code of CODES) {
+      if (code !== 'he') expect(isRtl(code), code).toBe(false);
+    }
+  });
+
+  it('sets the document direction and language from the active choice', () => {
+    const provider = () => createElement(I18nProvider, null, createElement('div'));
+    localStorage.setItem('ghpb.lang', 'he');
+    render(provider());
+    expect(document.documentElement.getAttribute('dir')).toBe('rtl');
+    expect(document.documentElement.getAttribute('lang')).toBe('he');
+    localStorage.clear();
+    render(provider());
+    expect(document.documentElement.getAttribute('dir')).toBe('ltr');
+    expect(document.documentElement.getAttribute('lang')).toBe('en');
   });
 });
 
