@@ -611,7 +611,7 @@ function AppBody() {
     try {
       const { createWelcomeExample } = await import('./welcome-example');
       if (request !== exampleRequest.current) return;
-      const example = createWelcomeExample({ a: tr('welcome.exampleNameA'), b: tr('welcome.exampleNameB') });
+      const example = createWelcomeExample({ a: '00001', b: '00002' });
       // Show it on the field the user actually uses — first visit defaults
       // to AndyMark, afterwards the remembered season + construction.
       setScene({
@@ -738,7 +738,7 @@ function AppBody() {
                     <option value={CUSTOM_FIELD_ID}>{tr('customField.title')}</option>
                   </select>
                   {field.aprilTagsAndyMark && <div className="seg field-variant-toggle" role="group" aria-label={tr('field.variant')}>
-                    {(['andymark', 'welded'] as const).map((variant) => <button key={variant} type="button" aria-pressed={fieldVariant === variant} className={fieldVariant === variant ? 'on' : ''} onClick={() => {
+                    {(['welded', 'andymark'] as const).map((variant) => <button key={variant} type="button" aria-pressed={fieldVariant === variant} className={fieldVariant === variant ? 'on' : ''} onClick={() => {
                       if (fieldVariant === variant) return;
                       setScene({ fieldVariant: variant });
                       if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, variant, fieldStyle);
@@ -748,10 +748,13 @@ function AppBody() {
                       model replaces the artwork plane entirely (the image
                       only feeds the no-model fallback), so both styles
                       render the same scene there (user request 2026-10-02). */}
-                  {!view3D && field.imageRendered && <select className="field-select field-style" value={fieldStyle} onChange={(e) => {
-                    const st = e.target.value as FieldArtStyle; setScene({ fieldStyle: st });
-                    if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, fieldVariant, st);
-                  }} title={tr('field.style')} aria-label={tr('field.style')}><option value="schematic">{tr('field.style.schematic')}</option><option value="rendered">{tr('field.style.rendered')}</option></select>}
+                  {!view3D && field.imageRendered && <div className="seg field-style-toggle" role="group" aria-label={tr('field.style')}>
+                    {(['schematic', 'rendered'] as const).map((style) => <button key={style} type="button" aria-pressed={fieldStyle === style} className={fieldStyle === style ? 'on' : ''} onClick={() => {
+                      if (fieldStyle === style) return;
+                      setScene({ fieldStyle: style });
+                      if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, fieldVariant, style);
+                    }}>{tr(`field.style.${style}`)}</button>)}
+                  </div>}
                 </div>
                 <div className="session-alliance" role="group" aria-label={tr('robots.alliance')}>
                   <div className="seg alliance-toggle">
