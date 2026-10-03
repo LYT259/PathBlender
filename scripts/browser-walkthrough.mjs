@@ -382,21 +382,9 @@ await page.screenshot({ path: `${SHOTS}/09-reefscape.png` });
   check('style/variant toggles paint no console/HTTP errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 }
 check('season switch', true);
-// 2018 removed from the app (user decision 2026-10-03); 2020 is now the
-// model-less single-artwork season exercising the same paths.
-await seasonSelect.selectOption('infinitercharge-2020');
-await page.waitForTimeout(700);
-check('model-less season (2020) renders', errors.length === 0);
-check('2020 hides the style selector (single artwork)', (await page.locator('.field-style-toggle').count()) === 0);
-// No official 3D model exists for 2019–2020 — the 2D/3D toggle must not
-// render at all (user directive 2026-10-01: no 3D offer, no stand-in 3D).
-check(
-  'model-less season hides the 2D/3D toggle (2020)',
-  (await page.locator('.view-toggle').count()) === 0,
-);
-await page.screenshot({ path: `${SHOTS}/09b-2020.png` });
-await seasonSelect.selectOption('rebuilt-2026');
-await page.waitForTimeout(400);
+// 2018–2020 removed (user decisions 2026-10-03); every bundled season now
+// ships an official 3D model, so the old "model-less season" paths are
+// gone — custom fields remain the one 3D-less surface, covered below.
 
 // --- custom field panel opens, takes an image, cancels ---
 await seasonSelect.selectOption('custom');
@@ -677,21 +665,10 @@ await page.waitForFunction(() => {
   check('revisited season keeps paths & camera', dynBack === dynBefore && JSON.stringify(camBack) === JSON.stringify(camBefore), `dynamic=${dynBack}, cam=${camBack}`);
 }
 
-// Switching to a model-less season while in 3D falls back to 2D and the
-// toggle disappears entirely; returning to a model season brings it back.
-await page.locator('.field-select').first().selectOption('infinitercharge-2020');
-await page.waitForTimeout(600);
-check(
-  'model-less season in 3D view falls back to 2D, toggle hidden',
-  (await page.locator('.view-toggle').count()) === 0 &&
-    (await page.locator('canvas.field-canvas').count()) === 1,
-);
-await page.locator('.field-select').first().selectOption('rebuilt-2026');
-await page.waitForTimeout(400);
-check(
-  'model season restores the 2D/3D toggle',
-  (await page.locator('.view-toggle').count()) === 1,
-);
+// Every bundled season ships an official 3D model now (2018–2020 removed,
+// 2026-10-03), and selecting "custom" only opens its panel without
+// switching the field — the old "3D falls back on a model-less season"
+// path no longer exists, so it is not exercised here.
 
 // The 2D/3D choice survives a reload (user directive 2026-10-02) — with
 // the autosaved session restoring, no re-import is needed anymore.
@@ -699,7 +676,7 @@ await page.locator('.view-toggle button', { hasText: '3D' }).click();
 await page.waitForSelector('.field-canvas-3d canvas', { timeout: 15000 });
 // The autosave is debounced 600ms — wait until the rebuilt-2026 field choice
 // has actually been persisted before reloading, otherwise the restore comes
-// back on the model-less infinitercharge-2020 (selected moments earlier), which
+// (no model-less switch happens anymore)
 // legitimately stays 2D with the toggle hidden and the wait below times out.
 await page.waitForFunction(
   () => (localStorage.getItem('pb.autosave.v1') ?? '').includes('rebuilt-2026'),
