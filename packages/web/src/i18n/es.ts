@@ -214,6 +214,7 @@ export const es: Record<MessageKey, string> = {
   'prefs.mouse.onshape': 'Onshape',
   'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Qué botón del ratón rota, desplaza y hace zoom en la vista 3D.',
+  "prefs.mouse.shortcuts": "Combinaciones de teclas",
   'prefs.mouse.table': 'Mapa de botones',
   'prefs.mouse.btn.left': 'Arrastrar botón izquierdo',
   'prefs.mouse.btn.middle': 'Arrastrar botón central',

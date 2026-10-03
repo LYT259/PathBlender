@@ -218,6 +218,7 @@ export const pl: Record<MessageKey, string> = {
   'prefs.mouse.onshape': 'Onshape',
   'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Który przycisk myszy obraca, przesuwa i zmienia powiększenie widoku 3D.',
+  "prefs.mouse.shortcuts": "Kombinacje klawiszy",
   'prefs.mouse.table': 'Przypisanie przycisków',
   'prefs.mouse.btn.left': 'Przeciąganie lewym',
   'prefs.mouse.btn.middle': 'Przeciąganie środkowym',

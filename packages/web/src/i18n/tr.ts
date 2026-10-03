@@ -213,6 +213,7 @@ export const tr: Record<MessageKey, string> = {
   'prefs.mouse.onshape': 'Onshape',
   'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Hangi fare düğmesi 3B görünümü döndürür, kaydırır ve yakınlaştırır.',
+  "prefs.mouse.shortcuts": "Tuş kombinasyonları",
   'prefs.mouse.table': 'Düğme haritası',
   'prefs.mouse.btn.left': 'Sol tuş sürükleme',
   'prefs.mouse.btn.middle': 'Orta tuş sürükleme',

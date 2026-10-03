@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.9';
+export const APP_VERSION = '0.1.7-beta.10';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.10', date: '2026.10.03', note: { en: 'Polish settings and preview ordered length units / 统一设置界面并预览有序长度单位' } },
   { version: '0.1.7-beta.9', date: '2026.10.03', note: { en: 'MK5i modules seat on rails, turret-only steering / MK5i 模组贴梁、仅转塔转向' } },
   { version: '0.1.7-beta.8', date: '2026.10.03', note: {
     en: 'Update notes now follow your UI language with dotted dates; Settings layout tidied',

@@ -204,6 +204,7 @@ export const en = {
   'prefs.mouse.onshape': 'Onshape',
   'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Which mouse button rotates, pans and zooms the 3D view.',
+  "prefs.mouse.shortcuts": "Keyboard combinations",
   'prefs.mouse.table': 'Button map',
   'prefs.mouse.btn.left': 'Left drag',
   'prefs.mouse.btn.middle': 'Middle drag',

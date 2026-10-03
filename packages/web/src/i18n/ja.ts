@@ -218,6 +218,7 @@ export const ja: Record<MessageKey, string> = {
   'prefs.mouse.onshape': 'Onshape',
   'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': '3D ビューの回転・パン・ズームをどのマウスボタンで行うか設定します。',
+  "prefs.mouse.shortcuts": "キーの組み合わせ",
   'prefs.mouse.table': 'ボタン割り当て',
   'prefs.mouse.btn.left': '左ドラッグ',
   'prefs.mouse.btn.middle': '中ドラッグ',

@@ -95,6 +95,7 @@ describe('i18n dictionaries', () => {
     // 'Bumpers {l} × {w} m', 'Meters/Centimeters/Inches (m/cm/in)').
     'robots.timing', 'prefs.section.updates', 'robots.bumper', 'robots.profileEntry',
     'prefs.unit.m', 'prefs.unit.cm', 'prefs.unit.in',
+    'prefs.unit.yd', // French 'Yards (yd)' is the same unit name.
     // Tokens sent to the OS unchanged.
     'prefs.channel.stable', 'prefs.channel.beta',
   ]);
