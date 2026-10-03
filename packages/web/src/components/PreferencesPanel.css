@@ -107,3 +107,4 @@
   .mouse-callout { font-size: 11px; gap: 2px; }
   .mouse-callout span { font-size: 10px; }
 }
+.preferences-update-check .update-actions { display: flex; gap: 8px; flex-wrap: wrap; }

@@ -12,7 +12,10 @@ import type { MessageKey } from './en';
  */
 export const ko: Record<MessageKey, string> = {
   'prefs.checkUpdates': "업데이트 확인",
-  'prefs.checkUpdatesPreview': "미리보기입니다. 여기에서는 아직 업데이트를 확인할 수 없습니다.",
+  'prefs.checking': "업데이트 확인 중…",
+  'prefs.updateAvailable': "버전 {v}을(를) 사용할 수 있습니다.",
+  'prefs.installUpdate': "설치하고 다시 시작",
+  'prefs.checkSavedChannel': "업데이트 확인에는 저장된 채널을 사용합니다: {channel}.",
   'prefs.appIcon': "앱 아이콘",
   'prefs.appIconPreview': "미리보기만 표시합니다. 앱 아이콘은 변경되지 않습니다.",
   'welcome.title': '경로를 가져와 시작하세요',

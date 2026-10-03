@@ -9,7 +9,10 @@ import type { MessageKey } from './en';
  */
 export const fr: Record<MessageKey, string> = {
   'prefs.checkUpdates': "Rechercher des mises à jour",
-  'prefs.checkUpdatesPreview': "Aperçu uniquement. La recherche de mises à jour n’est pas encore activée ici.",
+  'prefs.checking': "Recherche de mises à jour…",
+  'prefs.updateAvailable': "La version {v} est disponible.",
+  'prefs.installUpdate': "Installer et relancer",
+  'prefs.checkSavedChannel': "La recherche de mises à jour utilise le canal enregistré : {channel}.",
   'prefs.appIcon': "Icône de l’application",
   'prefs.appIconPreview': "Aperçu uniquement. L’icône de l’application ne changera pas.",
   'welcome.title': 'Importez des trajectoires pour commencer',

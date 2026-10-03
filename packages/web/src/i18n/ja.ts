@@ -13,7 +13,10 @@ import type { MessageKey } from './en';
  */
 export const ja: Record<MessageKey, string> = {
   'prefs.checkUpdates': "更新を確認",
-  'prefs.checkUpdatesPreview': "プレビューのみです。ここでの更新確認はまだ有効になっていません。",
+  'prefs.checking': "更新を確認しています…",
+  'prefs.updateAvailable': "バージョン {v} が利用可能です。",
+  'prefs.installUpdate': "インストールして再起動",
+  'prefs.checkSavedChannel': "更新の確認には保存済みのチャンネルを使用します: {channel}。",
   'prefs.appIcon': "アプリアイコン",
   'prefs.appIconPreview': "プレビューのみです。アプリアイコンは変更されません。",
   'welcome.title': 'パスをインポートして始めましょう',
