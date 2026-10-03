@@ -73,6 +73,8 @@ export function buildChassis3D(
   moduleTemplate?: THREE.Object3D | null,
   teamNumber?: string,
   frameTemplate?: THREE.Object3D | null,
+  /** Renderer max anisotropy for the cached decal/weave textures. */
+  anisotropy = 1,
 ): Chassis3D {
   const group = new THREE.Group();
 
@@ -83,7 +85,7 @@ export function buildChassis3D(
   group.add(body);
 
   const tint = new THREE.Color(color);
-  const bumperMat = bumperMaterial(tint);
+  const bumperMat = bumperMaterial(tint, anisotropy);
   const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.8 });
   const podMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3c, roughness: 0.55, metalness: 0.35 });
 
@@ -143,7 +145,7 @@ export function buildChassis3D(
   // Centered, upright stitched digits on all four outward-facing rails.
   // A fixed aspect ratio avoids stretching short numbers across the bumper.
   if (teamNumber) {
-    const tex = teamNumberTexture(teamNumber);
+    const tex = teamNumberTexture(teamNumber, anisotropy);
     const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.98, depthWrite: false });
     for (const rail of [
       { width: L - 2 * d, x: 0, z: W / 2 + 0.001, yaw: 0 },
@@ -284,7 +286,7 @@ export function validateModuleTemplate(t: THREE.Object3D): THREE.Group | null {
  *  shared by every robot carrying it (never disposed, like the module
  *  template). */
 const teamNumberTexCache = new Map<string, THREE.CanvasTexture>();
-function teamNumberTexture(num: string): THREE.CanvasTexture {
+function teamNumberTexture(num: string, anisotropy = 1): THREE.CanvasTexture {
   const hit = teamNumberTexCache.get(num);
   if (hit) return hit;
   const canvas = document.createElement('canvas');
@@ -308,7 +310,7 @@ function teamNumberTexture(num: string): THREE.CanvasTexture {
   ctx.stroke();
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
+  tex.anisotropy = anisotropy;
   teamNumberTexCache.set(num, tex);
   return tex;
 }
