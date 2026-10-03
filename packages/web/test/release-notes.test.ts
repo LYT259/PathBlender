@@ -26,14 +26,14 @@ function fixtureRegistry(): string {
 export interface VersionNote {
   version: string;
   date: string;
-  note: string;
+  note: Partial<Record<string, string>> & { en: string };
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.2.0', date: '2026-10-03', note: 'Stable release with everything since 0.1.5 / 正式版：汇集 0.1.5 以来全部改进' },
-  { version: '0.2.0-beta.2', date: '2026-10-02', note: 'Fix \\'quotes\\' in notes / 引号转义' },
-  { version: '0.2.0-beta.1', date: '2026-10-01', note: 'First beta / 首个 beta' },
-  { version: '0.1.5', date: '2026-10-02', note: '' },
+  { version: '0.2.0', date: '2026.10.03', note: { en: 'Stable release with everything since 0.1.5', zh: '正式版：汇集 0.1.5 以来全部改进' } },
+  { version: '0.2.0-beta.2', date: '2026.10.02', note: { en: "Fix 'quotes' in notes", zh: '引号转义' } },
+  { version: '0.2.0-beta.1', date: '2026.10.01', note: { en: 'First beta', zh: '首个 beta' } },
+  { version: '0.1.5', date: '2026.10.02', note: { en: '' } },
 ];
 `,
   );

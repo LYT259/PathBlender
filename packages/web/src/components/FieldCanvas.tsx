@@ -1,3 +1,4 @@
+import { bumperColor } from '../robot-identity';
 import {
   forwardRef,
   useCallback,
@@ -24,6 +25,7 @@ import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
 import {
   chaseAlpha,
+  classifyWheelInput,
   markGestureEnd,
   markGestureStart,
   pinchZoomFactor,
@@ -212,11 +214,12 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       v.cy += before.y - after.y;
     };
 
-    // Chase easing scaffolding (user round 5, 2026-10-02) — retained but
-    // inert since R11: Onshape applies zoom with zero animation (measured
-    // 2026-10-03), so CHASE_INSTANT_SHARE is 1 and events apply fully in
-    // their own frame. Wheel zoom was always instant and cancels any
-    // running chase.
+    // Chase easing (user round 5, 2026-10-02): continuous streams — pinch
+    // AND two-finger scroll — move a TARGET view; a rAF loop eases the real
+    // view toward it (zoom.ts). Each event still applies its instant share
+    // on arrival, so response is immediate; the glide merges batched
+    // deliveries into fluid motion. Discrete mouse notches are instant and
+    // cancel any running chase.
     let chaseTarget: View | null = null;
     let chaseRaf = 0;
     let lastChaseT = 0;
@@ -286,11 +289,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         const sy = (g.clientY ?? rect.top + rect.height / 2) - rect.top;
         const v = viewRef.current;
         const factor = pinchZoomFactor(scale / lastScale);
-        // Onshape-identical responsiveness (measured 2026-10-03): every
-        // event applies fully in its own frame — CHASE_INSTANT_SHARE is 1,
-        // so `deferred` is a no-op and the chase below never moves the
-        // view. The chase scaffolding stays only so the share can be
-        // re-tuned without restructuring.
+        // Half of every event applies on arrival (round 7; restored
+        // 2026-10-03 — full-instant read as steps), the chase glides the
+        // deferred remainder over ~5τ.
         const { instant, deferred } = splitInstant(factor);
         const live = zoomAtView(v, sx, sy, instant);
         v.scale = live.scale; v.cx = live.cx; v.cy = live.cy;
@@ -317,9 +318,32 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       // scroll burst — suppressing it is what freezes the zoom at release
       // (round 4; the gesture stream itself proved clean on video).
       if (wheelSuppressed()) return;
-      stopChase(); // wheel is instant; don't fight a running chase
       autoFitRef.current = false;
-      zoomAt(e.offsetX, e.offsetY, wheelZoomFactor(e.deltaY, e.deltaMode));
+      const factor = wheelZoomFactor(e.deltaY, e.deltaMode);
+      const sx = e.offsetX;
+      const sy = e.offsetY;
+      if (classifyWheelInput(e.deltaY, e.deltaMode) === 'trackpad') {
+        // Two-finger scroll is a continuous stream delivered in batches —
+        // same treatment as the pinch: half of every event applies on
+        // arrival, the chase glides the rest, so the batches read as one
+        // fluid motion instead of steps ("没有之前那么丝滑", 2026-10-03).
+        const { instant, deferred } = splitInstant(factor);
+        const live = zoomAtView(viewRef.current, sx, sy, instant);
+        viewRef.current.scale = live.scale;
+        viewRef.current.cx = live.cx;
+        viewRef.current.cy = live.cy;
+        // Target advances by the event's full factor; seeded from the
+        // post-instant live view when no chase is running (composing
+        // `instant` again here would double it).
+        chaseTarget = chaseTarget
+          ? zoomAtView(zoomAtView(chaseTarget, sx, sy, instant), sx, sy, deferred)
+          : zoomAtView({ scale: viewRef.current.scale, cx: viewRef.current.cx, cy: viewRef.current.cy }, sx, sy, deferred);
+        requestChase();
+      } else {
+        // Discrete mouse notch: instant and crisp; cancels any glide.
+        stopChase();
+        zoomAt(sx, sy, factor);
+      }
       requestDraw();
     };
 
@@ -561,8 +585,8 @@ function drawRobot(
   const W = outer.widthM * scale;
   const ox = outer.offsetX * scale;
   const oy = outer.offsetY * scale;
-  ctx.fillStyle = hexAlpha(r.color, 0.22);
-  ctx.strokeStyle = collided ? '#ff3b30' : outOfBounds ? '#ffa726' : r.color;
+  ctx.fillStyle = bumperColor(r.trajectory.alliance);
+  ctx.strokeStyle = collided ? '#ff3b30' : outOfBounds ? '#ffa726' : bumperColor(r.trajectory.alliance);
   ctx.lineWidth = collided || outOfBounds ? 3 : 2;
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
@@ -574,7 +598,7 @@ function drawRobot(
   const cW = chassis.widthM * scale;
   const cox = chassis.offsetX * scale;
   const coy = chassis.offsetY * scale;
-  ctx.fillStyle = hexAlpha(r.color, 0.45);
+  ctx.fillStyle = cssVar('--bg-panel', '#29292c');
   ctx.strokeStyle = hexAlpha(r.color, 0.9);
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -637,7 +661,7 @@ function drawRobot(
     ctx.textBaseline = 'middle';
     ctx.lineWidth = 3;
     ctx.strokeStyle = cssVar('--canvas-bg', '#1c1c1e');
-    ctx.fillStyle = cssVar('--fg', '#e6e6e8');
+    ctx.fillStyle = '#ffffff';
     for (const side of [1, -1]) {
       // Robot-frame rail center y = ±(W/2 − d/2); screen y is flipped.
       ctx.save();

@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 
 const paths = {
+  mouse: <><rect x="6" y="2" width="12" height="20" rx="6"/><path d="M12 2v7m-6 1h12"/></>,
   info: <><circle cx="12" cy="12" r="9"/><path d="M12 10v7m0-10v.1"/></>,
   refresh: <><path d="M20 11a8 8 0 0 0-14-5L3 9m0-6v6h6M4 13a8 8 0 0 0 14 5l3-3m0 6v-6h-6"/></>,
   import: <><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M5 14v6h14v-6"/></>,

@@ -19,16 +19,24 @@ import {
   sampleStateAt,
 } from '@pathblender/core';
 import { createGroundTrail } from '../ground-trail3d';
+import { bumperColor } from '../robot-identity';
 import { buildChassis3D, validateModuleTemplate } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
-import { useMouseControls } from '../mouse-controls';
+import {
+  resolveMouseAction,
+  useDefaultConstrained,
+  useMouseControls,
+  usePenAsMouse,
+} from '../mouse-controls';
 import {
   chaseStep,
   markGestureEnd,
   markGestureStart,
+  classifyWheelInput,
   orbitZoomSpeedFor,
   pinchZoomFactor,
+  reverseScrollZoomEnabled,
   splitInstant,
   wheelSuppressed,
   wheelZoomFactor,
@@ -106,6 +114,8 @@ interface Scene3D {
   backgroundThemed: { color: THREE.Color; token: string };
   /** Theme-token colors with live refs, retinted when the theme flips. */
   themed: { color: THREE.Color; token: string }[];
+  /** ViewCube face textures bake tokens; regenerate on theme change. */
+  retintCube: () => void;
 }
 
 // AS-style overview: higher and further back than the early low angle,
@@ -145,6 +155,44 @@ function tokenColorHex(token: string, fallback: string): number {
   );
 }
 
+/** Localized label texture for one ViewCube face (512px for retina-crisp
+ *  rendering). faceIdx: 0 +x, 1 -x, 2 top, 3 bottom, 4 +z, 5 -z — the
+ *  per-world-face brightness is baked, Onshape-style lit cube. */
+function faceTexture(label: string, faceIdx: number): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 512;
+  const g = c.getContext('2d')!;
+  const card = cssToken('--bg-card', '#2c2c2f');
+  const m = /^#([0-9a-f]{6})$/i.exec(card.trim());
+  const hex = m?.[1] ?? '8c8c91';
+  const base = [
+    parseInt(hex.slice(0, 2), 16),
+    parseInt(hex.slice(2, 4), 16),
+    parseInt(hex.slice(4, 6), 16),
+  ];
+  const shade = (mul: number) =>
+    `rgb(${base.map((v) => Math.round(Math.max(0, Math.min(255, v * mul)))).join(',')})`;
+  const faceMul = faceIdx === 2 ? 1.1 : faceIdx === 3 ? 0.78 : 1;
+  const grad = g.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0, shade(faceMul * 1.05));
+  grad.addColorStop(1, shade(faceMul * 0.92));
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 512, 512);
+  g.strokeStyle = cssToken('--border', '#3d3d41');
+  g.lineWidth = 14;
+  g.strokeRect(10, 10, 492, 492);
+  g.fillStyle = cssToken('--fg', '#e6e6e8');
+  g.font = '700 168px -apple-system, "Segoe UI", sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(label, 256, 272);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
+}
+
 /**
  * Parsed-and-processed official models, keyed by asset dir. The processed
  * group (mirror mount + material tuning applied) is cached; mounts receive
@@ -165,12 +213,23 @@ let lastModelDir: string | undefined;
  * the parsed template is never disposed (the app has exactly one).
  */
 let mk5iTemplatePromise: Promise<THREE.Group | null> | undefined;
-let mk5iFramePromise: Promise<THREE.Group | null> | undefined;
-function loadMk5iFrame(): Promise<THREE.Group | null> {
-  if (mk5iFramePromise) return mk5iFramePromise;
-  mk5iFramePromise = new Promise((resolve) => {
+const FRAME_ASSETS = {
+  // The user-built 27 in frame (2026 CAD, ships unscaled) and the 30 in
+  // frame (2019-2025 chassis, same construction at the 120-in perimeter
+  // size). Season selects the plan size; 2018 was removed (PR #143).
+  '27': `${import.meta.env.BASE_URL}models/mk5i-frame.glb`,
+  '30': `${import.meta.env.BASE_URL}models/mk5i-frame-30.glb`,
+} as const;
+export type FrameSize = keyof typeof FRAME_ASSETS;
+
+const framePromises = new Map<FrameSize, Promise<THREE.Group | null>>();
+function loadMk5iFrame(size: FrameSize): Promise<THREE.Group | null> {
+  const hit = framePromises.get(size);
+  if (hit) return hit;
+  const plan = size === '27' ? 0.6858 : 0.762; // 27 / 30 in, meters
+  const p = new Promise<THREE.Group | null>((resolve) => {
     new GLTFLoader().load(
-      `${import.meta.env.BASE_URL}models/mk5i-frame.glb`,
+      FRAME_ASSETS[size],
       (gltf) => {
         const g = gltf.scene;
         g.traverse((o) => {
@@ -178,19 +237,17 @@ function loadMk5iFrame(): Promise<THREE.Group | null> {
           if (!mesh.isMesh) return;
           mesh.castShadow = false;
         });
-        // Sanity gate: the shipped frame is 27x27 in (0.6858 m) square.
-        // Reject anything that is not plan-square within tolerance so a
-        // bad asset falls back to "no frame" instead of mis-rendering.
+        // Sanity gate: plan-square within tolerance, at this size.
         const box = new THREE.Box3().setFromObject(g);
         const sx = box.max.x - box.min.x;
         const sz = box.max.z - box.min.z;
         const ok =
-          Math.abs(sx - 0.6858) < 0.01 &&
-          Math.abs(sz - 0.6858) < 0.01 &&
+          Math.abs(sx - plan) < 0.01 &&
+          Math.abs(sz - plan) < 0.01 &&
           Math.abs(sx - sz) < 0.005;
         if (!ok) {
           console.warn(
-            `mk5i frame template rejected: plan ${sx.toFixed(3)}x${sz.toFixed(3)} m (expected ~0.6858 square)`,
+            `mk5i frame template rejected: plan ${sx.toFixed(3)}x${sz.toFixed(3)} m (expected ~${plan} square)`,
           );
           resolve(null);
           return;
@@ -201,7 +258,8 @@ function loadMk5iFrame(): Promise<THREE.Group | null> {
       () => resolve(null),
     );
   });
-  return mk5iFramePromise;
+  framePromises.set(size, p);
+  return p;
 }
 
 function loadMk5iTemplate(): Promise<THREE.Group | null> {
@@ -298,11 +356,19 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<Scene3D | null>(null);
-  // Mouse scheme (Onshape/SolidWorks button map) — read at pointer-event
-  // time through a ref so the scaffold effect's closures stay current.
-  const [mouseScheme, setMouseScheme] = useMouseControls();
+  // Mouse scheme (Onshape/SolidWorks button map) and the three view
+  // checkboxes — read at pointer-event time through refs so the scaffold
+  // effect's closures stay current. Reverse scroll lives in zoom.ts (the
+  // 2D canvas reads the same module flag), set from here on every change.
+  const [mouseScheme] = useMouseControls();
   const mouseSchemeRef = useRef(mouseScheme);
   useEffect(() => { mouseSchemeRef.current = mouseScheme; }, [mouseScheme]);
+  const [defaultConstrained] = useDefaultConstrained();
+  const defaultConstrainedRef = useRef(defaultConstrained);
+  useEffect(() => { defaultConstrainedRef.current = defaultConstrained; }, [defaultConstrained]);
+  const [penAsMouse] = usePenAsMouse();
+  const penAsMouseRef = useRef(penAsMouse);
+  useEffect(() => { penAsMouseRef.current = penAsMouse; }, [penAsMouse]);
   // Scaffold-effect chase cancel hook: Fit/resetCam repositions the camera
   // wholesale, so a mid-flight pinch chase must not keep zooming after it.
   const pinchChaseRef = useRef<{ cancel: () => void } | null>(null);
@@ -313,10 +379,14 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   // Official MK5i CAD module (null = not yet loaded / fell back) — the
   // rig-build effect re-runs when it arrives so existing views upgrade.
   const [moduleTemplate, setModuleTemplate] = useState<THREE.Group | null>(null);
-  const [frameTemplate, setFrameTemplate] = useState<THREE.Group | null>(null);
+  const [frameTemplates, setFrameTemplates] = useState<Partial<Record<FrameSize, THREE.Group | null>>>({});
   useEffect(() => {
     void loadMk5iTemplate().then(setModuleTemplate);
-    void loadMk5iFrame().then(setFrameTemplate);
+    for (const size of Object.keys(FRAME_ASSETS) as FrameSize[]) {
+      void loadMk5iFrame(size).then((g) =>
+        setFrameTemplates((prev) => ({ ...prev, [size]: g })),
+      );
+    }
   }, []);
 
   // Scene scaffold: renderer/camera/controls/lights/ground — per field.
@@ -347,6 +417,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       themed.push({ color: owner.color, token });
       return owner;
     };
+    let retintCube: () => void = () => {};
     scene.background = new THREE.Color(cssToken('--canvas-bg', '#1c1c1e'));
     const backgroundThemed = { color: scene.background as THREE.Color, token: '--canvas-bg' };
     themed.push(backgroundThemed);
@@ -384,7 +455,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // flat-field build used. Owned here (not OrbitControls) so the glide and
     // clamp share the spherical math with the wheel-deltaX handler.
     controls.enableRotate = false;
-    const drag = { active: false, x: 0, y: 0, vTheta: 0, vPhi: 0, lastT: 0 };
+    const drag = { active: false, x: 0, y: 0, vTheta: 0, vPhi: 0, lastT: 0, constrained: false };
     const applyOrbit = (dTheta: number, dPhi: number) => {
       const sph = new THREE.Spherical().setFromVector3(
         camera.position.clone().sub(controls.target),
@@ -395,32 +466,46 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       camera.lookAt(controls.target);
       markDirty();
     };
-    // Scheme routing (user request 2026-10-02, Onshape-style setting):
-    // onshape — left = orbit; solidworks — middle = orbit, Ctrl+middle =
-    // pan. Shift/Ctrl+left stays OrbitControls pan in both schemes.
+    // Scheme routing (verified against Onshape's settings table
+    // 2026-10-03; the pure table lives in mouse-controls.resolveMouseAction):
+    //   onshape — right drag = orbit, Alt+right = constrained orbit,
+    //             Ctrl+right OR middle = pan, wheel = zoom.
+    //   solidworks — middle = orbit, Alt+middle = constrained orbit,
+    //             Ctrl+middle = pan, Shift+middle = drag-zoom, wheel = zoom.
+    // Left does nothing in either scheme (a viewer has no selection).
     const pan = { active: false, x: 0, y: 0 };
+    const dragZoom = { active: false, lastY: 0 };
     const onDragDown = (e: PointerEvent) => {
-      const scheme = mouseSchemeRef.current;
-      const orbitButton = scheme === 'solidworks' ? 1 : 0;
-      if (e.shiftKey) return; // Shift+left = pan (controls)
-      if (e.button === orbitButton && !e.ctrlKey) {
-        e.preventDefault(); // middle: no autoscroll cursor
+      // Pen gate: a stylus only drives the view when "use pen as mouse".
+      if (e.pointerType === 'pen' && !penAsMouseRef.current) return;
+      const action = resolveMouseAction(
+        mouseSchemeRef.current, e.button, e, defaultConstrainedRef.current,
+      );
+      if (action.kind === 'none') return;
+      e.preventDefault(); // middle: no autoscroll; right: no native menu
+      noteInteraction();
+      if (action.kind === 'orbit') {
         drag.active = true;
-        noteInteraction();
+        drag.constrained = action.constrained;
         drag.x = e.clientX;
         drag.y = e.clientY;
         drag.vTheta = 0;
         drag.vPhi = 0;
         drag.lastT = performance.now();
-        renderer.domElement.setPointerCapture(e.pointerId);
-      } else if (scheme === 'solidworks' && e.button === 1 && e.ctrlKey) {
-        e.preventDefault();
+      } else if (action.kind === 'pan') {
         pan.active = true;
-        noteInteraction();
         pan.x = e.clientX;
         pan.y = e.clientY;
-        renderer.domElement.setPointerCapture(e.pointerId);
+      } else {
+        // dragZoom: aim the dolly at the press point (same NDC anchor the
+        // pinch chase uses), then feed vertical drag through applyPinchStep.
+        dragZoom.active = true;
+        dragZoom.lastY = e.clientY;
+        const rect = renderer.domElement.getBoundingClientRect();
+        pinchChase.nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        pinchChase.ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
       }
+      renderer.domElement.setPointerCapture(e.pointerId);
     };
     const onPanMove = (e: PointerEvent) => {
       if (!pan.active) return;
@@ -434,11 +519,29 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       pan.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
     };
+    const onDragZoomMove = (e: PointerEvent) => {
+      if (!dragZoom.active) return;
+      const dy = e.clientY - dragZoom.lastY;
+      dragZoom.lastY = e.clientY;
+      if (dy === 0) return;
+      // Drag up = zoom in (Onshape/SolidWorks drag-zoom convention).
+      // applyPinchStep dollies toward the anchored point through the wheel
+      // path's internals, so clamps and damping behave like a wheel notch.
+      applyPinchStep(Math.exp(-dy * 0.006));
+      noteInteraction();
+      markDirty();
+    };
+    const onDragZoomUp = (e: PointerEvent) => {
+      if (!dragZoom.active) return;
+      dragZoom.active = false;
+      renderer.domElement.releasePointerCapture(e.pointerId);
+    };
     const onDragMove = (e: PointerEvent) => {
       if (!drag.active) return;
       const ROT = 0.0052; // rad per px — the flat-field-era sensitivity
       const dTheta = (e.clientX - drag.x) * ROT;
-      const dPhi = (e.clientY - drag.y) * ROT; // drag down → phi shrinks → camera rises
+      // Constrained rotate (Onshape turntable): azimuth only, no elevation.
+      const dPhi = drag.constrained ? 0 : (e.clientY - drag.y) * ROT;
       drag.x = e.clientX;
       drag.y = e.clientY;
       noteInteraction();
@@ -458,10 +561,13 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     renderer.domElement.addEventListener('pointerdown', onDragDown);
     renderer.domElement.addEventListener('pointermove', onDragMove);
     renderer.domElement.addEventListener('pointermove', onPanMove);
+    renderer.domElement.addEventListener('pointermove', onDragZoomMove);
     renderer.domElement.addEventListener('pointerup', onDragUp);
     renderer.domElement.addEventListener('pointercancel', onDragUp);
     renderer.domElement.addEventListener('pointerup', onPanUp);
     renderer.domElement.addEventListener('pointercancel', onPanUp);
+    renderer.domElement.addEventListener('pointerup', onDragZoomUp);
+    renderer.domElement.addEventListener('pointercancel', onDragZoomUp);
 
     // Trackpad two-finger horizontal swipes arrive as wheel deltaX, which
     // OrbitControls ignores — turn them into azimuth rotation so "dragging
@@ -481,22 +587,34 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // Route vertical wheel zoom through the shared device-aware curve
     // (mouse notches keep a stepped feel; trackpad scrolls/deltas are
     // continuous with a per-event cap — user request 2026-10-02).
-    // OrbitControls applies exp(-K·zoomSpeed·|δ|) per event, so we set
+    // OrbitControls applies exp(K_OC·zoomSpeed·δY) per event, so we set
     // zoomSpeed per event to reproduce our factor exactly and keep its
     // damping, distance clamps and zoom-to-cursor. Capture phase on the
-    // host: OrbitControls' own wheel listener sits on the canvas (target
-    // phase, registration order) and must see the adjusted speed. The same
-    // capture position lets us swallow the lift-drift scroll burst after a
-    // pinch (round 4): stopping propagation keeps OrbitControls (and the
-    // horizontal-rotate handler) from acting on it, freezing the view at
-    // the release-moment zoom.
+    // host: OrbitControls' own wheel listener sits on the canvas and must
+    // see the adjusted speed; the same position lets us swallow the
+    // lift-drift scroll burst after a pinch (round 4).
+    // Reverse scroll cannot ride that formula — δY's sign alone picks
+    // dolly in/out — so reversed wheel notches take the cursor-aimed
+    // applyPinchStep path instead (same internals pinch/drag-zoom use).
     const onWheelZoomSpeed = (e: WheelEvent) => {
       if (wheelSuppressed()) {
         e.preventDefault();
         e.stopPropagation();
         return;
       }
-      controls.zoomSpeed = orbitZoomSpeedFor(wheelZoomFactor(e.deltaY, e.deltaMode), e.deltaY);
+      const factor = wheelZoomFactor(e.deltaY, e.deltaMode);
+      if (factor === 1) return;
+      if (classifyWheelInput(e.deltaY, e.deltaMode) === 'wheel' && reverseScrollZoomEnabled()) {
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = renderer.domElement.getBoundingClientRect();
+        pinchChase.nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        pinchChase.ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+        applyPinchStep(factor);
+        markDirty();
+        return;
+      }
+      controls.zoomSpeed = orbitZoomSpeedFor(factor, e.deltaY);
     };
     host.addEventListener('wheel', onWheelZoomSpeed, { capture: true });
 
@@ -542,7 +660,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       dynamic, rigs: [], trails: [],
       modelRoot, fallback, fieldRoot,
       backgroundThemed,
-      dirty: markDirty, themed,
+      dirty: markDirty, themed, retintCube,
     };
 
 
@@ -564,11 +682,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // orbit center), with the ratio softened via pinchZoomFactor. Events
     // after gestureend are ignored (user round 3: lagging events flushed
     // at finger lift kept zooming after release).
-    // Round 5 chase scaffolding — inert since R11 (Onshape applies zoom
-    // with zero animation, measured 2026-10-03; CHASE_INSTANT_SHARE = 1):
-    // events only touch a chase target (remaining view-zoom factor + anchor
-    // NDC) that the rAF loop would apply in exponential steps via the
-    // OrbitControls cursor-zoom internals.
+    // Round 5 pinch chase: events only touch a chase target (remaining
+    // view-zoom factor + anchor NDC) that the rAF loop applies in
+    // exponential steps via the OrbitControls cursor-zoom internals, so
+    // batched gesture events read as fluid motion instead of steps.
     let lastScale = 1;
     let gestureDone = false;
     const pinchChase = { factor: 1, nx: 0, ny: 0 };
@@ -591,10 +708,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
           const rect = renderer.domElement.getBoundingClientRect();
           pinchChase.nx = (((g.clientX ?? rect.left + rect.width / 2) - rect.left) / rect.width) * 2 - 1;
           pinchChase.ny = -((((g.clientY ?? rect.top + rect.height / 2) - rect.top) / rect.height) * 2 - 1);
-          // Onshape-identical responsiveness (measured 2026-10-03): every
-          // event applies fully in its own frame — CHASE_INSTANT_SHARE is
-          // 1, so `deferred` is a no-op and the chase factor never grows.
-          // The chase scaffolding stays only so the share can be re-tuned.
+          // Half of every event applies on arrival (round 7; restored
+          // 2026-10-03 — full-instant read as steps), the chase loop
+          // glides the deferred remainder over ~5τ.
           const { instant, deferred } = splitInstant(factor);
           applyPinchStep(instant);
           pinchChase.factor *= deferred; // remaining view zoom to apply
@@ -667,11 +783,177 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const ro0 = new ResizeObserver(markDirty);
     ro0.observe(host);
 
+    // --- Onshape-style ViewCube (top-right overlay) ---
+    // A second renderer mirrors the main camera's orientation. Faces, edges
+    // and corners are separate pick targets; each click tweens the camera to
+    // the matching view (face → ortho, edge → two-axis, corner → trimetric).
+    // The rAF loop below runs unconditionally, so damping and the tween can
+    // coexist (the old on-demand loop let the two deadlock); user input
+    // cancels a tween mid-flight.
+    let tween: { from: THREE.Spherical; to: THREE.Spherical; start: number } | null = null;
+    const onUserStart = () => {
+      tween = null;
+    };
+    controls.addEventListener('start', onUserStart);
+    const flyTo = (toPos: THREE.Vector3) => {
+      const from = new THREE.Spherical().setFromVector3(
+        camera.position.clone().sub(controls.target),
+      );
+      const to = new THREE.Spherical().setFromVector3(toPos.clone().sub(controls.target));
+      let d = to.theta - from.theta;
+      if (d > Math.PI) to.theta -= 2 * Math.PI;
+      else if (d < -Math.PI) to.theta += 2 * Math.PI;
+      to.phi = THREE.MathUtils.clamp(to.phi, 0.15, 2.6);
+      from.phi = THREE.MathUtils.clamp(from.phi, 0.15, 2.6);
+      tween = { from, to, start: performance.now() };
+    };
+    const viewcubeEl = document.createElement('div');
+    viewcubeEl.className = 'viewcube';
+    const cubeCanvas = document.createElement('canvas');
+    viewcubeEl.appendChild(cubeCanvas);
+    const homeBtn = document.createElement('button');
+    homeBtn.className = 'vc-home';
+    homeBtn.title = 'Home';
+    homeBtn.innerHTML =
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+    viewcubeEl.appendChild(homeBtn);
+    host.appendChild(viewcubeEl);
+
+    const cubeRenderer = new THREE.WebGLRenderer({ canvas: cubeCanvas, alpha: true, antialias: true });
+    cubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 3));
+    cubeRenderer.setSize(110, 110);
+    const cubeScene = new THREE.Scene();
+    const cubeCam = new THREE.PerspectiveCamera(38, 1, 0.1, 20);
+    cubeCam.position.set(0, 0, 3.6);
+    const cubeGroup = new THREE.Group();
+    cubeScene.add(cubeGroup);
+    const labels = [
+      t('vc.right'), t('vc.left'), t('vc.top'), t('vc.bottom'), t('vc.front'), t('vc.back'),
+    ];
+    // Face textures bake per-world-face shading (top lit, bottom dark) at
+    // 512px so the 110px cube stays crisp on retina displays.
+    const mats = labels.map((lab, i) => new THREE.MeshBasicMaterial({ map: faceTexture(lab, i) }));
+    // Face textures bake theme tokens at draw time; regenerate on theme flip.
+    retintCube = () => {
+      labels.forEach((lab, i) => {
+        const m = mats[i];
+        if (!m) return;
+        m.map?.dispose();
+        m.map = faceTexture(lab, i);
+        m.needsUpdate = true;
+      });
+      (cornerMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
+      (edgeMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
+    };
+    const cubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.55, 1.55), mats);
+    cubeGroup.add(cubeMesh);
+
+    // Onshape-style clean cube: no resident grips. Edge/corner intent is
+    // signaled by two dynamic markers that appear only while hovered and
+    // move to the classified feature (the resident hotspot meshes left
+    // faint artifacts on real GPUs and read as dented corners).
+    const CUBE_H = 1.55 / 2;
+    const hoverMat = () =>
+      new THREE.MeshBasicMaterial({ color: cssToken('--accent', '#0a84ff'), transparent: true, opacity: 0.95 });
+    const cornerMarker = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12), hoverMat());
+    const edgeMarker = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.5, 10), hoverMat());
+    cornerMarker.visible = false;
+    edgeMarker.visible = false;
+    cubeGroup.add(cornerMarker, edgeMarker);
+    const hideMarkers = () => {
+      cornerMarker.visible = false;
+      edgeMarker.visible = false;
+    };
+
+    const ray = new THREE.Raycaster();
+    const cubePtr = new THREE.Vector2();
+    interface CubePick {
+      dir: THREE.Vector3 | null;
+      faceIdx: number;
+      hot: THREE.Mesh | null;
+    }
+    const pick = (ev: PointerEvent): CubePick => {
+      const r = cubeCanvas.getBoundingClientRect();
+      cubePtr.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(cubePtr, cubeCam);
+      const hit = ray.intersectObject(cubeMesh, false)[0];
+      if (!hit) return { dir: null, faceIdx: -1, hot: null };
+      // Classify by how many local axes sit near their extreme: one → face,
+      // two → edge, three → corner (the world direction IS the local one —
+      // the cube only mirrors the camera).
+      const p = cubeMesh.worldToLocal(hit.point.clone());
+      const big = [Math.abs(p.x) > 0.5 * CUBE_H, Math.abs(p.y) > 0.5 * CUBE_H, Math.abs(p.z) > 0.5 * CUBE_H];
+      const dir = new THREE.Vector3(
+        big[0] ? Math.sign(p.x) : 0,
+        big[1] ? Math.sign(p.y) : 0,
+        big[2] ? Math.sign(p.z) : 0,
+      );
+      const faceIdx =
+        dir.lengthSq() === 1
+          ? [dir.x, -dir.x, dir.y, -dir.y, dir.z, -dir.z].findIndex((v) => v === 1)
+          : -1;
+      return { dir: dir.lengthSq() > 0 ? dir : null, faceIdx, hot: null };
+    };
+    const applyHover = (p: CubePick) => {
+      mats.forEach((m, i) => m.color.set(i === p.faceIdx ? cssToken('--accent', '#0a84ff') : '#ffffff'));
+      hideMarkers();
+      const nz = p.dir
+        ? [p.dir.x, p.dir.y, p.dir.z].filter((v) => Math.abs(v) > 0.4).length
+        : 0;
+      if (nz === 3 && p.dir) {
+        cornerMarker.position.copy(p.dir).multiplyScalar(CUBE_H);
+        cornerMarker.visible = true;
+      } else if (nz === 2 && p.dir) {
+        const axis = [0, 1, 2].find((i) => p.dir!.getComponent(i) === 0) ?? 0;
+        if (axis === 0) edgeMarker.rotation.set(0, 0, Math.PI / 2);
+        else if (axis === 2) edgeMarker.rotation.set(Math.PI / 2, 0, 0);
+        else edgeMarker.rotation.set(0, 0, 0);
+        edgeMarker.position.copy(p.dir).multiplyScalar(CUBE_H);
+        edgeMarker.visible = true;
+      }
+      markDirty();
+    };
+    const onCubeDown = (ev: PointerEvent) => {
+      ev.stopPropagation();
+      const p = pick(ev);
+      if (!p.dir) return;
+      // Test hook: the walkthrough asserts the camera reaches this target.
+      (window as unknown as { __pb3d?: { lastPick?: THREE.Vector3 } }).__pb3d!.lastPick = p.dir.clone();
+      const dist = camera.position.distanceTo(controls.target);
+      flyTo(controls.target.clone().add(p.dir.clone().multiplyScalar(dist)));
+    };
+    const onCubeMove = (ev: PointerEvent) => {
+      const p = pick(ev);
+      applyHover(p);
+      cubeCanvas.style.cursor = p.dir ? 'pointer' : 'default';
+    };
+    cubeCanvas.addEventListener('pointerdown', onCubeDown);
+    cubeCanvas.addEventListener('pointermove', onCubeMove);
+    const onHome = (ev: Event) => {
+      ev.preventDefault();
+      flyTo(new THREE.Vector3(...CAM_HOME));
+    };
+    homeBtn.addEventListener('click', onHome);
+
     let raf = 0;
     const loop = () => {
       const now = performance.now();
       const dt = now - lastFrameT;
       lastFrameT = now;
+      // ViewCube tween: ease the camera along the shortest spherical arc.
+      if (tween) {
+        const t = Math.min(1, (performance.now() - tween.start) / 300);
+        const e = 1 - Math.pow(1 - t, 3); // ease-out cubic
+        const sph = new THREE.Spherical(
+          THREE.MathUtils.lerp(tween.from.radius, tween.to.radius, e),
+          THREE.MathUtils.lerp(tween.from.phi, tween.to.phi, e),
+          THREE.MathUtils.lerp(tween.from.theta, tween.to.theta, e),
+        );
+        camera.position.setFromSpherical(sph).add(controls.target);
+        camera.lookAt(controls.target);
+        needsDraw = true;
+        if (t >= 1) tween = null;
+      }
       // Pinch chase: step the remaining zoom toward its target this frame.
       if (pinchChase.factor !== 1) {
         const stepped = chaseStep(pinchChase.factor, dt);
@@ -691,6 +973,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (needsDraw || moved) {
         needsDraw = false;
         renderer.render(scene, camera);
+        // Mirror the main orientation into the cube and draw it too.
+        cubeGroup.quaternion.copy(camera.quaternion).invert();
+        cubeRenderer.render(cubeScene, cubeCam);
       }
       raf = requestAnimationFrame(loop);
     };
@@ -704,6 +989,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       ro.disconnect();
       ro0.disconnect();
       controls.removeEventListener('change', markDirty);
+      controls.removeEventListener('start', onUserStart);
+      cubeCanvas.removeEventListener('pointerdown', onCubeDown);
+      cubeCanvas.removeEventListener('pointermove', onCubeMove);
+      homeBtn.removeEventListener('click', onHome);
+      cubeRenderer.dispose();
+      viewcubeEl.remove();
       renderer.domElement.removeEventListener('pointerdown', onDragDown);
       renderer.domElement.removeEventListener('pointermove', onDragMove);
       renderer.domElement.removeEventListener('pointermove', onPanMove);
@@ -723,19 +1014,15 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
   }, []);
 
-  // Non-orbit button map per scheme (Onshape-style setting, user request
-  // 2026-10-02): onshape — middle = pan, right = drag-zoom; solidworks —
-  // middle is the custom orbit/Ctrl+pan above, so OrbitControls stays off
-  // for middle/right. LEFT: ROTATE is inert with enableRotate off, except
-  // its Shift/Ctrl pan branch, which both schemes keep.
+  // All mouse navigation is owned by the scheme-routed handlers above;
+  // OrbitControls keeps the wheel dolly and touch gestures only. (The
+  // mapping must exist — controls skips buttons it doesn't own.)
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
     const NONE = -1 as unknown as THREE.MOUSE;
-    st.controls.mouseButtons = mouseScheme === 'solidworks'
-      ? { LEFT: THREE.MOUSE.ROTATE, MIDDLE: NONE, RIGHT: NONE }
-      : { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.DOLLY };
-  }, [mouseScheme]);
+    st.controls.mouseButtons = { LEFT: NONE, MIDDLE: NONE, RIGHT: NONE };
+  }, []);
 
   // ---- Field-dependent subtree: slab/walls/tags/structures ----------------
   // Rebuilt when the field (or its artwork) changes. The scaffold — and
@@ -928,6 +1215,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const st = sceneRef.current;
     if (!st) return;
     for (const { color, token } of st.themed) color.set(tokenColorHex(token, '#1c1c1e'));
+    st.retintCube();
     st.dirty();
   }, [themeResolved]);
 
@@ -1082,7 +1370,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // the official CAD module when its template has loaded.
       const vis = robotVisualGeometry(r.trajectory, field.year);
       const modules = chassisModules(r.trajectory, vis.chassis);
-      const chassis = buildChassis3D(vis, modules, r.color, moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplate);
+      // 2026 rides the 27 in CAD frame; every other season the 30 in one
+      // (2018 is gone). buildChassis3D scales the frame to the robot's
+      // chassis rectangle, so file-sized robots still fit exactly.
+      const frameSize: FrameSize = field.year === 2026 ? '27' : '30';
+      const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplates[frameSize] ?? null);
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,
@@ -1096,7 +1388,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       });
       st.dirty();
     }
-  }, [robots, field, moduleTemplate, frameTemplate]);
+  }, [robots, field, moduleTemplate, frameTemplates]);
 
   useEffect(() => {
     const st = sceneRef.current;
@@ -1107,7 +1399,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       mesh.material.uniforms.cutoff!.value = time;
     }
     st.dirty();
-  }, [currentT, showTrail, robots, field, moduleTemplate, frameTemplate]);
+  }, [currentT, showTrail, robots, field, moduleTemplate, frameTemplates]);
 
   // Drive the chassis rigs along the shared clock: pose from the shared
   // sampler, plus per-module turret steering from each wheel's ground
@@ -1148,27 +1440,17 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   }, [currentT, robots, field, moduleTemplate]);
 
   useImperativeHandle(ref, () => ({
-    // Fit the whole field into the vertical field of view from the current
-    // viewing direction — the toolbar's Fit action. It deliberately keeps the
-    // direction the user orbited to, so it does NOT restore the load-time
-    // camera (CAM_HOME sits closer, at |CAM_HOME| ≈ 17.1 m). The diagonal
-    // framing distance (~20.8 m for a 2026 field) is clamped to maxDistance
-    // (user round 11: the view may never shrink below the open view), so Fit
-    // recovers a deeply zoomed camera to the open framing without exceeding
-    // the zoom-out floor.
+    // The toolbar's Fit action (user 2026-10-03): return the camera to the
+    // EXACT open-app state — home position CAM_HOME (|CAM_HOME| ≈ 17.1 m),
+    // target back on the field origin — so position, zoom and viewing
+    // angle all reset in one click. (It previously kept the direction the
+    // user had orbited to and only reframed the distance.)
     resetCam: () => {
       const st = sceneRef.current;
       if (!st) return;
       pinchChaseRef.current?.cancel();
-      const diagonal = Math.hypot(st.cx * 2, st.cy * 2);
-      const fov = (st.camera.fov * Math.PI) / 180;
-      const dist = Math.min(
-        Math.max((diagonal / 2 / Math.tan(fov / 2)) * 1.05, 6),
-        st.controls.maxDistance,
-      );
-      const dir = st.camera.position.clone().sub(st.controls.target).normalize();
       st.controls.target.set(0, 0, 0);
-      st.camera.position.copy(dir.multiplyScalar(dist));
+      st.camera.position.set(...CAM_HOME);
       st.controls.update();
       st.dirty();
     },

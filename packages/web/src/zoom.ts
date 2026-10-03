@@ -122,16 +122,20 @@ export function wheelSuppressed(now = performance.now()): boolean {
 }
 
 /**
- * Chase smoothing (user round 5, 2026-10-02) is retained for structural
- * compatibility but disabled: Onshape applies every zoom event instantly
- * (same-frame, measured 2026-10-03), and the user asked for identical
- * responsiveness ("跟手程度跟 Onshape 一模一样", R11). A share of 1 makes
- * splitInstant return the whole factor immediately; the chase loop starts
- * settled and never moves the view. τ is kept for the loop math only.
+ * Zoom chase smoothing for the CONTINUOUS streams (pinch, two-finger
+ * scroll): each event applies this fraction immediately and a rAF loop
+ * glides the remainder (τ = 80 ms below). Onshape applies even wheel
+ * events with zero animation (measured 2026-10-03) and R11 shipped a
+ * share of 1 — but on WKWebView the gesture/touch streams arrive in
+ * main-thread-congested batches, so full-instant application reads as
+ * visible steps: the user called it "没有之前那么丝滑" (2026-10-03).
+ * 0.5 is the R8-approved feel — an immediate visible response with a
+ * short glide tail merging the batches. Discrete mouse notches bypass
+ * this entirely (instant, crisp).
  */
 export const CHASE_TAU_MS = 80;
 
-export const CHASE_INSTANT_SHARE = 1;
+export const CHASE_INSTANT_SHARE = 0.5;
 
 /**
  * Split one pinch factor into the instant part and the deferred part
@@ -168,6 +172,22 @@ export function classifyWheelInput(deltaY: number, deltaMode: number): WheelInpu
 }
 
 /**
+ * Onshape's "Reverse scroll wheel zoom direction" checkbox. Applied only
+ * to the discrete 'wheel' class: pinch (gesture* events) and two-finger
+ * trackpad scroll are natural-direction gestures and must not flip. The
+ * app host keeps this in sync with the saved preference.
+ */
+let reverseScrollZoom = false;
+
+export function setReverseScrollZoom(on: boolean): void {
+  reverseScrollZoom = on;
+}
+
+export function reverseScrollZoomEnabled(): boolean {
+  return reverseScrollZoom;
+}
+
+/**
  * Multiplicative zoom factor for one wheel event: >1 zooms in (δ<0),
  * <1 zooms out (δ>0), 1 is neutral. Mouse notches take Onshape's flat
  * per-event step (δ magnitude ignored, measured 2026-10-03); trackpad
@@ -176,7 +196,10 @@ export function classifyWheelInput(deltaY: number, deltaMode: number): WheelInpu
 export function wheelZoomFactor(deltaY: number, deltaMode: number = WheelEvent.DOM_DELTA_PIXEL): number {
   if (deltaY === 0) return 1;
   const trackpad = classifyWheelInput(deltaY, deltaMode) === 'trackpad';
-  if (!trackpad) return deltaY < 0 ? WHEEL_STEP : 1 / WHEEL_STEP;
+  if (!trackpad) {
+    const dy = reverseScrollZoom ? -deltaY : deltaY;
+    return dy < 0 ? WHEEL_STEP : 1 / WHEEL_STEP;
+  }
   const factor = Math.exp(-deltaY * TRACKPAD_K);
   return Math.min(TRACKPAD_EVENT_CAP, Math.max(1 / TRACKPAD_EVENT_CAP, factor));
 }
