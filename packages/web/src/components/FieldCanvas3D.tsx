@@ -23,13 +23,20 @@ import { bumperColor } from '../robot-identity';
 import { buildChassis3D, validateModuleTemplate } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
-import { useMouseControls } from '../mouse-controls';
+import {
+  resolveMouseAction,
+  useDefaultConstrained,
+  useMouseControls,
+  usePenAsMouse,
+} from '../mouse-controls';
 import {
   chaseStep,
   markGestureEnd,
   markGestureStart,
+  classifyWheelInput,
   orbitZoomSpeedFor,
   pinchZoomFactor,
+  reverseScrollZoomEnabled,
   splitInstant,
   wheelSuppressed,
   wheelZoomFactor,
@@ -305,11 +312,19 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<Scene3D | null>(null);
-  // Mouse scheme (Onshape/SolidWorks button map) — read at pointer-event
-  // time through a ref so the scaffold effect's closures stay current.
-  const [mouseScheme, setMouseScheme] = useMouseControls();
+  // Mouse scheme (Onshape/SolidWorks button map) and the three view
+  // checkboxes — read at pointer-event time through refs so the scaffold
+  // effect's closures stay current. Reverse scroll lives in zoom.ts (the
+  // 2D canvas reads the same module flag), set from here on every change.
+  const [mouseScheme] = useMouseControls();
   const mouseSchemeRef = useRef(mouseScheme);
   useEffect(() => { mouseSchemeRef.current = mouseScheme; }, [mouseScheme]);
+  const [defaultConstrained] = useDefaultConstrained();
+  const defaultConstrainedRef = useRef(defaultConstrained);
+  useEffect(() => { defaultConstrainedRef.current = defaultConstrained; }, [defaultConstrained]);
+  const [penAsMouse] = usePenAsMouse();
+  const penAsMouseRef = useRef(penAsMouse);
+  useEffect(() => { penAsMouseRef.current = penAsMouse; }, [penAsMouse]);
   // Scaffold-effect chase cancel hook: Fit/resetCam repositions the camera
   // wholesale, so a mid-flight pinch chase must not keep zooming after it.
   const pinchChaseRef = useRef<{ cancel: () => void } | null>(null);
@@ -395,7 +410,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // flat-field build used. Owned here (not OrbitControls) so the glide and
     // clamp share the spherical math with the wheel-deltaX handler.
     controls.enableRotate = false;
-    const drag = { active: false, x: 0, y: 0, vTheta: 0, vPhi: 0, lastT: 0 };
+    const drag = { active: false, x: 0, y: 0, vTheta: 0, vPhi: 0, lastT: 0, constrained: false };
     const applyOrbit = (dTheta: number, dPhi: number) => {
       const sph = new THREE.Spherical().setFromVector3(
         camera.position.clone().sub(controls.target),
@@ -406,32 +421,46 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       camera.lookAt(controls.target);
       markDirty();
     };
-    // Scheme routing (user request 2026-10-02, Onshape-style setting):
-    // onshape — left = orbit; solidworks — middle = orbit, Ctrl+middle =
-    // pan. Shift/Ctrl+left stays OrbitControls pan in both schemes.
+    // Scheme routing (verified against Onshape's settings table
+    // 2026-10-03; the pure table lives in mouse-controls.resolveMouseAction):
+    //   onshape — right drag = orbit, Alt+right = constrained orbit,
+    //             Ctrl+right OR middle = pan, wheel = zoom.
+    //   solidworks — middle = orbit, Alt+middle = constrained orbit,
+    //             Ctrl+middle = pan, Shift+middle = drag-zoom, wheel = zoom.
+    // Left does nothing in either scheme (a viewer has no selection).
     const pan = { active: false, x: 0, y: 0 };
+    const dragZoom = { active: false, lastY: 0 };
     const onDragDown = (e: PointerEvent) => {
-      const scheme = mouseSchemeRef.current;
-      const orbitButton = scheme === 'solidworks' ? 1 : 0;
-      if (e.shiftKey) return; // Shift+left = pan (controls)
-      if (e.button === orbitButton && !e.ctrlKey) {
-        e.preventDefault(); // middle: no autoscroll cursor
+      // Pen gate: a stylus only drives the view when "use pen as mouse".
+      if (e.pointerType === 'pen' && !penAsMouseRef.current) return;
+      const action = resolveMouseAction(
+        mouseSchemeRef.current, e.button, e, defaultConstrainedRef.current,
+      );
+      if (action.kind === 'none') return;
+      e.preventDefault(); // middle: no autoscroll; right: no native menu
+      noteInteraction();
+      if (action.kind === 'orbit') {
         drag.active = true;
-        noteInteraction();
+        drag.constrained = action.constrained;
         drag.x = e.clientX;
         drag.y = e.clientY;
         drag.vTheta = 0;
         drag.vPhi = 0;
         drag.lastT = performance.now();
-        renderer.domElement.setPointerCapture(e.pointerId);
-      } else if (scheme === 'solidworks' && e.button === 1 && e.ctrlKey) {
-        e.preventDefault();
+      } else if (action.kind === 'pan') {
         pan.active = true;
-        noteInteraction();
         pan.x = e.clientX;
         pan.y = e.clientY;
-        renderer.domElement.setPointerCapture(e.pointerId);
+      } else {
+        // dragZoom: aim the dolly at the press point (same NDC anchor the
+        // pinch chase uses), then feed vertical drag through applyPinchStep.
+        dragZoom.active = true;
+        dragZoom.lastY = e.clientY;
+        const rect = renderer.domElement.getBoundingClientRect();
+        pinchChase.nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        pinchChase.ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
       }
+      renderer.domElement.setPointerCapture(e.pointerId);
     };
     const onPanMove = (e: PointerEvent) => {
       if (!pan.active) return;
@@ -445,11 +474,29 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       pan.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
     };
+    const onDragZoomMove = (e: PointerEvent) => {
+      if (!dragZoom.active) return;
+      const dy = e.clientY - dragZoom.lastY;
+      dragZoom.lastY = e.clientY;
+      if (dy === 0) return;
+      // Drag up = zoom in (Onshape/SolidWorks drag-zoom convention).
+      // applyPinchStep dollies toward the anchored point through the wheel
+      // path's internals, so clamps and damping behave like a wheel notch.
+      applyPinchStep(Math.exp(-dy * 0.006));
+      noteInteraction();
+      markDirty();
+    };
+    const onDragZoomUp = (e: PointerEvent) => {
+      if (!dragZoom.active) return;
+      dragZoom.active = false;
+      renderer.domElement.releasePointerCapture(e.pointerId);
+    };
     const onDragMove = (e: PointerEvent) => {
       if (!drag.active) return;
       const ROT = 0.0052; // rad per px — the flat-field-era sensitivity
       const dTheta = (e.clientX - drag.x) * ROT;
-      const dPhi = (e.clientY - drag.y) * ROT; // drag down → phi shrinks → camera rises
+      // Constrained rotate (Onshape turntable): azimuth only, no elevation.
+      const dPhi = drag.constrained ? 0 : (e.clientY - drag.y) * ROT;
       drag.x = e.clientX;
       drag.y = e.clientY;
       noteInteraction();
@@ -469,10 +516,13 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     renderer.domElement.addEventListener('pointerdown', onDragDown);
     renderer.domElement.addEventListener('pointermove', onDragMove);
     renderer.domElement.addEventListener('pointermove', onPanMove);
+    renderer.domElement.addEventListener('pointermove', onDragZoomMove);
     renderer.domElement.addEventListener('pointerup', onDragUp);
     renderer.domElement.addEventListener('pointercancel', onDragUp);
     renderer.domElement.addEventListener('pointerup', onPanUp);
     renderer.domElement.addEventListener('pointercancel', onPanUp);
+    renderer.domElement.addEventListener('pointerup', onDragZoomUp);
+    renderer.domElement.addEventListener('pointercancel', onDragZoomUp);
 
     // Trackpad two-finger horizontal swipes arrive as wheel deltaX, which
     // OrbitControls ignores — turn them into azimuth rotation so "dragging
@@ -492,22 +542,34 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // Route vertical wheel zoom through the shared device-aware curve
     // (mouse notches keep a stepped feel; trackpad scrolls/deltas are
     // continuous with a per-event cap — user request 2026-10-02).
-    // OrbitControls applies exp(-K·zoomSpeed·|δ|) per event, so we set
+    // OrbitControls applies exp(K_OC·zoomSpeed·δY) per event, so we set
     // zoomSpeed per event to reproduce our factor exactly and keep its
     // damping, distance clamps and zoom-to-cursor. Capture phase on the
-    // host: OrbitControls' own wheel listener sits on the canvas (target
-    // phase, registration order) and must see the adjusted speed. The same
-    // capture position lets us swallow the lift-drift scroll burst after a
-    // pinch (round 4): stopping propagation keeps OrbitControls (and the
-    // horizontal-rotate handler) from acting on it, freezing the view at
-    // the release-moment zoom.
+    // host: OrbitControls' own wheel listener sits on the canvas and must
+    // see the adjusted speed; the same position lets us swallow the
+    // lift-drift scroll burst after a pinch (round 4).
+    // Reverse scroll cannot ride that formula — δY's sign alone picks
+    // dolly in/out — so reversed wheel notches take the cursor-aimed
+    // applyPinchStep path instead (same internals pinch/drag-zoom use).
     const onWheelZoomSpeed = (e: WheelEvent) => {
       if (wheelSuppressed()) {
         e.preventDefault();
         e.stopPropagation();
         return;
       }
-      controls.zoomSpeed = orbitZoomSpeedFor(wheelZoomFactor(e.deltaY, e.deltaMode), e.deltaY);
+      const factor = wheelZoomFactor(e.deltaY, e.deltaMode);
+      if (factor === 1) return;
+      if (classifyWheelInput(e.deltaY, e.deltaMode) === 'wheel' && reverseScrollZoomEnabled()) {
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = renderer.domElement.getBoundingClientRect();
+        pinchChase.nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        pinchChase.ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+        applyPinchStep(factor);
+        markDirty();
+        return;
+      }
+      controls.zoomSpeed = orbitZoomSpeedFor(factor, e.deltaY);
     };
     host.addEventListener('wheel', onWheelZoomSpeed, { capture: true });
 
@@ -732,19 +794,15 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
   }, []);
 
-  // Non-orbit button map per scheme (Onshape-style setting, user request
-  // 2026-10-02): onshape — middle = pan, right = drag-zoom; solidworks —
-  // middle is the custom orbit/Ctrl+pan above, so OrbitControls stays off
-  // for middle/right. LEFT: ROTATE is inert with enableRotate off, except
-  // its Shift/Ctrl pan branch, which both schemes keep.
+  // All mouse navigation is owned by the scheme-routed handlers above;
+  // OrbitControls keeps the wheel dolly and touch gestures only. (The
+  // mapping must exist — controls skips buttons it doesn't own.)
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
     const NONE = -1 as unknown as THREE.MOUSE;
-    st.controls.mouseButtons = mouseScheme === 'solidworks'
-      ? { LEFT: THREE.MOUSE.ROTATE, MIDDLE: NONE, RIGHT: NONE }
-      : { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.DOLLY };
-  }, [mouseScheme]);
+    st.controls.mouseButtons = { LEFT: NONE, MIDDLE: NONE, RIGHT: NONE };
+  }, []);
 
   // ---- Field-dependent subtree: slab/walls/tags/structures ----------------
   // Rebuilt when the field (or its artwork) changes. The scaffold — and
