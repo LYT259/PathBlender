@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.49';
+export const APP_VERSION = '0.1.6-beta.50';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.50', date: '2026-10-03', note: 'Project code is now uniformly Apache-2.0 — the core package\'s stray MIT LICENSE text is replaced / 项目代码统一为 Apache-2.0——替换 core 包遗留的 MIT 许可证文本' },
   { version: '0.1.6-beta.49', date: '2026-10-03', note: 'Wheels now track motion correctly — installed angle is the parked pose, steering takes over on move / 轮子随运动转向修正——安装角为静止姿态，运动后由转向接管' },
   { version: '0.1.6-beta.48', date: '2026-10-03', note: 'Demo robots are 00001/00002 with bumper numbers; Welded left; artwork segmented toggle / 示例 00001/00002 带队号；Welded 在左；样式切换分段化' },
   { version: '0.1.6-beta.47', date: '2026-10-03', note: 'Desktop build fix: restore the Rust lib rename lost in a merge / 桌面端构建修复：恢复合并中回退的 Rust 库名' },
