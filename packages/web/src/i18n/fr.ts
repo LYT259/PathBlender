@@ -14,7 +14,7 @@ export const fr: Record<MessageKey, string> = {
   'prefs.installUpdate': "Installer et relancer",
   'prefs.checkSavedChannel': "La recherche de mises à jour utilise le canal enregistré : {channel}.",
   'prefs.appIcon': "Icône de l’application",
-  'prefs.appIconPreview': "Aperçu uniquement. L’icône de l’application ne changera pas.",
+  'prefs.appIconHint': "S’applique à l’icône du Dock pendant que l’app est ouverte. Le Finder et le Launchpad suivent toujours l’apparence du système.",
   'welcome.title': 'Importez des trajectoires pour commencer',
   'welcome.description': 'Rejouez les trajectoires ensemble et repérez les interférences.',
   'welcome.folderAdvice': 'Importez un dossier complet pour changer de trajet en cas de conflit.',
