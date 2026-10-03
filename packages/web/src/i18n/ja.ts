@@ -12,6 +12,8 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const ja: Record<MessageKey, string> = {
+  'prefs.appIcon': "アプリアイコン",
+  'prefs.appIconPreview': "プレビューのみです。アプリアイコンは変更されません。",
   'welcome.title': 'パスをインポートして始めましょう',
   'welcome.description': 'パスをまとめて再生し、干渉がないかチェックできます。',
   'welcome.folderAdvice': 'フォルダごとインポートしておくと、競合が見つかったときにルートを切り替えられます。',

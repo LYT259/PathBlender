@@ -11,6 +11,8 @@ import type { MessageKey } from './en';
  * verified.
  */
 export const cs: Record<MessageKey, string> = {
+  'prefs.appIcon': "Ikona aplikace",
+  'prefs.appIconPreview': "Pouze náhled. Ikona aplikace se nezmění.",
   'welcome.title': 'Začněte importem tras',
   'welcome.description': 'Přehrávejte trasy současně a kontrolujte vzájemné kolize.',
   'welcome.folderAdvice': 'Importujte celou složku, abyste při konfliktu mohli přepnout na jinou trasu.',

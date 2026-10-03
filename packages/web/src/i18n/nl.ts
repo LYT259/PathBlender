@@ -11,6 +11,8 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const nl: Record<MessageKey, string> = {
+  'prefs.appIcon': "App-pictogram",
+  'prefs.appIconPreview': "Alleen een voorbeeld. Het app-pictogram verandert niet.",
   'welcome.title': 'Importeer routes om te beginnen',
   'welcome.description': 'Routes samen afspelen en controleren op interferentie.',
   'welcome.folderAdvice': 'Importeer een hele map om van route te kunnen wisselen als er een conflict optreedt.',

@@ -2,6 +2,8 @@ import type { MessageKey } from './en';
 
 /** 简体中文。 */
 export const zh: Record<MessageKey, string> = {
+  'prefs.appIcon': "应用图标",
+  'prefs.appIconPreview': "仅预览，不会更改当前应用图标。",
   'welcome.title': '从导入路径开始',
   'welcome.description': '一起回放路径，查看机器人之间是否有干涉。',
   'welcome.folderAdvice': '建议导入整个路径文件夹，发现干涉时可以快速切换路线。',

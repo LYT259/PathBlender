@@ -11,6 +11,8 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const ko: Record<MessageKey, string> = {
+  'prefs.appIcon': "앱 아이콘",
+  'prefs.appIconPreview': "미리보기만 표시합니다. 앱 아이콘은 변경되지 않습니다.",
   'welcome.title': '경로를 가져와 시작하세요',
   'welcome.description': '경로를 함께 재생하고 간섭을 확인합니다.',
   'welcome.folderAdvice': '폴더 전체를 가져오면 간섭이 나타났을 때 경로를 전환할 수 있습니다.',
