@@ -62,6 +62,9 @@ describe('i18n dictionaries', () => {
   const KEEP_VERBATIM = new Set([
     // Brand and format names, never translated.
     'app.title',
+    // Mouse-scheme brand names and the em-dash "no action" cell.
+    'prefs.mouse.onshape', 'prefs.mouse.solidworks', 'prefs.mouse.solidworks.right',
+    'prefs.mouse.onshape.wheel', 'prefs.mouse.solidworks.wheel',
     // Symbols and unit strings the field itself renders.
     'conflicts.pair', 'customField.ppm', 'timeline.speed', 'timeline.clock',
     'timeline.activity', 'timeline.band', 'canvas.clock', 'rail.png',
