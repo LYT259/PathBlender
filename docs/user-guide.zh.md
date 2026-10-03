@@ -66,4 +66,5 @@
 安全：无后端、无账号、无遥测。网页构建不发出任何网络请求；桌面版只有你主动「检查更新」时才访问 GitHub Releases。解析全程在本机内存；会话数据只有你自己保存或导出时才离开应用。
 
 **问：文件导入失败？**
-见[反馈模板](community/feedback-template.md)——格式漂移报告（工具 + 版本 + 报错文字）正是我们需要的。绝不会要求你公开路径文件。
+按[反馈模板](community/feedback-template.md)到
+[GitHub Issues](https://github.com/LYT259/pathblender/issues) 提交——格式漂移报告（工具 + 版本 + 报错文字）正是我们需要的。绝不会要求你公开路径文件。

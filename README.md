@@ -121,9 +121,11 @@ Full walkthrough per tool and an FAQ:
 ## Feedback
 
 Bugs, format-drift reports and season-field issues are exactly the
-feedback we need — see the
-[feedback template](docs/community/feedback-template.md) for what to
-include (you are never required to post your path files).
+feedback we need. Open an issue at
+[github.com/LYT259/pathblender/issues](https://github.com/LYT259/pathblender/issues) —
+the [feedback template](docs/community/feedback-template.md) shows what
+to include (you are never required to post your path files). Community
+discussion lives in the project's Chief Delphi announcement thread.
 
 ## Status
 
