@@ -170,18 +170,20 @@ export function chassisModules(
  * Per-corner installed yaw (radians) for the default MK5i layout — the
  * resting orientation each module is fastened at on a real chassis,
  * measured 2026-10-03 from the user's STEP assembly: each wheel's
- * rolling line is TANGENT to its corner diagonal (FL 135°, FR 45°,
- * RR -45°, RL -135°), so the two motors flank along the radial diagonal
- * (FL/RR 45° line, FR/RL 135° line). Steering replaces it once moving.
+ * rolling line is TANGENT to its corner diagonal, so the two motors
+ * flank along the radial diagonal (FL/RR 45° line, FR/RL 135° line).
+ * Exact rays FL -45°, FR -135°, RR 135°, RL 45° — the user verified
+ * the motor sides against the CAD (the first cut pointed every pod
+ * 180° the other way). Steering replaces it once moving.
  */
 export function moduleBaseYaw(m: ModuleLocation): number {
-  // radial + 90°: the CAD pins each module rotated with its corner, the
+  // radial - 90°: the CAD pins each module rotated with its corner, the
   // rolling direction (template +X) pointing tangentially — the pinwheel
   // resting pose. atan2 keeps the exact per-corner rays; the earlier
   // ±45° sign() collapsed both diagonals and pointed the rolling line
   // RADIALLY, 90° off the CAD on every corner. Wrapped to (-π, π].
-  const a = Math.atan2(m.y, m.x) + Math.PI / 2;
-  return a > Math.PI ? a - 2 * Math.PI : a;
+  const a = Math.atan2(m.y, m.x) - Math.PI / 2;
+  return a <= -Math.PI ? a + 2 * Math.PI : a;
 }
 
 /**

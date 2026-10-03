@@ -326,7 +326,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       setGlFailed(true);
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     // Soft shadows are the strongest depth cue for the field structures.
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -642,7 +642,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // is what batched the gesture events in the first place. While a pinch
     // or drag runs (plus this linger window), render at pixel ratio 1 with
     // the shadow map frozen; restore full quality once interaction settles.
-    const BASE_PIXEL_RATIO = Math.min(window.devicePixelRatio || 1, 1.5);
+    const BASE_PIXEL_RATIO = Math.min(window.devicePixelRatio || 1, 2);
     const INTERACTIVE_LINGER_MS = 250;
     let interactiveUntil = 0;
     let lowQuality = false;
