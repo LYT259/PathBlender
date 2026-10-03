@@ -1,5 +1,7 @@
 /** English strings (source of truth for the key set). */
 export const en = {
+  'prefs.appIcon': "App icon",
+  'prefs.appIconPreview': "Preview only. Your app icon will not change.",
   'welcome.title': 'Import paths to get started',
   'welcome.description': 'Replay paths together and check for interference.',
   'welcome.folderAdvice': 'Import a whole folder so you can switch routes when a conflict appears.',

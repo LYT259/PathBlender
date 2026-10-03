@@ -11,6 +11,8 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const ptBR: Record<MessageKey, string> = {
+  'prefs.appIcon': "Ícone do aplicativo",
+  'prefs.appIconPreview': "Apenas uma prévia. O ícone do aplicativo não será alterado.",
   'welcome.title': 'Importe trajetórias para começar',
   'welcome.description': 'Reproduza as trajetórias juntas e verifique interferências.',
   'welcome.folderAdvice': 'Importe uma pasta inteira para poder trocar de rota quando aparecer um conflito.',

@@ -6,6 +6,8 @@ import type { MessageKey } from './en';
  * placeholders stay byte-identical to English (i18n.test.ts).
  */
 export const tr: Record<MessageKey, string> = {
+  'prefs.appIcon': "Uygulama simgesi",
+  'prefs.appIconPreview': "Yalnızca önizleme. Uygulama simgesi değişmeyecek.",
   'welcome.title': 'Başlamak için yolları içe aktarın',
   'welcome.description': 'Yolları birlikte oynatın ve çakışmaları kontrol edin.',
   'welcome.folderAdvice': 'Bir çakışma olduğunda rota değiştirebilmek için klasörün tamamını içe aktarın.',
