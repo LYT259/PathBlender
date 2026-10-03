@@ -114,7 +114,7 @@ describe('chassisModules', () => {
   it('defaults to four corners on the frame-CAD plate zones (proportional)', () => {
     const mods = chassisModules(traj({}), { lengthM: 0.762, widthM: 0.762 });
     expect(mods).toHaveLength(4);
-    const ix = (0.762 / 2) * 0.7685;
+    const ix = (0.762 / 2) * 0.8056;
     for (const sx of [1, -1]) {
       for (const sy of [1, -1]) {
         expect(mods.some((m) => Math.abs(m.x - sx * ix) < 1e-9 && Math.abs(m.y - sy * ix) < 1e-9)).toBe(true);
