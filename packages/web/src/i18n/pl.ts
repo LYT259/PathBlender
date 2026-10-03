@@ -11,6 +11,8 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const pl: Record<MessageKey, string> = {
+  'prefs.appIcon': "Ikona aplikacji",
+  'prefs.appIconPreview': "Tylko podgląd. Ikona aplikacji nie zostanie zmieniona.",
   'welcome.title': 'Importuj trasy, aby rozpocząć',
   'welcome.description': 'Odtwarzaj trasy jednocześnie i sprawdzaj, czy się wzajemnie nie zakłócają.',
   'welcome.folderAdvice': 'Importuj cały folder, aby móc zmienić trasę, gdy pojawi się konflikt.',

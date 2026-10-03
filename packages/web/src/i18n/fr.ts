@@ -8,6 +8,8 @@ import type { MessageKey } from './en';
  * i18n.test.ts enforces the key set, the placeholders and non-empty values.
  */
 export const fr: Record<MessageKey, string> = {
+  'prefs.appIcon': "Icône de l’application",
+  'prefs.appIconPreview': "Aperçu uniquement. L’icône de l’application ne changera pas.",
   'welcome.title': 'Importez des trajectoires pour commencer',
   'welcome.description': 'Rejouez les trajectoires ensemble et repérez les interférences.',
   'welcome.folderAdvice': 'Importez un dossier complet pour changer de trajet en cas de conflit.',
