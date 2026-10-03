@@ -179,7 +179,11 @@ describe('shared desktop preferences', () => {
     openUpdates();
     const { APP_VERSION } = await import('../src/version-info');
     expect(screen.queryByText(`Version ${APP_VERSION}`)).not.toBeInTheDocument();
+    // The channel row and the check box share one settings group (user
+    // request 2026-10-03) and no channel hint sentence is shown anymore.
     const button = screen.getByRole('button', { name: 'Check for updates' });
+    expect(button.closest('.preferences-group')).not.toBeNull();
+    expect(screen.queryByText(/early|refinement|提前体验|完善/)).not.toBeInTheDocument();
     expect(button).toBeEnabled();
     fireEvent.click(button);
     expect(prefsCheck.calls).toEqual(['stable']);
