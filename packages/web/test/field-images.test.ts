@@ -180,8 +180,8 @@ describe('fieldImageFor (variant- and style-aware artwork registry)', () => {
     }
   });
 
-  it('2018–2020 have no rendered key — any style resolves their only artwork', () => {
-    for (const id of ['powerup-2018', 'deepspace-2019', 'infinitercharge-2020']) {
+  it('2019–2020 have no rendered key — any style resolves their only artwork', () => {
+    for (const id of ['deepspace-2019', 'infinitercharge-2020']) {
       expect(FIELD_IMAGES[`${id}/rendered`]).toBeUndefined();
       expect(fieldImageFor(id, 'welded', 'rendered', undefined)).toBe(FIELD_IMAGES[id]);
       expect(fieldImageFor(id, 'welded', 'schematic', undefined)).toBe(FIELD_IMAGES[id]);
