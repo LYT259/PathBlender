@@ -69,7 +69,13 @@ if (!/^version\s*=\s*"/m.test(read(TOML)) || !read(TOML).includes(`version = "${
   process.exit(1);
 }
 
-const date = new Date().toISOString().slice(0, 10);
+// Update-note i18n discipline (AGENTS.md 2026-10-03): dates use the
+// YYYY.MM.DD form, and a new note enters with the English text only —
+// fill the remaining languages in the same commit (version-notes.test.ts
+// refuses a newest entry that misses a language).
+const iso = new Date();
+const pad = (n) => String(n).padStart(2, '0');
+const date = `${iso.getFullYear()}.${pad(iso.getMonth() + 1)}.${pad(iso.getDate())}`;
 for (const f of JSON_FILES) {
   const t = read(f);
   write(f, t.replace(`"version": "${current}"`, `"version": "${next}"`));
@@ -85,7 +91,8 @@ write(LOCK, read(LOCK).replace(
 const info = read(INFO);
 const APP_LINE = /export const APP_VERSION = '[^']*';/;
 const NOTES_EMPTY = /export const VERSION_NOTES: VersionNote\[\] = \[\];/;
-const entry = `  { version: '${next}', date: '${date}', note: '${note.replaceAll("'", "\\'")}' },`;
+const noteEn = note.replaceAll("'", "\\'");
+const entry = `  { version: '${next}', date: '${date}', note: { en: '${noteEn}' } },`;
 let nextInfo;
 if (NOTES_EMPTY.test(info)) {
   nextInfo = info

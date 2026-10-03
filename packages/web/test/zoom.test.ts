@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   chaseAlpha,
   chaseStep,
@@ -12,6 +12,8 @@ import {
   PINCH_EVENT_LN_CAP,
   PINCH_GAIN,
   pinchZoomFactor,
+  reverseScrollZoomEnabled,
+  setReverseScrollZoom,
   splitInstant,
   TRACKPAD_EVENT_CAP,
   TRACKPAD_K,
@@ -21,6 +23,8 @@ import {
 } from '../src/zoom';
 
 const PIXEL = 0; // WheelEvent.DOM_DELTA_PIXEL
+
+afterEach(() => setReverseScrollZoom(false)); // module-level flag: reset per test
 
 describe('classifyWheelInput', () => {
   it('treats integer notch-sized pixel deltas as mouse wheel', () => {
@@ -224,15 +228,46 @@ describe('splitInstant', () => {
     expect(instant).toBeCloseTo(Math.pow(2, CHASE_INSTANT_SHARE), 12);
   });
 
-  it('is fully instant — Onshape applies zoom with zero animation (R11)', () => {
-    // Measured 2026-10-03: the full step is visible in a same-frame
-    // screenshot after one event. Share 1 keeps the chase scaffolding inert.
-    expect(CHASE_INSTANT_SHARE).toBe(1);
-    expect(splitInstant(1.74)).toEqual({ instant: 1.74, deferred: 1 });
+  it('splits half instant — continuous streams glide, restored after R11 felt steppy', () => {
+    // R11 set share 1 (Onshape applies zoom un-animated), but on WKWebView
+    // batched gesture/scroll deliveries then read as visible steps
+    // ("没有之前那么丝滑"). 0.5 = the R8-approved instant answer + glide.
+    expect(CHASE_INSTANT_SHARE).toBe(0.5);
+    const { instant, deferred } = splitInstant(1.74);
+    expect(instant).toBeCloseTo(Math.sqrt(1.74), 12);
+    expect(instant * deferred).toBeCloseTo(1.74, 12);
   });
 
   it('guards degenerate factors', () => {
     expect(splitInstant(0)).toEqual({ instant: 1, deferred: 1 });
     expect(splitInstant(Number.NaN)).toEqual({ instant: 1, deferred: 1 });
+  });
+});
+
+describe('reverse scroll wheel zoom direction', () => {
+  it('inverts mouse notches only while enabled', () => {
+    expect(wheelZoomFactor(-120)).toBe(WHEEL_STEP);
+    setReverseScrollZoom(true);
+    expect(wheelZoomFactor(-120)).toBeCloseTo(1 / WHEEL_STEP, 12);
+    expect(wheelZoomFactor(120)).toBe(WHEEL_STEP);
+    setReverseScrollZoom(false);
+    expect(wheelZoomFactor(-120)).toBe(WHEEL_STEP);
+  });
+
+  it('never flips the continuous trackpad curve or pinch-class input', () => {
+    setReverseScrollZoom(true);
+    expect(wheelZoomFactor(-4)).toBeCloseTo(Math.exp(4 * TRACKPAD_K));
+    expect(wheelZoomFactor(4)).toBeCloseTo(1 / Math.exp(4 * TRACKPAD_K));
+  });
+
+  it('exposes the flag so the 3D wheel handler can route reversed input', () => {
+    expect(reverseScrollZoomEnabled()).toBe(false);
+    setReverseScrollZoom(true);
+    expect(reverseScrollZoomEnabled()).toBe(true);
+    // Reversed wheel DOWN zooms IN with the flat step; the 3D handler
+    // detects this class and applies it through the pinch-dolly path
+    // (OrbitControls' wheel formula cannot invert direction).
+    expect(wheelZoomFactor(120)).toBe(WHEEL_STEP);
+    expect(wheelZoomFactor(-120)).toBeCloseTo(1 / WHEEL_STEP, 12);
   });
 });

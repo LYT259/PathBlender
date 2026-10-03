@@ -109,8 +109,9 @@ describe('shared desktop preferences', () => {
     // Default 'system' mirrors the OS appearance with matching artwork
     // (matchMedia stubbed to light above).
     await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false }));
-    // The preview-only note is gone; the hint now states the real scope.
-    expect(screen.getByText('Applies to the Dock icon while the app is running. Finder and Launchpad always follow the system appearance.')).toBeInTheDocument();
+    // The preview-only note is gone; the scope hint was removed too
+    // (user request 2026-10-03).
+    expect(screen.queryByText(/Dock icon/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Preview only/)).not.toBeInTheDocument();
 
     // Staging a draft enables Save but touches neither storage nor native.
@@ -178,7 +179,11 @@ describe('shared desktop preferences', () => {
     openUpdates();
     const { APP_VERSION } = await import('../src/version-info');
     expect(screen.queryByText(`Version ${APP_VERSION}`)).not.toBeInTheDocument();
+    // The channel row and the check box share one settings group (user
+    // request 2026-10-03) and no channel hint sentence is shown anymore.
     const button = screen.getByRole('button', { name: 'Check for updates' });
+    expect(button.closest('.preferences-group')).not.toBeNull();
+    expect(screen.queryByText(/early|refinement|提前体验|完善/)).not.toBeInTheDocument();
     expect(button).toBeEnabled();
     fireEvent.click(button);
     expect(prefsCheck.calls).toEqual(['stable']);

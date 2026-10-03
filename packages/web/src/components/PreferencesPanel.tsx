@@ -4,13 +4,16 @@ import { useTheme, type ThemeMode } from '../theme';
 import { useAppIcon, type IconAppearanceMode } from '../app-icon';
 import {
   MOUSE_SCHEMES,
+  useDefaultConstrained,
   useMouseControls,
+  usePenAsMouse,
+  useReverseScrollZoom,
   type MouseControlsScheme,
 } from '../mouse-controls';
 import { lengthUnitExample, useLengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
 import { checkForUpdate, installPendingUpdate } from '../update-check';
-import { APP_VERSION, VERSION_NOTES } from '../version-info';
+import { APP_VERSION, noteText, VERSION_NOTES } from '../version-info';
 import { copyText } from '../download';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from '../viewer';
 import { Icon } from './Icon';
@@ -43,6 +46,9 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const { channel, setChannel } = useUpdateChannel();
   const [mouseControls, setMouseControls] = useMouseControls();
   const [lengthUnit, setLengthUnit] = useLengthUnit();
+  const [reverseScroll, setReverseScroll] = useReverseScrollZoom();
+  const [defaultConstrained, setDefaultConstrained] = useDefaultConstrained();
+  const [penAsMouse, setPenAsMouse] = usePenAsMouse();
   const [section, setSection] = useState<Section>('general');
   const [languageDraft, setLanguageDraft] = useState<LangChoice | null>(null);
   const [themeDraft, setThemeDraft] = useState<ThemeMode | null>(null);
@@ -50,6 +56,9 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
   const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
   const [unitDraft, setUnitDraft] = useState<LengthUnitChoice | null>(null);
+  const [reverseDraft, setReverseDraft] = useState<boolean | null>(null);
+  const [constrainedDraft, setConstrainedDraft] = useState<boolean | null>(null);
+  const [penDraft, setPenDraft] = useState<boolean | null>(null);
   const [copyStatus, setCopyStatus] = useState('');
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck>({ kind: 'idle' });
   const id = useId();
@@ -62,8 +71,12 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const mouse = mouseDraft ?? mouseControls;
   const unit = unitDraft ?? lengthUnit;
   const supportedUnit = isSupportedLengthUnit(unit);
+  const reverse = reverseDraft ?? reverseScroll;
+  const constrained = constrainedDraft ?? defaultConstrained;
+  const pen = penDraft ?? penAsMouse;
   const dirty = language !== langChoice || theme !== mode || icon !== iconMode ||
-    updateChannel !== channel || mouse !== mouseControls || (supportedUnit && unit !== lengthUnit);
+    updateChannel !== channel || mouse !== mouseControls || (supportedUnit && unit !== lengthUnit) ||
+    reverse !== reverseScroll || constrained !== defaultConstrained || pen !== penAsMouse;
   const updateStatusText =
     updateCheck.kind === 'checking' ? t('prefs.checking')
       : updateCheck.kind === 'upToDate' ? t('updates.upToDate')
@@ -118,6 +131,9 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
     }
     if (mouse !== mouseControls) setMouseControls(mouse);
     if (isSupportedLengthUnit(unit) && unit !== lengthUnit) setLengthUnit(unit);
+    if (reverse !== reverseScroll) setReverseScroll(reverse);
+    if (constrained !== defaultConstrained) setDefaultConstrained(constrained);
+    if (pen !== penAsMouse) setPenAsMouse(pen);
     // Save keeps the window open (user request 2026-10-02): drafts become
     // current, dirty clears, and the user closes via Cancel/Escape/⌘W when
     // done — matching System Settings' persist-in-place behavior.
@@ -141,7 +157,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
     <div className="preferences-main">
       <section className="preferences-content" role="tabpanel" tabIndex={0}
         key={section} id={`${id}-${section}-panel`} aria-labelledby={`${id}-${section}-tab`}>
-        <header className="preferences-heading"><h2>{t(`prefs.section.${section}`)}</h2><p>{t(`prefs.description.${section}`)}</p></header>
+        <header className="preferences-heading"><h2>{t(`prefs.section.${section}`)}</h2></header>
         {section === 'general' && <>
           <div className="preferences-group"><label className="preferences-setting">
             <span>{t('prefs.language')}</span>
@@ -168,6 +184,24 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
               </select>
             </label>
             <MouseControlsDiagram scheme={mouse} iconMode={icon} />
+            <div className="preferences-mouse-table">
+              {(['rotate', 'constrained', 'pan', 'zoom'] as const).map((action) => <div key={action} className="preferences-mouse-row">
+                <span>{t(`prefs.mouse.${action}`)}</span>
+                <strong>{t(`prefs.mouse.${mouse}.${action}`)}</strong>
+              </div>)}
+            </div>
+            <label className="preferences-setting preferences-checkbox">
+              <span>{t('prefs.mouse.reverseScroll')}</span>
+              <input type="checkbox" checked={reverse} onChange={(event) => setReverseDraft(event.target.checked)} />
+            </label>
+            <label className="preferences-setting preferences-checkbox">
+              <span>{t('prefs.mouse.defaultConstrained')}</span>
+              <input type="checkbox" checked={constrained} onChange={(event) => setConstrainedDraft(event.target.checked)} />
+            </label>
+            <label className="preferences-setting preferences-checkbox">
+              <span>{t('prefs.mouse.penAsMouse')}</span>
+              <input type="checkbox" checked={pen} onChange={(event) => setPenDraft(event.target.checked)} />
+            </label>
           </div>
           <div className="preferences-group">
             <label className="preferences-setting"><span>{t('prefs.units')}</span>
@@ -186,32 +220,31 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
                 <option value="stable">{t('prefs.channel.stable')}</option><option value="beta">{t('prefs.channel.beta')}</option>
               </select>
             </label>
-            <p className="preferences-setting-description">{t(updateChannel === 'stable' ? 'prefs.stableHint' : 'prefs.betaHint')}</p>
+            <div className="preferences-update-check">
+              <div className="update-actions">
+                <button type="button" className="btn accent" disabled={updateCheck.kind === 'checking' || updateCheck.kind === 'installing'}
+                  aria-describedby={`${id}-update-status`} onClick={startUpdateCheck}><Icon name="refresh" size={15} />{t('prefs.checkUpdates')}</button>
+                {updateCheck.kind === 'found' &&
+                  <button type="button" className="btn" onClick={startInstall}>{t('prefs.installUpdate')}</button>}
+              </div>
+              <p id={`${id}-update-status`} role="status">{updateStatusText}</p>
+              {savedChannelHint && <p>{savedChannelHint}</p>}
+            </div>
           </div> : <div className="preferences-group"><div className="preferences-setting"><span>{t('site.version')}</span>
             <a className="prefs-link" href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{t(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')} ↗</a>
           </div></div>}
-          {desktop && <div className="preferences-update-check">
-            <div className="update-actions">
-              <button type="button" className="btn accent" disabled={updateCheck.kind === 'checking' || updateCheck.kind === 'installing'}
-                aria-describedby={`${id}-update-status`} onClick={startUpdateCheck}><Icon name="refresh" size={15} />{t('prefs.checkUpdates')}</button>
-              {updateCheck.kind === 'found' &&
-                <button type="button" className="btn" onClick={startInstall}>{t('prefs.installUpdate')}</button>}
-            </div>
-            <p id={`${id}-update-status`} role="status">{updateStatusText}</p>
-            {savedChannelHint && <p>{savedChannelHint}</p>}
-          </div>}
         </>}
         {section === 'about' && <>
           <div className="preferences-product"><strong>PathBlender</strong><span className="preferences-version" dir="ltr">Version {APP_VERSION}</span>
             <button className="btn" type="button" onClick={() => {
-              void copyText(`PathBlender ${APP_VERSION} (${desktop ? 'desktop' : 'web'})\n` + VERSION_NOTES.slice(0, 5).map((note) => `${note.version} (${note.date}) — ${note.note}`).join('\n'))
+              void copyText(`PathBlender ${APP_VERSION} (${desktop ? 'desktop' : 'web'})\n` + VERSION_NOTES.slice(0, 5).map((note) => `${note.version} (${note.date}) — ${noteText(note.note, langChoice)}`).join('\n'))
                 .then((ok) => setCopyStatus(t(ok ? 'about.copyDone' : 'about.copyFailed')));
             }}>{t('about.copy')}</button>
             <p className="preferences-copy-status" role="status">{copyStatus}</p>
           </div>
           {VERSION_NOTES.length > 0 && <div className="preferences-history"><h3>{t('prefs.releaseNotes')}</h3>
             <ol>{VERSION_NOTES.slice(0, 5).map((note) => <li key={note.version}>
-              <div><strong dir="ltr">Version {note.version}</strong><time dateTime={note.date}>{note.date}</time></div><p>{note.note}</p>
+              <div><strong dir="ltr">Version {note.version}</strong><time>{note.date}</time></div><p>{noteText(note.note, langChoice)}</p>
             </li>)}</ol>
           </div>}
         </>}
