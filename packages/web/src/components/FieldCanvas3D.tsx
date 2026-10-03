@@ -12,6 +12,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import {
   chassisModules,
+  moduleBaseYaw,
   moduleSteeringAngles,
   robotVisualGeometry,
   samplePoseAt,
@@ -1108,9 +1109,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         for (let i = 0; i < rig.pods.length; i++) {
           const a = angles[i]!;
           if (a !== null) rig.steer[i] = a;
-          // Robot-frame yaw maps to render yaw with the opposite sign
-          // (see the frame notes in chassis3d.ts).
-          rig.pods[i]!.rotation.y = -rig.steer[i]!;
+          // Installed per-corner yaw (from the user's chassis CAD) plus
+          // steering; robot-frame yaw maps to render yaw with the
+          // opposite sign (see the frame notes in chassis3d.ts).
+          rig.pods[i]!.rotation.y = -(moduleBaseYaw(rig.modules[i]!) + rig.steer[i]!);
         }
       }
       st.dirty();
