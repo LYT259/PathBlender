@@ -110,6 +110,8 @@ interface Scene3D {
   backgroundThemed: { color: THREE.Color; token: string };
   /** Theme-token colors with live refs, retinted when the theme flips. */
   themed: { color: THREE.Color; token: string }[];
+  /** ViewCube face textures bake tokens; regenerate on theme change. */
+  retintCube: () => void;
 }
 
 // AS-style overview: higher and further back than the early low angle,
@@ -147,6 +149,44 @@ function tokenColorHex(token: string, fallback: string): number {
   return (
     (mix(parseFloat(m[1]!), 0) << 16) | (mix(parseFloat(m[2]!), 1) << 8) | mix(parseFloat(m[3]!), 2)
   );
+}
+
+/** Localized label texture for one ViewCube face (512px for retina-crisp
+ *  rendering). faceIdx: 0 +x, 1 -x, 2 top, 3 bottom, 4 +z, 5 -z — the
+ *  per-world-face brightness is baked, Onshape-style lit cube. */
+function faceTexture(label: string, faceIdx: number): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 512;
+  const g = c.getContext('2d')!;
+  const card = cssToken('--bg-card', '#2c2c2f');
+  const m = /^#([0-9a-f]{6})$/i.exec(card.trim());
+  const hex = m?.[1] ?? '8c8c91';
+  const base = [
+    parseInt(hex.slice(0, 2), 16),
+    parseInt(hex.slice(2, 4), 16),
+    parseInt(hex.slice(4, 6), 16),
+  ];
+  const shade = (mul: number) =>
+    `rgb(${base.map((v) => Math.round(Math.max(0, Math.min(255, v * mul)))).join(',')})`;
+  const faceMul = faceIdx === 2 ? 1.1 : faceIdx === 3 ? 0.78 : 1;
+  const grad = g.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0, shade(faceMul * 1.05));
+  grad.addColorStop(1, shade(faceMul * 0.92));
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 512, 512);
+  g.strokeStyle = cssToken('--border', '#3d3d41');
+  g.lineWidth = 14;
+  g.strokeRect(10, 10, 492, 492);
+  g.fillStyle = cssToken('--fg', '#e6e6e8');
+  g.font = '700 168px -apple-system, "Segoe UI", sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(label, 256, 272);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  return tex;
 }
 
 /**
@@ -373,6 +413,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       themed.push({ color: owner.color, token });
       return owner;
     };
+    let retintCube: () => void = () => {};
     scene.background = new THREE.Color(cssToken('--canvas-bg', '#1c1c1e'));
     const backgroundThemed = { color: scene.background as THREE.Color, token: '--canvas-bg' };
     themed.push(backgroundThemed);
@@ -615,7 +656,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       dynamic, rigs: [], trails: [],
       modelRoot, fallback, fieldRoot,
       backgroundThemed,
-      dirty: markDirty, themed,
+      dirty: markDirty, themed, retintCube,
     };
 
 
@@ -738,11 +779,177 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const ro0 = new ResizeObserver(markDirty);
     ro0.observe(host);
 
+    // --- Onshape-style ViewCube (top-right overlay) ---
+    // A second renderer mirrors the main camera's orientation. Faces, edges
+    // and corners are separate pick targets; each click tweens the camera to
+    // the matching view (face → ortho, edge → two-axis, corner → trimetric).
+    // The rAF loop below runs unconditionally, so damping and the tween can
+    // coexist (the old on-demand loop let the two deadlock); user input
+    // cancels a tween mid-flight.
+    let tween: { from: THREE.Spherical; to: THREE.Spherical; start: number } | null = null;
+    const onUserStart = () => {
+      tween = null;
+    };
+    controls.addEventListener('start', onUserStart);
+    const flyTo = (toPos: THREE.Vector3) => {
+      const from = new THREE.Spherical().setFromVector3(
+        camera.position.clone().sub(controls.target),
+      );
+      const to = new THREE.Spherical().setFromVector3(toPos.clone().sub(controls.target));
+      let d = to.theta - from.theta;
+      if (d > Math.PI) to.theta -= 2 * Math.PI;
+      else if (d < -Math.PI) to.theta += 2 * Math.PI;
+      to.phi = THREE.MathUtils.clamp(to.phi, 0.15, 2.6);
+      from.phi = THREE.MathUtils.clamp(from.phi, 0.15, 2.6);
+      tween = { from, to, start: performance.now() };
+    };
+    const viewcubeEl = document.createElement('div');
+    viewcubeEl.className = 'viewcube';
+    const cubeCanvas = document.createElement('canvas');
+    viewcubeEl.appendChild(cubeCanvas);
+    const homeBtn = document.createElement('button');
+    homeBtn.className = 'vc-home';
+    homeBtn.title = 'Home';
+    homeBtn.innerHTML =
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+    viewcubeEl.appendChild(homeBtn);
+    host.appendChild(viewcubeEl);
+
+    const cubeRenderer = new THREE.WebGLRenderer({ canvas: cubeCanvas, alpha: true, antialias: true });
+    cubeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 3));
+    cubeRenderer.setSize(110, 110);
+    const cubeScene = new THREE.Scene();
+    const cubeCam = new THREE.PerspectiveCamera(38, 1, 0.1, 20);
+    cubeCam.position.set(0, 0, 3.6);
+    const cubeGroup = new THREE.Group();
+    cubeScene.add(cubeGroup);
+    const labels = [
+      t('vc.right'), t('vc.left'), t('vc.top'), t('vc.bottom'), t('vc.front'), t('vc.back'),
+    ];
+    // Face textures bake per-world-face shading (top lit, bottom dark) at
+    // 512px so the 110px cube stays crisp on retina displays.
+    const mats = labels.map((lab, i) => new THREE.MeshBasicMaterial({ map: faceTexture(lab, i) }));
+    // Face textures bake theme tokens at draw time; regenerate on theme flip.
+    retintCube = () => {
+      labels.forEach((lab, i) => {
+        const m = mats[i];
+        if (!m) return;
+        m.map?.dispose();
+        m.map = faceTexture(lab, i);
+        m.needsUpdate = true;
+      });
+      (cornerMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
+      (edgeMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
+    };
+    const cubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.55, 1.55), mats);
+    cubeGroup.add(cubeMesh);
+
+    // Onshape-style clean cube: no resident grips. Edge/corner intent is
+    // signaled by two dynamic markers that appear only while hovered and
+    // move to the classified feature (the resident hotspot meshes left
+    // faint artifacts on real GPUs and read as dented corners).
+    const CUBE_H = 1.55 / 2;
+    const hoverMat = () =>
+      new THREE.MeshBasicMaterial({ color: cssToken('--accent', '#0a84ff'), transparent: true, opacity: 0.95 });
+    const cornerMarker = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12), hoverMat());
+    const edgeMarker = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.5, 10), hoverMat());
+    cornerMarker.visible = false;
+    edgeMarker.visible = false;
+    cubeGroup.add(cornerMarker, edgeMarker);
+    const hideMarkers = () => {
+      cornerMarker.visible = false;
+      edgeMarker.visible = false;
+    };
+
+    const ray = new THREE.Raycaster();
+    const cubePtr = new THREE.Vector2();
+    interface CubePick {
+      dir: THREE.Vector3 | null;
+      faceIdx: number;
+      hot: THREE.Mesh | null;
+    }
+    const pick = (ev: PointerEvent): CubePick => {
+      const r = cubeCanvas.getBoundingClientRect();
+      cubePtr.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(cubePtr, cubeCam);
+      const hit = ray.intersectObject(cubeMesh, false)[0];
+      if (!hit) return { dir: null, faceIdx: -1, hot: null };
+      // Classify by how many local axes sit near their extreme: one → face,
+      // two → edge, three → corner (the world direction IS the local one —
+      // the cube only mirrors the camera).
+      const p = cubeMesh.worldToLocal(hit.point.clone());
+      const big = [Math.abs(p.x) > 0.5 * CUBE_H, Math.abs(p.y) > 0.5 * CUBE_H, Math.abs(p.z) > 0.5 * CUBE_H];
+      const dir = new THREE.Vector3(
+        big[0] ? Math.sign(p.x) : 0,
+        big[1] ? Math.sign(p.y) : 0,
+        big[2] ? Math.sign(p.z) : 0,
+      );
+      const faceIdx =
+        dir.lengthSq() === 1
+          ? [dir.x, -dir.x, dir.y, -dir.y, dir.z, -dir.z].findIndex((v) => v === 1)
+          : -1;
+      return { dir: dir.lengthSq() > 0 ? dir : null, faceIdx, hot: null };
+    };
+    const applyHover = (p: CubePick) => {
+      mats.forEach((m, i) => m.color.set(i === p.faceIdx ? cssToken('--accent', '#0a84ff') : '#ffffff'));
+      hideMarkers();
+      const nz = p.dir
+        ? [p.dir.x, p.dir.y, p.dir.z].filter((v) => Math.abs(v) > 0.4).length
+        : 0;
+      if (nz === 3 && p.dir) {
+        cornerMarker.position.copy(p.dir).multiplyScalar(CUBE_H);
+        cornerMarker.visible = true;
+      } else if (nz === 2 && p.dir) {
+        const axis = [0, 1, 2].find((i) => p.dir!.getComponent(i) === 0) ?? 0;
+        if (axis === 0) edgeMarker.rotation.set(0, 0, Math.PI / 2);
+        else if (axis === 2) edgeMarker.rotation.set(Math.PI / 2, 0, 0);
+        else edgeMarker.rotation.set(0, 0, 0);
+        edgeMarker.position.copy(p.dir).multiplyScalar(CUBE_H);
+        edgeMarker.visible = true;
+      }
+      markDirty();
+    };
+    const onCubeDown = (ev: PointerEvent) => {
+      ev.stopPropagation();
+      const p = pick(ev);
+      if (!p.dir) return;
+      // Test hook: the walkthrough asserts the camera reaches this target.
+      (window as unknown as { __pb3d?: { lastPick?: THREE.Vector3 } }).__pb3d!.lastPick = p.dir.clone();
+      const dist = camera.position.distanceTo(controls.target);
+      flyTo(controls.target.clone().add(p.dir.clone().multiplyScalar(dist)));
+    };
+    const onCubeMove = (ev: PointerEvent) => {
+      const p = pick(ev);
+      applyHover(p);
+      cubeCanvas.style.cursor = p.dir ? 'pointer' : 'default';
+    };
+    cubeCanvas.addEventListener('pointerdown', onCubeDown);
+    cubeCanvas.addEventListener('pointermove', onCubeMove);
+    const onHome = (ev: Event) => {
+      ev.preventDefault();
+      flyTo(new THREE.Vector3(...CAM_HOME));
+    };
+    homeBtn.addEventListener('click', onHome);
+
     let raf = 0;
     const loop = () => {
       const now = performance.now();
       const dt = now - lastFrameT;
       lastFrameT = now;
+      // ViewCube tween: ease the camera along the shortest spherical arc.
+      if (tween) {
+        const t = Math.min(1, (performance.now() - tween.start) / 300);
+        const e = 1 - Math.pow(1 - t, 3); // ease-out cubic
+        const sph = new THREE.Spherical(
+          THREE.MathUtils.lerp(tween.from.radius, tween.to.radius, e),
+          THREE.MathUtils.lerp(tween.from.phi, tween.to.phi, e),
+          THREE.MathUtils.lerp(tween.from.theta, tween.to.theta, e),
+        );
+        camera.position.setFromSpherical(sph).add(controls.target);
+        camera.lookAt(controls.target);
+        needsDraw = true;
+        if (t >= 1) tween = null;
+      }
       // Pinch chase: step the remaining zoom toward its target this frame.
       if (pinchChase.factor !== 1) {
         const stepped = chaseStep(pinchChase.factor, dt);
@@ -762,6 +969,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (needsDraw || moved) {
         needsDraw = false;
         renderer.render(scene, camera);
+        // Mirror the main orientation into the cube and draw it too.
+        cubeGroup.quaternion.copy(camera.quaternion).invert();
+        cubeRenderer.render(cubeScene, cubeCam);
       }
       raf = requestAnimationFrame(loop);
     };
@@ -775,6 +985,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       ro.disconnect();
       ro0.disconnect();
       controls.removeEventListener('change', markDirty);
+      controls.removeEventListener('start', onUserStart);
+      cubeCanvas.removeEventListener('pointerdown', onCubeDown);
+      cubeCanvas.removeEventListener('pointermove', onCubeMove);
+      homeBtn.removeEventListener('click', onHome);
+      cubeRenderer.dispose();
+      viewcubeEl.remove();
       renderer.domElement.removeEventListener('pointerdown', onDragDown);
       renderer.domElement.removeEventListener('pointermove', onDragMove);
       renderer.domElement.removeEventListener('pointermove', onPanMove);
@@ -995,6 +1211,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const st = sceneRef.current;
     if (!st) return;
     for (const { color, token } of st.themed) color.set(tokenColorHex(token, '#1c1c1e'));
+    st.retintCube();
     st.dirty();
   }, [themeResolved]);
 

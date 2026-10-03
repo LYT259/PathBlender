@@ -592,6 +592,93 @@ await cancelBtn.click();
 await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
 await page.waitForTimeout(200);
 
+check(
+  'viewcube present with home button',
+  (await page.locator('.viewcube canvas').count()) === 1 &&
+    (await page.locator('.vc-home').count()) === 1,
+);
+// Home snap returns to the default orbit (settled click, no drags before).
+const polBeforeHome = await page.evaluate(() => window.__pb3d?.controls.getPolarAngle?.());
+const atHome = () =>
+  page.waitForFunction(
+    () =>
+      Math.abs(window.__pb3d.controls.getAzimuthalAngle()) < 0.05 &&
+      Math.abs(window.__pb3d.controls.getPolarAngle() - 0.661) < 0.06,
+    undefined,
+    { timeout: 6000, polling: 100 },
+  );
+await page.locator('.vc-home').click();
+await atHome();
+const homeState = await page.evaluate(() => ({
+  az: window.__pb3d.controls.getAzimuthalAngle(),
+  pol: window.__pb3d.controls.getPolarAngle(),
+}));
+check(
+  'viewcube home snaps to default view',
+  Math.abs(homeState.az) < 0.2 && Math.abs(homeState.pol - 0.661) < 0.15,
+  `az=${homeState.az.toFixed(2)} pol=${homeState.pol.toFixed(2)} (from ${polBeforeHome?.toFixed?.(2)})`,
+);
+
+// Face/edge/corner picks tween the camera to the picked feature direction
+// (asserted against the pick hook — headless rAF is sparse, so wait for the
+// value instead of a fixed delay).
+const vcBox = await page.locator('.viewcube canvas').boundingBox();
+const clickCube = async (fx, fy) => {
+  await page.locator('.vc-home').click();
+  await atHome();
+  // move+down+up split: mouse.click() batches the events and occasionally
+  // drops the pointerdown under load (Playwright flake, not app logic).
+  await page.mouse.move(vcBox.x + vcBox.width * fx, vcBox.y + vcBox.height * fy);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForFunction(
+    () => (window.__pb3d.lastPick ? true : false),
+    undefined,
+    { timeout: 4000, polling: 100 },
+  );
+  const lp = await page.evaluate(() => {
+    const p = window.__pb3d.lastPick;
+    window.__pb3d.lastPick = undefined;
+    return [p.x, p.y, p.z];
+  });
+  const reached = await page
+    .waitForFunction(
+      ([x, y, z]) => {
+        const az = window.__pb3d.controls.getAzimuthalAngle();
+        const pol = window.__pb3d.controls.getPolarAngle();
+        const n = Math.hypot(x, y, z); // pick dirs are unnormalized sign vectors
+        const tAz = Math.atan2(x, z);
+        const tPol = Math.acos(Math.max(-1, Math.min(1, y / n)));
+        return Math.abs(az - tAz) < 0.1 && Math.abs(pol - tPol) < 0.1;
+      },
+      lp,
+      { timeout: 6000, polling: 100 },
+    )
+    .then(() => true)
+    .catch(async () => {
+      const s = await page.evaluate(() => ({
+        az: window.__pb3d.controls.getAzimuthalAngle(),
+        pol: window.__pb3d.controls.getPolarAngle(),
+      }));
+      console.log(`  [clickCube miss] target=${JSON.stringify(lp)} camera az=${s.az.toFixed(3)} pol=${s.pol.toFixed(3)}`);
+      return false;
+    });
+  if (!reached) return null;
+  return lp;
+};
+const cornerDir = await clickCube(0.28, 0.5);
+check(
+  'viewcube corner click tweens to trimetric',
+  Array.isArray(cornerDir) && cornerDir.filter((v) => Math.abs(v) > 0.4).length === 3,
+  JSON.stringify(cornerDir),
+);
+const edgeDir = await clickCube(0.5, 0.5);
+check(
+  'viewcube edge click tweens to two-axis view',
+  Array.isArray(edgeDir) && edgeDir.filter((v) => Math.abs(v) > 0.4).length === 2,
+  JSON.stringify(edgeDir),
+);
+
 // Damped orbit settles after release (no endless drift).
 {
   const main = await page.locator('.field-canvas-3d canvas').first().boundingBox();
