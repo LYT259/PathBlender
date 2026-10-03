@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.44';
+export const APP_VERSION = '0.1.6-beta.45';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.45', date: '2026-10-03', note: 'Ground tape trails follow playback in 2D and 3D / 2D 与 3D 贴地轨迹尾巴随播放延长' },
   { version: '0.1.6-beta.44', date: '2026-10-03', note: 'Module installed angles pinned to the chassis CAD diagonal / 模组安装角锁定为底盘 CAD 的对角排布' },
   { version: '0.1.6-beta.43', date: '2026-10-03', note: 'Release walkthrough covers the 10-entry language list incl. he RTL and pt-BR' },
   { version: '0.1.6-beta.42', date: '2026-10-03', note: 'Add Brazilian Portuguese and Hebrew (RTL) UI languages' },
