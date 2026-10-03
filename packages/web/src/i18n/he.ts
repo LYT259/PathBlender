@@ -220,6 +220,7 @@ export const he: Record<MessageKey, string> = {
   'prefs.mouse.onshape': 'Onshape',
   'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'איזה כפתור עכבר מסובב, מזיז ומתקרב בתצוגת ה-3D.',
+  "prefs.mouse.shortcuts": "צירופי מקשים",
   'prefs.mouse.table': 'מפת כפתורים',
   'prefs.mouse.btn.left': 'גרירה שמאלית',
   'prefs.mouse.btn.middle': 'גרירה אמצעית',

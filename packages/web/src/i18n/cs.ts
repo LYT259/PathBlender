@@ -215,6 +215,7 @@ export const cs: Record<MessageKey, string> = {
   'prefs.mouse.onshape': 'Onshape',
   'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Které tlačítko myši otáčí, posouvá a přibližuje 3D zobrazení.',
+  "prefs.mouse.shortcuts": "Klávesové kombinace",
   'prefs.mouse.table': 'Mapování tlačítek',
   'prefs.mouse.btn.left': 'Táhnutí levým',
   'prefs.mouse.btn.middle': 'Táhnutí prostředním',

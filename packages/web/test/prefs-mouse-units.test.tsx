@@ -60,6 +60,34 @@ describe('mouse controls & units settings', () => {
     expect(localStorage.getItem('pb.mouseControls')).toBeNull();
   });
 
+  it('omits inactive mouse buttons and their leader lines for each scheme', () => {
+    const { container } = panel();
+    expect(container.querySelector('[data-mouse-button="left"]')).toBeNull();
+    expect(container.querySelector('.mouse-callout-left')).toBeNull();
+    expect(container.querySelector('[data-mouse-button="right"]')).not.toBeNull();
+    fireEvent.change(screen.getByLabelText(/mouse controls/i, { selector: 'select' }), { target: { value: 'solidworks' } });
+    expect(container.querySelector('[data-mouse-button="right"]')).toBeNull();
+    expect(container.querySelector('.mouse-callout-right')).toBeNull();
+    expect(container.querySelector('[data-mouse-button="middle"]')).not.toBeNull();
+    fireEvent.click(screen.getByLabelText('Set default rotation behavior to constrained rotate'));
+    expect(container.querySelector('.mouse-callout-middle strong')).toHaveTextContent('Constrained rotate');
+  });
+
+  it('orders the five unit choices like the reference and never saves preview-only units', () => {
+    panel();
+    const units = screen.getByLabelText(/length unit/i, { selector: 'select' }) as HTMLSelectElement;
+    expect(Array.from(units.options).map(option => option.value)).toEqual(['cm', 'ft', 'in', 'm', 'yd']);
+    fireEvent.change(units, { target: { value: 'ft' } });
+    expect(screen.getByText('Preview: 3.04 ft. This unit is not applied yet.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    fireEvent.click(screen.getByLabelText('Reverse scroll wheel zoom direction'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(localStorage.getItem('pb.lengthUnit')).toBeNull();
+    expect(localStorage.getItem('pb.reverseScroll')).toBe('on');
+    fireEvent.change(units, { target: { value: 'yd' } });
+    expect(screen.getByText('Preview: 1.01 yd. This unit is not applied yet.')).toBeInTheDocument();
+  });
+
   it('stages checkbox drafts and persists them on Save', () => {
     panel();
     const save = screen.getByRole('button', { name: /save/i }) as HTMLButtonElement;

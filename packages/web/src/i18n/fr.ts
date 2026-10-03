@@ -212,6 +212,7 @@ export const fr: Record<MessageKey, string> = {
   'prefs.mouse.onshape': 'Onshape',
   'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Quel bouton de souris fait pivoter, déplacer et zoomer la vue 3D.',
+  "prefs.mouse.shortcuts": "Combinaisons de touches",
   'prefs.mouse.table': 'Table des boutons',
   'prefs.mouse.btn.left': 'Glisser bouton gauche',
   'prefs.mouse.btn.middle': 'Glisser bouton du milieu',

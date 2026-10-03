@@ -215,6 +215,7 @@ export const ko: Record<MessageKey, string> = {
   'prefs.mouse.onshape': 'Onshape',
   'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': '3D 뷰를 회전, 이동, 확대/축소하는 마우스 버튼을 지정합니다.',
+  "prefs.mouse.shortcuts": "조합 키",
   'prefs.mouse.table': '버튼 매핑',
   'prefs.mouse.btn.left': '왼쪽 드래그',
   'prefs.mouse.btn.middle': '가운데 드래그',

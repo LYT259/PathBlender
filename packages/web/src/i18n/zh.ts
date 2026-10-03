@@ -204,6 +204,7 @@ export const zh: Record<MessageKey, string> = {
   'prefs.mouse.onshape': 'Onshape',
   'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': '鼠标各键在 3D 视图中的功能。',
+  "prefs.mouse.shortcuts": "组合键",
   'prefs.mouse.table': '按键映射',
   'prefs.mouse.btn.left': '左键拖动',
   'prefs.mouse.btn.middle': '中键拖动',

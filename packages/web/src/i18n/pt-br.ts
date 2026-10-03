@@ -215,6 +215,7 @@ export const ptBR: Record<MessageKey, string> = {
   'prefs.mouse.onshape': 'Onshape',
   'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Qual botão do mouse gira, move e dá zoom na vista 3D.',
+  "prefs.mouse.shortcuts": "Combinações de teclas",
   'prefs.mouse.table': 'Mapa dos botões',
   'prefs.mouse.btn.left': 'Arrastar à esquerda',
   'prefs.mouse.btn.middle': 'Arrastar ao meio',

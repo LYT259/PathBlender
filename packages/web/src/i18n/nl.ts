@@ -215,6 +215,7 @@ export const nl: Record<MessageKey, string> = {
   'prefs.mouse.onshape': 'Onshape',
   'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Welke muisknop de 3D-weergave roteert, verschuift en zoomt.',
+  "prefs.mouse.shortcuts": "Toetscombinaties",
   'prefs.mouse.table': 'Knoptoewijzing',
   'prefs.mouse.btn.left': 'Slepen met linkerknop',
   'prefs.mouse.btn.middle': 'Slepen met middelste knop',

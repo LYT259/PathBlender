@@ -177,19 +177,30 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
           {desktop && <IconAppearancePicker value={icon} onChange={setIconDraft} />}
         </>}
         {section === 'controls' && <>
+          <div className="preferences-group preferences-units-group">
+            <label className="preferences-setting"><span>{t('prefs.units')}</span>
+              <select value={unit} onChange={(event) => setUnitDraft(event.target.value as LengthUnitChoice)}>
+                {lengthUnit === 'ftin' && <option value="ftin" hidden disabled>{t('prefs.unit.ftin')}</option>}
+                {LENGTH_UNIT_CHOICES.map((choice) => <option key={choice} value={choice}>{t(`prefs.unit.${choice}`)}</option>)}
+              </select>
+            </label>
+            <p className="preferences-setting-description">{isSupportedLengthUnit(unit) ? `${t('prefs.units.hint')} ${lengthUnitExample(unit)}` : t('prefs.units.preview', { value: LENGTH_UNIT_PREVIEWS[unit] })}</p>
+          </div>
           <div className="preferences-group preferences-mouse-group">
             <label className="preferences-setting"><span>{t('prefs.mouseControls')}</span>
               <select value={mouse} onChange={(event) => setMouseDraft(event.target.value as MouseControlsScheme)}>
                 {MOUSE_SCHEMES.map((choice) => <option key={choice} value={choice}>{t(`prefs.mouse.${choice}`)}</option>)}
               </select>
             </label>
-            <MouseControlsDiagram scheme={mouse} iconMode={icon} />
+            <MouseControlsDiagram scheme={mouse} iconMode={icon} constrained={constrained} />
+            <details className="preferences-mouse-details"><summary>{t('prefs.mouse.shortcuts')}</summary>
             <div className="preferences-mouse-table">
               {(['rotate', 'constrained', 'pan', 'zoom'] as const).map((action) => <div key={action} className="preferences-mouse-row">
-                <span>{t(`prefs.mouse.${action}`)}</span>
+                <span>{t(`prefs.mouse.${constrained && action === 'rotate' ? 'constrained' : constrained && action === 'constrained' ? 'rotate' : action}`)}</span>
                 <strong>{t(`prefs.mouse.${mouse}.${action}`)}</strong>
               </div>)}
-            </div>
+            </div></details>
+            <div className="preferences-mouse-options">
             <label className="preferences-setting preferences-checkbox">
               <span>{t('prefs.mouse.reverseScroll')}</span>
               <input type="checkbox" checked={reverse} onChange={(event) => setReverseDraft(event.target.checked)} />
@@ -201,17 +212,9 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
             <label className="preferences-setting preferences-checkbox">
               <span>{t('prefs.mouse.penAsMouse')}</span>
               <input type="checkbox" checked={pen} onChange={(event) => setPenDraft(event.target.checked)} />
-            </label>
+            </label></div>
           </div>
-          <div className="preferences-group">
-            <label className="preferences-setting"><span>{t('prefs.units')}</span>
-              <select value={unit} onChange={(event) => setUnitDraft(event.target.value as LengthUnitChoice)}>
-                {lengthUnit === 'ftin' && <option value="ftin">{t('prefs.unit.ftin')}</option>}
-                {LENGTH_UNIT_CHOICES.map((choice) => <option key={choice} value={choice}>{t(`prefs.unit.${choice}`)}</option>)}
-              </select>
-            </label>
-            <p className="preferences-setting-description">{isSupportedLengthUnit(unit) ? `${t('prefs.units.hint')} ${lengthUnitExample(unit)}` : t('prefs.units.preview', { value: LENGTH_UNIT_PREVIEWS[unit] })}</p>
-          </div>
+
         </>}
         {section === 'updates' && <>
           {desktop ? <div className="preferences-group">
