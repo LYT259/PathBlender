@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   STEERING_STATIC_MPS,
   chassisModules,
+  moduleBaseYaw,
   moduleSteeringAngles,
   robotVisualGeometry,
   seasonRobotProfile,
@@ -174,5 +175,14 @@ describe('moduleSteeringAngles', () => {
   it('creeping below the static threshold counts as parked', () => {
     const eps = STEERING_STATIC_MPS / 2;
     expect(moduleSteeringAngles({ heading: 0, vx: eps, vy: 0, omega: 0 }, mods)[0]).toBeNull();
+  });
+});
+
+describe('moduleBaseYaw (installed per-corner orientation, from the user CAD)', () => {
+  it('corners get ±45° on the diagonal pattern (FL/BR +45, FR/BL -45)', () => {
+    expect(moduleBaseYaw({ x: 1, y: 1 })).toBeCloseTo(Math.PI / 4, 9);
+    expect(moduleBaseYaw({ x: -1, y: -1 })).toBeCloseTo(Math.PI / 4, 9);
+    expect(moduleBaseYaw({ x: -1, y: 1 })).toBeCloseTo(-Math.PI / 4, 9);
+    expect(moduleBaseYaw({ x: 1, y: -1 })).toBeCloseTo(-Math.PI / 4, 9);
   });
 });

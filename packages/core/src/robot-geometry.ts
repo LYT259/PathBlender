@@ -167,6 +167,17 @@ export function chassisModules(
 }
 
 /**
+ * Per-corner installed yaw (radians) for the default MK5i layout — the
+ * resting orientation each module is fastened at on a real chassis,
+ * measured 2026-10-03 from the user's STEP assembly (motor lines: FL/BR
+ * 45 deg, FR/BL 135 deg = motors flanking along each corner's diagonal).
+ * Steering adds on top: pod yaw = installed yaw + steer angle.
+ */
+export function moduleBaseYaw(m: ModuleLocation): number {
+  return Math.PI / 4 * Math.sign(m.x * m.y || 1);
+}
+
+/**
  * Ground speed below which a module counts as parked; the caller then
  * keeps its previous steering angle (user decision 2026-10-02: wheels
  * hold the last pointing when the robot stands still).
