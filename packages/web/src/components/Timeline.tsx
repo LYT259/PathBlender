@@ -7,6 +7,7 @@ import type {
 import { activeEndT } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import './Timeline.css';
+import { robotIdentity } from '../robot-identity';
 
 const SPEEDS = [0.25, 0.5, 1];
 
@@ -94,7 +95,7 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
                 const robotConflicts = conflicts.filter((c) => c.aId === trajectory.id || c.bId === trajectory.id);
                 const robotBounds = bounds.filter((b) => b.robotId === trajectory.id);
                 const activityLabel = tr('timeline.activity', {
-                  name: trajectory.name,
+                  name: robotIdentity(trajectory),
                   start: robot.startDelayS.toFixed(2),
                   end: activeEndT(robot).toFixed(2),
                 });
@@ -104,12 +105,12 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
                       type="button"
                       className="timeline-robot"
                       onClick={() => onSelect?.(trajectory.id)}
-                      aria-label={tr('timeline.selectRobot', { name: trajectory.name })}
+                      aria-label={tr('timeline.selectRobot', { name: robotIdentity(trajectory) })}
                       aria-pressed={selectedId === trajectory.id}
-                      title={trajectory.name}
+                      title={robotIdentity(trajectory)}
                     >
                       <span className="timeline-robot-dot" style={{ background: robot.color }} />
-                      <span>{trajectory.name}</span>
+                      <span>{robotIdentity(trajectory)}</span>
                     </button>
                     <div className="timeline-lane">
                       <div
@@ -121,7 +122,7 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
                       />
                       {robotBounds.map((issue, index) => {
                         const label = tr('timeline.issue', {
-                          kind: tr('timeline.outOfBounds'), name: trajectory.name,
+                          kind: tr('timeline.outOfBounds'), name: robotIdentity(trajectory),
                           start: issue.startT.toFixed(2), end: issue.endT.toFixed(2),
                         });
                         return <button key={`bounds-${index}`} type="button" className="timeline-issue timeline-bounds" style={intervalStyle(issue.startT, issue.endT)} aria-label={label} title={label} onClick={() => jump(issue.startT, [trajectory.id])} />;
@@ -130,7 +131,7 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
                         const otherId = issue.aId === trajectory.id ? issue.bId : issue.aId;
                         const other = robots.find((r) => r.trajectory.id === otherId);
                         const label = tr('timeline.issue', {
-                          kind: tr('timeline.collision'), name: `${trajectory.name} × ${other?.trajectory.name ?? otherId}`,
+                          kind: tr('timeline.collision'), name: `${robotIdentity(trajectory)} × ${other ? robotIdentity(other.trajectory) : otherId}`,
                           start: issue.startT.toFixed(2), end: issue.endT.toFixed(2),
                         });
                         return <button key={`collision-${index}`} type="button" className="timeline-issue timeline-collision" style={intervalStyle(issue.startT, issue.endT)} aria-label={label} title={label} onClick={() => jump(issue.startT, [issue.aId, issue.bId], trajectory.id)} />;

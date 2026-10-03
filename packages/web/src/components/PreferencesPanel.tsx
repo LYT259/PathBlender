@@ -18,7 +18,7 @@ import { MouseControlsDiagram } from './MouseControlsDiagram';
 import { IconAppearancePicker } from './IconAppearancePicker';
 import './PreferencesPanel.css';
 
-type Section = 'general' | 'updates' | 'about';
+type Section = 'general' | 'controls' | 'updates' | 'about';
 
 /**
  * The settings-window update check is a two-step flow (unlike the native
@@ -53,7 +53,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck>({ kind: 'idle' });
   const id = useId();
   const tabRefs = useRef<Partial<Record<Section, HTMLButtonElement | null>>>({});
-  const sections: Section[] = desktop || VIEWER_ONLY ? ['general', 'updates', 'about'] : ['general', 'about'];
+  const sections: Section[] = desktop || VIEWER_ONLY ? ['general', 'controls', 'updates', 'about'] : ['general', 'controls', 'about'];
   const language = languageDraft ?? langChoice;
   const theme = themeDraft ?? mode;
   const icon = iconDraft ?? iconMode;
@@ -131,7 +131,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
           type="button" role="tab" id={`${id}-${item}-tab`} aria-controls={`${id}-${item}-panel`}
           aria-selected={section === item} tabIndex={section === item ? 0 : -1}
           onClick={() => setSection(item)} onKeyDown={(event) => navigate(event, item)}>
-          <Icon name={item === 'general' ? 'settings' : item === 'updates' ? 'refresh' : 'info'} size={17} />
+          <Icon name={item === 'general' ? 'settings' : item === 'controls' ? 'mouse' : item === 'updates' ? 'refresh' : 'info'} size={17} />
           {t(`prefs.section.${item}`)}
         </button>)}
       </div>
@@ -157,14 +157,15 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
             </div>
           </fieldset>
           {desktop && <IconAppearancePicker value={icon} onChange={setIconDraft} />}
+        </>}
+        {section === 'controls' && <>
           <div className="preferences-group preferences-mouse-group">
             <label className="preferences-setting"><span>{t('prefs.mouseControls')}</span>
               <select value={mouse} onChange={(event) => setMouseDraft(event.target.value as MouseControlsScheme)}>
                 {MOUSE_SCHEMES.map((choice) => <option key={choice} value={choice}>{t(`prefs.mouse.${choice}`)}</option>)}
               </select>
             </label>
-            <p className="preferences-setting-description">{t('prefs.mouse.hint')}</p>
-            <MouseControlsDiagram scheme={mouse} />
+            <MouseControlsDiagram scheme={mouse} iconMode={icon} />
           </div>
           <div className="preferences-group">
             <label className="preferences-setting"><span>{t('prefs.units')}</span>

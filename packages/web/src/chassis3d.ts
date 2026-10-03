@@ -10,7 +10,7 @@
  * absent or fails its sanity check, so the 3D view always has robots.
  *
  * The bumper skirt and frame deck stay procedural by design: they are
- * per-season rule rectangles tinted with the robot's identity color, not
+ * per-season rule rectangles tinted with the session's alliance color, not
  * MK5i geometry.
  *
  * Frame conventions (derived from field3d-frame.ts): the group sits at
@@ -25,6 +25,8 @@
  */
 
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { bumperMaterial, applyBumperWeaveUV } from './bumper-material';
 import type { ModuleLocation, RobotVisualGeometry } from '@pathblender/core';
 
 /** 4 in wheel (typical MK5i fit). */
@@ -60,7 +62,7 @@ export function buildChassis3D(
   group.add(body);
 
   const tint = new THREE.Color(color);
-  const bumperMat = new THREE.MeshStandardMaterial({ color: tint, roughness: 0.85 });
+  const bumperMat = bumperMaterial(tint);
   const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.8 });
   const podMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3c, roughness: 0.55, metalness: 0.35 });
 
@@ -74,7 +76,11 @@ export function buildChassis3D(
     z: number,
     mat: THREE.Material,
   ) => {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    const geometry = mat === bumperMat
+      ? new RoundedBoxGeometry(w, h, d, 2, Math.min(0.009, d / 4, h / 4))
+      : new THREE.BoxGeometry(w, h, d);
+    const mesh = new THREE.Mesh(geometry, mat);
+    if (mat === bumperMat) applyBumperWeaveUV(geometry);
     mesh.position.set(x, y, z);
     mesh.castShadow = true;
     parent.add(mesh);
@@ -103,18 +109,22 @@ export function buildChassis3D(
     body.add(frame);
   }
 
-  // Team number decals on the two side rails (user request 2026-10-02,
-  // like a real robot: white digits on the bumper). One outward-facing
-  // plane per rail, upright text, texture cached per number.
+  // Centered, upright stitched digits on all four outward-facing rails.
+  // A fixed aspect ratio avoids stretching short numbers across the bumper.
   if (teamNumber) {
     const tex = teamNumberTexture(teamNumber);
-    const railW = (L - 2 * d) * 0.92;
-    const geo = new THREE.PlaneGeometry(railW, BUMPER_H_M * 0.82);
-    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
-    for (const side of [1, -1] as const) {
-      const decal = new THREE.Mesh(geo, mat);
-      decal.position.set(0, BUMPER_Y_M, (side * W) / 2 + 0.001);
-      if (side < 0) decal.rotation.y = Math.PI;
+    const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.98, depthWrite: false });
+    for (const rail of [
+      { width: L - 2 * d, x: 0, z: W / 2 + 0.001, yaw: 0 },
+      { width: L - 2 * d, x: 0, z: -W / 2 - 0.001, yaw: Math.PI },
+      { width: W - 2 * d, x: L / 2 + 0.001, z: 0, yaw: Math.PI / 2 },
+      { width: W - 2 * d, x: -L / 2 - 0.001, z: 0, yaw: -Math.PI / 2 },
+    ]) {
+      const width = Math.min(rail.width * 0.92, BUMPER_H_M * 0.82 * 4);
+      const decal = new THREE.Mesh(new THREE.PlaneGeometry(width, width / 4), mat);
+      decal.name = 'bumper-team-number';
+      decal.position.set(rail.x, BUMPER_Y_M, rail.z);
+      decal.rotation.y = rail.yaw;
       body.add(decal);
     }
   }
@@ -204,9 +214,18 @@ function teamNumberTexture(num: string): THREE.CanvasTexture {
   ctx.clearRect(0, 0, 512, 128);
   ctx.font = 'bold 96px ui-sans-serif, system-ui, sans-serif';
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#f4f4f5';
-  ctx.fillText(num, 256, 68);
+  const metrics = ctx.measureText(num);
+  const baseline = 64 + (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
+  ctx.fillText(num, 256, baseline, 480);
+  // Fine diagonal stitch highlights are clipped to the glyphs.
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.strokeStyle = '#c8cbd0';
+  ctx.lineWidth = 0.7;
+  ctx.beginPath();
+  for (let x = -128; x < 512; x += 4) { ctx.moveTo(x, 128); ctx.lineTo(x + 128, 0); }
+  ctx.stroke();
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;

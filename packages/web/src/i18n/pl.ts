@@ -195,6 +195,8 @@ export const pl: Record<MessageKey, string> = {
   'rail.png': 'PNG',
   'rail.prefs': 'Opcje',
   'rail.clear': 'Wyczyść',
+  "prefs.section.controls": "Sterowanie",
+  "prefs.description.controls": "Wybierz sterowanie myszą i jednostki długości.",
   'prefs.section.general': 'Ogólne',
   'prefs.section.updates': 'Aktualizacje',
   'prefs.section.about': 'O aplikacji',
