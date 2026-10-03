@@ -101,6 +101,7 @@ export type { SessionFileV1, SessionTrajectory } from './session';
 export {
   STEERING_STATIC_MPS,
   chassisModules,
+  moduleBaseYaw,
   moduleSteeringAngles,
   robotVisualGeometry,
   seasonRobotProfile,
