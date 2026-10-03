@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.42';
+export const APP_VERSION = '0.1.6-beta.43';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.43', date: '2026-10-03', note: 'Session files now save as .pb (pre-rename .ghpb.json sessions still open); the old GHPathBlender name is gone / 会话文件改为 .pb 保存（更名前的 .ghpb.json 旧会话仍可打开）；旧名 GHPathBlender 全部清除' },
   { version: '0.1.6-beta.42', date: '2026-10-03', note: 'Add Brazilian Portuguese and Hebrew (RTL) UI languages' },
   { version: '0.1.6-beta.41', date: '2026-10-03', note: 'Modules now rest at their real installed angles from the chassis CAD (diagonal pattern), steering adds on top / 模组静止时按车架 CAD 的真实安装角摆放（对角排布），转向在其上叠加' },
   { version: '0.1.6-beta.40', date: '2026-10-03', note: '3D robots ride the real MK5i chassis frame CAD — tubes, corner blocks, hardware; 2026 default follows the CAD at 27 in / 3D 机器人换上真实 MK5i 车架 CAD——方管、角块与五金件；2026 默认尺寸随 CAD 定为 27 英寸' },

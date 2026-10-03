@@ -19,7 +19,7 @@ import { broadcastPref, listenPrefs } from './pref-sync';
 
 export type MouseControlsScheme = 'onshape' | 'solidworks';
 
-const STORAGE_KEY = 'ghpb.mouseControls';
+const STORAGE_KEY = 'pb.mouseControls';
 export const MOUSE_SCHEMES: MouseControlsScheme[] = ['onshape', 'solidworks'];
 
 function normalize(value: string | null): MouseControlsScheme {

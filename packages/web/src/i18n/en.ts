@@ -167,7 +167,7 @@ export const en = {
   'updates.upToDate': "You're up to date",
   'updates.downloading': 'Found v{v}, downloading and relaunching…',
   'updates.failed': 'Update check failed — check your connection and try again',
-  'actions.saveHint': 'Save all robots and session settings (.ghpb.json). Reopen with Import. Export individual paths from the robot inspector.',
+  'actions.saveHint': 'Save all robots and session settings (.pb). Reopen with Import. Export individual paths from the robot inspector.',
   'actions.clearHint': 'Remove all robots from the current session (never touches the imported files)',
   'rail.import': 'Import',
   'rail.save': 'Save',

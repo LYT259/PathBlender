@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    ghpathblender_desktop_lib::run()
+    pathblender_desktop_lib::run()
 }

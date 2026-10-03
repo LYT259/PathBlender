@@ -51,7 +51,7 @@ const LANG_META: Record<Lang, { englishName: string; endonym: string }> = {
   es: { englishName: 'Spanish', endonym: 'Español' },
   tr: { englishName: 'Turkish', endonym: 'Türkçe' },
 };
-const STORAGE_KEY = 'ghpb.lang';
+const STORAGE_KEY = 'pb.lang';
 const LANG_CODES = Object.keys(LANG_META) as Lang[];
 
 /**
