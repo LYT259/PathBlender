@@ -108,3 +108,23 @@ describe('session file round-trip', () => {
     expect(() => deserializeSession('{"app":"other"}')).toThrow();
   });
 });
+
+
+describe('session id persistence (save/load keeps identity)', () => {
+  it('serialize→deserialize keeps trajectory ids, so the demo marker survives', () => {
+    const traj = parseTraj(read('traj/v3_swerve.traj'), 'v3.traj');
+    const st = makeSession(traj);
+    const back = deserializeSession(serializeSession([st], 'rebuilt-2026'));
+    expect(back.robots[0]?.trajectory.id).toBe(traj.id);
+  });
+
+  it('pre-persistence files (no stored id) still load with a fresh id', () => {
+    const traj = parseTraj(read('traj/v3_swerve.traj'), 'v3.traj');
+    const st = makeSession(traj);
+    const file = JSON.parse(serializeSession([st], 'rebuilt-2026'));
+    delete file.robots[0].id;
+    const back = deserializeSession(JSON.stringify(file));
+    expect(back.robots[0]?.trajectory.id).toBeTruthy();
+    expect(back.robots[0]?.trajectory.id).not.toBe(traj.id);
+  });
+});
