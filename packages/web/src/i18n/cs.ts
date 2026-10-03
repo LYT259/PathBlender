@@ -17,7 +17,6 @@ export const cs: Record<MessageKey, string> = {
   'prefs.installUpdate': "Nainstalovat a restartovat",
   'prefs.checkSavedChannel': "Kontrola aktualizací používá uložený kanál: {channel}.",
   'prefs.appIcon': "Ikona aplikace",
-  'prefs.appIconHint': "Platí pro ikonu v Docku za běhu aplikace. Finder a Launchpad vždy následují vzhled systému.",
   'welcome.title': 'Začněte importem tras',
   'welcome.description': 'Přehrávejte trasy současně a kontrolujte vzájemné kolize.',
   'welcome.folderAdvice': 'Importujte celou složku, abyste při konfliktu mohli přepnout na jinou trasu.',

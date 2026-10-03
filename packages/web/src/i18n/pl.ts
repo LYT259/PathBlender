@@ -17,7 +17,6 @@ export const pl: Record<MessageKey, string> = {
   'prefs.installUpdate': "Zainstaluj i uruchom ponownie",
   'prefs.checkSavedChannel': "Sprawdzanie aktualizacji używa zapisanego kanału: {channel}.",
   'prefs.appIcon': "Ikona aplikacji",
-  'prefs.appIconHint': "Dotyczy ikony w Docku, gdy aplikacja jest uruchomiona. Finder i Launchpad zawsze podążają za wyglądem systemu.",
   'welcome.title': 'Importuj trasy, aby rozpocząć',
   'welcome.description': 'Odtwarzaj trasy jednocześnie i sprawdzaj, czy się wzajemnie nie zakłócają.',
   'welcome.folderAdvice': 'Importuj cały folder, aby móc zmienić trasę, gdy pojawi się konflikt.',

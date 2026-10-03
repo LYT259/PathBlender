@@ -17,7 +17,6 @@ export const nl: Record<MessageKey, string> = {
   'prefs.installUpdate': "Installeren en opnieuw starten",
   'prefs.checkSavedChannel': "Updatecontroles gebruiken het opgeslagen kanaal: {channel}.",
   'prefs.appIcon': "App-pictogram",
-  'prefs.appIconHint': "Geldt voor het Dock-symbool terwijl de app actief is. Finder en Launchpad volgen altijd de systeemweergave.",
   'welcome.title': 'Importeer routes om te beginnen',
   'welcome.description': 'Routes samen afspelen en controleren op interferentie.',
   'welcome.folderAdvice': 'Importeer een hele map om van route te kunnen wisselen als er een conflict optreedt.',

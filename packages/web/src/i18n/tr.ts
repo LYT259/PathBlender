@@ -12,7 +12,6 @@ export const tr: Record<MessageKey, string> = {
   'prefs.installUpdate': "Yükle ve yeniden başlat",
   'prefs.checkSavedChannel': "Güncelleme denetimleri kaydedilen kanalı kullanır: {channel}.",
   'prefs.appIcon': "Uygulama simgesi",
-  'prefs.appIconHint': "Uygulama çalışırken Dock simgesine uygulanır. Finder ve Launchpad her zaman sistem görünümünü izler.",
   'welcome.title': 'Başlamak için yolları içe aktarın',
   'welcome.description': 'Yolları birlikte oynatın ve çakışmaları kontrol edin.',
   'welcome.folderAdvice': 'Bir çakışma olduğunda rota değiştirebilmek için klasörün tamamını içe aktarın.',
