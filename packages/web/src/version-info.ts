@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.45';
+export const APP_VERSION = '0.1.6-beta.46';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.46', date: '2026-10-03', note: 'Demo robots are 00001/00002 with bumper numbers; Welded left of AndyMark; artwork toggle matches the segmented style / 示例机器人改为 00001/00002 并印上队号；构造切换 Welded 在左；示意图/渲染图改为同款分段按钮' },
   { version: '0.1.6-beta.45', date: '2026-10-03', note: 'Ground tape trails follow playback in 2D and 3D / 2D 与 3D 贴地轨迹尾巴随播放延长' },
   { version: '0.1.6-beta.44', date: '2026-10-03', note: 'Module installed angles pinned to the chassis CAD diagonal / 模组安装角锁定为底盘 CAD 的对角排布' },
   { version: '0.1.6-beta.43', date: '2026-10-03', note: 'Release walkthrough covers the 10-entry language list incl. he RTL and pt-BR' },
