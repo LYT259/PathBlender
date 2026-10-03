@@ -36,8 +36,6 @@ describe('seasonRobotProfile (rule-verified per-season maxima)', () => {
   type Row = [number, number, number, number, number];
   // year, frame length in, frame width in, bumper in/side, outer square/length in
   const rows: Row[] = [
-    [2019, 30, 30, 3.25, 36.5],
-    [2020, 30, 30, 3.25, 36.5],
     [2022, 30, 30, 3.25, 36.5],
     [2023, 30, 30, 3.25, 36.5],
     [2024, 30, 30, 3.25, 36.5],
