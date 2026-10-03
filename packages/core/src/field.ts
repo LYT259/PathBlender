@@ -69,13 +69,13 @@ export interface FieldPackage {
   year: number;
   /** Autonomous Period length that season's game ran, seconds — the
    *  timeline floor and mediation delay ceilings derive from it. 2026
-   *  REBUILT is 20 s; every bundled earlier season (2018–2025) was 15 s. */
+   *  REBUILT is 20 s; every bundled earlier season (2022–2025) was 15 s. */
   autoPeriodS: number;
   /** Playfield size excluding margins (the coordinate space of paths). */
   lengthM: number;
   widthM: number;
   /** Primary artwork — the flat schematic style (PathPlanner) for the
-   *  seasons that have one (2022–2026); the only artwork for 2018–2020
+   *  seasons that have one (2022–2026); the only artwork for 2022
    *  (AdvantageScope renders, no schematic exists upstream). */
   image?: FieldImageCalibration;
   /** Semi-realistic rendered artwork (AdvantageScope/Chief Delphi renders),
@@ -310,51 +310,6 @@ export const REBUILT_2026: FieldPackage = {
  */
 export const FIELDS: readonly FieldPackage[] = [
   {
-    id: 'powerup-2018',
-    name: 'POWER UP',
-    year: 2018,
-    autoPeriodS: 15,
-    lengthM: (648 * 0.0254),
-    widthM: (324 * 0.0254),
-    image: {
-      pixelWidth: 3840, pixelHeight: 1559,
-      ppm: (3320 - 519) / (648 * 0.0254),
-      ppmY: (1480 - 78) / (324 * 0.0254),
-      originPx: { x: 519, y: 78 },
-      marginM: 0,
-    },
-  },
-  {
-    id: 'deepspace-2019',
-    name: 'DEEP SPACE',
-    year: 2019,
-    autoPeriodS: 15,
-    lengthM: (648 * 0.0254),
-    widthM: (324 * 0.0254),
-    image: {
-      pixelWidth: 3701, pixelHeight: 1500,
-      ppm: (3204 - 496) / (648 * 0.0254),
-      ppmY: (1421 - 78) / (324 * 0.0254),
-      originPx: { x: 496, y: 78 },
-      marginM: 0,
-    },
-  },
-  {
-    id: 'infinitercharge-2020',
-    name: 'INFINITE RECHARGE',
-    year: 2020,
-    autoPeriodS: 15,
-    lengthM: (629.25 * 0.0254),
-    widthM: (323.25 * 0.0254),
-    image: {
-      pixelWidth: 3548, pixelHeight: 1438,
-      ppm: (3028 - 519) / (629.25 * 0.0254),
-      ppmY: (1363 - 73) / (323.25 * 0.0254),
-      originPx: { x: 519, y: 73 },
-      marginM: 0,
-    },
-  },
-  {
     id: 'rapidreact-2022',
     name: 'Rapid React',
     year: 2022,
@@ -471,7 +426,7 @@ export function fieldById(id: string): FieldPackage {
  * exists; the artwork follows the style — 'rendered' takes the
  * AdvantageScope artwork (2025 additionally takes its AndyMark sheet of the
  * official pair), 'schematic' (or a style the season lacks) takes the
- * primary artwork, which for 2018–2020 IS the render. The id, name and
+ * primary artwork, which for 2022 IS the render. The id, name and
  * playfield size never change.
  */
 export function withFieldVariant(

@@ -17,7 +17,7 @@ beforeEach(() => localStorage.clear());
 afterEach(cleanup);
 
 function panel() {
-  return render(
+  const result = render(
     <ThemeProvider>
       <UpdateChannelProvider>
         <I18nProvider>
@@ -26,28 +26,59 @@ function panel() {
       </UpdateChannelProvider>
     </ThemeProvider>,
   );
+  expect(screen.queryByLabelText(/mouse controls/i, { selector: 'select' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: 'Controls' }));
+  return result;
 }
 
 describe('mouse controls & units settings', () => {
-  it('shows both groups with their defaults (onshape, meters)', () => {
+  it('shows the scheme select, the verified function table and checkbox defaults', () => {
     panel();
     const mouse = screen.getByLabelText(/mouse controls/i, { selector: 'select' }) as HTMLSelectElement;
     const units = screen.getByLabelText(/length unit/i, { selector: 'select' }) as HTMLSelectElement;
     expect(mouse.value).toBe('onshape');
     expect(units.value).toBe('m');
-    // The onshape map previews what each button does.
-    expect(screen.getByText('Rotate')).toBeInTheDocument();
-    expect(screen.getByText('Pan')).toBeInTheDocument();
+    // Function rows carry the verified Onshape bindings (2026-10-03).
+    expect(screen.getByText('Right mouse button drag')).toBeInTheDocument();
+    expect(screen.getByText('Alt + Right mouse button drag')).toBeInTheDocument();
+    expect(screen.getByText('Ctrl + Right mouse button drag or Middle mouse button drag')).toBeInTheDocument();
+    expect(screen.getByText('Scroll wheel in/out')).toBeInTheDocument();
+    // Checkbox defaults: reverse off, constrained off, pen-as-mouse on.
+    expect((screen.getByLabelText('Reverse scroll wheel zoom direction') as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByLabelText('Set default rotation behavior to constrained rotate') as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByLabelText('Use pen input as mouse') as HTMLInputElement).checked).toBe(true);
   });
 
-  it('updates the labelled mouse diagram when the control scheme changes', () => {
+  it('swaps the diagram and table to the verified SOLIDWORKS bindings', () => {
     panel();
     expect(screen.getByRole('figure', { name: 'Button map' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'SOLIDWORKS', exact: true })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/mouse controls/i, { selector: 'select' }), { target: { value: 'solidworks' } });
-    expect(screen.getByText('Rotate (Ctrl: pan)')).toBeInTheDocument();
-    expect(screen.queryByText('Pan', { exact: true })).not.toBeInTheDocument();
+    expect(screen.getByText('Middle mouse button drag')).toBeInTheDocument();
+    expect(screen.getByText('Ctrl + Middle mouse button drag')).toBeInTheDocument();
+    expect(screen.getByText('Scroll wheel in/out or Shift + Middle mouse button drag')).toBeInTheDocument();
     expect(localStorage.getItem('pb.mouseControls')).toBeNull();
+  });
+
+  it('stages checkbox drafts and persists them on Save', () => {
+    panel();
+    const save = screen.getByRole('button', { name: /save/i }) as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+    fireEvent.click(screen.getByLabelText('Reverse scroll wheel zoom direction'));
+    fireEvent.click(screen.getByLabelText('Use pen input as mouse'));
+    expect(save.disabled).toBe(false);
+    fireEvent.click(save);
+    expect(localStorage.getItem('pb.reverseScroll')).toBe('on');
+    expect(localStorage.getItem('pb.penAsMouse')).toBe('off');
+    expect(save.disabled).toBe(true);
+  });
+
+  it('restores the persisted checkboxes on open (app restart)', () => {
+    localStorage.setItem('pb.reverseScroll', 'on');
+    localStorage.setItem('pb.penAsMouse', 'off');
+    panel();
+    expect((screen.getByLabelText('Reverse scroll wheel zoom direction') as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByLabelText('Use pen input as mouse') as HTMLInputElement).checked).toBe(false);
   });
 
   it('stages drafts, then persists on Save', () => {

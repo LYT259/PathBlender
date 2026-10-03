@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import type { CollisionInterval, RobotGeometry, SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { VIEWER_ONLY } from '../viewer';
 import { displayName, type LibraryProfile, type LibraryRoute } from '../route-library';
 import './RobotList.css';
+import { robotIdentity } from '../robot-identity';
 
 interface RobotListProps {
   robots: SessionTrajectory[];
@@ -33,31 +34,35 @@ interface RobotInspectorProps {
  * also prints on the robot's bumper). Digits only, max 5, Enter/blur
  * commits, Escape discards.
  */
-function TeamNumberCell({ robot, onUpdate }: {
+function TeamNumberCell({ robot, onUpdate, children }: {
+  children: ReactNode;
   robot: SessionTrajectory;
   onUpdate: (id: string, patch: Partial<SessionTrajectory>) => void;
 }) {
   const { t } = useI18n();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(robot.trajectory.teamNumber);
+  const committed = useRef(false);
   if (!editing) {
-    return (
+    return (<>
+      {children}
       <button
         className="robot-team-chip"
         title={t('robots.teamNumberEdit')}
         aria-label={t('robots.teamNumberEdit')}
         onClick={() => {
+          committed.current = false;
           setDraft(robot.trajectory.teamNumber);
           setEditing(true);
         }}
       >
-        {robot.trajectory.teamNumber ? `#${robot.trajectory.teamNumber}` : (
-          <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M13.5 3.5l3 3L7 16l-3.8.8L4 13z" /></svg>
-        )}
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8M16 3l5 5M10 14l-1 4 4-1 9-9-3-3Z" /></svg>
       </button>
-    );
+    </>);
   }
   const commit = () => {
+    if (committed.current) return;
+    committed.current = true;
     setEditing(false);
     const v = draft.replace(/\D/g, '').slice(0, 5);
     if (v !== robot.trajectory.teamNumber) {
@@ -65,7 +70,7 @@ function TeamNumberCell({ robot, onUpdate }: {
     }
   };
   return (
-    <input
+    <div className="robot-team-editor"><span className="band-dot" style={{ background: robot.color }} aria-hidden="true" /><input
       className="robot-team-input"
       value={draft}
       inputMode="numeric"
@@ -77,9 +82,9 @@ function TeamNumberCell({ robot, onUpdate }: {
       onBlur={commit}
       onKeyDown={(e) => {
         if (e.key === 'Enter') commit();
-        if (e.key === 'Escape') setEditing(false);
+        if (e.key === 'Escape') { committed.current = true; setEditing(false); }
       }}
-    />
+    /></div>
   );
 }
 
@@ -103,9 +108,9 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
           {robots.map((robot) => {
             const { trajectory } = robot;
             const hit = conflicts.some((c) => c.aId === trajectory.id || c.bId === trajectory.id);
-            const visibilityLabel = t(robot.visible ? 'robots.hide' : 'robots.show', { name: trajectory.name });
+            const visibilityLabel = t(robot.visible ? 'robots.hide' : 'robots.show', { name: robotIdentity(trajectory) });
             const selectionLabel = [
-              trajectory.teamNumber ? `#${trajectory.teamNumber} ${trajectory.name}` : trajectory.name,
+              robotIdentity(trajectory),
               sourceLabel(trajectory.source),
               `${trajectory.durationS.toFixed(2)} s`,
               hit ? t('robots.collision') : '',
@@ -113,12 +118,11 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
             const currentRoute = libraryRoutes.find((r) => r.id === robot.routeId);
             return (
               <li key={trajectory.id} className={`robot-library-row${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
-                <button className="robot-library-select" aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
+                <TeamNumberCell robot={robot} onUpdate={onUpdate}><button className="robot-library-select" aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
                   <span className="band-dot" style={{ background: robot.color }} aria-hidden="true" />
                   <span className="robot-library-content">
                     <span className="robot-library-name" title={trajectory.name}>
-                      {trajectory.teamNumber && <strong className="robot-library-team">#{trajectory.teamNumber}</strong>}
-                      <span className="robot-name">{trajectory.name}</span>
+                      <span className={trajectory.teamNumber ? "robot-name robot-library-team" : "robot-name"}>{robotIdentity(trajectory)}</span>
                     </span>
                     <span className="robot-library-meta">
                       <span>{sourceLabel(trajectory.source)}</span>
@@ -126,13 +130,13 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                       {hit && <span className="robot-library-conflict">{t('robots.collision')}</span>}
                     </span>
                   </span>
-                </button>
+                </button></TeamNumberCell>
                 {libraryRoutes.length > 0 && (
                   <select
                     className="route-picker"
                     value={robot.routeId ?? ''}
                     title={currentRoute ? currentRoute.relPath : t('library.routeOffLibrary')}
-                    aria-label={t('library.routePicker', { name: trajectory.name })}
+                    aria-label={t('library.routePicker', { name: robotIdentity(trajectory) })}
                     onChange={(e) => onPickRoute(trajectory.id, e.target.value)}
                   >
                     {!currentRoute && <option value="">{displayName(trajectory)}</option>}
@@ -143,7 +147,6 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     ))}
                   </select>
                 )}
-                <TeamNumberCell robot={robot} onUpdate={onUpdate} />
                 <button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
                   <EyeIcon visible={robot.visible} />
                 </button>
@@ -198,7 +201,7 @@ export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfil
     <section className="robot-inspector" key={id} aria-label={trajectory.name}>
       <header className="robot-inspector-heading">
         <span className="band-dot" style={{ background: robot.color }} aria-hidden="true" />
-        <h2>{trajectory.name}</h2>
+        <h2>{robotIdentity(trajectory)}</h2>
       </header>
       <section className="robot-inspector-section">
         <h3>{t('robots.identity')}</h3>

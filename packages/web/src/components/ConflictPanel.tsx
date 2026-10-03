@@ -1,3 +1,4 @@
+import { robotIdentity } from '../robot-identity';
 import type { ReactNode } from 'react';
 import type { CollisionInterval, OutOfBoundsInterval, SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
@@ -17,7 +18,10 @@ interface Props {
 export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump, guide }: Props) {
   const { t } = useI18n();
   const [unit] = useLengthUnit();
-  const nameOf = (id: string) => robots.find((r) => r.trajectory.id === id)?.trajectory.name ?? '?';
+  const nameOf = (id: string) => {
+    const robot = robots.find((r) => r.trajectory.id === id);
+    return robot ? robotIdentity(robot.trajectory) : '?';
+  };
   const issues = conflicts.length + bounds.length;
   const hidden = robots.filter((r) => !r.visible).length;
   const estimated = robots.some((r) => r.trajectory.geometrySource === 'default');

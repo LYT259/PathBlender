@@ -27,7 +27,7 @@ function dropFiles(files: File[]): void {
 beforeEach(() => localStorage.clear());
 
 function selectRobot(name: string): HTMLElement {
-  fireEvent.click(screen.getByText(name, { selector: '.robot-name' }));
+  fireEvent.click(screen.getByText(({ 'Straight Run': '#0001', 'Stop And Score': '#0002', 'Side Lane': '#0003' } as Record<string, string>)[name] ?? name, { selector: '.robot-name' }));
   return screen.getByRole('region', { name, exact: true });
 }
 
@@ -95,8 +95,8 @@ describe('App import → fusion → collision flow', () => {
 
     // Choreo card + ghost cards
     expect(screen.getByText('swerve', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('Stop And Score', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#0002', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByText('#0001', { selector: '.robot-library-team' })).toBeInTheDocument();
 
     // Collisions: the tuned pair (straight_run × stop_and_score) plus the
@@ -109,7 +109,7 @@ describe('App import → fusion → collision flow', () => {
       { timeout: 3000 },
     );
     expect(
-      screen.getByText('Straight Run × Stop And Score', { selector: '.conflict-pair' }),
+      screen.getByText('#0001 × #0002', { selector: '.conflict-pair' }),
     ).toBeInTheDocument();
     expect(screen.getAllByText(/closest/i, { selector: '.conflict-when' })).toHaveLength(2);
   });
@@ -229,7 +229,7 @@ describe('App import → fusion → collision flow', () => {
   it('AI assistant stays withdrawn: no entry point in toolbar, inspector or preferences', async () => {
     render(<App />);
     dropFiles([file('ghostauto/side_lane.ghostauto')]);
-    await screen.findByText('Side Lane', { selector: '.robot-name' });
+    await screen.findByText('#0003', { selector: '.robot-name' });
     // 2026-09-20 retreat: every assistant surface is unreachable while
     // AI_ENABLED is false (ai/availability.ts); the code itself remains.
     expect(screen.queryByRole('button', { name: 'AI Assistant', exact: true })).not.toBeInTheDocument();
@@ -275,7 +275,7 @@ describe('App import → fusion → collision flow', () => {
       () => {
       expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument();
     });
-    expect(screen.getByText('Side Lane', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#0003', { selector: '.robot-name' })).toBeInTheDocument();
   });
 
   it('PathPlanner .path now imports natively (Phase 2 generation)', async () => {

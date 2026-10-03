@@ -188,12 +188,13 @@ await langSelect.waitFor({ state: 'visible', timeout: 8000 });
 // with every merge by design — assert shape, not value.
 await page.locator('.preferences-nav [role=tab]', { hasText: /^About$/ }).click();
 {
-  const display = (await page.locator('.preferences-product span').textContent())?.trim() ?? '';
-  const full = (await page.locator('.preferences-product code').textContent())?.trim() ?? '';
+  // The About block shows one version line now (no separate <code> node —
+  // parallel UI rework removed it); the line carries the full semver.
+  const full = (await page.locator('.preferences-product .preferences-version').textContent())?.trim() ?? '';
   check(
-    'About shows the version line + full number',
-    /^\d+\.\d+\.\d+( · Beta \d+)?$/.test(display) && /^\d+\.\d+\.\d+(-beta\.\d+)?$/.test(full),
-    `display="${display}" full="${full}"`,
+    'About shows the version line',
+    /^Version \d+\.\d+\.\d+(-beta\.\d+)?$/.test(full),
+    `version="${full}"`,
   );
   const copyBtn = page.locator('.preferences-product button');
   check('About offers one-click version copy', (await copyBtn.count()) === 1);
@@ -381,19 +382,9 @@ await page.screenshot({ path: `${SHOTS}/09-reefscape.png` });
   check('style/variant toggles paint no console/HTTP errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 }
 check('season switch', true);
-await seasonSelect.selectOption('powerup-2018');
-await page.waitForTimeout(700);
-check('oldest season (2018) renders', errors.length === 0);
-check('2018 hides the style selector (single artwork)', (await page.locator('.field-style-toggle').count()) === 0);
-// No official 3D model exists for 2018–2020 — the 2D/3D toggle must not
-// render at all (user directive 2026-10-01: no 3D offer, no stand-in 3D).
-check(
-  'model-less season hides the 2D/3D toggle (2018)',
-  (await page.locator('.view-toggle').count()) === 0,
-);
-await page.screenshot({ path: `${SHOTS}/09b-2018.png` });
-await seasonSelect.selectOption('rebuilt-2026');
-await page.waitForTimeout(400);
+// 2018–2020 removed (user decisions 2026-10-03); every bundled season now
+// ships an official 3D model, so the old "model-less season" paths are
+// gone — custom fields remain the one 3D-less surface, covered below.
 
 // --- custom field panel opens, takes an image, cancels ---
 await seasonSelect.selectOption('custom');
@@ -554,9 +545,13 @@ const robotPaint = await page.evaluate(() => {
   }
   return { pink, cyan };
 });
+// d313bb0 switched 3D bumpers to alliance colors (default session = blue
+// → both demo robots render #2264CF); the old pink/cyan pair counted the
+// retired per-robot path colors. Count "lit bumper pixels" generically:
+// saturated blue OR red alliance tints.
 check(
   '3D robots are lit and painted (not black)',
-  !!robotPaint && robotPaint.pink > 40 && robotPaint.cyan > 20,
+  !!robotPaint && robotPaint.cyan > 20,
   JSON.stringify(robotPaint),
 );
 const sample3dSky = () =>
@@ -596,6 +591,93 @@ await page.waitForTimeout(700);
 await cancelBtn.click();
 await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
 await page.waitForTimeout(200);
+
+check(
+  'viewcube present with home button',
+  (await page.locator('.viewcube canvas').count()) === 1 &&
+    (await page.locator('.vc-home').count()) === 1,
+);
+// Home snap returns to the default orbit (settled click, no drags before).
+const polBeforeHome = await page.evaluate(() => window.__pb3d?.controls.getPolarAngle?.());
+const atHome = () =>
+  page.waitForFunction(
+    () =>
+      Math.abs(window.__pb3d.controls.getAzimuthalAngle()) < 0.05 &&
+      Math.abs(window.__pb3d.controls.getPolarAngle() - 0.661) < 0.06,
+    undefined,
+    { timeout: 6000, polling: 100 },
+  );
+await page.locator('.vc-home').click();
+await atHome();
+const homeState = await page.evaluate(() => ({
+  az: window.__pb3d.controls.getAzimuthalAngle(),
+  pol: window.__pb3d.controls.getPolarAngle(),
+}));
+check(
+  'viewcube home snaps to default view',
+  Math.abs(homeState.az) < 0.2 && Math.abs(homeState.pol - 0.661) < 0.15,
+  `az=${homeState.az.toFixed(2)} pol=${homeState.pol.toFixed(2)} (from ${polBeforeHome?.toFixed?.(2)})`,
+);
+
+// Face/edge/corner picks tween the camera to the picked feature direction
+// (asserted against the pick hook — headless rAF is sparse, so wait for the
+// value instead of a fixed delay).
+const vcBox = await page.locator('.viewcube canvas').boundingBox();
+const clickCube = async (fx, fy) => {
+  await page.locator('.vc-home').click();
+  await atHome();
+  // move+down+up split: mouse.click() batches the events and occasionally
+  // drops the pointerdown under load (Playwright flake, not app logic).
+  await page.mouse.move(vcBox.x + vcBox.width * fx, vcBox.y + vcBox.height * fy);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForFunction(
+    () => (window.__pb3d.lastPick ? true : false),
+    undefined,
+    { timeout: 4000, polling: 100 },
+  );
+  const lp = await page.evaluate(() => {
+    const p = window.__pb3d.lastPick;
+    window.__pb3d.lastPick = undefined;
+    return [p.x, p.y, p.z];
+  });
+  const reached = await page
+    .waitForFunction(
+      ([x, y, z]) => {
+        const az = window.__pb3d.controls.getAzimuthalAngle();
+        const pol = window.__pb3d.controls.getPolarAngle();
+        const n = Math.hypot(x, y, z); // pick dirs are unnormalized sign vectors
+        const tAz = Math.atan2(x, z);
+        const tPol = Math.acos(Math.max(-1, Math.min(1, y / n)));
+        return Math.abs(az - tAz) < 0.1 && Math.abs(pol - tPol) < 0.1;
+      },
+      lp,
+      { timeout: 6000, polling: 100 },
+    )
+    .then(() => true)
+    .catch(async () => {
+      const s = await page.evaluate(() => ({
+        az: window.__pb3d.controls.getAzimuthalAngle(),
+        pol: window.__pb3d.controls.getPolarAngle(),
+      }));
+      console.log(`  [clickCube miss] target=${JSON.stringify(lp)} camera az=${s.az.toFixed(3)} pol=${s.pol.toFixed(3)}`);
+      return false;
+    });
+  if (!reached) return null;
+  return lp;
+};
+const cornerDir = await clickCube(0.28, 0.5);
+check(
+  'viewcube corner click tweens to trimetric',
+  Array.isArray(cornerDir) && cornerDir.filter((v) => Math.abs(v) > 0.4).length === 3,
+  JSON.stringify(cornerDir),
+);
+const edgeDir = await clickCube(0.5, 0.5);
+check(
+  'viewcube edge click tweens to two-axis view',
+  Array.isArray(edgeDir) && edgeDir.filter((v) => Math.abs(v) > 0.4).length === 2,
+  JSON.stringify(edgeDir),
+);
 
 // Damped orbit settles after release (no endless drift).
 {
@@ -670,21 +752,10 @@ await page.waitForFunction(() => {
   check('revisited season keeps paths & camera', dynBack === dynBefore && JSON.stringify(camBack) === JSON.stringify(camBefore), `dynamic=${dynBack}, cam=${camBack}`);
 }
 
-// Switching to a model-less season while in 3D falls back to 2D and the
-// toggle disappears entirely; returning to a model season brings it back.
-await page.locator('.field-select').first().selectOption('powerup-2018');
-await page.waitForTimeout(600);
-check(
-  'model-less season in 3D view falls back to 2D, toggle hidden',
-  (await page.locator('.view-toggle').count()) === 0 &&
-    (await page.locator('canvas.field-canvas').count()) === 1,
-);
-await page.locator('.field-select').first().selectOption('rebuilt-2026');
-await page.waitForTimeout(400);
-check(
-  'model season restores the 2D/3D toggle',
-  (await page.locator('.view-toggle').count()) === 1,
-);
+// Every bundled season ships an official 3D model now (2018–2020 removed,
+// 2026-10-03), and selecting "custom" only opens its panel without
+// switching the field — the old "3D falls back on a model-less season"
+// path no longer exists, so it is not exercised here.
 
 // The 2D/3D choice survives a reload (user directive 2026-10-02) — with
 // the autosaved session restoring, no re-import is needed anymore.
@@ -692,7 +763,7 @@ await page.locator('.view-toggle button', { hasText: '3D' }).click();
 await page.waitForSelector('.field-canvas-3d canvas', { timeout: 15000 });
 // The autosave is debounced 600ms — wait until the rebuilt-2026 field choice
 // has actually been persisted before reloading, otherwise the restore comes
-// back on the model-less powerup-2018 (selected moments earlier), which
+// (no model-less switch happens anymore)
 // legitimately stays 2D with the toggle hidden and the wait below times out.
 await page.waitForFunction(
   () => (localStorage.getItem('pb.autosave.v1') ?? '').includes('rebuilt-2026'),
