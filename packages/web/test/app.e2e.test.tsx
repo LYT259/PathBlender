@@ -169,10 +169,10 @@ describe('App import → fusion → collision flow', () => {
     const dialog = screen.getByRole('dialog', { name: 'Preferences' });
     fireEvent.click(within(dialog).getByRole('radio', { name: 'Light', exact: true }));
     expect(document.documentElement.dataset.theme).toBe(initialTheme);
-    expect(localStorage.getItem('ghpb.theme')).toBeNull();
+    expect(localStorage.getItem('pb.theme')).toBeNull();
     fireEvent.click(within(dialog).getByRole('button', { name: /^Save$/i }));
     expect(document.documentElement.dataset.theme).toBe('light');
-    expect(localStorage.getItem('ghpb.theme')).toBe('light');
+    expect(localStorage.getItem('pb.theme')).toBe('light');
     // Save keeps the dialog open (user request 2026-10-02); Cancel closes it.
     expect(screen.getByRole('dialog', { name: 'Preferences' })).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole('button', { name: /^Cancel$/i }));
@@ -182,7 +182,7 @@ describe('App import → fusion → collision flow', () => {
     const nextDialog = screen.getByRole('dialog', { name: 'Preferences' });
     fireEvent.click(within(nextDialog).getByRole('radio', { name: 'Follow system', exact: true }));
     fireEvent.click(within(nextDialog).getByRole('button', { name: /^Save$/i }));
-    expect(localStorage.getItem('ghpb.theme')).toBeNull();
+    expect(localStorage.getItem('pb.theme')).toBeNull();
   });
 
   it('preferences: Save waits for a change and Cancel always gets you out', () => {
@@ -214,7 +214,7 @@ describe('App import → fusion → collision flow', () => {
     expect(within(next).getByRole('button', { name: /^Save$/i })).toBeEnabled();
     fireEvent.click(within(next).getByRole('button', { name: /^Cancel$/i }));
     expect(document.documentElement.dataset.theme).toBe(initialTheme);
-    expect(localStorage.getItem('ghpb.theme')).toBeNull();
+    expect(localStorage.getItem('pb.theme')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
     const again = screen.getByRole('dialog', { name: 'Preferences' });

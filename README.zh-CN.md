@@ -42,7 +42,7 @@ PathBlender 补上这个空缺：
 | `.path` | PathPlanner（MIT） | 本地生成轨迹——移植的 PathPlannerLib 算法 |
 | `.auto` | PathPlanner（MIT） | 路径序列 + 等待/命令语义 |
 | `settings.json` | PathPlanner（MIT） | 该项目机器人的保险杠尺寸 |
-| `.ghpb.json` | 本项目 | 会话文件：全部机器人 + 设置 + 场地 |
+| `.pb` | 本项目 | 会话文件：全部机器人 + 设置 + 场地（旧名 `.ghpb.json` 仍可打开） |
 
 场地：内置 FRC 2018–2020 与 2022–2026（2021 沿用 2020 场地、无独立公开素材），另支持自定义场地导入（标定 + WPILib/PhotonVision AprilTag 布局 JSON）。
 

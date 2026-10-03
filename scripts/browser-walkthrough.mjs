@@ -7,7 +7,7 @@
  * service worker → 3D. The app adjusts nothing: no editing, no delays, no
  * auto-resolve, no AI anywhere.
  *
- * Screenshots land in /tmp/ghpb-shots. Usage: node scripts/browser-walkthrough.mjs
+ * Screenshots land in /tmp/pb-shots. Usage: node scripts/browser-walkthrough.mjs
  * (expects `npm run preview` on :4173; system Chrome via channel, fallback bundled).
  */
 import { chromium } from 'playwright-core';
@@ -15,7 +15,7 @@ import { mkdirSync, readFileSync, readdirSync as readdir } from 'node:fs';
 import { resolve } from 'node:path';
 
 const BASE = process.env.WALK_BASE ?? 'http://localhost:4173/';
-const SHOTS = '/tmp/ghpb-shots';
+const SHOTS = '/tmp/pb-shots';
 const SAMPLES = resolve(process.cwd(), 'samples');
 mkdirSync(SHOTS, { recursive: true });
 
@@ -444,7 +444,7 @@ if (download) {
     const afterRemove = await rows().count();
     check('robot remove works', afterRemove === before - 1, `${before} → ${afterRemove}`);
     await fileInput().setInputFiles([
-      { name: 'session.ghpb.json', mimeType: 'application/json', buffer: buf },
+      { name: 'session.pb', mimeType: 'application/json', buffer: buf },
     ]);
     await page.waitForFunction(
       (n) => document.querySelectorAll('.robot-library-row').length === n,

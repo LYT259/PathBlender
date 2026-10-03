@@ -79,7 +79,7 @@ PathBlender fills that gap:
 | `.path` | PathPlanner (MIT) | Trajectory generated locally — ported PathPlannerLib algorithm |
 | `.auto` | PathPlanner (MIT) | Path sequences with wait/command semantics |
 | `settings.json` | PathPlanner (MIT) | Bumper dimensions for the robots in that project |
-| `.ghpb.json` | This project | Session file: all robots + settings + field |
+| `.pb` | This project | Session file: all robots + settings + field (pre-rename `.ghpb.json` still opens) |
 
 Fields: FRC 2018–2020 and 2022–2026 are built in (2021 reused the 2020
 field and has no public asset of its own), plus custom field import with

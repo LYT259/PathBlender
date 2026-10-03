@@ -47,8 +47,8 @@ describe('mouse controls & units settings', () => {
     expect(save.disabled).toBe(false);
 
     fireEvent.click(save);
-    expect(localStorage.getItem('ghpb.lengthUnit')).toBe('in');
-    expect(localStorage.getItem('ghpb.mouseControls')).toBe('solidworks');
+    expect(localStorage.getItem('pb.lengthUnit')).toBe('in');
+    expect(localStorage.getItem('pb.mouseControls')).toBe('solidworks');
     expect(save.disabled).toBe(true); // drafts became current
   });
 });

@@ -19,7 +19,7 @@ npm install @pathblender/core
 | Area | Entry points |
 |---|---|
 | Parse any supported file | `parsePathFile(text, fileName, resolvePath?)` — auto-detects format; returns a `Trajectory` or throws `ParseError` with an actionable reason |
-| Supported formats | Choreo `.traj` (all known schema versions) · Collaborative fork `.ghostauto` · PathPlanner `.path` / `.auto` (trajectory generation ported from PathPlannerLib) · PathBlender `.ghpb.json` session files |
+| Supported formats | Choreo `.traj` (all known schema versions) · Collaborative fork `.ghostauto` · PathPlanner `.path` / `.auto` (trajectory generation ported from PathPlannerLib) · PathBlender `.pb` session files (pre-rename `.ghpb.json` still reads) |
 | Unified model | `Trajectory` / `TrajectorySample` in WPILib blue-origin meters/radians; `applyAllianceChange` normalizes red-alliance exports |
 | Fusion & playback | `SessionTrajectory`, `samplePoseAt`, `sessionDuration`, `serializeSession` / `deserializeSession` |
 | Collision checking | `detectCollisions` (bumper OBB-SAT, 0.02 s sampling), `minimumSeparation`, `detectFieldBounds` |
