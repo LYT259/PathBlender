@@ -40,15 +40,20 @@ Calibration is measured from the mesh (steering axis = turret bbox
 center, floor = wheel bottom, rolling dir = wheel axle ⊥), baked into
 vertices — no operator semantics, byte-reproducible runs.
 
-## Acceptance (checked 2026-10-02 build)
+## Acceptance (checked 2026-10-03 build)
 
-- bbox after normalize: `[-0.0916, -0.1082, 0] .. [0.0926, 0.1084, 0.1564]`
+- bbox after normalize: `[-0.1084, -0.0917, 0] .. [0.1082, 0.0926, 0.1564]`
   — floor exactly z=0, steering axis straddles the origin, height
   0.1564 m ≈ 6.16 in vs official drawing 6.17 in (decimation loss
-  0.0007 m), plan 0.184×0.217 m (motors flank the rolling axis ±Y).
-- 55,141 triangles in 2 meshes (~24 material primitives).
-- Runtime loader sanity-checks height 0.10–0.35 m and falls back to the
-  procedural module if it ever fails.
+  0.0007 m), plan 0.217×0.184 m with the long edge along the rolling
+  axis ±X; motors sit fore/aft along ±X, offset +Y ≈ 0.06. (The
+  2026-10-02 notes described the mis-rotated build: axle on +X,
+  "motors flank ±Y" — that was the ROLL_SWAP regression, fixed by
+  rotating the template -90° about the up axis.)
+- 55,137 triangles (~24 material primitives).
+- Runtime loader sanity-checks height 0.10–0.35 m and plan X > Z
+  (rolling is the long plan axis) and falls back to the procedural
+  module if either ever fails.
 
 ## Runtime contract (mirrored in web/src/chassis3d.ts)
 

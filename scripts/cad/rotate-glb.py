@@ -1,6 +1,9 @@
-# Rotate the shipped module GLB by +90 degrees about Y (up) — equivalent
-# to toggling the converter's ROLL_SWAP, applied post-hoc because the
-# source STEP is no longer on disk. Vertex-baked, colors untouched.
+# Rotate the shipped module GLB about the up axis (glTF +Y = Blender Z)
+# by the angle given on the command line — vertex-baked, colors
+# untouched; a post-hoc patch for when the source STEP is not on disk.
+# History: +90° in commit 7c7c888 (based on a backwards pixel
+# measurement — made things worse), then -90° on 2026-10-03 to undo
+# the ROLL_SWAP error and put the rolling direction on +X.
 import bpy
 import sys
 from mathutils import Matrix, Vector
