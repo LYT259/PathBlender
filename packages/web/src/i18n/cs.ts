@@ -12,7 +12,10 @@ import type { MessageKey } from './en';
  */
 export const cs: Record<MessageKey, string> = {
   'prefs.checkUpdates': "Vyhledat aktualizace",
-  'prefs.checkUpdatesPreview': "Pouze náhled. Kontrola aktualizací zde zatím není zapnutá.",
+  'prefs.checking': "Kontrola aktualizací…",
+  'prefs.updateAvailable': "Je k dispozici verze {v}.",
+  'prefs.installUpdate': "Nainstalovat a restartovat",
+  'prefs.checkSavedChannel': "Kontrola aktualizací používá uložený kanál: {channel}.",
   'prefs.appIcon': "Ikona aplikace",
   'prefs.appIconPreview': "Pouze náhled. Ikona aplikace se nezmění.",
   'welcome.title': 'Začněte importem tras',

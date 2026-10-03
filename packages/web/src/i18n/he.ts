@@ -17,7 +17,10 @@ import type { MessageKey } from './en';
  */
 export const he: Record<MessageKey, string> = {
   'prefs.checkUpdates': "בדיקת עדכונים",
-  'prefs.checkUpdatesPreview': "תצוגה מקדימה בלבד. בדיקת עדכונים עדיין אינה פעילה כאן.",
+  'prefs.checking': "בודק עדכונים…",
+  'prefs.updateAvailable': "גרסה {v} זמינה.",
+  'prefs.installUpdate': "התקנה והפעלה מחדש",
+  'prefs.checkSavedChannel': "בדיקת העדכונים משתמשת בערוץ השמור: {channel}.",
   'prefs.appIcon': "סמל היישום",
   'prefs.appIconPreview': "תצוגה מקדימה בלבד. סמל היישום לא ישתנה.",
   'welcome.title': 'ייבאו מסלולים כדי להתחיל',

@@ -8,6 +8,7 @@ import {
 } from '../mouse-controls';
 import { lengthUnitExample, LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
+import { checkForUpdate, installPendingUpdate } from '../update-check';
 import { APP_VERSION, VERSION_NOTES } from '../version-info';
 import { copyText } from '../download';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from '../viewer';
@@ -17,6 +18,20 @@ import { IconAppearancePicker, type IconAppearanceMode } from './IconAppearanceP
 import './PreferencesPanel.css';
 
 type Section = 'general' | 'updates' | 'about';
+
+/**
+ * The settings-window update check is a two-step flow (unlike the native
+ * menu's one-shot check→install→relaunch): Check only queries the feed;
+ * a found update surfaces an "Install and relaunch" button the user must
+ * click before anything is downloaded.
+ */
+type UpdateCheck =
+  | { kind: 'idle' }
+  | { kind: 'checking' }
+  | { kind: 'upToDate' }
+  | { kind: 'found'; version: string }
+  | { kind: 'installing'; version: string }
+  | { kind: 'failed' };
 
 /** Shared settings; changes only reach other windows after Save. */
 export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClose: () => void }) {
@@ -35,6 +50,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   // The implementation task will replace this with an independent saved preference.
   const [iconPreview, setIconPreview] = useState<IconAppearanceMode>('system');
   const [copyStatus, setCopyStatus] = useState('');
+  const [updateCheck, setUpdateCheck] = useState<UpdateCheck>({ kind: 'idle' });
   const id = useId();
   const tabRefs = useRef<Partial<Record<Section, HTMLButtonElement | null>>>({});
   const sections: Section[] = desktop || VIEWER_ONLY ? ['general', 'updates', 'about'] : ['general', 'about'];
@@ -45,6 +61,18 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const unit = unitDraft ?? lengthUnit;
   const dirty = language !== langChoice || theme !== mode || updateChannel !== channel ||
     mouse !== mouseControls || unit !== lengthUnit;
+  const updateStatusText =
+    updateCheck.kind === 'checking' ? t('prefs.checking')
+      : updateCheck.kind === 'upToDate' ? t('updates.upToDate')
+        : updateCheck.kind === 'found' ? t('prefs.updateAvailable', { v: updateCheck.version })
+          : updateCheck.kind === 'installing' ? t('updates.downloading', { v: updateCheck.version })
+            : updateCheck.kind === 'failed' ? t('updates.failed')
+              : '';
+  // A channel draft that differs from the saved channel does NOT steer the
+  // check — say so next to the button, in the saved channel's own name.
+  const savedChannelHint = channelDraft != null && channelDraft !== channel
+    ? t('prefs.checkSavedChannel', { channel: t(channel === 'stable' ? 'prefs.channel.stable' : 'prefs.channel.beta') })
+    : '';
 
   function navigate(event: KeyboardEvent<HTMLButtonElement>, current: Section) {
     const index = sections.indexOf(current);
@@ -56,10 +84,34 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
     if (next) { event.preventDefault(); setSection(next); tabRefs.current[next]?.focus(); }
   }
 
+  function startUpdateCheck() {
+    // Re-entrancy guard: while a check (or an install) is in flight a second
+    // click must not fire another native request.
+    if (updateCheck.kind === 'checking' || updateCheck.kind === 'installing') return;
+    // The check uses the SAVED channel (context value), not the draft —
+    // the draft only takes effect after Save.
+    setUpdateCheck({ kind: 'checking' });
+    void checkForUpdate(channel, (e) => {
+      if (e.kind === 'found') setUpdateCheck({ kind: 'found', version: e.version });
+      else if (e.kind === 'upToDate') setUpdateCheck({ kind: 'upToDate' });
+      else setUpdateCheck({ kind: 'failed' });
+    });
+  }
+
+  function startInstall() {
+    if (updateCheck.kind !== 'found') return;
+    setUpdateCheck({ kind: 'installing', version: updateCheck.version });
+    void installPendingUpdate().catch(() => setUpdateCheck({ kind: 'failed' }));
+  }
+
   function save() {
     if (language !== langChoice) setLang(language);
     if (theme !== mode) setMode(theme);
-    if (updateChannel !== channel) setChannel(updateChannel);
+    if (updateChannel !== channel) {
+      setChannel(updateChannel);
+      // A new saved channel invalidates any result shown for the old one.
+      setUpdateCheck({ kind: 'idle' });
+    }
     if (mouse !== mouseControls) setMouseControls(mouse);
     if (unit !== lengthUnit) setLengthUnit(unit);
     // Save keeps the window open (user request 2026-10-02): drafts become
@@ -133,9 +185,14 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
             <a className="prefs-link" href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{t(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')} ↗</a>
           </div></div>}
           {desktop && <div className="preferences-update-check">
-            {/* UI-only: the implementation task will connect the updater. */}
-            <button type="button" className="btn accent" disabled aria-describedby={`${id}-update-preview`}><Icon name="refresh" size={15} />{t('prefs.checkUpdates')}</button>
-            <p id={`${id}-update-preview`}>{t('prefs.checkUpdatesPreview')}</p>
+            <div className="update-actions">
+              <button type="button" className="btn accent" disabled={updateCheck.kind === 'checking' || updateCheck.kind === 'installing'}
+                aria-describedby={`${id}-update-status`} onClick={startUpdateCheck}><Icon name="refresh" size={15} />{t('prefs.checkUpdates')}</button>
+              {updateCheck.kind === 'found' &&
+                <button type="button" className="btn" onClick={startInstall}>{t('prefs.installUpdate')}</button>}
+            </div>
+            <p id={`${id}-update-status`} role="status">{updateStatusText}</p>
+            {savedChannelHint && <p>{savedChannelHint}</p>}
           </div>}
         </>}
         {section === 'about' && <>

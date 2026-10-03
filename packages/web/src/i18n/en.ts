@@ -1,7 +1,10 @@
 /** English strings (source of truth for the key set). */
 export const en = {
   'prefs.checkUpdates': "Check for updates",
-  'prefs.checkUpdatesPreview': "Preview only. Update checks are not enabled here yet.",
+  'prefs.checking': "Checking for updates…",
+  'prefs.updateAvailable': "Version {v} is available.",
+  'prefs.installUpdate': "Install and relaunch",
+  'prefs.checkSavedChannel': "Update checks use the saved channel: {channel}.",
   'prefs.appIcon': "App icon",
   'prefs.appIconPreview': "Preview only. Your app icon will not change.",
   'welcome.title': 'Import paths to get started',
