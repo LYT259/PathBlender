@@ -189,6 +189,8 @@ export const fr: Record<MessageKey, string> = {
   'rail.png': 'PNG',
   'rail.prefs': 'Réglages',
   'rail.clear': 'Effacer',
+  "prefs.section.controls": "Commandes",
+  "prefs.description.controls": "Choisissez les commandes de la souris et les unités de longueur.",
   "prefs.section.general": "Général",
   "prefs.section.updates": "Mises à jour",
   "prefs.section.about": "À propos",

@@ -197,6 +197,8 @@ export const he: Record<MessageKey, string> = {
   'rail.png': 'PNG',
   'rail.prefs': 'העדפות',
   'rail.clear': 'ניקוי',
+  "prefs.section.controls": "בקרה",
+  "prefs.description.controls": "בחירת בקרת עכבר ויחידות אורך.",
   'prefs.section.general': 'כללי',
   'prefs.section.updates': 'עדכונים',
   'prefs.section.about': 'אודות',

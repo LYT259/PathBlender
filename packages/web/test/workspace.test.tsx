@@ -19,7 +19,7 @@ async function importSamples(...paths: string[]) {
 }
 
 function selectRobot(name: string) {
-  fireEvent.click(screen.getByText(name, { selector: '.robot-name' }));
+  fireEvent.click(screen.getByText(({ 'Straight Run': '#0001', 'Stop And Score': '#0002', 'Side Lane': '#0003' } as Record<string, string>)[name] ?? name, { selector: '.robot-name' }));
   return within(screen.getByRole('region', { name, exact: true }));
 }
 
@@ -27,7 +27,7 @@ function openChecks() {
   fireEvent.click(screen.getByRole('button', { name: /^Checks/i }));
 }
 
-const conflictPair = () => screen.getByText('Straight Run × Stop And Score', { selector: '.conflict-pair' });
+const conflictPair = () => screen.getByText('#0001 × #0002', { selector: '.conflict-pair' });
 
 beforeEach(() => localStorage.clear());
 
@@ -88,8 +88,8 @@ describe('workspace workflow', () => {
     expect(conflictPair()).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /hide.*Straight Run/i }));
-    expect(screen.getByRole('button', { name: /show.*Straight Run/i })).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(screen.getByRole('button', { name: /hide.*#0001/i }));
+    expect(screen.getByRole('button', { name: /show.*#0001/i })).toHaveAttribute('aria-pressed', 'false');
     expect(conflictPair()).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
 
@@ -98,7 +98,7 @@ describe('workspace workflow', () => {
     fireEvent.click(conflictPair().closest('button')!);
 
     expect(screen.getByRole('button', { name: /^Play$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /hide.*Straight Run/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /hide.*#0001/i })).toHaveAttribute('aria-pressed', 'true');
     expect(Number((screen.getByRole('slider') as HTMLInputElement).value)).toBeGreaterThan(0);
     expect(conflictPair()).toBeInTheDocument();
   });
@@ -121,7 +121,7 @@ describe('workspace workflow', () => {
     expect(season).toHaveValue('rebuilt-2026');
     fireEvent.change(season, { target: { value: 'reefscape-2025' } });
     expect(season).toHaveValue('reefscape-2025');
-    expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
 
     // Restore a different saved session, including its field and timing.
     const savedRobot = makeSession(parsePathFile(
@@ -135,9 +135,9 @@ describe('workspace workflow', () => {
       { type: 'application/json' },
     );
     fireEvent.drop(window, { dataTransfer: { files: [savedSession] } });
-    await screen.findByText('Stop And Score', { selector: '.robot-name' });
+    await screen.findByText('#0002', { selector: '.robot-name' });
     expect(season).toHaveValue('chargedup-2023');
-    expect(screen.queryByText('Straight Run', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(selectRobot('Stop And Score').getByText('1.25 s')).toBeInTheDocument();
   });
 });

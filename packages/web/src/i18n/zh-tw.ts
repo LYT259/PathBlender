@@ -185,6 +185,8 @@ export const zhTw: Record<MessageKey, string> = {
   'rail.png': '截圖',
   'rail.prefs': '設定',
   'rail.clear': '清空',
+  "prefs.section.controls": "操作",
+  "prefs.description.controls": "設定鼠標控制方式和長度單位。",
   "prefs.section.general": "一般",
   "prefs.section.updates": "更新",
   "prefs.section.about": "關於",

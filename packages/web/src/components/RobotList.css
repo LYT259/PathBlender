@@ -78,3 +78,9 @@
 .robot-team-chip { display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 30px; height: 30px; padding: 0 4px; border: 0; border-radius: 6px; background: transparent; color: var(--fg-dim); font: 600 11px ui-monospace, monospace; cursor: pointer; }
 .robot-team-chip:hover { background: var(--hover); color: var(--fg); }
 .robot-team-input { flex: none; width: 44px; height: 28px; padding: 0 4px; border: 1px solid var(--accent, #0a84ff); border-radius: 6px; background: var(--bg, #1c1c1e); color: var(--fg, #e6e6e8); font: 600 11px ui-monospace, monospace; text-align: center; }
+
+/* The editor occupies the name's position, with no duplicate team chip. */
+.robot-team-chip { width: 30px; align-self: flex-start; margin-top: 5px; }
+.robot-team-editor { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; padding: 7px 7px 7px 10px; }
+.robot-team-editor .band-dot { flex: none; width: 7px; height: 7px; }
+.robot-team-editor .robot-team-input { width: 100%; min-width: 0; flex: 1; font: inherit; font-size: 12.5px; text-align: start; padding-inline: 8px; }

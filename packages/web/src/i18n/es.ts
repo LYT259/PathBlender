@@ -191,6 +191,8 @@ export const es: Record<MessageKey, string> = {
   'rail.png': 'PNG',
   'rail.prefs': 'Ajustes',
   'rail.clear': 'Vaciar',
+  "prefs.section.controls": "Controles",
+  "prefs.description.controls": "Elige los controles del ratón y las unidades de longitud.",
   "prefs.section.general": "General",
   "prefs.section.updates": "Actualizaciones",
   "prefs.section.about": "Acerca de",

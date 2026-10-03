@@ -192,6 +192,8 @@ export const ko: Record<MessageKey, string> = {
   'rail.png': 'PNG',
   'rail.prefs': '설정',
   'rail.clear': '지우기',
+  "prefs.section.controls": "조작",
+  "prefs.description.controls": "마우스 조작 방식과 길이 단위를 설정합니다.",
   'prefs.section.general': '일반',
   'prefs.section.updates': '업데이트',
   'prefs.section.about': '정보',

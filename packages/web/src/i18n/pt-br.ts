@@ -192,6 +192,8 @@ export const ptBR: Record<MessageKey, string> = {
   'rail.png': 'PNG',
   'rail.prefs': 'Preferências',
   'rail.clear': 'Limpar',
+  "prefs.section.controls": "Controles",
+  "prefs.description.controls": "Escolha os controles do mouse e as unidades de comprimento.",
   'prefs.section.general': 'Geral',
   'prefs.section.updates': 'Atualizações',
   'prefs.section.about': 'Sobre',
