@@ -1139,27 +1139,17 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   }, [currentT, robots, field, moduleTemplate]);
 
   useImperativeHandle(ref, () => ({
-    // Fit the whole field into the vertical field of view from the current
-    // viewing direction — the toolbar's Fit action. It deliberately keeps the
-    // direction the user orbited to, so it does NOT restore the load-time
-    // camera (CAM_HOME sits closer, at |CAM_HOME| ≈ 17.1 m). The diagonal
-    // framing distance (~20.8 m for a 2026 field) is clamped to maxDistance
-    // (user round 11: the view may never shrink below the open view), so Fit
-    // recovers a deeply zoomed camera to the open framing without exceeding
-    // the zoom-out floor.
+    // The toolbar's Fit action (user 2026-10-03): return the camera to the
+    // EXACT open-app state — home position CAM_HOME (|CAM_HOME| ≈ 17.1 m),
+    // target back on the field origin — so position, zoom and viewing
+    // angle all reset in one click. (It previously kept the direction the
+    // user had orbited to and only reframed the distance.)
     resetCam: () => {
       const st = sceneRef.current;
       if (!st) return;
       pinchChaseRef.current?.cancel();
-      const diagonal = Math.hypot(st.cx * 2, st.cy * 2);
-      const fov = (st.camera.fov * Math.PI) / 180;
-      const dist = Math.min(
-        Math.max((diagonal / 2 / Math.tan(fov / 2)) * 1.05, 6),
-        st.controls.maxDistance,
-      );
-      const dir = st.camera.position.clone().sub(st.controls.target).normalize();
       st.controls.target.set(0, 0, 0);
-      st.camera.position.copy(dir.multiplyScalar(dist));
+      st.camera.position.set(...CAM_HOME);
       st.controls.update();
       st.dirty();
     },
