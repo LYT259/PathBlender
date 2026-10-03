@@ -61,7 +61,9 @@ PathBlender 補上這個空缺：
 
 ## 回饋
 
-Bug、格式漂移報告、賽季場地問題正是我們需要的回饋——見[回饋範本](docs/community/feedback-template.md)（絕不會要求你公開路徑檔案）。
+Bug、格式漂移報告、賽季場地問題正是我們需要的回饋。請到
+[github.com/LYT259/pathblender/issues](https://github.com/LYT259/pathblender/issues)
+提 issue——[回饋範本](docs/community/feedback-template.md)說明該寫哪些內容（絕不會要求你公開路徑檔案）。社群討論見專案的 Chief Delphi 發布帖。
 
 ## 狀態
 
