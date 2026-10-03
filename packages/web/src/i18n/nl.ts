@@ -12,7 +12,10 @@ import type { MessageKey } from './en';
  */
 export const nl: Record<MessageKey, string> = {
   'prefs.checkUpdates': "Controleren op updates",
-  'prefs.checkUpdatesPreview': "Alleen een voorbeeld. Controleren op updates is hier nog niet ingeschakeld.",
+  'prefs.checking': "Controleren op updates…",
+  'prefs.updateAvailable': "Versie {v} is beschikbaar.",
+  'prefs.installUpdate': "Installeren en opnieuw starten",
+  'prefs.checkSavedChannel': "Updatecontroles gebruiken het opgeslagen kanaal: {channel}.",
   'prefs.appIcon': "App-pictogram",
   'prefs.appIconPreview': "Alleen een voorbeeld. Het app-pictogram verandert niet.",
   'welcome.title': 'Importeer routes om te beginnen',

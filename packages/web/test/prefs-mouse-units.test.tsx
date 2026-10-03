@@ -1,7 +1,10 @@
 /**
  * The Mouse-controls and Length-unit settings follow the panel's staging
  * discipline (see prefs-channel.test.tsx): selects show drafts, Save
- * enables only when dirty, and saving persists to localStorage.
+ * enables only when dirty, and saving persists to localStorage. The last
+ * two tests pin the persistence contract of the existing mouse-controls.ts
+ * store itself: a saved scheme survives a reopen (app restart), while an
+ * unsaved draft never leaks into it.
  */
 import { fireEvent, render, screen, cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -60,5 +63,23 @@ describe('mouse controls & units settings', () => {
     expect(localStorage.getItem('pb.lengthUnit')).toBe('in');
     expect(localStorage.getItem('pb.mouseControls')).toBe('solidworks');
     expect(save.disabled).toBe(true); // drafts became current
+  });
+
+  it('restores the persisted mouse scheme on open (simulating an app restart)', () => {
+    // Written before the panel mounts, as a previous session's Save would.
+    localStorage.setItem('pb.mouseControls', 'solidworks');
+    panel();
+    const mouse = screen.getByLabelText(/mouse controls/i, { selector: 'select' }) as HTMLSelectElement;
+    expect(mouse.value).toBe('solidworks');
+  });
+
+  it('discards an unsaved mouse-scheme draft when the panel is closed and reopened', () => {
+    const first = panel();
+    fireEvent.change(screen.getByLabelText(/mouse controls/i, { selector: 'select' }), { target: { value: 'solidworks' } });
+    expect(localStorage.getItem('pb.mouseControls')).toBeNull(); // draft only — nothing persisted
+    first.unmount();
+    panel();
+    const mouse = screen.getByLabelText(/mouse controls/i, { selector: 'select' }) as HTMLSelectElement;
+    expect(mouse.value).toBe('onshape'); // reopen reads the store, not the dropped draft
   });
 });

@@ -3,7 +3,10 @@ import type { MessageKey } from './en';
 /** 简体中文。 */
 export const zh: Record<MessageKey, string> = {
   'prefs.checkUpdates': "检查更新",
-  'prefs.checkUpdatesPreview': "仅作界面预览，暂未启用更新检查。",
+  'prefs.checking': "正在检查更新…",
+  'prefs.updateAvailable': "发现新版本 v{v}。",
+  'prefs.installUpdate': "安装并重启",
+  'prefs.checkSavedChannel': "更新检查使用已保存的通道：{channel}。",
   'prefs.appIcon': "应用图标",
   'prefs.appIconPreview': "仅预览，不会更改当前应用图标。",
   'welcome.title': '从导入路径开始',
