@@ -55,7 +55,7 @@ PathBlender 补上这个空缺：
 
 路径文件**完全在你的设备上解析**。零后端、零账号、零遥测、零分析。网页构建不发出任何网络请求；桌面版只有你主动点「检查更新」时才联网（访问 GitHub Releases）——路径文件绝不离开应用。
 
-另含：会话级红蓝联盟视角、机器人队号标注、上述赛季场地与官方 AprilTag 叠加、七语界面——English / 简体中文 / 繁體中文（台灣）/ 繁體中文（中國香港）/ Français / Español / Türkçe——深浅色主题跟随系统。
+另含：会话级红蓝联盟视角、机器人队号标注、上述赛季场地与官方 AprilTag 叠加、十四语界面——English / 简体中文 / 繁體中文（台灣）/ 繁體中文（中國香港）/ Français / Español / Türkçe / Português (Brasil) / עברית / Nederlands / Polski / 日本語 / 한국어 / Čeština——深浅色主题跟随系统。
 
 完整操作指南与 FAQ：[English](docs/user-guide.en.md) · [简体中文](docs/user-guide.zh.md)。
 

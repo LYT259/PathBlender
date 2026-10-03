@@ -83,8 +83,8 @@ async fn install_update(pending: State<'_, PendingUpdate>) -> Result<(), String>
     Ok(())
 }
 
-/// UI strings per app language (zh-tw carries its own wording rather than
-/// reusing zh; en/es/fr/tr/zh each get a table below).
+/// UI strings per app language — every web dictionary gets a table below
+/// (zh-tw carries its own wording rather than reusing zh).
 struct MenuLang {
     about: &'static str,
     file: &'static str,
@@ -241,6 +241,83 @@ const HE: MenuLang = MenuLang {
     updates: "בדיקת עדכונים…",
 };
 
+// Second-batch UI languages (nl/pl/ja/ko/cs, red book §语言扩展规划): each
+// follows Apple's own macOS menu localization for hide/quit/about.
+const NL: MenuLang = MenuLang {
+    hide: "Verberg PathBlender",
+    hide_others: "Verberg andere",
+    quit: "Stop PathBlender",
+    about: "Over PathBlender",
+    file: "Archief",
+    edit: "Wijzig",
+    import: "Importeer…",
+    save: "Bewaar sessie…",
+    png: "Exporteer PNG…",
+    clear: "Wis sessie",
+    prefs: "Voorkeuren…",
+    updates: "Zoek naar updates…",
+};
+
+const PL: MenuLang = MenuLang {
+    hide: "Ukryj PathBlender",
+    hide_others: "Ukryj pozostałe",
+    quit: "Zakończ PathBlender",
+    about: "O programie PathBlender",
+    file: "Plik",
+    edit: "Edycja",
+    import: "Importuj…",
+    save: "Zapisz sesję…",
+    png: "Eksportuj PNG…",
+    clear: "Wyczyść sesję",
+    prefs: "Preferencje…",
+    updates: "Sprawdź uaktualnienia…",
+};
+
+const JA: MenuLang = MenuLang {
+    hide: "PathBlender を隠す",
+    hide_others: "ほかを隠す",
+    quit: "PathBlender を終了",
+    about: "PathBlender について",
+    file: "ファイル",
+    edit: "編集",
+    import: "読み込む…",
+    save: "セッションを保存…",
+    png: "PNG を書き出す…",
+    clear: "セッションをクリア",
+    prefs: "環境設定…",
+    updates: "アップデートを確認…",
+};
+
+const KO: MenuLang = MenuLang {
+    hide: "PathBlender 가리기",
+    hide_others: "기타 가리기",
+    quit: "PathBlender 종료",
+    about: "PathBlender 정보",
+    file: "파일",
+    edit: "편집",
+    import: "가져오기…",
+    save: "세션 저장…",
+    png: "PNG 내보내기…",
+    clear: "세션 지우기",
+    prefs: "환경설정…",
+    updates: "업데이트 확인…",
+};
+
+const CS: MenuLang = MenuLang {
+    hide: "Skrýt PathBlender",
+    hide_others: "Skrýt ostatní",
+    quit: "Ukončit PathBlender",
+    about: "O aplikaci PathBlender",
+    file: "Soubor",
+    edit: "Upravit",
+    import: "Importovat…",
+    save: "Uložit relaci…",
+    png: "Exportovat PNG…",
+    clear: "Vymazat relaci",
+    prefs: "Předvolby…",
+    updates: "Zkontrolovat aktualizace…",
+};
+
 /// Every web dictionary has a menu table: `set_menu_language` used to fall
 /// through to English for anything but zh/zh-tw, so a Spanish or Turkish user
 /// got an English native menu next to a translated window. Adding a language
@@ -257,6 +334,11 @@ fn lang_of(lang: &str) -> &'static MenuLang {
         "tr" => &TR,
         "pt-BR" => &PT_BR,
         "he" => &HE,
+        "nl" => &NL,
+        "pl" => &PL,
+        "ja" => &JA,
+        "ko" => &KO,
+        "cs" => &CS,
         _ => &EN,
     }
 }

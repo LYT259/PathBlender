@@ -6,21 +6,28 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { broadcastPref, listenPrefs } from '../pref-sync';
 import { en, type MessageKey } from './en';
+import { cs } from './cs';
 import { es } from './es';
 import { fr } from './fr';
 import { he } from './he';
+import { ja } from './ja';
+import { ko } from './ko';
+import { nl } from './nl';
+import { pl } from './pl';
 import { ptBR } from './pt-br';
 import { tr } from './tr';
 import { zh } from './zh';
 import { zhHk } from './zh-hk';
 import { zhTw } from './zh-tw';
 
-export type Lang = 'en' | 'es' | 'fr' | 'he' | 'pt-BR' | 'tr' | 'zh' | 'zh-hk' | 'zh-tw';
+export type Lang =
+  | 'en' | 'cs' | 'es' | 'fr' | 'he' | 'ja' | 'ko' | 'nl' | 'pl' | 'pt-BR'
+  | 'tr' | 'zh' | 'zh-hk' | 'zh-tw';
 /** User choice: 'system' follows the OS language live (first visit uses it). */
 export type LangChoice = 'system' | Lang;
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = {
-  en, es, fr, he, 'pt-BR': ptBR, tr, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  en, cs, es, fr, he, ja, ko, nl, pl, 'pt-BR': ptBR, tr, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
 };
 
 /**
@@ -44,9 +51,14 @@ const LANG_META: Record<Lang, { englishName: string; endonym: string }> = {
   zh: { englishName: 'Chinese (Simplified)', endonym: '简体中文' },
   'zh-hk': { englishName: 'Chinese (Traditional, Hong Kong)', endonym: '繁體中文（中國香港）' },
   'zh-tw': { englishName: 'Chinese (Traditional, Taiwan)', endonym: '繁體中文（中國台灣）' },
+  cs: { englishName: 'Czech', endonym: 'Čeština' },
+  nl: { englishName: 'Dutch', endonym: 'Nederlands' },
   en: { englishName: 'English', endonym: 'English' },
   fr: { englishName: 'French', endonym: 'Français' },
   he: { englishName: 'Hebrew', endonym: 'עברית' },
+  ja: { englishName: 'Japanese', endonym: '日本語' },
+  ko: { englishName: 'Korean', endonym: '한국어' },
+  pl: { englishName: 'Polish', endonym: 'Polski' },
   'pt-BR': { englishName: 'Portuguese (Brazilian)', endonym: 'Português (Brasil)' },
   es: { englishName: 'Spanish', endonym: 'Español' },
   tr: { englishName: 'Turkish', endonym: 'Türkçe' },
@@ -62,9 +74,10 @@ const LANG_CODES = Object.keys(LANG_META) as Lang[];
  * cannot be clicked from memory). One consequence is worth stating: Chinese
  * sorts first, so the three CJK rows head the list — the group our main
  * audience reaches for — with the Latin names in their own alphabetical order
- * behind them. Result in all nine UI languages:
- * 简体中文 · 繁體中文（中國香港） · 繁體中文（中國台灣） · English · Français ·
- * עברית · Português (Brasil) · Español · Türkçe.
+ * behind them. Result in all fourteen UI languages:
+ * 简体中文 · 繁體中文（中國香港） · 繁體中文（中國台灣） · Čeština · Nederlands ·
+ * English · Français · עברית · 日本語 · 한국어 · Polski · Português (Brasil) ·
+ * Español · Türkçe.
  */
 export const LANGUAGES: readonly LangChoice[] = [
   'system',
@@ -101,6 +114,11 @@ export function langFromTags(tags: readonly string[]): Lang {
     if (/^es/i.test(l)) return 'es';
     if (/^fr/i.test(l)) return 'fr';
     if (/^tr/i.test(l)) return 'tr';
+    if (/^cs/i.test(l)) return 'cs';
+    if (/^nl/i.test(l)) return 'nl';
+    if (/^ja/i.test(l)) return 'ja';
+    if (/^ko/i.test(l)) return 'ko';
+    if (/^pl/i.test(l)) return 'pl';
     if (/^en/i.test(l)) return 'en';
   }
   return 'en';

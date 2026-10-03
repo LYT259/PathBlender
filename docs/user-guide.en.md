@@ -76,7 +76,8 @@ rest of the alliance.
   PathBlender menu;
 - **Appearance & languages**: light/dark/follow-system in Preferences
   (⌘, on desktop); the UI ships in English, 简体中文, 繁體中文（台灣）,
-  繁體中文（中國香港）, Français, Español, Türkçe;
+  繁體中文（中國香港）, Français, Español, Türkçe, Português (Brasil),
+  עברית, Nederlands, Polski, 日本語, 한국어, Čeština;
 - **Updates** (desktop): menu **PathBlender → Check for Updates…**;
   Preferences → Updates switches between the stable and beta channels.
 

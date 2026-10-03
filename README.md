@@ -110,8 +110,9 @@ check you trigger (GitHub Releases) — path files never leave the app.
 
 Also included: a session-level red/blue alliance view, per-robot team
 number annotations, the season fields above with official AprilTag
-overlays, and a seven-language UI — English / 简体中文 / 繁體中文（台灣）/
-繁體中文（中國香港）/ Français / Español / Türkçe — in light and dark
+overlays, and a fourteen-language UI — English / 简体中文 / 繁體中文（台灣）/
+繁體中文（中國香港）/ Français / Español / Türkçe / Português (Brasil) /
+עברית / Nederlands / Polski / 日本語 / 한국어 / Čeština — in light and dark
 themes (follows the system).
 
 Full walkthrough per tool and an FAQ:
