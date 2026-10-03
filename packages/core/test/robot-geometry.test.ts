@@ -179,10 +179,10 @@ describe('moduleSteeringAngles', () => {
 });
 
 describe('moduleBaseYaw (installed per-corner orientation, from the user CAD)', () => {
-  it('corners: negated diagonal pattern (screenshot-pinned 2026-10-03)', () => {
-    expect(moduleBaseYaw({ x: 1, y: 1 })).toBeCloseTo(-Math.PI / 4, 9);
-    expect(moduleBaseYaw({ x: -1, y: -1 })).toBeCloseTo(-Math.PI / 4, 9);
-    expect(moduleBaseYaw({ x: -1, y: 1 })).toBeCloseTo(Math.PI / 4, 9);
-    expect(moduleBaseYaw({ x: 1, y: -1 })).toBeCloseTo(Math.PI / 4, 9);
+  it('corners: diagonal pattern (template rolling-axis fix 2026-10-03)', () => {
+    expect(moduleBaseYaw({ x: 1, y: 1 })).toBeCloseTo(Math.PI / 4, 9);
+    expect(moduleBaseYaw({ x: -1, y: -1 })).toBeCloseTo(Math.PI / 4, 9);
+    expect(moduleBaseYaw({ x: -1, y: 1 })).toBeCloseTo(-Math.PI / 4, 9);
+    expect(moduleBaseYaw({ x: 1, y: -1 })).toBeCloseTo(-Math.PI / 4, 9);
   });
 });

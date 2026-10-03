@@ -1111,7 +1111,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       rig.root.rotation.y = headingToRender(pose.heading);
       if (state) {
         const angles = moduleSteeringAngles(state, rig.modules);
-        if (rig.steer.length !== angles.length) rig.steer = rig.modules.map(() => 0);
+        if (rig.steer.length !== angles.length) rig.steer = rig.modules.map((m) => moduleBaseYaw(m));
         for (let i = 0; i < rig.pods.length; i++) {
           const a = angles[i]!;
           if (a !== null) rig.steer[i] = a;

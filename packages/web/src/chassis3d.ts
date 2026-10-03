@@ -159,9 +159,9 @@ const TEMPLATE_HEIGHT_MAX_M = 0.35;
 
 /**
  * Validate a freshly loaded template against the contract — catches a
- * unit error (inches/cm exports) or a wrong model before it mis-renders
- * every robot on the field. Returns the template, or null to fall back
- * to the procedural module.
+ * unit error (inches/cm exports), an axle/rolling axis swap, or a
+ * wrong model before it mis-renders every robot on the field. Returns
+ * the template, or null to fall back to the procedural module.
  */
 export function validateModuleTemplate(t: THREE.Object3D): THREE.Group | null {
   const box = new THREE.Box3().setFromObject(t);
@@ -171,6 +171,19 @@ export function validateModuleTemplate(t: THREE.Object3D): THREE.Group | null {
     console.warn(
       `mk5i module template rejected: height ${h.toFixed(3)} m outside ` +
         `[${TEMPLATE_HEIGHT_MIN_M}, ${TEMPLATE_HEIGHT_MAX_M}] (expected ≈ ${MK5I_HEIGHT_M.toFixed(3)} m)`,
+    );
+    return null;
+  }
+  // +X is the rolling direction — and the module's long plan axis
+  // (measured 2026-10-03: 0.2165 m along X vs 0.1843 m along Z). A
+  // template rebuilt with the axle on +X (the ROLL_SWAP regression)
+  // swaps the two yet passes the height check, so reject it here.
+  const planX = box.max.x - box.min.x;
+  const planZ = box.max.z - box.min.z;
+  if (planX <= planZ) {
+    console.warn(
+      `mk5i module template rejected: plan ${planX.toFixed(3)}×${planZ.toFixed(3)} m ` +
+        `has X ≤ Z — +X must be the rolling (long) axis`,
     );
     return null;
   }
