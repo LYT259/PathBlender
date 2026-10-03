@@ -4,7 +4,10 @@ import { useTheme, type ThemeMode } from '../theme';
 import { useAppIcon, type IconAppearanceMode } from '../app-icon';
 import {
   MOUSE_SCHEMES,
+  useDefaultConstrained,
   useMouseControls,
+  usePenAsMouse,
+  useReverseScrollZoom,
   type MouseControlsScheme,
 } from '../mouse-controls';
 import { lengthUnitExample, LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
@@ -42,6 +45,9 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const { channel, setChannel } = useUpdateChannel();
   const [mouseControls, setMouseControls] = useMouseControls();
   const [lengthUnit, setLengthUnit] = useLengthUnit();
+  const [reverseScroll, setReverseScroll] = useReverseScrollZoom();
+  const [defaultConstrained, setDefaultConstrained] = useDefaultConstrained();
+  const [penAsMouse, setPenAsMouse] = usePenAsMouse();
   const [section, setSection] = useState<Section>('general');
   const [languageDraft, setLanguageDraft] = useState<LangChoice | null>(null);
   const [themeDraft, setThemeDraft] = useState<ThemeMode | null>(null);
@@ -49,6 +55,9 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
   const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
   const [unitDraft, setUnitDraft] = useState<LengthUnit | null>(null);
+  const [reverseDraft, setReverseDraft] = useState<boolean | null>(null);
+  const [constrainedDraft, setConstrainedDraft] = useState<boolean | null>(null);
+  const [penDraft, setPenDraft] = useState<boolean | null>(null);
   const [copyStatus, setCopyStatus] = useState('');
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck>({ kind: 'idle' });
   const id = useId();
@@ -60,8 +69,12 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const updateChannel = channelDraft ?? channel;
   const mouse = mouseDraft ?? mouseControls;
   const unit = unitDraft ?? lengthUnit;
+  const reverse = reverseDraft ?? reverseScroll;
+  const constrained = constrainedDraft ?? defaultConstrained;
+  const pen = penDraft ?? penAsMouse;
   const dirty = language !== langChoice || theme !== mode || icon !== iconMode ||
-    updateChannel !== channel || mouse !== mouseControls || unit !== lengthUnit;
+    updateChannel !== channel || mouse !== mouseControls || unit !== lengthUnit ||
+    reverse !== reverseScroll || constrained !== defaultConstrained || pen !== penAsMouse;
   const updateStatusText =
     updateCheck.kind === 'checking' ? t('prefs.checking')
       : updateCheck.kind === 'upToDate' ? t('updates.upToDate')
@@ -116,6 +129,9 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
     }
     if (mouse !== mouseControls) setMouseControls(mouse);
     if (unit !== lengthUnit) setLengthUnit(unit);
+    if (reverse !== reverseScroll) setReverseScroll(reverse);
+    if (constrained !== defaultConstrained) setDefaultConstrained(constrained);
+    if (pen !== penAsMouse) setPenAsMouse(pen);
     // Save keeps the window open (user request 2026-10-02): drafts become
     // current, dirty clears, and the user closes via Cancel/Escape/⌘W when
     // done — matching System Settings' persist-in-place behavior.
@@ -166,6 +182,24 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
               </select>
             </label>
             <MouseControlsDiagram scheme={mouse} iconMode={icon} />
+            <div className="preferences-mouse-table">
+              {(['rotate', 'constrained', 'pan', 'zoom'] as const).map((action) => <div key={action} className="preferences-mouse-row">
+                <span>{t(`prefs.mouse.${action}`)}</span>
+                <strong>{t(`prefs.mouse.${mouse}.${action}`)}</strong>
+              </div>)}
+            </div>
+            <label className="preferences-setting preferences-checkbox">
+              <span>{t('prefs.mouse.reverseScroll')}</span>
+              <input type="checkbox" checked={reverse} onChange={(event) => setReverseDraft(event.target.checked)} />
+            </label>
+            <label className="preferences-setting preferences-checkbox">
+              <span>{t('prefs.mouse.defaultConstrained')}</span>
+              <input type="checkbox" checked={constrained} onChange={(event) => setConstrainedDraft(event.target.checked)} />
+            </label>
+            <label className="preferences-setting preferences-checkbox">
+              <span>{t('prefs.mouse.penAsMouse')}</span>
+              <input type="checkbox" checked={pen} onChange={(event) => setPenDraft(event.target.checked)} />
+            </label>
           </div>
           <div className="preferences-group">
             <label className="preferences-setting"><span>{t('prefs.units')}</span>
