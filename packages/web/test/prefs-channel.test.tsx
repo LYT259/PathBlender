@@ -89,6 +89,20 @@ describe('shared desktop preferences', () => {
     expect(within(screen.getByRole('group', { name: 'App icon' })).getByRole('radio', { name: 'Follow system' })).toBeChecked();
   });
 
+  it('keeps update checks UI-only and shows the full version only in About', async () => {
+    await renderPreferences();
+    openUpdates();
+    const { APP_VERSION } = await import('../src/version-info');
+    expect(screen.queryByText(`Version ${APP_VERSION}`)).not.toBeInTheDocument();
+    const button = screen.getByRole('button', { name: 'Check for updates' });
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(emit.checks).toEqual([]);
+    fireEvent.click(screen.getByRole('tab', { name: 'About' }));
+    expect(document.querySelector('.preferences-version')).toHaveTextContent(`Version ${APP_VERSION}`);
+    expect(document.querySelector('.preferences-product code')).toBeNull();
+  });
+
   it('opens the native settings window from the toolbar', async () => {
     await renderApp();
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));

@@ -12,6 +12,8 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const ja: Record<MessageKey, string> = {
+  'prefs.checkUpdates': "更新を確認",
+  'prefs.checkUpdatesPreview': "プレビューのみです。ここでの更新確認はまだ有効になっていません。",
   'prefs.appIcon': "アプリアイコン",
   'prefs.appIconPreview': "プレビューのみです。アプリアイコンは変更されません。",
   'welcome.title': 'パスをインポートして始めましょう',
@@ -215,7 +217,7 @@ export const ja: Record<MessageKey, string> = {
   'prefs.channel.beta': 'Beta',
   'prefs.mouseControls': 'マウス操作 (3D ビュー)',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': '3D ビューの回転・パン・ズームをどのマウスボタンで行うか設定します。',
   'prefs.mouse.table': 'ボタン割り当て',
   'prefs.mouse.btn.left': '左ドラッグ',

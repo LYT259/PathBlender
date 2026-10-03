@@ -6,6 +6,8 @@ import type { MessageKey } from './en';
  * （人工覆寫會在下一次生成時丟失）。
  */
 export const zhTw: Record<MessageKey, string> = {
+  'prefs.checkUpdates': "檢查更新",
+  'prefs.checkUpdatesPreview': "僅作界面預覽，暫未啓用更新檢查。",
   'prefs.appIcon': "應用圖標",
   'prefs.appIconPreview': "僅預覽，不會更改目前應用圖標。",
   'welcome.title': '從匯入路徑開始',
@@ -205,7 +207,7 @@ export const zhTw: Record<MessageKey, string> = {
   'prefs.channel.beta': 'Beta（預覽版）',
   'prefs.mouseControls': '滑鼠控制（3D 檢視）',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': '滑鼠各鍵在 3D 檢視中的功能。',
   'prefs.mouse.table': '按鍵對應',
   'prefs.mouse.btn.left': '左鍵拖曳',
