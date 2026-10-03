@@ -177,7 +177,7 @@ export const es: Record<MessageKey, string> = {
   'updates.upToDate': 'Ya tienes la última versión',
   'updates.downloading': 'Encontrada v{v}; descargando y reiniciando…',
   'updates.failed': 'No se pudo comprobar las actualizaciones: revisa tu conexión e inténtalo de nuevo',
-  'actions.saveHint': 'Guarda todos los robots y los ajustes de la sesión (.ghpb.json). Vuelve a abrirla con Importar. Exporta rutas sueltas desde el inspector de robots.',
+  'actions.saveHint': 'Guarda todos los robots y los ajustes de la sesión (.pb). Vuelve a abrirla con Importar. Exporta rutas sueltas desde el inspector de robots.',
   'actions.clearHint': 'Quita todos los robots de la sesión actual (nunca toca los archivos importados)',
   'rail.import': 'Importar',
   'rail.save': 'Guardar',

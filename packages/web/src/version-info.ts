@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.46';
+export const APP_VERSION = '0.1.6-beta.47';
 
 export interface VersionNote {
   version: string;
@@ -13,7 +13,8 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.6-beta.46', date: '2026-10-03', note: 'Demo robots are 00001/00002 with bumper numbers; Welded left of AndyMark; artwork toggle matches the segmented style / 示例机器人改为 00001/00002 并印上队号；构造切换 Welded 在左；示意图/渲染图改为同款分段按钮' },
+  { version: '0.1.6-beta.47', date: '2026-10-03', note: 'Desktop build fix: restore the Rust lib rename lost in a merge / 桌面端构建修复：恢复合并中回退的 Rust 库名' },
+  { version: '0.1.6-beta.46', date: '2026-10-03', note: 'Session files now save as .pb (pre-rename .ghpb.json sessions still open); the old GHPathBlender name is gone / 会话文件改为 .pb 保存（更名前的 .ghpb.json 旧会话仍可打开）；旧名 GHPathBlender 全部清除' },
   { version: '0.1.6-beta.45', date: '2026-10-03', note: 'Ground tape trails follow playback in 2D and 3D / 2D 与 3D 贴地轨迹尾巴随播放延长' },
   { version: '0.1.6-beta.44', date: '2026-10-03', note: 'Module installed angles pinned to the chassis CAD diagonal / 模组安装角锁定为底盘 CAD 的对角排布' },
   { version: '0.1.6-beta.43', date: '2026-10-03', note: 'Release walkthrough covers the 10-entry language list incl. he RTL and pt-BR' },

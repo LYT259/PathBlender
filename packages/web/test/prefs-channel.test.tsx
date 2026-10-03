@@ -6,7 +6,7 @@
  *
  * The channel row is desktop-only (IS_DESKTOP at import time), so the Tauri
  * marker is stubbed before the lazy App import; the Tauri core module is
- * mocked. Menu commands arrive as shell-dispatched `ghpb-menu-*` DOM
+ * mocked. Menu commands arrive as shell-dispatched `pb-menu-*` DOM
  * CustomEvents (ADR-0003) — dispatching one drives the real check→toast
  * chain (the pref bridge itself is a web no-op in jsdom).
  */
@@ -79,12 +79,12 @@ describe('shared desktop preferences', () => {
   it('stages the channel: Save applies, Cancel discards', async () => {
     const first = await renderPreferences();
     fireEvent.change(openUpdates(), { target: { value: 'beta' } });
-    expect(localStorage.getItem('ghpb.updateChannel')).toBeNull();
+    expect(localStorage.getItem('pb.updateChannel')).toBeNull();
     expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await waitFor(() => expect(native.close).toHaveBeenCalledOnce());
     first.unmount();
-    expect(localStorage.getItem('ghpb.updateChannel')).toBeNull();
+    expect(localStorage.getItem('pb.updateChannel')).toBeNull();
 
     await renderPreferences();
     expect(openUpdates()).toHaveValue('stable');
@@ -93,7 +93,7 @@ describe('shared desktop preferences', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     // Save applies but KEEPS the window open (user request 2026-10-02):
     // still only the one close from the Cancel above.
-    await waitFor(() => expect(localStorage.getItem('ghpb.updateChannel')).toBe('beta'));
+    await waitFor(() => expect(localStorage.getItem('pb.updateChannel')).toBe('beta'));
     expect(native.close).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
@@ -107,13 +107,13 @@ describe('shared desktop preferences', () => {
     fireEvent.keyDown(general, { key: 'End' });
     expect(screen.getByRole('tab', { name: 'About' })).toHaveFocus();
     expect(screen.getByRole('heading', { name: 'Recent changes' })).toBeInTheDocument();
-    expect(localStorage.getItem('ghpb.theme')).toBeNull();
+    expect(localStorage.getItem('pb.theme')).toBeNull();
     fireEvent.keyDown(screen.getByRole('tab', { name: 'About' }), { key: 'Home' });
     expect(screen.getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
     expect(screen.getByRole('combobox', { name: 'Language' })).toHaveValue('zh');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(localStorage.getItem('ghpb.theme')).toBe('dark'));
-    expect(localStorage.getItem('ghpb.lang')).toBe('zh');
+    await waitFor(() => expect(localStorage.getItem('pb.theme')).toBe('dark'));
+    expect(localStorage.getItem('pb.lang')).toBe('zh');
     // Save applies without closing the settings window.
     expect(native.close).not.toHaveBeenCalled();
   });
@@ -124,7 +124,7 @@ describe('shared desktop preferences', () => {
     // The native menu's "Check for Updates…" now arrives as a shell-dispatched
     // DOM event (ADR-0003): dispatch it to drive the real chain
     // checkForUpdates → (mocked) runUpdateCheck emits failed → toast.
-    window.dispatchEvent(new CustomEvent('ghpb-menu-check-update'));
+    window.dispatchEvent(new CustomEvent('pb-menu-check-update'));
 
     await waitFor(() => {
       const toast = document.querySelector('.toast');

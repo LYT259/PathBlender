@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate .ghostauto sample files for the GHPathBlender regression suite.
+"""Generate .ghostauto sample files for the PathBlender regression suite.
 
 Format facts confirmed from Team 103 Collaborative PathPlanner fork
 lib/auto/ghost_auto.dart (MIT), toJson/fromJson methods, 2026-08-25.

@@ -227,7 +227,7 @@ describe('RTL (Hebrew)', () => {
 
   it('sets the document direction and language from the active choice', () => {
     const provider = () => createElement(I18nProvider, null, createElement('div'));
-    localStorage.setItem('ghpb.lang', 'he');
+    localStorage.setItem('pb.lang', 'he');
     render(provider());
     expect(document.documentElement.getAttribute('dir')).toBe('rtl');
     expect(document.documentElement.getAttribute('lang')).toBe('he');

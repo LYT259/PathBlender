@@ -358,7 +358,7 @@ fn open_preferences(app: AppHandle) {
 }
 
 /// (file name, base64 bytes) pairs — the payload shape of the web side's
-/// `ghpb-open-files` CustomEvent (ADR-0003).
+/// `pb-open-files` CustomEvent (ADR-0003).
 fn read_open_pairs(paths: impl IntoIterator<Item = PathBuf>) -> Vec<(String, String)> {
     paths
         .into_iter()
@@ -384,9 +384,9 @@ fn push_open_files<R: tauri::Runtime>(app: &AppHandle<R>, pairs: &[(String, Stri
     }
     let json = serde_json::to_string(pairs).expect("serialize open-with files");
     let js = format!(
-        "window.__ghpbOpenPayload={json};\
-         window.dispatchEvent(new CustomEvent('ghpb-open-files',\
-         {{detail:window.__ghpbOpenPayload}}))"
+        "window.__pbOpenPayload={json};\
+         window.dispatchEvent(new CustomEvent('pb-open-files',\
+         {{detail:window.__pbOpenPayload}}))"
     );
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.eval(&js);
@@ -398,7 +398,7 @@ fn push_open_files<R: tauri::Runtime>(app: &AppHandle<R>, pairs: &[(String, Stri
 /// web-side `listen()` registration can silently lose the race against
 /// page load on WebKitGTK, leaving the menu dead (ADR-0003).
 fn push_menu_event<R: tauri::Runtime>(app: &AppHandle<R>, name: &str) {
-    let js = format!("window.dispatchEvent(new CustomEvent('ghpb-menu-{name}'))");
+    let js = format!("window.dispatchEvent(new CustomEvent('pb-menu-{name}'))");
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.eval(&js);
     }
@@ -456,7 +456,7 @@ fn apply_dock_icon(path: &std::path::Path) {
 pub fn run() {
     // Open-with: files passed on the command line (double-click / "open
     // with") are read locally and pushed into the page once loading
-    // finishes — same `ghpb-open-files` channel the native import picker
+    // finishes — same `pb-open-files` channel the native import picker
     // uses (ADR-0003).
     let opened = read_open_pairs(std::env::args().skip(1).map(PathBuf::from));
     let delivered = AtomicBool::new(false);
@@ -497,9 +497,9 @@ pub fn run() {
             }
             let json = serde_json::to_string(&opened).expect("serialize argv files");
             let js = format!(
-                "window.__ghpbOpenPayload={json};\
-                 window.dispatchEvent(new CustomEvent('ghpb-open-files',\
-                 {{detail:window.__ghpbOpenPayload}}))"
+                "window.__pbOpenPayload={json};\
+                 window.dispatchEvent(new CustomEvent('pb-open-files',\
+                 {{detail:window.__pbOpenPayload}}))"
             );
             let _ = webview.eval(&js);
         })

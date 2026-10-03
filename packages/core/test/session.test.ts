@@ -71,6 +71,8 @@ describe('session file round-trip', () => {
     const a = makeSession(parseGhostAuto(read('ghostauto/straight_run.ghostauto'), 'a'), 0);
     const b = { ...makeSession(parseTraj(read('traj/v3_swerve.traj'), 'b'), 1), startDelayS: 1.5 };
     const text = serializeSession([a, b], 'rebuilt-2026');
+    // New files carry the post-rename marker.
+    expect(JSON.parse(text).app).toBe('pathblender');
     const back = deserializeSession(text);
     expect(back.fieldId).toBe('rebuilt-2026');
     expect(back.robots).toHaveLength(2);
@@ -91,6 +93,15 @@ describe('session file round-trip', () => {
     for (const r of legacy.robots) delete r.teamNumber;
     const back = deserializeSession(JSON.stringify(legacy));
     expect(back.robots[0]!.trajectory.teamNumber).toBe('');
+  });
+
+  it('pre-rename marker (ghpathblender) still deserializes', () => {
+    const a = makeSession(parseGhostAuto(read('ghostauto/straight_run.ghostauto'), 'a'), 0);
+    const legacy = JSON.parse(serializeSession([a], 'rebuilt-2026'));
+    legacy.app = 'ghpathblender';
+    const back = deserializeSession(JSON.stringify(legacy));
+    expect(back.robots).toHaveLength(1);
+    expect(back.robots[0]!.trajectory.teamNumber).toBe('0001');
   });
 
   it('rejects foreign JSON', () => {
