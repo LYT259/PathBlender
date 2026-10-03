@@ -326,7 +326,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       setGlFailed(true);
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio((window.devicePixelRatio || 1));
     // Soft shadows are the strongest depth cue for the field structures.
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -642,7 +642,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // is what batched the gesture events in the first place. While a pinch
     // or drag runs (plus this linger window), render at pixel ratio 1 with
     // the shadow map frozen; restore full quality once interaction settles.
-    const BASE_PIXEL_RATIO = Math.min(window.devicePixelRatio || 1, 2);
+    const BASE_PIXEL_RATIO = (window.devicePixelRatio || 1);
     const INTERACTIVE_LINGER_MS = 250;
     let interactiveUntil = 0;
     let lowQuality = false;
@@ -676,7 +676,13 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         markDirty();
       }
       const interacting = now < interactiveUntil || pinchChase.factor !== 1 || drag.active;
-      if (interacting !== lowQuality) setLowQuality(interacting);
+      if (interacting !== lowQuality) {
+        setLowQuality(interacting);
+        // Restore repaints immediately: setPixelRatio resizes (clears) the
+        // buffer, and with damping already settled nothing else would mark
+        // this frame dirty — leaving the blurry low-quality frame up.
+        if (!interacting) needsDraw = true;
+      }
       const moved = controls.update();
       if (needsDraw || moved) {
         needsDraw = false;
