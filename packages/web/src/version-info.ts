@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.38';
+export const APP_VERSION = '0.1.6-beta.39';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.39', date: '2026-10-03', note: 'Settings: Onshape/SolidWorks mouse schemes for the 3D view, and a length-unit choice for distance readouts / 设置新增 3D 视图鼠标方案（Onshape/SolidWorks）与距离读数长度单位' },
   { version: '0.1.6-beta.38', date: '2026-10-03', note: 'Trimmed toolbar chrome: undo/redo, both sidebar-collapse buttons and the inspector close ✕ are gone; side panels now stay open / 工具栏瘦身：删除撤销/重做、左右折叠边栏按钮与检查器关闭叉，侧栏常开' },
   { version: '0.1.6-beta.37', date: '2026-10-02', note: 'Team numbers edit in place and print on the bumper / 队号行内铅笔编辑，印刷在防撞条上' },
   { version: '0.1.6-beta.36', date: '2026-10-02', note: 'Align workspace controls and simplify field construction selection / 统一工作区控件高度并简化场地结构切换' },

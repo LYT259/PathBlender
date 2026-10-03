@@ -8,7 +8,7 @@
  * loop). Web/browser contexts: both helpers degrade to no-ops.
  */
 
-type PrefKey = 'lang' | 'theme' | 'updateChannel';
+type PrefKey = 'lang' | 'theme' | 'updateChannel' | 'mouseControls' | 'lengthUnit';
 
 // `__TAURI_INTERNALS__` covers Linux/Windows (http(s)-served webviews);
 // protocol-only detection would skip pref sync there (same check as
