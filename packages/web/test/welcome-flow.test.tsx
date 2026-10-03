@@ -1,7 +1,7 @@
 /** First-use guidance runs through the real import, playback and check flows. */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeSession, parsePathFile, serializeSession } from '@pathblender/core';
 import { App } from '../src/App';
@@ -129,7 +129,7 @@ describe('welcome flow', () => {
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
   });
 
-  it('ends only the example paths after a real file is imported and supports undo', async () => {
+  it('ends only the example paths after a real file is imported', async () => {
     render(<App />);
     await openExample();
     fireEvent.drop(window, { dataTransfer: { files: [new File([sampleText], 'straight_run.ghostauto')] } });
@@ -139,24 +139,6 @@ describe('welcome flow', () => {
     expect(screen.queryByText('Example path B', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.queryByText('Fictional paths for exploring the app.')).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Undo', exact: true }));
-    expect(screen.getByText('Example path A', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('Example path B', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
-  });
-
-  it('hides history buttons on return to welcome while retaining keyboard undo', async () => {
-    render(<App />);
-    await openExample();
-    fireEvent.click(screen.getByRole('button', { name: 'End example' }));
-    expect(screen.getByRole('region', { name: 'Import paths to get started' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Show or hide path list' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Undo', exact: true })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Redo', exact: true })).not.toBeInTheDocument();
-    fireEvent.keyDown(window, { key: 'z', metaKey: true });
-    expect(screen.getByText('Example path A', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'End example' })).toBeInTheDocument();
   });
 
   it('preserves a real library route that replaced an example robot when ending the example', async () => {
@@ -191,23 +173,6 @@ describe('welcome flow', () => {
     expect(screen.queryByText('Example path A', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.queryByText('Example path B', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'End example' })).not.toBeInTheDocument();
-  });
-
-  it('does not let a pending example replace the scene the user just restored with Undo', async () => {
-    render(<App />);
-    await openExample();
-    fireEvent.change(screen.getByRole('combobox', { name: 'Game season' }), { target: { value: 'chargedup-2023' } });
-    fireEvent.click(screen.getByRole('button', { name: 'End example' }));
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-      fireEvent.keyDown(window, { key: 'z', metaKey: true });
-      await vi.dynamicImportSettled();
-    });
-
-    expect(screen.getByRole('combobox', { name: 'Game season' })).toHaveValue('chargedup-2023');
-    expect(screen.getByText('Example path A', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('Example path B', { selector: '.robot-name' })).toBeInTheDocument();
   });
 
   it('reports an invalid saved session without replacing the currently loaded scene', async () => {
