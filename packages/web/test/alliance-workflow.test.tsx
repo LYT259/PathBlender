@@ -64,7 +64,7 @@ describe('whole-session alliance control', () => {
     expect(payload.robots.every((r: { alliance: string }) => r.alliance === 'red')).toBe(true);
     const positions = payload.robots.map((r: { samples: { x: number }[] }) => r.samples[0]!.x);
     fireEvent.click(side('Blue'));
-    drop([new File([saved], 'red.ghpb.json')]);
+    drop([new File([saved], 'red.pb')]);
     await waitFor(() => expect(side('Red')).toHaveAttribute('aria-pressed', 'true'));
     expect(fieldRobots().map((r) => r.trajectory.samples[0]!.x)).toEqual(positions);
   });

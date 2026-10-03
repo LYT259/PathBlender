@@ -178,7 +178,7 @@ export const ptBR: Record<MessageKey, string> = {
   'updates.upToDate': 'Você está em dia',
   'updates.downloading': 'Versão v{v} encontrada, baixando e reiniciando…',
   'updates.failed': 'Falha ao verificar atualizações — confira sua conexão e tente novamente',
-  'actions.saveHint': 'Salva todos os robôs e as configurações da sessão (.ghpb.json). Reabra com Importar. Exporte trajetórias individuais pelo inspetor do robô.',
+  'actions.saveHint': 'Salva todos os robôs e as configurações da sessão (.pb). Reabra com Importar. Exporte trajetórias individuais pelo inspetor do robô.',
   'actions.clearHint': 'Remove todos os robôs da sessão atual (nunca altera os arquivos importados)',
   'rail.import': 'Importar',
   'rail.save': 'Salvar',

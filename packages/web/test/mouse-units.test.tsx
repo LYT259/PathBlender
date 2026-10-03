@@ -47,7 +47,7 @@ describe('length unit preference', () => {
   });
 
   it('falls back to meters for unknown stored values', () => {
-    localStorage.setItem('ghpb.lengthUnit', 'furlongs');
+    localStorage.setItem('pb.lengthUnit', 'furlongs');
     expect(readLengthUnit()).toBe('m');
   });
 
@@ -67,7 +67,7 @@ describe('mouse controls preference', () => {
   });
 
   it('falls back to onshape for unknown stored values', () => {
-    localStorage.setItem('ghpb.mouseControls', 'catia');
+    localStorage.setItem('pb.mouseControls', 'catia');
     expect(readMouseControls()).toBe('onshape');
   });
 

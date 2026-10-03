@@ -11,7 +11,7 @@ import { broadcastPref, listenPrefs } from './pref-sync';
 
 export type LengthUnit = 'm' | 'cm' | 'in' | 'ftin';
 
-const STORAGE_KEY = 'ghpb.lengthUnit';
+const STORAGE_KEY = 'pb.lengthUnit';
 export const LENGTH_UNITS: LengthUnit[] = ['m', 'cm', 'in', 'ftin'];
 
 const IN_PER_M = 39.3700787;

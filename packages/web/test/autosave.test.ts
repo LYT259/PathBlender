@@ -42,7 +42,7 @@ describe('saveAutosave / loadAutosave', () => {
 
   it('missing slot and unusable blobs fall back to null', () => {
     expect(loadAutosave()).toBeNull();
-    localStorage.setItem('ghpb.autosave.v1', 'not a session');
+    localStorage.setItem('pb.autosave.v1', 'not a session');
     expect(loadAutosave()).toBeNull();
   });
 
@@ -63,7 +63,7 @@ describe('saveAutosave / loadAutosave', () => {
     try {
       const rs = robots();
       saveAutosave(rs, 'rebuilt-2026');
-      expect(localStorage.getItem('ghpb.autosave.v1')).toBe(
+      expect(localStorage.getItem('pb.autosave.v1')).toBe(
         serializeSession(rs, 'rebuilt-2026', undefined),
       );
     } finally {

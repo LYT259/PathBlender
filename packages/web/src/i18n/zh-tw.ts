@@ -171,7 +171,7 @@ export const zhTw: Record<MessageKey, string> = {
   'updates.upToDate': '已是最新版本',
   'updates.downloading': '發現 v{v}，正在下載安裝並重啓…',
   'updates.failed': '更新檢查失敗，請檢查網路後重試',
-  'actions.saveHint': '儲存全部機器人和工作階段設定（.ghpb.json），用「匯入」重新開啟。單條路徑在右側機器人面板中匯出。',
+  'actions.saveHint': '儲存全部機器人和工作階段設定（.pb），用「匯入」重新開啟。單條路徑在右側機器人面板中匯出。',
   'actions.clearHint': '移除目前工作階段的全部機器人（不會改動已匯入的檔案）',
   'rail.import': '匯入',
   'rail.save': '儲存',

@@ -176,7 +176,7 @@ export const tr: Record<MessageKey, string> = {
   'updates.upToDate': 'Güncelsiniz',
   'updates.downloading': 'v{v} bulundu, indiriliyor ve yeniden başlatılıyor…',
   'updates.failed': 'Güncelleme denetimi yapılamadı — bağlantınızı kontrol edip yeniden deneyin',
-  'actions.saveHint': 'Tüm robotları ve oturum ayarlarını kaydeder (.ghpb.json). İçe aktar ile yeniden açın. Tek tek yolları robot denetçisinden dışa aktarın.',
+  'actions.saveHint': 'Tüm robotları ve oturum ayarlarını kaydeder (.pb). İçe aktar ile yeniden açın. Tek tek yolları robot denetçisinden dışa aktarın.',
   'actions.clearHint': 'Geçerli oturumdaki tüm robotları kaldırır (içe aktarılan dosyalara asla dokunmaz)',
   'rail.import': 'İçe aktar',
   'rail.save': 'Kaydet',

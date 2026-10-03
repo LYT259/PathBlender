@@ -49,14 +49,14 @@ describe('initial channel from localStorage', () => {
   });
 
   it('restores a stored beta choice', () => {
-    localStorage.setItem('ghpb.updateChannel', 'beta');
+    localStorage.setItem('pb.updateChannel', 'beta');
     const { getByTestId } = renderProbe();
     expect(getByTestId('channel').textContent).toBe('beta');
   });
 
   it('treats corrupted values as stable (never throws)', () => {
-    localStorage.setItem('ghpb.updateChannel', 'Beta');
-    localStorage.setItem('ghpb.updateChannel', 'nightly'); // last write wins
+    localStorage.setItem('pb.updateChannel', 'Beta');
+    localStorage.setItem('pb.updateChannel', 'nightly'); // last write wins
     const { getByTestId } = renderProbe();
     expect(getByTestId('channel').textContent).toBe('stable');
   });
@@ -76,7 +76,7 @@ describe('setChannel', () => {
     const { getByTestId } = renderProbe();
     act(() => getByTestId('set-beta').click());
     expect(getByTestId('channel').textContent).toBe('beta');
-    expect(localStorage.getItem('ghpb.updateChannel')).toBe('beta');
+    expect(localStorage.getItem('pb.updateChannel')).toBe('beta');
     expect(broadcasts).toEqual([['updateChannel', 'beta']]);
   });
 
@@ -97,7 +97,7 @@ describe('remote pref sync (desktop prefs window)', () => {
     const { getByTestId } = renderProbe();
     act(() => remoteHandler?.('updateChannel', 'beta'));
     expect(getByTestId('channel').textContent).toBe('beta');
-    expect(localStorage.getItem('ghpb.updateChannel')).toBe('beta');
+    expect(localStorage.getItem('pb.updateChannel')).toBe('beta');
   });
 
   it('ignores unknown keys and invalid values', () => {
