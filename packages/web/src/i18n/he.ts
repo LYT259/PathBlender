@@ -16,6 +16,8 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const he: Record<MessageKey, string> = {
+  'prefs.appIcon': "סמל היישום",
+  'prefs.appIconPreview': "תצוגה מקדימה בלבד. סמל היישום לא ישתנה.",
   'welcome.title': 'ייבאו מסלולים כדי להתחיל',
   'welcome.description': 'נגנו מסלולים יחד ובדקו הפרעות.',
   'welcome.folderAdvice': 'ייבאו תיקייה שלמה כדי שתוכלו להחליף מסלול כשיש התנגשות.',

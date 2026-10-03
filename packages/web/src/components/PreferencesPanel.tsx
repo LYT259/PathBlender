@@ -13,6 +13,7 @@ import { formatVersionDisplay } from '../version';
 import { copyText } from '../download';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from '../viewer';
 import { Icon } from './Icon';
+import { IconAppearancePicker, type IconAppearanceMode } from './IconAppearancePicker';
 import './PreferencesPanel.css';
 
 type Section = 'general' | 'updates' | 'about';
@@ -30,6 +31,9 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
   const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
   const [unitDraft, setUnitDraft] = useState<LengthUnit | null>(null);
+  // UI-only preview: intentionally excluded from Save/dirty and native effects.
+  // The implementation task will replace this with an independent saved preference.
+  const [iconPreview, setIconPreview] = useState<IconAppearanceMode>('system');
   const [copyStatus, setCopyStatus] = useState('');
   const id = useId();
   const tabRefs = useRef<Partial<Record<Section, HTMLButtonElement | null>>>({});
@@ -98,6 +102,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
               </label>)}
             </div>
           </fieldset>
+          {desktop && <IconAppearancePicker value={iconPreview} onChange={setIconPreview} />}
           <div className="preferences-group">
             <label className="preferences-setting"><span>{t('prefs.mouseControls')}</span>
               <select value={mouse} onChange={(event) => setMouseDraft(event.target.value as MouseControlsScheme)}>

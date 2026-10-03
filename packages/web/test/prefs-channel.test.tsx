@@ -10,7 +10,7 @@
  * CustomEvents (ADR-0003) — dispatching one drives the real check→toast
  * chain (the pref bridge itself is a web no-op in jsdom).
  */
-import { fireEvent, render, screen, waitFor, cleanup } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, cleanup, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const native = vi.hoisted(() => ({ invoke: vi.fn((_command: string, ..._args: unknown[]) => Promise.resolve()), close: vi.fn(() => Promise.resolve()) }));
@@ -68,6 +68,27 @@ function openUpdates() {
 }
 
 describe('shared desktop preferences', () => {
+  it('previews an independent icon appearance without persisting or invoking a native icon change', async () => {
+    const view = await renderPreferences();
+    const icons = screen.getByRole('group', { name: 'App icon' });
+    expect(within(icons).getByRole('radio', { name: 'Follow system' })).toBeChecked();
+    const storage = JSON.stringify(localStorage);
+    native.invoke.mockClear();
+    fireEvent.click(within(icons).getByRole('radio', { name: 'Dark', exact: true }));
+    expect(within(icons).getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
+    expect(within(screen.getByRole('group', { name: 'Theme' })).getByRole('radio', { name: 'Follow system' })).toBeChecked();
+    expect(screen.getByText('Preview only. Your app icon will not change.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(JSON.stringify(localStorage)).toBe(storage);
+    expect(native.invoke).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('tab', { name: 'About' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'General' }));
+    expect(within(screen.getByRole('group', { name: 'App icon' })).getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
+    view.unmount();
+    await renderPreferences();
+    expect(within(screen.getByRole('group', { name: 'App icon' })).getByRole('radio', { name: 'Follow system' })).toBeChecked();
+  });
+
   it('opens the native settings window from the toolbar', async () => {
     await renderApp();
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
@@ -100,7 +121,7 @@ describe('shared desktop preferences', () => {
 
   it('retains appearance drafts across sections and applies only on Save', async () => {
     await renderPreferences();
-    fireEvent.click(screen.getByRole('radio', { name: 'Dark', exact: true }));
+    fireEvent.click(within(screen.getByRole('group', { name: 'Theme', exact: true })).getByRole('radio', { name: 'Dark', exact: true }));
     fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'zh' } });
     const general = screen.getByRole('tab', { name: 'General' });
     general.focus();
@@ -109,7 +130,7 @@ describe('shared desktop preferences', () => {
     expect(screen.getByRole('heading', { name: 'Recent changes' })).toBeInTheDocument();
     expect(localStorage.getItem('pb.theme')).toBeNull();
     fireEvent.keyDown(screen.getByRole('tab', { name: 'About' }), { key: 'Home' });
-    expect(screen.getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
+    expect(within(screen.getByRole('group', { name: 'Theme', exact: true })).getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
     expect(screen.getByRole('combobox', { name: 'Language' })).toHaveValue('zh');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(localStorage.getItem('pb.theme')).toBe('dark'));

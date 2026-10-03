@@ -6,6 +6,8 @@ import type { MessageKey } from './en';
  * （人工覆寫會在下一次生成時丟失）。
  */
 export const zhTw: Record<MessageKey, string> = {
+  'prefs.appIcon': "應用圖標",
+  'prefs.appIconPreview': "僅預覽，不會更改目前應用圖標。",
   'welcome.title': '從匯入路徑開始',
   'welcome.description': '一起重播路徑，查看機器人之間是否有干涉。',
   'welcome.folderAdvice': '建議匯入整個路徑資料夾，發現干涉時可以快速切換路線。',

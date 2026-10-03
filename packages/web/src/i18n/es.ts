@@ -7,6 +7,8 @@ import type { MessageKey } from './en';
  * English; i18n.test.ts enforces both.
  */
 export const es: Record<MessageKey, string> = {
+  'prefs.appIcon': "Icono de la aplicación",
+  'prefs.appIconPreview': "Solo vista previa. El icono de la aplicación no cambiará.",
   'welcome.title': 'Importa trayectorias para empezar',
   'welcome.description': 'Reproduce las trayectorias juntas y detecta interferencias.',
   'welcome.folderAdvice': 'Importa una carpeta completa para cambiar de ruta si aparece un conflicto.',
