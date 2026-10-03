@@ -1,5 +1,5 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePlayback } from '../src/playback';
 
 describe('playback clock bounds and keyboard ownership', () => {
@@ -58,5 +58,67 @@ describe('playback clock bounds and keyboard ownership', () => {
     expect(result.current.playing).toBe(false);
     fireEvent.keyDown(window, { code: 'Home', key: 'Home' });
     expect(result.current.t).toBe(0);
+  });
+});
+
+describe('playback speed scaling (regression: 0.25x must slow the clock)', () => {
+  // Manual rAF pump: wall clock advances in exact 60 fps steps so the
+  // path-time advance is deterministic (no real timers involved).
+  let rafCallbacks: Map<number, FrameRequestCallback>;
+  let rafId = 0;
+  let now = 0;
+
+  beforeEach(() => {
+    rafCallbacks = new Map();
+    rafId = 0;
+    now = 0;
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      rafId += 1;
+      rafCallbacks.set(rafId, cb);
+      return rafId;
+    });
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+      rafCallbacks.delete(id);
+    });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const pump = (wallMs: number, frameMs = 1000 / 60) => {
+    const frames = Math.round(wallMs / frameMs);
+    for (let i = 0; i < frames; i += 1) {
+      now += frameMs;
+      const batch = [...rafCallbacks.values()];
+      rafCallbacks.clear();
+      act(() => {
+        for (const cb of batch) cb(now);
+      });
+    }
+  };
+
+  it('0.25x advances ~0.75 path seconds in 3 wall seconds', () => {
+    const { result } = renderHook(() => usePlayback(20));
+    act(() => {
+      result.current.setSpeed(0.25);
+      result.current.setPlaying(true);
+    });
+    pump(3000);
+    expect(result.current.t).toBeGreaterThan(0.6);
+    expect(result.current.t).toBeLessThan(0.9);
+  });
+
+  it('switching speed mid-play rescales the running clock', () => {
+    const { result } = renderHook(() => usePlayback(20));
+    act(() => result.current.setPlaying(true));
+    pump(1000); // 1 s at 1x
+    expect(result.current.t).toBeGreaterThan(0.8);
+    expect(result.current.t).toBeLessThan(1.2);
+    act(() => result.current.setSpeed(0.25));
+    const before = result.current.t;
+    pump(3000);
+    const advanced = result.current.t - before;
+    expect(advanced).toBeGreaterThan(0.6);
+    expect(advanced).toBeLessThan(0.9);
   });
 });
