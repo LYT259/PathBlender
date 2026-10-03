@@ -7,7 +7,10 @@ import type { MessageKey } from './en';
  */
 export const zhTw: Record<MessageKey, string> = {
   'prefs.checkUpdates': "檢查更新",
-  'prefs.checkUpdatesPreview': "僅作界面預覽，暫未啓用更新檢查。",
+  'prefs.checking': "正在檢查更新…",
+  'prefs.updateAvailable': "發現新版本 v{v}。",
+  'prefs.installUpdate': "安裝並重啓",
+  'prefs.checkSavedChannel': "更新檢查使用已儲存的通道：{channel}。",
   'prefs.appIcon': "應用圖標",
   'prefs.appIconPreview': "僅預覽，不會更改目前應用圖標。",
   'welcome.title': '從匯入路徑開始',

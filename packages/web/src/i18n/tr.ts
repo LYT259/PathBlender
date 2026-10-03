@@ -7,7 +7,10 @@ import type { MessageKey } from './en';
  */
 export const tr: Record<MessageKey, string> = {
   'prefs.checkUpdates': "Güncellemeleri denetle",
-  'prefs.checkUpdatesPreview': "Yalnızca önizleme. Güncelleme denetimi burada henüz etkin değil.",
+  'prefs.checking': "Güncellemeler denetleniyor…",
+  'prefs.updateAvailable': "{v} sürümü kullanılabilir.",
+  'prefs.installUpdate': "Yükle ve yeniden başlat",
+  'prefs.checkSavedChannel': "Güncelleme denetimleri kaydedilen kanalı kullanır: {channel}.",
   'prefs.appIcon': "Uygulama simgesi",
   'prefs.appIconPreview': "Yalnızca önizleme. Uygulama simgesi değişmeyecek.",
   'welcome.title': 'Başlamak için yolları içe aktarın',

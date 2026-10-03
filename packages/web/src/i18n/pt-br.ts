@@ -12,7 +12,10 @@ import type { MessageKey } from './en';
  */
 export const ptBR: Record<MessageKey, string> = {
   'prefs.checkUpdates': "Verificar atualizações",
-  'prefs.checkUpdatesPreview': "Apenas uma prévia. A verificação de atualizações ainda não está ativada aqui.",
+  'prefs.checking': "Verificando atualizações…",
+  'prefs.updateAvailable': "A versão {v} está disponível.",
+  'prefs.installUpdate': "Instalar e reiniciar",
+  'prefs.checkSavedChannel': "A verificação de atualizações usa o canal salvo: {channel}.",
   'prefs.appIcon': "Ícone do aplicativo",
   'prefs.appIconPreview': "Apenas uma prévia. O ícone do aplicativo não será alterado.",
   'welcome.title': 'Importe trajetórias para começar',

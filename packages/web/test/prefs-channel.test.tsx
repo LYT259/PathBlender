@@ -4,23 +4,41 @@
  * and theme; Save enables and applies; Cancel discards. And a failed update
  * check must show the ERROR toast, not the green success box.
  *
+ * The settings window's "Check for updates" button is a real two-step flow:
+ * checkForUpdate only queries the feed (the mock below records the channel
+ * and holds the event callback so tests drive results explicitly), and a
+ * found update installs ONLY via the separate "Install and relaunch"
+ * button (installPendingUpdate). Checks always use the SAVED channel —
+ * an unsaved channel draft only shows a hint.
+ *
  * The channel row is desktop-only (IS_DESKTOP at import time), so the Tauri
  * marker is stubbed before the lazy App import; the Tauri core module is
  * mocked. Menu commands arrive as shell-dispatched `pb-menu-*` DOM
  * CustomEvents (ADR-0003) — dispatching one drives the real check→toast
  * chain (the pref bridge itself is a web no-op in jsdom).
  */
-import { fireEvent, render, screen, waitFor, cleanup, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, cleanup, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const native = vi.hoisted(() => ({ invoke: vi.fn((_command: string, ..._args: unknown[]) => Promise.resolve()), close: vi.fn(() => Promise.resolve()) }));
 const emit = vi.hoisted(() => ({ checks: [] as string[] }));
+const prefsCheck = vi.hoisted(() => ({
+  calls: [] as string[],
+  onEvent: null as null | ((e: { kind: string; version?: string }) => void),
+  install: vi.fn(() => Promise.resolve()),
+}));
 vi.mock('../src/update-check', () => ({
   runUpdateCheck: (channel: string, onEvent: (e: { kind: string }) => void) => {
     emit.checks.push(channel);
     onEvent({ kind: 'failed' });
     return Promise.resolve();
   },
+  checkForUpdate: (channel: string, onEvent: (e: { kind: string; version?: string }) => void) => {
+    prefsCheck.calls.push(channel);
+    prefsCheck.onEvent = onEvent;
+    return Promise.resolve();
+  },
+  installPendingUpdate: prefsCheck.install,
 }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: native.invoke }));
 vi.mock('@tauri-apps/api/window', () => ({ getCurrentWindow: () => ({ close: native.close }) }));
@@ -30,6 +48,9 @@ beforeEach(() => {
   native.invoke.mockClear();
   native.close.mockClear();
   emit.checks.length = 0;
+  prefsCheck.calls.length = 0;
+  prefsCheck.onEvent = null;
+  prefsCheck.install.mockClear();
   (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = { invoke: native.invoke };
 });
 afterEach(() => {
@@ -89,18 +110,74 @@ describe('shared desktop preferences', () => {
     expect(within(screen.getByRole('group', { name: 'App icon' })).getByRole('radio', { name: 'Follow system' })).toBeChecked();
   });
 
-  it('keeps update checks UI-only and shows the full version only in About', async () => {
+  it('checks for updates in the settings window: click → checking → up to date, and shows the full version only in About', async () => {
     await renderPreferences();
     openUpdates();
     const { APP_VERSION } = await import('../src/version-info');
     expect(screen.queryByText(`Version ${APP_VERSION}`)).not.toBeInTheDocument();
     const button = screen.getByRole('button', { name: 'Check for updates' });
-    expect(button).toBeDisabled();
+    expect(button).toBeEnabled();
     fireEvent.click(button);
+    expect(prefsCheck.calls).toEqual(['stable']);
+    expect(button).toBeDisabled(); // checking in flight
+    act(() => prefsCheck.onEvent!({ kind: 'upToDate' }));
+    expect(await screen.findByText("You're up to date")).toBeInTheDocument();
+    expect(button).toBeEnabled();
+    // The settings check never routes through the one-shot menu runner…
     expect(emit.checks).toEqual([]);
+    // …and never installs or relaunches on its own.
+    expect(prefsCheck.install).not.toHaveBeenCalled();
+    // The full version still shows only in About.
     fireEvent.click(screen.getByRole('tab', { name: 'About' }));
     expect(document.querySelector('.preferences-version')).toHaveTextContent(`Version ${APP_VERSION}`);
     expect(document.querySelector('.preferences-product code')).toBeNull();
+  });
+
+  it('a found update shows the version plus an Install and relaunch button — only that button installs', async () => {
+    await renderPreferences();
+    openUpdates();
+    fireEvent.click(screen.getByRole('button', { name: 'Check for updates' }));
+    act(() => prefsCheck.onEvent!({ kind: 'found', version: '9.9.9' }));
+    expect(await screen.findByText('Version 9.9.9 is available.')).toBeInTheDocument();
+    // Clicking Check alone must NOT have installed or relaunched anything.
+    expect(prefsCheck.install).not.toHaveBeenCalled();
+    const install = screen.getByRole('button', { name: 'Install and relaunch' });
+    expect(install).not.toHaveClass('accent'); // secondary action, distinct from the accent check button
+    fireEvent.click(install);
+    expect(prefsCheck.install).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('Found v9.9.9, downloading and relaunching…')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Install and relaunch' })).not.toBeInTheDocument();
+  });
+
+  it('a failed check shows the update error inside the settings window', async () => {
+    await renderPreferences();
+    openUpdates();
+    fireEvent.click(screen.getByRole('button', { name: 'Check for updates' }));
+    act(() => prefsCheck.onEvent!({ kind: 'failed' }));
+    expect(await screen.findByText('Update check failed — check your connection and try again')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Check for updates' })).toBeEnabled();
+    expect(prefsCheck.install).not.toHaveBeenCalled();
+  });
+
+  it('ignores extra clicks while a check is in flight — one native request', async () => {
+    await renderPreferences();
+    openUpdates();
+    const button = screen.getByRole('button', { name: 'Check for updates' });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(prefsCheck.calls).toEqual(['stable']);
+    act(() => prefsCheck.onEvent!({ kind: 'upToDate' }));
+    expect(await screen.findByText("You're up to date")).toBeInTheDocument();
+  });
+
+  it('checks use the SAVED channel, not the draft — and says so next to the button', async () => {
+    await renderPreferences();
+    fireEvent.change(openUpdates(), { target: { value: 'beta' } });
+    expect(await screen.findByText('Update checks use the saved channel: Stable.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Check for updates' }));
+    expect(prefsCheck.calls).toEqual(['stable']);
+    act(() => prefsCheck.onEvent!({ kind: 'upToDate' }));
+    expect(await screen.findByText("You're up to date")).toBeInTheDocument();
   });
 
   it('opens the native settings window from the toolbar', async () => {
