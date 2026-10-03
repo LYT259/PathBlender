@@ -13,7 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.7-beta.6', date: '2026-10-03', note: 'restore the Onshape-style ViewCube (faces, edges and corners)' },
+  { version: '0.1.7-beta.6', date: '2026-10-03', note: 'Removed the app icon hint line in Settings — the icon choices stay' },
   { version: '0.1.7-beta.5', date: '2026-10-03', note: 'Mouse schemes now match the real Onshape/SolidWorks bindings; added the three view checkboxes (reverse scroll, default constrained rotate, pen as mouse)' },
   { version: '0.1.7-beta.4', date: '2026-10-03', note: 'Mouse schemes now match the real Onshape/SolidWorks bindings; added the three view checkboxes (reverse scroll, default constrained rotate, pen as mouse)' },
   { version: '0.1.7-beta.3', date: '2026-10-03', note: '2019–2025 robots ride the user\'s 30 in chassis frame; 2026 keeps the 27 in one / 2019–2025 机器人换装用户的 30 英寸车架；2026 沿用 27 英寸' },
