@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.51';
+export const APP_VERSION = '0.1.6-beta.52';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.52', date: '2026-10-03', note: 'Second-batch UI languages (nl, pl, ja, ko, cs)' },
   { version: '0.1.6-beta.51', date: '2026-10-03', note: 'Lower the Linux smoke paint-gate threshold for the redesigned welcome screen' },
   { version: '0.1.6-beta.50', date: '2026-10-03', note: 'Project code is now uniformly Apache-2.0 — the core package\'s stray MIT LICENSE text is replaced / 项目代码统一为 Apache-2.0——替换 core 包遗留的 MIT 许可证文本' },
   { version: '0.1.6-beta.49', date: '2026-10-03', note: 'Wheels now track motion correctly — installed angle is the parked pose, steering takes over on move / 轮子随运动转向修正——安装角为静止姿态，运动后由转向接管' },

@@ -4,9 +4,14 @@ import { createElement } from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { en, type MessageKey } from '../src/i18n/en';
+import { cs } from '../src/i18n/cs';
 import { es } from '../src/i18n/es';
 import { fr } from '../src/i18n/fr';
 import { he } from '../src/i18n/he';
+import { ja } from '../src/i18n/ja';
+import { ko } from '../src/i18n/ko';
+import { nl } from '../src/i18n/nl';
+import { pl } from '../src/i18n/pl';
 import { ptBR } from '../src/i18n/pt-br';
 import { tr } from '../src/i18n/tr';
 import { zh } from '../src/i18n/zh';
@@ -23,7 +28,7 @@ import { I18nProvider, isRtl, LANGUAGES, langLabel, langFromTags, type Lang } fr
  * runtime checks below cover the blanks and the placeholders a type cannot.
  */
 const DICTS: Record<string, Record<string, string>> = {
-  en, es, fr, he, 'pt-BR': ptBR, tr, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  en, cs, es, fr, he, ja, ko, nl, pl, 'pt-BR': ptBR, tr, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
 };
 const CODES = Object.keys(DICTS) as Lang[];
 const KEYS = Object.keys(en);
@@ -72,15 +77,22 @@ describe('i18n dictionaries', () => {
     // Symbols and unit strings the field itself renders.
     'conflicts.pair', 'customField.ppm', 'timeline.speed', 'timeline.clock',
     'timeline.activity', 'timeline.band', 'canvas.clock', 'rail.png',
-    // View-cube initials: the Latin abbreviations collide, so every dictionary
-    // keeps the English letters (only the CJK ones use single ideographs).
+    // View-cube initials: the Latin abbreviations collide, so the Latin-script
+    // dictionaries keep the English letters (the CJK ones — zh/zh-tw, and
+    // second-batch ja/ko — use single ideographs instead).
     'vc.top', 'vc.bottom', 'vc.front', 'vc.back', 'vc.left', 'vc.right',
     // Words that genuinely coincide with English in at least one shipped
-    // language (fr 'Pause'/'Collision'/'alliance', es 'Robot'/'General').
+    // language (fr 'Pause'/'Collision'/'alliance', es 'Robot'/'General',
+    // nl 'Timing'/'Updates'/'bumper (m)'/'Meters (m)' etc.).
     'prefs.section.general', // Spanish 'General' is identical.
     'workspace.details', 'robots.identity', 'robots.title',
     'robots.collision', 'robots.alliance', 'timeline.pause', 'timeline.collision',
     'site.version', 'about.version',
+    // Dutch coincidences: loanwords and shared unit plurals that spell exactly
+    // like the English source (nl 'Timing', 'Updates', 'bumper (m)',
+    // 'Bumpers {l} × {w} m', 'Meters/Centimeters/Inches (m/cm/in)').
+    'robots.timing', 'prefs.section.updates', 'robots.bumper', 'robots.profileEntry',
+    'prefs.unit.m', 'prefs.unit.cm', 'prefs.unit.in',
     // Tokens sent to the OS unchanged.
     'prefs.channel.stable', 'prefs.channel.beta',
   ]);
@@ -113,11 +125,13 @@ describe('language picker', () => {
   /**
    * Order comes from the registry's ASCII English sort key, not from a
    * collator — see the comment on LANGUAGES (report §7.2 v1.20). 'system' is a
-   * mode and stays pinned first; Chinese sorts first, so the two CJK names
-   * head the list and the Latin names keep their own alphabetical order.
+   * mode and stays pinned first; Chinese sorts first, so the three Chinese
+   * names head the list and the rest keep their own alphabetical order.
    */
   it('offers the languages in a fixed alphabetical order after “system”', () => {
-    expect([...LANGUAGES]).toEqual(['system', 'zh', 'zh-hk', 'zh-tw', 'en', 'fr', 'he', 'pt-BR', 'es', 'tr']);
+    expect([...LANGUAGES]).toEqual([
+      'system', 'zh', 'zh-hk', 'zh-tw', 'cs', 'nl', 'en', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-BR', 'es', 'tr',
+    ]);
   });
 
   it('lists exactly the shipped dictionaries', () => {
@@ -128,9 +142,14 @@ describe('language picker', () => {
   it('labels each language in its own language', () => {
     expect(CODES.map((c) => langLabel(c))).toEqual([
       'English',
+      'Čeština',
       'Español',
       'Français',
       'עברית',
+      '日本語',
+      '한국어',
+      'Nederlands',
+      'Polski',
       'Português (Brasil)',
       'Türkçe',
       '简体中文',
@@ -141,9 +160,14 @@ describe('language picker', () => {
       '简体中文',
       '繁體中文（中國香港）',
       '繁體中文（中國台灣）',
+      'Čeština',
+      'Nederlands',
       'English',
       'Français',
       'עברית',
+      '日本語',
+      '한국어',
+      'Polski',
       'Português (Brasil)',
       'Español',
       'Türkçe',
@@ -173,8 +197,26 @@ describe('system language detection', () => {
     expect(langFromTags(['pt-BR'])).toBe('pt-BR');
     expect(langFromTags(['he-IL'])).toBe('he');
     // Anything unsupported still lands on English rather than undefined.
-    expect(langFromTags(['de-DE', 'ja-JP'])).toBe('en');
+    expect(langFromTags(['de-DE', 'it-IT'])).toBe('en');
     expect(langFromTags([])).toBe('en');
+  });
+
+  it('maps the second-batch language tags (nl/pl/ja/ko/cs)', () => {
+    // Bare tags and the regions those communities actually send.
+    expect(langFromTags(['nl'])).toBe('nl');
+    expect(langFromTags(['nl-NL'])).toBe('nl');
+    expect(langFromTags(['nl-BE'])).toBe('nl');
+    expect(langFromTags(['pl'])).toBe('pl');
+    expect(langFromTags(['pl-PL'])).toBe('pl');
+    expect(langFromTags(['ja'])).toBe('ja');
+    expect(langFromTags(['ja-JP'])).toBe('ja');
+    expect(langFromTags(['ko'])).toBe('ko');
+    expect(langFromTags(['ko-KR'])).toBe('ko');
+    expect(langFromTags(['cs'])).toBe('cs');
+    expect(langFromTags(['cs-CZ'])).toBe('cs');
+    // Preference order still wins over any single tag.
+    expect(langFromTags(['en-US', 'ja-JP'])).toBe('en');
+    expect(langFromTags(['de-DE', 'ko-KR', 'en'])).toBe('ko');
   });
 
   it('routes every Portuguese tag to the one shipped Portuguese dictionary', () => {
