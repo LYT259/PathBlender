@@ -1074,7 +1074,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         root: chassis.group,
         robot: r,
         pods: chassis.pods,
-        steer: modules.map(() => 0),
+        // Parked at the installed angle from the chassis CAD; steering
+        // replaces it with the absolute motion angle once moving.
+        steer: modules.map((m) => moduleBaseYaw(m)),
         modules,
       });
       st.dirty();
@@ -1113,10 +1115,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         for (let i = 0; i < rig.pods.length; i++) {
           const a = angles[i]!;
           if (a !== null) rig.steer[i] = a;
-          // Installed per-corner yaw (from the user's chassis CAD) plus
-          // steering; robot-frame yaw maps to render yaw with the
-          // opposite sign (see the frame notes in chassis3d.ts).
-          rig.pods[i]!.rotation.y = -(moduleBaseYaw(rig.modules[i]!) + rig.steer[i]!);
+          // steer[] IS the absolute wheel angle in robot frame (the
+          // installed base yaw only seeds it while parked); robot-frame
+          // yaw maps to render yaw with the opposite sign.
+          rig.pods[i]!.rotation.y = -rig.steer[i]!;
         }
       }
       st.dirty();
