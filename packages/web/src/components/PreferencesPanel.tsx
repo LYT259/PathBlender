@@ -7,7 +7,7 @@ import {
   useMouseControls,
   type MouseControlsScheme,
 } from '../mouse-controls';
-import { lengthUnitExample, LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
+import { lengthUnitExample, useLengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
 import { checkForUpdate, installPendingUpdate } from '../update-check';
 import { APP_VERSION, VERSION_NOTES } from '../version-info';
@@ -17,6 +17,7 @@ import { Icon } from './Icon';
 import { MouseControlsDiagram } from './MouseControlsDiagram';
 import { IconAppearancePicker } from './IconAppearancePicker';
 import './PreferencesPanel.css';
+import { LENGTH_UNIT_CHOICES, LENGTH_UNIT_PREVIEWS, isSupportedLengthUnit, type LengthUnitChoice } from './length-unit-options';
 
 type Section = 'general' | 'controls' | 'updates' | 'about';
 
@@ -48,7 +49,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const [iconDraft, setIconDraft] = useState<IconAppearanceMode | null>(null);
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
   const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
-  const [unitDraft, setUnitDraft] = useState<LengthUnit | null>(null);
+  const [unitDraft, setUnitDraft] = useState<LengthUnitChoice | null>(null);
   const [copyStatus, setCopyStatus] = useState('');
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck>({ kind: 'idle' });
   const id = useId();
@@ -60,8 +61,9 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const updateChannel = channelDraft ?? channel;
   const mouse = mouseDraft ?? mouseControls;
   const unit = unitDraft ?? lengthUnit;
+  const supportedUnit = isSupportedLengthUnit(unit);
   const dirty = language !== langChoice || theme !== mode || icon !== iconMode ||
-    updateChannel !== channel || mouse !== mouseControls || unit !== lengthUnit;
+    updateChannel !== channel || mouse !== mouseControls || (supportedUnit && unit !== lengthUnit);
   const updateStatusText =
     updateCheck.kind === 'checking' ? t('prefs.checking')
       : updateCheck.kind === 'upToDate' ? t('updates.upToDate')
@@ -115,7 +117,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
       setUpdateCheck({ kind: 'idle' });
     }
     if (mouse !== mouseControls) setMouseControls(mouse);
-    if (unit !== lengthUnit) setLengthUnit(unit);
+    if (isSupportedLengthUnit(unit) && unit !== lengthUnit) setLengthUnit(unit);
     // Save keeps the window open (user request 2026-10-02): drafts become
     // current, dirty clears, and the user closes via Cancel/Escape/⌘W when
     // done — matching System Settings' persist-in-place behavior.
@@ -169,11 +171,12 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
           </div>
           <div className="preferences-group">
             <label className="preferences-setting"><span>{t('prefs.units')}</span>
-              <select value={unit} onChange={(event) => setUnitDraft(event.target.value as LengthUnit)}>
-                {LENGTH_UNITS.map((choice) => <option key={choice} value={choice}>{t(`prefs.unit.${choice}`)}</option>)}
+              <select value={unit} onChange={(event) => setUnitDraft(event.target.value as LengthUnitChoice)}>
+                {lengthUnit === 'ftin' && <option value="ftin">{t('prefs.unit.ftin')}</option>}
+                {LENGTH_UNIT_CHOICES.map((choice) => <option key={choice} value={choice}>{t(`prefs.unit.${choice}`)}</option>)}
               </select>
             </label>
-            <p className="preferences-setting-description">{t('prefs.units.hint')}: {lengthUnitExample(unit)}</p>
+            <p className="preferences-setting-description">{isSupportedLengthUnit(unit) ? `${t('prefs.units.hint')} ${lengthUnitExample(unit)}` : t('prefs.units.preview', { value: LENGTH_UNIT_PREVIEWS[unit] })}</p>
           </div>
         </>}
         {section === 'updates' && <>
