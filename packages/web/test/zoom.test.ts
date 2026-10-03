@@ -224,11 +224,14 @@ describe('splitInstant', () => {
     expect(instant).toBeCloseTo(Math.pow(2, CHASE_INSTANT_SHARE), 12);
   });
 
-  it('is fully instant — Onshape applies zoom with zero animation (R11)', () => {
-    // Measured 2026-10-03: the full step is visible in a same-frame
-    // screenshot after one event. Share 1 keeps the chase scaffolding inert.
-    expect(CHASE_INSTANT_SHARE).toBe(1);
-    expect(splitInstant(1.74)).toEqual({ instant: 1.74, deferred: 1 });
+  it('splits half instant — continuous streams glide, restored after R11 felt steppy', () => {
+    // R11 set share 1 (Onshape applies zoom un-animated), but on WKWebView
+    // batched gesture/scroll deliveries then read as visible steps
+    // ("没有之前那么丝滑"). 0.5 = the R8-approved instant answer + glide.
+    expect(CHASE_INSTANT_SHARE).toBe(0.5);
+    const { instant, deferred } = splitInstant(1.74);
+    expect(instant).toBeCloseTo(Math.sqrt(1.74), 12);
+    expect(instant * deferred).toBeCloseTo(1.74, 12);
   });
 
   it('guards degenerate factors', () => {
