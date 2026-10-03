@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSessionState } from './session-state';
 import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
+import { isExampleRobot } from './example-robot';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
 import { PreferencesPanel } from './components/PreferencesPanel';
@@ -51,9 +52,6 @@ const SESSION_EXT = '.pb';
 // extension; they must keep opening (naming-is-contract: files on disk).
 const LEGACY_SESSION_EXT = '.ghpb.json';
 const isSessionFileName = (name: string) => name.endsWith(SESSION_EXT) || name.endsWith(LEGACY_SESSION_EXT);
-// Switching a demo robot to a real library route keeps its stable id. That
-// robot now belongs to the user and must survive "End example".
-const isExampleRobot = (robot: SessionTrajectory) => robot.trajectory.id.startsWith('welcome-example-') && !robot.routeId;
 // The project's public home — the repo is private today; the link simply
 // starts resolving once it goes public.
 const GITHUB_URL = 'https://github.com/LYT259/pathblender';

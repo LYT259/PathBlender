@@ -106,6 +106,8 @@ export interface SessionFileV1 {
   };
   savedAt: string;
   robots: Array<{
+    /** Stable trajectory id, kept across save/load (v1.6+); older files lack it. */
+    id?: string;
     name: string;
     teamName: string;
     /** Optional since v1.4; older session files simply lack it. */
@@ -153,6 +155,7 @@ export function serializeSession(
         : undefined,
     savedAt: new Date().toISOString(),
     robots: sts.map((st) => ({
+      id: st.trajectory.id,
       name: st.trajectory.name,
       teamName: st.trajectory.teamName,
       teamNumber: st.trajectory.teamNumber,
@@ -199,7 +202,7 @@ export function deserializeSession(text: string): {
     : undefined;
   const robots = v.robots.map((r) => {
     const traj: Trajectory = {
-      id: crypto.randomUUID(),
+      id: r.id ?? crypto.randomUUID(),
       name: r.name,
       teamName: r.teamName,
       teamNumber: r.teamNumber ?? '',

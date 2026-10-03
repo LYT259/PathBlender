@@ -31,6 +31,16 @@ const DICTS: Record<Lang, Record<MessageKey, string>> = {
 };
 
 /**
+ * Localized demo names from before the 2026-10-03 rename to 00001/00002.
+ * Demos autosaved before the rename carry these as robot names and lack the
+ * stable `welcome-example-` id; matching them lets a relaunched pre-rename
+ * demo still offer its "End example" exit. Data for recognition, not UI copy.
+ */
+export const legacyExampleNames: ReadonlySet<string> = new Set(
+  Object.values(DICTS).flatMap((dict) => [dict['welcome.exampleNameA'], dict['welcome.exampleNameB']]),
+);
+
+/**
  * Language registry (report §7.2 v1.20): one row per language, holding the name
  * it is sorted by and the name it is displayed by. `Record<Lang, …>` makes
  * adding a code to `Lang` without adding a row a compile error.
