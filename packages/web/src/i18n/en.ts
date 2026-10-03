@@ -6,7 +6,7 @@ export const en = {
   'prefs.installUpdate': "Install and relaunch",
   'prefs.checkSavedChannel': "Update checks use the saved channel: {channel}.",
   'prefs.appIcon': "App icon",
-  'prefs.appIconPreview': "Preview only. Your app icon will not change.",
+  'prefs.appIconHint': "Applies to the Dock icon while the app is running. Finder and Launchpad always follow the system appearance.",
   'welcome.title': 'Import paths to get started',
   'welcome.description': 'Replay paths together and check for interference.',
   'welcome.folderAdvice': 'Import a whole folder so you can switch routes when a conflict appears.',

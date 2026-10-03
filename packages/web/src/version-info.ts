@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.60';
+export const APP_VERSION = '0.1.6-beta.61';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.61', date: '2026-10-03', note: 'App icon setting now really switches the Dock icon — independent from the interface theme, follows the OS by default / 应用图标设置真正生效——独立于界面主题，默认跟随系统' },
   { version: '0.1.6-beta.60', date: '2026-10-03', note: 'Settings window can check for updates, then install and relaunch on confirmation / 设置窗口可检查更新，确认后安装并重启' },
   { version: '0.1.6-beta.59', date: '2026-10-03', note: 'Tangential module rest pose measured from the STEP assembly / 按 STEP 装配实测改切向静止姿态' },
   { version: '0.1.6-beta.58', date: '2026-10-03', note: 'Mouse control diagram, update-check UI and full About version / 鼠标键位示意图、检查更新界面及完整版本号' },

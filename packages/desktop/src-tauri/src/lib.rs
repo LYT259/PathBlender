@@ -486,12 +486,14 @@ fn push_menu_event<R: tauri::Runtime>(app: &AppHandle<R>, name: &str) {
     }
 }
 
-/// Mirror the in-app theme onto the running app's Dock tile (macOS only).
-/// The bundle's icon catalog already tracks the OS appearance; this runtime
-/// override (`setApplicationIconImage` with explicit artwork) makes the
-/// running tile track the app's own theme choice instead, bypassing the
-/// appearance-rendering pipeline entirely. Missing artwork or a non-macOS
-/// host is a quiet no-op — the catalog remains the fallback there.
+/// Apply the app-icon appearance choice (web-side app-icon.tsx, independent
+/// from the UI theme) to the running app's Dock tile (macOS only). The
+/// bundle's icon catalog already tracks the OS appearance; this runtime
+/// override (`setApplicationIconImage` with explicit artwork) pins the tile
+/// to the choice — in 'system' mode the web side re-pushes the OS-matching
+/// artwork on every appearance flip, so no Dock re-render behavior is
+/// relied upon. Missing artwork or a non-macOS host is a quiet no-op — the
+/// catalog remains the fallback there.
 #[tauri::command]
 fn set_dock_icon(app: AppHandle, dark: bool) -> Result<(), String> {
     #[cfg(target_os = "macos")]
