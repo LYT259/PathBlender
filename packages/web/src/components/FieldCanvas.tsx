@@ -457,13 +457,14 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       const id = r.trajectory.id;
       let last = steerRef.current.get(id);
       if (!last || last.length !== modules.length) {
-        last = modules.map(() => 0);
+        // Parked at the installed angle; steering replaces it once moving.
+        last = modules.map((m) => moduleBaseYaw(m));
         steerRef.current.set(id, last);
       }
       const angles = moduleSteeringAngles(
         state ?? { heading: pose.heading, vx: 0, vy: 0, omega: 0 },
         modules,
-      ).map((a, i) => (a === null ? null : a + moduleBaseYaw(modules[i]!)));
+      );
       const wheels = angles.map((a, i) => {
         const angle = a ?? last![i]!;
         last![i] = angle;
