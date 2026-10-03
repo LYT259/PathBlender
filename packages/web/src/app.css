@@ -676,3 +676,25 @@ body.desktop .editor-bar { padding-left: 84px; }
 
 /* ---------- ViewCube overlay ---------- */
 .field-canvas-3d { position: relative; }
+
+/* ---------- RTL (Hebrew) ----------
+   The html element carries dir=rtl, set by I18nProvider from the active
+   language, so prose, dialogs and reading order follow right-to-left.
+   Physical geometry never mirrors: the field canvases draw their own pixels,
+   and the containers below pin their own direction — a number range like
+   3.5–6.0 or a pairing "Alpha × Bravo" must not reorder inside RTL flow. */
+html[dir='rtl'] .timeline-workspace {
+  /* A physical time axis: ticks, the clock and the verbatim
+     "name: 3.5–6.0 s" rows stay left-to-right. */
+  direction: ltr;
+}
+html[dir='rtl'] .conflict-list {
+  /* Data rows (ranges, coordinates, edge names, robot pairs) are order-
+     sensitive; Hebrew words inside them still render as correct words. */
+  direction: ltr;
+}
+html[dir='rtl'] input[type='number'],
+html[dir='rtl'] .robot-team-input {
+  /* Numbers stay left-to-right whatever the surrounding text does. */
+  direction: ltr;
+}
