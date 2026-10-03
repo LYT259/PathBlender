@@ -13,7 +13,7 @@ import {
 import { lengthUnitExample, LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
 import { checkForUpdate, installPendingUpdate } from '../update-check';
-import { APP_VERSION, VERSION_NOTES } from '../version-info';
+import { APP_VERSION, noteText, VERSION_NOTES } from '../version-info';
 import { copyText } from '../download';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from '../viewer';
 import { Icon } from './Icon';
@@ -155,7 +155,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
     <div className="preferences-main">
       <section className="preferences-content" role="tabpanel" tabIndex={0}
         key={section} id={`${id}-${section}-panel`} aria-labelledby={`${id}-${section}-tab`}>
-        <header className="preferences-heading"><h2>{t(`prefs.section.${section}`)}</h2><p>{t(`prefs.description.${section}`)}</p></header>
+        <header className="preferences-heading"><h2>{t(`prefs.section.${section}`)}</h2></header>
         {section === 'general' && <>
           <div className="preferences-group"><label className="preferences-setting">
             <span>{t('prefs.language')}</span>
@@ -217,32 +217,31 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
                 <option value="stable">{t('prefs.channel.stable')}</option><option value="beta">{t('prefs.channel.beta')}</option>
               </select>
             </label>
-            <p className="preferences-setting-description">{t(updateChannel === 'stable' ? 'prefs.stableHint' : 'prefs.betaHint')}</p>
+            <div className="preferences-update-check">
+              <div className="update-actions">
+                <button type="button" className="btn accent" disabled={updateCheck.kind === 'checking' || updateCheck.kind === 'installing'}
+                  aria-describedby={`${id}-update-status`} onClick={startUpdateCheck}><Icon name="refresh" size={15} />{t('prefs.checkUpdates')}</button>
+                {updateCheck.kind === 'found' &&
+                  <button type="button" className="btn" onClick={startInstall}>{t('prefs.installUpdate')}</button>}
+              </div>
+              <p id={`${id}-update-status`} role="status">{updateStatusText}</p>
+              {savedChannelHint && <p>{savedChannelHint}</p>}
+            </div>
           </div> : <div className="preferences-group"><div className="preferences-setting"><span>{t('site.version')}</span>
             <a className="prefs-link" href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{t(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')} ↗</a>
           </div></div>}
-          {desktop && <div className="preferences-update-check">
-            <div className="update-actions">
-              <button type="button" className="btn accent" disabled={updateCheck.kind === 'checking' || updateCheck.kind === 'installing'}
-                aria-describedby={`${id}-update-status`} onClick={startUpdateCheck}><Icon name="refresh" size={15} />{t('prefs.checkUpdates')}</button>
-              {updateCheck.kind === 'found' &&
-                <button type="button" className="btn" onClick={startInstall}>{t('prefs.installUpdate')}</button>}
-            </div>
-            <p id={`${id}-update-status`} role="status">{updateStatusText}</p>
-            {savedChannelHint && <p>{savedChannelHint}</p>}
-          </div>}
         </>}
         {section === 'about' && <>
           <div className="preferences-product"><strong>PathBlender</strong><span className="preferences-version" dir="ltr">Version {APP_VERSION}</span>
             <button className="btn" type="button" onClick={() => {
-              void copyText(`PathBlender ${APP_VERSION} (${desktop ? 'desktop' : 'web'})\n` + VERSION_NOTES.slice(0, 5).map((note) => `${note.version} (${note.date}) — ${note.note}`).join('\n'))
+              void copyText(`PathBlender ${APP_VERSION} (${desktop ? 'desktop' : 'web'})\n` + VERSION_NOTES.slice(0, 5).map((note) => `${note.version} (${note.date}) — ${noteText(note.note, langChoice)}`).join('\n'))
                 .then((ok) => setCopyStatus(t(ok ? 'about.copyDone' : 'about.copyFailed')));
             }}>{t('about.copy')}</button>
             <p className="preferences-copy-status" role="status">{copyStatus}</p>
           </div>
           {VERSION_NOTES.length > 0 && <div className="preferences-history"><h3>{t('prefs.releaseNotes')}</h3>
             <ol>{VERSION_NOTES.slice(0, 5).map((note) => <li key={note.version}>
-              <div><strong dir="ltr">Version {note.version}</strong><time dateTime={note.date}>{note.date}</time></div><p>{note.note}</p>
+              <div><strong dir="ltr">Version {note.version}</strong><time>{note.date}</time></div><p>{noteText(note.note, langChoice)}</p>
             </li>)}</ol>
           </div>}
         </>}
