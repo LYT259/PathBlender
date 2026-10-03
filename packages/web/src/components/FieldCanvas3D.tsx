@@ -403,7 +403,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     renderer.setPixelRatio((window.devicePixelRatio || 1));
     // Soft shadows are the strongest depth cue for the field structures.
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     // AdvantageScope's lighting recipe: no tone mapping, no environment
     // map, no fog — a hemisphere fill plus one shadow-casting key light.
     // (The earlier ACES+studio-env stack overexposed the official models.)
@@ -518,6 +518,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (!pan.active) return;
       pan.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
+      endInteraction();
     };
     const onDragZoomMove = (e: PointerEvent) => {
       if (!dragZoom.active) return;
@@ -535,6 +536,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (!dragZoom.active) return;
       dragZoom.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
+      endInteraction();
     };
     const onDragMove = (e: PointerEvent) => {
       if (!drag.active) return;
@@ -557,6 +559,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (!drag.active) return;
       drag.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
+      endInteraction();
     };
     renderer.domElement.addEventListener('pointerdown', onDragDown);
     renderer.domElement.addEventListener('pointermove', onDragMove);
@@ -636,7 +639,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const sun = new THREE.DirectionalLight(0xffffff, 1.1 * Math.PI);
     sun.position.set(9, 16, 8);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(4096, 4096);
     sun.shadow.camera.left = -12;
     sun.shadow.camera.right = 12;
     sun.shadow.camera.top = 12;
@@ -724,6 +727,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       gestureDone = true;
       markGestureEnd();
       lastScale = 1;
+      endInteraction();
     };
     renderer.domElement.addEventListener('gesturestart', onGestureStart);
     renderer.domElement.addEventListener('gesturechange', onGestureChange);
@@ -763,7 +767,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // or drag runs (plus this linger window), render at pixel ratio 1 with
     // the shadow map frozen; restore full quality once interaction settles.
     const BASE_PIXEL_RATIO = (window.devicePixelRatio || 1);
-    const INTERACTIVE_LINGER_MS = 250;
+    const INTERACTIVE_LINGER_MS = 100;
     let interactiveUntil = 0;
     let lowQuality = false;
     const setLowQuality = (on: boolean) => {
@@ -774,6 +778,13 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
     const noteInteraction = () => {
       interactiveUntil = performance.now() + INTERACTIVE_LINGER_MS;
+    };
+    // Finger lift / gesture end: drop the linger so the next frame is
+    // back at full pixel ratio — zooming in to inspect detail went
+    // visibly soft when the low ratio waited out the window (wheel
+    // streams still get the short debounce via noteInteraction).
+    const endInteraction = () => {
+      interactiveUntil = 0;
     };
     let lastFrameT = performance.now();
 
@@ -811,12 +822,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     viewcubeEl.className = 'viewcube';
     const cubeCanvas = document.createElement('canvas');
     viewcubeEl.appendChild(cubeCanvas);
-    const homeBtn = document.createElement('button');
-    homeBtn.className = 'vc-home';
-    homeBtn.title = 'Home';
-    homeBtn.innerHTML =
-      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
-    viewcubeEl.appendChild(homeBtn);
     host.appendChild(viewcubeEl);
 
     const cubeRenderer = new THREE.WebGLRenderer({ canvas: cubeCanvas, alpha: true, antialias: true });
@@ -929,11 +934,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
     cubeCanvas.addEventListener('pointerdown', onCubeDown);
     cubeCanvas.addEventListener('pointermove', onCubeMove);
-    const onHome = (ev: Event) => {
-      ev.preventDefault();
-      flyTo(new THREE.Vector3(...CAM_HOME));
-    };
-    homeBtn.addEventListener('click', onHome);
 
     let raf = 0;
     const loop = () => {
@@ -992,7 +992,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       controls.removeEventListener('start', onUserStart);
       cubeCanvas.removeEventListener('pointerdown', onCubeDown);
       cubeCanvas.removeEventListener('pointermove', onCubeMove);
-      homeBtn.removeEventListener('click', onHome);
       cubeRenderer.dispose();
       viewcubeEl.remove();
       renderer.domElement.removeEventListener('pointerdown', onDragDown);
@@ -1075,6 +1074,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     if (fieldImageUrl) {
       const tex = new THREE.TextureLoader().load(fieldImageUrl);
       tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = st.renderer.capabilities.getMaxAnisotropy();
       // The field artwork runs left→right with world +x, but the render frame
       // maps world +x to −X (see field3d-frame), so the image is flipped
       // along U or the flat fallback shows the blue alliance on the red side.
@@ -1163,7 +1163,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       const { position: tagPos, quaternion: tagQuat } = tagRenderPose(tag, cx, cy);
       const quad = new THREE.Mesh(
         new THREE.PlaneGeometry(TAG_SIZE_M * (10 / 8), TAG_SIZE_M * (10 / 8)),
-        new THREE.MeshBasicMaterial({ map: aprilTagTexture(tag.id), side: THREE.DoubleSide, toneMapped: false }),
+        new THREE.MeshBasicMaterial({ map: aprilTagTexture(tag.id, st.renderer.capabilities.getMaxAnisotropy()), side: THREE.DoubleSide, toneMapped: false }),
       );
       quad.name = `apriltag-${tag.id}`;
       quad.position.copy(tagPos);
@@ -1374,7 +1374,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // (2018 is gone). buildChassis3D scales the frame to the robot's
       // chassis rectangle, so file-sized robots still fit exactly.
       const frameSize: FrameSize = field.year === 2026 ? '27' : '30';
-      const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplates[frameSize] ?? null);
+      const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplates[frameSize] ?? null, st.renderer.capabilities.getMaxAnisotropy());
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,
