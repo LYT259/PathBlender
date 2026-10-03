@@ -21,7 +21,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { CUSTOM_FIELD_ID, fieldById, withFieldVariant } from '@pathblender/core';
+import { CUSTOM_FIELD_ID, FIELDS, fieldById, withFieldVariant } from '@pathblender/core';
 import { FIELD_IMAGES, fieldImageFor } from '../src/field-images';
 
 const asset = (name: string) => resolve(__dirname, `../../../assets/fields/${name}`);
@@ -180,11 +180,10 @@ describe('fieldImageFor (variant- and style-aware artwork registry)', () => {
     }
   });
 
-  it('2019–2020 have no rendered key — any style resolves their only artwork', () => {
-    for (const id of ['deepspace-2019', 'infinitercharge-2020']) {
-      expect(FIELD_IMAGES[`${id}/rendered`]).toBeUndefined();
-      expect(fieldImageFor(id, 'welded', 'rendered', undefined)).toBe(FIELD_IMAGES[id]);
-      expect(fieldImageFor(id, 'welded', 'schematic', undefined)).toBe(FIELD_IMAGES[id]);
+  it('every bundled season resolves both its artwork styles', () => {
+    for (const f of FIELDS) {
+      expect(fieldImageFor(f.id, 'welded', 'schematic', undefined)).toBeDefined();
+      expect(fieldImageFor(f.id, 'welded', 'rendered', undefined)).toBeDefined();
     }
   });
 
