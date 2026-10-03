@@ -15,7 +15,7 @@ export function IconAppearancePicker({ value, onChange }: {
 }) {
   const { t } = useI18n();
   const id = useId();
-  return <fieldset className="preferences-appearance preferences-icon-appearance" aria-describedby={`${id}-hint`}>
+  return <fieldset className="preferences-appearance preferences-icon-appearance">
     <legend>{t('prefs.appIcon')}</legend>
     <div className="preferences-theme-options">
       {(['system', 'light', 'dark'] as const).map((choice) => <label key={choice} className="preferences-theme-choice">
@@ -29,6 +29,5 @@ export function IconAppearancePicker({ value, onChange }: {
         <span>{t(`theme.${choice}`)}</span>
       </label>)}
     </div>
-    <p className="preferences-icon-hint" id={`${id}-hint`}>{t('prefs.appIconHint')}</p>
   </fieldset>;
 }
