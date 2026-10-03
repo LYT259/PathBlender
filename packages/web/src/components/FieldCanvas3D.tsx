@@ -561,11 +561,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // orbit center), with the ratio softened via pinchZoomFactor. Events
     // after gestureend are ignored (user round 3: lagging events flushed
     // at finger lift kept zooming after release).
-    // Round 5 chase scaffolding — inert since R11 (Onshape applies zoom
-    // with zero animation, measured 2026-10-03; CHASE_INSTANT_SHARE = 1):
-    // events only touch a chase target (remaining view-zoom factor + anchor
-    // NDC) that the rAF loop would apply in exponential steps via the
-    // OrbitControls cursor-zoom internals.
+    // Round 5 pinch chase: events only touch a chase target (remaining
+    // view-zoom factor + anchor NDC) that the rAF loop applies in
+    // exponential steps via the OrbitControls cursor-zoom internals, so
+    // batched gesture events read as fluid motion instead of steps.
     let lastScale = 1;
     let gestureDone = false;
     const pinchChase = { factor: 1, nx: 0, ny: 0 };
@@ -588,10 +587,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
           const rect = renderer.domElement.getBoundingClientRect();
           pinchChase.nx = (((g.clientX ?? rect.left + rect.width / 2) - rect.left) / rect.width) * 2 - 1;
           pinchChase.ny = -((((g.clientY ?? rect.top + rect.height / 2) - rect.top) / rect.height) * 2 - 1);
-          // Onshape-identical responsiveness (measured 2026-10-03): every
-          // event applies fully in its own frame — CHASE_INSTANT_SHARE is
-          // 1, so `deferred` is a no-op and the chase factor never grows.
-          // The chase scaffolding stays only so the share can be re-tuned.
+          // Half of every event applies on arrival (round 7; restored
+          // 2026-10-03 — full-instant read as steps), the chase loop
+          // glides the deferred remainder over ~5τ.
           const { instant, deferred } = splitInstant(factor);
           applyPinchStep(instant);
           pinchChase.factor *= deferred; // remaining view zoom to apply
