@@ -53,10 +53,14 @@ function cmpSemver(a, b) {
 function readVersionNotes() {
   const ts = readFileSync(notesTsArg ? resolve(notesTsArg) : join(root, 'packages/web/src/version-info.ts'), 'utf-8');
   const entries = [];
-  const re = /\{ version: '((?:\\.|[^'\\])*)', date: '((?:\\.|[^'\\])*)', note: '((?:\\.|[^'\\])*)' \}/g;
+  // New shape (2026-10-03): each entry carries a per-language note object.
+  const re = /\{ version: '((?:\\.|[^'\\])*)', date: '((?:\\.|[^'\\])*)', note: \{\s*([\s\S]*?)\s*\} \}/g;
   for (const m of ts.matchAll(re)) {
     const unesc = (s) => s.replace(/\\'/g, "'").replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
-    entries.push({ version: unesc(m[1]), date: m[2], note: unesc(m[3]) });
+    const langVal = /(?:(?:'([a-z][a-z-]*)')|([a-z][a-z-]*))\s*:\s*(['"])((?:\\.|(?!\3)[^\\])*)\3/g;
+    const note = {};
+    for (const lm of m[3].matchAll(langVal)) note[lm[1] ?? lm[2]] = unesc(lm[4]);
+    entries.push({ version: unesc(m[1]), date: m[2], note });
   }
   if (entries.length === 0) throw new Error('no VERSION_NOTES entries parsed from version-info.ts');
   return entries; // newest-first (bump-version.mjs prepends)
@@ -80,9 +84,17 @@ if (isStable(version)) {
   selected = [own];
 }
 
+// GitHub-visible notes stay English-primary with the Chinese wording
+// alongside (repo convention): take en/zh from the per-language structure.
 const changes = selected
-  .filter((e) => e.note.trim() !== '')
-  .map((e) => `- v${e.version} (${e.date}): ${e.note.trim()}`);
+  .filter((e) => e.note.en?.trim())
+  .map((e) => {
+    const en = e.note.en.trim();
+    const zh = e.note.zh?.trim();
+    return zh && zh !== en
+      ? `- v${e.version} (${e.date}): ${en} / ${zh}`
+      : `- v${e.version} (${e.date}): ${en}`;
+  });
 const changesBlock =
   changes.length > 0
     ? changes.join('\n')

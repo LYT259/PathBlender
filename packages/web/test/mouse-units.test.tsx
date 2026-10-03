@@ -7,7 +7,15 @@ import {
   useLengthUnit,
   writeLengthUnit,
 } from '../src/length-units';
-import { readMouseControls, useMouseControls, writeMouseControls } from '../src/mouse-controls';
+import {
+  defaultConstrainedPref,
+  penAsMousePref,
+  readMouseControls,
+  resolveMouseAction,
+  reverseScrollPref,
+  useMouseControls,
+  writeMouseControls,
+} from '../src/mouse-controls';
 
 beforeEach(() => localStorage.clear());
 
@@ -76,5 +84,51 @@ describe('mouse controls preference', () => {
     const b = renderHook(() => useMouseControls());
     act(() => a.result.current[1]('solidworks'));
     expect(b.result.current[0]).toBe('solidworks');
+  });
+});
+
+describe('view checkbox preferences', () => {
+  it('defaults: reverse scroll off, constrained off, pen-as-mouse on', () => {
+    expect(reverseScrollPref.read()).toBe(false);
+    expect(defaultConstrainedPref.read()).toBe(false);
+    expect(penAsMousePref.read()).toBe(true);
+  });
+
+  it('persists on/off and restores them', () => {
+    reverseScrollPref.write(true);
+    penAsMousePref.write(false);
+    expect(localStorage.getItem('pb.reverseScroll')).toBe('on');
+    expect(localStorage.getItem('pb.penAsMouse')).toBe('off');
+    expect(reverseScrollPref.read()).toBe(true);
+    expect(penAsMousePref.read()).toBe(false);
+  });
+
+  it('updates hooks in-process (settings dialog shares the window)', () => {
+    const a = renderHook(() => reverseScrollPref.use());
+    const b = renderHook(() => reverseScrollPref.use());
+    act(() => a.result.current[1](true));
+    expect(b.result.current[0]).toBe(true);
+  });
+});
+
+describe('resolveMouseAction routing table', () => {
+  it('onshape: right orbits, middle pans, left idle', () => {
+    expect(resolveMouseAction('onshape', 2, { ctrlKey: false, shiftKey: false, altKey: false }, false))
+      .toEqual({ kind: 'orbit', constrained: false });
+    expect(resolveMouseAction('onshape', 1, { ctrlKey: false, shiftKey: false, altKey: false }, false))
+      .toEqual({ kind: 'pan' });
+    expect(resolveMouseAction('onshape', 0, { ctrlKey: false, shiftKey: false, altKey: false }, false))
+      .toEqual({ kind: 'none' });
+  });
+
+  it('solidworks: middle orbits, Ctrl pans, Shift drag-zooms, left idle', () => {
+    expect(resolveMouseAction('solidworks', 1, { ctrlKey: false, shiftKey: false, altKey: false }, false))
+      .toEqual({ kind: 'orbit', constrained: false });
+    expect(resolveMouseAction('solidworks', 1, { ctrlKey: true, shiftKey: false, altKey: false }, false))
+      .toEqual({ kind: 'pan' });
+    expect(resolveMouseAction('solidworks', 1, { ctrlKey: false, shiftKey: true, altKey: false }, false))
+      .toEqual({ kind: 'dragZoom' });
+    expect(resolveMouseAction('solidworks', 0, { ctrlKey: false, shiftKey: false, altKey: false }, false))
+      .toEqual({ kind: 'none' });
   });
 });
