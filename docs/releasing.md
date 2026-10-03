@@ -29,6 +29,9 @@
       **豁免清单（当前全部出站请求，逐处核对）**：web 版零出站请求（2026-09-30 AI 模块整体删除后已无任何 fetch）；
       桌面版仅「检查更新」按用户点击访问 GitHub Releases（feed JSON + 更新包，见 src-tauri/src/lib.rs 的
       FEED_STABLE/FEED_BETA 白名单）——除此之外出现任何新的网络调用都要在本清单登记或删掉。
+      **机制保证（2026-10-03 收紧）**：桌面版页面侧 CSP 为 `connect-src 'self'`——页面脚本发起的任何外发连接
+      （fetch/XHR/WebSocket，http/https/ws 一律）都会被 WebView 直接拦截；「路径不出机」由机制兜底而非仅靠代码
+      纪律。唯一出站通道 = Rust 原生 updater（tauri-plugin-updater 原生网络栈，不受页面 CSP 约束）。
 
 - [ ] README 隐私声明与实际行为一致（文件本地解析）
 
