@@ -11,7 +11,7 @@
  *
  * Every number below is verified against that season's official game
  * manual (primary sources, checked 2026-10-02): 2023–2026 from the
- * local reference/ archive PDFs; 2019/2020/2022 from the official
+ * local reference/ archive PDFs; 2022 from the official
  * firstinspires season-manual PDFs. Excerpts and rule numbers in
  * PathBlender_底盘与队号方案.md §2. Perimeter-capped seasons take the
  * max-area square (perimeter/4 per side).
@@ -47,11 +47,6 @@ function profile(frameLIn: number, frameWIn: number, bumperIn: number): SeasonRo
 
 /** Frame sides + bumper depth per side, inches, each row rule-verified. */
 const SEASONS: Readonly<Record<number, { frame: [number, number]; bumper: number; src: string }>> = {
-  // R3 FRAME PERIMETER ≤ 120 in (→ 30×30 in max square); bumper ¾ in
-  // plywood + 2½ in noodles → 3.25 in nominal.
-  2019: { frame: [30, 30], bumper: 3.25, src: '2019 R3 ≤120 in + ¾+2½ bumper' },
-  // R3 FRAME PERIMETER ≤ 120 in; bumper ¾ in plywood + 2½ in noodles.
-  2020: { frame: [30, 30], bumper: 3.25, src: '2020 R3 ≤120 in + ¾+2½ bumper' },
   // R104 FRAME PERIMETER ≤ 120 in; bumper ¾ in plywood + 2½ in noodles.
   2022: { frame: [30, 30], bumper: 3.25, src: '2022 R104 ≤120 in + ¾+2½ bumper' },
   // R104 FRAME PERIMETER ≤ 120 in; R408 construction ¾ in + 2½ in.

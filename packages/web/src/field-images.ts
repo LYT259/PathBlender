@@ -4,14 +4,12 @@
  * artwork styles — the flat schematic (PathPlanner, default key `id`) and a
  * semi-realistic render (AdvantageScope, key `id/rendered`); 2025's render
  * pair additionally registers `id/rendered/andymark` for its AndyMark sheet.
- * 2019–2020 have a single artwork (the AS render), registered under `id`.
+ * 2022 has a single artwork (the AS render), registered under `id`.
  * Resolution order: `id/rendered/andymark` → `id/rendered` → `id` → the
  * caller's custom-image URL (schematic is the base key, so a missing render
  * falls back to the field's only art).
  */
 import { CUSTOM_FIELD_ID, type FieldArtStyle } from '@pathblender/core';
-import field2019 from '../../../assets/fields/deepspace2019.png';
-import field2020 from '../../../assets/fields/infinitercharge2020.png';
 import field2022 from '../../../assets/fields/rapidreact2022.png';
 import field2022R from '../../../assets/fields/rapidreact2022-rendered.png';
 import field2023 from '../../../assets/fields/chargedup2023.png';
@@ -25,8 +23,6 @@ import field2026 from '../../../assets/fields/rebuilt2026.png';
 import field2026R from '../../../assets/fields/rebuilt2026-rendered.png';
 
 export const FIELD_IMAGES: Record<string, string> = {
-  'deepspace-2019': field2019,
-  'infinitercharge-2020': field2020,
   'rapidreact-2022': field2022,
   'rapidreact-2022/rendered': field2022R,
   'chargedup-2023': field2023,
