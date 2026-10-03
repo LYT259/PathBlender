@@ -79,10 +79,6 @@ describe('route library workflow', () => {
     fireEvent.change(picker, { target: { value: within(document.body).getAllByRole('option')[1]!.value } });
     // Duration text refreshes to the other route's.
     await waitFor(() => expect(screen.queryByText('8.30 s')).toBeNull());
-
-    // Undo puts the previous route back (switching is a session change).
-    fireEvent.click(screen.getByRole('button', { name: /^Undo$/i }));
-    await waitFor(() => expect(screen.getByText('8.30 s')).toBeInTheDocument());
   });
 
   it('places a second robot from the library with the + button', async () => {

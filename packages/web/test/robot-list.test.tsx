@@ -85,3 +85,63 @@ describe('robot workspace controls', () => {
     expect(screen.getByText('Robot data')).toBeInTheDocument();
   });
 });
+
+describe('team number chip (metadata edit, 2026-10-02)', () => {
+  it('edits the team number inline from the row', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    const onUpdate = vi.fn();
+    render(
+      <I18nProvider>
+        <RobotList
+          robots={[sample]}
+          conflicts={[]}
+          selectedId={null}
+          onSelect={vi.fn()}
+          onImport={vi.fn()}
+          onUpdate={onUpdate}
+          onPickRoute={vi.fn()}
+          onAddRoute={vi.fn()}
+          libraryRoutes={[]}
+          libraryProfiles={[]}
+        />
+      </I18nProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit team number' }));
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: '2910' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+    const [id, patch] = onUpdate.mock.calls[0]!;
+    expect(id).toBe(sample.trajectory.id);
+    expect((patch as { trajectory: { teamNumber: string } }).trajectory.teamNumber).toBe('2910');
+  });
+
+  it('strips non-digits and discards on Escape', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    const onUpdate = vi.fn();
+    render(
+      <I18nProvider>
+        <RobotList
+          robots={[sample]}
+          conflicts={[]}
+          selectedId={null}
+          onSelect={vi.fn()}
+          onImport={vi.fn()}
+          onUpdate={onUpdate}
+          onPickRoute={vi.fn()}
+          onAddRoute={vi.fn()}
+          libraryRoutes={[]}
+          libraryProfiles={[]}
+        />
+      </I18nProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit team number' }));
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: '29a1b0' } });
+    expect(input).toHaveValue('2910');
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(onUpdate).not.toHaveBeenCalled();
+  });
+});
