@@ -9,10 +9,10 @@ import {
 import { lengthUnitExample, LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
 import { APP_VERSION, VERSION_NOTES } from '../version-info';
-import { formatVersionDisplay } from '../version';
 import { copyText } from '../download';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from '../viewer';
 import { Icon } from './Icon';
+import { MouseControlsDiagram } from './MouseControlsDiagram';
 import { IconAppearancePicker, type IconAppearanceMode } from './IconAppearancePicker';
 import './PreferencesPanel.css';
 
@@ -103,19 +103,14 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
             </div>
           </fieldset>
           {desktop && <IconAppearancePicker value={iconPreview} onChange={setIconPreview} />}
-          <div className="preferences-group">
+          <div className="preferences-group preferences-mouse-group">
             <label className="preferences-setting"><span>{t('prefs.mouseControls')}</span>
               <select value={mouse} onChange={(event) => setMouseDraft(event.target.value as MouseControlsScheme)}>
                 {MOUSE_SCHEMES.map((choice) => <option key={choice} value={choice}>{t(`prefs.mouse.${choice}`)}</option>)}
               </select>
             </label>
             <p className="preferences-setting-description">{t('prefs.mouse.hint')}</p>
-            <table className="preferences-mouse-table"><caption className="sr-only">{t('prefs.mouse.table')}</caption><tbody>
-              {(['left', 'middle', 'right', 'wheel'] as const).map((button) => <tr key={button}>
-                <th scope="row">{t(`prefs.mouse.btn.${button}`)}</th>
-                <td>{t(`prefs.mouse.${mouse}.${button}`)}</td>
-              </tr>)}
-            </tbody></table>
+            <MouseControlsDiagram scheme={mouse} />
           </div>
           <div className="preferences-group">
             <label className="preferences-setting"><span>{t('prefs.units')}</span>
@@ -137,10 +132,14 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
           </div> : <div className="preferences-group"><div className="preferences-setting"><span>{t('site.version')}</span>
             <a className="prefs-link" href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{t(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')} ↗</a>
           </div></div>}
-          <p className="preferences-current-version">{t('about.version')} <strong>{formatVersionDisplay(APP_VERSION)}</strong></p>
+          {desktop && <div className="preferences-update-check">
+            {/* UI-only: the implementation task will connect the updater. */}
+            <button type="button" className="btn accent" disabled aria-describedby={`${id}-update-preview`}><Icon name="refresh" size={15} />{t('prefs.checkUpdates')}</button>
+            <p id={`${id}-update-preview`}>{t('prefs.checkUpdatesPreview')}</p>
+          </div>}
         </>}
         {section === 'about' && <>
-          <div className="preferences-product"><strong>PathBlender</strong><span>{formatVersionDisplay(APP_VERSION)}</span><code>{APP_VERSION}</code>
+          <div className="preferences-product"><strong>PathBlender</strong><span className="preferences-version" dir="ltr">Version {APP_VERSION}</span>
             <button className="btn" type="button" onClick={() => {
               void copyText(`PathBlender ${APP_VERSION} (${desktop ? 'desktop' : 'web'})\n` + VERSION_NOTES.slice(0, 5).map((note) => `${note.version} (${note.date}) — ${note.note}`).join('\n'))
                 .then((ok) => setCopyStatus(t(ok ? 'about.copyDone' : 'about.copyFailed')));
@@ -149,7 +148,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
           </div>
           {VERSION_NOTES.length > 0 && <div className="preferences-history"><h3>{t('prefs.releaseNotes')}</h3>
             <ol>{VERSION_NOTES.slice(0, 5).map((note) => <li key={note.version}>
-              <div><strong>{formatVersionDisplay(note.version)}</strong><time dateTime={note.date}>{note.date}</time></div><p>{note.note}</p>
+              <div><strong dir="ltr">Version {note.version}</strong><time dateTime={note.date}>{note.date}</time></div><p>{note.note}</p>
             </li>)}</ol>
           </div>}
         </>}

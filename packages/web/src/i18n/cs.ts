@@ -11,6 +11,8 @@ import type { MessageKey } from './en';
  * verified.
  */
 export const cs: Record<MessageKey, string> = {
+  'prefs.checkUpdates': "Vyhledat aktualizace",
+  'prefs.checkUpdatesPreview': "Pouze náhled. Kontrola aktualizací zde zatím není zapnutá.",
   'prefs.appIcon': "Ikona aplikace",
   'prefs.appIconPreview': "Pouze náhled. Ikona aplikace se nezmění.",
   'welcome.title': 'Začněte importem tras',
@@ -212,7 +214,7 @@ export const cs: Record<MessageKey, string> = {
   'prefs.channel.beta': 'Beta',
   'prefs.mouseControls': 'Ovládání myší (3D zobrazení)',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Které tlačítko myši otáčí, posouvá a přibližuje 3D zobrazení.',
   'prefs.mouse.table': 'Mapování tlačítek',
   'prefs.mouse.btn.left': 'Táhnutí levým',

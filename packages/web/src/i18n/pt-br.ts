@@ -11,6 +11,8 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const ptBR: Record<MessageKey, string> = {
+  'prefs.checkUpdates': "Verificar atualizações",
+  'prefs.checkUpdatesPreview': "Apenas uma prévia. A verificação de atualizações ainda não está ativada aqui.",
   'prefs.appIcon': "Ícone do aplicativo",
   'prefs.appIconPreview': "Apenas uma prévia. O ícone do aplicativo não será alterado.",
   'welcome.title': 'Importe trajetórias para começar',
@@ -212,7 +214,7 @@ export const ptBR: Record<MessageKey, string> = {
   'prefs.channel.beta': 'Beta',
   'prefs.mouseControls': 'Controles do mouse (vista 3D)',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Qual botão do mouse gira, move e dá zoom na vista 3D.',
   'prefs.mouse.table': 'Mapa dos botões',
   'prefs.mouse.btn.left': 'Arrastar à esquerda',

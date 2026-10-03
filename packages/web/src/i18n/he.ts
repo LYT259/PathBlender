@@ -16,6 +16,8 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const he: Record<MessageKey, string> = {
+  'prefs.checkUpdates': "בדיקת עדכונים",
+  'prefs.checkUpdatesPreview': "תצוגה מקדימה בלבד. בדיקת עדכונים עדיין אינה פעילה כאן.",
   'prefs.appIcon': "סמל היישום",
   'prefs.appIconPreview': "תצוגה מקדימה בלבד. סמל היישום לא ישתנה.",
   'welcome.title': 'ייבאו מסלולים כדי להתחיל',
@@ -217,7 +219,7 @@ export const he: Record<MessageKey, string> = {
   'prefs.channel.beta': 'Beta',
   'prefs.mouseControls': 'עכבר (תצוגת 3D)',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'איזה כפתור עכבר מסובב, מזיז ומתקרב בתצוגת ה-3D.',
   'prefs.mouse.table': 'מפת כפתורים',
   'prefs.mouse.btn.left': 'גרירה שמאלית',
