@@ -46,7 +46,11 @@ import { runUpdateCheck } from './update-check';
 import { listenPrefs } from './pref-sync';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from './viewer';
 
-const SESSION_EXT = '.ghpb.json';
+const SESSION_EXT = '.pb';
+// Sessions saved before the 2026-10-03 rename carry the legacy double
+// extension; they must keep opening (naming-is-contract: files on disk).
+const LEGACY_SESSION_EXT = '.ghpb.json';
+const isSessionFileName = (name: string) => name.endsWith(SESSION_EXT) || name.endsWith(LEGACY_SESSION_EXT);
 // Switching a demo robot to a real library route keeps its stable id. That
 // robot now belongs to the user and must survive "End example".
 const isExampleRobot = (robot: SessionTrajectory) => robot.trajectory.id.startsWith('welcome-example-') && !robot.routeId;
@@ -56,7 +60,7 @@ const GITHUB_URL = 'https://github.com/LYT259/pathblender';
 
 // The field + variant survive refreshes (a custom field is not persisted —
 // its definition lives only in the session payload).
-const FIELD_PREF_KEY = 'ghpb.field';
+const FIELD_PREF_KEY = 'pb.field';
 type FieldPref = { id: string; variant: 'welded' | 'andymark'; style: FieldArtStyle };
 function loadFieldPref(): FieldPref {
   // First-run defaults (user directive 2026-10-02): the current season,
@@ -90,7 +94,7 @@ function rememberFieldPrefs(id: string, variant: 'welded' | 'andymark', style: F
 // leaving in 3D means the next launch opens in 3D. Only the user's own
 // toggles are written — the model-less-season auto-fallback must not erase
 // the stored preference.
-const VIEW3D_KEY = 'ghpb.view3d';
+const VIEW3D_KEY = 'pb.view3d';
 function loadView3D(): boolean {
   try {
     return localStorage.getItem(VIEW3D_KEY) === '1';
@@ -229,7 +233,7 @@ function AppBody() {
     for (const { file, relPath } of incoming) {
       const text = await file.text();
       // Session files restore as a whole session rather than one robot.
-      if (relPath.endsWith(SESSION_EXT)) {
+      if (isSessionFileName(relPath)) {
         try {
           const restored = deserializeSession(text);
           setScene({ ...restoreSessionAlliance(restored), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
@@ -536,15 +540,15 @@ function AppBody() {
   }, [setT, setRobots, playback.setPlaying]);
   // Desktop: native menu commands and visible buttons share the same handlers.
   // The menu is rebuilt in the app language whenever it changes. The shell
-  // dispatches `ghpb-menu-*` DOM CustomEvents via eval (ADR-0003) — Tauri
+  // dispatches `pb-menu-*` DOM CustomEvents via eval (ADR-0003) — Tauri
   // event `listen()` can silently lose the race against page load on
   // WebKitGTK, leaving every menu command dead.
   useEffect(() => {
     if (!IS_DESKTOP) return;
     const on = (name: string, fn: () => void) => {
       const h = () => fn();
-      window.addEventListener(`ghpb-menu-${name}`, h);
-      return () => window.removeEventListener(`ghpb-menu-${name}`, h);
+      window.addEventListener(`pb-menu-${name}`, h);
+      return () => window.removeEventListener(`pb-menu-${name}`, h);
     };
     const unbinds = [
       on('import', () => importInputRef.current?.click()),
@@ -556,7 +560,7 @@ function AppBody() {
     return () => unbinds.forEach((u) => u());
   }, [saveSession, exportPng, clearAll, flash, tr, checkForUpdates]);
 
-  // Desktop open-with: the shell evals a `ghpb-open-files` CustomEvent with
+  // Desktop open-with: the shell evals a `pb-open-files` CustomEvent with
   // [name, base64] pairs (launch-argument files and native-picker imports
   // both arrive here — push-only, no privileged channel; ADR-0003).
   useEffect(() => {
@@ -573,18 +577,18 @@ function AppBody() {
       if (files.length) void Promise.resolve(importFiles(files)).catch(() => undefined);
     };
     const onOpen = (e: Event) => {
-      delete (window as { __ghpbOpenPayload?: unknown }).__ghpbOpenPayload;
+      delete (window as { __pbOpenPayload?: unknown }).__pbOpenPayload;
       deliver((e as CustomEvent).detail);
     };
-    window.addEventListener('ghpb-open-files', onOpen);
+    window.addEventListener('pb-open-files', onOpen);
     // The shell may have delivered before React mounted — consume the stash.
-    const w = window as { __ghpbOpenPayload?: unknown };
-    if (w.__ghpbOpenPayload) {
-      const stash = w.__ghpbOpenPayload;
-      delete w.__ghpbOpenPayload;
+    const w = window as { __pbOpenPayload?: unknown };
+    if (w.__pbOpenPayload) {
+      const stash = w.__pbOpenPayload;
+      delete w.__pbOpenPayload;
       deliver(stash);
     }
-    return () => window.removeEventListener('ghpb-open-files', onOpen);
+    return () => window.removeEventListener('pb-open-files', onOpen);
   }, [importFiles]);
 
   // Keep the native menu's language in sync with the in-app preference.
@@ -691,11 +695,11 @@ function AppBody() {
             />
           </>
         )}
-        <input ref={sessionInputRef} type="file" accept=".ghpb.json" hidden aria-label={tr('welcome.openSession')} onChange={(e) => {
+        <input ref={sessionInputRef} type="file" accept=".pb,.ghpb.json" hidden aria-label={tr('welcome.openSession')} onChange={(e) => {
           const file = e.currentTarget.files?.[0];
           e.currentTarget.value = '';
           if (!file) return;
-          if (!file.name.endsWith(SESSION_EXT)) { setErrors([{ fileName: file.name, message: tr('import.notSession') }]); return; }
+          if (!isSessionFileName(file.name)) { setErrors([{ fileName: file.name, message: tr('import.notSession') }]); return; }
           void importFiles([file]);
         }} />
         <span className="toolbar-spacer" data-tauri-drag-region="" />

@@ -1,5 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+// Must stay the first local import: it copies pre-rename `ghpb.*`
+// localStorage entries to their `pb.*` names before anything reads them.
+import './legacy-storage';
 import { App } from './App';
 import { I18nProvider } from './i18n';
 import { ThemeProvider } from './theme';

@@ -69,8 +69,9 @@ rest of the alliance.
 
 - **Alliance view**: one red/blue toggle for the whole session mirrors
   every path drawn from the other perspective into the unified frame;
-- **Session file & PNG** (desktop): save/open a `.ghpb.json` session to
-  hand the exact field to the next strategy meeting; export a PNG of the
+- **Session file & PNG** (desktop): save/open a `.pb` session (sessions saved
+  before the rename as `.ghpb.json` still open) to hand the exact field to
+  the next strategy meeting; export a PNG of the
   current 2D view for the alliance chat. Everything also lives in the
   PathBlender menu;
 - **Appearance & languages**: light/dark/follow-system in Preferences

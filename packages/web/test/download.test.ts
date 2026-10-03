@@ -19,13 +19,13 @@ describe('saveBytes desktop contract', () => {
   it('calls save_file with camelCase argument keys', async () => {
     (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = { invoke: native.invoke };
     const { saveText } = await import('../src/download');
-    await saveText('session-2026-10-02.ghpb.json', 'json', '{}');
+    await saveText('session-2026-10-02.pb', 'json', '{}');
 
     expect(native.invoke).toHaveBeenCalledTimes(1);
     const [command, args] = native.invoke.mock.calls[0] as [string, Record<string, unknown>];
     expect(command).toBe('save_file');
     expect(Object.keys(args).sort()).toEqual(['data', 'filterExt', 'suggestedName']);
-    expect(args.suggestedName).toBe('session-2026-10-02.ghpb.json');
+    expect(args.suggestedName).toBe('session-2026-10-02.pb');
     expect(args.filterExt).toBe('json');
     expect(args.data).toBeInstanceOf(Uint8Array);
   });
