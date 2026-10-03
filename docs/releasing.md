@@ -38,11 +38,11 @@
 - [ ] 网站上线（2026-09-09 起实际走 Cloudflare Pages 直传，报告 §7.1 的国内可达性方案即此渠道）：
       `npx wrangler pages deploy packages/web/dist --project-name=pathblender --branch=stable`；
       β 预览站另建 `pathblender-preview`（`--branch=beta` + `VITE_SITE_PREVIEW=1`）。
-      **部署后核对线上版本与本次发版一致**（2026-10-02 审计发现线上仍挂着转型前含编辑功能的旧构建）。
+      **部署后核对线上版本与本次发版一致**（2026-10-02 审计曾发现线上挂着转型前旧构建；2026-10-03 已从 beta.35 查看器构建重部署两站并线上实测，此条转为常规核对项）。
 - [ ] GitHub Pages 工作流已于 2026-10-02 移除：私有 Free 仓库无法启用 Pages，deploy.yml 在每次 stable 推送上稳定失败（5/5），唯一网页渠道是上面的 Cloudflare 直传。仓库转公开后若要恢复 Pages 再评估。
 - [ ] **转公开日清单（用户决定 2026-10-02：仓库暂不转公开；转公开之后才有 Demo 网站）**——按序执行，防止 README 的站点链接先于 Demo 上线：
       ① 给 stable 打分支保护（常设授权：禁强推+禁删除+含管理员，命令存档见记忆 stable-branch-protection-recommendation）；
-      ② 从当期 release tag 构建 + `VITE_VIEWER_ONLY=1` 重新部署 Cloudflare 两站（stable 与 preview），部署后核对线上版本串与 release 一致（当前线上仍是转型前含编辑功能的旧构建，2026-10-02 审计实录）；
+      ② 从当期 release tag 构建 + `VITE_VIEWER_ONLY=1` 重新部署 Cloudflare 两站（stable 与 preview），部署后核对线上版本串与 release 一致（线上自 2026-10-03 起为 viewer 构建；此步确保转公开日站点与当期 release 同版）；
       ③ 核对 README 三语的「获取方式」链接与真实可达状态一致；更新 feed / Release 资产对未认证用户转可达（无需改动——端点本就是 GitHub 公网 URL）；
       ④ 反馈渠道=GitHub Issues（转公开即活；README/指南/模板已指向 issues 链接）；Chief Delphi 发布帖由用户本人发（用户决定 2026-10-03）。
 
