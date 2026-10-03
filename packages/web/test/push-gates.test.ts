@@ -74,9 +74,17 @@ describe('install-hooks.sh (worktree-compatible)', () => {
       // This test itself runs from a worktree checkout — the exact context
       // where the old script wrote to `.git/hooks/` (a FILE) and failed
       // silently.
-      const res = run('zsh', [INSTALL]);
+      //
+      // Both calls run with cwd = ROOT on purpose: `git rev-parse
+      // --git-path hooks` prints a path relative to the CURRENT directory
+      // when the cwd sits inside the repo (`.git/hooks` from the root, but
+      // `../../.git/hooks` from packages/web), and an absolute path from a
+      // worktree. Resolving that output against ROOT is only sound when it
+      // was produced from ROOT — from packages/web it resolved to
+      // /Users/.git/hooks and the assertion failed on the main tree.
+      const res = run('zsh', [INSTALL], { cwd: ROOT });
       expect(res.code).toBe(0);
-      const hooksDir = run('git', ['rev-parse', '--git-path', 'hooks']).out.trim();
+      const hooksDir = run('git', ['rev-parse', '--git-path', 'hooks'], { cwd: ROOT }).out.trim();
       // resolve() handles both relative (".git/hooks") and absolute forms
       const hook = resolve(ROOT, hooksDir) + '/pre-push';
       expect(existsSync(hook)).toBe(true);
