@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.7';
+export const APP_VERSION = '0.1.7-beta.8';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.8', date: '2026.10.03', note: {
+    en: 'Update notes now follow your UI language with dotted dates; Settings layout tidied',
+    zh: '更新说明按界面语言显示并改用点格式日期；设置界面整理',
+    'zh-tw': '更新說明依介面語言顯示並改用點格式日期；設定介面整理',
+    cs: 'Poznámky aktualizací sledují jazyk rozhraní a používají tečkované datum; uspořádání Nastavení vyčištěno',
+    nl: 'Updatenotities volgen nu je interfacetaal en gebruiken puntnotatie voor datums; Instellingen opgeruimd',
+    fr: 'Les notes de mise à jour suivent la langue de l\'interface avec des dates en pointillés ; réglages réorganisés',
+    he: 'הערות העדכון עוקבות אחר שפת הממשק עם תאריכים בנקודות; סידור ההגדרות נוקה',
+    ja: '更新説明がインターフェース言語に追従し、日付を点区切りに；設定画面を整理',
+    ko: '업데이트 설명이 인터페이스 언어를 따르고 날짜를 점 형식으로 표시합니다. 설정 화면 정리',
+    pl: 'Notatki aktualizacji podążają za językiem interfejsu z datami w formacie kropkowym; porządek w Ustawieniach',
+    'pt-br': 'Notas de atualização seguem o idioma da interface com datas pontilhadas; Ajustes reorganizados',
+    es: 'Las notas de actualización siguen el idioma de la interfaz con fechas punteadas; Ajustes ordenados',
+    tr: 'Güncelleme notları arayüz dilini izliyor ve noktalı tarih kullanıyor; Ayarlar düzeni toplandı',
+  } },
   { version: '0.1.7-beta.7', date: '2026.10.03', note: {
     en: 'Restore the Onshape-style ViewCube (faces, edges and corners)',
     zh: '恢复 Onshape 风格的视角立方体（面、棱与角）',

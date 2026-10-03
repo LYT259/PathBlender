@@ -5,7 +5,7 @@ import { I18nProvider } from '../src/i18n';
 import { ThemeProvider } from '../src/theme';
 import { UpdateChannelProvider } from '../src/update-channel';
 import { AppIconProvider } from '../src/app-icon';
-import { NOTE_LANGS, noteText, VERSION_NOTES } from '../src/version-info';
+import { APP_VERSION, NOTE_LANGS, noteText, VERSION_NOTES } from '../src/version-info';
 
 /**
  * Update-note i18n discipline (AGENTS.md 2026-10-03): the registry carries
@@ -35,11 +35,10 @@ describe('version notes registry', () => {
     }
   });
 
-  it('has unique versions, newest first', () => {
+  it('has unique versions with the shipped version first', () => {
     const versions = VERSION_NOTES.map((n) => n.version);
     expect(new Set(versions).size).toBe(versions.length);
-    // 0.1.7-beta.6 is the newest shipped entry right now.
-    expect(versions[0]).toBe('0.1.7-beta.6');
+    expect(versions[0]).toBe(APP_VERSION);
   });
 });
 
