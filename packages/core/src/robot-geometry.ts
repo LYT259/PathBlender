@@ -174,7 +174,11 @@ export function chassisModules(
  * Steering adds on top: pod yaw = installed yaw + steer angle.
  */
 export function moduleBaseYaw(m: ModuleLocation): number {
-  return Math.PI / 4 * Math.sign(m.x * m.y || 1);
+  // NEGATED sign(x*y): pinned 2026-10-03 from the user's app screenshot
+  // (the off-diagonal corner pair measured parallel at ~117° screen =
+  // ~135° robot frame after the ~18° camera tilt; the un-negated form
+  // put every module on the opposite diagonal).
+  return -Math.PI / 4 * Math.sign(m.x * m.y || -1);
 }
 
 /**
