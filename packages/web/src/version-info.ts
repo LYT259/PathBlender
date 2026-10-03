@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.67';
+export const APP_VERSION = '0.1.6';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6', date: '2026-10-03', note: '' },
   { version: '0.1.6-beta.67', date: '2026-10-03', note: 'Trackpad zoom glides again — continuous scroll and pinch answer instantly then ease, mouse notches stay crisp' },
   { version: '0.1.6-beta.66', date: '2026-10-03', note: 'Trackpad zoom glides again — continuous scroll and pinch answer instantly then ease, mouse notches stay crisp' },
   { version: '0.1.6-beta.65', date: '2026-10-03', note: 'Refine control settings, team labels and fabric bumpers / 优化操作设置、队号显示和布面护杠' },
