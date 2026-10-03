@@ -1,5 +1,7 @@
 /** English strings (source of truth for the key set). */
 export const en = {
+  'prefs.checkUpdates': "Check for updates",
+  'prefs.checkUpdatesPreview': "Preview only. Update checks are not enabled here yet.",
   'prefs.appIcon': "App icon",
   'prefs.appIconPreview': "Preview only. Your app icon will not change.",
   'welcome.title': 'Import paths to get started',
@@ -201,7 +203,7 @@ export const en = {
   'prefs.channel.beta': 'Beta',
   'prefs.mouseControls': 'Mouse controls (3D view)',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Which mouse button rotates, pans and zooms the 3D view.',
   'prefs.mouse.table': 'Button map',
   'prefs.mouse.btn.left': 'Left drag',

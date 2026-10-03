@@ -37,6 +37,16 @@ describe('mouse controls & units settings', () => {
     expect(screen.getByText('Pan')).toBeInTheDocument();
   });
 
+  it('updates the labelled mouse diagram when the control scheme changes', () => {
+    panel();
+    expect(screen.getByRole('figure', { name: 'Button map' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'SOLIDWORKS', exact: true })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/mouse controls/i, { selector: 'select' }), { target: { value: 'solidworks' } });
+    expect(screen.getByText('Rotate (Ctrl: pan)')).toBeInTheDocument();
+    expect(screen.queryByText('Pan', { exact: true })).not.toBeInTheDocument();
+    expect(localStorage.getItem('pb.mouseControls')).toBeNull();
+  });
+
   it('stages drafts, then persists on Save', () => {
     panel();
     const save = screen.getByRole('button', { name: /save/i }) as HTMLButtonElement;

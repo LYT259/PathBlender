@@ -7,6 +7,8 @@ import type { MessageKey } from './en';
  * English; i18n.test.ts enforces both.
  */
 export const es: Record<MessageKey, string> = {
+  'prefs.checkUpdates': "Buscar actualizaciones",
+  'prefs.checkUpdatesPreview': "Solo vista previa. La búsqueda de actualizaciones aún no está habilitada aquí.",
   'prefs.appIcon': "Icono de la aplicación",
   'prefs.appIconPreview': "Solo vista previa. El icono de la aplicación no cambiará.",
   'welcome.title': 'Importa trayectorias para empezar',
@@ -211,7 +213,7 @@ export const es: Record<MessageKey, string> = {
   'prefs.channel.beta': 'Beta',
   'prefs.mouseControls': 'Controles del ratón (vista 3D)',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Qué botón del ratón rota, desplaza y hace zoom en la vista 3D.',
   'prefs.mouse.table': 'Mapa de botones',
   'prefs.mouse.btn.left': 'Arrastrar botón izquierdo',

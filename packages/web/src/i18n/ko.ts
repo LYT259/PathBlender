@@ -11,6 +11,8 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const ko: Record<MessageKey, string> = {
+  'prefs.checkUpdates': "업데이트 확인",
+  'prefs.checkUpdatesPreview': "미리보기입니다. 여기에서는 아직 업데이트를 확인할 수 없습니다.",
   'prefs.appIcon': "앱 아이콘",
   'prefs.appIconPreview': "미리보기만 표시합니다. 앱 아이콘은 변경되지 않습니다.",
   'welcome.title': '경로를 가져와 시작하세요',
@@ -212,7 +214,7 @@ export const ko: Record<MessageKey, string> = {
   'prefs.channel.beta': 'Beta',
   'prefs.mouseControls': '마우스 조작 (3D 뷰)',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': '3D 뷰를 회전, 이동, 확대/축소하는 마우스 버튼을 지정합니다.',
   'prefs.mouse.table': '버튼 매핑',
   'prefs.mouse.btn.left': '왼쪽 드래그',

@@ -11,6 +11,8 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const pl: Record<MessageKey, string> = {
+  'prefs.checkUpdates': "Sprawdź aktualizacje",
+  'prefs.checkUpdatesPreview': "Tylko podgląd. Sprawdzanie aktualizacji nie jest tu jeszcze włączone.",
   'prefs.appIcon': "Ikona aplikacji",
   'prefs.appIconPreview': "Tylko podgląd. Ikona aplikacji nie zostanie zmieniona.",
   'welcome.title': 'Importuj trasy, aby rozpocząć',
@@ -215,7 +217,7 @@ export const pl: Record<MessageKey, string> = {
   'prefs.channel.beta': 'Beta',
   'prefs.mouseControls': 'Sterowanie myszą (widok 3D)',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Który przycisk myszy obraca, przesuwa i zmienia powiększenie widoku 3D.',
   'prefs.mouse.table': 'Przypisanie przycisków',
   'prefs.mouse.btn.left': 'Przeciąganie lewym',
