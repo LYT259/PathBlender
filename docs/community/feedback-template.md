@@ -1,12 +1,14 @@
 # Feedback template / 反馈模板
 
-> Copy this into your bug report (GitHub issue or wherever we're collecting
-> feedback). **You are never required to post your path files** — the error
-> text alone is usually enough; attach a file only if your team is
-> comfortable sharing it (a single scrubbed route beats a whole match
-> deploy folder).
+> Copy this into a bug report at
+> [github.com/LYT259/pathblender/issues](https://github.com/LYT259/pathblender/issues).
+> **You are never required to post your path files** — the error text alone
+> is usually enough; attach a file only if your team is comfortable sharing
+> it (a single scrubbed route beats a whole match deploy folder).
 >
-> 复制以下模板到你的反馈（GitHub issue 或当时的反馈渠道）。**绝不会要求你公开路径文件**——通常报错文字就够用了；只有你们队伍愿意时才附文件（一条脱敏路线远好过整个比赛 deploy 目录）。
+> 将以下模板复制到
+> [github.com/LYT259/pathblender/issues](https://github.com/LYT259/pathblender/issues)
+> 提交。**绝不会要求你公开路径文件**——通常报错文字就够用了；只有你们队伍愿意时才附文件（一条脱敏路线远好过整个比赛 deploy 目录）。
 
 ```
 **App version / 应用版本**: (PathBlender menu → About PathBlender → copy, e.g. 0.1.6)

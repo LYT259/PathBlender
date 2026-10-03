@@ -116,6 +116,7 @@ ask it to check for updates. Parsing happens in local memory; session
 data leaves the app only when you save or export it yourself.
 
 **Q: A file fails to import?**
-See [the feedback template](community/feedback-template.md) — format
-drift reports (tool + version + the error text) are exactly what we
-need. You are never required to post your path files.
+[Open an issue](https://github.com/LYT259/pathblender/issues) following
+[the feedback template](community/feedback-template.md) — format drift
+reports (tool + version + the error text) are exactly what we need. You
+are never required to post your path files.
