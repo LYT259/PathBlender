@@ -17,6 +17,7 @@ import {
   samplePoseAt,
   sampleStateAt,
 } from '@pathblender/core';
+import { trailPoints, TRAIL_WIDTH_M } from '../ground-trail';
 import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { useI18n } from '../i18n';
@@ -397,28 +398,24 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       ctx.fillText(String(tag.id), px + 7, py + 4);
     }
 
-    // Full trajectories — saturated, near-opaque, each with a background-
-    // colored halo stroke underneath so every palette color stays readable
-    // over any field artwork (dark zones, blue zones) in both themes.
+    // Ground tape grows only along the already-travelled part of each route.
     if (showTrail) {
-      const halo = cssVar('--bg', '#1e1e20');
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'butt';
+      ctx.lineWidth = TRAIL_WIDTH_M * v.scale;
       for (const r of robots) {
+        const points = trailPoints(r, currentT);
+        if (points.length < 2) continue;
         ctx.beginPath();
-        r.trajectory.samples.forEach((s, i) => {
-          const px = sx(s.x);
-          const py = sy(s.y);
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
+        points.forEach((p, i) => {
+          if (i === 0) ctx.moveTo(sx(p.x), sy(p.y));
+          else ctx.lineTo(sx(p.x), sy(p.y));
         });
-        ctx.strokeStyle = halo;
-        ctx.globalAlpha = 0.85;
-        ctx.lineWidth = 5;
-        ctx.stroke();
-        ctx.strokeStyle = hexAlpha(r.color, 0.95);
-        ctx.globalAlpha = 1;
-        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = r.color;
         ctx.stroke();
       }
+      ctx.restore();
     }
 
     // Conflict markers at closest approaches.
