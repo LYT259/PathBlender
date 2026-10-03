@@ -91,6 +91,11 @@ if [ "$stalled" != 1 ] && [ -n "$TAURI_OUT" ] && [ -s "$TAURI_OUT" ]; then
   exit 0
 fi
 
+# Re-glob the AppDir here, not only at script start: on a fresh tree the
+# directory is staged by linuxdeploy during the build, so the startup glob
+# resolves nothing and the stall-recovery pack below would run with an
+# empty path (2026-10-03 verification run).
+APPDIR="$(ls -d "$ROOT"/packages/desktop/src-tauri/target/release/bundle/appimage/*.AppDir 2>/dev/null | head -1 || true)"
 [ -d "$APPDIR" ] || { echo "error: AppDir missing at $APPDIR" >&2; exit 1; }
 say "packing $APPDIR (squashfs compression takes several minutes)"
 ARCH=x86_64 NO_STRIP=true timeout 540 "$TOOL" "$APPDIR" "$OUT"
