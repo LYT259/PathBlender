@@ -1,7 +1,7 @@
 /**
  * Real-browser end-to-end walkthrough against the production preview build.
  * View-only edition (2026-09-30): import → collision → playback (0.5×) →
- * language switch (10 entries) → field bounds → season +
+ * language switch (15 entries) → field bounds → season +
  * variant persistence → custom field → read-only inspector → route library →
  * PathPlanner batch → session save/restore → bulk stress → PNG export →
  * service worker → 3D. The app adjusts nothing: no editing, no delays, no
@@ -51,6 +51,9 @@ const gearLocator = page.locator(
   ['.tool-btn[aria-label="Preferences"]', '.tool-btn[aria-label="Preferencias"]',
    '.tool-btn[aria-label="Tercihler"]', '.tool-btn[aria-label="Préférences"]',
    '.tool-btn[aria-label="Preferências"]', '.tool-btn[aria-label="העדפות"]',
+   '.tool-btn[aria-label="Voorkeuren"]', '.tool-btn[aria-label="Preferencje"]',
+   '.tool-btn[aria-label="環境設定"]', '.tool-btn[aria-label="환경설정"]',
+   '.tool-btn[aria-label="Předvolby"]',
    '.tool-btn[aria-label="偏好设置"]', '.tool-btn[aria-label="偏好設定"]'].join(', '),
 ).first();
 // Since PR #65 Save keeps the window open; several sections below end with
@@ -201,7 +204,7 @@ await page.locator('.preferences-nav [role=tab]', { hasText: /^About$/ }).click(
 }
 await page.locator('.preferences-nav [role=tab]', { hasText: /^General$/ }).click();
 const optionCount = await langSelect.locator('option').count();
-check('language list has all 10 choices', optionCount === 10, `options=${optionCount}`);
+check('language list has all 15 choices', optionCount === 15, `options=${optionCount}`);
 check('follow-system sits first', /Follow system|跟随系统|跟隨系統/i.test((await langSelect.locator('option').first().textContent()) ?? ''));
 await langSelect.selectOption('zh');
 await page.waitForTimeout(150);
@@ -269,6 +272,23 @@ check(
 const ptText = await page.locator('.robot-library-heading h2').first().textContent();
 check('pt-BR switch (first-batch language)', /Robôs/.test(ptText ?? ''), ptText ?? '');
 await page.screenshot({ path: `${SHOTS}/05d-pt-br.png` });
+await cancelBtn.click();
+await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+await page.waitForTimeout(200);
+// ja — second-batch language (nl/pl/ja/ko/cs, red book §语言扩展规划): a CJK
+// round that must stay LTR, exercising a non-Latin font path end to end.
+await (await prefsGear()).click();
+await page.locator('.preferences-panel select').first().selectOption('ja');
+await saveBtn.click();
+await page.waitForTimeout(300);
+check(
+  'ja switch keeps the document LTR',
+  (await page.evaluate(() => document.documentElement.getAttribute('dir'))) === 'ltr',
+  await page.evaluate(() => document.documentElement.getAttribute('dir') ?? 'no-dir'),
+);
+const jaText = await page.locator('.robot-library-heading h2').first().textContent();
+check('ja switch (second-batch language)', /ロボット/.test(jaText ?? ''), jaText ?? '');
+await page.screenshot({ path: `${SHOTS}/05e-ja.png` });
 await cancelBtn.click();
 await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
 await page.waitForTimeout(200);
