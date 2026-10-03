@@ -95,13 +95,14 @@ def smallest_eigen_axis(m):
 axle = smallest_eigen_axis(cov)
 axle.z = 0.0
 axle.normalize()
-# ROLL_SWAP: False = rolling is perpendicular to the covariance axle
-# (the original calibration). Measured against the real app render
-# 2026-10-02: with the swap the motor overhang ran parallel to travel;
-# real chassis install motors to the SIDES (vendors sell L/R mirror
-# variants for exactly that), so overhang must be perpendicular — swap
-# off.
-ROLL_SWAP = False
+# ROLL_SWAP: keep ON. The covariance variable named "axle" is in fact
+# the ROLLING direction, not the wheel axle — proven 2026-10-03 on the
+# shipped GLB: the ground-contact strip (chord of the wheel circle at
+# floor level) runs along rolling. With the swap OFF the converter
+# baked the axle onto +X and every module rendered 90 deg off; the
+# 2026-10-02 "motors to the sides" reasoning had measured the app
+# pixels backwards (see git history and scripts/cad/README.md).
+ROLL_SWAP = True
 roll = Vector((axle.x, axle.y, 0.0)) if ROLL_SWAP else Vector((-axle.y, axle.x, 0.0))
 ang = math.atan2(roll.y, roll.x)       # rolling direction vs +X
 print(f"[axle] direction=({axle.x:.3f},{axle.y:.3f},0) roll_angle={math.degrees(ang):.1f} deg swap={ROLL_SWAP}")
