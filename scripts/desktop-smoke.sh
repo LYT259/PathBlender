@@ -62,11 +62,14 @@ done
 [ -n "$WID" ] || die "app window did not map"
 say "window mapped: $WID"
 
-# Paint gate: a rendered UI screenshot is tens of KB; blank is ~300 B.
+# Paint gate: a rendered UI screenshot is well above 10 KB; blank is ~300 B.
+# The redesigned welcome screen (2026-10) compresses to ~28 KB, so the old
+# 30000 cut-off rejected a fully painted window — 10 KB keeps a >30x margin
+# over blank while accepting the leaner welcome layout.
 READY=0
 for _ in $(seq 1 30); do
   import -window root "$OUT/00-ready.png" 2>/dev/null || true
-  if [ -s "$OUT/00-ready.png" ] && [ "$(wc -c <"$OUT/00-ready.png")" -gt 30000 ]; then READY=1; break; fi
+  if [ -s "$OUT/00-ready.png" ] && [ "$(wc -c <"$OUT/00-ready.png")" -gt 10000 ]; then READY=1; break; fi
   sleep 1
 done
 [ "$READY" = 1 ] || die "webview did not paint within 30 s"
