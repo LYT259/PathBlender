@@ -20,6 +20,7 @@ import {
 import { buildChassis3D, validateModuleTemplate } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
+import { useMouseControls } from '../mouse-controls';
 import {
   chaseStep,
   markGestureEnd,
@@ -250,6 +251,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<Scene3D | null>(null);
+  // Mouse scheme (Onshape/SolidWorks button map) — read at pointer-event
+  // time through a ref so the scaffold effect's closures stay current.
+  const [mouseScheme, setMouseScheme] = useMouseControls();
+  const mouseSchemeRef = useRef(mouseScheme);
+  useEffect(() => { mouseSchemeRef.current = mouseScheme; }, [mouseScheme]);
   // Scaffold-effect chase cancel hook: Fit/resetCam repositions the camera
   // wholesale, so a mid-flight pinch chase must not keep zooming after it.
   const pinchChaseRef = useRef<{ cancel: () => void } | null>(null);
@@ -338,16 +344,44 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       camera.lookAt(controls.target);
       markDirty();
     };
+    // Scheme routing (user request 2026-10-02, Onshape-style setting):
+    // onshape — left = orbit; solidworks — middle = orbit, Ctrl+middle =
+    // pan. Shift/Ctrl+left stays OrbitControls pan in both schemes.
+    const pan = { active: false, x: 0, y: 0 };
     const onDragDown = (e: PointerEvent) => {
-      if (e.button !== 0 || e.shiftKey) return; // Shift+left = pan (controls)
-      drag.active = true;
-      noteInteraction();
-      drag.x = e.clientX;
-      drag.y = e.clientY;
-      drag.vTheta = 0;
-      drag.vPhi = 0;
-      drag.lastT = performance.now();
-      renderer.domElement.setPointerCapture(e.pointerId);
+      const scheme = mouseSchemeRef.current;
+      const orbitButton = scheme === 'solidworks' ? 1 : 0;
+      if (e.shiftKey) return; // Shift+left = pan (controls)
+      if (e.button === orbitButton && !e.ctrlKey) {
+        e.preventDefault(); // middle: no autoscroll cursor
+        drag.active = true;
+        noteInteraction();
+        drag.x = e.clientX;
+        drag.y = e.clientY;
+        drag.vTheta = 0;
+        drag.vPhi = 0;
+        drag.lastT = performance.now();
+        renderer.domElement.setPointerCapture(e.pointerId);
+      } else if (scheme === 'solidworks' && e.button === 1 && e.ctrlKey) {
+        e.preventDefault();
+        pan.active = true;
+        noteInteraction();
+        pan.x = e.clientX;
+        pan.y = e.clientY;
+        renderer.domElement.setPointerCapture(e.pointerId);
+      }
+    };
+    const onPanMove = (e: PointerEvent) => {
+      if (!pan.active) return;
+      controls.pan(e.clientX - pan.x, e.clientY - pan.y);
+      pan.x = e.clientX;
+      pan.y = e.clientY;
+      markDirty();
+    };
+    const onPanUp = (e: PointerEvent) => {
+      if (!pan.active) return;
+      pan.active = false;
+      renderer.domElement.releasePointerCapture(e.pointerId);
     };
     const onDragMove = (e: PointerEvent) => {
       if (!drag.active) return;
@@ -372,8 +406,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
     renderer.domElement.addEventListener('pointerdown', onDragDown);
     renderer.domElement.addEventListener('pointermove', onDragMove);
+    renderer.domElement.addEventListener('pointermove', onPanMove);
     renderer.domElement.addEventListener('pointerup', onDragUp);
     renderer.domElement.addEventListener('pointercancel', onDragUp);
+    renderer.domElement.addEventListener('pointerup', onPanUp);
+    renderer.domElement.addEventListener('pointercancel', onPanUp);
 
     // Trackpad two-finger horizontal swipes arrive as wheel deltaX, which
     // OrbitControls ignores — turn them into azimuth rotation so "dragging
@@ -610,8 +647,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       controls.removeEventListener('change', markDirty);
       renderer.domElement.removeEventListener('pointerdown', onDragDown);
       renderer.domElement.removeEventListener('pointermove', onDragMove);
+      renderer.domElement.removeEventListener('pointermove', onPanMove);
       renderer.domElement.removeEventListener('pointerup', onDragUp);
       renderer.domElement.removeEventListener('pointercancel', onDragUp);
+      renderer.domElement.removeEventListener('pointerup', onPanUp);
+      renderer.domElement.removeEventListener('pointercancel', onPanUp);
       renderer.domElement.removeEventListener('wheel', onWheelX);
       host.removeEventListener('wheel', onWheelZoomSpeed, { capture: true });
       renderer.domElement.removeEventListener('gesturestart', onGestureStart);
@@ -623,6 +663,20 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       sceneRef.current = null;
     };
   }, []);
+
+  // Non-orbit button map per scheme (Onshape-style setting, user request
+  // 2026-10-02): onshape — middle = pan, right = drag-zoom; solidworks —
+  // middle is the custom orbit/Ctrl+pan above, so OrbitControls stays off
+  // for middle/right. LEFT: ROTATE is inert with enableRotate off, except
+  // its Shift/Ctrl pan branch, which both schemes keep.
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    const NONE = -1 as unknown as THREE.MOUSE;
+    st.controls.mouseButtons = mouseScheme === 'solidworks'
+      ? { LEFT: THREE.MOUSE.ROTATE, MIDDLE: NONE, RIGHT: NONE }
+      : { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.DOLLY };
+  }, [mouseScheme]);
 
   // ---- Field-dependent subtree: slab/walls/tags/structures ----------------
   // Rebuilt when the field (or its artwork) changes. The scaffold — and

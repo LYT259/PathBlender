@@ -1,6 +1,12 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { LANGUAGES, langLabel, useI18n, type LangChoice } from '../i18n';
 import { useTheme, type ThemeMode } from '../theme';
+import {
+  MOUSE_SCHEMES,
+  useMouseControls,
+  type MouseControlsScheme,
+} from '../mouse-controls';
+import { lengthUnitExample, LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
 import { APP_VERSION, VERSION_NOTES } from '../version-info';
 import { formatVersionDisplay } from '../version';
@@ -16,10 +22,14 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const { langChoice, setLang, t } = useI18n();
   const { mode, setMode } = useTheme();
   const { channel, setChannel } = useUpdateChannel();
+  const [mouseControls, setMouseControls] = useMouseControls();
+  const [lengthUnit, setLengthUnit] = useLengthUnit();
   const [section, setSection] = useState<Section>('general');
   const [languageDraft, setLanguageDraft] = useState<LangChoice | null>(null);
   const [themeDraft, setThemeDraft] = useState<ThemeMode | null>(null);
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
+  const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
+  const [unitDraft, setUnitDraft] = useState<LengthUnit | null>(null);
   const [copyStatus, setCopyStatus] = useState('');
   const id = useId();
   const tabRefs = useRef<Partial<Record<Section, HTMLButtonElement | null>>>({});
@@ -27,7 +37,10 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const language = languageDraft ?? langChoice;
   const theme = themeDraft ?? mode;
   const updateChannel = channelDraft ?? channel;
-  const dirty = language !== langChoice || theme !== mode || updateChannel !== channel;
+  const mouse = mouseDraft ?? mouseControls;
+  const unit = unitDraft ?? lengthUnit;
+  const dirty = language !== langChoice || theme !== mode || updateChannel !== channel ||
+    mouse !== mouseControls || unit !== lengthUnit;
 
   function navigate(event: KeyboardEvent<HTMLButtonElement>, current: Section) {
     const index = sections.indexOf(current);
@@ -43,6 +56,8 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
     if (language !== langChoice) setLang(language);
     if (theme !== mode) setMode(theme);
     if (updateChannel !== channel) setChannel(updateChannel);
+    if (mouse !== mouseControls) setMouseControls(mouse);
+    if (unit !== lengthUnit) setLengthUnit(unit);
     // Save keeps the window open (user request 2026-10-02): drafts become
     // current, dirty clears, and the user closes via Cancel/Escape/⌘W when
     // done — matching System Settings' persist-in-place behavior.
@@ -83,6 +98,28 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
               </label>)}
             </div>
           </fieldset>
+          <div className="preferences-group">
+            <label className="preferences-setting"><span>{t('prefs.mouseControls')}</span>
+              <select value={mouse} onChange={(event) => setMouseDraft(event.target.value as MouseControlsScheme)}>
+                {MOUSE_SCHEMES.map((choice) => <option key={choice} value={choice}>{t(`prefs.mouse.${choice}`)}</option>)}
+              </select>
+            </label>
+            <p className="preferences-setting-description">{t('prefs.mouse.hint')}</p>
+            <table className="preferences-mouse-table"><caption className="sr-only">{t('prefs.mouse.table')}</caption><tbody>
+              {(['left', 'middle', 'right', 'wheel'] as const).map((button) => <tr key={button}>
+                <th scope="row">{t(`prefs.mouse.btn.${button}`)}</th>
+                <td>{t(`prefs.mouse.${mouse}.${button}`)}</td>
+              </tr>)}
+            </tbody></table>
+          </div>
+          <div className="preferences-group">
+            <label className="preferences-setting"><span>{t('prefs.units')}</span>
+              <select value={unit} onChange={(event) => setUnitDraft(event.target.value as LengthUnit)}>
+                {LENGTH_UNITS.map((choice) => <option key={choice} value={choice}>{t(`prefs.unit.${choice}`)}</option>)}
+              </select>
+            </label>
+            <p className="preferences-setting-description">{t('prefs.units.hint')}: {lengthUnitExample(unit)}</p>
+          </div>
         </>}
         {section === 'updates' && <>
           {desktop ? <div className="preferences-group">
