@@ -80,7 +80,11 @@ interface Scene3D {
     root: THREE.Group;
     robot: SessionTrajectory;
     pods: THREE.Group[];
-    /** Last applied steering angle per pod (radians, robot frame). */
+    /** Steering pivots, one per module: the turret sub-group for the
+     *  split GLB (the box stays frozen at the installed yaw), the pod
+     *  itself for the old GLB / procedural fallback. */
+    turrets: THREE.Group[];
+    /** Last applied steering angle per module (radians, robot frame). */
     steer: number[];
     modules: { x: number; y: number }[];
   }[];
@@ -1084,6 +1088,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         root: chassis.group,
         robot: r,
         pods: chassis.pods,
+        turrets: chassis.turrets,
         // Parked at the installed angle from the chassis CAD; steering
         // replaces it with the absolute motion angle once moving.
         steer: modules.map((m) => moduleBaseYaw(m)),
@@ -1105,8 +1110,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   }, [currentT, showTrail, robots, field, moduleTemplate, frameTemplate]);
 
   // Drive the chassis rigs along the shared clock: pose from the shared
-  // sampler, plus per-pod steering from each wheel's ground velocity
-  // (pods hold their last pointing while the robot stands still).
+  // sampler, plus per-module turret steering from each wheel's ground
+  // velocity (turrets hold their last pointing while the robot stands
+  // still; the module boxes stay frozen at the installed angle).
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
@@ -1122,13 +1128,15 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (state) {
         const angles = moduleSteeringAngles(state, rig.modules);
         if (rig.steer.length !== angles.length) rig.steer = rig.modules.map((m) => moduleBaseYaw(m));
-        for (let i = 0; i < rig.pods.length; i++) {
+        for (let i = 0; i < rig.turrets.length; i++) {
           const a = angles[i]!;
           if (a !== null) rig.steer[i] = a;
           // steer[] IS the absolute wheel angle in robot frame (the
           // installed base yaw only seeds it while parked); robot-frame
-          // yaw maps to render yaw with the opposite sign.
-          rig.pods[i]!.rotation.y = -rig.steer[i]!;
+          // yaw maps to render yaw with the opposite sign. Only the
+          // turret turns — the module box is frozen at the installed
+          // yaw in buildChassis3D.
+          rig.turrets[i]!.rotation.y = -rig.steer[i]!;
         }
       }
       st.dirty();

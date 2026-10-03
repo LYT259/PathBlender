@@ -62,3 +62,39 @@ vertices — no operator semantics, byte-reproducible runs.
   (steering 0 = straight ahead);
 - small enough to clone 4× per robot with shared GPU buffers
   (a few meshes / tens of thousands of triangles).
+
+## Box/turret split + chassis measurements (2026-10-03)
+
+The shipped GLB is now two nodes — `mk5i-box` (static: top plate, both
+Kraken motors, L plate) and `mk5i-turret` (steers: fork + wheel) — so
+the app yaws only the turret, matching the real robot where the box is
+bolted to the rail.
+
+- **Split tool** — `scripts/cad/mk5i-split-glb.py`, pure python3
+  stdlib (no Blender). Input is the DesignApp-exported module GLB
+  exactly as shipped at git `9250d4b` (backup:
+  `/tmp/mk5i-module-design.glb`). It re-groups per TRIANGLE: a
+  triangle is turret iff every vertex sits inside the fork/wheel
+  column around the steering axis (`|x| <= 0.0518`, `|z| <= 0.0518` —
+  fork bbox measured on the chassis STEP's named Turret Assembly) AND
+  it either touches the floor (`ymin <= 0.001`, the wheel) or is no
+  taller than the fork (`ymax <= 0.0775`); everything else is box.
+  Materials are preserved and all node transforms are flattened to
+  identity — a pure re-grouping: no decimate, no calibration. Result:
+  box 46,548 + turret 8,589 = 55,137 triangles, exactly the source
+  total; measured turret bbox x ±0.0518, y 0..0.0775,
+  z -0.0518..0.0512.
+- **Why not the chassis STEP** — "MK5i Chassis 27*27.step" (literal
+  `*` in the filename) is internally mis-mated: its Top Assembly +
+  Kraken motors hang 55–87 mm BELOW the wheel floor and the top cover
+  is missing, and the Blender decimate/loose-parts route shattered the
+  module into hundreds of pieces. Every STEP-based split attempt
+  failed, hence the triangle-level script on the shipped GLB itself.
+- **Steering-axis positions** — the four turret bbox centers in the
+  chassis STEP are the true steering axes: ±0.27625 m, symmetric in
+  render coordinates. This is the measured basis for
+  `MODULE_INSET_FRACTION = 0.8056` in
+  `packages/core/src/robot-geometry.ts`.
+- **Fastener cross-check** — the chassis GLB carries all 64 fasteners
+  (20× 2-1/2 in long bolts — 5 per corner in an L pattern — plus 24
+  short bolts and 20 nuts); positions match the STEP within 0.33 mm.

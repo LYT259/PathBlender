@@ -140,11 +140,16 @@ export function robotVisualGeometry(t: Trajectory, year: number): RobotVisualGeo
 /** Corner inset for the default MK5i-style module layout, meters. */
 /**
  * Default module layout as a fraction of the chassis half-dimension,
- * matched to the shipped MK5i frame CAD (plates bolt at ±10.375 in on
- * the 27 in frame → 10.375/13.5 ≈ 0.7685) so the app's modules sit on
- * the frame's plate zones for every season the frame scales to.
+ * matched to the user's MK5i chassis CAD: the steering axes sit at
+ * ±10.876 in on the 27 in frame (turret bbox centers measured from the
+ * STEP assembly 2026-10-03 → 10.876/13.5 ≈ 0.8056), so the app's
+ * modules sit exactly on the frame CAD's module axes for every season
+ * the frame scales to. At this inset all 20 mounting bolts pass through
+ * the module plates (verified against mk5i-frame.glb + the module CAD:
+ * worst cover distance 1.2 mm); the earlier ±10.375 in guess left each
+ * corner's outer bolt off the plate entirely.
  */
-const MODULE_INSET_FRACTION = 0.7685;
+const MODULE_INSET_FRACTION = 0.8056;
 
 /**
  * Module positions for the MK5i-style rendering: the file's real
