@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.43';
+export const APP_VERSION = '0.1.6-beta.44';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.44', date: '2026-10-03', note: 'Module installed angles pinned to the chassis CAD diagonal / 模组安装角锁定为底盘 CAD 的对角排布' },
   { version: '0.1.6-beta.43', date: '2026-10-03', note: 'Release walkthrough covers the 10-entry language list incl. he RTL and pt-BR' },
   { version: '0.1.6-beta.42', date: '2026-10-03', note: 'Add Brazilian Portuguese and Hebrew (RTL) UI languages' },
   { version: '0.1.6-beta.41', date: '2026-10-03', note: 'Modules now rest at their real installed angles from the chassis CAD (diagonal pattern), steering adds on top / 模组静止时按车架 CAD 的真实安装角摆放（对角排布），转向在其上叠加' },
