@@ -17,7 +17,7 @@ import {
   type SessionTrajectory,
 } from '@pathblender/core';
 
-const KEY = 'ghpb.autosave.v1';
+const KEY = 'pb.autosave.v1';
 
 export interface AutosavedSession {
   fieldId: string;

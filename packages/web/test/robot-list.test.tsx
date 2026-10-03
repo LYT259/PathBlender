@@ -31,7 +31,7 @@ function inspectorCallbacks() {
 }
 
 beforeEach(() => {
-  localStorage.setItem('ghpb.lang', 'en');
+  localStorage.setItem('pb.lang', 'en');
   mode.viewerOnly = false;
 });
 

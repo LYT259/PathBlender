@@ -22,16 +22,15 @@ set -u
 
 BIN="${1:-/usr/bin/pathblender-desktop}"
 REPO="${2:-$(cd "$(dirname "$0")/.." && pwd)}"
-OUT="$(mktemp -d /tmp/ghpb-smoke.XXXXXX)"
+OUT="$(mktemp -d /tmp/pb-smoke.XXXXXX)"
 
 say() { printf '[smoke] %s\n' "$*"; }
 die() { printf '[smoke] FAIL: %s\n' "$*" >&2; exit 1; }
 
 # Kill leftovers without matching this script's own command line: exact
-# comm names for both generations + anchored full-cmdline for AppImages.
+# comm names plus anchored full-cmdline for AppImages.
 kill_app() {
   pkill -x pathblender-desktop >/dev/null 2>&1 || true
-  pkill -x ghpathblender >/dev/null 2>&1 || true
   pkill -x pathblender >/dev/null 2>&1 || true
   pkill -f "^$BIN\$" >/dev/null 2>&1 || true
 }
@@ -58,7 +57,6 @@ WID=""
 for _ in $(seq 1 60); do
   sleep 1
   WID="$(xdotool search --onlyvisible --name 'PathBlender' 2>/dev/null | head -1)"
-  [ -z "$WID" ] && WID="$(xdotool search --onlyvisible --name 'GHPathBlender' 2>/dev/null | head -1)"
   [ -n "$WID" ] && break
 done
 [ -n "$WID" ] || die "app window did not map"
@@ -136,7 +134,6 @@ say "PNG export dialog opens (GUI confirm needs a WM)"
 # --- open-with: launching with a file argument imports it -------------------
 kill_app
 pkill -9 -x pathblender-desktop 2>/dev/null || true
-pkill -9 -x ghpathblender 2>/dev/null || true
 sleep 2
 "$BIN" "$REPO/samples/ghostauto/straight_run.ghostauto" >/dev/null 2>&1 &
 WID2=""

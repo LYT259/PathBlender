@@ -131,7 +131,7 @@ describe('workspace workflow', () => {
     savedRobot.startDelayS = 1.25;
     const savedSession = new File(
       [serializeSession([savedRobot], 'chargedup-2023')],
-      'alliance.ghpb.json',
+      'alliance.pb',
       { type: 'application/json' },
     );
     fireEvent.drop(window, { dataTransfer: { files: [savedSession] } });

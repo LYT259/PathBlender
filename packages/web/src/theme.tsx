@@ -1,7 +1,7 @@
 /**
  * Theme system (report v1.7 §7.4): dark/light palettes, default follows the
  * OS (`prefers-color-scheme`, live), Preferences can override with a
- * remembered choice (localStorage 'ghpb.theme').
+ * remembered choice (localStorage 'pb.theme').
  */
 
 import {
@@ -19,7 +19,7 @@ import { syncDockIcon } from './dock-icon';
 
 export type ThemeMode = 'system' | 'dark' | 'light';
 
-const STORAGE_KEY = 'ghpb.theme';
+const STORAGE_KEY = 'pb.theme';
 
 interface ThemeCtx {
   mode: ThemeMode;
