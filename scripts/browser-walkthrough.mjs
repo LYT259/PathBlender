@@ -1,7 +1,7 @@
 /**
  * Real-browser end-to-end walkthrough against the production preview build.
  * View-only edition (2026-09-30): import → collision → playback (0.5×) →
- * language switch (8 locales) → field bounds → season +
+ * language switch (10 entries) → field bounds → season +
  * variant persistence → custom field → read-only inspector → route library →
  * PathPlanner batch → session save/restore → bulk stress → PNG export →
  * service worker → 3D. The app adjusts nothing: no editing, no delays, no
@@ -50,6 +50,7 @@ const rowByName = (name) => rows().filter({ has: page.locator('.robot-name', { h
 const gearLocator = page.locator(
   ['.tool-btn[aria-label="Preferences"]', '.tool-btn[aria-label="Preferencias"]',
    '.tool-btn[aria-label="Tercihler"]', '.tool-btn[aria-label="Préférences"]',
+   '.tool-btn[aria-label="Preferências"]', '.tool-btn[aria-label="העדפות"]',
    '.tool-btn[aria-label="偏好设置"]', '.tool-btn[aria-label="偏好設定"]'].join(', '),
 ).first();
 // Since PR #65 Save keeps the window open; several sections below end with
@@ -200,7 +201,7 @@ await page.locator('.preferences-nav [role=tab]', { hasText: /^About$/ }).click(
 }
 await page.locator('.preferences-nav [role=tab]', { hasText: /^General$/ }).click();
 const optionCount = await langSelect.locator('option').count();
-check('language list has all 8 choices', optionCount === 8, `options=${optionCount}`);
+check('language list has all 10 choices', optionCount === 10, `options=${optionCount}`);
 check('follow-system sits first', /Follow system|跟随系统|跟隨系統/i.test((await langSelect.locator('option').first().textContent()) ?? ''));
 await langSelect.selectOption('zh');
 await page.waitForTimeout(150);
@@ -235,6 +236,39 @@ await page.waitForTimeout(300);
 const frText = await page.locator('.robot-library-heading h2').first().textContent();
 check('fr switch (P1 language)', /Robots/.test(frText ?? ''), frText ?? '');
 await page.screenshot({ path: `${SHOTS}/05b-fr.png` });
+await cancelBtn.click();
+await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+await page.waitForTimeout(200);
+// he — the app's first RTL language (first batch, PR #114): the document
+// flips to rtl while the field and timeline keep their physical directions.
+await (await prefsGear()).click();
+await page.locator('.preferences-panel select').first().selectOption('he');
+await saveBtn.click();
+await page.waitForTimeout(300);
+check(
+  'he switch flips the document to RTL',
+  (await page.evaluate(() => document.documentElement.getAttribute('dir'))) === 'rtl',
+  await page.evaluate(() => document.documentElement.getAttribute('dir') ?? 'no-dir'),
+);
+const heText = await page.locator('.robot-library-heading h2').first().textContent();
+check('he switch (first-batch language)', /רובוט/.test(heText ?? ''), heText ?? '');
+await page.screenshot({ path: `${SHOTS}/05c-he.png` });
+await cancelBtn.click();
+await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+await page.waitForTimeout(200);
+// pt-BR — the second first-batch language, and a return trip to LTR.
+await (await prefsGear()).click();
+await page.locator('.preferences-panel select').first().selectOption('pt-BR');
+await saveBtn.click();
+await page.waitForTimeout(300);
+check(
+  'pt-BR switch returns the document to LTR',
+  (await page.evaluate(() => document.documentElement.getAttribute('dir'))) === 'ltr',
+  await page.evaluate(() => document.documentElement.getAttribute('dir') ?? 'no-dir'),
+);
+const ptText = await page.locator('.robot-library-heading h2').first().textContent();
+check('pt-BR switch (first-batch language)', /Robôs/.test(ptText ?? ''), ptText ?? '');
+await page.screenshot({ path: `${SHOTS}/05d-pt-br.png` });
 await cancelBtn.click();
 await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
 await page.waitForTimeout(200);
