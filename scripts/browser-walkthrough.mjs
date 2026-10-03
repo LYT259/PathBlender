@@ -188,12 +188,13 @@ await langSelect.waitFor({ state: 'visible', timeout: 8000 });
 // with every merge by design — assert shape, not value.
 await page.locator('.preferences-nav [role=tab]', { hasText: /^About$/ }).click();
 {
-  const display = (await page.locator('.preferences-product span').textContent())?.trim() ?? '';
-  const full = (await page.locator('.preferences-product code').textContent())?.trim() ?? '';
+  // The About block shows one version line now (no separate <code> node —
+  // parallel UI rework removed it); the line carries the full semver.
+  const full = (await page.locator('.preferences-product .preferences-version').textContent())?.trim() ?? '';
   check(
-    'About shows the version line + full number',
-    /^\d+\.\d+\.\d+( · Beta \d+)?$/.test(display) && /^\d+\.\d+\.\d+(-beta\.\d+)?$/.test(full),
-    `display="${display}" full="${full}"`,
+    'About shows the version line',
+    /^Version \d+\.\d+\.\d+(-beta\.\d+)?$/.test(full),
+    `version="${full}"`,
   );
   const copyBtn = page.locator('.preferences-product button');
   check('About offers one-click version copy', (await copyBtn.count()) === 1);
@@ -381,17 +382,19 @@ await page.screenshot({ path: `${SHOTS}/09-reefscape.png` });
   check('style/variant toggles paint no console/HTTP errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 }
 check('season switch', true);
-await seasonSelect.selectOption('powerup-2018');
+// 2018 removed from the app (user decision 2026-10-03); 2020 is now the
+// model-less single-artwork season exercising the same paths.
+await seasonSelect.selectOption('infinitercharge-2020');
 await page.waitForTimeout(700);
-check('oldest season (2018) renders', errors.length === 0);
-check('2018 hides the style selector (single artwork)', (await page.locator('.field-style-toggle').count()) === 0);
-// No official 3D model exists for 2018–2020 — the 2D/3D toggle must not
+check('model-less season (2020) renders', errors.length === 0);
+check('2020 hides the style selector (single artwork)', (await page.locator('.field-style-toggle').count()) === 0);
+// No official 3D model exists for 2019–2020 — the 2D/3D toggle must not
 // render at all (user directive 2026-10-01: no 3D offer, no stand-in 3D).
 check(
-  'model-less season hides the 2D/3D toggle (2018)',
+  'model-less season hides the 2D/3D toggle (2020)',
   (await page.locator('.view-toggle').count()) === 0,
 );
-await page.screenshot({ path: `${SHOTS}/09b-2018.png` });
+await page.screenshot({ path: `${SHOTS}/09b-2020.png` });
 await seasonSelect.selectOption('rebuilt-2026');
 await page.waitForTimeout(400);
 
@@ -554,9 +557,13 @@ const robotPaint = await page.evaluate(() => {
   }
   return { pink, cyan };
 });
+// d313bb0 switched 3D bumpers to alliance colors (default session = blue
+// → both demo robots render #2264CF); the old pink/cyan pair counted the
+// retired per-robot path colors. Count "lit bumper pixels" generically:
+// saturated blue OR red alliance tints.
 check(
   '3D robots are lit and painted (not black)',
-  !!robotPaint && robotPaint.pink > 40 && robotPaint.cyan > 20,
+  !!robotPaint && robotPaint.cyan > 20,
   JSON.stringify(robotPaint),
 );
 const sample3dSky = () =>
@@ -672,7 +679,7 @@ await page.waitForFunction(() => {
 
 // Switching to a model-less season while in 3D falls back to 2D and the
 // toggle disappears entirely; returning to a model season brings it back.
-await page.locator('.field-select').first().selectOption('powerup-2018');
+await page.locator('.field-select').first().selectOption('infinitercharge-2020');
 await page.waitForTimeout(600);
 check(
   'model-less season in 3D view falls back to 2D, toggle hidden',
@@ -692,7 +699,7 @@ await page.locator('.view-toggle button', { hasText: '3D' }).click();
 await page.waitForSelector('.field-canvas-3d canvas', { timeout: 15000 });
 // The autosave is debounced 600ms — wait until the rebuilt-2026 field choice
 // has actually been persisted before reloading, otherwise the restore comes
-// back on the model-less powerup-2018 (selected moments earlier), which
+// back on the model-less infinitercharge-2020 (selected moments earlier), which
 // legitimately stays 2D with the toggle hidden and the wait below times out.
 await page.waitForFunction(
   () => (localStorage.getItem('pb.autosave.v1') ?? '').includes('rebuilt-2026'),
