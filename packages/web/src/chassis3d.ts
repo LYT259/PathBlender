@@ -49,6 +49,7 @@ export function buildChassis3D(
   color: string,
   moduleTemplate?: THREE.Object3D | null,
   teamNumber?: string,
+  frameTemplate?: THREE.Object3D | null,
 ): Chassis3D {
   const group = new THREE.Group();
 
@@ -91,6 +92,16 @@ export function buildChassis3D(
   add(body, L, BUMPER_H_M, d, 0, BUMPER_Y_M, -(W - d) / 2, bumperMat);
   add(body, d, BUMPER_H_M, W - 2 * d, (L - d) / 2, BUMPER_Y_M, 0, bumperMat);
   add(body, d, BUMPER_H_M, W - 2 * d, -(L - d) / 2, BUMPER_Y_M, 0, bumperMat);
+
+  // The user-built MK5i frame CAD (tubes + corner blocks + hardware,
+  // 27x27 in unscaled; modules stripped — the app mounts its own). Scaled
+  // per-robot only to fit that robot's chassis rectangle: exactly 1.0 for
+  // the 2026 default, proportional for other seasons/file geometries.
+  if (frameTemplate) {
+    const frame = frameTemplate.clone(true);
+    frame.scale.set(vis.chassis.lengthM / 0.6858, 1, vis.chassis.widthM / 0.6858);
+    body.add(frame);
+  }
 
   // Team number decals on the two side rails (user request 2026-10-02,
   // like a real robot: white digits on the bumper). One outward-facing

@@ -42,7 +42,7 @@ describe('seasonRobotProfile (rule-verified per-season maxima)', () => {
     [2023, 30, 30, 3.25, 36.5],
     [2024, 30, 30, 3.25, 36.5],
     [2025, 30, 30, 4, 38],
-    [2026, 27.5, 27.5, 4, 35.5],
+    [2026, 27, 27, 4, 35],
   ];
   it.each(rows)('%i: frame %ix%i in + %s in bumper', (year, fl, fw, b, outerL) => {
     const p = seasonRobotProfile(year);
@@ -79,7 +79,7 @@ describe('withSeasonGeometry', () => {
     const a = withSeasonGeometry(st, 2023);
     expect(a.trajectory.geometry.lengthM).toBeCloseTo(0.9271, 6);
     const b = withSeasonGeometry(st, 2026);
-    expect(b.trajectory.geometry.lengthM).toBeCloseTo(0.9017, 6);
+    expect(b.trajectory.geometry.lengthM).toBeCloseTo(0.889, 6);
     // Already at the season value → same object back (no re-render churn).
     expect(withSeasonGeometry(a, 2023)).toBe(a);
   });
@@ -110,10 +110,10 @@ describe('chassisModules', () => {
     expect(chassisModules(t, { lengthM: 0.762, widthM: 0.762 })).toEqual(t.moduleLocations);
   });
 
-  it('defaults to four corners inset from the frame edges', () => {
+  it('defaults to four corners on the frame-CAD plate zones (proportional)', () => {
     const mods = chassisModules(traj({}), { lengthM: 0.762, widthM: 0.762 });
     expect(mods).toHaveLength(4);
-    const ix = 0.762 / 2 - 0.12;
+    const ix = (0.762 / 2) * 0.7685;
     for (const sx of [1, -1]) {
       for (const sy of [1, -1]) {
         expect(mods.some((m) => Math.abs(m.x - sx * ix) < 1e-9 && Math.abs(m.y - sy * ix) < 1e-9)).toBe(true);
