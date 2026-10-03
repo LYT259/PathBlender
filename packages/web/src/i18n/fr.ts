@@ -8,6 +8,8 @@ import type { MessageKey } from './en';
  * i18n.test.ts enforces the key set, the placeholders and non-empty values.
  */
 export const fr: Record<MessageKey, string> = {
+  'prefs.checkUpdates': "Rechercher des mises à jour",
+  'prefs.checkUpdatesPreview': "Aperçu uniquement. La recherche de mises à jour n’est pas encore activée ici.",
   'prefs.appIcon': "Icône de l’application",
   'prefs.appIconPreview': "Aperçu uniquement. L’icône de l’application ne changera pas.",
   'welcome.title': 'Importez des trajectoires pour commencer',
@@ -209,7 +211,7 @@ export const fr: Record<MessageKey, string> = {
   'prefs.channel.beta': 'Bêta',
   'prefs.mouseControls': 'Commandes souris (vue 3D)',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Quel bouton de souris fait pivoter, déplacer et zoomer la vue 3D.',
   'prefs.mouse.table': 'Table des boutons',
   'prefs.mouse.btn.left': 'Glisser bouton gauche',

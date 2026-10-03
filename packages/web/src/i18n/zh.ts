@@ -2,6 +2,8 @@ import type { MessageKey } from './en';
 
 /** 简体中文。 */
 export const zh: Record<MessageKey, string> = {
+  'prefs.checkUpdates': "检查更新",
+  'prefs.checkUpdatesPreview': "仅作界面预览，暂未启用更新检查。",
   'prefs.appIcon': "应用图标",
   'prefs.appIconPreview': "仅预览，不会更改当前应用图标。",
   'welcome.title': '从导入路径开始',
@@ -201,7 +203,7 @@ export const zh: Record<MessageKey, string> = {
   'prefs.channel.beta': 'Beta（预览版）',
   'prefs.mouseControls': '鼠标控制（3D 视图）',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': '鼠标各键在 3D 视图中的功能。',
   'prefs.mouse.table': '按键映射',
   'prefs.mouse.btn.left': '左键拖动',

@@ -6,6 +6,8 @@ import type { MessageKey } from './en';
  * placeholders stay byte-identical to English (i18n.test.ts).
  */
 export const tr: Record<MessageKey, string> = {
+  'prefs.checkUpdates': "Güncellemeleri denetle",
+  'prefs.checkUpdatesPreview': "Yalnızca önizleme. Güncelleme denetimi burada henüz etkin değil.",
   'prefs.appIcon': "Uygulama simgesi",
   'prefs.appIconPreview': "Yalnızca önizleme. Uygulama simgesi değişmeyecek.",
   'welcome.title': 'Başlamak için yolları içe aktarın',
@@ -210,7 +212,7 @@ export const tr: Record<MessageKey, string> = {
   'prefs.channel.beta': 'Beta',
   'prefs.mouseControls': 'Fare kontrolleri (3B görünüm)',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Hangi fare düğmesi 3B görünümü döndürür, kaydırır ve yakınlaştırır.',
   'prefs.mouse.table': 'Düğme haritası',
   'prefs.mouse.btn.left': 'Sol tuş sürükleme',

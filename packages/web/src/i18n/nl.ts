@@ -11,6 +11,8 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const nl: Record<MessageKey, string> = {
+  'prefs.checkUpdates': "Controleren op updates",
+  'prefs.checkUpdatesPreview': "Alleen een voorbeeld. Controleren op updates is hier nog niet ingeschakeld.",
   'prefs.appIcon': "App-pictogram",
   'prefs.appIconPreview': "Alleen een voorbeeld. Het app-pictogram verandert niet.",
   'welcome.title': 'Importeer routes om te beginnen',
@@ -212,7 +214,7 @@ export const nl: Record<MessageKey, string> = {
   'prefs.channel.beta': 'Beta',
   'prefs.mouseControls': 'Muisbesturing (3D-weergave)',
   'prefs.mouse.onshape': 'Onshape',
-  'prefs.mouse.solidworks': 'SolidWorks',
+  'prefs.mouse.solidworks': 'SOLIDWORKS',
   'prefs.mouse.hint': 'Welke muisknop de 3D-weergave roteert, verschuift en zoomt.',
   'prefs.mouse.table': 'Knoptoewijzing',
   'prefs.mouse.btn.left': 'Slepen met linkerknop',
