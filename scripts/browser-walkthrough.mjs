@@ -1,7 +1,7 @@
 /**
  * Real-browser end-to-end walkthrough against the production preview build.
  * View-only edition (2026-09-30): import → collision → playback (0.5×) →
- * language switch (8 locales) → share-link restore → field bounds → season +
+ * language switch (8 locales) → field bounds → season +
  * variant persistence → custom field → read-only inspector → route library →
  * PathPlanner batch → session save/restore → bulk stress → PNG export →
  * service worker → 3D. The app adjusts nothing: no editing, no delays, no
@@ -264,22 +264,8 @@ await cancelBtn.click();
 await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
 await page.waitForTimeout(200);
 
-// --- share link: dialog with the compressed session, then restore ---
-await page.locator('.share-action').click();
-await page.waitForSelector('.share-box', { timeout: 5000 });
-const shareText = await page.locator('.share-box').inputValue();
-const hash = await page.evaluate(() => location.hash);
-check('share dialog shows link', shareText.includes('#s=') && hash.startsWith('#s='), shareText.slice(0, 40) + '…');
-await page.getByRole('button', { name: /Done|完成|完成/i }).first().click();
-
-const ctx2 = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'en-US' });
-const page2 = await ctx2.newPage();
-await page2.goto(BASE + hash, { waitUntil: 'domcontentloaded' });
-await page2.waitForSelector('.robot-library-row', { timeout: 10000 });
-const restoredCount = await page2.locator('.robot-library-row').count();
-check('share link restores robots', restoredCount === 2, `rows=${restoredCount}`);
-await page2.screenshot({ path: `${SHOTS}/07-share-restored.png` });
-await ctx2.close();
+// (Share link removed entirely, PR #89 — never coming back; its
+// walkthrough steps went stale and blocked every later run 2026-10-02.)
 
 // --- out-of-bounds + field bounds panel ---
 await fileInput().setInputFiles([`${SAMPLES}/ghostauto/out_of_bounds.ghostauto`]);

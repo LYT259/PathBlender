@@ -48,6 +48,7 @@ export const fr: Record<MessageKey, string> = {
   "checks.jump": "Mettre en pause à cet instant",
   "checks.hidden": "Dont {n} robots masqués",
   "robots.import": "Importer les parcours",
+  "robots.teamNumberEdit": "Modifier le numéro d'équipe",
   "robots.empty": "Importez des parcours pour composer votre alliance.",
   "robots.selectPrompt": "Sélectionnez un robot pour voir ses détails.",
   "robots.identity": "Robot",

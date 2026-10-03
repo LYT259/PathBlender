@@ -83,7 +83,9 @@ jobs:
           mkdir -p release
           B=packages/desktop/src-tauri/target/release/bundle
           cp "$B/macos/PathBlender.app.tar.gz" "$B/macos/PathBlender.app.tar.gz.sig" release/
-          cp "$B/dmg/PathBlender_"*_aarch64.dmg release/ || true
+          # No `|| true`: a release without a (verified) dmg must fail loudly —
+          # beta.22 shipped a pre-seal image collected from a stale path.
+          cp "$B/dmg/PathBlender_"*_aarch64.dmg release/
       - uses: actions/upload-artifact@v4
         with:
           name: macos

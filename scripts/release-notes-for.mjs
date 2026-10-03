@@ -111,7 +111,10 @@ ${changesBlock}
 
 - **macOS (Apple Silicon, 13.0+)** — download \`${dmg}\` from the assets below, open it, and drag PathBlender to Applications.
 - **Windows / Linux** — installers are not provided yet; they are planned for a follow-up release. (The code is cross-platform; this release ships macOS only.)
-- **网页版 / Web app** — not yet re-published for this version; the desktop app above is the current distribution.
+- **Web app / 网页版** — also runs directly in the browser at
+  [pathblender.pages.dev](https://pathblender.pages.dev) (viewer build:
+  import, playback and checking; no session save / PNG / folder import),
+  preview channel at [pathblender-preview.pages.dev](https://pathblender-preview.pages.dev).
 
 ## Known issues & limitations / 已知问题与限制
 

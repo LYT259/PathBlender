@@ -48,6 +48,7 @@ export function buildChassis3D(
   modules: readonly ModuleLocation[],
   color: string,
   moduleTemplate?: THREE.Object3D | null,
+  teamNumber?: string,
 ): Chassis3D {
   const group = new THREE.Group();
 
@@ -90,6 +91,22 @@ export function buildChassis3D(
   add(body, L, BUMPER_H_M, d, 0, BUMPER_Y_M, -(W - d) / 2, bumperMat);
   add(body, d, BUMPER_H_M, W - 2 * d, (L - d) / 2, BUMPER_Y_M, 0, bumperMat);
   add(body, d, BUMPER_H_M, W - 2 * d, -(L - d) / 2, BUMPER_Y_M, 0, bumperMat);
+
+  // Team number decals on the two side rails (user request 2026-10-02,
+  // like a real robot: white digits on the bumper). One outward-facing
+  // plane per rail, upright text, texture cached per number.
+  if (teamNumber) {
+    const tex = teamNumberTexture(teamNumber);
+    const railW = (L - 2 * d) * 0.92;
+    const geo = new THREE.PlaneGeometry(railW, BUMPER_H_M * 0.82);
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+    for (const side of [1, -1] as const) {
+      const decal = new THREE.Mesh(geo, mat);
+      decal.position.set(0, BUMPER_Y_M, (side * W) / 2 + 0.001);
+      if (side < 0) decal.rotation.y = Math.PI;
+      body.add(decal);
+    }
+  }
 
   // Swerve pods at module positions (robot frame, relative to the pose).
   const pods: THREE.Group[] = [];
@@ -147,4 +164,28 @@ export function validateModuleTemplate(t: THREE.Object3D): THREE.Group | null {
     return null;
   }
   return t as THREE.Group;
+}
+
+/** Canvas texture with the team number in white — cached per number,
+ *  shared by every robot carrying it (never disposed, like the module
+ *  template). */
+const teamNumberTexCache = new Map<string, THREE.CanvasTexture>();
+function teamNumberTexture(num: string): THREE.CanvasTexture {
+  const hit = teamNumberTexCache.get(num);
+  if (hit) return hit;
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d')!;
+  ctx.clearRect(0, 0, 512, 128);
+  ctx.font = 'bold 96px ui-sans-serif, system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#f4f4f5';
+  ctx.fillText(num, 256, 68);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  teamNumberTexCache.set(num, tex);
+  return tex;
 }
