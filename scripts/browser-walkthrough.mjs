@@ -95,7 +95,8 @@ check('starts in 2D (toggle pressed)', (await page.locator('.view-toggle button'
 // schematic artwork, 2D view.
 {
   const season = await page.locator('.field-select').first().inputValue();
-  const welded = await page.locator('select.field-variant option[value="welded"]').first().evaluate((o) => o.selected);
+  // The variant control is now a segmented toggle (buttons), not a select.
+  const welded = (await page.locator('.field-variant-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'Welded';
   const schematic = await page.locator('select.field-style option[value="schematic"]').first().evaluate((o) => o.selected);
   check(
     'first-run defaults: 2026 + welded + schematic',
@@ -282,7 +283,7 @@ await page.screenshot({ path: `${SHOTS}/08-bounds.png` });
 const seasonSelect = page.locator('.field-select').first();
 await seasonSelect.selectOption('reefscape-2025');
 await page.waitForTimeout(700);
-await page.locator('.field-select').nth(1).selectOption('andymark');
+await page.locator('.field-variant-toggle button', { hasText: 'AndyMark' }).click();
 await page.waitForTimeout(400);
 await page.evaluate(() => history.replaceState(null, '', location.pathname));
 await page.reload({ waitUntil: 'domcontentloaded' });
@@ -296,8 +297,8 @@ await fileInput().setInputFiles([
 await page.waitForSelector('.robot-library-row', { timeout: 10000 });
 await page.waitForSelector('.field-canvas');
 const fieldAfterReload = await seasonSelect.inputValue();
-const variantAfterReload = await page.locator('.field-select').nth(1).inputValue();
-check('field + AndyMark variant survive reload', fieldAfterReload === 'reefscape-2025' && variantAfterReload === 'andymark', `field=${fieldAfterReload} variant=${variantAfterReload}`);
+const amPressed = (await page.locator('.field-variant-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'AndyMark';
+check('field + AndyMark variant survive reload', fieldAfterReload === 'reefscape-2025' && amPressed, `field=${fieldAfterReload} andymark=${amPressed}`);
 await page.screenshot({ path: `${SHOTS}/09-reefscape.png` });
 // 2025's default style is the schematic (a single artwork): toggling the
 // construction variant moves only the tag overlay (~7 cm at the coral
@@ -309,7 +310,7 @@ await page.screenshot({ path: `${SHOTS}/09-reefscape.png` });
   const styleSelect = page.locator('select.field-style');
   check('2025 exposes the style selector', (await styleSelect.count()) === 1);
   const amSchematic = await snap();
-  await page.locator('.field-select').nth(1).selectOption('welded');
+  await page.locator('.field-variant-toggle button', { hasText: 'Welded' }).click();
   await page.waitForTimeout(600);
   const wdSchematic = await snap();
   check('schematic variant toggle repaints (tag overlay moves)', amSchematic !== wdSchematic);
@@ -317,7 +318,7 @@ await page.screenshot({ path: `${SHOTS}/09-reefscape.png` });
   await page.waitForTimeout(600);
   const wdRendered = await snap();
   check('style switch to rendered repaints', wdRendered !== wdSchematic);
-  await page.locator('.field-select').nth(1).selectOption('andymark');
+  await page.locator('.field-variant-toggle button', { hasText: 'AndyMark' }).click();
   await page.waitForTimeout(600);
   const amRendered = await snap();
   check('2025 rendered pair swaps with the construction variant', amRendered !== wdRendered);
@@ -652,11 +653,8 @@ const rowsAfterReload = await page.locator('.robot-library-row').count();
 check('last session restored on reload (no re-import)', rowsAfterReload > 0, `rows=${rowsAfterReload}`);
 const restoredField = await page.locator('.field-select').first().inputValue();
 check('field selection remembered across reload', restoredField === 'rebuilt-2026', restoredField);
-const variantSelected = await page
-  .locator('select option[value="andymark"]')
-  .first()
-  .evaluate((opt) => opt.selected);
-check('explicit AndyMark choice survives reload', variantSelected === true);
+const amPressed2 = (await page.locator('.field-variant-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'AndyMark';
+check('explicit AndyMark choice survives reload', amPressed2 === true);
 
 check('no console/page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 

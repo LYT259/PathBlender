@@ -157,6 +157,45 @@ let lastModelDir: string | undefined;
  * the parsed template is never disposed (the app has exactly one).
  */
 let mk5iTemplatePromise: Promise<THREE.Group | null> | undefined;
+let mk5iFramePromise: Promise<THREE.Group | null> | undefined;
+function loadMk5iFrame(): Promise<THREE.Group | null> {
+  if (mk5iFramePromise) return mk5iFramePromise;
+  mk5iFramePromise = new Promise((resolve) => {
+    new GLTFLoader().load(
+      `${import.meta.env.BASE_URL}models/mk5i-frame.glb`,
+      (gltf) => {
+        const g = gltf.scene;
+        g.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          mesh.castShadow = false;
+        });
+        // Sanity gate: the shipped frame is 27x27 in (0.6858 m) square.
+        // Reject anything that is not plan-square within tolerance so a
+        // bad asset falls back to "no frame" instead of mis-rendering.
+        const box = new THREE.Box3().setFromObject(g);
+        const sx = box.max.x - box.min.x;
+        const sz = box.max.z - box.min.z;
+        const ok =
+          Math.abs(sx - 0.6858) < 0.01 &&
+          Math.abs(sz - 0.6858) < 0.01 &&
+          Math.abs(sx - sz) < 0.005;
+        if (!ok) {
+          console.warn(
+            `mk5i frame template rejected: plan ${sx.toFixed(3)}x${sz.toFixed(3)} m (expected ~0.6858 square)`,
+          );
+          resolve(null);
+          return;
+        }
+        resolve(g);
+      },
+      undefined,
+      () => resolve(null),
+    );
+  });
+  return mk5iFramePromise;
+}
+
 function loadMk5iTemplate(): Promise<THREE.Group | null> {
   if (mk5iTemplatePromise) return mk5iTemplatePromise;
   mk5iTemplatePromise = new Promise((resolve) => {
@@ -266,8 +305,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   // Official MK5i CAD module (null = not yet loaded / fell back) — the
   // rig-build effect re-runs when it arrives so existing views upgrade.
   const [moduleTemplate, setModuleTemplate] = useState<THREE.Group | null>(null);
+  const [frameTemplate, setFrameTemplate] = useState<THREE.Group | null>(null);
   useEffect(() => {
     void loadMk5iTemplate().then(setModuleTemplate);
+    void loadMk5iFrame().then(setFrameTemplate);
   }, []);
 
   // Scene scaffold: renderer/camera/controls/lights/ground — per field.
@@ -1033,7 +1074,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // the official CAD module when its template has loaded.
       const vis = robotVisualGeometry(r.trajectory, field.year);
       const modules = chassisModules(r.trajectory, vis.chassis);
-      const chassis = buildChassis3D(vis, modules, r.color, moduleTemplate, r.trajectory.teamNumber || undefined);
+      const chassis = buildChassis3D(vis, modules, r.color, moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplate);
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,
@@ -1044,7 +1085,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       });
       st.dirty();
     }
-  }, [robots, field, moduleTemplate]);
+  }, [robots, field, moduleTemplate, frameTemplate]);
 
   // Drive the chassis rigs along the shared clock: pose from the shared
   // sampler, plus per-pod steering from each wheel's ground velocity
