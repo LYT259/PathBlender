@@ -122,16 +122,20 @@ export function wheelSuppressed(now = performance.now()): boolean {
 }
 
 /**
- * Chase smoothing (user round 5, 2026-10-02) is retained for structural
- * compatibility but disabled: Onshape applies every zoom event instantly
- * (same-frame, measured 2026-10-03), and the user asked for identical
- * responsiveness ("跟手程度跟 Onshape 一模一样", R11). A share of 1 makes
- * splitInstant return the whole factor immediately; the chase loop starts
- * settled and never moves the view. τ is kept for the loop math only.
+ * Zoom chase smoothing for the CONTINUOUS streams (pinch, two-finger
+ * scroll): each event applies this fraction immediately and a rAF loop
+ * glides the remainder (τ = 80 ms below). Onshape applies even wheel
+ * events with zero animation (measured 2026-10-03) and R11 shipped a
+ * share of 1 — but on WKWebView the gesture/touch streams arrive in
+ * main-thread-congested batches, so full-instant application reads as
+ * visible steps: the user called it "没有之前那么丝滑" (2026-10-03).
+ * 0.5 is the R8-approved feel — an immediate visible response with a
+ * short glide tail merging the batches. Discrete mouse notches bypass
+ * this entirely (instant, crisp).
  */
 export const CHASE_TAU_MS = 80;
 
-export const CHASE_INSTANT_SHARE = 1;
+export const CHASE_INSTANT_SHARE = 0.5;
 
 /**
  * Split one pinch factor into the instant part and the deferred part
