@@ -18,6 +18,7 @@ import {
   samplePoseAt,
   sampleStateAt,
 } from '@pathblender/core';
+import { createGroundTrail } from '../ground-trail3d';
 import { buildChassis3D, validateModuleTemplate } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
@@ -60,6 +61,7 @@ interface Props {
   fieldImageUrl?: string;
   robots: SessionTrajectory[];
   currentT: number;
+  showTrail?: boolean;
   /** Field construction variant (AndyMark vs welded), when offered. */
   variant?: 'welded' | 'andymark';
 }
@@ -72,6 +74,7 @@ interface Scene3D {
   cx: number;
   cy: number;
   dynamic: THREE.Group;
+  trails: ReturnType<typeof createGroundTrail>[];
   /** Procedural MK5i-style chassis rigs, one per robot. */
   rigs: {
     root: THREE.Group;
@@ -286,7 +289,7 @@ function loadProcessedModel(dir: string): Promise<THREE.Group | null> {
 }
 
 export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function FieldCanvas3D(
-  { field, fieldImageUrl, robots, currentT, variant = 'welded' },
+  { field, fieldImageUrl, robots, currentT, showTrail = true, variant = 'welded' },
   ref,
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -530,7 +533,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     sceneRef.current = {
       renderer, scene, camera, controls,
       cx: 0, cy: 0,
-      dynamic, rigs: [],
+      dynamic, rigs: [], trails: [],
       modelRoot, fallback, fieldRoot,
       backgroundThemed,
       dirty: markDirty, themed,
@@ -1034,7 +1037,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
   }, [field.id, variant, field.lengthM, field.widthM]);
 
-  // Rebuild path tubes + robot boxes when the robot set changes — AND when
+  // Rebuild ground tape + robot boxes when the robot set changes — AND when
   // the field changes: the scaffold effect tears the whole scene down and
   // hands sceneRef a fresh, EMPTY dynamic group; without `field` in the deps
   // this effect never re-ran, so switching seasons in 3D left the field
@@ -1055,21 +1058,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     disposeDeep(st.dynamic);
     st.dynamic.clear();
     st.rigs = [];
+    st.trails = [];
     for (const r of robots) {
-      const color = new THREE.Color(r.color);
-      const pts = r.trajectory.samples.map((s) =>
-        worldToRenderVec3(s.x, s.y, 0.06, st.cx, st.cy),
-      );
-      if (pts.length > 1) {
-        // Tube geometry gives the path real thickness (line width is not
-        // honored by the WebGL backend) — a strong 3D cue.
-        const curve = new THREE.CatmullRomCurve3(pts);
-        const tube = new THREE.Mesh(
-          new THREE.TubeGeometry(curve, Math.min(600, pts.length * 3), 0.05, 8),
-          new THREE.MeshStandardMaterial({ color, roughness: 0.4 }),
-        );
-        st.dynamic.add(tube);
-      }
+      const trail = createGroundTrail(r, st.cx, st.cy);
+      st.dynamic.add(trail.mesh);
+      st.trails.push(trail);
       // MK5i-style chassis (bumper skirt + frame deck + swerve pods),
       // sized by this robot's season-resolved two-layer geometry; pods use
       // the official CAD module when its template has loaded.
@@ -1087,6 +1080,17 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       st.dirty();
     }
   }, [robots, field, moduleTemplate, frameTemplate]);
+
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    for (const { mesh, robot } of st.trails) {
+      const time = currentT - robot.startDelayS;
+      mesh.visible = showTrail && time > (robot.trajectory.samples[0]?.t ?? 0);
+      mesh.material.uniforms.cutoff!.value = time;
+    }
+    st.dirty();
+  }, [currentT, showTrail, robots, field, moduleTemplate, frameTemplate]);
 
   // Drive the chassis rigs along the shared clock: pose from the shared
   // sampler, plus per-pod steering from each wheel's ground velocity
