@@ -85,9 +85,9 @@ body.desktop .workspace-toolbar { padding-left: 100px; }
 .field-options { display: flex; gap: 6px; align-items: center; min-width: 0; }
 .field-select { min-height: 30px; font-weight: 500; max-width: 190px; padding: 4px 8px; background: var(--btn-bg); border: 1px solid var(--border); border-radius: 6px; appearance: auto; cursor: pointer; }
 .field-select:hover { background: var(--btn-bg-hover); }
-.field-variant, .field-style { color: var(--fg); font-size: 12px; max-width: 120px; }
+.field-style { color: var(--fg); font-size: 12px; max-width: 120px; }
 .session-alliance { display: flex; align-items: center; gap: 7px; flex: none; }
-.session-alliance-label { font-size: 12px; color: var(--fg-dim); }
+
 .alliance-toggle { border: 1px solid var(--border); background: var(--seg-bg); }
 .alliance-toggle button { min-width: 44px; font-size: 12px; }
 .alliance-toggle button.alliance-blue.on { background: #006cdb; color: #fff; }
@@ -185,3 +185,15 @@ body.desktop .workspace-toolbar { padding-left: 100px; }
 .wp-head { padding: 0 6px 0 0; cursor: default; }
 .wp-toggle { display: flex; flex: 1; align-items: center; gap: 8px; min-width: 0; min-height: 36px; padding: 6px; border: 0; background: none; color: var(--fg); text-align: left; font: inherit; cursor: pointer; }
 .wp-toggle .wp-coords { flex: 1; }
+
+/* Match the outer control boxes, including segmented-control borders. */
+.workspace-toolbar > .btn,
+.workspace-canvas-bar .field-select { height: 32px; min-height: 32px; }
+.workspace-canvas-bar .seg {
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.workspace-canvas-bar .seg button { height: 26px; white-space: nowrap; }
+.field-options { flex-wrap: wrap; }

@@ -99,6 +99,7 @@ export const es: Record<MessageKey, string> = {
   'robots.remove': 'Quitar',
   'robots.collision': 'colisión',
   'robots.teamNumber': 'equipo n.º',
+  'robots.teamNumberEdit': 'Editar número de equipo',
   'robots.alliance': 'alianza',
   'robots.blue': 'Azul',
   'robots.red': 'Rojo',
