@@ -1,11 +1,13 @@
 import { useId } from 'react';
 import { useI18n } from '../i18n';
+import type { IconAppearanceMode } from '../app-icon';
 import dayIcon from '../assets/app-icon-day.png';
 import nightIcon from '../assets/app-icon-night.png';
 
-/** Independent from the interface theme. Persistence/native application is a
- * follow-up task; this controlled component only renders the selection UI. */
-export type IconAppearanceMode = 'system' | 'light' | 'dark';
+/** Controlled picker for the independent app-icon appearance preference
+ * (app-icon.tsx) — separate from the interface theme on purpose. The parent
+ * stages the draft; Save applies and persists it, Cancel discards it. */
+export type { IconAppearanceMode };
 
 export function IconAppearancePicker({ value, onChange }: {
   value: IconAppearanceMode;
@@ -27,6 +29,6 @@ export function IconAppearancePicker({ value, onChange }: {
         <span>{t(`theme.${choice}`)}</span>
       </label>)}
     </div>
-    <p className="preferences-icon-hint" id={`${id}-hint`}>{t('prefs.appIconPreview')}</p>
+    <p className="preferences-icon-hint" id={`${id}-hint`}>{t('prefs.appIconHint')}</p>
   </fieldset>;
 }

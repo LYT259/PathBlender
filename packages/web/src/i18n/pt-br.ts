@@ -17,7 +17,7 @@ export const ptBR: Record<MessageKey, string> = {
   'prefs.installUpdate': "Instalar e reiniciar",
   'prefs.checkSavedChannel': "A verificação de atualizações usa o canal salvo: {channel}.",
   'prefs.appIcon': "Ícone do aplicativo",
-  'prefs.appIconPreview': "Apenas uma prévia. O ícone do aplicativo não será alterado.",
+  'prefs.appIconHint': "Aplica-se ao ícone do Dock enquanto o app está aberto. O Finder e o Launchpad sempre seguem a aparência do sistema.",
   'welcome.title': 'Importe trajetórias para começar',
   'welcome.description': 'Reproduza as trajetórias juntas e verifique interferências.',
   'welcome.folderAdvice': 'Importe uma pasta inteira para poder trocar de rota quando aparecer um conflito.',

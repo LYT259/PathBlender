@@ -18,7 +18,7 @@ export const ja: Record<MessageKey, string> = {
   'prefs.installUpdate': "インストールして再起動",
   'prefs.checkSavedChannel': "更新の確認には保存済みのチャンネルを使用します: {channel}。",
   'prefs.appIcon': "アプリアイコン",
-  'prefs.appIconPreview': "プレビューのみです。アプリアイコンは変更されません。",
+  'prefs.appIconHint': "実行中の Dock アイコンに適用されます。Finder と Launchpad は常にシステムの外観に従います。",
   'welcome.title': 'パスをインポートして始めましょう',
   'welcome.description': 'パスをまとめて再生し、干渉がないかチェックできます。',
   'welcome.folderAdvice': 'フォルダごとインポートしておくと、競合が見つかったときにルートを切り替えられます。',

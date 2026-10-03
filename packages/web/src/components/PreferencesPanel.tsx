@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { LANGUAGES, langLabel, useI18n, type LangChoice } from '../i18n';
 import { useTheme, type ThemeMode } from '../theme';
+import { useAppIcon, type IconAppearanceMode } from '../app-icon';
 import {
   MOUSE_SCHEMES,
   useMouseControls,
@@ -14,7 +15,7 @@ import { copyText } from '../download';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from '../viewer';
 import { Icon } from './Icon';
 import { MouseControlsDiagram } from './MouseControlsDiagram';
-import { IconAppearancePicker, type IconAppearanceMode } from './IconAppearancePicker';
+import { IconAppearancePicker } from './IconAppearancePicker';
 import './PreferencesPanel.css';
 
 type Section = 'general' | 'updates' | 'about';
@@ -37,18 +38,17 @@ type UpdateCheck =
 export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClose: () => void }) {
   const { langChoice, setLang, t } = useI18n();
   const { mode, setMode } = useTheme();
+  const { mode: iconMode, setMode: setIconMode } = useAppIcon();
   const { channel, setChannel } = useUpdateChannel();
   const [mouseControls, setMouseControls] = useMouseControls();
   const [lengthUnit, setLengthUnit] = useLengthUnit();
   const [section, setSection] = useState<Section>('general');
   const [languageDraft, setLanguageDraft] = useState<LangChoice | null>(null);
   const [themeDraft, setThemeDraft] = useState<ThemeMode | null>(null);
+  const [iconDraft, setIconDraft] = useState<IconAppearanceMode | null>(null);
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
   const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
   const [unitDraft, setUnitDraft] = useState<LengthUnit | null>(null);
-  // UI-only preview: intentionally excluded from Save/dirty and native effects.
-  // The implementation task will replace this with an independent saved preference.
-  const [iconPreview, setIconPreview] = useState<IconAppearanceMode>('system');
   const [copyStatus, setCopyStatus] = useState('');
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck>({ kind: 'idle' });
   const id = useId();
@@ -56,11 +56,12 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const sections: Section[] = desktop || VIEWER_ONLY ? ['general', 'updates', 'about'] : ['general', 'about'];
   const language = languageDraft ?? langChoice;
   const theme = themeDraft ?? mode;
+  const icon = iconDraft ?? iconMode;
   const updateChannel = channelDraft ?? channel;
   const mouse = mouseDraft ?? mouseControls;
   const unit = unitDraft ?? lengthUnit;
-  const dirty = language !== langChoice || theme !== mode || updateChannel !== channel ||
-    mouse !== mouseControls || unit !== lengthUnit;
+  const dirty = language !== langChoice || theme !== mode || icon !== iconMode ||
+    updateChannel !== channel || mouse !== mouseControls || unit !== lengthUnit;
   const updateStatusText =
     updateCheck.kind === 'checking' ? t('prefs.checking')
       : updateCheck.kind === 'upToDate' ? t('updates.upToDate')
@@ -107,6 +108,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   function save() {
     if (language !== langChoice) setLang(language);
     if (theme !== mode) setMode(theme);
+    if (icon !== iconMode) setIconMode(icon);
     if (updateChannel !== channel) {
       setChannel(updateChannel);
       // A new saved channel invalidates any result shown for the old one.
@@ -154,7 +156,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
               </label>)}
             </div>
           </fieldset>
-          {desktop && <IconAppearancePicker value={iconPreview} onChange={setIconPreview} />}
+          {desktop && <IconAppearancePicker value={icon} onChange={setIconDraft} />}
           <div className="preferences-group preferences-mouse-group">
             <label className="preferences-setting"><span>{t('prefs.mouseControls')}</span>
               <select value={mouse} onChange={(event) => setMouseDraft(event.target.value as MouseControlsScheme)}>

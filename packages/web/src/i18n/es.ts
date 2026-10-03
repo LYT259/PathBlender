@@ -13,7 +13,7 @@ export const es: Record<MessageKey, string> = {
   'prefs.installUpdate': "Instalar y reiniciar",
   'prefs.checkSavedChannel': "La búsqueda de actualizaciones usa el canal guardado: {channel}.",
   'prefs.appIcon': "Icono de la aplicación",
-  'prefs.appIconPreview': "Solo vista previa. El icono de la aplicación no cambiará.",
+  'prefs.appIconHint': "Se aplica al icono del Dock mientras la app está en ejecución. Finder y Launchpad siempre siguen la apariencia del sistema.",
   'welcome.title': 'Importa trayectorias para empezar',
   'welcome.description': 'Reproduce las trayectorias juntas y detecta interferencias.',
   'welcome.folderAdvice': 'Importa una carpeta completa para cambiar de ruta si aparece un conflicto.',

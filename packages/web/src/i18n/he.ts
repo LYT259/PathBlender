@@ -22,7 +22,7 @@ export const he: Record<MessageKey, string> = {
   'prefs.installUpdate': "התקנה והפעלה מחדש",
   'prefs.checkSavedChannel': "בדיקת העדכונים משתמשת בערוץ השמור: {channel}.",
   'prefs.appIcon': "סמל היישום",
-  'prefs.appIconPreview': "תצוגה מקדימה בלבד. סמל היישום לא ישתנה.",
+  'prefs.appIconHint': "חל על צלמית ה-Dock כשהיישום פועל. ה-Finder וה-Launchpad תמיד עוקבים אחר מראה המערכת.",
   'welcome.title': 'ייבאו מסלולים כדי להתחיל',
   'welcome.description': 'נגנו מסלולים יחד ובדקו הפרעות.',
   'welcome.folderAdvice': 'ייבאו תיקייה שלמה כדי שתוכלו להחליף מסלול כשיש התנגשות.',
