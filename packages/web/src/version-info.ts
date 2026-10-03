@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.52';
+export const APP_VERSION = '0.1.6-beta.53';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.53', date: '2026-10-03', note: 'Desktop CSP hardened: page code can no longer open outbound connections — paths stay on-device by mechanism / 桌面端安全策略收紧：页面无法发起外发连接——路径不出机由机制保证' },
   { version: '0.1.6-beta.52', date: '2026-10-03', note: 'Second-batch UI languages (nl, pl, ja, ko, cs)' },
   { version: '0.1.6-beta.51', date: '2026-10-03', note: 'Lower the Linux smoke paint-gate threshold for the redesigned welcome screen' },
   { version: '0.1.6-beta.50', date: '2026-10-03', note: 'Project code is now uniformly Apache-2.0 — the core package\'s stray MIT LICENSE text is replaced / 项目代码统一为 Apache-2.0——替换 core 包遗留的 MIT 许可证文本' },
