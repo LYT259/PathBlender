@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.58';
+export const APP_VERSION = '0.1.6-beta.59';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.59', date: '2026-10-03', note: 'Tangential module rest pose measured from the STEP assembly / 按 STEP 装配实测改切向静止姿态' },
   { version: '0.1.6-beta.58', date: '2026-10-03', note: 'Mouse control diagram, update-check UI and full About version / 鼠标键位示意图、检查更新界面及完整版本号' },
   { version: '0.1.6-beta.57', date: '2026-10-03', note: 'Preview independent app icon appearance in settings (UI only) / 设置新增独立应用图标选择界面（仅预览）' },
   { version: '0.1.6-beta.56', date: '2026-10-03', note: 'Walkthrough: wait out autosave debounce at 3D-restore step' },
