@@ -13,7 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.7-beta.4', date: '2026-10-03', note: 'Remove the 2019 and 2020 seasons — the app now starts at 2022 / 移除 2019 与 2020 赛季——App 现从 2022 年开始' },
+  { version: '0.1.7-beta.4', date: '2026-10-03', note: 'Mouse schemes now match the real Onshape/SolidWorks bindings; added the three view checkboxes (reverse scroll, default constrained rotate, pen as mouse)' },
   { version: '0.1.7-beta.3', date: '2026-10-03', note: '2019–2025 robots ride the user\'s 30 in chassis frame; 2026 keeps the 27 in one / 2019–2025 机器人换装用户的 30 英寸车架；2026 沿用 27 英寸' },
   { version: '0.1.7-beta.2', date: '2026-10-03', note: 'Remove the 2018 POWER UP season — app covers 2019–2026 / 移除 2018 赛季，App 覆盖 2019–2026' },
   { version: '0.1.7-beta.1', date: '2026-10-03', note: '3D Fit button returns to the exact open-app camera — position, zoom and viewing angle all reset' },

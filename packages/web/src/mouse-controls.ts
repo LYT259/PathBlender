@@ -1,13 +1,14 @@
 /**
- * Mouse-controls scheme preference (user request 2026-10-02, modeled on
- * Onshape's web "Mouse controls" setting): which button rotates / pans /
- * zooms in the 3D view. Two schemes ship:
+ * Mouse-controls preferences (user request 2026-10-02, verified against
+ * Onshape's production UI 2026-10-03): the view-manipulation scheme plus
+ * Onshape's three view checkboxes. Two schemes ship, with bindings taken
+ * verbatim from Onshape's own settings table:
  *
- * - onshape (default): left = rotate, middle = pan, right = drag-zoom,
- *   wheel = zoom, Shift/Ctrl+left = pan.
- * - solidworks: middle = rotate, Ctrl+middle = pan, left = none (a viewer
- *   has no selection — the CAD muscle memory keeps working on the wheel
- *   and middle button), wheel = zoom, Shift/Ctrl+left = pan.
+ * - onshape (default): right drag = rotate, Alt+right drag = constrained
+ *   rotate, Ctrl+right drag OR middle drag = pan, wheel = zoom.
+ * - solidworks: middle drag = rotate, Alt+middle drag = constrained
+ *   rotate, Ctrl+middle drag = pan, wheel OR Shift+middle drag = zoom.
+ *   (Also how the real SOLIDWORKS desktop works.)
  *
  * Storage/broadcast follows the theme.tsx pattern (localStorage +
  * pref-sync events) so the settings window, the desktop shell and open
@@ -65,3 +66,89 @@ export function useMouseControls(): [MouseControlsScheme, (s: MouseControlsSchem
   }, []);
   return [scheme, writeMouseControls];
 }
+
+/**
+ * What a pressed mouse button does in the 3D view — the pure routing table
+ * behind the schemes above (unit-tested; the canvas handlers stay thin).
+ * `defaultConstrained` is Onshape's "set default rotation behavior to
+ * constrained rotate" checkbox: it swaps which of plain/Alt drags is the
+ * turntable-only rotation.
+ */
+export type ViewMouseAction =
+  | { kind: 'orbit'; constrained: boolean }
+  | { kind: 'pan' }
+  | { kind: 'dragZoom' }
+  | { kind: 'none' };
+
+export function resolveMouseAction(
+  scheme: MouseControlsScheme,
+  button: number,
+  mods: { ctrlKey: boolean; shiftKey: boolean; altKey: boolean },
+  defaultConstrained: boolean,
+): ViewMouseAction {
+  const constrained = mods.altKey ? !defaultConstrained : defaultConstrained;
+  if (scheme === 'solidworks') {
+    if (button !== 1) return { kind: 'none' };
+    if (mods.shiftKey) return { kind: 'dragZoom' };
+    if (mods.ctrlKey) return { kind: 'pan' };
+    return { kind: 'orbit', constrained };
+  }
+  // onshape
+  if (button === 2) {
+    if (mods.ctrlKey) return { kind: 'pan' };
+    return { kind: 'orbit', constrained };
+  }
+  if (button === 1) return { kind: 'pan' };
+  return { kind: 'none' };
+}
+
+/** Onshape's three view checkboxes as boolean prefs ('on'/'off' storage). */
+type BoolPrefKey = 'reverseScroll' | 'defaultConstrained' | 'penAsMouse';
+
+function booleanPref(storageKey: string, prefKey: BoolPrefKey, fallback: boolean) {
+  const subs = new Set<(value: boolean) => void>();
+  const read = (): boolean => {
+    try {
+      const value = localStorage.getItem(storageKey);
+      return value === null ? fallback : value === 'on';
+    } catch {
+      return fallback;
+    }
+  };
+  const write = (value: boolean): void => {
+    try {
+      localStorage.setItem(storageKey, value ? 'on' : 'off');
+    } catch {
+      // Storage unavailable (private mode); in-memory only.
+    }
+    subs.forEach((fn) => fn(value));
+    broadcastPref(prefKey, value ? 'on' : 'off');
+  };
+  const use = (): [boolean, (value: boolean) => void] => {
+    const [state, setState] = useState<boolean>(read);
+    useEffect(() => {
+      subs.add(setState);
+      const unlisten = listenPrefs((key, value) => {
+        if (key === prefKey) setState(value === 'on');
+      });
+      return () => {
+        subs.delete(setState);
+        unlisten();
+      };
+    }, []);
+    return [state, write];
+  };
+  return { read, write, use };
+}
+
+/** Wheel zooms the opposite way (Onshape's factory default: off). */
+export const reverseScrollPref = booleanPref('pb.reverseScroll', 'reverseScroll', false);
+/** Plain drag becomes turntable-only rotation; Alt drags are free. */
+export const defaultConstrainedPref = booleanPref('pb.defaultConstrained', 'defaultConstrained', false);
+/** Pen/stylus input drives the view like a mouse (default on — our viewer has
+ * no pen-specific gesture yet, so a pen already works as a mouse). */
+export const penAsMousePref = booleanPref('pb.penAsMouse', 'penAsMouse', true);
+
+export const useReverseScrollZoom = reverseScrollPref.use;
+export const useDefaultConstrained = defaultConstrainedPref.use;
+export const usePenAsMouse = penAsMousePref.use;
