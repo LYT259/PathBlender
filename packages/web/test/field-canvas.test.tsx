@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type FieldPackage, type SessionTrajectory } from '@pathblender/core';
 import { FieldCanvas, type FieldCanvasHandle } from '../src/components/FieldCanvas';
-import { CHASE_INSTANT_SHARE, PINCH_GAIN } from '../src/zoom';
+import { CHASE_INSTANT_SHARE, PINCH_GAIN, WHEEL_STEP } from '../src/zoom';
 import { I18nProvider } from '../src/i18n';
 
 const field: FieldPackage = { id: 'test', name: 'Test field', year: 2026, lengthM: 10, widthM: 5 };
@@ -98,12 +98,12 @@ describe('field canvas interaction and redraws', () => {
     paint();
     expect(strokeRect).toHaveBeenLastCalledWith(10, 10, 200, 100);
 
-    // Integer notch → mouse-wheel curve: one ±120 event scales by
-    // exp(120·0.0012) ≈ 1.155, so the fit scale of 20 px/m becomes ≈23.1.
+    // Integer notch → mouse-wheel curve: one ±120 event is Onshape's flat
+    // ×1.06 step, so the fit scale of 20 px/m becomes 21.2.
     fireEvent.wheel(container.querySelector('canvas')!, { deltaY: -120 });
     paint();
     const zoomedWidth = strokeRect.mock.lastCall![2];
-    expect(zoomedWidth).toBeCloseTo(231, 0);
+    expect(zoomedWidth).toBeCloseTo(212, 0);
     resize(660, 360);
     paint();
     expect(strokeRect.mock.lastCall![2]).toBe(zoomedWidth);
@@ -130,7 +130,7 @@ describe('field canvas interaction and redraws', () => {
     fireEvent(container.querySelector('canvas')!, wheel);
     paint();
     const [x, , width] = strokeRect.mock.lastCall!;
-    expect(width).toBeCloseTo(462, 0);
+    expect(width).toBeCloseTo(424, 0);
     expect(x).toBeLessThan(20); // zooming in pushes the left edge away
     expect(x + 0.7 * width).toBeCloseTo(300, 0);
   });
@@ -143,7 +143,7 @@ describe('field canvas interaction and redraws', () => {
     return vi.spyOn(performance, 'now').mockImplementation(() => (t += 16));
   }
 
-  it('pinch chases smoothly, settles at the centroid-anchored target, ignores post-end noise', () => {
+  it('pinch applies every event in full on arrival, settles at the centroid-anchored target, ignores post-end noise', () => {
     const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
     resize(440, 240);
     paint();
@@ -164,23 +164,19 @@ describe('field canvas interaction and redraws', () => {
     fireEvent(canvas, gestureEvent('gesturestart', 1));
     // A realistic stream: two small steps of +5% finger separation each
     // (per-event ln 0.049, below the end-of-gesture rate limit). Per-event
-    // factor = 1.05^PINCH_GAIN; its instant share applies on arrival.
+    // factor = 1.05^PINCH_GAIN, applied fully on arrival (R11: Onshape has
+    // zero zoom animation, measured 2026-10-03).
     fireEvent(canvas, gestureEvent('gesturechange', 1.05));
     fireEvent(canvas, gestureEvent('gesturechange', 1.1025));
 
-    // Instant halves land immediately (round 7) — the first drawn frame is
-    // already well on its way, but still short of the full target.
+    // The first drawn frame already carries the full composed target —
+    // no glide, no ramp.
     paint();
-    paint();
-    const partial = strokeRect.mock.lastCall![2];
-    const instantTotal = Math.pow(Math.pow(1.05, PINCH_GAIN), 2 * CHASE_INSTANT_SHARE);
     const fullTarget = Math.pow(Math.pow(1.05, PINCH_GAIN), 2);
-    // Instant halves landed AND the glide is already stepping beyond them.
-    expect(partial).toBeGreaterThan(400 * instantTotal);
-    expect(partial).toBeLessThan(400 * fullTarget);
-
-    // The chase glides the deferred remainder in and settles (~5τ).
-    for (let i = 0; i < 80; i++) paint();
+    expect(CHASE_INSTANT_SHARE).toBe(1);
+    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(400 * fullTarget, 0);
+    // Further frames change nothing.
+    for (let i = 0; i < 8; i++) paint();
     const [x, , width] = strokeRect.mock.lastCall!;
     expect(width).toBeCloseTo(400 * fullTarget, 0);
     // The world point under the fingers stays at screen x=300.
@@ -212,39 +208,41 @@ describe('field canvas interaction and redraws', () => {
     fireEvent(canvas, gestureEvent('gesturestart', 1));
     fireEvent(canvas, gestureEvent('gesturechange', 1.05));
     fireEvent(canvas, gestureEvent('gestureend', 1.05));
-    // Let the chase land first (the real app runs rAF during these 400 ms).
-    for (let i = 0; i < 80; i++) paint();
+    // The instant pinch landed on its first frame; run frames anyway (the
+    // real app runs rAF during these 400 ms).
+    for (let i = 0; i < 8; i++) paint();
 
-    // The settle (~270 ms of mocked time) ends inside the 350 ms quiet
-    // window; tick the mocked clock past it (each call advances 16 ms).
+    // The pinch applied immediately; the quiet window still runs 350 ms of
+    // real time — tick the mocked clock past it (each call advances 16 ms).
     for (let i = 0; i < 30; i++) performance.now();
     await new Promise((r) => setTimeout(r, 10));
     fireEvent.wheel(canvas, { deltaY: -120 });
     paint();
-    // The gesture zoomed once (1.05^PINCH_GAIN), then the notch adds ×1.155.
-    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(400 * Math.pow(1.05, PINCH_GAIN) * Math.exp(120 * 0.0012), 0);
+    // The gesture zoomed once (1.05^PINCH_GAIN), then the notch adds
+    // Onshape's flat ×1.06 step.
+    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(400 * Math.pow(1.05, PINCH_GAIN) * WHEEL_STEP, 0);
   });
 
 });
 
 describe('zoom range limits', () => {
-  it('zooms in much deeper than before, and never lets the field shrink below half the canvas', () => {
+  it('zooms in much deeper than before (R11: Onshape-grade depth), capped at 6000 px/m', () => {
     const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
     resize(440, 240);
     paint();
     expect(strokeRect).toHaveBeenLastCalledWith(20, 20, 400, 200); // fit scale 40 px/m
     const canvas = container.querySelector('canvas')!;
 
-    // Zoom IN: 40 notches × 1.155 ≈ 80× — the view must stop at the cap
-    // (1000 px/m → 10,000 px wide), not run away.
-    for (let i = 0; i < 40; i++) fireEvent.wheel(canvas, { deltaY: -120 });
+    // Zoom IN: ×1.06 per notch needs ln(150)/ln(1.06) ≈ 86 notches to reach
+    // the 6000 px/m cap — 100 must stop there (60,000 px wide), not run away.
+    for (let i = 0; i < 100; i++) fireEvent.wheel(canvas, { deltaY: -120 });
     paint();
-    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(10000, 0);
+    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(60000, 0);
 
     // The zoom-out floor is covered by the next test with a fresh fit.
   });
 
-  it('holds the zoom-out floor at half the fitted scale', () => {
+  it('holds the zoom-out floor exactly at the fit view (the open view)', () => {
     const ref = createRef<FieldCanvasHandle>();
     const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} ref={ref} /></I18nProvider>);
     resize(440, 240);
@@ -254,7 +252,8 @@ describe('zoom range limits', () => {
     const canvas = container.querySelector('canvas')!;
     for (let i = 0; i < 60; i++) fireEvent.wheel(canvas, { deltaY: 120 });
     paint();
-    // Fit 40 px/m → floor 20 px/m → field width 200 px.
-    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(200, 0);
+    // The field may never shrink below how it looks on open: the floor is
+    // the full fit scale (40 px/m → 400 px), not half of it (R11).
+    expect(strokeRect.mock.lastCall![2]).toBeCloseTo(400, 0);
   });
 });

@@ -194,13 +194,15 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     // Zoom by `factor` keeping the world point under (sx, sy) fixed —
     // Onshape-style zoom-to-cursor (user request 2026-10-02). The
     // before/after diff stays exact even when the scale clamps.
-    // Range (user round 9): the top lets a robot's bumper fill the screen
-    // (~1.2 m of field visible); the bottom keeps the field spanning at
-    // least half the canvas — the old static 8 px/m floor let it shrink
-    // to a thumbnail, which the user explicitly did not want.
-    const MAX_SCALE = 1000;
+    // Range (user round 11, 2026-10-03): the top is deep CAD-grade zoom
+    // (~0.23 m of field visible — Onshape lets you zoom until geometry
+    // degenerates; the old 1000 px/m cap stopped short of that); the
+    // bottom is exactly the fit view: zooming out may never shrink the
+    // field below what it looks like on open ("缩到刚打开时的样子，不能
+    // 再小了"). The static 8 px/m term is only an unreachable safety net.
+    const MAX_SCALE = 6000;
     const clampScale = (s: number) =>
-      Math.min(MAX_SCALE, Math.max(Math.max(8, fitScaleRef.current * 0.5), s));
+      Math.min(MAX_SCALE, Math.max(Math.max(8, fitScaleRef.current), s));
     const zoomAt = (sx: number, sy: number, factor: number) => {
       const v = viewRef.current;
       const before = world(sx, sy);
@@ -210,12 +212,11 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       v.cy += before.y - after.y;
     };
 
-    // Pinch chase (round 5): WKWebView batches gesture events under main-
-    // thread congestion (~12/s in the user's recording), so applying each
-    // event on arrival steps the view. Pinch events now move a TARGET view;
-    // a rAF loop eases the real view toward it exponentially (zoom.ts
-    // chaseAlpha). Wheel zoom stays instant (discrete notches read crisper)
-    // and cancels any running chase.
+    // Chase easing scaffolding (user round 5, 2026-10-02) — retained but
+    // inert since R11: Onshape applies zoom with zero animation (measured
+    // 2026-10-03), so CHASE_INSTANT_SHARE is 1 and events apply fully in
+    // their own frame. Wheel zoom was always instant and cancels any
+    // running chase.
     let chaseTarget: View | null = null;
     let chaseRaf = 0;
     let lastChaseT = 0;
@@ -285,9 +286,11 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         const sy = (g.clientY ?? rect.top + rect.height / 2) - rect.top;
         const v = viewRef.current;
         const factor = pinchZoomFactor(scale / lastScale);
-        // Round 7 ("takes too long to show"): apply half of every event
-        // immediately, chase only the rest — an instant visible response
-        // with a short glide tail instead of a 15%-per-frame ramp.
+        // Onshape-identical responsiveness (measured 2026-10-03): every
+        // event applies fully in its own frame — CHASE_INSTANT_SHARE is 1,
+        // so `deferred` is a no-op and the chase below never moves the
+        // view. The chase scaffolding stays only so the share can be
+        // re-tuned without restructuring.
         const { instant, deferred } = splitInstant(factor);
         const live = zoomAtView(v, sx, sy, instant);
         v.scale = live.scale; v.cx = live.cx; v.cy = live.cy;
