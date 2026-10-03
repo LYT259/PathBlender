@@ -15,9 +15,9 @@ import {
   splitInstant,
   TRACKPAD_EVENT_CAP,
   TRACKPAD_K,
-  WHEEL_K,
   wheelSuppressed,
   wheelZoomFactor,
+  WHEEL_STEP,
 } from '../src/zoom';
 
 const PIXEL = 0; // WheelEvent.DOM_DELTA_PIXEL
@@ -42,10 +42,19 @@ describe('classifyWheelInput', () => {
 });
 
 describe('wheelZoomFactor', () => {
-  it('keeps the approved mouse-wheel notch step (≈13% per ±120)', () => {
-    expect(wheelZoomFactor(-120)).toBeCloseTo(Math.exp(120 * WHEEL_K));
-    expect(wheelZoomFactor(-120)).toBeCloseTo(1.155, 3);
-    expect(wheelZoomFactor(120)).toBeCloseTo(1 / 1.155, 3);
+  it('applies Onshape\'s measured flat step per mouse notch (×1.06/event)', () => {
+    // Measured against Onshape 2026-10-03: ln 0.0578 ± 0.0004 per notch
+    // event; accumulation is linear in event count.
+    expect(wheelZoomFactor(-120)).toBe(WHEEL_STEP);
+    expect(wheelZoomFactor(120)).toBeCloseTo(1 / WHEEL_STEP, 12);
+  });
+
+  it('ignores notch magnitude like Onshape does mid-gesture', () => {
+    // Onshape gives δ40, δ120 and ctrl+δ3 the same step (pixel-identical
+    // views in the measurement runs); fast-scrolling mice emit ±240.
+    expect(wheelZoomFactor(-40)).toBe(WHEEL_STEP);
+    expect(wheelZoomFactor(-240)).toBe(WHEEL_STEP);
+    expect(wheelZoomFactor(240)).toBeCloseTo(1 / WHEEL_STEP, 12);
   });
 
   it('zooms in for negative deltas and out for positive ones', () => {
@@ -54,19 +63,22 @@ describe('wheelZoomFactor', () => {
   });
 
   it('makes gentle trackpad swipes visible from the first events', () => {
-    // δ=4 at the old wheel curve was a sub-0.5% no-op ("nothing happens");
-    // the trackpad curve turns it into a ~1.6% step.
+    // δ=4 at the old shared wheel curve was a sub-0.5% no-op ("nothing
+    // happens"); the trackpad curve turns it into a ~3.7% step.
     expect(wheelZoomFactor(-4)).toBeCloseTo(Math.exp(4 * TRACKPAD_K));
-    expect(wheelZoomFactor(-4)).toBeGreaterThan(1.015);
+    expect(wheelZoomFactor(-4)).toBeGreaterThan(1.03);
     expect(Math.exp(-4 * 0.0012)).toBeLessThan(1.006); // the old behavior
   });
 
-  it('caps momentum bursts per event so zoom cannot explode', () => {
-    // Momentum-phase trackpad deltas are large but fractional.
+  it('caps momentum bursts at exactly one Onshape step per event', () => {
+    // Momentum-phase trackpad deltas are large but fractional. Onshape
+    // never applies more than one step per delivered event — the cap is
+    // pinned to the same value.
     expect(wheelZoomFactor(400.5)).toBeCloseTo(1 / TRACKPAD_EVENT_CAP);
     expect(wheelZoomFactor(-380.25)).toBeCloseTo(TRACKPAD_EVENT_CAP);
-    // Uncapped, the continuous curve would apply an 80% step per event.
-    expect(Math.exp(-400 * TRACKPAD_K)).toBeLessThan(0.25);
+    expect(TRACKPAD_EVENT_CAP).toBe(WHEEL_STEP);
+    // Uncapped, the continuous curve would apply a ~97% step per event.
+    expect(Math.exp(-400 * TRACKPAD_K)).toBeLessThan(0.05);
   });
 
   it('is neutral for zero delta', () => {
@@ -81,8 +93,8 @@ describe('orbitZoomSpeedFor', () => {
     // OrbitControls scales the camera radius by exp(K_OC·zoomSpeed·δY);
     // our zoom factor f means a radius factor of 1/f.
     const cases: [factor: number, deltaY: number][] = [
-      [Math.exp(120 * WHEEL_K), -120], // mouse notch, zoom in
-      [Math.exp(-120 * WHEEL_K), 120], // mouse notch, zoom out
+      [WHEEL_STEP, -120], // mouse notch, zoom in
+      [1 / WHEEL_STEP, 120], // mouse notch, zoom out
       [Math.exp(5.5 * TRACKPAD_K), -5.5], // trackpad swipe in
       [1 / TRACKPAD_EVENT_CAP, 400], // capped momentum burst, zoom out
     ];
@@ -100,7 +112,7 @@ describe('orbitZoomSpeedFor', () => {
     expect(orbitZoomSpeedFor(Number.NaN, 100)).toBe(1);
     // A factor pointing against the delta's direction must never invert
     // the zoom — fall back instead.
-    expect(orbitZoomSpeedFor(1.155, 120)).toBe(1);
+    expect(orbitZoomSpeedFor(WHEEL_STEP, 120)).toBe(1);
   });
 });
 
@@ -210,6 +222,13 @@ describe('splitInstant', () => {
   it('splits in log space at the configured share', () => {
     const { instant } = splitInstant(2);
     expect(instant).toBeCloseTo(Math.pow(2, CHASE_INSTANT_SHARE), 12);
+  });
+
+  it('is fully instant — Onshape applies zoom with zero animation (R11)', () => {
+    // Measured 2026-10-03: the full step is visible in a same-frame
+    // screenshot after one event. Share 1 keeps the chase scaffolding inert.
+    expect(CHASE_INSTANT_SHARE).toBe(1);
+    expect(splitInstant(1.74)).toEqual({ instant: 1.74, deferred: 1 });
   });
 
   it('guards degenerate factors', () => {

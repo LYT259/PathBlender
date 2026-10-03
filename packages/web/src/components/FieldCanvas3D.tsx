@@ -363,12 +363,14 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // model because the slab is thin and the near wall occludes.
     controls.minPolarAngle = 0.15;
     controls.maxPolarAngle = 2.6;
-    // Dolly range (user round 9): 1 m lets a bumper fill the view (was 2 m —
-    // "can't zoom in particularly large"); 32 m keeps the field spanning
-    // most of the view from the home distance (~17 m) — the old 60 m let it
-    // shrink to a corner, which the user explicitly did not want.
-    controls.minDistance = 1;
-    controls.maxDistance = 32;
+    // Dolly range (user round 11, 2026-10-03): 0.15 m is deep CAD-grade
+    // zoom — Onshape lets you zoom until geometry degenerates, and the old
+    // 1 m floor still stopped short ("放大的极限还要大得多"). The ceiling
+    // is exactly the home distance: pulling back may never show the field
+    // smaller than it looks on open ("缩小到刚打开时的样子，不能再小
+    // 了"); the old 32 m allowed shrinking it into a corner.
+    controls.minDistance = 0.15;
+    controls.maxDistance = Math.hypot(CAM_HOME[0], CAM_HOME[1], CAM_HOME[2]);
     // Onshape-style wheel zoom (user request 2026-10-02): dollies down the
     // pointer ray, so zooming in magnifies the detail under the cursor and
     // zooming out lets the scene flow away from it.
@@ -558,10 +560,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // orbit center), with the ratio softened via pinchZoomFactor. Events
     // after gestureend are ignored (user round 3: lagging events flushed
     // at finger lift kept zooming after release).
-    // Round 5: events only move a chase target (remaining view-zoom factor
-    // + anchor NDC); the rAF loop applies it in exponential steps via the
-    // OrbitControls cursor-zoom internals, so batched gesture events read
-    // as fluid motion instead of steps.
+    // Round 5 chase scaffolding — inert since R11 (Onshape applies zoom
+    // with zero animation, measured 2026-10-03; CHASE_INSTANT_SHARE = 1):
+    // events only touch a chase target (remaining view-zoom factor + anchor
+    // NDC) that the rAF loop would apply in exponential steps via the
+    // OrbitControls cursor-zoom internals.
     let lastScale = 1;
     let gestureDone = false;
     const pinchChase = { factor: 1, nx: 0, ny: 0 };
@@ -584,9 +587,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
           const rect = renderer.domElement.getBoundingClientRect();
           pinchChase.nx = (((g.clientX ?? rect.left + rect.width / 2) - rect.left) / rect.width) * 2 - 1;
           pinchChase.ny = -((((g.clientY ?? rect.top + rect.height / 2) - rect.top) / rect.height) * 2 - 1);
-          // Round 7 ("takes too long to show"): apply half of every event
-          // immediately, chase only the rest — instant response with a
-          // short glide tail instead of a slow ramp.
+          // Onshape-identical responsiveness (measured 2026-10-03): every
+          // event applies fully in its own frame — CHASE_INSTANT_SHARE is
+          // 1, so `deferred` is a no-op and the chase factor never grows.
+          // The chase scaffolding stays only so the share can be re-tuned.
           const { instant, deferred } = splitInstant(factor);
           applyPinchStep(instant);
           pinchChase.factor *= deferred; // remaining view zoom to apply
@@ -1133,14 +1137,21 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // Fit the whole field into the vertical field of view from the current
     // viewing direction — the toolbar's Fit action. It deliberately keeps the
     // direction the user orbited to, so it does NOT restore the load-time
-    // camera (CAM_HOME sits closer, at |CAM_HOME| ≈ 17.1 m).
+    // camera (CAM_HOME sits closer, at |CAM_HOME| ≈ 17.1 m). The diagonal
+    // framing distance (~20.8 m for a 2026 field) is clamped to maxDistance
+    // (user round 11: the view may never shrink below the open view), so Fit
+    // recovers a deeply zoomed camera to the open framing without exceeding
+    // the zoom-out floor.
     resetCam: () => {
       const st = sceneRef.current;
       if (!st) return;
       pinchChaseRef.current?.cancel();
       const diagonal = Math.hypot(st.cx * 2, st.cy * 2);
       const fov = (st.camera.fov * Math.PI) / 180;
-      const dist = Math.max((diagonal / 2 / Math.tan(fov / 2)) * 1.05, 6);
+      const dist = Math.min(
+        Math.max((diagonal / 2 / Math.tan(fov / 2)) * 1.05, 6),
+        st.controls.maxDistance,
+      );
       const dir = st.camera.position.clone().sub(st.controls.target).normalize();
       st.controls.target.set(0, 0, 0);
       st.camera.position.copy(dir.multiplyScalar(dist));
