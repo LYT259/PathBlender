@@ -1,11 +1,11 @@
 [package]
 name = "pathblender-desktop"
-version = "0.1.6-beta.43"
+version = "0.1.6-beta.46"
 description = "PathBlender — FRC alliance path fusion viewer (desktop shell)"
 edition = "2021"
 
 [lib]
-name = "pathblender_desktop_lib"
+name = "ghpathblender_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
