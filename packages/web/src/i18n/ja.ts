@@ -195,6 +195,8 @@ export const ja: Record<MessageKey, string> = {
   'rail.png': 'PNG',
   'rail.prefs': '設定',
   'rail.clear': 'クリア',
+  "prefs.section.controls": "操作",
+  "prefs.description.controls": "マウス操作と長さの単位を設定します。",
   "prefs.section.general": "一般",
   "prefs.section.updates": "アップデート",
   "prefs.section.about": "情報",

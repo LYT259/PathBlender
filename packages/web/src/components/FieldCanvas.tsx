@@ -1,3 +1,4 @@
+import { bumperColor } from '../robot-identity';
 import {
   forwardRef,
   useCallback,
@@ -561,8 +562,8 @@ function drawRobot(
   const W = outer.widthM * scale;
   const ox = outer.offsetX * scale;
   const oy = outer.offsetY * scale;
-  ctx.fillStyle = hexAlpha(r.color, 0.22);
-  ctx.strokeStyle = collided ? '#ff3b30' : outOfBounds ? '#ffa726' : r.color;
+  ctx.fillStyle = bumperColor(r.trajectory.alliance);
+  ctx.strokeStyle = collided ? '#ff3b30' : outOfBounds ? '#ffa726' : bumperColor(r.trajectory.alliance);
   ctx.lineWidth = collided || outOfBounds ? 3 : 2;
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
@@ -574,7 +575,7 @@ function drawRobot(
   const cW = chassis.widthM * scale;
   const cox = chassis.offsetX * scale;
   const coy = chassis.offsetY * scale;
-  ctx.fillStyle = hexAlpha(r.color, 0.45);
+  ctx.fillStyle = cssVar('--bg-panel', '#29292c');
   ctx.strokeStyle = hexAlpha(r.color, 0.9);
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -637,7 +638,7 @@ function drawRobot(
     ctx.textBaseline = 'middle';
     ctx.lineWidth = 3;
     ctx.strokeStyle = cssVar('--canvas-bg', '#1c1c1e');
-    ctx.fillStyle = cssVar('--fg', '#e6e6e8');
+    ctx.fillStyle = '#ffffff';
     for (const side of [1, -1]) {
       // Robot-frame rail center y = ±(W/2 − d/2); screen y is flipped.
       ctx.save();

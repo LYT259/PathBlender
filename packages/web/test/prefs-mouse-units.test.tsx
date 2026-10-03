@@ -17,7 +17,7 @@ beforeEach(() => localStorage.clear());
 afterEach(cleanup);
 
 function panel() {
-  return render(
+  const result = render(
     <ThemeProvider>
       <UpdateChannelProvider>
         <I18nProvider>
@@ -26,6 +26,9 @@ function panel() {
       </UpdateChannelProvider>
     </ThemeProvider>,
   );
+  expect(screen.queryByLabelText(/mouse controls/i, { selector: 'select' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: 'Controls' }));
+  return result;
 }
 
 describe('mouse controls & units settings', () => {

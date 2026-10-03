@@ -190,6 +190,8 @@ export const tr: Record<MessageKey, string> = {
   'rail.png': 'PNG',
   'rail.prefs': 'Ayarlar',
   'rail.clear': 'Temizle',
+  "prefs.section.controls": "Kontroller",
+  "prefs.description.controls": "Fare kontrollerini ve uzunluk birimlerini seçin.",
   "prefs.section.general": "Genel",
   "prefs.section.updates": "Güncellemeler",
   "prefs.section.about": "Hakkında",

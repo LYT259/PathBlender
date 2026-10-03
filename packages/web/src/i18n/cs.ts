@@ -192,6 +192,8 @@ export const cs: Record<MessageKey, string> = {
   'rail.png': 'PNG',
   'rail.prefs': 'Předvolby',
   'rail.clear': 'Vymazat',
+  "prefs.section.controls": "Ovládání",
+  "prefs.description.controls": "Vyberte ovládání myší a jednotky délky.",
   "prefs.section.general": "Obecné",
   "prefs.section.updates": "Aktualizace",
   "prefs.section.about": "O aplikaci",

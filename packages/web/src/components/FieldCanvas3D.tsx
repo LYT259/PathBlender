@@ -19,6 +19,7 @@ import {
   sampleStateAt,
 } from '@pathblender/core';
 import { createGroundTrail } from '../ground-trail3d';
+import { bumperColor } from '../robot-identity';
 import { buildChassis3D, validateModuleTemplate } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
@@ -1078,7 +1079,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // the official CAD module when its template has loaded.
       const vis = robotVisualGeometry(r.trajectory, field.year);
       const modules = chassisModules(r.trajectory, vis.chassis);
-      const chassis = buildChassis3D(vis, modules, r.color, moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplate);
+      const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplate);
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,
