@@ -4,7 +4,7 @@
  * part of that script's contract; check-version.mjs pins APP_VERSION to the
  * six manifest copies).
  */
-export const APP_VERSION = '0.1.6-beta.62';
+export const APP_VERSION = '0.1.6-beta.63';
 
 export interface VersionNote {
   version: string;
@@ -13,6 +13,7 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.6-beta.63', date: '2026-10-03', note: 'Full-resolution 3D (uncapped pixel ratio) + settle repaint / 3D 全分辨率与停手重绘' },
   { version: '0.1.6-beta.62', date: '2026-10-03', note: 'Flip module pods 180° to CAD-verified motor sides; Retina 3D pixel ratio / 模组转180°对齐CAD电机边；3D Retina 画质' },
   { version: '0.1.6-beta.61', date: '2026-10-03', note: 'App icon setting now really switches the Dock icon — independent from the interface theme, follows the OS by default / 应用图标设置真正生效——独立于界面主题，默认跟随系统' },
   { version: '0.1.6-beta.60', date: '2026-10-03', note: 'Settings window can check for updates, then install and relaunch on confirmation / 设置窗口可检查更新，确认后安装并重启' },
