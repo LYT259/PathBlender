@@ -12,7 +12,6 @@ export const zhTw: Record<MessageKey, string> = {
   'prefs.installUpdate': "安裝並重啓",
   'prefs.checkSavedChannel': "更新檢查使用已儲存的通道：{channel}。",
   'prefs.appIcon': "應用圖標",
-  'prefs.appIconHint': "在 App 執行時套用於 Dock 圖示；Finder 與啟動台一律跟隨系統外觀。",
   'welcome.title': '從匯入路徑開始',
   'welcome.description': '一起重播路徑，查看機器人之間是否有干涉。',
   'welcome.folderAdvice': '建議匯入整個路徑資料夾，發現干涉時可以快速切換路線。',

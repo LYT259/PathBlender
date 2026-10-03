@@ -109,8 +109,9 @@ describe('shared desktop preferences', () => {
     // Default 'system' mirrors the OS appearance with matching artwork
     // (matchMedia stubbed to light above).
     await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false }));
-    // The preview-only note is gone; the hint now states the real scope.
-    expect(screen.getByText('Applies to the Dock icon while the app is running. Finder and Launchpad always follow the system appearance.')).toBeInTheDocument();
+    // The preview-only note is gone; the scope hint was removed too
+    // (user request 2026-10-03).
+    expect(screen.queryByText(/Dock icon/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Preview only/)).not.toBeInTheDocument();
 
     // Staging a draft enables Save but touches neither storage nor native.
