@@ -162,12 +162,23 @@ let lastModelDir: string | undefined;
  * the parsed template is never disposed (the app has exactly one).
  */
 let mk5iTemplatePromise: Promise<THREE.Group | null> | undefined;
-let mk5iFramePromise: Promise<THREE.Group | null> | undefined;
-function loadMk5iFrame(): Promise<THREE.Group | null> {
-  if (mk5iFramePromise) return mk5iFramePromise;
-  mk5iFramePromise = new Promise((resolve) => {
+const FRAME_ASSETS = {
+  // The user-built 27 in frame (2026 CAD, ships unscaled) and the 30 in
+  // frame (2019-2025 chassis, same construction at the 120-in perimeter
+  // size). Season selects the plan size; 2018 was removed (PR #143).
+  '27': `${import.meta.env.BASE_URL}models/mk5i-frame.glb`,
+  '30': `${import.meta.env.BASE_URL}models/mk5i-frame-30.glb`,
+} as const;
+export type FrameSize = keyof typeof FRAME_ASSETS;
+
+const framePromises = new Map<FrameSize, Promise<THREE.Group | null>>();
+function loadMk5iFrame(size: FrameSize): Promise<THREE.Group | null> {
+  const hit = framePromises.get(size);
+  if (hit) return hit;
+  const plan = size === '27' ? 0.6858 : 0.762; // 27 / 30 in, meters
+  const p = new Promise<THREE.Group | null>((resolve) => {
     new GLTFLoader().load(
-      `${import.meta.env.BASE_URL}models/mk5i-frame.glb`,
+      FRAME_ASSETS[size],
       (gltf) => {
         const g = gltf.scene;
         g.traverse((o) => {
@@ -175,19 +186,17 @@ function loadMk5iFrame(): Promise<THREE.Group | null> {
           if (!mesh.isMesh) return;
           mesh.castShadow = false;
         });
-        // Sanity gate: the shipped frame is 27x27 in (0.6858 m) square.
-        // Reject anything that is not plan-square within tolerance so a
-        // bad asset falls back to "no frame" instead of mis-rendering.
+        // Sanity gate: plan-square within tolerance, at this size.
         const box = new THREE.Box3().setFromObject(g);
         const sx = box.max.x - box.min.x;
         const sz = box.max.z - box.min.z;
         const ok =
-          Math.abs(sx - 0.6858) < 0.01 &&
-          Math.abs(sz - 0.6858) < 0.01 &&
+          Math.abs(sx - plan) < 0.01 &&
+          Math.abs(sz - plan) < 0.01 &&
           Math.abs(sx - sz) < 0.005;
         if (!ok) {
           console.warn(
-            `mk5i frame template rejected: plan ${sx.toFixed(3)}x${sz.toFixed(3)} m (expected ~0.6858 square)`,
+            `mk5i frame template rejected: plan ${sx.toFixed(3)}x${sz.toFixed(3)} m (expected ~${plan} square)`,
           );
           resolve(null);
           return;
@@ -198,7 +207,8 @@ function loadMk5iFrame(): Promise<THREE.Group | null> {
       () => resolve(null),
     );
   });
-  return mk5iFramePromise;
+  framePromises.set(size, p);
+  return p;
 }
 
 function loadMk5iTemplate(): Promise<THREE.Group | null> {
@@ -310,10 +320,14 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   // Official MK5i CAD module (null = not yet loaded / fell back) — the
   // rig-build effect re-runs when it arrives so existing views upgrade.
   const [moduleTemplate, setModuleTemplate] = useState<THREE.Group | null>(null);
-  const [frameTemplate, setFrameTemplate] = useState<THREE.Group | null>(null);
+  const [frameTemplates, setFrameTemplates] = useState<Partial<Record<FrameSize, THREE.Group | null>>>({});
   useEffect(() => {
     void loadMk5iTemplate().then(setModuleTemplate);
-    void loadMk5iFrame().then(setFrameTemplate);
+    for (const size of Object.keys(FRAME_ASSETS) as FrameSize[]) {
+      void loadMk5iFrame(size).then((g) =>
+        setFrameTemplates((prev) => ({ ...prev, [size]: g })),
+      );
+    }
   }, []);
 
   // Scene scaffold: renderer/camera/controls/lights/ground — per field.
@@ -1077,7 +1091,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // the official CAD module when its template has loaded.
       const vis = robotVisualGeometry(r.trajectory, field.year);
       const modules = chassisModules(r.trajectory, vis.chassis);
-      const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplate);
+      // 2026 rides the 27 in CAD frame; every other season the 30 in one
+      // (2018 is gone). buildChassis3D scales the frame to the robot's
+      // chassis rectangle, so file-sized robots still fit exactly.
+      const frameSize: FrameSize = field.year === 2026 ? '27' : '30';
+      const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplates[frameSize] ?? null);
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,
@@ -1090,7 +1108,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       });
       st.dirty();
     }
-  }, [robots, field, moduleTemplate, frameTemplate]);
+  }, [robots, field, moduleTemplate, frameTemplates]);
 
   useEffect(() => {
     const st = sceneRef.current;
@@ -1101,7 +1119,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       mesh.material.uniforms.cutoff!.value = time;
     }
     st.dirty();
-  }, [currentT, showTrail, robots, field, moduleTemplate, frameTemplate]);
+  }, [currentT, showTrail, robots, field, moduleTemplate, frameTemplates]);
 
   // Drive the chassis rigs along the shared clock: pose from the shared
   // sampler, plus per-pod steering from each wheel's ground velocity
