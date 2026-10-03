@@ -65,35 +65,27 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: cd packages/desktop && npx tauri build
-      - name: Inject dark-mode app icon + regenerate wrapped artifacts
-        # Tauri bundles a plain icns only; scripts/apply-dark-icon.sh adds the
-        # day+night Assets.car. Everything tauri wrapped during the build (the
-        # updater tar.gz + sig and the dmg) predates the injection, so rebuild
-        # them from the icon-complete app. Steps do NOT inherit each other's
-        # env, so the standalone signer needs the key vars declared here too —
-        # without them it tries key generation and aborts (first seen on the
-        # v0.1.4-beta.3 run).
+      - name: Package, seal and verify desktop artifacts
+        # The shared pipeline scripts/package-desktop-artifacts.sh — the same
+        # one install-desktop.sh runs locally: inject the day+night icon
+        # catalog, ad-hoc codesign the app, HARD-GATE on strict verification
+        # (the old CI flow re-wrapped the icon-injected app without ever
+        # sealing it, so downloaded builds failed the seal check every local
+        # install passed), then regenerate the updater tar.gz + sig and the
+        # dmg from the sealed bundle. Key env declared here because steps do
+        # not inherit each other's env.
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: |
-          APP=packages/desktop/src-tauri/target/release/bundle/macos/PathBlender.app
-          scripts/apply-dark-icon.sh "$APP"
-          APP_ABS="$PWD/$APP"
-          rm -f "$APP.tar.gz" "$APP.tar.gz.sig"
-          (cd "$(dirname "$APP")" && tar -czf "$(basename "$APP").tar.gz" "$(basename "$APP")")
-          (cd packages/desktop && npx tauri signer sign "$APP_ABS.tar.gz")
-          B=packages/desktop/src-tauri/target/release/bundle
-          rm -f "$B"/dmg/*.dmg
-          mkdir -p "$B/dmg"
-          scripts/make-dmg.sh "$APP" \
-            "$B/dmg/PathBlender_${GITHUB_REF_NAME#v}_aarch64.dmg"
+        run: scripts/package-desktop-artifacts.sh "${GITHUB_REF_NAME#v}"
       - name: Stage artifacts
         run: |
           mkdir -p release
           B=packages/desktop/src-tauri/target/release/bundle
           cp "$B/macos/PathBlender.app.tar.gz" "$B/macos/PathBlender.app.tar.gz.sig" release/
-          cp "$B/dmg/PathBlender_"*_aarch64.dmg release/ || true
+          # No `|| true`: a release without a (verified) dmg must fail loudly —
+          # beta.22 shipped a pre-seal image collected from a stale path.
+          cp "$B/dmg/PathBlender_"*_aarch64.dmg release/
       - uses: actions/upload-artifact@v4
         with:
           name: macos
@@ -152,6 +144,19 @@ jobs:
           cp artifacts/macos/*.tar.gz* bundle/macos/
           cp artifacts/macos/*.tar.gz* release/
           cp artifacts/macos/*.dmg release/ || true
+      - name: Compose user-facing release notes
+        # Single source of per-version user notes (task: one text drives the
+        # About page, the GitHub Release body AND the updater feed): the
+        # VERSION_NOTES registry that bump-version.mjs maintains, plus the
+        # curated known-issues list and the platform/download/update template.
+        # Written into bundle/ so gen-latest-json embeds the SAME notes in the
+        # updater feed, and kept as release-body.md for gh release create
+        # (--generate-notes then appends the commit list as a supplement).
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          node scripts/release-notes-for.mjs "$VERSION" > bundle/RELEASE_NOTES.md
+          cp bundle/RELEASE_NOTES.md release-body.md
+          cat release-body.md
       - name: Generate updater feeds
         run: |
           VERSION=${GITHUB_REF_NAME#v}
@@ -161,6 +166,7 @@ jobs:
           # can never point at a beta build); a stable release publishes both
           # feeds — stable raises the beta channel too.
           CH=$(node scripts/release-channel.mjs "$GITHUB_REF_NAME")
+          echo "RELEASE_CHANNEL=$CH" >> "$GITHUB_ENV"  # step-level if: below
           node scripts/gen-latest-json.mjs "$VERSION" bundle > release/latest-beta.json
           if [ "$CH" = "stable" ]; then
             cp release/latest-beta.json release/latest.json
@@ -175,8 +181,27 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=${GITHUB_REF_NAME#v}
-          ARGS=(--title "PathBlender v${VERSION}" --generate-notes)
+          ARGS=(--title "PathBlender v${VERSION}" -F release-body.md --generate-notes)
           if [ "$(node scripts/release-channel.mjs "$GITHUB_REF_NAME")" = "beta" ]; then
             ARGS+=(--prerelease)
           fi
           gh release create "$GITHUB_REF_NAME" "${ARGS[@]}" release/*
+      - name: Republish the beta feed onto the latest stable release
+        # GitHub's `releases/latest` NEVER resolves to a prerelease, but the
+        # desktop app's beta channel reads
+        # releases/latest/download/latest-beta.json — so a beta tag alone
+        # left beta users stranded on whatever beta feed the last stable
+        # shipped (found 2026-10-02: after v0.1.5 + newer betas, the URL
+        # still served v0.1.5's feed). latest-beta.json is a LIVE POINTER,
+        # not a historical artifact: every beta release re-uploads it onto
+        # the current stable release, where releases/latest can always find
+        # it. Installer/appendix assets are never touched — only this feed.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: env.RELEASE_CHANNEL == 'beta'
+        run: |
+          STABLE_TAG="$(gh release view --json tagName --jq .tagName)" || {
+            echo "no stable release exists yet — beta feed stays on this prerelease only"; exit 0; }
+          gh release upload "$STABLE_TAG" release/latest-beta.json --clobber
+          echo "beta feed (latest-beta.json) now on stable release $STABLE_TAG:"
+          gh release view "$STABLE_TAG" --json assets --jq '.assets[].name'

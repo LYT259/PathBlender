@@ -79,10 +79,6 @@ describe('route library workflow', () => {
     fireEvent.change(picker, { target: { value: within(document.body).getAllByRole('option')[1]!.value } });
     // Duration text refreshes to the other route's.
     await waitFor(() => expect(screen.queryByText('8.30 s')).toBeNull());
-
-    // Undo puts the previous route back (switching is a session change).
-    fireEvent.click(screen.getByRole('button', { name: /^Undo$/i }));
-    await waitFor(() => expect(screen.getByText('8.30 s')).toBeInTheDocument());
   });
 
   it('places a second robot from the library with the + button', async () => {
@@ -101,7 +97,7 @@ describe('route library workflow', () => {
     await importFolder([folderFile(...GHOST), folderFile('', '254/settings.json', SETTINGS)]);
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
 
-    fireEvent.click(screen.getByText('Straight Run', { selector: '.robot-name' }));
+    fireEvent.click(screen.getByText('#0001', { selector: '.robot-name' }));
     fireEvent.click(screen.getByRole('button', { name: /^Robot$/i }));
 
     const profileSelect = await screen.findByRole('combobox', { name: 'Robot profile' });

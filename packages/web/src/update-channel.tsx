@@ -20,7 +20,7 @@ import { broadcastPref, listenPrefs } from './pref-sync';
 
 export type UpdateChannel = 'stable' | 'beta';
 
-const STORAGE_KEY = 'ghpb.updateChannel';
+const STORAGE_KEY = 'pb.updateChannel';
 
 interface ChannelCtx {
   channel: UpdateChannel;

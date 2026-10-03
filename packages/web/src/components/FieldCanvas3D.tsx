@@ -12,16 +12,28 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import {
   chassisModules,
+  moduleBaseYaw,
   moduleSteeringAngles,
   robotVisualGeometry,
   samplePoseAt,
   sampleStateAt,
 } from '@pathblender/core';
-import { buildChassis3D } from '../chassis3d';
+import { createGroundTrail } from '../ground-trail3d';
+import { bumperColor } from '../robot-identity';
+import { buildChassis3D, validateModuleTemplate } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
-import { markGestureEnd, markGestureStart, orbitZoomSpeedFor, pinchZoomFactor, wheelSuppressed, wheelZoomFactor } from '../zoom';
-import { gestureEnded, noteGesture, notePostEndWheel } from '../gesture-debug';
+import { useMouseControls } from '../mouse-controls';
+import {
+  chaseStep,
+  markGestureEnd,
+  markGestureStart,
+  orbitZoomSpeedFor,
+  pinchZoomFactor,
+  splitInstant,
+  wheelSuppressed,
+  wheelZoomFactor,
+} from '../zoom';
 import { aprilTagTexture } from '../april-tag-texture';
 // One coordinate frame for the whole scene — tags, robots, trails, fallback
 // structures, the flat field image and the official field models all map
@@ -50,6 +62,7 @@ interface Props {
   fieldImageUrl?: string;
   robots: SessionTrajectory[];
   currentT: number;
+  showTrail?: boolean;
   /** Field construction variant (AndyMark vs welded), when offered. */
   variant?: 'welded' | 'andymark';
 }
@@ -62,6 +75,7 @@ interface Scene3D {
   cx: number;
   cy: number;
   dynamic: THREE.Group;
+  trails: ReturnType<typeof createGroundTrail>[];
   /** Procedural MK5i-style chassis rigs, one per robot. */
   rigs: {
     root: THREE.Group;
@@ -140,6 +154,84 @@ const MODEL_CACHE_CAP = 6;
 const inflightModels = new Map<string, Promise<THREE.Group | null>>();
 let lastModelDir: string | undefined;
 
+/**
+ * The official MK5i CAD module (scripts/cad/README.md) — loaded once per
+ * page, cloned per swerve pod. Resolves null when the asset is missing
+ * or fails its height sanity check, and every rig then keeps the
+ * procedural module renderer. Same lifetime rule as the field models:
+ * the parsed template is never disposed (the app has exactly one).
+ */
+let mk5iTemplatePromise: Promise<THREE.Group | null> | undefined;
+let mk5iFramePromise: Promise<THREE.Group | null> | undefined;
+function loadMk5iFrame(): Promise<THREE.Group | null> {
+  if (mk5iFramePromise) return mk5iFramePromise;
+  mk5iFramePromise = new Promise((resolve) => {
+    new GLTFLoader().load(
+      `${import.meta.env.BASE_URL}models/mk5i-frame.glb`,
+      (gltf) => {
+        const g = gltf.scene;
+        g.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          mesh.castShadow = false;
+        });
+        // Sanity gate: the shipped frame is 27x27 in (0.6858 m) square.
+        // Reject anything that is not plan-square within tolerance so a
+        // bad asset falls back to "no frame" instead of mis-rendering.
+        const box = new THREE.Box3().setFromObject(g);
+        const sx = box.max.x - box.min.x;
+        const sz = box.max.z - box.min.z;
+        const ok =
+          Math.abs(sx - 0.6858) < 0.01 &&
+          Math.abs(sz - 0.6858) < 0.01 &&
+          Math.abs(sx - sz) < 0.005;
+        if (!ok) {
+          console.warn(
+            `mk5i frame template rejected: plan ${sx.toFixed(3)}x${sz.toFixed(3)} m (expected ~0.6858 square)`,
+          );
+          resolve(null);
+          return;
+        }
+        resolve(g);
+      },
+      undefined,
+      () => resolve(null),
+    );
+  });
+  return mk5iFramePromise;
+}
+
+function loadMk5iTemplate(): Promise<THREE.Group | null> {
+  if (mk5iTemplatePromise) return mk5iTemplatePromise;
+  mk5iTemplatePromise = new Promise((resolve) => {
+    new GLTFLoader().load(
+      `${import.meta.env.BASE_URL}models/mk5i-module.glb`,
+      (gltf) => {
+        const g = gltf.scene;
+        // NO mount mirror here. The earlier scale(1,1,-1) "handedness
+        // correction" (PR #74) actually flipped the module upside down —
+        // its origin is ON the floor, so the body went below the carpet
+        // (user demonstrated the flip on the comparison sheet 2026-10-02:
+        // the mirrored renders showed motors-and-wheel from below). The
+        // field models' mirror comes from their AdvantageScope authoring
+        // convention, not from this scene.
+        g.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          // Same shadow policy as the heavy field models: robots keep the
+          // cheap procedural shadows, the detailed instanced meshes stay
+          // out of the second render pass.
+          mesh.castShadow = false;
+        });
+        resolve(validateModuleTemplate(g));
+      },
+      undefined,
+      () => resolve(null),
+    );
+  });
+  return mk5iTemplatePromise;
+}
+
 /** Asset dir → mount mirror (both variants of a season share one). */
 const DIR_MIRROR = new Map<string, FieldModelMirror>(
   Object.values(FIELD3D_MODELS).flatMap((e) => [
@@ -198,15 +290,31 @@ function loadProcessedModel(dir: string): Promise<THREE.Group | null> {
 }
 
 export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function FieldCanvas3D(
-  { field, fieldImageUrl, robots, currentT, variant = 'welded' },
+  { field, fieldImageUrl, robots, currentT, showTrail = true, variant = 'welded' },
   ref,
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<Scene3D | null>(null);
+  // Mouse scheme (Onshape/SolidWorks button map) — read at pointer-event
+  // time through a ref so the scaffold effect's closures stay current.
+  const [mouseScheme, setMouseScheme] = useMouseControls();
+  const mouseSchemeRef = useRef(mouseScheme);
+  useEffect(() => { mouseSchemeRef.current = mouseScheme; }, [mouseScheme]);
+  // Scaffold-effect chase cancel hook: Fit/resetCam repositions the camera
+  // wholesale, so a mid-flight pinch chase must not keep zooming after it.
+  const pinchChaseRef = useRef<{ cancel: () => void } | null>(null);
   const { t } = useI18n();
   // Environments without WebGL (jsdom, locked-down webviews) fall back to a
   // quiet empty pane instead of crashing the app.
   const [glFailed, setGlFailed] = useState(false);
+  // Official MK5i CAD module (null = not yet loaded / fell back) — the
+  // rig-build effect re-runs when it arrives so existing views upgrade.
+  const [moduleTemplate, setModuleTemplate] = useState<THREE.Group | null>(null);
+  const [frameTemplate, setFrameTemplate] = useState<THREE.Group | null>(null);
+  useEffect(() => {
+    void loadMk5iTemplate().then(setModuleTemplate);
+    void loadMk5iFrame().then(setFrameTemplate);
+  }, []);
 
   // Scene scaffold: renderer/camera/controls/lights/ground — per field.
   useEffect(() => {
@@ -219,7 +327,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       setGlFailed(true);
       return;
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setPixelRatio((window.devicePixelRatio || 1));
     // Soft shadows are the strongest depth cue for the field structures.
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -256,8 +364,14 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // model because the slab is thin and the near wall occludes.
     controls.minPolarAngle = 0.15;
     controls.maxPolarAngle = 2.6;
-    controls.minDistance = 2;
-    controls.maxDistance = 60;
+    // Dolly range (user round 11, 2026-10-03): 0.15 m is deep CAD-grade
+    // zoom — Onshape lets you zoom until geometry degenerates, and the old
+    // 1 m floor still stopped short ("放大的极限还要大得多"). The ceiling
+    // is exactly the home distance: pulling back may never show the field
+    // smaller than it looks on open ("缩小到刚打开时的样子，不能再小
+    // 了"); the old 32 m allowed shrinking it into a corner.
+    controls.minDistance = 0.15;
+    controls.maxDistance = Math.hypot(CAM_HOME[0], CAM_HOME[1], CAM_HOME[2]);
     // Onshape-style wheel zoom (user request 2026-10-02): dollies down the
     // pointer ray, so zooming in magnifies the detail under the cursor and
     // zooming out lets the scene flow away from it.
@@ -278,15 +392,44 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       camera.lookAt(controls.target);
       markDirty();
     };
+    // Scheme routing (user request 2026-10-02, Onshape-style setting):
+    // onshape — left = orbit; solidworks — middle = orbit, Ctrl+middle =
+    // pan. Shift/Ctrl+left stays OrbitControls pan in both schemes.
+    const pan = { active: false, x: 0, y: 0 };
     const onDragDown = (e: PointerEvent) => {
-      if (e.button !== 0 || e.shiftKey) return; // Shift+left = pan (controls)
-      drag.active = true;
-      drag.x = e.clientX;
-      drag.y = e.clientY;
-      drag.vTheta = 0;
-      drag.vPhi = 0;
-      drag.lastT = performance.now();
-      renderer.domElement.setPointerCapture(e.pointerId);
+      const scheme = mouseSchemeRef.current;
+      const orbitButton = scheme === 'solidworks' ? 1 : 0;
+      if (e.shiftKey) return; // Shift+left = pan (controls)
+      if (e.button === orbitButton && !e.ctrlKey) {
+        e.preventDefault(); // middle: no autoscroll cursor
+        drag.active = true;
+        noteInteraction();
+        drag.x = e.clientX;
+        drag.y = e.clientY;
+        drag.vTheta = 0;
+        drag.vPhi = 0;
+        drag.lastT = performance.now();
+        renderer.domElement.setPointerCapture(e.pointerId);
+      } else if (scheme === 'solidworks' && e.button === 1 && e.ctrlKey) {
+        e.preventDefault();
+        pan.active = true;
+        noteInteraction();
+        pan.x = e.clientX;
+        pan.y = e.clientY;
+        renderer.domElement.setPointerCapture(e.pointerId);
+      }
+    };
+    const onPanMove = (e: PointerEvent) => {
+      if (!pan.active) return;
+      controls.pan(e.clientX - pan.x, e.clientY - pan.y);
+      pan.x = e.clientX;
+      pan.y = e.clientY;
+      markDirty();
+    };
+    const onPanUp = (e: PointerEvent) => {
+      if (!pan.active) return;
+      pan.active = false;
+      renderer.domElement.releasePointerCapture(e.pointerId);
     };
     const onDragMove = (e: PointerEvent) => {
       if (!drag.active) return;
@@ -295,6 +438,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       const dPhi = (e.clientY - drag.y) * ROT; // drag down → phi shrinks → camera rises
       drag.x = e.clientX;
       drag.y = e.clientY;
+      noteInteraction();
       const now = performance.now();
       const dt = Math.max(1, now - drag.lastT);
       drag.lastT = now;
@@ -310,8 +454,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
     renderer.domElement.addEventListener('pointerdown', onDragDown);
     renderer.domElement.addEventListener('pointermove', onDragMove);
+    renderer.domElement.addEventListener('pointermove', onPanMove);
     renderer.domElement.addEventListener('pointerup', onDragUp);
     renderer.domElement.addEventListener('pointercancel', onDragUp);
+    renderer.domElement.addEventListener('pointerup', onPanUp);
+    renderer.domElement.addEventListener('pointercancel', onPanUp);
 
     // Trackpad two-finger horizontal swipes arrive as wheel deltaX, which
     // OrbitControls ignores — turn them into azimuth rotation so "dragging
@@ -344,7 +491,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (wheelSuppressed()) {
         e.preventDefault();
         e.stopPropagation();
-        notePostEndWheel(e.deltaY);
         return;
       }
       controls.zoomSpeed = orbitZoomSpeedFor(wheelZoomFactor(e.deltaY, e.deltaMode), e.deltaY);
@@ -357,8 +503,16 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       needsDraw = true;
     };
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.6));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+    // AdvantageScope's lighting recipe: no tone mapping, no environment
+    // map, no fog — a hemisphere fill plus one shadow-casting key light.
+    // (The earlier ACES+studio-env stack overexposed the official models.)
+    // Intensities are π-scaled: three ≥r155 runs physical light units
+    // (useLegacyLights removed in r165), and the recipe's raw values
+    // (0.6 / 1.1) predate that switch — unscaled they left every lit mesh
+    // (robots, path tubes) rendering black on the unlit field model
+    // (user report 2026-10-02; verified via readPixels: ×π restores them).
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.6 * Math.PI));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.1 * Math.PI);
     sun.position.set(9, 16, 8);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -382,7 +536,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     sceneRef.current = {
       renderer, scene, camera, controls,
       cx: 0, cy: 0,
-      dynamic, rigs: [],
+      dynamic, rigs: [], trails: [],
       modelRoot, fallback, fieldRoot,
       backgroundThemed,
       dirty: markDirty, themed,
@@ -407,62 +561,100 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // orbit center), with the ratio softened via pinchZoomFactor. Events
     // after gestureend are ignored (user round 3: lagging events flushed
     // at finger lift kept zooming after release).
+    // Round 5 pinch chase: events only touch a chase target (remaining
+    // view-zoom factor + anchor NDC) that the rAF loop applies in
+    // exponential steps via the OrbitControls cursor-zoom internals, so
+    // batched gesture events read as fluid motion instead of steps.
     let lastScale = 1;
+    let gestureDone = false;
+    const pinchChase = { factor: 1, nx: 0, ny: 0 };
+    pinchChaseRef.current = { cancel: () => { pinchChase.factor = 1; } };
     const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
     const onGestureStart = (e: Event) => {
       lastScale = gestureScale(e);
+      gestureDone = false;
       markGestureStart();
-      noteGesture('start', lastScale);
+      noteInteraction();
     };
     const onGestureChange = (e: Event) => {
       e.preventDefault();
-      if (gestureEnded()) return; // stray post-end flush
+      if (gestureDone) return; // stray post-end flush
       const s = gestureScale(e);
-      noteGesture('change', s);
       if (s > 0 && lastScale > 0 && s !== lastScale) {
         const factor = pinchZoomFactor(s / lastScale);
         if (factor !== 1) {
           const g = e as Event & { clientX?: number; clientY?: number };
           const rect = renderer.domElement.getBoundingClientRect();
-          const nx = (((g.clientX ?? rect.left + rect.width / 2) - rect.left) / rect.width) * 2 - 1;
-          const ny = -((((g.clientY ?? rect.top + rect.height / 2) - rect.top) / rect.height) * 2 - 1);
-          // Mirror OrbitControls' own wheel-zoom path: aim the dolly at the
-          // centroid, then let update() apply damping, distance clamps and
-          // target placement exactly like a wheel notch at that point.
-          // three is pinned (0.185.x); if the internals ever rename, the
-          // fallback below keeps pinch working (center-anchored).
-          const oc = controls as unknown as {
-            _mouse?: THREE.Vector2;
-            _dollyDirection?: THREE.Vector3;
-            _performCursorZoom?: boolean;
-            _scale?: number;
-          };
-          if (oc._mouse && oc._dollyDirection && oc._scale !== undefined && oc._performCursorZoom !== undefined) {
-            oc._mouse.set(nx, ny);
-            oc._dollyDirection.set(nx, ny, 1).unproject(camera).sub(camera.position).normalize();
-            oc._performCursorZoom = true;
-            oc._scale *= 1 / factor; // camera radius moves opposite to view zoom
-            controls.update();
-            markDirty();
-          } else {
-            const dir = camera.position.clone().sub(controls.target).multiplyScalar(1 / factor);
-            dir.setLength(THREE.MathUtils.clamp(dir.length(), controls.minDistance, controls.maxDistance));
-            camera.position.copy(controls.target).add(dir);
-            camera.lookAt(controls.target);
-            markDirty();
-          }
+          pinchChase.nx = (((g.clientX ?? rect.left + rect.width / 2) - rect.left) / rect.width) * 2 - 1;
+          pinchChase.ny = -((((g.clientY ?? rect.top + rect.height / 2) - rect.top) / rect.height) * 2 - 1);
+          // Half of every event applies on arrival (round 7; restored
+          // 2026-10-03 — full-instant read as steps), the chase loop
+          // glides the deferred remainder over ~5τ.
+          const { instant, deferred } = splitInstant(factor);
+          applyPinchStep(instant);
+          pinchChase.factor *= deferred; // remaining view zoom to apply
+          noteInteraction();
+          markDirty();
         }
       }
       lastScale = s;
     };
     const onGestureEnd = (e: Event) => {
-      noteGesture('end', gestureScale(e));
+      gestureDone = true;
       markGestureEnd();
       lastScale = 1;
     };
     renderer.domElement.addEventListener('gesturestart', onGestureStart);
     renderer.domElement.addEventListener('gesturechange', onGestureChange);
     renderer.domElement.addEventListener('gestureend', onGestureEnd);
+
+    // Apply one exponential step of the pinch chase (zoom.ts chaseStep) by
+    // mirroring OrbitControls' own wheel-zoom path: aim the dolly at the
+    // gesture centroid, then let the loop's update() apply damping,
+    // distance clamps and target placement exactly like a wheel notch at
+    // that point. three is pinned (0.185.x); if the internals ever rename,
+    // the fallback dollies toward the orbit target instead.
+    const oc = controls as unknown as {
+      _mouse?: THREE.Vector2;
+      _dollyDirection?: THREE.Vector3;
+      _performCursorZoom?: boolean;
+      _scale?: number;
+    };
+    const applyPinchStep = (step: number) => {
+      if (step === 1) return;
+      const { nx, ny } = pinchChase;
+      if (oc._mouse && oc._dollyDirection && oc._scale !== undefined && oc._performCursorZoom !== undefined) {
+        oc._mouse.set(nx, ny);
+        oc._dollyDirection.set(nx, ny, 1).unproject(camera).sub(camera.position).normalize();
+        oc._performCursorZoom = true;
+        oc._scale *= 1 / step; // camera radius moves opposite to view zoom
+      } else {
+        const dir = camera.position.clone().sub(controls.target).multiplyScalar(1 / step);
+        dir.setLength(THREE.MathUtils.clamp(dir.length(), controls.minDistance, controls.maxDistance));
+        camera.position.copy(controls.target).add(dir);
+        camera.lookAt(controls.target);
+      }
+    };
+
+    // Adaptive interaction quality (round 5): the official field models
+    // (14–20 MB GLB) make full-quality renders hog the main thread, which
+    // is what batched the gesture events in the first place. While a pinch
+    // or drag runs (plus this linger window), render at pixel ratio 1 with
+    // the shadow map frozen; restore full quality once interaction settles.
+    const BASE_PIXEL_RATIO = (window.devicePixelRatio || 1);
+    const INTERACTIVE_LINGER_MS = 250;
+    let interactiveUntil = 0;
+    let lowQuality = false;
+    const setLowQuality = (on: boolean) => {
+      lowQuality = on;
+      renderer.setPixelRatio(on ? 1 : BASE_PIXEL_RATIO);
+      renderer.shadowMap.autoUpdate = !on;
+      if (!on) renderer.shadowMap.needsUpdate = true; // refresh frozen shadows once
+    };
+    const noteInteraction = () => {
+      interactiveUntil = performance.now() + INTERACTIVE_LINGER_MS;
+    };
+    let lastFrameT = performance.now();
 
     // Draw only when the camera moved or something was marked dirty —
     // the heavy field model made render-per-frame starve all macrotasks.
@@ -472,6 +664,24 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
 
     let raf = 0;
     const loop = () => {
+      const now = performance.now();
+      const dt = now - lastFrameT;
+      lastFrameT = now;
+      // Pinch chase: step the remaining zoom toward its target this frame.
+      if (pinchChase.factor !== 1) {
+        const stepped = chaseStep(pinchChase.factor, dt);
+        applyPinchStep(stepped.step);
+        pinchChase.factor = stepped.remaining;
+        markDirty();
+      }
+      const interacting = now < interactiveUntil || pinchChase.factor !== 1 || drag.active;
+      if (interacting !== lowQuality) {
+        setLowQuality(interacting);
+        // Restore repaints immediately: setPixelRatio resizes (clears) the
+        // buffer, and with damping already settled nothing else would mark
+        // this frame dirty — leaving the blurry low-quality frame up.
+        if (!interacting) needsDraw = true;
+      }
       const moved = controls.update();
       if (needsDraw || moved) {
         needsDraw = false;
@@ -491,8 +701,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       controls.removeEventListener('change', markDirty);
       renderer.domElement.removeEventListener('pointerdown', onDragDown);
       renderer.domElement.removeEventListener('pointermove', onDragMove);
+      renderer.domElement.removeEventListener('pointermove', onPanMove);
       renderer.domElement.removeEventListener('pointerup', onDragUp);
       renderer.domElement.removeEventListener('pointercancel', onDragUp);
+      renderer.domElement.removeEventListener('pointerup', onPanUp);
+      renderer.domElement.removeEventListener('pointercancel', onPanUp);
       renderer.domElement.removeEventListener('wheel', onWheelX);
       host.removeEventListener('wheel', onWheelZoomSpeed, { capture: true });
       renderer.domElement.removeEventListener('gesturestart', onGestureStart);
@@ -504,6 +717,20 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       sceneRef.current = null;
     };
   }, []);
+
+  // Non-orbit button map per scheme (Onshape-style setting, user request
+  // 2026-10-02): onshape — middle = pan, right = drag-zoom; solidworks —
+  // middle is the custom orbit/Ctrl+pan above, so OrbitControls stays off
+  // for middle/right. LEFT: ROTATE is inert with enableRotate off, except
+  // its Shift/Ctrl pan branch, which both schemes keep.
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    const NONE = -1 as unknown as THREE.MOUSE;
+    st.controls.mouseButtons = mouseScheme === 'solidworks'
+      ? { LEFT: THREE.MOUSE.ROTATE, MIDDLE: NONE, RIGHT: NONE }
+      : { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.DOLLY };
+  }, [mouseScheme]);
 
   // ---- Field-dependent subtree: slab/walls/tags/structures ----------------
   // Rebuilt when the field (or its artwork) changes. The scaffold — and
@@ -819,7 +1046,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
   }, [field.id, variant, field.lengthM, field.widthM]);
 
-  // Rebuild path tubes + robot boxes when the robot set changes — AND when
+  // Rebuild ground tape + robot boxes when the robot set changes — AND when
   // the field changes: the scaffold effect tears the whole scene down and
   // hands sceneRef a fresh, EMPTY dynamic group; without `field` in the deps
   // this effect never re-ran, so switching seasons in 3D left the field
@@ -840,37 +1067,41 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     disposeDeep(st.dynamic);
     st.dynamic.clear();
     st.rigs = [];
+    st.trails = [];
     for (const r of robots) {
-      const color = new THREE.Color(r.color);
-      const pts = r.trajectory.samples.map((s) =>
-        worldToRenderVec3(s.x, s.y, 0.06, st.cx, st.cy),
-      );
-      if (pts.length > 1) {
-        // Tube geometry gives the path real thickness (line width is not
-        // honored by the WebGL backend) — a strong 3D cue.
-        const curve = new THREE.CatmullRomCurve3(pts);
-        const tube = new THREE.Mesh(
-          new THREE.TubeGeometry(curve, Math.min(600, pts.length * 3), 0.05, 8),
-          new THREE.MeshStandardMaterial({ color, roughness: 0.4 }),
-        );
-        st.dynamic.add(tube);
-      }
-      // Procedural MK5i-style chassis (bumper skirt + frame deck + swerve
-      // pods), sized by this robot's season-resolved two-layer geometry.
+      const trail = createGroundTrail(r, st.cx, st.cy);
+      st.dynamic.add(trail.mesh);
+      st.trails.push(trail);
+      // MK5i-style chassis (bumper skirt + frame deck + swerve pods),
+      // sized by this robot's season-resolved two-layer geometry; pods use
+      // the official CAD module when its template has loaded.
       const vis = robotVisualGeometry(r.trajectory, field.year);
       const modules = chassisModules(r.trajectory, vis.chassis);
-      const chassis = buildChassis3D(vis, modules, r.color);
+      const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplate);
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,
         robot: r,
         pods: chassis.pods,
-        steer: modules.map(() => 0),
+        // Parked at the installed angle from the chassis CAD; steering
+        // replaces it with the absolute motion angle once moving.
+        steer: modules.map((m) => moduleBaseYaw(m)),
         modules,
       });
       st.dirty();
     }
-  }, [robots, field]);
+  }, [robots, field, moduleTemplate, frameTemplate]);
+
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    for (const { mesh, robot } of st.trails) {
+      const time = currentT - robot.startDelayS;
+      mesh.visible = showTrail && time > (robot.trajectory.samples[0]?.t ?? 0);
+      mesh.material.uniforms.cutoff!.value = time;
+    }
+    st.dirty();
+  }, [currentT, showTrail, robots, field, moduleTemplate, frameTemplate]);
 
   // Drive the chassis rigs along the shared clock: pose from the shared
   // sampler, plus per-pod steering from each wheel's ground velocity
@@ -889,30 +1120,43 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       rig.root.rotation.y = headingToRender(pose.heading);
       if (state) {
         const angles = moduleSteeringAngles(state, rig.modules);
-        if (rig.steer.length !== angles.length) rig.steer = rig.modules.map(() => 0);
+        if (rig.steer.length !== angles.length) rig.steer = rig.modules.map((m) => moduleBaseYaw(m));
         for (let i = 0; i < rig.pods.length; i++) {
           const a = angles[i]!;
           if (a !== null) rig.steer[i] = a;
-          // Robot-frame yaw maps to render yaw with the opposite sign
-          // (see the frame notes in chassis3d.ts).
+          // steer[] IS the absolute wheel angle in robot frame (the
+          // installed base yaw only seeds it while parked); robot-frame
+          // yaw maps to render yaw with the opposite sign.
           rig.pods[i]!.rotation.y = -rig.steer[i]!;
         }
       }
       st.dirty();
     }
-  }, [currentT, robots, field]);
+    // `moduleTemplate` matters here too: when the CAD template resolves it
+    // rebuilds every rig at the origin — without re-driving the poses the
+    // fresh rigs stay buried under the field slab (robots vanish, user
+    // report 2026-10-02).
+  }, [currentT, robots, field, moduleTemplate]);
 
   useImperativeHandle(ref, () => ({
     // Fit the whole field into the vertical field of view from the current
     // viewing direction — the toolbar's Fit action. It deliberately keeps the
     // direction the user orbited to, so it does NOT restore the load-time
-    // camera (CAM_HOME sits closer, at |CAM_HOME| ≈ 17.1 m).
+    // camera (CAM_HOME sits closer, at |CAM_HOME| ≈ 17.1 m). The diagonal
+    // framing distance (~20.8 m for a 2026 field) is clamped to maxDistance
+    // (user round 11: the view may never shrink below the open view), so Fit
+    // recovers a deeply zoomed camera to the open framing without exceeding
+    // the zoom-out floor.
     resetCam: () => {
       const st = sceneRef.current;
       if (!st) return;
+      pinchChaseRef.current?.cancel();
       const diagonal = Math.hypot(st.cx * 2, st.cy * 2);
       const fov = (st.camera.fov * Math.PI) / 180;
-      const dist = Math.max((diagonal / 2 / Math.tan(fov / 2)) * 1.05, 6);
+      const dist = Math.min(
+        Math.max((diagonal / 2 / Math.tan(fov / 2)) * 1.05, 6),
+        st.controls.maxDistance,
+      );
       const dir = st.camera.position.clone().sub(st.controls.target).normalize();
       st.controls.target.set(0, 0, 0);
       st.camera.position.copy(dir.multiplyScalar(dist));

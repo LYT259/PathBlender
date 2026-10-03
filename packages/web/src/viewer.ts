@@ -1,9 +1,11 @@
 /**
  * Viewer-only deployments (pathblender.pages.dev): import + playback +
  * collision preview only — routes stay as imported and nothing is exported
- * (no path files, no session file, no PNG). Desktop and dev builds are the
- * full authoring tool; the flag is set only in the website build
- * (VITE_VIEWER_ONLY=1) so one codebase serves both shapes.
+ * (no session save, no PNG, no folder import). Since the 2026-09-30
+ * viewer-only pivot the PRODUCT is a viewer everywhere; desktop and dev
+ * builds additionally carry session save/open, PNG export and the route
+ * library. The flag is set only in the website build (VITE_VIEWER_ONLY=1)
+ * so one codebase serves both shapes.
  */
 export const VIEWER_ONLY = import.meta.env.VITE_VIEWER_ONLY === '1';
 

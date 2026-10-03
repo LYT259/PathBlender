@@ -1,3 +1,4 @@
+import { bumperColor } from '../robot-identity';
 import {
   forwardRef,
   useCallback,
@@ -11,17 +12,27 @@ import type { FieldPackage, ModuleLocation, RobotVisualGeometry, SessionTrajecto
 import {
   chassisModules,
   fieldImageWorldRect,
+  moduleBaseYaw,
   moduleSteeringAngles,
   robotVisualGeometry,
   samplePoseAt,
   sampleStateAt,
 } from '@pathblender/core';
+import { trailPoints, TRAIL_WIDTH_M } from '../ground-trail';
 import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
-import { markGestureEnd, markGestureStart, pinchZoomFactor, wheelSuppressed, wheelZoomFactor } from '../zoom';
-import { gestureEnded, noteGesture, notePostEndWheel } from '../gesture-debug';
+import {
+  chaseAlpha,
+  classifyWheelInput,
+  markGestureEnd,
+  markGestureStart,
+  pinchZoomFactor,
+  splitInstant,
+  wheelSuppressed,
+  wheelZoomFactor,
+} from '../zoom';
 
 export interface FieldCanvasHandle {
   exportPng: (onDone?: (ok: boolean) => void) => void;
@@ -85,6 +96,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   const steerRef = useRef(new Map<string, number[]>());
   const [imgReady, setImgReady] = useState(false);
   const viewRef = useRef<View>({ scale: 40, cx: field.lengthM / 2, cy: field.widthM / 2 });
+  // Last fitted px/m — anchors the zoom-out floor (field stays ≥ half the
+  // canvas) and updates on every fit/resize.
+  const fitScaleRef = useRef(40);
   const sizeRef = useRef({ w: 0, h: 0 });
   const autoFitRef = useRef(true);
   const drawRef = useRef<() => void>(() => {});
@@ -138,6 +152,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       cx: field.lengthM / 2,
       cy: field.widthM / 2,
     };
+    fitScaleRef.current = viewRef.current.scale;
     requestDraw();
   }, [field, requestDraw]);
 
@@ -180,14 +195,71 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
 
     // Zoom by `factor` keeping the world point under (sx, sy) fixed —
     // Onshape-style zoom-to-cursor (user request 2026-10-02). The
-    // before/after diff stays exact even when the scale clamps at 8/400.
+    // before/after diff stays exact even when the scale clamps.
+    // Range (user round 11, 2026-10-03): the top is deep CAD-grade zoom
+    // (~0.23 m of field visible — Onshape lets you zoom until geometry
+    // degenerates; the old 1000 px/m cap stopped short of that); the
+    // bottom is exactly the fit view: zooming out may never shrink the
+    // field below what it looks like on open ("缩到刚打开时的样子，不能
+    // 再小了"). The static 8 px/m term is only an unreachable safety net.
+    const MAX_SCALE = 6000;
+    const clampScale = (s: number) =>
+      Math.min(MAX_SCALE, Math.max(Math.max(8, fitScaleRef.current), s));
     const zoomAt = (sx: number, sy: number, factor: number) => {
       const v = viewRef.current;
       const before = world(sx, sy);
-      v.scale = Math.min(400, Math.max(8, v.scale * factor));
+      v.scale = clampScale(v.scale * factor);
       const after = world(sx, sy);
       v.cx += before.x - after.x;
       v.cy += before.y - after.y;
+    };
+
+    // Chase easing (user round 5, 2026-10-02): continuous streams — pinch
+    // AND two-finger scroll — move a TARGET view; a rAF loop eases the real
+    // view toward it (zoom.ts). Each event still applies its instant share
+    // on arrival, so response is immediate; the glide merges batched
+    // deliveries into fluid motion. Discrete mouse notches are instant and
+    // cancel any running chase.
+    let chaseTarget: View | null = null;
+    let chaseRaf = 0;
+    let lastChaseT = 0;
+    const stopChase = () => {
+      chaseTarget = null;
+      if (chaseRaf) cancelAnimationFrame(chaseRaf);
+      chaseRaf = 0;
+    };
+    const zoomAtView = (v: View, sx: number, sy: number, factor: number): View => {
+      const { w, h } = sizeRef.current;
+      const wx = v.cx + (sx - w / 2) / v.scale;
+      const wy = v.cy - (sy - h / 2) / v.scale;
+      const scale = clampScale(v.scale * factor);
+      return { scale, cx: wx - (sx - w / 2) / scale, cy: wy + (sy - h / 2) / scale };
+    };
+    const chaseStepFrame = () => {
+      chaseRaf = 0;
+      const t = chaseTarget;
+      // Fit/resize reclaims the view (autoFit on) — snap to it, stop chasing.
+      if (!t || autoFitRef.current) { stopChase(); return; }
+      const v = viewRef.current;
+      const now = performance.now();
+      const a = chaseAlpha(Math.min(64, now - lastChaseT));
+      lastChaseT = now;
+      v.scale += (t.scale - v.scale) * a;
+      v.cx += (t.cx - v.cx) * a;
+      v.cy += (t.cy - v.cy) * a;
+      const settled = Math.abs(Math.log(t.scale / v.scale)) < 0.001 &&
+        Math.abs(t.cx - v.cx) < 0.05 && Math.abs(t.cy - v.cy) < 0.05;
+      if (settled) {
+        v.scale = t.scale; v.cx = t.cx; v.cy = t.cy;
+        chaseTarget = null;
+      } else {
+        chaseRaf = requestAnimationFrame(chaseStepFrame);
+      }
+      requestDraw();
+    };
+    const requestChase = () => {
+      lastChaseT = performance.now();
+      if (!chaseRaf) chaseRaf = requestAnimationFrame(chaseStepFrame);
     };
 
     // WebKit trackpad pinch fires gesture* events (not wheel+ctrlKey); the
@@ -198,32 +270,45 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     // around finger lift, which showed up as the view zooming *further*
     // the moment the user let go (user round 3).
     let lastScale = 1;
+    let gestureDone = false;
     const gestureScale = (e: Event) => (e as Event & { scale?: number }).scale ?? 1;
     const onGestureStart = (e: Event) => {
       lastScale = gestureScale(e);
+      gestureDone = false;
       markGestureStart();
-      noteGesture('start', lastScale);
     };
     const onGestureChange = (e: Event) => {
       e.preventDefault();
-      if (gestureEnded()) return; // stray post-end flush
+      if (gestureDone) return; // stray post-end flush
       const scale = gestureScale(e);
-      noteGesture('change', scale);
       if (scale > 0 && lastScale > 0) {
         autoFitRef.current = false;
         const g = e as Event & { clientX?: number; clientY?: number };
         const rect = canvas.getBoundingClientRect();
-        zoomAt(
-          (g.clientX ?? rect.left + rect.width / 2) - rect.left,
-          (g.clientY ?? rect.top + rect.height / 2) - rect.top,
-          pinchZoomFactor(scale / lastScale),
-        );
+        const sx = (g.clientX ?? rect.left + rect.width / 2) - rect.left;
+        const sy = (g.clientY ?? rect.top + rect.height / 2) - rect.top;
+        const v = viewRef.current;
+        const factor = pinchZoomFactor(scale / lastScale);
+        // Half of every event applies on arrival (round 7; restored
+        // 2026-10-03 — full-instant read as steps), the chase glides the
+        // deferred remainder over ~5τ.
+        const { instant, deferred } = splitInstant(factor);
+        const live = zoomAtView(v, sx, sy, instant);
+        v.scale = live.scale; v.cx = live.cx; v.cy = live.cy;
+        // Target advances by the event's full factor. With no chase
+        // running, seed from the post-instant live view — either way the
+        // target equals the pre-event view composed with the full factor
+        // (applying `instant` again here would double it).
+        chaseTarget = chaseTarget
+          ? zoomAtView(zoomAtView(chaseTarget, sx, sy, instant), sx, sy, deferred)
+          : zoomAtView({ scale: v.scale, cx: v.cx, cy: v.cy }, sx, sy, deferred);
+        requestChase();
         requestDraw();
       }
       lastScale = scale;
     };
     const onGestureEnd = (e: Event) => {
-      noteGesture('end', gestureScale(e));
+      gestureDone = true;
       markGestureEnd();
       lastScale = 1;
     };
@@ -232,12 +317,33 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       // Lifting fingers off a pinch drift across the glass and arrive as a
       // scroll burst — suppressing it is what freezes the zoom at release
       // (round 4; the gesture stream itself proved clean on video).
-      if (wheelSuppressed()) {
-        notePostEndWheel(e.deltaY);
-        return;
-      }
+      if (wheelSuppressed()) return;
       autoFitRef.current = false;
-      zoomAt(e.offsetX, e.offsetY, wheelZoomFactor(e.deltaY, e.deltaMode));
+      const factor = wheelZoomFactor(e.deltaY, e.deltaMode);
+      const sx = e.offsetX;
+      const sy = e.offsetY;
+      if (classifyWheelInput(e.deltaY, e.deltaMode) === 'trackpad') {
+        // Two-finger scroll is a continuous stream delivered in batches —
+        // same treatment as the pinch: half of every event applies on
+        // arrival, the chase glides the rest, so the batches read as one
+        // fluid motion instead of steps ("没有之前那么丝滑", 2026-10-03).
+        const { instant, deferred } = splitInstant(factor);
+        const live = zoomAtView(viewRef.current, sx, sy, instant);
+        viewRef.current.scale = live.scale;
+        viewRef.current.cx = live.cx;
+        viewRef.current.cy = live.cy;
+        // Target advances by the event's full factor; seeded from the
+        // post-instant live view when no chase is running (composing
+        // `instant` again here would double it).
+        chaseTarget = chaseTarget
+          ? zoomAtView(zoomAtView(chaseTarget, sx, sy, instant), sx, sy, deferred)
+          : zoomAtView({ scale: viewRef.current.scale, cx: viewRef.current.cx, cy: viewRef.current.cy }, sx, sy, deferred);
+        requestChase();
+      } else {
+        // Discrete mouse notch: instant and crisp; cancels any glide.
+        stopChase();
+        zoomAt(sx, sy, factor);
+      }
       requestDraw();
     };
 
@@ -246,6 +352,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     canvas.addEventListener('gesturechange', onGestureChange);
     canvas.addEventListener('gestureend', onGestureEnd);
     return () => {
+      stopChase();
       canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('gesturestart', onGestureStart);
       canvas.removeEventListener('gesturechange', onGestureChange);
@@ -318,28 +425,24 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       ctx.fillText(String(tag.id), px + 7, py + 4);
     }
 
-    // Full trajectories — saturated, near-opaque, each with a background-
-    // colored halo stroke underneath so every palette color stays readable
-    // over any field artwork (dark zones, blue zones) in both themes.
+    // Ground tape grows only along the already-travelled part of each route.
     if (showTrail) {
-      const halo = cssVar('--bg', '#1e1e20');
+      ctx.save();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'butt';
+      ctx.lineWidth = TRAIL_WIDTH_M * v.scale;
       for (const r of robots) {
+        const points = trailPoints(r, currentT);
+        if (points.length < 2) continue;
         ctx.beginPath();
-        r.trajectory.samples.forEach((s, i) => {
-          const px = sx(s.x);
-          const py = sy(s.y);
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
+        points.forEach((p, i) => {
+          if (i === 0) ctx.moveTo(sx(p.x), sy(p.y));
+          else ctx.lineTo(sx(p.x), sy(p.y));
         });
-        ctx.strokeStyle = halo;
-        ctx.globalAlpha = 0.85;
-        ctx.lineWidth = 5;
-        ctx.stroke();
-        ctx.strokeStyle = hexAlpha(r.color, 0.95);
-        ctx.globalAlpha = 1;
-        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = r.color;
         ctx.stroke();
       }
+      ctx.restore();
     }
 
     // Conflict markers at closest approaches.
@@ -381,7 +484,8 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       const id = r.trajectory.id;
       let last = steerRef.current.get(id);
       if (!last || last.length !== modules.length) {
-        last = modules.map(() => 0);
+        // Parked at the installed angle; steering replaces it once moving.
+        last = modules.map((m) => moduleBaseYaw(m));
         steerRef.current.set(id, last);
       }
       const angles = moduleSteeringAngles(
@@ -481,8 +585,8 @@ function drawRobot(
   const W = outer.widthM * scale;
   const ox = outer.offsetX * scale;
   const oy = outer.offsetY * scale;
-  ctx.fillStyle = hexAlpha(r.color, 0.22);
-  ctx.strokeStyle = collided ? '#ff3b30' : outOfBounds ? '#ffa726' : r.color;
+  ctx.fillStyle = bumperColor(r.trajectory.alliance);
+  ctx.strokeStyle = collided ? '#ff3b30' : outOfBounds ? '#ffa726' : bumperColor(r.trajectory.alliance);
   ctx.lineWidth = collided || outOfBounds ? 3 : 2;
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
@@ -494,7 +598,7 @@ function drawRobot(
   const cW = chassis.widthM * scale;
   const cox = chassis.offsetX * scale;
   const coy = chassis.offsetY * scale;
-  ctx.fillStyle = hexAlpha(r.color, 0.45);
+  ctx.fillStyle = cssVar('--bg-panel', '#29292c');
   ctx.strokeStyle = hexAlpha(r.color, 0.9);
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -534,21 +638,38 @@ function drawRobot(
   ctx.fill();
   ctx.restore();
 
-  // Team number annotation, drawn upright so it stays readable at any
-  // robot heading (report v1.4 §6.1: color = path = legend = number).
+  // Team number ON the bumper, like a real robot (user request
+  // 2026-10-02, replacing the old center annotation): one number per
+  // side rail, baseline along the rail so it rotates with the robot.
+  // Font sized to the rail band with a legibility floor; halo keeps it
+  // readable on any artwork, in both themes.
   if (r.trajectory.teamNumber) {
+    const num = r.trajectory.teamNumber;
+    const d = vis.bumperDepthM * scale;
+    const railPrintable = Math.max((L - 2.4 * d) * 0.95, 8);
+    let fs = Math.max(d * 1.15, 9);
     ctx.save();
     ctx.translate(sx(pose.x), sy(pose.y));
-    ctx.font = `bold ${Math.max(11, Math.round(0.26 * outer.lengthM * scale))}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.rotate(-pose.heading);
+    ctx.font = `bold ${fs}px ui-sans-serif, system-ui, sans-serif`;
+    const wide = ctx.measureText(num).width;
+    if (wide > railPrintable) {
+      fs = Math.max((fs * railPrintable) / wide, 6);
+      ctx.font = `bold ${fs}px ui-sans-serif, system-ui, sans-serif`;
+    }
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.lineWidth = 3;
-    // Halo in the page background color keeps the number readable on any
-    // field artwork, in both themes (fg text + bg halo).
     ctx.strokeStyle = cssVar('--canvas-bg', '#1c1c1e');
-    ctx.strokeText(r.trajectory.teamNumber, 0, 0);
-    ctx.fillStyle = cssVar('--fg', '#e6e6e8');
-    ctx.fillText(r.trajectory.teamNumber, 0, 0);
+    ctx.fillStyle = '#ffffff';
+    for (const side of [1, -1]) {
+      // Robot-frame rail center y = ±(W/2 − d/2); screen y is flipped.
+      ctx.save();
+      ctx.translate(ox, -oy - side * (W / 2 - d / 2));
+      ctx.strokeText(num, 0, 0);
+      ctx.fillText(num, 0, 0);
+      ctx.restore();
+    }
     ctx.restore();
   }
 }

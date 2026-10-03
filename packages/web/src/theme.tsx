@@ -1,7 +1,11 @@
 /**
  * Theme system (report v1.7 §7.4): dark/light palettes, default follows the
  * OS (`prefers-color-scheme`, live), Preferences can override with a
- * remembered choice (localStorage 'ghpb.theme').
+ * remembered choice (localStorage 'pb.theme').
+ *
+ * The interface theme is deliberately decoupled from the app-icon
+ * appearance: the Dock tile is driven by the independent preference in
+ * app-icon.tsx, not by the palette resolved here.
  */
 
 import {
@@ -14,12 +18,11 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { broadcastPref, isDesktop, listenPrefs } from './pref-sync';
-import { syncDockIcon } from './dock-icon';
+import { broadcastPref, listenPrefs } from './pref-sync';
 
 export type ThemeMode = 'system' | 'dark' | 'light';
 
-const STORAGE_KEY = 'ghpb.theme';
+const STORAGE_KEY = 'pb.theme';
 
 interface ThemeCtx {
   mode: ThemeMode;
@@ -57,13 +60,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // before the browser paints (no wrong-theme flash on mount).
   useLayoutEffect(() => {
     document.documentElement.dataset.theme = resolved;
-  }, [resolved]);
-
-  // Desktop: the running Dock tile follows the resolved theme (explicit
-  // artwork via dock-icon.ts). Both windows mount this provider, so a
-  // change converges with the same value from both — idempotent.
-  useEffect(() => {
-    syncDockIcon(resolved, isDesktop);
   }, [resolved]);
 
   const setMode = useCallback((m: ThemeMode) => {

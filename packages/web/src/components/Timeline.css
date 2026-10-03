@@ -23,7 +23,7 @@
 .timeline-transport button:disabled { opacity: .32; cursor: default; }
 .timeline-workspace .timeline-clock { grid-area: clock; margin-left: 0; color: var(--fg); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .timeline-speeds { grid-area: speeds; justify-self: end; display: flex; align-items: center; padding: 2px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); }
-.timeline-speeds button { min-width: 39px; padding: 3px 7px; border: 0; border-radius: 4px; color: var(--fg-dim); background: transparent; font: inherit; font-size: 11px; cursor: pointer; }
+.timeline-speeds button { height: 24px; min-width: 39px; padding: 3px 7px; border: 0; border-radius: 4px; color: var(--fg-dim); background: transparent; font: inherit; font-size: 11px; cursor: pointer; }
 .timeline-speeds button[aria-pressed='true'] { color: var(--fg); background: var(--bg-panel); box-shadow: 0 1px 2px var(--shadow); }
 .timeline-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-left: auto; font-size: 10px; color: var(--fg-dim); }
 .timeline-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
@@ -36,12 +36,24 @@
 .timeline-scroller { overflow: auto; max-height: 210px; margin-top: 10px; padding: 0 2px 2px; scrollbar-width: thin; }
 .timeline-surface { min-width: 550px; padding-right: 8px; position: relative; }
 .timeline-axis, .timeline-row { display: grid; grid-template-columns: var(--timeline-label-width) minmax(0, 1fr); column-gap: var(--timeline-column-gap); }
-.timeline-axis { height: 36px; align-items: start; }
-.timeline-unit { color: var(--fg-dim); font-size: 10px; padding-top: 1px; }
+/* The ruler rides below the track rows (user spec, 2026-10-02): the numbers
+   row sits directly under the example paths, directly above the play bar. */
+.timeline-axis { height: 36px; align-items: start; margin-top: 4px; }
+/* The unit label that used to occupy the label column is gone (folded
+   into the final tick), so pin the ruler to the lane column explicitly —
+   auto-placement would drop it into the 144px label column and crush
+   the whole scale. */
+.timeline-axis .timeline-ruler { grid-column: 2; }
 .timeline-ruler { position: relative; height: 36px; min-width: 0; }
 .timeline-ticks { position: absolute; top: 0; left: 0; right: 0; height: 19px; border-bottom: 1px solid var(--border); }
 .timeline-tick { position: absolute; top: 0; bottom: 0; transform: translateX(-50%); font-size: 10px; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
 .timeline-tick::after { content: ''; position: absolute; height: 4px; width: 1px; background: var(--border); bottom: -1px; left: 50%; }
+/* The final tick carries the unit ("20 秒" / "20 seconds") and is
+   right-anchored so the wider label cannot overflow the scale's end;
+   its tick line moves with it to stay on the true axis-max position.
+   Latin unit words read better lowercase next to a number. */
+.timeline-tick:last-child { transform: translateX(-100%); padding-right: 4px; text-transform: lowercase; }
+.timeline-tick:last-child::after { left: auto; right: 0; }
 
 /* Native thumbs travel between half-thumb insets. Extending the input by
    one thumb width aligns the thumb center with the ruler and all lanes. */
@@ -70,7 +82,7 @@
 .timeline-collision { top: 4px; background: var(--danger); }
 .timeline-bounds { bottom: 4px; background: var(--oob); }
 .timeline-event { position: absolute; top: 8px; width: 9px; height: 9px; border: 1px solid var(--bg-panel); border-radius: 2px; padding: 0; background: var(--fg); transform: translateX(-50%) rotate(45deg); cursor: pointer; z-index: 2; }
-.timeline-playhead-plane { position: absolute; top: 25px; bottom: 0; left: calc(var(--timeline-label-width) + var(--timeline-column-gap)); right: 8px; pointer-events: none; z-index: 2; }
+.timeline-playhead-plane { position: absolute; top: 0; bottom: 0; left: calc(var(--timeline-label-width) + var(--timeline-column-gap)); right: 8px; pointer-events: none; z-index: 2; }
 .timeline-playhead { position: absolute; top: 0; bottom: 0; width: 1px; transform: translateX(-.5px); background: var(--accent); }
 .timeline-workspace button:focus-visible, .timeline-scrubber:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 

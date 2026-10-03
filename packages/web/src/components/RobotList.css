@@ -53,7 +53,7 @@
 .robot-inspector-remove:hover { text-decoration: underline; }
 
 /* Per-robot route picker: flip between imported autos without re-importing. */
-.route-picker { flex: none; max-width: 96px; height: 26px; padding: 0 4px; color: var(--fg-dim); background: transparent; border: 1px solid transparent; border-radius: 6px; font: inherit; font-size: 10.5px; cursor: pointer; }
+.route-picker { flex: none; max-width: 96px; height: 30px; padding: 0 4px; color: var(--fg-dim); background: transparent; border: 1px solid transparent; border-radius: 6px; font: inherit; font-size: 10.5px; cursor: pointer; }
 .route-picker:hover { background: var(--bg-card); border-color: var(--border); color: var(--fg); }
 .route-picker:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .route-picker option { color: initial; background: initial; }
@@ -72,3 +72,15 @@
 .route-library-add-btn:hover { color: var(--fg); border-color: var(--accent); }
 .route-library-note { margin: 9px 6px 8px; font-size: 10.5px; line-height: 1.6; color: var(--fg-dim); }
 .robot-inspector-profile select { max-width: 150px; height: 28px; padding: 3px 6px; color: var(--fg); background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 11px; }
+
+/* Team-number chip + inline editor (2026-10-02: metadata annotation is
+   back by user request; path editing stays out — pure viewer otherwise). */
+.robot-team-chip { display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 30px; height: 30px; padding: 0 4px; border: 0; border-radius: 6px; background: transparent; color: var(--fg-dim); font: 600 11px ui-monospace, monospace; cursor: pointer; }
+.robot-team-chip:hover { background: var(--hover); color: var(--fg); }
+.robot-team-input { flex: none; width: 44px; height: 28px; padding: 0 4px; border: 1px solid var(--accent, #0a84ff); border-radius: 6px; background: var(--bg, #1c1c1e); color: var(--fg, #e6e6e8); font: 600 11px ui-monospace, monospace; text-align: center; }
+
+/* The editor occupies the name's position, with no duplicate team chip. */
+.robot-team-chip { width: 30px; align-self: flex-start; margin-top: 5px; }
+.robot-team-editor { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; padding: 7px 7px 7px 10px; }
+.robot-team-editor .band-dot { flex: none; width: 7px; height: 7px; }
+.robot-team-editor .robot-team-input { width: 100%; min-width: 0; flex: 1; font: inherit; font-size: 12.5px; text-align: start; padding-inline: 8px; }

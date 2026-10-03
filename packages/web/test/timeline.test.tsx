@@ -21,6 +21,14 @@ function playback(t = 6) {
 }
 
 describe('unified timeline', () => {
+  it('uses the edited team number without changing the imported route name', () => {
+    const robot = { ...delayedRobot, trajectory: { ...delayedRobot.trajectory, teamNumber: '2910' } };
+    render(<I18nProvider><Timeline robots={[robot]} conflicts={[]} bounds={[]} autoPeriodS={20} duration={8} playback={playback()} /></I18nProvider>);
+    expect(screen.getByText('#2910')).toBeInTheDocument();
+    expect(screen.queryByText('Robot A')).not.toBeInTheDocument();
+    expect(robot.trajectory.name).toBe('Robot A');
+  });
+
   it('uses one time domain for the ruler, scrubber, delayed activity, events, and playhead', () => {
     const { container } = render(
       <I18nProvider>
@@ -119,7 +127,8 @@ describe('unified timeline', () => {
     );
     const scrubber = screen.getByRole('slider', { name: 'Playback position' });
     expect(scrubber).toHaveAttribute('max', '15');
-    expect(screen.getByText('15', { selector: '.timeline-tick' })).toBeInTheDocument();
+    // The final tick carries the unit (chart-axis convention): "15 Seconds".
+    expect(screen.getByText('15 Seconds', { selector: '.timeline-tick' })).toBeInTheDocument();
     expect(screen.getByText('6', { selector: '.timeline-tick' })).toHaveStyle({ left: '40%' });
     // A session running past the autonomous period keeps its own end.
     unmount();

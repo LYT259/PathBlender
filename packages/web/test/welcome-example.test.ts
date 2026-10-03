@@ -21,7 +21,7 @@ describe('welcome example', () => {
     const conflicts = detectCollisions(robots);
     expect(conflicts).toHaveLength(1);
     expect(conflicts[0]!.startT).toBeGreaterThan(0);
-    expect(conflicts[0]!.closestT).toBeCloseTo(4, 2);
+    expect(conflicts[0]!.closestT).toBeCloseTo(10, 2);
     expect(conflicts[0]!.endT).toBeLessThan(sessionDuration(robots));
     expect(detectFieldBounds(robots, field)).toEqual([]);
     const adjusted = autoResolveConflicts(robots);
@@ -29,13 +29,15 @@ describe('welcome example', () => {
     expect(detectFieldBounds(adjusted, field)).toEqual([]);
   });
 
-  it('has finite, ordered samples, explicit geometry, and an eight-second playback', () => {
+  it('has finite, ordered samples, explicit geometry, and a twenty-second playback', () => {
     const { robots } = createWelcomeExample(names);
-    expect(sessionDuration(robots)).toBe(8);
+    expect(sessionDuration(robots)).toBe(20);
     expect(robots).toHaveLength(2);
     for (const { trajectory, startDelayS, visible } of robots) {
       expect(trajectory.teamName).toBe('');
-      expect(trajectory.teamNumber).toBe('');
+      // Demo robots carry plain team numbers on the bumper (user request
+      // 2026-10-03): 00001 / 00002 instead of "示例路径 A/B".
+      expect(['00001', '00002']).toContain(trajectory.teamNumber);
       expect(trajectory.geometrySource).toBe('file');
       expect(trajectory.geometry.lengthM).toBe(0.8);
       expect(trajectory.geometry.widthM).toBe(0.8);
@@ -43,7 +45,7 @@ describe('welcome example', () => {
       expect(startDelayS).toBe(0);
       expect(visible).toBe(true);
       expect(trajectory.samples[0]!.t).toBe(0);
-      expect(trajectory.samples.at(-1)!.t).toBe(8);
+      expect(trajectory.samples.at(-1)!.t).toBe(20);
       for (let i = 0; i < trajectory.samples.length; i++) {
         const sample = trajectory.samples[i]!;
         expect(Object.values(sample).every(Number.isFinite)).toBe(true);
@@ -80,7 +82,7 @@ describe('welcome example', () => {
     const restored = deserializeSession(serializeSession(example.robots, example.fieldId));
     expect(restored.fieldId).toBe(example.fieldId);
     expect(restored.robots).toHaveLength(2);
-    expect(sessionDuration(restored.robots)).toBe(8);
+    expect(sessionDuration(restored.robots)).toBe(20);
     expect(detectCollisions(restored.robots)).toHaveLength(1);
     expect(detectFieldBounds(restored.robots, fieldById(restored.fieldId))).toEqual([]);
     for (let i = 0; i < restored.robots.length; i++) {
@@ -90,7 +92,7 @@ describe('welcome example', () => {
       expect(back.trajectory.geometry).toEqual(original.trajectory.geometry);
       expect(back.trajectory.geometrySource).toBe('file');
       expect(back.trajectory.samples).toEqual(original.trajectory.samples);
-      for (const t of [0, 2, 4, 6, 8]) expect(samplePoseAt(back, t)).toEqual(samplePoseAt(original, t));
+      for (const t of [0, 5, 10, 15, 20]) expect(samplePoseAt(back, t)).toEqual(samplePoseAt(original, t));
     }
   });
 });

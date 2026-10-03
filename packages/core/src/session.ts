@@ -81,8 +81,16 @@ export function sessionGeometry(st: SessionTrajectory): RobotGeometry {
 /* file restores without the original path files.                      */
 /* ------------------------------------------------------------------ */
 
+/** Marker written into every new session file. */
+const APP_MARKER = 'pathblender';
+/**
+ * Marker of sessions saved before the 2026-10-03 rename; still accepted on
+ * read so files already on disk keep opening (naming-is-contract).
+ */
+const LEGACY_APP_MARKER = 'ghpathblender';
+
 export interface SessionFileV1 {
-  app: 'ghpathblender';
+  app: typeof APP_MARKER;
   version: 1;
   fieldId: string;
   /** Custom-field calibration, present only for user-imported fields. */
@@ -98,6 +106,8 @@ export interface SessionFileV1 {
   };
   savedAt: string;
   robots: Array<{
+    /** Stable trajectory id, kept across save/load (v1.6+); older files lack it. */
+    id?: string;
     name: string;
     teamName: string;
     /** Optional since v1.4; older session files simply lack it. */
@@ -127,7 +137,7 @@ export function serializeSession(
   field?: import('./field').FieldPackage,
 ): string {
   const file: SessionFileV1 = {
-    app: 'ghpathblender',
+    app: APP_MARKER,
     version: 1,
     fieldId,
     field:
@@ -145,6 +155,7 @@ export function serializeSession(
         : undefined,
     savedAt: new Date().toISOString(),
     robots: sts.map((st) => ({
+      id: st.trajectory.id,
       name: st.trajectory.name,
       teamName: st.trajectory.teamName,
       teamNumber: st.trajectory.teamNumber,
@@ -173,8 +184,8 @@ export function deserializeSession(text: string): {
   robots: SessionTrajectory[];
 } {
   const root = JSON.parse(text) as Record<string, unknown>;
-  if (root.app !== 'ghpathblender' || root.version !== 1) {
-    throw new Error('not a GHPathBlender session file');
+  if ((root.app !== APP_MARKER && root.app !== LEGACY_APP_MARKER) || root.version !== 1) {
+    throw new Error('not a PathBlender session file');
   }
   const v = root as unknown as SessionFileV1;
   const customField = v.field
@@ -191,7 +202,7 @@ export function deserializeSession(text: string): {
     : undefined;
   const robots = v.robots.map((r) => {
     const traj: Trajectory = {
-      id: crypto.randomUUID(),
+      id: r.id ?? crypto.randomUUID(),
       name: r.name,
       teamName: r.teamName,
       teamNumber: r.teamNumber ?? '',

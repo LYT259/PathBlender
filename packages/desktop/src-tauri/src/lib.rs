@@ -1,7 +1,7 @@
 /// PathBlender desktop shell — minimal static host (report v1.6 §7.1).
 /// No sidecars, no backend, no telemetry. The only native behavior:
 /// a macOS-standard menu (app menu with About/Preferences/Check-for-Updates,
-/// a File menu for import/save/share/PNG/clear, an Edit menu) that follows
+/// a File menu for import/save/PNG/clear, an Edit menu) that follows
 /// the app language, plus a preferences window on ?window=prefs.
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -19,6 +19,12 @@ const PREFS_WINDOW: &str = "prefs";
 /// latest-beta.json onto GitHub releases). The channel choice cannot be
 /// made web-side: the updater plugin's JS `check()` has no endpoint
 /// override, so it is resolved here from the channel string.
+///
+/// `releases/latest` never resolves to a prerelease, yet the beta feed must
+/// track the NEWEST beta: release.yml therefore re-uploads latest-beta.json
+/// onto the current stable release with every beta tag (a live pointer, not
+/// a historical artifact) so this URL always serves the newest beta feed.
+/// Mechanism first shipped with the 2026-10-02 channel fix.
 const FEED_STABLE: &str = "https://github.com/LYT259/pathblender/releases/latest/download/latest.json";
 const FEED_BETA: &str = "https://github.com/LYT259/pathblender/releases/latest/download/latest-beta.json";
 
@@ -77,26 +83,32 @@ async fn install_update(pending: State<'_, PendingUpdate>) -> Result<(), String>
     Ok(())
 }
 
-/// UI strings per app language (zh-tw carries its own wording rather than
-/// reusing zh; en/es/fr/tr/zh each get a table below).
+/// UI strings per app language — every web dictionary gets a table below
+/// (zh-tw carries its own wording rather than reusing zh).
 struct MenuLang {
+    about: &'static str,
     file: &'static str,
     edit: &'static str,
     import: &'static str,
     save: &'static str,
-    share: &'static str,
     png: &'static str,
     clear: &'static str,
     prefs: &'static str,
     updates: &'static str,
+    hide: &'static str,
+    hide_others: &'static str,
+    quit: &'static str,
 }
 
 const EN: MenuLang = MenuLang {
+    hide: "Hide PathBlender",
+    hide_others: "Hide Others",
+    quit: "Quit PathBlender",
+    about: "About PathBlender",
     file: "File",
     edit: "Edit",
     import: "Import…",
     save: "Save Session…",
-    share: "Share…",
     png: "Export PNG…",
     clear: "Clear Session",
     prefs: "Preferences…",
@@ -104,11 +116,14 @@ const EN: MenuLang = MenuLang {
 };
 
 const ZH: MenuLang = MenuLang {
+    hide: "隐藏 PathBlender",
+    hide_others: "隐藏其他",
+    quit: "退出 PathBlender",
+    about: "关于 PathBlender",
     file: "文件",
     edit: "编辑",
     import: "导入…",
     save: "保存会话…",
-    share: "分享…",
     png: "导出 PNG…",
     clear: "清空会话",
     prefs: "偏好设置…",
@@ -116,11 +131,14 @@ const ZH: MenuLang = MenuLang {
 };
 
 const ZH_TW: MenuLang = MenuLang {
+    hide: "隱藏 PathBlender",
+    hide_others: "隱藏其他",
+    quit: "結束 PathBlender",
+    about: "關於 PathBlender",
     file: "檔案",
     edit: "編輯",
     import: "匯入…",
     save: "儲存工作階段…",
-    share: "分享…",
     png: "匯出 PNG…",
     clear: "清空工作階段",
     prefs: "偏好設定…",
@@ -130,11 +148,14 @@ const ZH_TW: MenuLang = MenuLang {
 /// Hong Kong wording. Same script, a few terms and the session word differ
 /// from the Taiwan table; Macau reads this one too (report §7.2 v1.23).
 const ZH_HK: MenuLang = MenuLang {
+    hide: "隱藏 PathBlender",
+    hide_others: "隱藏其他",
+    quit: "結束 PathBlender",
+    about: "關於 PathBlender",
     file: "檔案",
     edit: "編輯",
     import: "匯入…",
     save: "儲存工作階段…",
-    share: "分享…",
     png: "匯出 PNG…",
     clear: "清除工作階段",
     prefs: "偏好設定…",
@@ -142,11 +163,14 @@ const ZH_HK: MenuLang = MenuLang {
 };
 
 const ES: MenuLang = MenuLang {
+    hide: "Ocultar PathBlender",
+    hide_others: "Ocultar otros",
+    quit: "Salir de PathBlender",
+    about: "Acerca de PathBlender",
     file: "Archivo",
     edit: "Edición",
     import: "Importar…",
     save: "Guardar sesión…",
-    share: "Compartir…",
     png: "Exportar PNG…",
     clear: "Vaciar sesión",
     prefs: "Preferencias…",
@@ -154,11 +178,14 @@ const ES: MenuLang = MenuLang {
 };
 
 const FR: MenuLang = MenuLang {
+    hide: "Masquer PathBlender",
+    hide_others: "Masquer les autres",
+    quit: "Quitter PathBlender",
+    about: "À propos de PathBlender",
     file: "Fichier",
     edit: "Édition",
     import: "Importer…",
     save: "Enregistrer la session…",
-    share: "Partager…",
     png: "Exporter PNG…",
     clear: "Effacer la session",
     prefs: "Réglages…",
@@ -166,15 +193,129 @@ const FR: MenuLang = MenuLang {
 };
 
 const TR: MenuLang = MenuLang {
+    hide: "PathBlender'i Gizle",
+    hide_others: "Diğerlerini Gizle",
+    quit: "PathBlender'dan Çık",
+    about: "PathBlender Hakkında",
     file: "Dosya",
     edit: "Düzen",
     import: "İçe Aktar…",
     save: "Oturumu Kaydet…",
-    share: "Paylaş…",
     png: "PNG Dışa Aktar…",
     clear: "Oturumu Temizle",
     prefs: "Tercihler…",
     updates: "Güncellemeleri Denetle…",
+};
+
+/// Brazilian Portuguese wording (first batch of the language expansion plan).
+const PT_BR: MenuLang = MenuLang {
+    hide: "Ocultar PathBlender",
+    hide_others: "Ocultar Outros",
+    quit: "Sair do PathBlender",
+    about: "Sobre o PathBlender",
+    file: "Arquivo",
+    edit: "Editar",
+    import: "Importar…",
+    save: "Salvar Sessão…",
+    png: "Exportar PNG…",
+    clear: "Limpar Sessão",
+    prefs: "Preferências…",
+    updates: "Verificar Atualizações…",
+};
+
+/// Hebrew wording. macOS renders the native menu bar itself, so the strings
+/// stay plain Hebrew text and need no RTL markup here — the web content is
+/// where dir=rtl applies.
+const HE: MenuLang = MenuLang {
+    hide: "הסתר את PathBlender",
+    hide_others: "הסתר את האחרים",
+    quit: "יציאה מ-PathBlender",
+    about: "אודות PathBlender",
+    file: "קובץ",
+    edit: "עריכה",
+    import: "ייבוא…",
+    save: "שמירת הפעלה…",
+    png: "ייצוא PNG…",
+    clear: "ניקוי הפעלה",
+    prefs: "העדפות…",
+    updates: "בדיקת עדכונים…",
+};
+
+// Second-batch UI languages (nl/pl/ja/ko/cs, red book §语言扩展规划): each
+// follows Apple's own macOS menu localization for hide/quit/about.
+const NL: MenuLang = MenuLang {
+    hide: "Verberg PathBlender",
+    hide_others: "Verberg andere",
+    quit: "Stop PathBlender",
+    about: "Over PathBlender",
+    file: "Archief",
+    edit: "Wijzig",
+    import: "Importeer…",
+    save: "Bewaar sessie…",
+    png: "Exporteer PNG…",
+    clear: "Wis sessie",
+    prefs: "Voorkeuren…",
+    updates: "Zoek naar updates…",
+};
+
+const PL: MenuLang = MenuLang {
+    hide: "Ukryj PathBlender",
+    hide_others: "Ukryj pozostałe",
+    quit: "Zakończ PathBlender",
+    about: "O programie PathBlender",
+    file: "Plik",
+    edit: "Edycja",
+    import: "Importuj…",
+    save: "Zapisz sesję…",
+    png: "Eksportuj PNG…",
+    clear: "Wyczyść sesję",
+    prefs: "Preferencje…",
+    updates: "Sprawdź uaktualnienia…",
+};
+
+const JA: MenuLang = MenuLang {
+    hide: "PathBlender を隠す",
+    hide_others: "ほかを隠す",
+    quit: "PathBlender を終了",
+    about: "PathBlender について",
+    file: "ファイル",
+    edit: "編集",
+    import: "読み込む…",
+    save: "セッションを保存…",
+    png: "PNG を書き出す…",
+    clear: "セッションをクリア",
+    prefs: "環境設定…",
+    updates: "アップデートを確認…",
+};
+
+const KO: MenuLang = MenuLang {
+    hide: "PathBlender 가리기",
+    hide_others: "기타 가리기",
+    quit: "PathBlender 종료",
+    about: "PathBlender 정보",
+    file: "파일",
+    edit: "편집",
+    import: "가져오기…",
+    save: "세션 저장…",
+    png: "PNG 내보내기…",
+    clear: "세션 지우기",
+    prefs: "환경설정…",
+    updates: "업데이트 확인…",
+};
+
+const CS: MenuLang = MenuLang {
+    hide: "Skrýt PathBlender",
+    hide_others: "Skrýt ostatní",
+    quit: "Ukončit PathBlender",
+    about: "O aplikaci PathBlender",
+    file: "Soubor",
+    edit: "Upravit",
+    import: "Importovat…",
+    save: "Uložit relaci…",
+    png: "Exportovat PNG…",
+    clear: "Vymazat relaci",
+    prefs: "Předvolby…",
+    updates: "Zkontrolovat aktualizace…",
 };
 
 /// Every web dictionary has a menu table: `set_menu_language` used to fall
@@ -191,6 +332,13 @@ fn lang_of(lang: &str) -> &'static MenuLang {
         "es" => &ES,
         "fr" => &FR,
         "tr" => &TR,
+        "pt-BR" => &PT_BR,
+        "he" => &HE,
+        "nl" => &NL,
+        "pl" => &PL,
+        "ja" => &JA,
+        "ko" => &KO,
+        "cs" => &CS,
         _ => &EN,
     }
 }
@@ -203,7 +351,7 @@ fn build_menu(app: &AppHandle, lang: &str) -> tauri::Result<tauri::menu::Menu<ta
     let l = lang_of(lang);
 
     let app_submenu = SubmenuBuilder::new(app, "PathBlender")
-        .about(Some(
+        .about_with_text(l.about, Some(
             AboutMetadataBuilder::new()
                 .name(Some("PathBlender".to_string()))
                 .version(Some(env!("CARGO_PKG_VERSION").to_string()))
@@ -226,9 +374,9 @@ fn build_menu(app: &AppHandle, lang: &str) -> tauri::Result<tauri::menu::Menu<ta
             None::<&str>,
         )?)
         .separator()
-        .hide()
-        .hide_others()
-        .quit()
+        .hide_with_text(l.hide)
+        .hide_others_with_text(l.hide_others)
+        .quit_with_text(l.quit)
         .build()?;
 
     let file_submenu = SubmenuBuilder::new(app, l.file)
@@ -247,7 +395,6 @@ fn build_menu(app: &AppHandle, lang: &str) -> tauri::Result<tauri::menu::Menu<ta
             Some("CmdOrCtrl+S"),
         )?)
         .separator()
-        .item(&MenuItem::with_id(app, "share", l.share, true, None::<&str>)?)
         .item(&MenuItem::with_id(app, "png", l.png, true, None::<&str>)?)
         .separator()
         .item(&MenuItem::with_id(app, "clear", l.clear, true, None::<&str>)?)
@@ -293,7 +440,7 @@ fn open_preferences(app: AppHandle) {
 }
 
 /// (file name, base64 bytes) pairs — the payload shape of the web side's
-/// `ghpb-open-files` CustomEvent (ADR-0003).
+/// `pb-open-files` CustomEvent (ADR-0003).
 fn read_open_pairs(paths: impl IntoIterator<Item = PathBuf>) -> Vec<(String, String)> {
     paths
         .into_iter()
@@ -319,32 +466,34 @@ fn push_open_files<R: tauri::Runtime>(app: &AppHandle<R>, pairs: &[(String, Stri
     }
     let json = serde_json::to_string(pairs).expect("serialize open-with files");
     let js = format!(
-        "window.__ghpbOpenPayload={json};\
-         window.dispatchEvent(new CustomEvent('ghpb-open-files',\
-         {{detail:window.__ghpbOpenPayload}}))"
+        "window.__pbOpenPayload={json};\
+         window.dispatchEvent(new CustomEvent('pb-open-files',\
+         {{detail:window.__pbOpenPayload}}))"
     );
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.eval(&js);
     }
 }
 
-/// Menu commands drive web-state actions (save/share/PNG/clear/update).
+/// Menu commands drive web-state actions (save/PNG/clear/update).
 /// Dispatch them as DOM CustomEvents via eval instead of Tauri events: the
 /// web-side `listen()` registration can silently lose the race against
 /// page load on WebKitGTK, leaving the menu dead (ADR-0003).
 fn push_menu_event<R: tauri::Runtime>(app: &AppHandle<R>, name: &str) {
-    let js = format!("window.dispatchEvent(new CustomEvent('ghpb-menu-{name}'))");
+    let js = format!("window.dispatchEvent(new CustomEvent('pb-menu-{name}'))");
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.eval(&js);
     }
 }
 
-/// Mirror the in-app theme onto the running app's Dock tile (macOS only).
-/// The bundle's icon catalog already tracks the OS appearance; this runtime
-/// override (`setApplicationIconImage` with explicit artwork) makes the
-/// running tile track the app's own theme choice instead, bypassing the
-/// appearance-rendering pipeline entirely. Missing artwork or a non-macOS
-/// host is a quiet no-op — the catalog remains the fallback there.
+/// Apply the app-icon appearance choice (web-side app-icon.tsx, independent
+/// from the UI theme) to the running app's Dock tile (macOS only). The
+/// bundle's icon catalog already tracks the OS appearance; this runtime
+/// override (`setApplicationIconImage` with explicit artwork) pins the tile
+/// to the choice — in 'system' mode the web side re-pushes the OS-matching
+/// artwork on every appearance flip, so no Dock re-render behavior is
+/// relied upon. Missing artwork or a non-macOS host is a quiet no-op — the
+/// catalog remains the fallback there.
 #[tauri::command]
 fn set_dock_icon(app: AppHandle, dark: bool) -> Result<(), String> {
     #[cfg(target_os = "macos")]
@@ -391,7 +540,7 @@ fn apply_dock_icon(path: &std::path::Path) {
 pub fn run() {
     // Open-with: files passed on the command line (double-click / "open
     // with") are read locally and pushed into the page once loading
-    // finishes — same `ghpb-open-files` channel the native import picker
+    // finishes — same `pb-open-files` channel the native import picker
     // uses (ADR-0003).
     let opened = read_open_pairs(std::env::args().skip(1).map(PathBuf::from));
     let delivered = AtomicBool::new(false);
@@ -432,9 +581,9 @@ pub fn run() {
             }
             let json = serde_json::to_string(&opened).expect("serialize argv files");
             let js = format!(
-                "window.__ghpbOpenPayload={json};\
-                 window.dispatchEvent(new CustomEvent('ghpb-open-files',\
-                 {{detail:window.__ghpbOpenPayload}}))"
+                "window.__pbOpenPayload={json};\
+                 window.dispatchEvent(new CustomEvent('pb-open-files',\
+                 {{detail:window.__pbOpenPayload}}))"
             );
             let _ = webview.eval(&js);
         })
@@ -465,7 +614,6 @@ pub fn run() {
                     });
                 }
                 "save" => push_menu_event(app, "save"),
-                "share" => push_menu_event(app, "share"),
                 "png" => push_menu_event(app, "png"),
                 "clear" => push_menu_event(app, "clear"),
                 "check-update" => push_menu_event(app, "check-update"),

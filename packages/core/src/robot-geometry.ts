@@ -65,7 +65,11 @@ const SEASONS: Readonly<Record<number, { frame: [number, number]; bumper: number
   2025: { frame: [30, 30], bumper: 4, src: '2025 R104 ≤120 in + R403 ≤4 in' },
   // 2026 tightened the perimeter itself: R104 ROBOT PERIMETER ≤ 110 in
   // (→ 27.5×27.5 in max square); R403 bumper ≤ 4.0 in per side.
-  2026: { frame: [27.5, 27.5], bumper: 4, src: '2026 R104 ≤110 in + R403 ≤4.0 in' },
+  // 2026 frame 27.0 (not the 27.5 rule max): the shipped CAD chassis
+  // (user-built Onshape frame, 2026-10-03) lands on the MK5i plate hole
+  // grid in whole-inch steps — 27.5 is unreachable, 27.0 is the largest
+  // legal档位. The CAD outline ships unscaled; the default follows it.
+  2026: { frame: [27, 27], bumper: 4, src: '2026 R104 ≤110 in + R403 ≤4.0 in' },
 };
 
 const FALLBACK_YEAR = 2025;
@@ -134,26 +138,52 @@ export function robotVisualGeometry(t: Trajectory, year: number): RobotVisualGeo
 }
 
 /** Corner inset for the default MK5i-style module layout, meters. */
-const MODULE_INSET_M = 0.12;
+/**
+ * Default module layout as a fraction of the chassis half-dimension,
+ * matched to the shipped MK5i frame CAD (plates bolt at ±10.375 in on
+ * the 27 in frame → 10.375/13.5 ≈ 0.7685) so the app's modules sit on
+ * the frame's plate zones for every season the frame scales to.
+ */
+const MODULE_INSET_FRACTION = 0.7685;
 
 /**
  * Module positions for the MK5i-style rendering: the file's real
- * swerve-module layout when it carries one, else four corners inset
- * from the frame edges (visual default, not a rule-derived number).
+ * swerve-module layout when it carries one, else four corners placed
+ * on the frame CAD's plate zones (proportional, scales with chassis).
  */
 export function chassisModules(
   t: Pick<Trajectory, 'moduleLocations'>,
   chassis: { lengthM: number; widthM: number },
 ): ModuleLocation[] {
   if (t.moduleLocations.length > 0) return t.moduleLocations;
-  const ix = Math.max(chassis.lengthM / 2 - MODULE_INSET_M, 0.05);
-  const iy = Math.max(chassis.widthM / 2 - MODULE_INSET_M, 0.05);
+  const ix = Math.max((chassis.lengthM / 2) * MODULE_INSET_FRACTION, 0.05);
+  const iy = Math.max((chassis.widthM / 2) * MODULE_INSET_FRACTION, 0.05);
   return [
     { x: ix, y: iy },
     { x: -ix, y: iy },
     { x: -ix, y: -iy },
     { x: ix, y: -iy },
   ];
+}
+
+/**
+ * Per-corner installed yaw (radians) for the default MK5i layout — the
+ * resting orientation each module is fastened at on a real chassis,
+ * measured 2026-10-03 from the user's STEP assembly: each wheel's
+ * rolling line is TANGENT to its corner diagonal, so the two motors
+ * flank along the radial diagonal (FL/RR 45° line, FR/RL 135° line).
+ * Exact rays FL -45°, FR -135°, RR 135°, RL 45° — the user verified
+ * the motor sides against the CAD (the first cut pointed every pod
+ * 180° the other way). Steering replaces it once moving.
+ */
+export function moduleBaseYaw(m: ModuleLocation): number {
+  // radial - 90°: the CAD pins each module rotated with its corner, the
+  // rolling direction (template +X) pointing tangentially — the pinwheel
+  // resting pose. atan2 keeps the exact per-corner rays; the earlier
+  // ±45° sign() collapsed both diagonals and pointed the rolling line
+  // RADIALLY, 90° off the CAD on every corner. Wrapped to (-π, π].
+  const a = Math.atan2(m.y, m.x) - Math.PI / 2;
+  return a <= -Math.PI ? a + 2 * Math.PI : a;
 }
 
 /**

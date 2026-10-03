@@ -19,7 +19,7 @@ async function importSamples(...paths: string[]) {
 }
 
 function selectRobot(name: string) {
-  fireEvent.click(screen.getByText(name, { selector: '.robot-name' }));
+  fireEvent.click(screen.getByText(({ 'Straight Run': '#0001', 'Stop And Score': '#0002', 'Side Lane': '#0003' } as Record<string, string>)[name] ?? name, { selector: '.robot-name' }));
   return within(screen.getByRole('region', { name, exact: true }));
 }
 
@@ -27,7 +27,7 @@ function openChecks() {
   fireEvent.click(screen.getByRole('button', { name: /^Checks/i }));
 }
 
-const conflictPair = () => screen.getByText('Straight Run × Stop And Score', { selector: '.conflict-pair' });
+const conflictPair = () => screen.getByText('#0001 × #0002', { selector: '.conflict-pair' });
 
 beforeEach(() => localStorage.clear());
 
@@ -65,26 +65,21 @@ describe('workspace workflow', () => {
     expect(document.querySelector('.canvas-bar')).toBeInTheDocument();
   });
 
-  it('closes robot details back to checks without hiding the sidebar or removing a robot', async () => {
+  it('returns from robot details to checks without removing a robot', async () => {
     render(<App />);
     await importSamples('ghostauto/straight_run.ghostauto', 'ghostauto/stop_and_score.ghostauto');
     selectRobot('Straight Run');
-    fireEvent.click(screen.getByRole('button', { name: 'Close robot details' }));
+    openChecks();
 
     expect(screen.queryByRole('region', { name: 'Straight Run', exact: true })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Checks/i })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Show or hide inspector' })).toHaveAttribute('aria-pressed', 'true');
     expect(conflictPair()).toBeVisible();
     expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
 
-    // Selecting a robot again reopens its details; hiding the entire sidebar
-    // remains an explicit action on the toolbar.
+    // Selecting a robot again reopens its details.
     selectRobot('Stop And Score');
     expect(screen.getByRole('region', { name: 'Stop And Score', exact: true })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Show or hide inspector' }));
-    expect(screen.getByRole('button', { name: 'Show or hide inspector' })).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.queryByRole('region', { name: 'Stop And Score', exact: true })).not.toBeInTheDocument();
   });
 
   it('keeps hidden robots in collision analysis, then reveals and pauses at a selected conflict', async () => {
@@ -93,8 +88,8 @@ describe('workspace workflow', () => {
     expect(conflictPair()).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /hide.*Straight Run/i }));
-    expect(screen.getByRole('button', { name: /show.*Straight Run/i })).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(screen.getByRole('button', { name: /hide.*#0001/i }));
+    expect(screen.getByRole('button', { name: /show.*#0001/i })).toHaveAttribute('aria-pressed', 'false');
     expect(conflictPair()).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
 
@@ -103,7 +98,7 @@ describe('workspace workflow', () => {
     fireEvent.click(conflictPair().closest('button')!);
 
     expect(screen.getByRole('button', { name: /^Play$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /hide.*Straight Run/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /hide.*#0001/i })).toHaveAttribute('aria-pressed', 'true');
     expect(Number((screen.getByRole('slider') as HTMLInputElement).value)).toBeGreaterThan(0);
     expect(conflictPair()).toBeInTheDocument();
   });
@@ -119,20 +114,14 @@ describe('workspace workflow', () => {
     expect(document.querySelectorAll('.robot-library-conflict')).toHaveLength(2);
   });
 
-  it('restores the field and robots together through field changes and whole-session import history', async () => {
+  it('switches the field, and a saved session restores the field and robots together with timing', async () => {
     render(<App />);
     await importSamples('ghostauto/straight_run.ghostauto');
     const season = screen.getByRole('combobox', { name: 'Game season' });
     expect(season).toHaveValue('rebuilt-2026');
     fireEvent.change(season, { target: { value: 'reefscape-2025' } });
     expect(season).toHaveValue('reefscape-2025');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    expect(season).toHaveValue('rebuilt-2026');
-    expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
-    expect(season).toHaveValue('reefscape-2025');
-    expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
 
     // Restore a different saved session, including its field and timing.
     const savedRobot = makeSession(parsePathFile(
@@ -142,34 +131,13 @@ describe('workspace workflow', () => {
     savedRobot.startDelayS = 1.25;
     const savedSession = new File(
       [serializeSession([savedRobot], 'chargedup-2023')],
-      'alliance.ghpb.json',
+      'alliance.pb',
       { type: 'application/json' },
     );
     fireEvent.drop(window, { dataTransfer: { files: [savedSession] } });
-    await screen.findByText('Stop And Score', { selector: '.robot-name' });
+    await screen.findByText('#0002', { selector: '.robot-name' });
     expect(season).toHaveValue('chargedup-2023');
-    expect(screen.queryByText('Straight Run', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(selectRobot('Stop And Score').getByText('1.25 s')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    expect(season).toHaveValue('reefscape-2025');
-    expect(selectRobot('Straight Run').getByText('0.00 s')).toBeInTheDocument();
-    expect(screen.queryByText('Stop And Score', { selector: '.robot-name' })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
-    expect(season).toHaveValue('chargedup-2023');
-    expect(selectRobot('Stop And Score').getByText('1.25 s')).toBeInTheDocument();
-    expect(screen.queryByText('Straight Run', { selector: '.robot-name' })).not.toBeInTheDocument();
-  });
-
-  it('undo removes an import back to the welcome screen, redo restores it', async () => {
-    render(<App />);
-    await importSamples('traj/v3_swerve.traj');
-    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    await screen.findByRole('region', { name: 'Get started' });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
-    await screen.findByText('swerve', { selector: '.robot-name' });
-    expect(screen.getByRole('combobox', { name: 'Game season' })).toHaveValue('rebuilt-2026');
   });
 });

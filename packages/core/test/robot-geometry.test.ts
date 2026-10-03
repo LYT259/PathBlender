@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   STEERING_STATIC_MPS,
   chassisModules,
+  moduleBaseYaw,
   moduleSteeringAngles,
   robotVisualGeometry,
   seasonRobotProfile,
@@ -42,7 +43,7 @@ describe('seasonRobotProfile (rule-verified per-season maxima)', () => {
     [2023, 30, 30, 3.25, 36.5],
     [2024, 30, 30, 3.25, 36.5],
     [2025, 30, 30, 4, 38],
-    [2026, 27.5, 27.5, 4, 35.5],
+    [2026, 27, 27, 4, 35],
   ];
   it.each(rows)('%i: frame %ix%i in + %s in bumper', (year, fl, fw, b, outerL) => {
     const p = seasonRobotProfile(year);
@@ -79,7 +80,7 @@ describe('withSeasonGeometry', () => {
     const a = withSeasonGeometry(st, 2023);
     expect(a.trajectory.geometry.lengthM).toBeCloseTo(0.9271, 6);
     const b = withSeasonGeometry(st, 2026);
-    expect(b.trajectory.geometry.lengthM).toBeCloseTo(0.9017, 6);
+    expect(b.trajectory.geometry.lengthM).toBeCloseTo(0.889, 6);
     // Already at the season value → same object back (no re-render churn).
     expect(withSeasonGeometry(a, 2023)).toBe(a);
   });
@@ -110,10 +111,10 @@ describe('chassisModules', () => {
     expect(chassisModules(t, { lengthM: 0.762, widthM: 0.762 })).toEqual(t.moduleLocations);
   });
 
-  it('defaults to four corners inset from the frame edges', () => {
+  it('defaults to four corners on the frame-CAD plate zones (proportional)', () => {
     const mods = chassisModules(traj({}), { lengthM: 0.762, widthM: 0.762 });
     expect(mods).toHaveLength(4);
-    const ix = 0.762 / 2 - 0.12;
+    const ix = (0.762 / 2) * 0.7685;
     for (const sx of [1, -1]) {
       for (const sy of [1, -1]) {
         expect(mods.some((m) => Math.abs(m.x - sx * ix) < 1e-9 && Math.abs(m.y - sy * ix) < 1e-9)).toBe(true);
@@ -174,5 +175,14 @@ describe('moduleSteeringAngles', () => {
   it('creeping below the static threshold counts as parked', () => {
     const eps = STEERING_STATIC_MPS / 2;
     expect(moduleSteeringAngles({ heading: 0, vx: eps, vy: 0, omega: 0 }, mods)[0]).toBeNull();
+  });
+});
+
+describe('moduleBaseYaw (installed per-corner orientation, from the user CAD)', () => {
+  it('corners: tangential pinwheel, motor-side rays verified against the CAD', () => {
+    expect(moduleBaseYaw({ x: 1, y: 1 })).toBeCloseTo(-Math.PI / 4, 9); // FL
+    expect(moduleBaseYaw({ x: 1, y: -1 })).toBeCloseTo((-3 * Math.PI) / 4, 9); // FR
+    expect(moduleBaseYaw({ x: -1, y: -1 })).toBeCloseTo((3 * Math.PI) / 4, 9); // RR
+    expect(moduleBaseYaw({ x: -1, y: 1 })).toBeCloseTo(Math.PI / 4, 9); // RL
   });
 });

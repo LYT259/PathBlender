@@ -28,10 +28,11 @@ packages/desktop/src-tauri/target/
 .pre-push-patterns
 
 # 私有文件（2026-09-07 用户指令：研究报告/工程日志不上 GitHub）
-# 计划书 2026-09-12 改名（v1.12：可行性研究报告 → 产品计划书）——两个名字都挡，
-# 否则改名后的权威文档会以 untracked 身份躺在工作区里，一次 git add -A 就推上去了
+# Internal reference document: keep current and historical filenames private.
+# 内部参考文档：现名与历次旧名均保持私有。
 PathBlender_可行性研究报告.md
 PathBlender_产品计划书.md
+PathBlender_红皮书.md
 engineering-log/
 
 # 网站内部规格（2026-09-10 用户指令：与报告同等地位，不入库）
@@ -51,3 +52,5 @@ scripts/.probe-*.mjs
 
 # AI 协作工具私有清单（同 AGENTS.md 纪律，不入库）
 .zcodeignore
+# matches build dirs AND worktree symlinks (slash-less)
+packages/desktop/src-tauri/target

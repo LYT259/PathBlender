@@ -1,6 +1,6 @@
 /**
  * Desktop open-with channel (ADR-0003): the shell evals a
- * `ghpb-open-files` CustomEvent carrying [name, base64] pairs — both for
+ * `pb-open-files` CustomEvent carrying [name, base64] pairs — both for
  * launch-argument files (double-click / "open with", delivered once the
  * page finishes loading) and for the shell-owned native import picker.
  * The pairs must reach the normal import pipeline (a robot appears); a
@@ -43,27 +43,27 @@ describe('open-with channel', () => {
     await waitFor(() => expect(document.querySelector('header')).toBeTruthy());
 
     window.dispatchEvent(
-      new CustomEvent('ghpb-open-files', {
+      new CustomEvent('pb-open-files', {
         detail: [['straight_run.ghostauto', ghostautoB64('ghostauto/straight_run.ghostauto')]],
       }),
     );
 
     await waitFor(() => expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument());
-    expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
     // The stash is consumed by the handler, not left on the window.
-    expect((window as unknown as Record<string, unknown>).__ghpbOpenPayload).toBeUndefined();
+    expect((window as unknown as Record<string, unknown>).__pbOpenPayload).toBeUndefined();
   });
 
   it('consumes a payload stashed before React mounted', async () => {
     (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = { invoke: native.invoke };
-    (window as unknown as Record<string, unknown>).__ghpbOpenPayload = [
+    (window as unknown as Record<string, unknown>).__pbOpenPayload = [
       ['side_lane.ghostauto', ghostautoB64('ghostauto/side_lane.ghostauto')],
     ];
     renderApp();
 
     await waitFor(() => expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument());
-    expect(screen.getByText('Side Lane', { selector: '.robot-name' })).toBeInTheDocument();
-    expect((window as unknown as Record<string, unknown>).__ghpbOpenPayload).toBeUndefined();
+    expect(screen.getByText('#0003', { selector: '.robot-name' })).toBeInTheDocument();
+    expect((window as unknown as Record<string, unknown>).__pbOpenPayload).toBeUndefined();
   });
 
   it('ignores malformed payloads without crashing', async () => {
@@ -71,16 +71,16 @@ describe('open-with channel', () => {
     renderApp();
     await waitFor(() => expect(document.querySelector('header')).toBeTruthy());
 
-    window.dispatchEvent(new CustomEvent('ghpb-open-files', { detail: 'not-a-pair-list' }));
-    window.dispatchEvent(new CustomEvent('ghpb-open-files', { detail: [[42, null]] }));
+    window.dispatchEvent(new CustomEvent('pb-open-files', { detail: 'not-a-pair-list' }));
+    window.dispatchEvent(new CustomEvent('pb-open-files', { detail: [[42, null]] }));
 
     // Still interactive afterwards: a good payload still imports.
     window.dispatchEvent(
-      new CustomEvent('ghpb-open-files', {
+      new CustomEvent('pb-open-files', {
         detail: [['stop_and_score.ghostauto', ghostautoB64('ghostauto/stop_and_score.ghostauto')]],
       }),
     );
     await waitFor(() => expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument());
-    expect(screen.getByText('Stop And Score', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#0002', { selector: '.robot-name' })).toBeInTheDocument();
   });
 });

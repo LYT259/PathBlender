@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App';
 import { ThemeProvider } from '../src/theme';
 
@@ -27,11 +27,51 @@ function dropFiles(files: File[]): void {
 beforeEach(() => localStorage.clear());
 
 function selectRobot(name: string): HTMLElement {
-  fireEvent.click(screen.getByText(name, { selector: '.robot-name' }));
+  fireEvent.click(screen.getByText(({ 'Straight Run': '#0001', 'Stop And Score': '#0002', 'Side Lane': '#0003' } as Record<string, string>)[name] ?? name, { selector: '.robot-name' }));
   return screen.getByRole('region', { name, exact: true });
 }
 
 describe('App import → fusion → collision flow', () => {
+  it('cancels a pending import notice when the app is closed', async () => {
+    const timeout = vi.spyOn(window, 'setTimeout');
+    const clear = vi.spyOn(window, 'clearTimeout');
+    const app = render(<App />);
+    try {
+      const route = file('ghostauto/straight_run.ghostauto');
+      Object.defineProperty(route, 'webkitRelativePath', { value: 'routes/straight_run.ghostauto' });
+      dropFiles([route]);
+      await waitFor(() => expect(timeout.mock.calls.some((call) => call[1] === 2500)).toBe(true));
+      const index = timeout.mock.calls.findIndex((call) => call[1] === 2500);
+      const timer = timeout.mock.results[index].value;
+      app.unmount();
+      expect(clear).toHaveBeenCalledWith(timer);
+    } finally {
+      app.unmount();
+      timeout.mockRestore();
+      clear.mockRestore();
+    }
+  });
+
+  it('switches field construction with mutually exclusive buttons and remembers the choice', async () => {
+    const app = render(<App />);
+    dropFiles([file('ghostauto/straight_run.ghostauto')]);
+    const group = await screen.findByRole('group', { name: 'Field construction (welded vs AndyMark-built)' });
+    const andymark = within(group).getByRole('button', { name: 'AndyMark' });
+    const welded = within(group).getByRole('button', { name: 'Welded' });
+    fireEvent.click(andymark);
+    expect(andymark).toHaveAttribute('aria-pressed', 'true');
+    expect(welded).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(welded);
+    expect(welded).toHaveAttribute('aria-pressed', 'true');
+    expect(andymark).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(andymark);
+    app.unmount();
+    render(<App />);
+    dropFiles([file('ghostauto/straight_run.ghostauto')]);
+    const restored = await screen.findByRole('group', { name: 'Field construction (welded vs AndyMark-built)' });
+    expect(within(restored).getByRole('button', { name: 'AndyMark' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
   it('renders the empty state', () => {
     render(<App />);
     expect(document.querySelector('.toolbar')).not.toBeNull();
@@ -55,8 +95,8 @@ describe('App import → fusion → collision flow', () => {
 
     // Choreo card + ghost cards
     expect(screen.getByText('swerve', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('Straight Run', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('Stop And Score', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#0002', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByText('#0001', { selector: '.robot-library-team' })).toBeInTheDocument();
 
     // Collisions: the tuned pair (straight_run × stop_and_score) plus the
@@ -69,7 +109,7 @@ describe('App import → fusion → collision flow', () => {
       { timeout: 3000 },
     );
     expect(
-      screen.getByText('Straight Run × Stop And Score', { selector: '.conflict-pair' }),
+      screen.getByText('#0001 × #0002', { selector: '.conflict-pair' }),
     ).toBeInTheDocument();
     expect(screen.getAllByText(/closest/i, { selector: '.conflict-when' })).toHaveLength(2);
   });
@@ -129,17 +169,20 @@ describe('App import → fusion → collision flow', () => {
     const dialog = screen.getByRole('dialog', { name: 'Preferences' });
     fireEvent.click(within(dialog).getByRole('radio', { name: 'Light', exact: true }));
     expect(document.documentElement.dataset.theme).toBe(initialTheme);
-    expect(localStorage.getItem('ghpb.theme')).toBeNull();
+    expect(localStorage.getItem('pb.theme')).toBeNull();
     fireEvent.click(within(dialog).getByRole('button', { name: /^Save$/i }));
     expect(document.documentElement.dataset.theme).toBe('light');
-    expect(localStorage.getItem('ghpb.theme')).toBe('light');
+    expect(localStorage.getItem('pb.theme')).toBe('light');
+    // Save keeps the dialog open (user request 2026-10-02); Cancel closes it.
+    expect(screen.getByRole('dialog', { name: 'Preferences' })).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: /^Cancel$/i }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
     const nextDialog = screen.getByRole('dialog', { name: 'Preferences' });
     fireEvent.click(within(nextDialog).getByRole('radio', { name: 'Follow system', exact: true }));
     fireEvent.click(within(nextDialog).getByRole('button', { name: /^Save$/i }));
-    expect(localStorage.getItem('ghpb.theme')).toBeNull();
+    expect(localStorage.getItem('pb.theme')).toBeNull();
   });
 
   it('preferences: Save waits for a change and Cancel always gets you out', () => {
@@ -171,7 +214,7 @@ describe('App import → fusion → collision flow', () => {
     expect(within(next).getByRole('button', { name: /^Save$/i })).toBeEnabled();
     fireEvent.click(within(next).getByRole('button', { name: /^Cancel$/i }));
     expect(document.documentElement.dataset.theme).toBe(initialTheme);
-    expect(localStorage.getItem('ghpb.theme')).toBeNull();
+    expect(localStorage.getItem('pb.theme')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
     const again = screen.getByRole('dialog', { name: 'Preferences' });
@@ -186,7 +229,7 @@ describe('App import → fusion → collision flow', () => {
   it('AI assistant stays withdrawn: no entry point in toolbar, inspector or preferences', async () => {
     render(<App />);
     dropFiles([file('ghostauto/side_lane.ghostauto')]);
-    await screen.findByText('Side Lane', { selector: '.robot-name' });
+    await screen.findByText('#0003', { selector: '.robot-name' });
     // 2026-09-20 retreat: every assistant surface is unreachable while
     // AI_ENABLED is false (ai/availability.ts); the code itself remains.
     expect(screen.queryByRole('button', { name: 'AI Assistant', exact: true })).not.toBeInTheDocument();
@@ -232,7 +275,7 @@ describe('App import → fusion → collision flow', () => {
       () => {
       expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument();
     });
-    expect(screen.getByText('Side Lane', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#0003', { selector: '.robot-name' })).toBeInTheDocument();
   });
 
   it('PathPlanner .path now imports natively (Phase 2 generation)', async () => {
@@ -284,5 +327,28 @@ describe('App import → fusion → collision flow', () => {
     // The responsive overflow menu contains a second Save action; jsdom
     // does not apply the CSS breakpoint that chooses between the two.
     expect(screen.getByText('Save session', { selector: '.toolbar > .save-action' })).toBeEnabled();
+  });
+});
+
+describe('artwork style switcher vs 3D', () => {
+  it('shows the schematic/rendered switcher in 2D but hides it in 3D (identical scene)', async () => {
+    render(<App />);
+    dropFiles([file('ghostauto/straight_run.ghostauto')]);
+    await waitFor(() => expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument());
+
+    // Default field (2026) has both artwork styles and a 3D model.
+    const style = () => document.querySelector('.field-style-toggle');
+    expect(style()).not.toBeNull(); // 2D: switchable
+
+    fireEvent.click(screen.getByRole('button', { name: '3D', exact: true }));
+    expect(style()).toBeNull(); // 3D: official model replaces the artwork
+    const trails = screen.getByRole('checkbox', { name: 'trails' });
+    expect(trails).toBeChecked();
+    fireEvent.click(trails);
+    expect(trails).not.toBeChecked();
+
+    fireEvent.click(screen.getByRole('button', { name: '2D', exact: true }));
+    expect(style()).not.toBeNull(); // back to 2D: the choice returns
+    expect(screen.getByRole('checkbox', { name: 'trails' })).not.toBeChecked();
   });
 });

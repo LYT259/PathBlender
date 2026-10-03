@@ -7,6 +7,7 @@ import type {
 import { activeEndT } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import './Timeline.css';
+import { robotIdentity } from '../robot-identity';
 
 const SPEEDS = [0.25, 0.5, 1];
 
@@ -88,12 +89,72 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
       {robots.length === 0 ? <p className="timeline-empty">{tr('timeline.empty')}</p> : (
         <div className="timeline-scroller">
           <div className="timeline-surface">
+            <div className="timeline-rows">
+              {robots.map((robot) => {
+                const { trajectory } = robot;
+                const robotConflicts = conflicts.filter((c) => c.aId === trajectory.id || c.bId === trajectory.id);
+                const robotBounds = bounds.filter((b) => b.robotId === trajectory.id);
+                const activityLabel = tr('timeline.activity', {
+                  name: robotIdentity(trajectory),
+                  start: robot.startDelayS.toFixed(2),
+                  end: activeEndT(robot).toFixed(2),
+                });
+                return (
+                  <div className={`timeline-row${selectedId === trajectory.id ? ' is-selected' : ''}`} key={trajectory.id}>
+                    <button
+                      type="button"
+                      className="timeline-robot"
+                      onClick={() => onSelect?.(trajectory.id)}
+                      aria-label={tr('timeline.selectRobot', { name: robotIdentity(trajectory) })}
+                      aria-pressed={selectedId === trajectory.id}
+                      title={robotIdentity(trajectory)}
+                    >
+                      <span className="timeline-robot-dot" style={{ background: robot.color }} />
+                      <span>{robotIdentity(trajectory)}</span>
+                    </button>
+                    <div className="timeline-lane">
+                      <div
+                        className="timeline-activity"
+                        style={{ ...intervalStyle(robot.startDelayS, activeEndT(robot)), background: robot.color }}
+                        role="img"
+                        aria-label={activityLabel}
+                        title={activityLabel}
+                      />
+                      {robotBounds.map((issue, index) => {
+                        const label = tr('timeline.issue', {
+                          kind: tr('timeline.outOfBounds'), name: robotIdentity(trajectory),
+                          start: issue.startT.toFixed(2), end: issue.endT.toFixed(2),
+                        });
+                        return <button key={`bounds-${index}`} type="button" className="timeline-issue timeline-bounds" style={intervalStyle(issue.startT, issue.endT)} aria-label={label} title={label} onClick={() => jump(issue.startT, [trajectory.id])} />;
+                      })}
+                      {robotConflicts.map((issue, index) => {
+                        const otherId = issue.aId === trajectory.id ? issue.bId : issue.aId;
+                        const other = robots.find((r) => r.trajectory.id === otherId);
+                        const label = tr('timeline.issue', {
+                          kind: tr('timeline.collision'), name: `${robotIdentity(trajectory)} × ${other ? robotIdentity(other.trajectory) : otherId}`,
+                          start: issue.startT.toFixed(2), end: issue.endT.toFixed(2),
+                        });
+                        return <button key={`collision-${index}`} type="button" className="timeline-issue timeline-collision" style={intervalStyle(issue.startT, issue.endT)} aria-label={label} title={label} onClick={() => jump(issue.startT, [issue.aId, issue.bId], trajectory.id)} />;
+                      })}
+                      {trajectory.events.map((event, index) => {
+                        const globalT = event.t + robot.startDelayS;
+                        const label = tr('timeline.eventAt', { name: event.name, t: globalT.toFixed(2) });
+                        return <button key={`event-${index}`} type="button" className="timeline-event" style={{ left: percent(globalT) }} title={label} aria-label={label} onClick={() => jump(globalT, [trajectory.id])} />;
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
             <div className="timeline-axis">
-              <span className="timeline-unit">{tr('timeline.seconds')}</span>
               <div className="timeline-ruler">
                 <div className="timeline-ticks" aria-hidden="true">
                   {ticks.map((tick) => (
-                    <span key={tick} className="timeline-tick" style={{ left: percent(tick) }}>{tick}</span>
+                    // The unit rides with the final tick (chart-axis
+                    // convention) — e.g. "20 秒" / "20 seconds".
+                    <span key={tick} className="timeline-tick" style={{ left: percent(tick) }}>
+                      {tick}{tick === axisMax ? ` ${tr('timeline.seconds')}` : ''}
+                    </span>
                   ))}
                 </div>
                 <input
@@ -117,63 +178,6 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
                   }}
                 />
               </div>
-            </div>
-            <div className="timeline-rows">
-              {robots.map((robot) => {
-                const { trajectory } = robot;
-                const robotConflicts = conflicts.filter((c) => c.aId === trajectory.id || c.bId === trajectory.id);
-                const robotBounds = bounds.filter((b) => b.robotId === trajectory.id);
-                const activityLabel = tr('timeline.activity', {
-                  name: trajectory.name,
-                  start: robot.startDelayS.toFixed(2),
-                  end: activeEndT(robot).toFixed(2),
-                });
-                return (
-                  <div className={`timeline-row${selectedId === trajectory.id ? ' is-selected' : ''}`} key={trajectory.id}>
-                    <button
-                      type="button"
-                      className="timeline-robot"
-                      onClick={() => onSelect?.(trajectory.id)}
-                      aria-label={tr('timeline.selectRobot', { name: trajectory.name })}
-                      aria-pressed={selectedId === trajectory.id}
-                      title={trajectory.name}
-                    >
-                      <span className="timeline-robot-dot" style={{ background: robot.color }} />
-                      <span>{trajectory.name}</span>
-                    </button>
-                    <div className="timeline-lane">
-                      <div
-                        className="timeline-activity"
-                        style={{ ...intervalStyle(robot.startDelayS, activeEndT(robot)), background: robot.color }}
-                        role="img"
-                        aria-label={activityLabel}
-                        title={activityLabel}
-                      />
-                      {robotBounds.map((issue, index) => {
-                        const label = tr('timeline.issue', {
-                          kind: tr('timeline.outOfBounds'), name: trajectory.name,
-                          start: issue.startT.toFixed(2), end: issue.endT.toFixed(2),
-                        });
-                        return <button key={`bounds-${index}`} type="button" className="timeline-issue timeline-bounds" style={intervalStyle(issue.startT, issue.endT)} aria-label={label} title={label} onClick={() => jump(issue.startT, [trajectory.id])} />;
-                      })}
-                      {robotConflicts.map((issue, index) => {
-                        const otherId = issue.aId === trajectory.id ? issue.bId : issue.aId;
-                        const other = robots.find((r) => r.trajectory.id === otherId);
-                        const label = tr('timeline.issue', {
-                          kind: tr('timeline.collision'), name: `${trajectory.name} × ${other?.trajectory.name ?? otherId}`,
-                          start: issue.startT.toFixed(2), end: issue.endT.toFixed(2),
-                        });
-                        return <button key={`collision-${index}`} type="button" className="timeline-issue timeline-collision" style={intervalStyle(issue.startT, issue.endT)} aria-label={label} title={label} onClick={() => jump(issue.startT, [issue.aId, issue.bId], trajectory.id)} />;
-                      })}
-                      {trajectory.events.map((event, index) => {
-                        const globalT = event.t + robot.startDelayS;
-                        const label = tr('timeline.eventAt', { name: event.name, t: globalT.toFixed(2) });
-                        return <button key={`event-${index}`} type="button" className="timeline-event" style={{ left: percent(globalT) }} title={label} aria-label={label} onClick={() => jump(globalT, [trajectory.id])} />;
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
             </div>
             <div className="timeline-playhead-plane" aria-hidden="true">
               <div className="timeline-playhead" style={{ left: percent(currentT) }} />

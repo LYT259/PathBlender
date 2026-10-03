@@ -1,8 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+// Must stay the first local import: it copies pre-rename `ghpb.*`
+// localStorage entries to their `pb.*` names before anything reads them.
+import './legacy-storage';
 import { App } from './App';
 import { I18nProvider } from './i18n';
 import { ThemeProvider } from './theme';
+import { AppIconProvider } from './app-icon';
 import { UpdateChannelProvider } from './update-channel';
 import { PrefsWindow } from './prefs-window';
 import './app.css';
@@ -22,9 +26,11 @@ if (typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || window.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-      <UpdateChannelProvider>
-        <I18nProvider>{isPrefsWindow ? <PrefsWindow /> : <App />}</I18nProvider>
-      </UpdateChannelProvider>
+      <AppIconProvider>
+        <UpdateChannelProvider>
+          <I18nProvider>{isPrefsWindow ? <PrefsWindow /> : <App />}</I18nProvider>
+        </UpdateChannelProvider>
+      </AppIconProvider>
     </ThemeProvider>
   </StrictMode>,
 );

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the GHPathBlender AppImage, working around the tauri bundler's
+# Build the PathBlender AppImage, working around the tauri bundler's
 # appimagetool hang: let `tauri build --bundles appimage` run until the
 # AppDir is staged (linuxdeploy finished), detect the pack-stage stall,
 # kill the bundler, then pack the AppDir with a standalone appimagetool.
@@ -14,11 +14,11 @@ ROOT="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
 STALL_SECS="${STALL_SECS:-120}"
 # Cargo target dir when building from packages/desktop (the default:
 # src-tauri/target, no workspace-level redirection in this repo).
-# tauri names the AppDir after the product (GHPathBlender.AppDir) — glob it
+# tauri names the AppDir after the product (PathBlender.AppDir) — glob it
 # so the script survives casing/name changes.
 APPDIR="$(ls -d "$ROOT"/packages/desktop/src-tauri/target/release/bundle/appimage/*.AppDir 2>/dev/null | head -1 || true)"
-OUT="$ROOT/packages/desktop/src-tauri/target/GHPathBlender-x86_64.AppImage"
-LOG=/tmp/ghpb-appimage-bundle.log
+OUT="$ROOT/packages/desktop/src-tauri/target/PathBlender-x86_64.AppImage"
+LOG=/tmp/pb-appimage-bundle.log
 
 say() { printf '[appimage] %s\n' "$*"; }
 
@@ -26,7 +26,7 @@ say() { printf '[appimage] %s\n' "$*"; }
 find_tool() {
   local c plugin tmpd
   for c in "${APPIMAGETOOL:-}" /tmp/appimagetool-x86_64.AppImage \
-           "$HOME/.cache/ghpb/appimagetool-prefix/AppRun"; do
+           "$HOME/.cache/pathblender/appimagetool-prefix/AppRun"; do
     if [ -n "$c" ] && [ -x "$c" ]; then printf '%s' "$c"; return 0; fi
   done
   # Extract the embedded mini appimagetool AppImage from the linuxdeploy
@@ -38,11 +38,11 @@ find_tool() {
   tmpd="$(mktemp -d)"
   (cd "$tmpd" && ARCH=x86_64 "$plugin" --appimage-extract appimagetool-prefix >/dev/null 2>&1 || true)
   if [ -x "$tmpd/squashfs-root/appimagetool-prefix/AppRun" ]; then
-    mkdir -p "$HOME/.cache/ghpb"
-    rm -rf "$HOME/.cache/ghpb/appimagetool-prefix"
-    mv "$tmpd/squashfs-root/appimagetool-prefix" "$HOME/.cache/ghpb/"
+    mkdir -p "$HOME/.cache/pathblender"
+    rm -rf "$HOME/.cache/pathblender/appimagetool-prefix"
+    mv "$tmpd/squashfs-root/appimagetool-prefix" "$HOME/.cache/pathblender/"
     rm -rf "$tmpd"
-    printf '%s' "$HOME/.cache/ghpb/appimagetool-prefix/AppRun"
+    printf '%s' "$HOME/.cache/pathblender/appimagetool-prefix/AppRun"
     return 0
   fi
   rm -rf "$tmpd"
@@ -91,6 +91,11 @@ if [ "$stalled" != 1 ] && [ -n "$TAURI_OUT" ] && [ -s "$TAURI_OUT" ]; then
   exit 0
 fi
 
+# Re-glob the AppDir here, not only at script start: on a fresh tree the
+# directory is staged by linuxdeploy during the build, so the startup glob
+# resolves nothing and the stall-recovery pack below would run with an
+# empty path (2026-10-03 verification run).
+APPDIR="$(ls -d "$ROOT"/packages/desktop/src-tauri/target/release/bundle/appimage/*.AppDir 2>/dev/null | head -1 || true)"
 [ -d "$APPDIR" ] || { echo "error: AppDir missing at $APPDIR" >&2; exit 1; }
 say "packing $APPDIR (squashfs compression takes several minutes)"
 ARCH=x86_64 NO_STRIP=true timeout 540 "$TOOL" "$APPDIR" "$OUT"

@@ -1,5 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSessionHistory } from './session-history';
+import { useSessionState } from './session-state';
+import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
+import { isExampleRobot } from './example-robot';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
 import { PreferencesPanel } from './components/PreferencesPanel';
@@ -26,8 +28,8 @@ import {
 import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } from '@pathblender/core';
 import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
 import { displayName, robotFromRoute, type LibraryProfile, type LibraryRoute } from './route-library';
-import { hashToSession, sessionToHash } from './share-url';
-import { copyText, saveText } from './download';
+import { loadAutosave, saveAutosave } from './autosave';
+import { saveText } from './download';
 import { fieldImageFor } from './field-images';
 import { FIELD3D_MODELS } from './field3d-models';
 import { FieldCanvas, type FieldCanvasHandle } from './components/FieldCanvas';
@@ -45,20 +47,23 @@ import { runUpdateCheck } from './update-check';
 import { listenPrefs } from './pref-sync';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from './viewer';
 
-const SESSION_EXT = '.ghpb.json';
-// Switching a demo robot to a real library route keeps its stable id. That
-// robot now belongs to the user and must survive "End example".
-const isExampleRobot = (robot: SessionTrajectory) => robot.trajectory.id.startsWith('welcome-example-') && !robot.routeId;
+const SESSION_EXT = '.pb';
+// Sessions saved before the 2026-10-03 rename carry the legacy double
+// extension; they must keep opening (naming-is-contract: files on disk).
+const LEGACY_SESSION_EXT = '.ghpb.json';
+const isSessionFileName = (name: string) => name.endsWith(SESSION_EXT) || name.endsWith(LEGACY_SESSION_EXT);
 // The project's public home — the repo is private today; the link simply
 // starts resolving once it goes public.
 const GITHUB_URL = 'https://github.com/LYT259/pathblender';
 
 // The field + variant survive refreshes (a custom field is not persisted —
-// its definition lives only in the session/share payload).
-const FIELD_PREF_KEY = 'ghpb.field';
+// its definition lives only in the session payload).
+const FIELD_PREF_KEY = 'pb.field';
 type FieldPref = { id: string; variant: 'welded' | 'andymark'; style: FieldArtStyle };
 function loadFieldPref(): FieldPref {
-  const fallback: FieldPref = { id: REBUILT_2026.id, variant: 'andymark', style: 'schematic' };
+  // First-run defaults (user directive 2026-10-02): the current season,
+  // welded construction, schematic artwork, 2D view.
+  const fallback: FieldPref = { id: REBUILT_2026.id, variant: 'welded', style: 'schematic' };
   try {
     const raw = localStorage.getItem(FIELD_PREF_KEY);
     if (!raw) return fallback;
@@ -83,6 +88,26 @@ function rememberFieldPrefs(id: string, variant: 'welded' | 'andymark', style: F
   }
 }
 
+// The 2D/3D choice survives app restarts too (user directive 2026-10-02):
+// leaving in 3D means the next launch opens in 3D. Only the user's own
+// toggles are written — the model-less-season auto-fallback must not erase
+// the stored preference.
+const VIEW3D_KEY = 'pb.view3d';
+function loadView3D(): boolean {
+  try {
+    return localStorage.getItem(VIEW3D_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function rememberView3D(on: boolean) {
+  try {
+    localStorage.setItem(VIEW3D_KEY, on ? '1' : '0');
+  } catch {
+    /* best-effort */
+  }
+}
+
 // Native menus supplement the same visible workspace actions.
 const IS_DESKTOP = '__TAURI_INTERNALS__' in window || location.protocol === 'tauri:' || location.protocol === 'asset:';
 
@@ -98,13 +123,11 @@ function AppBody() {
   const { lang, t: tr } = useI18n();
   const { channel: updateChannel } = useUpdateChannel();
   const [initialFieldPref] = useState(loadFieldPref);
-  const { robots, setRobots, setScene, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, beginEdit, endEdit, canUndo, canRedo } = useSessionHistory(initialFieldPref);
+  const { robots: sourceRobots, alliance, setRobots, setScene, fieldId, fieldVariant, fieldStyle, customField, customImageUrl } = useSessionState(initialFieldPref);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [pathsOpen, setPathsOpen] = useState(() => window.innerWidth > 640);
-  const [inspectorOpen, setInspectorOpen] = useState(true);
   const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot'>('checks');
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
-  const [view3D, setView3D] = useState(false);
+  const [view3D, setView3D] = useState(loadView3D);
   const [showTrail, setShowTrail] = useState(true);
   const [showPrefs, setShowPrefs] = useState(false);
   function openPreferences() {
@@ -120,9 +143,17 @@ function AppBody() {
   const { visible: showCheckTip, dismiss: dismissCheckTip } = useUsageTip('checks');
   const [cfOpen, setCfOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'error' } | null>(null);
+  const toastTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
+  }, []);
   const flash = useCallback((msg: string, kind: 'ok' | 'error' = 'ok') => {
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
     setToast({ msg, kind });
-    window.setTimeout(() => setToast(null), 2500);
+    toastTimer.current = window.setTimeout(() => {
+      toastTimer.current = null;
+      setToast(null);
+    }, 2500);
   }, []);
   const importInputRef = useRef<HTMLInputElement>(null);
   const sessionInputRef = useRef<HTMLInputElement>(null);
@@ -135,6 +166,9 @@ function AppBody() {
     () => (baseField ? withFieldVariant(baseField, fieldVariant, fieldStyle) : baseField),
     [baseField, fieldVariant, fieldStyle],
   );
+  // Keep source paths in their original blue-side frame. Both renderers,
+  // analysis, inspectors and session exports consume the same alliance view.
+  const robots = useMemo(() => robotsForAlliance(sourceRobots, alliance, field), [sourceRobots, alliance, field]);
   const fieldImageUrl = fieldImageFor(fieldId, fieldVariant, fieldStyle, customImageUrl);
   // Per-season rule-max geometry (MK5i plan, 2026-10-02): default-geometry
   // robots are re-resolved against the selected field's season, so checks
@@ -151,7 +185,7 @@ function AppBody() {
     if (view3D && !field3dAvailable) setView3D(false);
   }, [view3D, field3dAvailable]);
   // Field/variant memory is written ONLY from the user's own selects —
-  // share-link and session-file restores must not overwrite it.
+  // session-file restores must not overwrite it.
 
   const duration = sessionDuration(robots);
   const playback = usePlayback(duration);
@@ -159,8 +193,6 @@ function AppBody() {
   useEffect(() => {
     if ((playback.playing || t > 0) && showPlayTip) dismissPlayTip();
   }, [playback.playing, t, showPlayTip, dismissPlayTip]);
-  const undoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); undo(); }, [playback.setPlaying, undo]);
-  const redoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); redo(); }, [playback.setPlaying, redo]);
 
   const visible = useMemo(() => seasonRobots.filter((r) => r.visible), [seasonRobots]);
   const conflicts = useMemo(
@@ -199,14 +231,12 @@ function AppBody() {
     for (const { file, relPath } of incoming) {
       const text = await file.text();
       // Session files restore as a whole session rather than one robot.
-      if (relPath.endsWith(SESSION_EXT)) {
+      if (isSessionFileName(relPath)) {
         try {
           const restored = deserializeSession(text);
-          setScene({ robots: restored.robots, fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
+          setScene({ ...restoreSessionAlliance(restored), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
           setSelectedId(restored.robots[0]?.trajectory.id ?? null);
           setInspectorMode('checks');
-          setInspectorOpen(window.innerWidth > 900);
-          if (window.innerWidth <= 640) setPathsOpen(false);
           playback.setPlaying(false);
           setT(0);
           setErrors([]);
@@ -296,8 +326,6 @@ function AppBody() {
       if (!fromFolder || willSeed) {
         setSelectedId(ids[0]!);
         setInspectorMode('checks');
-        setInspectorOpen(window.innerWidth > 900);
-        if (window.innerWidth <= 640) setPathsOpen(false);
       }
     }
     setErrors(nextErrors);
@@ -331,13 +359,10 @@ function AppBody() {
   const pickRoute = useCallback((robotId: string, routeId: string) => {
     const route = libraryRoutes.find((r) => r.id === routeId);
     if (!route) return;
-    // An in-progress waypoint edit belongs to the previous route; leave edit
-    // mode rather than half-apply it to the new one.
     setRobots((prev) =>
       prev.map((r) => {
         if (r.trajectory.id !== robotId) return r;
-        // A pure viewer: the route shows exactly as the file defines it,
-        // including its own alliance frame.
+        // The shared alliance view is derived after picking the source route.
         const traj = route.trajectory;
         return {
           ...r,
@@ -356,8 +381,6 @@ function AppBody() {
     setRobots((prev) => [...prev, robotFromRoute(route, prev.length, id)]);
     setSelectedId(id);
     setInspectorMode('robot');
-    setInspectorOpen(true);
-    if (window.innerWidth <= 640) setPathsOpen(false);
   }, [libraryRoutes, setRobots]);
 
   /** Apply an imported profile's bumper box to one robot. */
@@ -414,8 +437,6 @@ function AppBody() {
   const selectRobot = useCallback((id: string) => {
     setSelectedId(id);
     setInspectorMode('robot');
-    setInspectorOpen(true);
-    if (window.innerWidth <= 640) setPathsOpen(false);
   }, []);
   const selectedRobot = robots.find((r) => r.trajectory.id === selectedId) ?? robots[0];
 
@@ -440,49 +461,28 @@ function AppBody() {
     );
   }, [robots, fieldId, field]);
 
-
+  // Launch continuity (user report 2026-10-02: quitting in 3D reopened to
+  // the welcome page — the 3D pref was honored but only after a fresh
+  // import). Restore the autosaved session once on mount; a desktop
+  // open-with file that arrives later simply replaces whatever this restored.
   useEffect(() => {
-    const key = (e: KeyboardEvent) => {
-      const element = e.target instanceof Element ? e.target : null;
-      if ((!e.metaKey && !e.ctrlKey) || e.key.toLowerCase() !== 'z' || e.altKey || element?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]') || document.querySelector('[aria-modal="true"]')) return;
-      e.preventDefault();
-      if (e.shiftKey) redoSession(); else undoSession();
-    };
-    window.addEventListener('keydown', key);
-    return () => window.removeEventListener('keydown', key);
-  }, [undoSession, redoSession]);
-
-  const [shareLink, setShareLink] = useState<string | null>(null);
-  const shareUrl = useCallback(async () => {
-    try {
-      const hash = await sessionToHash(
-        robots,
-        fieldId,
-        fieldId === CUSTOM_FIELD_ID ? field : undefined,
-      );
-      try {
-        history.replaceState(null, '', hash);
-      } catch {
-        // Custom protocols (desktop) may refuse replaceState — the payload
-        // itself still goes to the dialog below.
-      }
-      // Web: full URL; desktop: the #s=… payload itself (recipient pastes it
-      // after the web app's address).
-      setShareLink(location.protocol.startsWith('http') ? location.href : hash);
-    } catch {
-      flash(tr('toast.shareFailed'), 'error');
+    const restored = loadAutosave();
+    if (restored) {
+      setScene({ ...restoreSessionAlliance(restored), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
+      setSelectedId(restored.robots[0]?.trajectory.id ?? null);
     }
-  }, [robots, fieldId, field, flash, tr]);
-
-  // Restore a shared session from the URL hash on first load.
-  useEffect(() => {
-    if (!location.hash.startsWith('#s=')) return;
-    void hashToSession(location.hash).then((restored) => {
-      if (restored && restored.robots.length > 0) {
-        setScene({ robots: restored.robots, fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
-      }
-    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
   }, []);
+
+  // Keep the autosave current (debounced; removing the last robot clears
+  // the slot so the next launch opens on the welcome page again).
+  useEffect(() => {
+    const id = setTimeout(
+      () => saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined),
+      600,
+    );
+    return () => clearTimeout(id);
+  }, [robots, fieldId, field]);
 
   const exportPng = useCallback(() => {
     if (view3D) {
@@ -538,28 +538,27 @@ function AppBody() {
   }, [setT, setRobots, playback.setPlaying]);
   // Desktop: native menu commands and visible buttons share the same handlers.
   // The menu is rebuilt in the app language whenever it changes. The shell
-  // dispatches `ghpb-menu-*` DOM CustomEvents via eval (ADR-0003) — Tauri
+  // dispatches `pb-menu-*` DOM CustomEvents via eval (ADR-0003) — Tauri
   // event `listen()` can silently lose the race against page load on
   // WebKitGTK, leaving every menu command dead.
   useEffect(() => {
     if (!IS_DESKTOP) return;
     const on = (name: string, fn: () => void) => {
       const h = () => fn();
-      window.addEventListener(`ghpb-menu-${name}`, h);
-      return () => window.removeEventListener(`ghpb-menu-${name}`, h);
+      window.addEventListener(`pb-menu-${name}`, h);
+      return () => window.removeEventListener(`pb-menu-${name}`, h);
     };
     const unbinds = [
       on('import', () => importInputRef.current?.click()),
       on('save', () => saveSession()),
-      on('share', () => void shareUrl()),
       on('png', () => exportPng()),
       on('clear', () => clearAll()),
       on('check-update', () => void checkForUpdates()),
     ];
     return () => unbinds.forEach((u) => u());
-  }, [saveSession, shareUrl, exportPng, clearAll, flash, tr, checkForUpdates]);
+  }, [saveSession, exportPng, clearAll, flash, tr, checkForUpdates]);
 
-  // Desktop open-with: the shell evals a `ghpb-open-files` CustomEvent with
+  // Desktop open-with: the shell evals a `pb-open-files` CustomEvent with
   // [name, base64] pairs (launch-argument files and native-picker imports
   // both arrive here — push-only, no privileged channel; ADR-0003).
   useEffect(() => {
@@ -576,18 +575,18 @@ function AppBody() {
       if (files.length) void Promise.resolve(importFiles(files)).catch(() => undefined);
     };
     const onOpen = (e: Event) => {
-      delete (window as { __ghpbOpenPayload?: unknown }).__ghpbOpenPayload;
+      delete (window as { __pbOpenPayload?: unknown }).__pbOpenPayload;
       deliver((e as CustomEvent).detail);
     };
-    window.addEventListener('ghpb-open-files', onOpen);
+    window.addEventListener('pb-open-files', onOpen);
     // The shell may have delivered before React mounted — consume the stash.
-    const w = window as { __ghpbOpenPayload?: unknown };
-    if (w.__ghpbOpenPayload) {
-      const stash = w.__ghpbOpenPayload;
-      delete w.__ghpbOpenPayload;
+    const w = window as { __pbOpenPayload?: unknown };
+    if (w.__pbOpenPayload) {
+      const stash = w.__pbOpenPayload;
+      delete w.__pbOpenPayload;
       deliver(stash);
     }
-    return () => window.removeEventListener('ghpb-open-files', onOpen);
+    return () => window.removeEventListener('pb-open-files', onOpen);
   }, [importFiles]);
 
   // Keep the native menu's language in sync with the in-app preference.
@@ -600,9 +599,9 @@ function AppBody() {
 
   const hasRobots = robots.length > 0;
   const hasExample = robots.some(isExampleRobot);
-  const leftOpen = pathsOpen && hasRobots;
+  const leftOpen = hasRobots;
   const issueCount = conflicts.length + bounds.length;
-  const rightOpen = inspectorOpen && hasRobots;
+  const rightOpen = hasRobots;
   const openImport = () => importInputRef.current?.click();
   const tryExample = async () => {
     const request = ++exampleRequest.current;
@@ -610,7 +609,7 @@ function AppBody() {
     try {
       const { createWelcomeExample } = await import('./welcome-example');
       if (request !== exampleRequest.current) return;
-      const example = createWelcomeExample({ a: tr('welcome.exampleNameA'), b: tr('welcome.exampleNameB') });
+      const example = createWelcomeExample({ a: '00001', b: '00002' });
       // Show it on the field the user actually uses — first visit defaults
       // to AndyMark, afterwards the remembered season + construction.
       setScene({
@@ -622,9 +621,7 @@ function AppBody() {
         customImageUrl: undefined,
       });
       setSelectedId(example.robots[0]?.trajectory.id ?? null);
-      setPathsOpen(window.innerWidth > 640);
       setInspectorMode('checks');
-      setInspectorOpen(window.innerWidth > 900);
       setView3D(false);
       setShowTrail(true);
       setErrors([]);
@@ -638,7 +635,7 @@ function AppBody() {
   };
   const exitExample = () => {
     // Keep any real paths the user added while exploring the example.
-    const remaining = robots.filter((robot) => !isExampleRobot(robot));
+    const remaining = sourceRobots.filter((robot) => !isExampleRobot(robot));
     // Folder imports build a library without adding robots while the demo is
     // on the field. Exiting must still expose that newly imported library.
     if (!remaining.length && libraryRoutes.length) remaining.push(robotFromRoute(libraryRoutes[0]!, 0, crypto.randomUUID()));
@@ -659,9 +656,8 @@ function AppBody() {
       setRobots((previous) => previous.map((r) => robotIds.includes(r.trajectory.id) ? { ...r, visible: true } : r));
   };
   return (
-    <div className="app">
+    <div className={`app${hasRobots ? '' : ' is-welcome'}`}>
       <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label="primary">
-        {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.togglePaths')} aria-pressed={leftOpen} onClick={() => { setPathsOpen(!pathsOpen); if (!pathsOpen && window.innerWidth <= 640) setInspectorOpen(false); }}><Icon name="sidebar" /></button>}
         {hasRobots && <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>}
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
         {!VIEWER_ONLY && (
@@ -697,20 +693,15 @@ function AppBody() {
             />
           </>
         )}
-        <input ref={sessionInputRef} type="file" accept=".ghpb.json" hidden aria-label={tr('welcome.openSession')} onChange={(e) => {
+        <input ref={sessionInputRef} type="file" accept=".pb,.ghpb.json" hidden aria-label={tr('welcome.openSession')} onChange={(e) => {
           const file = e.currentTarget.files?.[0];
           e.currentTarget.value = '';
           if (!file) return;
-          if (!file.name.endsWith(SESSION_EXT)) { setErrors([{ fileName: file.name, message: tr('import.notSession') }]); return; }
+          if (!isSessionFileName(file.name)) { setErrors([{ fileName: file.name, message: tr('import.notSession') }]); return; }
           void importFiles([file]);
         }} />
-        {(hasRobots || canUndo || canRedo) && <div className="history-controls">
-          <button className="tool-btn square" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
-          <button className="tool-btn square" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
-        </div>}
         <span className="toolbar-spacer" data-tauri-drag-region="" />
         {!VIEWER_ONLY && hasRobots && <button className="tool-btn save-action" onClick={saveSession} title={tr('actions.saveHint')}>{tr('actions.save')}</button>}
-        {hasRobots && <button className="tool-btn share-action" aria-label={tr('actions.share')} onClick={() => void shareUrl()}><Icon name="share" /><span>{tr('rail.share')}</span></button>}
         {hasRobots && <details className="workspace-menu">
           <summary className="tool-btn square" aria-label={tr('workspace.more')} title={tr('workspace.more')}><Icon name="more" /></summary>
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
@@ -722,7 +713,6 @@ function AppBody() {
           </div>
         </details>}
         <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={openPreferences}><Icon name="settings" /></button>
-        {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.toggleInspector')} aria-pressed={rightOpen} onClick={() => { setInspectorOpen(!inspectorOpen); if (!inspectorOpen && window.innerWidth <= 640) setPathsOpen(false); }}><Icon name="inspector" /></button>}
       </header>
       {VIEWER_ONLY && SITE_PREVIEW && <div className="site-preview-banner" role="contentinfo"><span>{tr('site.previewNote')}</span><a href={SITE_URLS.stable}>{tr('site.backStable')}</a></div>}
       <div className="app-col">
@@ -745,43 +735,57 @@ function AppBody() {
                     {FIELDS.map((f) => <option key={f.id} value={f.id}>{f.name} {f.year}</option>)}
                     <option value={CUSTOM_FIELD_ID}>{tr('customField.title')}</option>
                   </select>
-                  {field.aprilTagsAndyMark && <select className="field-select field-variant" value={fieldVariant} onChange={(e) => {
-                    const v = e.target.value as 'welded' | 'andymark'; setScene({ fieldVariant: v });
-                    if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, v, fieldStyle);
-                  }} title={tr('field.variant')} aria-label={tr('field.variant')}><option value="andymark">AndyMark</option><option value="welded">Welded</option></select>}
-                  {field.imageRendered && <select className="field-select field-style" value={fieldStyle} onChange={(e) => {
-                    const st = e.target.value as FieldArtStyle; setScene({ fieldStyle: st });
-                    if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, fieldVariant, st);
-                  }} title={tr('field.style')} aria-label={tr('field.style')}><option value="schematic">{tr('field.style.schematic')}</option><option value="rendered">{tr('field.style.rendered')}</option></select>}
+                  {field.aprilTagsAndyMark && <div className="seg field-variant-toggle" role="group" aria-label={tr('field.variant')}>
+                    {(['welded', 'andymark'] as const).map((variant) => <button key={variant} type="button" aria-pressed={fieldVariant === variant} className={fieldVariant === variant ? 'on' : ''} onClick={() => {
+                      if (fieldVariant === variant) return;
+                      setScene({ fieldVariant: variant });
+                      if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, variant, fieldStyle);
+                    }}>{variant === 'andymark' ? 'AndyMark' : 'Welded'}</button>)}
+                  </div>}
+                  {/* 2D-artwork switcher, hidden in 3D: the official field
+                      model replaces the artwork plane entirely (the image
+                      only feeds the no-model fallback), so both styles
+                      render the same scene there (user request 2026-10-02). */}
+                  {!view3D && field.imageRendered && <div className="seg field-style-toggle" role="group" aria-label={tr('field.style')}>
+                    {(['schematic', 'rendered'] as const).map((style) => <button key={style} type="button" aria-pressed={fieldStyle === style} className={fieldStyle === style ? 'on' : ''} onClick={() => {
+                      if (fieldStyle === style) return;
+                      setScene({ fieldStyle: style });
+                      if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, fieldVariant, style);
+                    }}>{tr(`field.style.${style}`)}</button>)}
+                  </div>}
+                </div>
+                <div className="session-alliance" role="group" aria-label={tr('robots.alliance')}>
+                  <div className="seg alliance-toggle">
+                    {(['blue', 'red'] as const).map((side) => <button key={side} type="button" className={`alliance-${side}${alliance === side ? ' on' : ''}`} aria-pressed={alliance === side} onClick={() => {
+                      if (alliance === side) return;
+                      playback.setPlaying(false);
+                      setScene({ alliance: side });
+                    }}>{tr(side === 'blue' ? 'robots.blue' : 'robots.red')}</button>)}
+                  </div>
                 </div>
                 <span className="canvas-spacer" />
                 {field3dAvailable && (
                   <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
-                    <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => setView3D(false)}>2D</button>
-                    <button aria-pressed={view3D} className={view3D ? 'on' : ''} onClick={() => setView3D(true)}>3D</button>
+                    <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => { setView3D(false); rememberView3D(false); }}>2D</button>
+                    <button aria-pressed={view3D} className={view3D ? 'on' : ''} onClick={() => { setView3D(true); rememberView3D(true); }}>3D</button>
                   </div>
                 )}
                 {/* The rest of the bar needs a robot to act on, which the gate
                     above now guarantees. */}
                 <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
-                {!view3D && <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>}
+                <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
                 <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
-            {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); setInspectorOpen(true); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
+            {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
             {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} playback={playback} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
           </section>
           <aside className="workspace-inspector" hidden={!rightOpen}>
             <div className="inspector-header"><div className="seg inspector-tabs" role="group" aria-label={tr('workspace.panels')}>
               <button className={inspectorMode === 'checks' ? 'on' : ''} aria-pressed={inspectorMode === 'checks'} onClick={() => setInspectorMode('checks')}>{tr('workspace.checks')}{issueCount > 0 && <span className="tab-count">{issueCount}</span>}</button>
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
-            </div><button className="tool-btn square inspector-close" title={tr(inspectorMode === 'robot' ? 'workspace.closeRobotDetails' : 'workspace.closePanel')} aria-label={tr(inspectorMode === 'robot' ? 'workspace.closeRobotDetails' : 'workspace.closePanel')} onClick={() => {
-              // Closing a robot detail page returns to checks. The toolbar's
-              // inspector toggle still controls the whole sidebar.
-              if (inspectorMode === 'robot') setInspectorMode('checks');
-              else setInspectorOpen(false);
-            }}><Icon name="close" size={14} /></button></div>
+            </div></div>
             {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
             {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} onRemove={removeRobot} libraryProfiles={libraryProfiles} onApplyProfile={applyProfile} /></div>}
           </aside>
@@ -797,28 +801,6 @@ function AppBody() {
         }}
       />}
       {toast && <div className={toast.kind === 'error' ? 'toast error' : 'toast'} role="status">{toast.msg}</div>}
-      {shareLink != null && (
-        <Dialog title={tr('share.title')} onClose={() => setShareLink(null)}>
-            <h3>{tr('share.title')}</h3>
-            <textarea aria-label={tr('share.title')} className="share-box" readOnly value={shareLink} rows={3} />
-            <p className="prefs-note">{tr('share.note')}</p>
-            <div className="prefs-row btns">
-              <button
-                className="btn small"
-                onClick={async () => {
-                  const ok = await copyText(shareLink);
-                  setToast({ msg: ok ? tr('toast.copied') : tr('share.copyFailed'), kind: ok ? 'ok' : 'error' });
-                  window.setTimeout(() => setToast(null), 2500);
-                }}
-              >
-                {tr('share.copy')}
-              </button>
-              <button className="btn small" onClick={() => setShareLink(null)}>
-                {tr('prefs.done')}
-              </button>
-            </div>
-        </Dialog>
-      )}
       {showPrefs && <Dialog title={tr('prefs.title')} onClose={() => setShowPrefs(false)} className="preferences-dialog">
         <PreferencesPanel desktop={IS_DESKTOP} onClose={() => setShowPrefs(false)} />
       </Dialog>}
