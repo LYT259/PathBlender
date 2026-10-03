@@ -174,11 +174,11 @@ export function chassisModules(
  * Steering adds on top: pod yaw = installed yaw + steer angle.
  */
 export function moduleBaseYaw(m: ModuleLocation): number {
-  // NEGATED sign(x*y): pinned 2026-10-03 from the user's app screenshot
-  // (the off-diagonal corner pair measured parallel at ~117° screen =
-  // ~135° robot frame after the ~18° camera tilt; the un-negated form
-  // put every module on the opposite diagonal).
-  return -Math.PI / 4 * Math.sign(m.x * m.y || -1);
+  // +sign(x*y) · 45°: CAD diagonal pattern (FL/BR +45°, FR/BL -45°),
+  // valid now that the template's +X is the ROLLING direction (the GLB
+  // was rotated -90° about Z on 2026-10-03 to undo the ROLL_SWAP error
+  // that had put the axle on +X).
+  return Math.PI / 4 * Math.sign(m.x * m.y || 1);
 }
 
 /**
