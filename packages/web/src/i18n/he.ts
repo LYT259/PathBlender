@@ -137,7 +137,7 @@ export const he: Record<MessageKey, string> = {
   'robots.title': 'רובוטים ({n})',
   'robots.remove': 'הסרה',
   'robots.collision': 'התנגשות',
-  'robots.teamNumberEdit': 'עריכת מספר קבוצה',
+  'robots.teamNumberEdit': "עריכת שם תצוגה",
   'robots.alliance': 'ברית',
   'robots.blue': 'כחול',
   'robots.red': 'אדום',

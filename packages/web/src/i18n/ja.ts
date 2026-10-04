@@ -133,7 +133,7 @@ export const ja: Record<MessageKey, string> = {
   'robots.title': 'ロボット ({n})',
   'robots.remove': '削除',
   'robots.collision': '衝突',
-  'robots.teamNumberEdit': 'チーム番号を編集',
+  'robots.teamNumberEdit': "表示名を編集",
   'robots.alliance': 'アライアンス',
   'robots.blue': '青',
   'robots.red': '赤',

@@ -120,7 +120,7 @@ export const de = {
   'robots.title': 'Roboter ({n})',
   'robots.remove': 'Entfernen',
   'robots.collision': 'Kollision',
-  'robots.teamNumberEdit': 'Teamnummer bearbeiten',
+  'robots.teamNumberEdit': "Anzeigenamen bearbeiten",
   'robots.alliance': 'Allianz',
   'robots.blue': 'Blau',
   'robots.red': 'Rot',

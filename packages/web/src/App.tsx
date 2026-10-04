@@ -415,6 +415,7 @@ function AppBody() {
       return { ...robot, routeId: route.id, trajectory: {
         ...traj, ...geometry, id: robot.trajectory.id, name: displayName(traj),
         teamNumber: robot.trajectory.teamNumber,
+        displayName: robot.trajectory.displayName,
         teamName: robot.trajectory.teamName || traj.teamName,
       } };
     }));
@@ -461,7 +462,7 @@ function AppBody() {
   const updateRobot = useCallback((id: string, patch: Partial<SessionTrajectory>) => {
     setRobots((prev) => withTeamPlaceholders(prev.map((r) => r.trajectory.id === id
       ? { ...r, ...patch, trajectory: patch.trajectory
-        ? { ...r.trajectory, teamNumber: patch.trajectory.teamNumber }
+        ? { ...r.trajectory, teamNumber: patch.trajectory.teamNumber, displayName: patch.trajectory.displayName }
         : r.trajectory }
       : r)));
   }, []);

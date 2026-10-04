@@ -98,7 +98,7 @@ export const mk = {
   'robots.title': 'Роботи ({n})',
   'robots.remove': 'Отстрани',
   'robots.collision': 'судир',
-  'robots.teamNumberEdit': 'Уреди број на тим',
+  'robots.teamNumberEdit': "Уреди го прикажаното име",
   'robots.alliance': 'сојуз',
   'robots.blue': 'Сина',
   'robots.red': 'Црвена',

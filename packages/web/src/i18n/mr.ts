@@ -120,7 +120,7 @@ export const mr = {
   'robots.title': 'रोबोट ({n})',
   'robots.remove': 'काढा',
   'robots.collision': 'टक्कर',
-  'robots.teamNumberEdit': 'संघ क्रमांक संपादित करा',
+  'robots.teamNumberEdit': "दर्शविलेले नाव संपादित करा",
   'robots.alliance': 'युती',
   'robots.blue': 'निळा',
   'robots.red': 'लाल',
