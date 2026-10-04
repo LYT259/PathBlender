@@ -57,6 +57,14 @@ export const ja: Record<MessageKey, string> = {
   "checks.clearTitle": "競合は検出されませんでした",
   "checks.clearBody": "インポートしたパスと現在のロボット寸法が対象です。",
   "checks.issues": "確認が必要な項目 {n} 件",
+  "actions.heatmapOn": "ヒートマップ",
+  "actions.heatmapOff": "ヒートマップを隠す",
+  "actions.abCompare": "A-B 比較",
+  "checks.abBaselineSet": "基準を保存——シナリオを変更して再度比較してください",
+  "checks.abNoPairs": "シナリオ間に比較できるペアがありません",
+  "checks.abDelta": "最もタイトなペアが {d} m {dir}",
+  "checks.abSafer": "より安全",
+  "checks.abTighter": "よりタイト",
   "checks.exportReport": "テキストレポートをエクスポート",
   "checks.reportTitle": "衝突レポート",
   "checks.reportGenerated": "生成日時",
@@ -112,6 +120,7 @@ export const ja: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': 'ファイルをインポート',
   'actions.save': 'セッションを保存',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG をエクスポート',
   'actions.clear': 'クリア',
 
@@ -161,6 +170,14 @@ export const ja: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': '衝突 {start}–{end} s',
+
+  'toast.gifOnly2d': 'GIF エクスポートは 2D のみ',
+
+  'toast.gifRendering': 'GIF をレンダリング中…',
+
+  'toast.gifSaved': 'GIF を保存しました',
+
+  'toast.gifFailed': 'GIF に失敗',
 
   'toast.pngOnly2d': 'PNG のエクスポートは 2D のみです',
   'toast.pngSaved': 'PNG を保存しました',

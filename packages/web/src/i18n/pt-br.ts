@@ -56,6 +56,14 @@ export const ptBR: Record<MessageKey, string> = {
   'checks.clearTitle': 'Nenhum conflito detectado',
   'checks.clearBody': 'Para as trajetórias importadas e as dimensões atuais dos robôs.',
   'checks.issues': '{n} itens para revisar',
+  'actions.heatmapOn': 'Mapa de calor',
+  'actions.heatmapOff': 'Ocultar mapa de calor',
+  'actions.abCompare': 'Comparar A-B',
+  'checks.abBaselineSet': 'Referência salva — mude o cenário e compare novamente',
+  'checks.abNoPairs': 'Nenhum par comparável entre os cenários',
+  'checks.abDelta': 'Par mais apertado {dir} em {d} m',
+  'checks.abSafer': 'mais seguro',
+  'checks.abTighter': 'mais apertado',
   'checks.exportReport': 'Exportar relatório em texto',
   'checks.reportTitle': 'Relatório de conflitos',
   'checks.reportGenerated': 'Gerado em',
@@ -111,6 +119,7 @@ export const ptBR: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': 'Importar arquivos',
   'actions.save': 'Salvar sessão',
+  'actions.gif': 'GIF',
   'actions.png': 'Exportar PNG',
   'actions.clear': 'Limpar',
 
@@ -158,6 +167,14 @@ export const ptBR: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'colisão {start}–{end} s',
+
+  'toast.gifOnly2d': 'Exportação de GIF só em 2D',
+
+  'toast.gifRendering': 'Renderizando GIF…',
+
+  'toast.gifSaved': 'GIF salvo',
+
+  'toast.gifFailed': 'Falha no GIF',
 
   'toast.pngOnly2d': 'A exportação de PNG é somente em 2D',
   'toast.pngSaved': 'PNG salvo',

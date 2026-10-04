@@ -47,6 +47,14 @@ export const zh: Record<MessageKey, string> = {
   "checks.clearTitle": "未发现路径冲突",
   "checks.clearBody": "基于当前导入的路径与机器人尺寸。",
   "checks.issues": "有 {n} 项需要检查",
+  "actions.heatmapOn": "热力图",
+  "actions.heatmapOff": "隐藏热力图",
+  "actions.abCompare": "A-B 对比",
+  "checks.abBaselineSet": "基准已保存——改动场景后再次对比",
+  "checks.abNoPairs": "两场景无可比对的机对",
+  "checks.abDelta": "最紧的一对{dir}了 {d} 米",
+  "checks.abSafer": "更安全",
+  "checks.abTighter": "更紧张",
   "checks.exportReport": "导出文字版冲突报告",
   "checks.reportTitle": "冲突报告",
   "checks.reportGenerated": "生成于",
@@ -102,6 +110,7 @@ export const zh: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': '导入文件',
   'actions.save': '保存会话',
+  'actions.gif': '回放 GIF',
   'actions.png': '导出 PNG',
   'actions.clear': '清空',
 
@@ -149,6 +158,14 @@ export const zh: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} 秒',
   'timeline.band': '碰撞 {start}–{end} 秒',
+
+  'toast.gifOnly2d': 'GIF 回放导出仅支持 2D',
+
+  'toast.gifRendering': '正在渲染 GIF…',
+
+  'toast.gifSaved': 'GIF 已保存',
+
+  'toast.gifFailed': 'GIF 失败',
 
   'toast.pngOnly2d': '截图仅支持 2D 视图',
   'toast.pngSaved': '截图已保存',

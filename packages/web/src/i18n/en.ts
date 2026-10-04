@@ -45,6 +45,14 @@ export const en = {
   "checks.clearTitle": "No conflicts detected",
   "checks.clearBody": "For the imported paths and current robot dimensions.",
   "checks.issues": "{n} items to review",
+  "actions.heatmapOn": "Heatmap",
+  "actions.heatmapOff": "Hide heatmap",
+  "actions.abCompare": "A-B compare",
+  "checks.abBaselineSet": "Baseline saved — change the scenario, then compare again",
+  "checks.abNoPairs": "No comparable pairs between the two scenarios",
+  "checks.abDelta": "Tightest pair {dir} by {d} m",
+  "checks.abSafer": "safer",
+  "checks.abTighter": "tighter",
   "checks.exportReport": "Export text report",
   "checks.reportTitle": "Conflict report",
   "checks.reportGenerated": "Generated",
@@ -100,6 +108,7 @@ export const en = {
   'app.title': 'PathBlender',
   'actions.import': 'Import files',
   'actions.save': 'Save session',
+  'actions.gif': 'GIF',
   'actions.png': 'Export PNG',
   'actions.clear': 'Clear',
 
@@ -147,6 +156,14 @@ export const en = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'collision {start}–{end} s',
+
+  'toast.gifOnly2d': 'GIF replay export is 2D-only',
+
+  'toast.gifRendering': 'Rendering GIF…',
+
+  'toast.gifSaved': 'GIF saved',
+
+  'toast.gifFailed': 'GIF failed',
 
   'toast.pngOnly2d': 'PNG export is 2D-only',
   'toast.pngSaved': 'PNG saved',

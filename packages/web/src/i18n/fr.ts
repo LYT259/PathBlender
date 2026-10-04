@@ -53,6 +53,14 @@ export const fr: Record<MessageKey, string> = {
   "checks.clearTitle": "Aucun conflit détecté",
   "checks.clearBody": "Pour les parcours importés et les dimensions de robots actuelles.",
   "checks.issues": "{n} éléments à examiner",
+  "actions.heatmapOn": "Carte thermique",
+  "actions.heatmapOff": "Masquer la carte thermique",
+  "actions.abCompare": "Comparer A-B",
+  "checks.abBaselineSet": "Référence enregistrée — modifiez le scénario puis comparez",
+  "checks.abNoPairs": "Aucune paire comparable entre les scénarios",
+  "checks.abDelta": "Paire la plus serrée {dir} de {d} m",
+  "checks.abSafer": "plus sûr",
+  "checks.abTighter": "plus serré",
   "checks.exportReport": "Exporter le rapport texte",
   "checks.reportTitle": "Rapport de conflits",
   "checks.reportGenerated": "Généré le",
@@ -109,6 +117,7 @@ export const fr: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': 'Importer des fichiers',
   'actions.save': 'Enregistrer la session',
+  'actions.gif': 'GIF',
   'actions.png': 'Exporter en PNG',
   'actions.clear': 'Effacer',
 
@@ -158,6 +167,14 @@ export const fr: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'collision {start}–{end} s',
+
+  "toast.gifOnly2d": "L’export GIF ne fonctionne qu’en 2D",
+
+  "toast.gifRendering": "Rendu du GIF…",
+
+  "toast.gifSaved": "GIF enregistré",
+
+  "toast.gifFailed": "Échec du GIF",
 
   "toast.pngOnly2d": "L'export PNG n'est possible qu'en 2D",
   'toast.pngSaved': 'PNG enregistré',

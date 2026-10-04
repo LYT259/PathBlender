@@ -45,6 +45,14 @@ export const ar = {
   "checks.clearTitle": "لم يتم اكتشاف تعارضات",
   "checks.clearBody": "للمسارات المستوردة وأبعاد الروبوت الحالية.",
   "checks.issues": "{n} عناصر للمراجعة",
+  "actions.heatmapOn": "خريطة حرارية",
+  "actions.heatmapOff": "إخفاء الخريطة الحرارية",
+  "actions.abCompare": "مقارنة A-B",
+  "checks.abBaselineSet": "حُفظ الأساس — غيّر السيناريو ثم قارن مجددًا",
+  "checks.abNoPairs": "لا أزواج قابلة للمقارنة بين السيناريوهين",
+  "checks.abDelta": "أضيق زوج {dir} بمقدار {d} م",
+  "checks.abSafer": "أكثر أمانًا",
+  "checks.abTighter": "أضيق",
   "checks.exportReport": "تصدير تقرير نصي",
   "checks.reportTitle": "تقرير التصادمات",
   "checks.reportGenerated": "أُنشئ في",
@@ -100,6 +108,7 @@ export const ar = {
   'app.title': 'PathBlender',
   'actions.import': 'استيراد ملفات',
   'actions.save': 'حفظ الجلسة',
+  'actions.gif': 'صورة GIF متحركة',
   'actions.png': 'تصدير PNG',
   'actions.clear': 'مسح',
   
@@ -143,6 +152,14 @@ export const ar = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} ث',
   'timeline.band': 'تصادم {start}–{end} ث',
+  
+  'toast.gifOnly2d': 'تصدير GIF للثنائي الأبعاد فقط',
+  
+  'toast.gifRendering': 'جارٍ إنشاء GIF…',
+  
+  'toast.gifSaved': 'تم حفظ GIF',
+  
+  'toast.gifFailed': 'فشل GIF',
   
   'toast.pngOnly2d': 'تصدير PNG ثنائي الأبعاد فقط',
   'toast.pngSaved': 'تم حفظ PNG',
