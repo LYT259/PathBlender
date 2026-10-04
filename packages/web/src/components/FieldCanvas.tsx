@@ -560,6 +560,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         inCollisionNow.has(id),
         outOfBoundsNow.has(id),
         w,
+        h,
       );
     }
 
@@ -684,6 +685,7 @@ function drawRobot(
   collided: boolean,
   outOfBounds: boolean,
   canvasW: number,
+  canvasH: number,
 ) {
   const { outer, chassis } = vis;
   ctx.save();
@@ -813,37 +815,77 @@ function drawRobot(
   // number stays upright and constant-size at any heading and zoom.
   if (r.trajectory.teamNumber) {
     const num = r.trajectory.teamNumber;
-    const cx = sx(pose.x);
-    const cy = sy(pose.y);
+    // The visible footprint can be offset from the trajectory origin.
+    // Rotate that local offset exactly as the bumper/chassis above.
+    const cos = Math.cos(pose.heading);
+    const sin = Math.sin(pose.heading);
+    const cx = sx(pose.x + outer.offsetX * cos - outer.offsetY * sin);
+    const cy = sy(pose.y + outer.offsetX * sin + outer.offsetY * cos);
     const reach = Math.hypot(L, W) / 2;
     ctx.save();
     ctx.font = 'bold 13px ui-sans-serif, system-ui, sans-serif';
     const tw = ctx.measureText(num).width;
-    // Leader runs up-right; mirror to up-left when the label would
-    // cross the right canvas edge.
+    // Reuse the theme-aware alliance control colors, including their
+    // lighter dark-theme variants, rather than a white number or accent dot.
+    const color = cssVar(
+      r.trajectory.alliance === 'red' ? '--seg-red-fg' : '--seg-blue-fg',
+      bumperColor(r.trajectory.alliance),
+    );
+    const plate = cssVar('--bg-panel', '#ffffff');
+    const pad = 7;
+    const labelW = tw + pad * 2;
+    const labelH = 24;
+    const margin = 6;
     const leader = 20;
-    const dir = cx + reach + leader + 8 + tw + 4 <= canvasW ? 1 : -1;
-    const ax = cx + dir * Math.SQRT1_2 * reach;
-    const ay = cy - Math.SQRT1_2 * reach;
-    const lx = cx + dir * Math.SQRT1_2 * (reach + leader);
-    const ly = cy - Math.SQRT1_2 * (reach + leader);
-    ctx.strokeStyle = cssVar('--fg-dim', '#8e8e93');
-    ctx.lineWidth = 1;
+    const offset = Math.SQRT1_2 * (reach + leader);
+    const dir = cx + offset + labelW + margin <= canvasW ? 1 : -1;
+    // Keep the badge inside the viewport and align its text to backing
+    // pixels. Font size remains in CSS pixels; the existing DPR transform
+    // rasterizes it directly at display resolution, independent of zoom.
+    const dpr = window.devicePixelRatio || 1;
+    const snap = (value: number) => Math.round(value * dpr) / dpr;
+    const bx = snap(Math.max(margin, Math.min(
+      cx + dir * offset - (dir < 0 ? labelW : 0),
+      canvasW - margin - labelW,
+    )));
+    const by = snap(Math.max(margin, Math.min(
+      cy - offset - labelH / 2,
+      canvasH - margin - labelH,
+    )));
+    const lx = dir > 0 ? bx : bx + labelW;
+    const ly = by + labelH / 2;
+    // An opaque under-stroke keeps the fine leader legible over artwork.
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(ax, ay);
+    ctx.moveTo(cx, cy);
     ctx.lineTo(lx, ly);
-    ctx.stroke();
-    ctx.fillStyle = cssVar('--accent', '#0a84ff');
-    ctx.beginPath();
-    ctx.arc(ax, ay, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.textAlign = dir > 0 ? 'left' : 'right';
-    ctx.textBaseline = 'middle';
+    ctx.strokeStyle = plate;
     ctx.lineWidth = 3;
-    ctx.strokeStyle = cssVar('--canvas-bg', '#1c1c1e');
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeText(num, lx + dir * 5, ly);
-    ctx.fillText(num, lx + dir * 5, ly);
+    ctx.stroke();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+    ctx.strokeStyle = plate;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fill();
+
+    // A solid, compact badge isolates the glyphs from field textures.
+    // Avoid thick strokeText outlines, which muddy small letter counters.
+    ctx.beginPath();
+    ctx.roundRect(bx, by, labelW, labelH, 6);
+    ctx.fillStyle = plate;
+    ctx.fill();
+    ctx.strokeStyle = cssVar('--border', 'rgba(0, 0, 0, 0.10)');
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.fillText(num, snap(bx + pad), snap(ly));
     ctx.restore();
   }
 }
