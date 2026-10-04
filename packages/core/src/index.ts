@@ -56,6 +56,8 @@ export type { DetectedFormat, ParseErrorKind } from './parsers';
 export type { RobotProfile, ProfileDynamics, ProfileDefaultConstraints } from './parsers/robot-profile';
 export { applyProfileToTrajectory } from './profile-apply';
 export type { AutoSegment } from './parsers/pathplanner-auto';
+export { compareScenarios } from './collision/ab-compare';
+export type { AbCompare, AbPairDelta } from './collision/ab-compare';
 
 // PathPlanner trajectory generation (Phase 2 port, MIT-licensed upstream).
 export { DCMotor } from './pathplanner/dc-motor';
@@ -87,6 +89,8 @@ export type {
 } from './collision/field-bounds';
 
 export {
+  COLORBLIND_COLORS,
+  remapColorblind,
   SESSION_COLORS,
   activeEndT,
   activeStartT,

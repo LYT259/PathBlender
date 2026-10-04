@@ -25,6 +25,8 @@ export const ko: Record<MessageKey, string> = {
   'welcome.importFolderHint': '여러 경로를 불러와 재생할 경로를 선택합니다',
   'welcome.openSession': '저장된 세션 열기',
   'welcome.openSessionHint': '이전에 저장한 분석을 엽니다',
+  'welcome.demo': '데모 모드',
+  'welcome.demoHint': '예시 경기를 불러와 자동 재생합니다',
   'welcome.tryExample': '예제 사용해 보기',
   'welcome.exampleHint': '샘플 경로로 재생과 충돌 검사를 살펴봅니다.',
   'welcome.loadingExample': '예제 여는 중…',
@@ -60,6 +62,14 @@ export const ko: Record<MessageKey, string> = {
   'checks.clearTitle': '감지된 간섭 없음',
   'checks.clearBody': '가져온 경로와 현재 로봇 치수 기준입니다.',
   'checks.issues': '검토할 항목 {n}개',
+  'actions.heatmapOn': '히트맵',
+  'actions.heatmapOff': '히트맵 숨기기',
+  'actions.abCompare': 'A-B 비교',
+  'checks.abBaselineSet': '기준 저장됨 — 시나리오를 바꾼 뒤 다시 비교하세요',
+  'checks.abNoPairs': '두 시나리오 사이에 비교할 쌍이 없습니다',
+  'checks.abDelta': '가장 촘촘한 쌍이 {d} m {dir}',
+  'checks.abSafer': '더 안전',
+  'checks.abTighter': '더 촘촘',
   'checks.exportReport': '텍스트 보고서 내보내기',
   'checks.reportTitle': '충돌 보고서',
   'checks.reportGenerated': '생성 시각',
@@ -115,6 +125,7 @@ export const ko: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': '파일 가져오기',
   'actions.save': '세션 저장',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG 내보내기',
   'actions.clear': '지우기',
 
@@ -162,6 +173,14 @@ export const ko: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': '충돌 {start}–{end} s',
+
+  'toast.gifOnly2d': 'GIF 내보내기는 2D 전용',
+
+  'toast.gifRendering': 'GIF 렌더링 중…',
+
+  'toast.gifSaved': 'GIF 저장됨',
+
+  'toast.gifFailed': 'GIF 실패',
 
   'toast.pngOnly2d': 'PNG 내보내기는 2D 전용입니다',
   'toast.pngSaved': 'PNG를 저장했습니다',
@@ -274,6 +293,8 @@ export const ko: Record<MessageKey, string> = {
   'prefs.unit.in': '인치 (in)',
   'prefs.unit.ftin': '피트 + 인치 (3′2″)',
   'prefs.units.hint': '검사 패널의 거리에 이 단위를 사용합니다. 예:',
+  'prefs.colorblind': '색각 안전 팔레트',
+  'prefs.colorblindHint': '로봇 색상을 색각 이상에 안전한 세트(Okabe-Ito)로 교체합니다',
   'prefs.theme': '테마',
   'theme.system': '시스템 설정 따르기',
   'theme.dark': '다크',

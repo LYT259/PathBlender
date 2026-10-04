@@ -25,6 +25,8 @@ export const ptBR: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Carregue várias rotas e escolha quais reproduzir',
   'welcome.openSession': 'Abrir sessão salva',
   'welcome.openSessionHint': 'Abra uma análise salva anteriormente',
+  'welcome.demo': 'Modo demonstração',
+  'welcome.demoHint': 'Carregar a partida de exemplo e reproduzi-la automaticamente',
   'welcome.tryExample': 'Experimentar um exemplo',
   'welcome.exampleHint': 'Explore a reprodução e as verificações de colisão com trajetórias de exemplo.',
   'welcome.loadingExample': 'Abrindo exemplo…',
@@ -60,6 +62,14 @@ export const ptBR: Record<MessageKey, string> = {
   'checks.clearTitle': 'Nenhum conflito detectado',
   'checks.clearBody': 'Para as trajetórias importadas e as dimensões atuais dos robôs.',
   'checks.issues': '{n} itens para revisar',
+  'actions.heatmapOn': 'Mapa de calor',
+  'actions.heatmapOff': 'Ocultar mapa de calor',
+  'actions.abCompare': 'Comparar A-B',
+  'checks.abBaselineSet': 'Referência salva — mude o cenário e compare novamente',
+  'checks.abNoPairs': 'Nenhum par comparável entre os cenários',
+  'checks.abDelta': 'Par mais apertado {dir} em {d} m',
+  'checks.abSafer': 'mais seguro',
+  'checks.abTighter': 'mais apertado',
   'checks.exportReport': 'Exportar relatório em texto',
   'checks.reportTitle': 'Relatório de conflitos',
   'checks.reportGenerated': 'Gerado em',
@@ -115,6 +125,7 @@ export const ptBR: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': 'Importar arquivos',
   'actions.save': 'Salvar sessão',
+  'actions.gif': 'GIF',
   'actions.png': 'Exportar PNG',
   'actions.clear': 'Limpar',
 
@@ -162,6 +173,14 @@ export const ptBR: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'colisão {start}–{end} s',
+
+  'toast.gifOnly2d': 'Exportação de GIF só em 2D',
+
+  'toast.gifRendering': 'Renderizando GIF…',
+
+  'toast.gifSaved': 'GIF salvo',
+
+  'toast.gifFailed': 'Falha no GIF',
 
   'toast.pngOnly2d': 'A exportação de PNG é somente em 2D',
   'toast.pngSaved': 'PNG salvo',
@@ -274,6 +293,8 @@ export const ptBR: Record<MessageKey, string> = {
   'prefs.unit.in': 'Polegadas (in)',
   'prefs.unit.ftin': 'Pés + polegadas (3′2″)',
   'prefs.units.hint': 'As distâncias no painel de verificações usam esta unidade, por exemplo.',
+  'prefs.colorblind': 'Paleta para daltonismo',
+  'prefs.colorblindHint': 'Troque as cores dos robôs por um conjunto seguro para daltonismo (Okabe-Ito)',
   'prefs.theme': 'Tema',
   'theme.system': 'Seguir o sistema',
   'theme.dark': 'Escuro',

@@ -26,6 +26,8 @@ export const ja: Record<MessageKey, string> = {
   'welcome.importFolderHint': '複数のルートを読み込み、再生するものを選べます',
   'welcome.openSession': '保存したセッションを開く',
   'welcome.openSessionHint': '以前保存した解析を開きます',
+  'welcome.demo': 'デモモード',
+  'welcome.demoHint': 'サンプル試合を読み込み自動再生します',
   'welcome.tryExample': 'サンプルを試す',
   'welcome.exampleHint': 'サンプルパスで再生と衝突チェックを体験できます。',
   'welcome.loadingExample': 'サンプルを開いています…',
@@ -61,6 +63,14 @@ export const ja: Record<MessageKey, string> = {
   "checks.clearTitle": "競合は検出されませんでした",
   "checks.clearBody": "インポートしたパスと現在のロボット寸法が対象です。",
   "checks.issues": "確認が必要な項目 {n} 件",
+  "actions.heatmapOn": "ヒートマップ",
+  "actions.heatmapOff": "ヒートマップを隠す",
+  "actions.abCompare": "A-B 比較",
+  "checks.abBaselineSet": "基準を保存——シナリオを変更して再度比較してください",
+  "checks.abNoPairs": "シナリオ間に比較できるペアがありません",
+  "checks.abDelta": "最もタイトなペアが {d} m {dir}",
+  "checks.abSafer": "より安全",
+  "checks.abTighter": "よりタイト",
   "checks.exportReport": "テキストレポートをエクスポート",
   "checks.reportTitle": "衝突レポート",
   "checks.reportGenerated": "生成日時",
@@ -116,6 +126,7 @@ export const ja: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': 'ファイルをインポート',
   'actions.save': 'セッションを保存',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG をエクスポート',
   'actions.clear': 'クリア',
 
@@ -165,6 +176,14 @@ export const ja: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': '衝突 {start}–{end} s',
+
+  'toast.gifOnly2d': 'GIF エクスポートは 2D のみ',
+
+  'toast.gifRendering': 'GIF をレンダリング中…',
+
+  'toast.gifSaved': 'GIF を保存しました',
+
+  'toast.gifFailed': 'GIF に失敗',
 
   'toast.pngOnly2d': 'PNG のエクスポートは 2D のみです',
   'toast.pngSaved': 'PNG を保存しました',
@@ -277,6 +296,8 @@ export const ja: Record<MessageKey, string> = {
   'prefs.unit.in': 'インチ (in)',
   'prefs.unit.ftin': 'フィート + インチ (3′2″)',
   'prefs.units.hint': 'チェックパネルの距離にはこの単位が使われます。例:',
+  'prefs.colorblind': '色覚安全パレット',
+  'prefs.colorblindHint': 'ロボットの色を色覚障害に安全なセット（Okabe-Ito）に切り替えます',
   'prefs.theme': 'テーマ',
   'theme.system': 'システムに従う',
   'theme.dark': 'ダーク',

@@ -25,6 +25,8 @@ export const nl: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Laad meerdere routes en kies welke u wilt afspelen',
   'welcome.openSession': 'Opgeslagen sessie openen',
   'welcome.openSessionHint': 'Open een eerder opgeslagen analyse',
+  'welcome.demo': 'Demomodus',
+  'welcome.demoHint': 'Laad de voorbeeldwedstrijd en speel deze automatisch af',
   'welcome.tryExample': 'Een voorbeeld proberen',
   'welcome.exampleHint': 'Verken het afspelen en de botsingscontroles met voorbeeldroutes.',
   'welcome.loadingExample': 'Voorbeeld openen…',
@@ -60,6 +62,14 @@ export const nl: Record<MessageKey, string> = {
   "checks.clearTitle": "Geen conflicten gedetecteerd",
   "checks.clearBody": "Voor de geïmporteerde routes en de huidige robotafmetingen.",
   "checks.issues": "{n} bevindingen om te beoordelen",
+  "actions.heatmapOn": "Heatmap",
+  "actions.heatmapOff": "Heatmap verbergen",
+  "actions.abCompare": "A-B vergelijken",
+  "checks.abBaselineSet": "Basis opgeslagen — wijzig het scenario en vergelijk opnieuw",
+  "checks.abNoPairs": "Geen vergelijkbare paren tussen de scenario’s",
+  "checks.abDelta": "Krapste paar {dir} met {d} m",
+  "checks.abSafer": "veiliger",
+  "checks.abTighter": "krapper",
   "checks.exportReport": "Tekstrapport exporteren",
   "checks.reportTitle": "Conflictverslag",
   "checks.reportGenerated": "Gegenereerd op",
@@ -115,6 +125,7 @@ export const nl: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': 'Bestanden importeren',
   'actions.save': 'Sessie opslaan',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG exporteren',
   'actions.clear': 'Wissen',
 
@@ -162,6 +173,14 @@ export const nl: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'botsing {start}–{end} s',
+
+  'toast.gifOnly2d': 'GIF-export werkt alleen in 2D',
+
+  'toast.gifRendering': 'GIF renderen…',
+
+  'toast.gifSaved': 'GIF opgeslagen',
+
+  'toast.gifFailed': 'GIF mislukt',
 
   'toast.pngOnly2d': 'PNG-export werkt alleen in 2D',
   'toast.pngSaved': 'PNG opgeslagen',
@@ -274,6 +293,8 @@ export const nl: Record<MessageKey, string> = {
   'prefs.unit.in': 'Inches (in)',
   'prefs.unit.ftin': 'Voeten + inches (3′2″)',
   'prefs.units.hint': 'Afstanden in het paneel Controles gebruiken deze eenheid, bijv.',
+  'prefs.colorblind': 'Kleurenblindpalet',
+  'prefs.colorblindHint': 'Wissel robotkleuren naar een kleurenblind-veilige set (Okabe-Ito)',
   'prefs.theme': 'Thema',
   'theme.system': 'Systeem volgen',
   'theme.dark': 'Donker',

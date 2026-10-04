@@ -14,6 +14,8 @@ export const mr = {
   'welcome.importFolderHint': 'अनेक मार्ग लोड करा आणि कोणता रीप्ले करायचा ते निवडा',
   'welcome.openSession': 'जतन केलेले सत्र उघडा',
   'welcome.openSessionHint': 'पूर्वी जतन केलेले विश्लेषण उघडा',
+  'welcome.demo': 'डेमो मोड',
+  'welcome.demoHint': 'उदाहरण सामना लोड करून आपोआप चालवा',
   'welcome.tryExample': 'उदाहरण वापरून पहा',
   'welcome.exampleHint': 'नमुना मार्गांसह प्लेबॅक आणि टक्कर तपासणी एक्सप्लोर करा.',
   'welcome.loadingExample': 'उदाहरण उघडत आहे…',
@@ -49,6 +51,14 @@ export const mr = {
   "checks.clearTitle": "कोणतेही संघर्ष आढळले नाहीत",
   "checks.clearBody": "आयात केलेल्या मार्गांसाठी आणि सध्याच्या रोबोट परिमाणांसाठी.",
   "checks.issues": "पुनरावलोकनासाठी {n} वस्तू",
+  "actions.heatmapOn": "हीटमॅप",
+  "actions.heatmapOff": "हीटमॅप लपवा",
+  "actions.abCompare": "A-B तुलना",
+  "checks.abBaselineSet": "बेसलाइन जतन — परिदृश्य बदला आणि पुन्हा तुलना करा",
+  "checks.abNoPairs": "दोन्ही परिदृश्यांमध्ये तुलनायोग्य जोड्या नाहीत",
+  "checks.abDelta": "सर्वात घट्ट जोडी {d} मी {dir}",
+  "checks.abSafer": "अधिक सुरक्षित",
+  "checks.abTighter": "अधिक घट्ट",
   "checks.exportReport": "मजकूर अहवाल निर्यात करा",
   "checks.reportTitle": "टक्कर अहवाल",
   "checks.reportGenerated": "तयार केला",
@@ -104,6 +114,7 @@ export const mr = {
   'app.title': 'PathBlender',
   'actions.import': 'फाइली आयात करा',
   'actions.save': 'सत्र जतन करा',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG निर्यात करा',
   'actions.clear': 'साफ करा',
   
@@ -147,6 +158,14 @@ export const mr = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} से',
   'timeline.band': 'टक्कर {start}–{end} से',
+  
+  'toast.gifOnly2d': 'GIF निर्यात फक्त 2D',
+  
+  'toast.gifRendering': 'GIF तयार होत आहे…',
+  
+  'toast.gifSaved': 'GIF जतन झाले',
+  
+  'toast.gifFailed': 'GIF अयशस्वी',
   
   'toast.pngOnly2d': 'PNG निर्यात केवळ 2D आहे',
   'toast.pngSaved': 'PNG जतन झाले',
@@ -257,6 +276,8 @@ export const mr = {
   'prefs.unit.in': 'इंच (in)',
   'prefs.unit.ftin': 'फूट + इंच (3′2″)',
   'prefs.units.hint': 'तपासणी पॅनेलमधील अंतर हे एकक वापरतात, उदा.',
+  'prefs.colorblind': 'वर्णांधता पॅलेट',
+  'prefs.colorblindHint': 'रोबोट रंग वर्णांधता-सुरक्षित संचात (Okabe-Ito) बदला',
   'prefs.theme': 'थीम',
   'theme.system': 'सिस्टम फॉलो करा',
   'theme.dark': 'गडद',

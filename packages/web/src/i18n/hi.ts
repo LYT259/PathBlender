@@ -14,6 +14,8 @@ export const hi = {
   'welcome.importFolderHint': 'कई रूट लोड करें और चुनें कि किसे रीप्ले करना है',
   'welcome.openSession': 'सहेजी गई सत्र खोलें',
   'welcome.openSessionHint': 'पहले से सहेजा गया विश्लेषण खोलें',
+  'welcome.demo': 'डेमो मोड',
+  'welcome.demoHint': 'उदाहरण मैच लोड करें और स्वतः चलाएँ',
   'welcome.tryExample': 'उदाहरण आज़माएं',
   'welcome.exampleHint': 'नमूना पथों के साथ प्लेबैक और टकराव जाँच एक्सप्लोर करें।',
   'welcome.loadingExample': 'उदाहरण खोला जा रहा है…',
@@ -49,6 +51,14 @@ export const hi = {
   "checks.clearTitle": "कोई संघर्ष नहीं मिला",
   "checks.clearBody": "आयातित पथों और वर्तमान रोबोट आयामों के लिए।",
   "checks.issues": "समीक्षा के लिए {n} मदें",
+  "actions.heatmapOn": "हीटमैप",
+  "actions.heatmapOff": "हीटमैप छिपाएँ",
+  "actions.abCompare": "A-B तुलना",
+  "checks.abBaselineSet": "आधार सहेजा गया — परिदृश्य बदलें और फिर तुलना करें",
+  "checks.abNoPairs": "दोनों परिदृश्यों में तुलनीय जोड़े नहीं हैं",
+  "checks.abDelta": "सबसे तंग जोड़ा {d} मी {dir}",
+  "checks.abSafer": "अधिक सुरक्षित",
+  "checks.abTighter": "अधिक तंग",
   "checks.exportReport": "पाठ रिपोर्ट निर्यात करें",
   "checks.reportTitle": "टक्कर रिपोर्ट",
   "checks.reportGenerated": "बनाई गई",
@@ -104,6 +114,7 @@ export const hi = {
   'app.title': 'PathBlender',
   'actions.import': 'फ़ाइलें आयात करें',
   'actions.save': 'सत्र सहेजें',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG निर्यात करें',
   'actions.clear': 'साफ़ करें',
   
@@ -147,6 +158,14 @@ export const hi = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} से',
   'timeline.band': 'टकराव {start}–{end} से',
+  
+  'toast.gifOnly2d': 'GIF निर्यात केवल 2D में',
+  
+  'toast.gifRendering': 'GIF बन रहा है…',
+  
+  'toast.gifSaved': 'GIF सहेजा गया',
+  
+  'toast.gifFailed': 'GIF विफल',
   
   'toast.pngOnly2d': 'PNG निर्यात केवल 2D है',
   'toast.pngSaved': 'PNG सहेजा गया',
@@ -257,6 +276,8 @@ export const hi = {
   'prefs.unit.in': 'इंच (in)',
   'prefs.unit.ftin': 'फीट + इंच (3′2″)',
   'prefs.units.hint': 'जाँच पैनल में दूरियां इस इकाई का उपयोग करती हैं, उदा.',
+  'prefs.colorblind': 'वर्णांधता पैलेट',
+  'prefs.colorblindHint': 'रोबोट रंगों को वर्णांधता-सुरक्षित सेट (Okabe-Ito) से बदलें',
   'prefs.theme': 'थीम',
   'theme.system': 'सिस्टम का पालन करें',
   'theme.dark': 'डार्क',

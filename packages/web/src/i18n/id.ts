@@ -14,6 +14,8 @@ export const id = {
   'welcome.importFolderHint': 'Muat beberapa rute dan pilih mana yang diputar ulang',
   'welcome.openSession': 'Buka sesi tersimpan',
   'welcome.openSessionHint': 'Buka analisis yang tersimpan sebelumnya',
+  'welcome.demo': 'Mode demo',
+  'welcome.demoHint': 'Muat pertandingan contoh dan putar otomatis',
   'welcome.tryExample': 'Coba contoh',
   'welcome.exampleHint': 'Jelajahi pemutaran dan pemeriksaan tabrakan dengan jalur contoh.',
   'welcome.loadingExample': 'Membuka contoh…',
@@ -49,6 +51,14 @@ export const id = {
   "checks.clearTitle": "Tidak ada konflik terdeteksi",
   "checks.clearBody": "Untuk jalur yang diimpor dan dimensi robot saat ini.",
   "checks.issues": "{n} item untuk ditinjau",
+  "actions.heatmapOn": "Peta panas",
+  "actions.heatmapOff": "Sembunyikan peta panas",
+  "actions.abCompare": "Bandingkan A-B",
+  "checks.abBaselineSet": "Baseline tersimpan — ubah skenario lalu bandingkan lagi",
+  "checks.abNoPairs": "Tidak ada pasangan yang sebanding antara kedua skenario",
+  "checks.abDelta": "Pasangan terketat {dir} sebesar {d} m",
+  "checks.abSafer": "lebih aman",
+  "checks.abTighter": "lebih ketat",
   "checks.exportReport": "Ekspor laporan teks",
   "checks.reportTitle": "Laporan konflik",
   "checks.reportGenerated": "Dibuat pada",
@@ -104,6 +114,7 @@ export const id = {
   'app.title': 'PathBlender',
   'actions.import': 'Impor berkas',
   'actions.save': 'Simpan sesi',
+  'actions.gif': 'GIF',
   'actions.png': 'Ekspor PNG',
   'actions.clear': 'Bersihkan',
   
@@ -147,6 +158,14 @@ export const id = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'tabrakan {start}–{end} s',
+  
+  'toast.gifOnly2d': 'Ekspor GIF hanya 2D',
+  
+  'toast.gifRendering': 'Membuat GIF…',
+  
+  'toast.gifSaved': 'GIF tersimpan',
+  
+  'toast.gifFailed': 'GIF gagal',
   
   'toast.pngOnly2d': 'Ekspor PNG hanya 2D',
   'toast.pngSaved': 'PNG disimpan',
@@ -257,6 +276,8 @@ export const id = {
   'prefs.unit.in': 'Inci (in)',
   'prefs.unit.ftin': 'Kaki + inci (3′2″)',
   'prefs.units.hint': 'Jarak di panel pemeriksaan memakai satuan ini, mis.',
+  'prefs.colorblind': 'Palet buta warna',
+  'prefs.colorblindHint': 'Ganti warna robot dengan set yang aman untuk buta warna (Okabe-Ito)',
   'prefs.theme': 'Tema',
   'theme.system': 'Ikuti sistem',
   'theme.dark': 'Gelap',

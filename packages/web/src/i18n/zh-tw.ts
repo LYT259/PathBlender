@@ -20,6 +20,8 @@ export const zhTw: Record<MessageKey, string> = {
   'welcome.importFolderHint': '一次載入多條路線，選擇要重播的路徑',
   'welcome.openSession': '開啟已儲存的工作階段',
   'welcome.openSessionHint': '開啟先前儲存的分析',
+  'welcome.demo': '演示模式',
+  'welcome.demoHint': '載入範例對局並自動回放',
   'welcome.tryExample': '體驗範例',
   'welcome.exampleHint': '無需準備檔案，用範例路徑了解回放和衝突檢查。',
   'welcome.loadingExample': '正在開啟範例…',
@@ -55,6 +57,14 @@ export const zhTw: Record<MessageKey, string> = {
   "checks.clearTitle": "未發現路徑衝突",
   "checks.clearBody": "根據目前匯入的路徑與機器人尺寸。",
   "checks.issues": "有 {n} 項需要檢查",
+  "actions.heatmapOn": "熱力圖",
+  "actions.heatmapOff": "隱藏熱力圖",
+  "actions.abCompare": "A-B 對比",
+  "checks.abBaselineSet": "基準已儲存——改動場景後再次對比",
+  "checks.abNoPairs": "兩場景無可比對的機對",
+  "checks.abDelta": "最緊的一對{dir}了 {d} 米",
+  "checks.abSafer": "更安全",
+  "checks.abTighter": "更緊張",
   "checks.exportReport": "匯出文字版衝突報告",
   "checks.reportTitle": "衝突報告",
   "checks.reportGenerated": "產生於",
@@ -110,6 +120,7 @@ export const zhTw: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': '匯入檔案',
   'actions.save': '儲存工作階段',
+  'actions.gif': '回放 GIF',
   'actions.png': '匯出 PNG',
   'actions.clear': '清空',
 
@@ -157,6 +168,14 @@ export const zhTw: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} 秒',
   'timeline.band': '碰撞 {start}–{end} 秒',
+
+  'toast.gifOnly2d': 'GIF 回放匯出僅支援 2D',
+
+  'toast.gifRendering': '正在渲染 GIF…',
+
+  'toast.gifSaved': 'GIF 已儲存',
+
+  'toast.gifFailed': 'GIF 失敗',
 
   'toast.pngOnly2d': '截圖僅支援 2D 視圖',
   'toast.pngSaved': '截圖已儲存',
@@ -268,6 +287,8 @@ export const zhTw: Record<MessageKey, string> = {
   'prefs.unit.in': '英吋 (in)',
   'prefs.unit.ftin': '英呎+英吋 (3′2″)',
   'prefs.units.hint': '檢查面板中的距離使用此單位，例：',
+  'prefs.colorblind': '色盲安全配色',
+  'prefs.colorblindHint': '把機器人顏色換成色覺障礙友善配色（Okabe-Ito）',
   'prefs.theme': '主題',
   'theme.system': '跟隨系統',
   'theme.dark': '深色',

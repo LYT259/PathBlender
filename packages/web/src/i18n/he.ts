@@ -30,6 +30,8 @@ export const he: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'טענו כמה מסלולים ובחרו אילו לנגן',
   'welcome.openSession': 'פתחו הפעלה שמורה',
   'welcome.openSessionHint': 'פתחו ניתוח שנשמר בעבר',
+  'welcome.demo': 'מצב הדגמה',
+  'welcome.demoHint': 'טעינת משחק לדוגמה והפעלה אוטומטית',
   'welcome.tryExample': 'נסו דוגמה',
   'welcome.exampleHint': 'חקרו ניגון ובדיקות התנגשות עם מסלולים לדוגמה.',
   'welcome.loadingExample': 'פותח דוגמה…',
@@ -65,6 +67,14 @@ export const he: Record<MessageKey, string> = {
   'checks.clearTitle': 'לא נמצאו התנגשויות',
   'checks.clearBody': 'עבור המסלולים המיובאים ומידות הרובוטים הנוכחיות.',
   'checks.issues': '{n} פריטים לבדיקה',
+  'actions.heatmapOn': 'מפת חום',
+  'actions.heatmapOff': 'הסתר מפת חום',
+  'actions.abCompare': 'השוואת A-B',
+  'checks.abBaselineSet': 'בסיס נשמר — שנה את התרחיש והשווה שוב',
+  'checks.abNoPairs': 'אין זוגות ברי השוואה בין התרחישים',
+  'checks.abDelta': 'הזוג ההדוק ביותר {dir} ב־{d} מ׳',
+  'checks.abSafer': 'בטוח יותר',
+  'checks.abTighter': 'הדוק יותר',
   'checks.exportReport': 'ייצוא דוח טקסט',
   'checks.reportTitle': 'דוח התנגשויות',
   'checks.reportGenerated': 'הופק ב־',
@@ -120,6 +130,7 @@ export const he: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': 'ייבאו קבצים',
   'actions.save': 'שמירת הפעלה',
+  'actions.gif': 'GIF',
   'actions.png': 'ייצוא PNG',
   'actions.clear': 'ניקוי',
 
@@ -167,6 +178,14 @@ export const he: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'התנגשות {start}–{end} ש׳',
+
+  'toast.gifOnly2d': 'ייצוא GIF זמין ב־2D בלבד',
+
+  'toast.gifRendering': 'מרנדר GIF…',
+
+  'toast.gifSaved': 'ה־GIF נשמר',
+
+  'toast.gifFailed': 'ה־GIF נכשל',
 
   'toast.pngOnly2d': 'ייצוא PNG הוא רק ב-2D',
   'toast.pngSaved': 'ה-PNG נשמר',
@@ -279,6 +298,8 @@ export const he: Record<MessageKey, string> = {
   'prefs.unit.in': 'אינצ׳ים (in)',
   'prefs.unit.ftin': 'רגל + אינצ׳ים (3′2″)',
   'prefs.units.hint': 'המרחקים בחלונית הבדיקות משתמשים ביחידה הזו, למשל.',
+  'prefs.colorblind': 'פלטת עיוורון צבעים',
+  'prefs.colorblindHint': 'החלפת צבעי רובוטים לערכה בטוחה לעיוורי צבעים (Okabe-Ito)',
   'prefs.theme': 'ערכת נושא',
   'theme.system': 'עקוב אחר המערכת',
   'theme.dark': 'כהה',

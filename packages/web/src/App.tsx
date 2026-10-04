@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useSessionHistory } from './session-history';
 import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
 import { isExampleRobot } from './example-robot';
+import { compareScenarios, remapColorblind } from '@pathblender/core';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
 import { PreferencesPanel } from './components/PreferencesPanel';
@@ -46,7 +47,7 @@ import { I18nProvider, useI18n } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
-import { listenPrefs } from './pref-sync';
+import { listenPrefs, readColorblind } from './pref-sync';
 import { effectiveReverseScroll, useMouseControls, useReverseScrollZoom } from './mouse-controls';
 import { setReverseScrollZoom } from './zoom';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from './viewer';
@@ -218,9 +219,31 @@ function AppBody() {
   const redoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); redo(); }, [playback.setPlaying, redo]);
 
   const visible = useMemo(() => seasonRobots.filter((r) => r.visible), [seasonRobots]);
+  // Colorblind-safe robot palette (§7.3-3): the toggle remaps default
+  // palette colors in place; custom colors pass through (core remap).
+  const [colorblind, setColorblind] = useState(readColorblind);
+  useEffect(() => {
+    setRobots((prev) =>
+      prev.length === 0 ? prev : prev.map((r) => ({ ...r, color: remapColorblind(r.color, colorblind) })),
+    );
+    // The preference itself persists via the settings panel; the remap
+    // effect above only needs to run when the toggle flips.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colorblind]);
+  useEffect(
+    () =>
+      listenPrefs((key, v) => {
+        if (key === 'colorblindPalette') setColorblind(v === '1');
+      }),
+    [],
+  );
+
   // §6.5-①: the tolerance slider rescans pair windows at relative start
   // shifts ±2δ — worst-case execution timing, not just the paper plan.
   const [toleranceS, setToleranceS] = useState(0);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  // A-B compare: first click snapshots the scenario, second reports deltas.
+  const abBaselineRef = useRef<SessionTrajectory[] | null>(null);
   const conflicts = useMemo(
     () => detectCollisions(seasonRobots, { toleranceS: toleranceS > 0 ? toleranceS : undefined }),
     [seasonRobots, toleranceS],
@@ -516,6 +539,34 @@ function AppBody() {
     canvasRef.current?.exportPng((ok) => flash(tr(ok ? 'toast.pngSaved' : 'toast.pngFailed'), ok ? 'ok' : 'error'));
   }, [view3D, flash, tr]);
 
+  const exportGif = useCallback(() => {
+    if (view3D) {
+      flash(tr('toast.gifOnly2d'));
+      return;
+    }
+    flash(tr('toast.gifRendering'));
+    canvasRef.current?.exportGif((ok) => flash(tr(ok ? 'toast.gifSaved' : 'toast.gifFailed'), ok ? 'ok' : 'error'));
+  }, [view3D, flash, tr]);
+
+  const abToggle = useCallback(() => {
+    if (abBaselineRef.current === null) {
+      abBaselineRef.current = robots;
+      flash(tr('checks.abBaselineSet'));
+      return;
+    }
+    const result = compareScenarios(abBaselineRef.current, robots);
+    abBaselineRef.current = null;
+    if (result.pairs.length === 0) {
+      flash(tr('checks.abNoPairs'));
+      return;
+    }
+    const tightest = result.pairs[0]!;
+    flash(tr('checks.abDelta', {
+      d: Math.abs(tightest.deltaM).toFixed(2),
+      dir: tightest.deltaM >= 0 ? tr('checks.abSafer') : tr('checks.abTighter'),
+    }));
+  }, [robots, flash, tr]);
+
   // Native "Check for Updates…" and channel switches. The Rust shell owns
   // the channel→feed mapping (check_update); feed unreachable (offline, or
   // no release assets yet) reports 'failed' → the honest toast, not a fake
@@ -629,7 +680,7 @@ function AppBody() {
   const issueCount = conflicts.length + bounds.length;
   const rightOpen = inspectorOpen && hasRobots;
   const openImport = () => importInputRef.current?.click();
-  const tryExample = async () => {
+  const tryExample = async (autoplay = false) => {
     const request = ++exampleRequest.current;
     setExampleLoading(true);
     try {
@@ -653,7 +704,7 @@ function AppBody() {
       setView3D(false);
       setShowTrail(true);
       setErrors([]);
-      playback.setPlaying(false);
+      playback.setPlaying(autoplay);
       setT(0);
     } catch {
       if (request === exampleRequest.current) flash(tr('welcome.exampleFailed'), 'error');
@@ -737,6 +788,9 @@ function AppBody() {
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
             {!VIEWER_ONLY && <button className="menu-save-action" disabled={!hasRobots} onClick={saveSession}>{tr('actions.save')}</button>}
             {!VIEWER_ONLY && <button disabled={!hasRobots || view3D} onClick={exportPng} title={view3D ? tr('toast.pngOnly2d') : undefined}>{tr('actions.png')}</button>}
+            {!VIEWER_ONLY && <button disabled={!hasRobots || view3D} onClick={exportGif} title={view3D ? tr('toast.gifOnly2d') : undefined}>{tr('actions.gif')}</button>}
+            {hasRobots && <button onClick={() => setShowHeatmap((v) => !v)} aria-pressed={showHeatmap}>{tr(showHeatmap ? 'actions.heatmapOff' : 'actions.heatmapOn')}</button>}
+            {hasRobots && <button onClick={abToggle}>{tr('actions.abCompare')}</button>}
             <button disabled={!hasRobots} onClick={clearAll}>{tr('actions.clear')}</button>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub ↗</a>
             {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
@@ -806,7 +860,7 @@ function AppBody() {
                 <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
                 <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} onDemo={() => void tryExample(true)} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
                 <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); setInspectorOpen(true); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
