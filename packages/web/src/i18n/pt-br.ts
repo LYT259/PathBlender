@@ -50,6 +50,7 @@ export const ptBR: Record<MessageKey, string> = {
   'workspace.closeRobotDetails': "Fechar detalhes do robô",
   'workspace.undo': "Desfazer",
   'workspace.redo': "Refazer",
+  'workspace.home': "Voltar ao início",
   'workspace.more': 'Mais ações',
   'workspace.season': 'Temporada',
   'workspace.edit2d': 'Termine a edição para alternar para 3D',

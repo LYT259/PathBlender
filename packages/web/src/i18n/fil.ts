@@ -39,6 +39,7 @@ export const fil = {
   'workspace.closeRobotDetails': "Isara ang mga detalye ng robot",
   'workspace.undo': "I-undo",
   'workspace.redo': "I-redo",
+  'workspace.home': "Bumalik sa Home",
   "workspace.more": "Higit pang mga aksyon",
   "workspace.season": "Panahon ng laro",
   "workspace.edit2d": "Tapusin ang pag-edit para lumipat sa 3D",

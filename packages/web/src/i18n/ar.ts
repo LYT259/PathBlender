@@ -39,6 +39,7 @@ export const ar = {
   'workspace.closeRobotDetails': "إغلاق تفاصيل الروبوت",
   'workspace.undo': "تراجع",
   'workspace.redo': "إعادة",
+  'workspace.home': "العودة إلى الرئيسية",
   "workspace.more": "المزيد من الإجراءات",
   "workspace.season": "موسم اللعبة",
   "workspace.edit2d": "أنهِ التحرير للانتقال إلى ثلاثي الأبعاد",

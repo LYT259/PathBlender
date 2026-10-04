@@ -55,6 +55,7 @@ export const he: Record<MessageKey, string> = {
   'workspace.closeRobotDetails': "סגור פרטי רובוט",
   'workspace.undo': "בטל",
   'workspace.redo': "בצע שוב",
+  'workspace.home': "חזרה לדף הבית",
   'workspace.more': 'עוד פעולות',
   'workspace.season': 'עונת המשחק',
   'workspace.edit2d': 'סיימו לערוך כדי לעבור ל-3D',

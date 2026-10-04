@@ -47,6 +47,7 @@ export const fr: Record<MessageKey, string> = {
   'workspace.closeRobotDetails': "Fermer les détails du robot",
   'workspace.undo': "Annuler",
   'workspace.redo': "Rétablir",
+  'workspace.home': "Retour à l'accueil",
   "workspace.more": "Autres actions",
   "workspace.season": "Saison de jeu",
   "workspace.edit2d": "Terminez l'édition pour passer en 3D",
