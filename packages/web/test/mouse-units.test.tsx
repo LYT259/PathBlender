@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   formatLength,
+  LENGTH_UNITS,
   lengthUnitSuffix,
   readLengthUnit,
   useLengthUnit,
@@ -9,6 +10,7 @@ import {
 } from '../src/length-units';
 import {
   defaultConstrainedPref,
+  effectiveReverseScroll,
   penAsMousePref,
   readMouseControls,
   resolveMouseAction,
@@ -30,7 +32,16 @@ describe('formatLength', () => {
     expect(formatLength(0.927, 'in')).toBe('36.5 in');
   });
 
-  it('formats feet+inches, dropping a leading zero foot', () => {
+  it('converts to decimal feet and yards with the exact factors', () => {
+    // Exact definitions: 1 ft = 0.3048 m, 1 yd = 0.9144 m.
+    expect(formatLength(0.927, 'ft')).toBe('3.04 ft');
+    expect(formatLength(0.927, 'yd')).toBe('1.01 yd');
+    expect(formatLength(0.3048, 'ft')).toBe('1.00 ft');
+    expect(formatLength(0.9144, 'yd')).toBe('1.00 yd');
+    expect(formatLength(0.0254, 'in')).toBe('1.0 in');
+  });
+
+  it('keeps the legacy feet+inches format, dropping a leading zero foot', () => {
     // 0.927 m = 36.5 in = 3 ft 0.5 in.
     expect(formatLength(0.927, 'ftin')).toBe('3′0.5″');
     expect(formatLength(0.2, 'ftin')).toBe('7.9″');
@@ -39,11 +50,18 @@ describe('formatLength', () => {
   it('keeps the sign for penetration depths', () => {
     expect(formatLength(-0.12, 'm')).toBe('-0.12 m');
     expect(formatLength(-0.12, 'in')).toBe('-4.7 in');
+    expect(formatLength(-0.12, 'ft')).toBe('-0.39 ft');
   });
 
   it('exposes a short suffix per unit', () => {
     expect(lengthUnitSuffix('ftin')).toBe('ft/in');
     expect(lengthUnitSuffix('cm')).toBe('cm');
+    expect(lengthUnitSuffix('ft')).toBe('ft');
+    expect(lengthUnitSuffix('yd')).toBe('yd');
+  });
+
+  it('offers exactly cm, ft, in, m, yd in that order (no millimeters)', () => {
+    expect(LENGTH_UNITS).toEqual(['cm', 'ft', 'in', 'm', 'yd']);
   });
 });
 
@@ -57,6 +75,21 @@ describe('length unit preference', () => {
   it('falls back to meters for unknown stored values', () => {
     localStorage.setItem('pb.lengthUnit', 'furlongs');
     expect(readLengthUnit()).toBe('m');
+  });
+
+  it('honors the legacy ftin stored value as feet+inches, never decimal feet', () => {
+    // Saved by a build before the five-unit picker: the mixed feet+inches
+    // display must survive, not collapse into decimal 'ft'.
+    localStorage.setItem('pb.lengthUnit', 'ftin');
+    expect(readLengthUnit()).toBe('ftin');
+    expect(readLengthUnit()).not.toBe('ft');
+  });
+
+  it('persists the newly real units (ft, yd)', () => {
+    writeLengthUnit('ft');
+    expect(readLengthUnit()).toBe('ft');
+    writeLengthUnit('yd');
+    expect(readLengthUnit()).toBe('yd');
   });
 
   it('updates hooks in-process (web settings dialog shares the window)', () => {
@@ -108,6 +141,20 @@ describe('view checkbox preferences', () => {
     const b = renderHook(() => reverseScrollPref.use());
     act(() => a.result.current[1](true));
     expect(b.result.current[0]).toBe(true);
+  });
+});
+
+describe('effectiveReverseScroll (per-scheme factory wheel direction)', () => {
+  it('onshape defaults to scroll-up zooms in; the checkbox reverses it', () => {
+    expect(effectiveReverseScroll('onshape', false)).toBe(false);
+    expect(effectiveReverseScroll('onshape', true)).toBe(true);
+  });
+
+  it('solidworks defaults to scroll-up zooms out; the checkbox reverses it', () => {
+    // SOLIDWORKS factory direction is the opposite of Onshape's, so the
+    // same checkbox state flips the effective flag.
+    expect(effectiveReverseScroll('solidworks', false)).toBe(true);
+    expect(effectiveReverseScroll('solidworks', true)).toBe(false);
   });
 });
 

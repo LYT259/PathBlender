@@ -1,23 +1,37 @@
 /**
- * Length-unit preference (user request 2026-10-02): the checks panel and
- * other linear readouts format meters into the user's unit. Meters is the
- * default — the WPILib/Choreo/PathPlanner ecosystem speaks meters, and the
- * core model is meters, so the default display needs no conversion.
- * Formatting keeps 2 significant decimals (enough for robot-scale gaps).
+ * Length-unit preference (user request 2026-10-02, ft/yd made real
+ * 2026-10-04): the checks panel and other linear readouts format meters
+ * into the user's unit. Meters is the default — the WPILib/Choreo/
+ * PathPlanner ecosystem speaks meters, and the core model is meters, so
+ * the default display needs no conversion; internal coordinates stay in
+ * meters regardless of the display unit.
+ *
+ * Picker order is fixed: cm, ft, in, m, yd (millimeters deliberately not
+ * offered). Conversions are exact: 1 in = 0.0254 m, 1 ft = 0.3048 m,
+ * 1 yd = 0.9144 m.
+ *
+ * 'ftin' (feet+inches mixed, e.g. 3′0.5″) is a LEGACY stored value from
+ * before the five-unit picker: it is still honored on read and formats
+ * exactly as it used to — never re-interpreted as decimal feet — but it
+ * is not in the picker; saving any current unit replaces it.
  */
 
 import { useEffect, useState } from 'react';
 import { broadcastPref, listenPrefs } from './pref-sync';
 
-export type LengthUnit = 'm' | 'cm' | 'in' | 'ftin';
+export type LengthUnit = 'cm' | 'ft' | 'in' | 'm' | 'yd' | 'ftin';
 
 const STORAGE_KEY = 'pb.lengthUnit';
-export const LENGTH_UNITS: LengthUnit[] = ['m', 'cm', 'in', 'ftin'];
+/** Picker choices, in display order. */
+export const LENGTH_UNITS: LengthUnit[] = ['cm', 'ft', 'in', 'm', 'yd'];
 
-const IN_PER_M = 39.3700787;
+/** Exact conversion factors (meters per unit are the definitions). */
+const IN_PER_M = 1 / 0.0254;
+const FT_PER_M = 1 / 0.3048;
+const YD_PER_M = 1 / 0.9144;
 
 function normalize(value: string | null): LengthUnit {
-  return (LENGTH_UNITS as string[]).includes(value ?? '') ? (value as LengthUnit) : 'm';
+  return ([...LENGTH_UNITS, 'ftin'] as string[]).includes(value ?? '') ? (value as LengthUnit) : 'm';
 }
 
 export function readLengthUnit(): LengthUnit {
@@ -58,14 +72,14 @@ export function useLengthUnit(): [LengthUnit, (u: LengthUnit) => void] {
   return [unit, writeLengthUnit];
 }
 
-/** Short unit suffix for the current scheme ('m', 'cm', 'in', 'ft/in'). */
+/** Short unit suffix for the current scheme ('m', 'cm', 'in', 'ft', 'yd', 'ft/in'). */
 export function lengthUnitSuffix(unit: LengthUnit): string {
   return unit === 'ftin' ? 'ft/in' : unit;
 }
 
 /**
  * Format a length in meters as a display string in `unit`, e.g.
- * 0.927 → '0.93 m' | '92.7 cm' | '36.5 in' | '3′0.5″'.
+ * 0.927 → '0.93 m' | '92.7 cm' | '36.5 in' | '3.04 ft' | '1.01 yd' | '3′0.5″'.
  * Negative values (penetration depths) format their magnitude with a
  * leading minus.
  */
@@ -79,6 +93,10 @@ export function formatLength(meters: number, unit: LengthUnit): string {
       return `${sign}${(v * 100).toFixed(1)} cm`;
     case 'in':
       return `${sign}${(v * IN_PER_M).toFixed(1)} in`;
+    case 'ft':
+      return `${sign}${(v * FT_PER_M).toFixed(2)} ft`;
+    case 'yd':
+      return `${sign}${(v * YD_PER_M).toFixed(2)} yd`;
     case 'ftin': {
       const totalIn = v * IN_PER_M;
       const ft = Math.floor(totalIn / 12);
