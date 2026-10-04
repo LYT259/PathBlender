@@ -8,6 +8,7 @@ import { activeEndT } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import './Timeline.css';
 import { robotIdentity } from '../robot-identity';
+import { playbackEnd, timelineScale, type PlaybackRange } from '../playback-range';
 
 const SPEEDS = [0.25, 0.5, 1];
 
@@ -29,6 +30,8 @@ interface Props {
   autoPeriodS: number;
   duration: number;
   playback: Playback;
+  playbackRange?: PlaybackRange;
+  onPlaybackRangeChange?: (range: PlaybackRange) => void;
   selectedId?: string;
   onSelect?: (id: string) => void;
   onJump?: (time: number, robotIds: string[]) => void;
@@ -47,16 +50,14 @@ function TransportIcon({ kind }: { kind: 'rewind' | 'back' | 'play' | 'pause' | 
   );
 }
 
-export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, playback, selectedId, onSelect, onJump, guide }: Props) {
+export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, playback, playbackRange = 'paths', onPlaybackRangeChange, selectedId, onSelect, onJump, guide }: Props) {
   const { t: tr } = useI18n();
   const { t, setT, playing, setPlaying, speed, setSpeed } = playback;
-  const end = Number.isFinite(duration) ? Math.max(0, duration) : 0;
+  const end = playbackEnd(duration, autoPeriodS, playbackRange);
   const currentT = Math.min(end, Math.max(0, t));
   // Ruler, range, activity, markers, and playhead all share this domain.
-  const axisMax = Math.max(autoPeriodS, Math.ceil(end));
-  const tickStep = Math.max(1, Math.ceil(axisMax / 20));
+  const { axisMax, tickStep } = timelineScale(duration, autoPeriodS);
   const ticks = Array.from({ length: Math.floor(axisMax / tickStep) + 1 }, (_, i) => i * tickStep);
-  if (ticks[ticks.length - 1] !== axisMax) ticks.push(axisMax);
   const percent = (time: number) => `${(Math.min(axisMax, Math.max(0, time)) / axisMax) * 100}%`;
   const intervalStyle = (start: number, finish: number): CSSProperties => ({
     left: percent(start),
@@ -77,6 +78,15 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
     <section className="timeline timeline-workspace" aria-label={tr('timeline.title')}>
       <div className="timeline-toolbar">
         <h2>{tr('timeline.title')}</h2>
+        {onPlaybackRangeChange && <select
+          className="timeline-range"
+          aria-label={tr('timeline.range')}
+          value={playbackRange}
+          onChange={(event) => onPlaybackRangeChange(event.target.value as PlaybackRange)}
+        >
+          <option value="full">{tr('timeline.rangeFull', { seconds: axisMax })}</option>
+          <option value="paths">{tr('timeline.rangePaths', { seconds: Number(playbackEnd(duration, autoPeriodS, 'paths').toFixed(2)) })}</option>
+        </select>}
         {robots.length > 0 && (
           <div className="timeline-legend">
             <span><i className="timeline-legend-collision" />{tr('timeline.collision')}</span>
@@ -147,13 +157,12 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
               })}
             </div>
             <div className="timeline-axis">
+              <span className="timeline-unit">{tr('timeline.seconds')}</span>
               <div className="timeline-ruler">
                 <div className="timeline-ticks" aria-hidden="true">
                   {ticks.map((tick) => (
-                    // The unit rides with the final tick (chart-axis
-                    // convention) — e.g. "20 秒" / "20 seconds".
                     <span key={tick} className="timeline-tick" style={{ left: percent(tick) }}>
-                      {tick}{tick === axisMax ? ` ${tr('timeline.seconds')}` : ''}
+                      {tick}
                     </span>
                   ))}
                 </div>
@@ -169,8 +178,7 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
                   aria-valuetext={tr('timeline.clock', { t: currentT.toFixed(2), d: end.toFixed(2) })}
                   onChange={(e) => seek(Number(e.target.value))}
                   onKeyDown={(e) => {
-                    // End goes to the actual session end even when the ruler
-                    // still includes the remainder of the autonomous period.
+                    // End follows the chosen playback range.
                     if (e.key === 'End') {
                       e.preventDefault();
                       seek(end);
