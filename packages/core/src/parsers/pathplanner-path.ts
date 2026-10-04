@@ -21,7 +21,7 @@ export function parsePathPlannerPath(text: string, fileName: string): Trajectory
   }
 
   const warnings = [
-    'generated with default robot config (Kraken X60 swerve) — timing is an estimate',
+    'generated with default robot config (Kraken X60 swerve) — timing is an estimate; attach a PathPlanner settings.json profile for real geometry and timing',
     ...path.parseWarnings,
   ];
   if (!Number.isFinite(path.globalConstraints.maxVelocityMPS)) {
