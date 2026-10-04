@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.28';
+export const APP_VERSION = '0.1.7-beta.29';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.29', date: '2026.10.04', note: {
+    en: 'Fix ghost duplicate 2D field after dragging the window between Retina and 1x displays',
+    zh: '修复在 Retina 与 1x 外接屏之间拖动窗口后，2D 场地出现残影双画面',
+    'zh-tw': '修復在 Retina 與 1x 外接螢幕之間拖動視窗後，2D 場地出現殘影雙畫面',
+    cs: 'Opraveno zdvojené „duchové“ 2D hřiště po přetažení okna mezi Retina a 1x displeji',
+    nl: 'Dubbel spookbeeld van het 2D-veld verholpen na het slepen van het venster tussen Retina- en 1x-schermen',
+    fr: 'Correction du champ 2D fantôme en double après avoir déplacé la fenêtre entre un écran Retina et un écran 1x',
+    he: 'תוקנה כפילות רפאים בשדה הדו-ממדי לאחר גרירת החלון בין מסך Retina למסך 1x',
+    ja: 'Retina と 1x ディスプレイ間でウィンドウをドラッグした後に 2D フィールドが二重に残る問題を修正',
+    ko: 'Retina와 1x 디스플레이 사이에서 창을 드래그한 후 2D 필드가 겹쳐 보이던 잔상 문제 수정',
+    pl: 'Naprawiono zduplikowany „widmowy“ widok boiska 2D po przeciągnięciu okna między ekranem Retina a ekranem 1x',
+    'pt-br': 'Corrigido o campo 2D duplicado (fantasma) ao arrastar a janela entre telas Retina e 1x',
+    es: 'Corregido el campo 2D duplicado (fantasma) al arrastrar la ventana entre pantallas Retina y 1x',
+    tr: 'Pencere Retina ile 1x ekranlar arasında sürüklendikten sonra 2D sahanın çift (hayalet) görünmesi düzeltildi',
+  } },
   { version: '0.1.7-beta.28', date: '2026.10.04', note: {
     en: 'i18n batch-4: 17 languages — Romanian, Bulgarian, Croatian, Swedish, Greek, Azerbaijani, Armenian, Hungarian, Macedonian, Albanian, Serbian, Bosnian, Danish, Norwegian Bokmål/Nynorsk, Ukrainian, Kinyarwanda',
     zh: 'i18n 第四批：17 种语言——罗马尼亚语、保加利亚语、克罗地亚语、瑞典语、希腊语、阿塞拜疆语、亚美尼亚语、匈牙利语、马其顿语、阿尔巴尼亚语、塞尔维亚语、波斯尼亚语、丹麦语、挪威语（巴克摩/耐诺斯克）、乌克兰语、基尼亚卢旺达语',
