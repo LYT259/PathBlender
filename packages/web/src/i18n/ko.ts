@@ -56,6 +56,14 @@ export const ko: Record<MessageKey, string> = {
   'checks.clearTitle': '감지된 간섭 없음',
   'checks.clearBody': '가져온 경로와 현재 로봇 치수 기준입니다.',
   'checks.issues': '검토할 항목 {n}개',
+  'actions.heatmapOn': '히트맵',
+  'actions.heatmapOff': '히트맵 숨기기',
+  'actions.abCompare': 'A-B 비교',
+  'checks.abBaselineSet': '기준 저장됨 — 시나리오를 바꾼 뒤 다시 비교하세요',
+  'checks.abNoPairs': '두 시나리오 사이에 비교할 쌍이 없습니다',
+  'checks.abDelta': '가장 촘촘한 쌍이 {d} m {dir}',
+  'checks.abSafer': '더 안전',
+  'checks.abTighter': '더 촘촘',
   'checks.exportReport': '텍스트 보고서 내보내기',
   'checks.reportTitle': '충돌 보고서',
   'checks.reportGenerated': '생성 시각',
@@ -111,6 +119,7 @@ export const ko: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': '파일 가져오기',
   'actions.save': '세션 저장',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG 내보내기',
   'actions.clear': '지우기',
 
@@ -158,6 +167,14 @@ export const ko: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': '충돌 {start}–{end} s',
+
+  'toast.gifOnly2d': 'GIF 내보내기는 2D 전용',
+
+  'toast.gifRendering': 'GIF 렌더링 중…',
+
+  'toast.gifSaved': 'GIF 저장됨',
+
+  'toast.gifFailed': 'GIF 실패',
 
   'toast.pngOnly2d': 'PNG 내보내기는 2D 전용입니다',
   'toast.pngSaved': 'PNG를 저장했습니다',

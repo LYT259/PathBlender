@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.24';
+export const APP_VERSION = '0.1.7-beta.25';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.25', date: '2026.10.04', note: {
+    en: 'Heatmap overlay, A-B scenario comparison, and animated GIF replay export',
+    zh: '热力图叠加、A-B 场景对比与回放 GIF 导出',
+    'zh-tw': '熱力圖疊加、A-B 場景對比與回放 GIF 匯出',
+    cs: 'Překryv teplotní mapy, porovnání scénářů A-B a export přehrávání jako GIF',
+    nl: 'Heatmap-overlay, A-B-scenariovergelijking en GIF-export van de afspeelcyclus',
+    fr: 'Superposition de carte thermique, comparaison de scénarios A-B et export GIF de la lecture',
+    he: 'שכבת מפת חום, השוואת תרחישים A-B וייצוא GIF של ההפעלה',
+    ja: 'ヒートマップ表示、A-B シナリオ比較、再生 GIF 書き出し',
+    ko: '히트맵 오버레이, A-B 시나리오 비교, 재생 GIF 내보내기',
+    pl: 'Nakładka mapy cieplnej, porównanie scenariuszy A-B i eksport GIF odtwarzania',
+    'pt-br': 'Sobreposição de mapa de calor, comparação A-B de cenários e exportação de GIF da reprodução',
+    es: 'Superposición de mapa de calor, comparación A-B de escenarios y exportación GIF de la reproducción',
+    tr: 'Isı haritası katmanı, A-B senaryo karşılaştırması ve animasyonlu GIF dışa aktarımı',
+  } },
   { version: '0.1.7-beta.24', date: '2026.10.04', note: {
     en: 'Colorblind-safe robot palette in settings; one-click demo mode replays the example match',
     zh: '设置新增色盲安全配色；一键演示模式自动回放示例对局',

@@ -45,6 +45,14 @@ export const de = {
   "checks.clearTitle": "Keine Konflikte erkannt",
   "checks.clearBody": "Für die importierten Pfade und aktuellen Roboterabmessungen.",
   "checks.issues": "{n} Punkte zu überprüfen",
+  "actions.heatmapOn": "Heatmap",
+  "actions.heatmapOff": "Heatmap ausblenden",
+  "actions.abCompare": "A-B-Vergleich",
+  "checks.abBaselineSet": "Baseline gespeichert — Szenario ändern und erneut vergleichen",
+  "checks.abNoPairs": "Keine vergleichbaren Paare zwischen den Szenarien",
+  "checks.abDelta": "Engstes Paar {dir} um {d} m",
+  "checks.abSafer": "sicherer",
+  "checks.abTighter": "enger",
   "checks.exportReport": "Textbericht exportieren",
   "checks.reportTitle": "Konfliktbericht",
   "checks.reportGenerated": "Erstellt am",
@@ -100,6 +108,7 @@ export const de = {
   'app.title': 'PathBlender',
   'actions.import': 'Dateien importieren',
   'actions.save': 'Sitzung speichern',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG exportieren',
   'actions.clear': 'Löschen',
   
@@ -143,6 +152,14 @@ export const de = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'Kollision {start}–{end} s',
+  
+  'toast.gifOnly2d': 'GIF-Export nur in 2D',
+  
+  'toast.gifRendering': 'GIF wird gerendert…',
+  
+  'toast.gifSaved': 'GIF gespeichert',
+  
+  'toast.gifFailed': 'GIF fehlgeschlagen',
   
   'toast.pngOnly2d': 'PNG-Export ist nur 2D',
   'toast.pngSaved': 'PNG gespeichert',
