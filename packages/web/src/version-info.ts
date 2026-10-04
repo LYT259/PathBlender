@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.12';
+export const APP_VERSION = '0.1.7-beta.13';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.13', date: '2026.10.04', note: { en: 'freeze swerve modules at installed angle, drop steering animation / 模组锁定安装角、撤掉转向动画' } },
   { version: '0.1.7-beta.12', date: '2026.10.04', note: {
     en: 'Mouse illustration is white in light mode and icon-black in dark mode',
     zh: '鼠标图解在浅色模式为白色，深色模式使用图标黑色',
