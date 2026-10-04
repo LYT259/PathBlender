@@ -1,10 +1,10 @@
 # i18n 术语契约（对照表 + keep-verbatim 白名单）
 
-> Source: PathBlender Red Book (formerly Product Plan), §7.2 v1.20; GHPaths report v1.31, reverse-sync item ④. This table keeps terminology consistent across the fourteen dictionaries.
-> 依据：《PathBlender_红皮书》（原《PathBlender_产品计划书》）§7.2 v1.20（GHPaths 报告 v1.31 反向同步第 ④ 条）——十四份字典已各自取舍，没有一张表就会各说各话。
+> Source: PathBlender Red Book (formerly Product Plan), §7.2 v1.20; GHPaths report v1.31, reverse-sync item ④. This table keeps terminology consistent across the twenty-four dictionaries.
+> 依据：《PathBlender_红皮书》（原《PathBlender_产品计划书》）§7.2 v1.20（GHPaths 报告 v1.31 反向同步第 ④ 条）——二十四份字典已各自取舍，没有一张表就会各说各话。
 > **规矩：新术语先补本表，再往字典里写。** 表里没定的词不要由某一份字典单独决定。
 
-字典位置：`packages/web/src/i18n/{en,zh,zh-tw,zh-hk,es,fr,tr,pt-br,he,nl,pl,ja,ko,cs}.ts`（`en.ts` 是键源与源文案；`zh-hk.ts` 是覆盖表不是完整字典——见第 6 节）。
+字典位置：`packages/web/src/i18n/{en,ar,cs,de,es,fil,fr,he,hi,id,it,ja,ko,mr,ms,nl,pl,pt-br,ta,tr,vi,zh,zh-hk,zh-tw}.ts`（`en.ts` 是键源与源文案；`zh-hk.ts` 是覆盖表不是完整字典——见第 6 节）。第三批（de/it/ar/hi/mr/ms/ta/fil/vi/id，10 种）2026-10-04 落地；第四批待评估。
 完整性/占位符/漏翻三道门禁在 `packages/web/test/i18n.test.ts`。
 
 ## 1. 核心术语对照

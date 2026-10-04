@@ -52,10 +52,15 @@ describe('whole-session alliance control', () => {
     fireEvent.click(side('Red'));
     drop([pathFile('stop_and_score.ghostauto')]);
     await waitFor(() => expect(fieldRobots()).toHaveLength(2));
-    const picker = screen.getAllByRole('combobox', { name: /Active route for/ })[0]!;
+    const a = pathFile('straight_run.ghostauto');
+    const b = pathFile('side_lane.ghostauto');
+    Object.defineProperty(a, 'webkitRelativePath', { value: 'choreo/Straight.ghostauto' });
+    Object.defineProperty(b, 'webkitRelativePath', { value: 'choreo/Side.ghostauto' });
+    drop([a, b]);
+    await waitFor(() => expect(fieldRobots()).toHaveLength(3));
+    const picker = screen.getAllByRole('combobox', { name: /Active route for/ })[2]!;
     const options = within(picker).getAllByRole('option') as HTMLOptionElement[];
     fireEvent.change(picker, { target: { value: options[1]!.value } });
-    fireEvent.click(screen.getAllByRole('button', { name: /Add .* as a robot/ })[0]!);
     expect(fieldRobots()).toHaveLength(3);
     expect(fieldRobots().every((r) => r.trajectory.alliance === 'red')).toBe(true);
     fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
@@ -77,7 +82,7 @@ describe('whole-session alliance control', () => {
     const file = pathFile('straight_run.ghostauto');
     Object.defineProperty(file, 'webkitRelativePath', { value: 'autos/straight_run.ghostauto' });
     drop([file]);
-    await screen.findByText('Route library (1)');
+    await screen.findByRole('combobox', { name: 'Active route for #0001' });
     fireEvent.click(screen.getByRole('button', { name: 'End example', exact: true }));
     expect(fieldRobots()).toHaveLength(1);
     expect(fieldRobots()[0]!.trajectory.alliance).toBe('red');

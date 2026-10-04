@@ -9,8 +9,11 @@ import {
   parseGhostAuto,
   parseTraj,
   REBUILT_2026,
+  COLORBLIND_COLORS,
+  remapColorblind,
   samplePoseAt,
   serializeSession,
+  SESSION_COLORS,
   sessionDuration,
 } from '../src';
 
@@ -126,5 +129,32 @@ describe('session id persistence (save/load keeps identity)', () => {
     const back = deserializeSession(JSON.stringify(file));
     expect(back.robots[0]?.trajectory.id).toBeTruthy();
     expect(back.robots[0]?.trajectory.id).not.toBe(traj.id);
+  });
+});
+
+describe('opponent flag round trip (red book §6.5-②)', () => {
+  it('persists through serialize → deserialize and stays optional for old files', () => {
+    const traj = parseTraj(read('traj/v3_swerve.traj'), 'v3_swerve.traj');
+    const robot = { ...makeSession(traj, 0), opponent: true };
+    const restored = deserializeSession(serializeSession([robot], 'rebuilt-2026'));
+    expect(restored.robots[0]!.opponent).toBe(true);
+    const plain = deserializeSession(serializeSession([makeSession(traj, 0)], 'rebuilt-2026'));
+    expect(plain.robots[0]!.opponent).toBeUndefined();
+  });
+});
+
+describe('colorblind palette remap (§7.3-3, landed 2026-10-04)', () => {
+  it('maps default palette colors both ways and leaves custom colors untouched', () => {
+    const a = SESSION_COLORS[0] as string;
+    const cb = remapColorblind(a, true);
+    expect(cb).not.toBe(a);
+    expect(remapColorblind(cb, false)).toBe(a);
+    expect(remapColorblind('#123456', true)).toBe('#123456');
+    // wrap slots are documented lossy: index 9 wraps onto slot 1 and a
+    // disable round trip restores slot 1's color, not the original.
+    const last = SESSION_COLORS[9] as string;
+    const wrapped = remapColorblind(last, true);
+    expect(wrapped).toBe(COLORBLIND_COLORS[1]);
+    expect(remapColorblind(wrapped, false)).toBe(SESSION_COLORS[1]);
   });
 });
