@@ -94,6 +94,10 @@ interface Scene3D {
   }[];
   /** Render-on-demand: a frame is drawn only when something changed. */
   dirty: () => void;
+  /** The scene CONTENT moved (playback steered the rigs, robots changed):
+   *  re-bake the shadow map on the next frame. Camera-only motion never
+   *  calls this — the shadow map stays cached through orbit/zoom/pan. */
+  invalidateShadows: () => void;
   /** Official 3D field model (when available); replaces the fallback. */
   modelRoot: THREE.Group;
   /** Field id of the model currently inside `modelRoot` (undefined = none).
@@ -493,7 +497,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       );
       if (action.kind === 'none') return;
       e.preventDefault(); // middle: no autoscroll; right: no native menu
-      noteInteraction();
       if (action.kind === 'orbit') {
         drag.active = true;
         drag.constrained = action.constrained;
@@ -531,7 +534,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (!pan.active) return;
       pan.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
-      endInteraction();
     };
     const onDragZoomMove = (e: PointerEvent) => {
       if (!dragZoom.active) return;
@@ -542,21 +544,18 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // applyPinchStep dollies toward the anchored point through the wheel
       // path's internals, so clamps and damping behave like a wheel notch.
       applyPinchStep(Math.exp(-dy * 0.006));
-      noteInteraction();
       markDirty();
     };
     const onDragZoomUp = (e: PointerEvent) => {
       if (!dragZoom.active) return;
       dragZoom.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
-      endInteraction();
     };
     const onRollMove = (e: PointerEvent) => {
       if (!roll.active) return;
       const dx = e.clientX - roll.x;
       roll.x = e.clientX;
       if (dx === 0) return;
-      noteInteraction();
       applyRoll(dx);
       markDirty();
     };
@@ -564,7 +563,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (!roll.active) return;
       roll.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
-      endInteraction();
     };
     const onDragMove = (e: PointerEvent) => {
       if (!drag.active) return;
@@ -574,7 +572,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       const dPhi = drag.constrained ? 0 : (e.clientY - drag.y) * ROT;
       drag.x = e.clientX;
       drag.y = e.clientY;
-      noteInteraction();
       const now = performance.now();
       const dt = Math.max(1, now - drag.lastT);
       drag.lastT = now;
@@ -587,7 +584,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (!drag.active) return;
       drag.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
-      endInteraction();
     };
     renderer.domElement.addEventListener('pointerdown', onDragDown);
     renderer.domElement.addEventListener('pointermove', onDragMove);
@@ -658,6 +654,25 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       needsDraw = true;
     };
 
+    // Content-driven shadow pass (2026-10-04): the shadow map re-renders
+    // only when the scene CONTENT changed — camera-only motion (orbit,
+    // pinch, wheel, pan) never re-bakes it, which is what the old
+    // interaction freeze bought. But that freeze was keyed to TIME, not
+    // content: a pinch overlapping playback parked the shadows at the
+    // freeze pose while the robots drove on ("the shadow doesn't follow
+    // the robot", user 2026-10-04), and its engage/disengage flutter made
+    // playback read as janky. Only the robots cast shadows (the heavy
+    // field models stay out of the pass), so the rig-driving and
+    // robot-rebuild effects call invalidateShadows(); gesture handlers
+    // need nothing. The pixel ratio stays at full DPR the whole time
+    // (2026-10-04: "keep it razor sharp while I'm still pinching").
+    renderer.shadowMap.autoUpdate = false;
+    let shadowDirty = true; // the first frame bakes the shadow map
+    const invalidateShadows = () => {
+      shadowDirty = true;
+      markDirty();
+    };
+
     // AdvantageScope's lighting recipe: no tone mapping, no environment
     // map, no fog — a hemisphere fill plus one shadow-casting key light.
     // (The earlier ACES+studio-env stack overexposed the official models.)
@@ -694,7 +709,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       dynamic, rigs: [], trails: [],
       modelRoot, fallback, fieldRoot,
       backgroundThemed,
-      dirty: markDirty, themed, retintCube,
+      dirty: markDirty, invalidateShadows, themed, retintCube,
     };
 
 
@@ -729,7 +744,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       lastScale = gestureScale(e);
       gestureDone = false;
       markGestureStart();
-      noteInteraction();
     };
     const onGestureChange = (e: Event) => {
       e.preventDefault();
@@ -748,7 +762,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
           const { instant, deferred } = splitInstant(factor);
           applyPinchStep(instant);
           pinchChase.factor *= deferred; // remaining view zoom to apply
-          noteInteraction();
           markDirty();
         }
       }
@@ -758,7 +771,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       gestureDone = true;
       markGestureEnd();
       lastScale = 1;
-      endInteraction();
     };
     renderer.domElement.addEventListener('gesturestart', onGestureStart);
     renderer.domElement.addEventListener('gesturechange', onGestureChange);
@@ -792,32 +804,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       }
     };
 
-    // Interaction shadow freeze (round 5 kept; round 6 changed the rest):
-    // the official field models (14–20 MB GLB) make full-quality renders
-    // hog the main thread, which is what batched the gesture events in the
-    // first place. While a pinch or drag runs (plus this linger window),
-    // the shadow map stays frozen — invisible, since a camera-only move
-    // never changes shadow content. The pixel ratio used to drop to 1 here
-    // too, but the user reads fine detail MID-gesture (2026-10-04: "keep
-    // it razor sharp while I'm still pinching"), so resolution now stays
-    // at full DPR the whole time.
-    const INTERACTIVE_LINGER_MS = 100;
-    let interactiveUntil = 0;
-    let shadowsFrozen = false;
-    const setShadowsFrozen = (on: boolean) => {
-      shadowsFrozen = on;
-      renderer.shadowMap.autoUpdate = !on;
-      if (!on) renderer.shadowMap.needsUpdate = true; // refresh frozen shadows once
-    };
-    const noteInteraction = () => {
-      interactiveUntil = performance.now() + INTERACTIVE_LINGER_MS;
-    };
-    // Finger lift / gesture end: drop the linger so the next frame's
-    // shadow map refreshes right away (wheel streams still get the short
-    // debounce via noteInteraction).
-    const endInteraction = () => {
-      interactiveUntil = 0;
-    };
     let lastFrameT = performance.now();
 
     // Draw only when the camera moved or something was marked dirty —
@@ -993,13 +979,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         pinchChase.factor = stepped.remaining;
         markDirty();
       }
-      const interacting = now < interactiveUntil || pinchChase.factor !== 1 || drag.active || roll.active;
-      if (interacting !== shadowsFrozen) {
-        setShadowsFrozen(interacting);
-        // Restore repaints immediately when the freeze lifts: the shadow
-        // refresh changes the frame, and with damping already settled
-        // nothing else would mark this frame dirty.
-        if (!interacting) needsDraw = true;
+      if (shadowDirty) {
+        // Consumed by the render below: the shadow map re-bakes only on
+        // frames where the content moved — camera motion alone never does.
+        shadowDirty = false;
+        renderer.shadowMap.needsUpdate = true;
       }
       const moved = controls.update();
       // DPR can change without a resize (window dragged between Retina and
@@ -1435,7 +1419,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         turrets: chassis.turrets,
         modules,
       });
-      st.dirty();
+      st.invalidateShadows();
     }
   }, [robots, field, moduleTemplate, frameTemplates]);
 
@@ -1466,7 +1450,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // The render frame reflects X, so the heading reflects with it —
       // leaving it raw would have every robot drive sideways.
       rig.root.rotation.y = headingToRender(pose.heading);
-      st.dirty();
+      st.invalidateShadows();
     }
     // `moduleTemplate` matters here too: when the CAD template resolves it
     // rebuilds every rig at the origin — without re-driving the poses the
