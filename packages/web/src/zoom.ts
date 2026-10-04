@@ -175,7 +175,9 @@ export function classifyWheelInput(deltaY: number, deltaMode: number): WheelInpu
  * Onshape's "Reverse scroll wheel zoom direction" checkbox. Applied only
  * to the discrete 'wheel' class: pinch (gesture* events) and two-finger
  * trackpad scroll are natural-direction gestures and must not flip. The
- * app host keeps this in sync with the saved preference.
+ * app host keeps this in sync with the EFFECTIVE direction — the saved
+ * checkbox combined with the scheme's factory default (SOLIDWORKS ships
+ * scroll-up = zoom out; see mouse-controls.effectiveReverseScroll).
  */
 let reverseScrollZoom = false;
 

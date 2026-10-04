@@ -45,7 +45,7 @@ import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
 import { listenPrefs } from './pref-sync';
-import { useReverseScrollZoom } from './mouse-controls';
+import { effectiveReverseScroll, useMouseControls, useReverseScrollZoom } from './mouse-controls';
 import { setReverseScrollZoom } from './zoom';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from './viewer';
 
@@ -124,11 +124,15 @@ export function App() {
 function AppBody() {
   const { lang, t: tr } = useI18n();
   // Reverse-scroll lives in the zoom module both canvases read — keep it
-  // in sync here so 2D also flips while no 3D scene is mounted.
+  // in sync here so 2D also flips while no 3D scene is mounted. The saved
+  // checkbox reverses each scheme's own factory direction (Onshape scroll
+  // up = zoom in, SOLIDWORKS scroll up = zoom out), so what the zoom
+  // module receives is the EFFECTIVE flag.
   const [reverseScroll] = useReverseScrollZoom();
+  const [mouseControlsScheme] = useMouseControls();
   useEffect(() => {
-    setReverseScrollZoom(reverseScroll);
-  }, [reverseScroll]);
+    setReverseScrollZoom(effectiveReverseScroll(mouseControlsScheme, reverseScroll));
+  }, [mouseControlsScheme, reverseScroll]);
   const { channel: updateChannel } = useUpdateChannel();
   const [initialFieldPref] = useState(loadFieldPref);
   const { robots: sourceRobots, alliance, setRobots, setScene, fieldId, fieldVariant, fieldStyle, customField, customImageUrl } = useSessionState(initialFieldPref);

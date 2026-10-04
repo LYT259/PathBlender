@@ -5,7 +5,7 @@ import nightIcon from '../assets/app-icon-night.png';
 import { useI18n } from '../i18n';
 import { resolveMouseAction, type MouseControlsScheme } from '../mouse-controls';
 
-type MouseCallout = { button: 'left' | 'right' | 'middle' | 'wheel'; action: 'rotate' | 'constrained' | 'pan' | 'zoom' };
+type MouseCallout = { button: 'left' | 'right' | 'middle' | 'wheel'; action: 'rotate' | 'constrained' | 'pan' | 'zoom' | 'roll' };
 
 /** Flat mouse illustration; leader lines remain physically left/right in RTL. */
 export function MouseControlsDiagram({ scheme, iconMode = 'system', constrained = false }: { scheme: MouseControlsScheme; iconMode?: IconAppearanceMode; constrained?: boolean }) {
@@ -22,7 +22,15 @@ export function MouseControlsDiagram({ scheme, iconMode = 'system', constrained 
     if (button === 'wheel') return [{ button, action: 'zoom' as const }];
     const action = resolveMouseAction(scheme, { left: 0, middle: 1, right: 2 }[button], { ctrlKey: false, altKey: false, shiftKey: false }, constrained);
     if (action.kind === 'none') return [];
-    return [{ button, action: action.kind === 'orbit' ? (action.constrained ? 'constrained' as const : 'rotate' as const) : action.kind === 'pan' ? 'pan' as const : 'zoom' as const }];
+    // Plain buttons never produce 'roll' (Alt-only) or 'dragZoom'
+    // (Shift-only); the mapping stays exhaustive so a future scheme that
+    // puts either on a bare button renders correctly.
+    const callout: MouseCallout['action'] =
+      action.kind === 'orbit' ? (action.constrained ? 'constrained' : 'rotate')
+        : action.kind === 'pan' ? 'pan'
+          : action.kind === 'roll' ? 'roll'
+            : 'zoom';
+    return [{ button, action: callout }];
   });
   const leaders = {
     left: 'M215 60H144', right: 'M265 60H336',

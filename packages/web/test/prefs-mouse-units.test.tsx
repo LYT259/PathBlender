@@ -57,7 +57,19 @@ describe('mouse controls & units settings', () => {
     expect(screen.getByText('Middle mouse button drag')).toBeInTheDocument();
     expect(screen.getByText('Ctrl + Middle mouse button drag')).toBeInTheDocument();
     expect(screen.getByText('Scroll wheel in/out or Shift + Middle mouse button drag')).toBeInTheDocument();
+    // Alt+middle is Roll View (verified against SOLIDWORKS' docs 2026-10-04),
+    // not constrained rotate — that row must not appear in this scheme.
+    expect(screen.getByText('Roll view')).toBeInTheDocument();
+    expect(screen.getByText('Alt + Middle mouse button drag')).toBeInTheDocument();
+    expect(screen.queryByText('Constrained rotate', { exact: true })).not.toBeInTheDocument();
     expect(localStorage.getItem('pb.mouseControls')).toBeNull();
+  });
+
+  it('keeps Alt+right as constrained rotate in the Onshape table', () => {
+    panel();
+    expect(screen.getByText('Constrained rotate')).toBeInTheDocument();
+    expect(screen.getByText('Alt + Right mouse button drag')).toBeInTheDocument();
+    expect(screen.queryByText('Roll view')).not.toBeInTheDocument();
   });
 
   it('omits inactive mouse buttons and their leader lines for each scheme', () => {
@@ -73,19 +85,32 @@ describe('mouse controls & units settings', () => {
     expect(container.querySelector('.mouse-callout-middle strong')).toHaveTextContent('Constrained rotate');
   });
 
-  it('orders the five unit choices like the reference and never saves preview-only units', () => {
+  it('orders the five unit choices like the reference and saves every one of them', () => {
     panel();
     const units = screen.getByLabelText(/length unit/i, { selector: 'select' }) as HTMLSelectElement;
     expect(Array.from(units.options).map(option => option.value)).toEqual(['cm', 'ft', 'in', 'm', 'yd']);
+    // ft/yd are fully wired (2026-10-04): an example in the chosen unit,
+    // Save enabled, and the choice persists like any other unit.
     fireEvent.change(units, { target: { value: 'ft' } });
-    expect(screen.getByText('Preview: 3.04 ft. This unit is not applied yet.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
-    fireEvent.click(screen.getByLabelText('Reverse scroll wheel zoom direction'));
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(localStorage.getItem('pb.lengthUnit')).toBeNull();
-    expect(localStorage.getItem('pb.reverseScroll')).toBe('on');
+    expect(screen.getByText('Distances in the checks panel use this unit, e.g. 3.04 ft')).toBeInTheDocument();
     fireEvent.change(units, { target: { value: 'yd' } });
-    expect(screen.getByText('Preview: 1.01 yd. This unit is not applied yet.')).toBeInTheDocument();
+    expect(screen.getByText('Distances in the checks panel use this unit, e.g. 1.01 yd')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(localStorage.getItem('pb.lengthUnit')).toBe('yd');
+  });
+
+  it('shows a legacy ftin preference in the picker and replaces it on save', () => {
+    // Stored by a pre-five-unit build: the mixed feet+inches mode still
+    // reads and displays (never as decimal feet) until the user saves a
+    // current unit over it.
+    localStorage.setItem('pb.lengthUnit', 'ftin');
+    panel();
+    const units = screen.getByLabelText(/length unit/i, { selector: 'select' }) as HTMLSelectElement;
+    expect(units.value).toBe('ftin');
+    expect(screen.getByText('Distances in the checks panel use this unit, e.g. 3′0.5″')).toBeInTheDocument();
+    fireEvent.change(units, { target: { value: 'ft' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(localStorage.getItem('pb.lengthUnit')).toBe('ft');
   });
 
   it('stages checkbox drafts and persists them on Save', () => {
