@@ -27,7 +27,8 @@ import {
 } from '@pathblender/core';
 import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } from '@pathblender/core';
 import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
-import { displayName, robotFromRoute, type LibraryProfile, type LibraryRoute } from './route-library';
+import { displayName, robotsFromImport, type LibraryProfile, type LibraryRoute } from './route-library';
+import { withTeamPlaceholders } from './team-placeholder';
 import { loadAutosave, saveAutosave } from './autosave';
 import { saveText } from './download';
 import { fieldImageFor } from './field-images';
@@ -217,10 +218,8 @@ function AppBody() {
   // .path texts stay available so later .auto imports can resolve their
   // pathName references (within the same batch or across this session).
   const pathTextsRef = useRef(new Map<string, string>());
-  // Route/profile library: everything parsed this session stays pickable
-  // next to each robot, so users can compare autos by switching (2026-09-20).
-  const [libraryRoutes, setLibraryRoutes] = useState<LibraryRoute[]>([]);
-  const [libraryProfiles, setLibraryProfiles] = useState<LibraryProfile[]>([]);
+  // A loose configuration picked before any path waits for the next loose import.
+  const pendingProfilesRef = useRef<LibraryProfile[]>([]);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   const importFiles = useCallback(async (files: FileList | File[] | IncomingFile[], opts?: { fromFolder?: boolean }) => {
@@ -231,22 +230,25 @@ function AppBody() {
     // A folder drop/pick is any import that carries paths below its root.
     const fromFolder = opts?.fromFolder ?? incoming.some((f) => f.relPath.includes('/'));
     const knownRouteExt = /\.(traj|ghostauto|path|auto|chor)$/i;
-    const batch = new Map<string, string>(pathTextsRef.current);
+    const batch = new Map<string, string>(fromFolder ? [] : pathTextsRef.current);
     for (const { file, relPath } of incoming) {
       if (/\.path$/i.test(file.name)) {
         const stem = relPath.split('/').pop()!.replace(/\.path$/i, '');
-        batch.set(stem, await file.text());
+        batch.set(fromFolder ? relPath : stem, await file.text());
       }
     }
     const addedRoutes: LibraryRoute[] = [];
     const addedProfiles: LibraryProfile[] = [];
     for (const { file, relPath } of incoming) {
+      if (fromFolder && !knownRouteExt.test(file.name) && !/\.json$/i.test(file.name)) continue;
       const text = await file.text();
       // Session files restore as a whole session rather than one robot.
-      if (isSessionFileName(relPath)) {
+      if (!fromFolder && isSessionFileName(relPath)) {
         try {
           const restored = deserializeSession(text);
-          setScene({ ...restoreSessionAlliance(restored), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
+          pathTextsRef.current.clear();
+          pendingProfilesRef.current = [];
+          setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(restored.robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
           setSelectedId(restored.robots[0]?.trajectory.id ?? null);
           setInspectorMode('checks');
           playback.setPlaying(false);
@@ -269,7 +271,12 @@ function AppBody() {
         continue;
       }
       try {
-        const traj = parsePathFile(text, relPath, (name) => batch.get(name));
+        const traj = parsePathFile(text, relPath, (name) => {
+          if (!fromFolder) return batch.get(name);
+          const root = relPath.split('/')[0];
+          const matches = [...batch].filter(([path]) => path.split('/')[0] === root && path.split('/').at(-1) === `${name}.path`);
+          return matches.length === 1 ? matches[0]![1] : undefined;
+        });
         addedRoutes.push({ id: crypto.randomUUID(), relPath, trajectory: traj });
       } catch (e) {
         // Folder imports tolerate bystanders (jars, images, dotfiles);
@@ -298,50 +305,31 @@ function AppBody() {
         message: tr('import.folderNoRoutes'),
       });
     }
-    pathTextsRef.current = batch;
-    // Re-importing the same path refreshes the entry in place (stable id, so
-    // robots pointing at it follow the update).
-    setLibraryRoutes((prev) => {
-      const byRel = new Map(prev.map((r) => [r.relPath, r]));
-      for (const r of addedRoutes) {
-        const old = byRel.get(r.relPath);
-        byRel.set(r.relPath, old ? { ...r, id: old.id } : r);
-      }
-      return [...byRel.values()];
-    });
-    setLibraryProfiles((prev) => {
-      const byRel = new Map(prev.map((p) => [p.relPath, p]));
-      for (const p of addedProfiles) {
-        const old = byRel.get(p.relPath);
-        byRel.set(p.relPath, old ? { ...p, id: old.id } : p);
-      }
-      return [...byRel.values()];
-    });
-    if (addedRoutes.length > 0 || addedProfiles.length > 0) {
-      flash(tr('library.imported', { n: addedRoutes.length, m: addedProfiles.length }));
-    }
+    if (!fromFolder) pathTextsRef.current = batch;
     if (addedRoutes.length > 0) {
-      // Ids are decided up front so selection can target the first new
-      // robot without depending on when the state update flushes.
-      const ids = addedRoutes.map(() => crypto.randomUUID());
-      const willSeed = fromFolder && robots.length === 0;
-      setRobots((prev) =>
-        fromFolder
-          ? prev.length > 0
-            ? prev
-            : [robotFromRoute(addedRoutes[0]!, 0, ids[0]!)]
-          : [
-              ...prev,
-              ...addedRoutes.map((route, i) => robotFromRoute(route, prev.length + i, ids[i]!)),
-            ],
-      );
-      if (!fromFolder || willSeed) {
-        setSelectedId(ids[0]!);
-        setInspectorMode('checks');
-      }
+      const profiles = fromFolder ? addedProfiles : [...pendingProfilesRef.current, ...addedProfiles];
+      const additions = robotsFromImport(addedRoutes, profiles, fromFolder, sourceRobots.length);
+      if (!fromFolder) pendingProfilesRef.current = [];
+      setRobots((prev) => withTeamPlaceholders([...prev, ...additions]));
+      setSelectedId(additions[0]!.trajectory.id);
+      setInspectorMode('checks');
+      flash(tr('library.imported', { n: addedRoutes.length, m: addedProfiles.length }));
+    } else if (!fromFolder && addedProfiles.length > 0 && sourceRobots.length > 0) {
+      const targetId = selectedId ?? sourceRobots[0]!.trajectory.id;
+      setRobots((prev) => prev.map((robot) => robot.trajectory.id === targetId
+        ? { ...robot, profileOptions: [...(robot.profileOptions ?? []), ...addedProfiles] }
+        : robot));
+      setSelectedId(targetId);
+      setInspectorMode('robot');
+      flash(tr('library.imported', { n: 0, m: addedProfiles.length }));
+    } else if (!fromFolder && addedProfiles.length > 0) {
+      pendingProfilesRef.current.push(...addedProfiles);
+      flash(tr('library.imported', { n: 0, m: addedProfiles.length }));
+    } else if (fromFolder && !addedRoutes.length && !nextErrors.length) {
+      nextErrors.push({ fileName: incoming[0]?.relPath.split('/')[0] ?? '', message: tr('import.folderNoRoutes') });
     }
     setErrors(nextErrors);
-  }, [tr, flash, robots.length, setRobots, setScene, setT, playback.setPlaying]);
+  }, [tr, flash, sourceRobots.length, selectedId, setRobots, setScene, setT, playback.setPlaying]);
 
   /**
    * Folder picker result, with every silent exit removed. Before this handler
@@ -367,54 +355,37 @@ function AppBody() {
     await importFiles(list, { fromFolder: true });
   }, [importFiles, tr]);
 
-  /** Switch one robot onto another library route (the comparison loop). */
+  /** Switch within this team's own routes; keep identity and slot settings. */
   const pickRoute = useCallback((robotId: string, routeId: string) => {
-    const route = libraryRoutes.find((r) => r.id === routeId);
-    if (!route) return;
-    setRobots((prev) =>
-      prev.map((r) => {
-        if (r.trajectory.id !== robotId) return r;
-        // The shared alliance view is derived after picking the source route.
-        const traj = route.trajectory;
-        return {
-          ...r,
-          trajectory: { ...traj, id: r.trajectory.id, name: displayName(traj) },
-          routeId: route.id,
-        };
-      }),
-    );
-  }, [libraryRoutes, setRobots]);
+    setRobots((prev) => prev.map((robot) => {
+      if (robot.trajectory.id !== robotId) return robot;
+      const route = robot.routeOptions?.find((option) => option.id === routeId);
+      if (!route) return robot;
+      const traj = route.trajectory;
+      const profile = robot.profileOptions?.find((option) => option.id === robot.profileId)?.profile;
+      const geometry = profile ? {
+        geometry: profile.geometry,
+        moduleLocations: profile.moduleLocations,
+        geometrySource: 'file' as const,
+      } : {};
+      return { ...robot, routeId: route.id, trajectory: {
+        ...traj, ...geometry, id: robot.trajectory.id, name: displayName(traj),
+        teamNumber: robot.trajectory.teamNumber,
+        teamName: robot.trajectory.teamName || traj.teamName,
+      } };
+    }));
+  }, [setRobots]);
 
-  const addRouteAsRobot = useCallback((routeId: string) => {
-    const route = libraryRoutes.find((r) => r.id === routeId);
-    if (!route) return;
-    // Decide the id before dispatching so selection can target it directly.
-    const id = crypto.randomUUID();
-    setRobots((prev) => [...prev, robotFromRoute(route, prev.length, id)]);
-    setSelectedId(id);
-    setInspectorMode('robot');
-  }, [libraryRoutes, setRobots]);
-
-  /** Apply an imported profile's bumper box to one robot. */
+  /** Imported profiles also belong to one team. */
   const applyProfile = useCallback((robotId: string, profileId: string) => {
-    const entry = libraryProfiles.find((p) => p.id === profileId);
-    if (!entry) return;
-    setRobots((prev) =>
-      prev.map((r) =>
-        r.trajectory.id === robotId
-          ? {
-              ...r,
-              trajectory: {
-                ...r.trajectory,
-                geometry: entry.profile.geometry,
-                moduleLocations: entry.profile.moduleLocations,
-                geometrySource: 'file',
-              },
-            }
-          : r,
-      ),
-    );
-  }, [libraryProfiles, setRobots]);
+    setRobots((prev) => prev.map((robot) => {
+      if (robot.trajectory.id !== robotId) return robot;
+      const entry = robot.profileOptions?.find((profile) => profile.id === profileId);
+      if (!entry) return robot;
+      return { ...robot, profileId: entry.id, trajectory: { ...robot.trajectory, geometry: entry.profile.geometry,
+        moduleLocations: entry.profile.moduleLocations, geometrySource: 'file' } };
+    }));
+  }, [setRobots]);
 
   // Whole-window drag & drop; folders are walked recursively.
   useEffect(() => {
@@ -443,7 +414,11 @@ function AppBody() {
   }, [importFiles]);
 
   const updateRobot = useCallback((id: string, patch: Partial<SessionTrajectory>) => {
-    setRobots((prev) => prev.map((r) => (r.trajectory.id === id ? { ...r, ...patch } : r)));
+    setRobots((prev) => withTeamPlaceholders(prev.map((r) => r.trajectory.id === id
+      ? { ...r, ...patch, trajectory: patch.trajectory
+        ? { ...r.trajectory, teamNumber: patch.trajectory.teamNumber }
+        : r.trajectory }
+      : r)));
   }, []);
 
   const selectRobot = useCallback((id: string) => {
@@ -480,7 +455,7 @@ function AppBody() {
   useEffect(() => {
     const restored = loadAutosave();
     if (restored) {
-      setScene({ ...restoreSessionAlliance(restored), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
+      setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(restored.robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
       setSelectedId(restored.robots[0]?.trajectory.id ?? null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
@@ -543,6 +518,8 @@ function AppBody() {
     exampleRequest.current += 1;
     setExampleLoading(false);
     setRobots([]);
+    pathTextsRef.current.clear();
+    pendingProfilesRef.current = [];
     setErrors([]);
     setT(0);
     playback.setPlaying(false);
@@ -621,7 +598,7 @@ function AppBody() {
     try {
       const { createWelcomeExample } = await import('./welcome-example');
       if (request !== exampleRequest.current) return;
-      const example = createWelcomeExample({ a: '00001', b: '00002' });
+      const example = createWelcomeExample({ a: 'AAAAAA', b: 'BBBBBB' });
       // Show it on the field the user actually uses — first visit defaults
       // to AndyMark, afterwards the remembered season + construction.
       setScene({
@@ -648,9 +625,6 @@ function AppBody() {
   const exitExample = () => {
     // Keep any real paths the user added while exploring the example.
     const remaining = sourceRobots.filter((robot) => !isExampleRobot(robot));
-    // Folder imports build a library without adding robots while the demo is
-    // on the field. Exiting must still expose that newly imported library.
-    if (!remaining.length && libraryRoutes.length) remaining.push(robotFromRoute(libraryRoutes[0]!, 0, crypto.randomUUID()));
     setRobots(remaining);
     setSelectedId(remaining[0]?.trajectory.id ?? null);
     playback.setPlaying(false);
@@ -674,7 +648,7 @@ function AppBody() {
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
         {!VIEWER_ONLY && (
           <>
-            {hasRobots && <button className="btn import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>}
+            {hasRobots && <button className="btn accent import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>}
             <input
               ref={folderInputRef}
               type="file"
@@ -730,7 +704,7 @@ function AppBody() {
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
         <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
-          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} libraryRoutes={libraryRoutes} libraryProfiles={libraryProfiles} onPickRoute={pickRoute} onAddRoute={addRouteAsRobot} />}
+          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onPickRoute={pickRoute} />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
             {hasExample && <div className="example-notice"><strong>{tr('welcome.exampleBadge')}</strong><span>{tr('welcome.exampleNotice')}</span><button className="btn small" onClick={exitExample}>{tr('welcome.exitExample')}</button></div>}
             <div className="canvas-slot">
@@ -799,7 +773,7 @@ function AppBody() {
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
             </div></div>
             {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
-            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} onRemove={removeRobot} libraryProfiles={libraryProfiles} onApplyProfile={applyProfile} /></div>}
+            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} onRemove={removeRobot} libraryProfiles={selectedRobot?.profileOptions ?? []} onApplyProfile={applyProfile} /></div>}
           </aside>
         </main>
 

@@ -96,7 +96,7 @@ export {
   serializeSession,
   sessionDuration,
 } from './session';
-export type { SessionFileV1, SessionTrajectory } from './session';
+export type { SessionFileV1, SessionTrajectory, SessionRouteOption, SessionProfileOption } from './session';
 
 export {
   STEERING_STATIC_MPS,

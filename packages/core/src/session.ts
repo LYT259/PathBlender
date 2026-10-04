@@ -7,6 +7,19 @@
 import type { Pose2d, RobotGeometry, Trajectory, TrajectorySample } from './types';
 import { sampleTrajectory } from './math';
 import { makeCustomField } from './field';
+import type { RobotProfile } from './parsers/robot-profile';
+
+export interface SessionRouteOption {
+  id: string;
+  relPath: string;
+  trajectory: Trajectory;
+}
+
+export interface SessionProfileOption {
+  id: string;
+  relPath: string;
+  profile: RobotProfile;
+}
 
 export interface SessionTrajectory {
   trajectory: Trajectory;
@@ -15,13 +28,13 @@ export interface SessionTrajectory {
   /** UI display color; persisted in session files. */
   color: string;
   visible: boolean;
-  /**
-   * Route-library id of the trajectory this robot currently shows, when it
-   * came from (or was switched to) an imported library route. Session-layer
-   * concern only — survives undo/redo with the robot, inert when the library
-   * it points at is gone (restored sessions start with an empty library).
-   */
+  /** Selected route inside this team's alternatives; older sessions may lack them. */
   routeId?: string;
+  /** Alternatives belong to this team slot, including after save/restore. */
+  routeOptions?: SessionRouteOption[];
+  profileOptions?: SessionProfileOption[];
+  /** Explicitly applied configuration, retained when switching routes. */
+  profileId?: string;
 }
 
 /** Palette mirroring the 103 fork's ghost colors (community-familiar). */
@@ -119,6 +132,9 @@ export interface SessionFileV1 {
     visible: boolean;
     /** Route-library id when the robot's current route came from the library. */
     routeId?: string;
+    routeOptions?: SessionRouteOption[];
+    profileOptions?: SessionProfileOption[];
+    profileId?: string;
     geometry: RobotGeometry;
     geometrySource: Trajectory['geometrySource'];
     moduleLocations: Trajectory['moduleLocations'];
@@ -165,6 +181,9 @@ export function serializeSession(
       color: st.color,
       visible: st.visible,
       routeId: st.routeId,
+      routeOptions: st.routeOptions,
+      profileOptions: st.profileOptions,
+      profileId: st.profileId,
       geometry: st.trajectory.geometry,
       geometrySource: st.trajectory.geometrySource,
       moduleLocations: st.trajectory.moduleLocations,
@@ -228,7 +247,45 @@ export function deserializeSession(text: string): {
       color: r.color,
       visible: r.visible,
       routeId: r.routeId,
+      routeOptions: readRouteOptions(r.routeOptions),
+      profileOptions: readProfileOptions(r.profileOptions),
+      profileId: typeof r.profileId === 'string' ? r.profileId : undefined,
     } satisfies SessionTrajectory;
   });
   return { fieldId: v.fieldId, field: customField, robots };
+}
+
+function validGeometry(value: RobotGeometry | undefined): boolean {
+  return !!value && Number.isFinite(value.lengthM) && value.lengthM > 0 &&
+    Number.isFinite(value.widthM) && value.widthM > 0 &&
+    Number.isFinite(value.offsetX) && Number.isFinite(value.offsetY);
+}
+
+function readRouteOptions(value: SessionRouteOption[] | undefined): SessionRouteOption[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.some((option) => {
+    const t = option?.trajectory;
+    return typeof option?.id !== 'string' || typeof option.relPath !== 'string' ||
+      !t || !['id', 'name', 'teamName', 'teamNumber'].every((key) => typeof t[key as keyof Trajectory] === 'string') ||
+      !['choreo-traj', 'ghostauto', 'pathplanner-path', 'pathplanner-auto'].includes(t.source) ||
+      !['blue', 'red'].includes(t.alliance) || !['file', 'default'].includes(t.geometrySource) ||
+      !validGeometry(t.geometry) || !Array.isArray(t.moduleLocations) || t.moduleLocations.some((m) =>
+        !m || !Number.isFinite(m.x) || !Number.isFinite(m.y)) ||
+      !Array.isArray(t.events) || t.events.some((e) => !e || typeof e.name !== 'string' || !Number.isFinite(e.t)) ||
+      !Array.isArray(t.warnings) || t.warnings.some((w) => typeof w !== 'string') ||
+      !Number.isFinite(t.durationS) || t.durationS < 0 || !Array.isArray(t.samples) ||
+      t.samples.length === 0 || t.samples.some((sample, index) => !sample ||
+        !['t', 'x', 'y', 'heading', 'vx', 'vy', 'omega'].every((key) => Number.isFinite(sample[key as keyof typeof sample])) ||
+        (index > 0 && sample.t < t.samples[index - 1]!.t));
+  })) throw new Error('invalid team route options');
+  return value;
+}
+
+function readProfileOptions(value: SessionProfileOption[] | undefined): SessionProfileOption[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.some((option) => typeof option?.id !== 'string' ||
+    typeof option.relPath !== 'string' || !option.profile || typeof option.profile.name !== 'string' || !validGeometry(option.profile.geometry) ||
+    !Array.isArray(option.profile.moduleLocations) || option.profile.moduleLocations.some((m) =>
+      !m || !Number.isFinite(m.x) || !Number.isFinite(m.y)))) throw new Error('invalid team profile options');
+  return value;
 }
