@@ -50,6 +50,7 @@ export const ko: Record<MessageKey, string> = {
   'workspace.closeRobotDetails': "로봇 상세 닫기",
   'workspace.undo': "실행 취소",
   'workspace.redo': "다시 실행",
+  'workspace.home': "홈으로 돌아가기",
   'workspace.more': '더 많은 작업',
   'workspace.season': '게임 시즌',
   'workspace.edit2d': '편집을 마치면 3D로 전환할 수 있습니다',

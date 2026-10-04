@@ -39,6 +39,7 @@ export const ta = {
   'workspace.closeRobotDetails': "ரோபோ விவரங்களை மூடு",
   'workspace.undo': "செயல்தவிர்",
   'workspace.redo': "மீண்டும் செய்",
+  'workspace.home': "முகப்புக்குத் திரும்பு",
   "workspace.more": "மேலும் செயல்கள்",
   "workspace.season": "விளையாட்டு பருவம்",
   "workspace.edit2d": "3D க்கு மாற எடிட்டிங்கை முடிக்கவும்",

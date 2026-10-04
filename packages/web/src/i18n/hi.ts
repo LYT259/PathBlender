@@ -39,6 +39,7 @@ export const hi = {
   'workspace.closeRobotDetails': "रोबोट विवरण बंद करें",
   'workspace.undo': "पूर्ववत करें",
   'workspace.redo': "फिर से करें",
+  'workspace.home': "होम पर वापस जाएँ",
   "workspace.more": "अधिक क्रियाएं",
   "workspace.season": "गेम सीज़न",
   "workspace.edit2d": "3D पर स्विच करने के लिए संपादन समाप्त करें",

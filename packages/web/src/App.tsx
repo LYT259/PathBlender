@@ -777,6 +777,7 @@ function AppBody() {
           if (!isSessionFileName(file.name)) { setErrors([{ fileName: file.name, message: tr('import.notSession') }]); return; }
           void importFiles([file]);
         }} />
+        {hasRobots && <button className="tool-btn square" title={tr('workspace.home')} aria-label={tr('workspace.home')} onClick={clearAll}><Icon name="home" /></button>}
         {hasRobots && <div className="history-controls">
           <button className="tool-btn square" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
           <button className="tool-btn square" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>

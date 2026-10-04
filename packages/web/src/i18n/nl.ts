@@ -50,6 +50,7 @@ export const nl: Record<MessageKey, string> = {
   'workspace.closeRobotDetails': "Robotdetails sluiten",
   'workspace.undo': "Ongedaan maken",
   'workspace.redo': "Opnieuw",
+  'workspace.home': "Terug naar home",
   "workspace.more": "Meer acties",
   "workspace.season": "Wedstrijdseizoen",
   "workspace.edit2d": "Rond het bewerken af om naar 3D te schakelen",

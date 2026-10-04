@@ -51,6 +51,7 @@ export const ja: Record<MessageKey, string> = {
   'workspace.closeRobotDetails': "ロボット詳細を閉じる",
   'workspace.undo': "元に戻す",
   'workspace.redo': "やり直す",
+  'workspace.home': "ホームに戻る",
   "workspace.more": "その他の操作",
   "workspace.season": "競技シーズン",
   "workspace.edit2d": "編集を終了すると 3D に切り替わります",

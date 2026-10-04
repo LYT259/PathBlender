@@ -45,6 +45,7 @@ export const tr: Record<MessageKey, string> = {
   'workspace.closeRobotDetails': "Robot ayrıntılarını kapat",
   'workspace.undo': "Geri al",
   'workspace.redo': "Yinele",
+  'workspace.home': "Ana sayfaya dön",
   "workspace.more": "Diğer işlemler",
   "workspace.season": "Oyun sezonu",
   "workspace.edit2d": "3B'ye geçmek için düzenlemeyi bitirin",

@@ -39,6 +39,7 @@ export const vi = {
   'workspace.closeRobotDetails': "Đóng chi tiết robot",
   'workspace.undo': "Hoàn tác",
   'workspace.redo': "Làm lại",
+  'workspace.home': "Về trang chủ",
   "workspace.more": "Thao tác khác",
   "workspace.season": "Mùa giải",
   "workspace.edit2d": "Kết thúc chỉnh sửa để chuyển sang 3D",
