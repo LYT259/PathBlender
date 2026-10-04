@@ -30,7 +30,7 @@ export const es: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'Ruta de ejemplo A',
   'welcome.exampleNameB': 'Ruta de ejemplo B',
   'welcome.exampleBadge': 'Ejemplo',
-  'welcome.exampleNotice': 'Rutas ficticias para explorar la aplicación.',
+  'welcome.exampleNotice': 'Rutas reales de la temporada 2026 de los equipos FRC 8814 y 11019.',
   'welcome.exitExample': 'Terminar ejemplo',
   'onboarding.play': 'Pulsa Reproducir para ver las rutas o desplázate por la línea de tiempo.',
   'onboarding.check': 'Selecciona un problema de la lista para ir a ese momento.',

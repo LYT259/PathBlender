@@ -23,7 +23,7 @@ export const de = {
   'welcome.exampleNameA': 'Beispielpfad A',
   'welcome.exampleNameB': 'Beispielpfad B',
   'welcome.exampleBadge': 'Beispiel',
-  'welcome.exampleNotice': 'Fiktive Pfade zum Erkunden der App.',
+  'welcome.exampleNotice': 'Echte Strecken der Saison 2026 der FRC-Teams 8814 und 11019.',
   'welcome.exitExample': 'Beispiel beenden',
   'onboarding.play': 'Drücken Sie Play, um die Pfade zu sehen, oder ziehen Sie die Zeitleiste.',
   'onboarding.check': 'Wählen Sie ein Problem unten, um zu diesem Moment zu springen.',

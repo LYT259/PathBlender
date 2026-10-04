@@ -21,7 +21,7 @@ export const ro = {
   'welcome.exampleNameA': 'Ruta de exemplu A',
   'welcome.exampleNameB': 'Ruta de exemplu B',
   'welcome.exampleBadge': 'Exemplu',
-  'welcome.exampleNotice': 'Rute fictive pentru explorarea aplicației.',
+  'welcome.exampleNotice': 'Rute reale din sezonul 2026 ale echipelor FRC 8814 și 11019.',
   'welcome.exitExample': 'Termină exemplul',
   'onboarding.play': 'Apasă Play pentru a vedea rutele sau trage linia de timp.',
   'onboarding.check': 'Selectează o problemă de mai jos pentru a sari la acel moment.',

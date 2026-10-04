@@ -35,7 +35,7 @@ export const ja: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'サンプルパス A',
   'welcome.exampleNameB': 'サンプルパス B',
   'welcome.exampleBadge': 'サンプル',
-  'welcome.exampleNotice': 'アプリを試すための架空のパスです。',
+  'welcome.exampleNotice': 'FRC チーム 8814・11019 の 2026 シーズンの実際のルート。',
   'welcome.exitExample': 'サンプルを終了',
   'onboarding.play': '「再生」を押してパスを見るか、タイムラインをスクラブしてください。',
   'onboarding.check': '下の項目を選択すると、その瞬間にジャンプします。',

@@ -21,7 +21,7 @@ export const sv = {
   'welcome.exampleNameA': 'Exempelrutt A',
   'welcome.exampleNameB': 'Exempelrutt B',
   'welcome.exampleBadge': 'Exempel',
-  'welcome.exampleNotice': 'Fiktiva rutter för att utforska appen.',
+  'welcome.exampleNotice': 'Verkliga rutter från säsongen 2026 från FRC-lagen 8814 och 11019.',
   'welcome.exitExample': 'Avsluta exempel',
   'onboarding.play': 'Tryck Spela för att se rutterna, eller dra i tidslinjen.',
   'onboarding.check': 'Välj ett problem nedan för att hoppa till det ögonblicket.',

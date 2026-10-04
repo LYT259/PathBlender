@@ -23,7 +23,7 @@ export const ar = {
   'welcome.exampleNameA': 'مسار المثال أ',
   'welcome.exampleNameB': 'مسار المثال ب',
   'welcome.exampleBadge': 'مثال',
-  'welcome.exampleNotice': 'مسارات افتراضية لاستكشاف التطبيق.',
+  'welcome.exampleNotice': 'مسارات حقيقية لموسم 2026 من فريقَي FRC 8814 و11019.',
   'welcome.exitExample': 'إنهاء المثال',
   'onboarding.play': 'اضغط تشغيل لرؤية المسارات، أو اسحب الجدول الزمني.',
   'onboarding.check': 'حدد مشكلة أدناه للانتقال إلى تلك اللحظة.',

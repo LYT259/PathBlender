@@ -21,7 +21,7 @@ export const el = {
   'welcome.exampleNameA': 'Παράδειγμα διαδρομής A',
   'welcome.exampleNameB': 'Παράδειγμα διαδρομής B',
   'welcome.exampleBadge': 'Παράδειγμα',
-  'welcome.exampleNotice': 'Φανταστικές διαδρομές για εξερεύνηση της εφαρμογής.',
+  'welcome.exampleNotice': 'Πραγματικές διαδρομές της σεζόν 2026 από τις ομάδες FRC 8814 και 11019.',
   'welcome.exitExample': 'Τέλος παραδείγματος',
   'onboarding.play': 'Πατήστε Αναπαραγωγή για να δείτε τις διαδρομές ή σύρετε τη γραμμή χρόνου.',
   'onboarding.check': 'Επιλέξτε ένα πρόβλημα παρακάτω για να μεταβείτε σε εκείνη τη στιγμή.',

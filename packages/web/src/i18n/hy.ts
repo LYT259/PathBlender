@@ -21,7 +21,7 @@ export const hy = {
   'welcome.exampleNameA': 'Օրինակ երթուղի A',
   'welcome.exampleNameB': 'Օրինակ երթուղի B',
   'welcome.exampleBadge': 'Օրինակ',
-  'welcome.exampleNotice': 'Հավելվածը ուսումնասիրելու համար հորինված երթուղիներ։',
+  'welcome.exampleNotice': 'FRC 8814 և 11019 թիմերի 2026 մրցաշրջանի իրական երթուղիները։',
   'welcome.exitExample': 'Ավարտել օրինակը',
   'onboarding.play': 'Սեղմեք Վերարտադրել՝ երթուղիները տեսնելու համար, կամ սահեցրեք ժամանակագիծը։',
   'onboarding.check': 'Ընտրեք խնդիր ներքևում՝ այդ պահին անցնելու համար։',

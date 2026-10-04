@@ -21,7 +21,7 @@ export const rw = {
   'welcome.exampleNameA': "Inzira y'urugero A",
   'welcome.exampleNameB': "Inzira y'urugero B",
   'welcome.exampleBadge': "Urugero",
-  'welcome.exampleNotice': "Inzira z'ibihimbano zo gusenyera porogaramu.",
+  'welcome.exampleNotice': "Inzira nyazo z'icyiciro cya 2026 z'amakipe FRC 8814 na 11019.",
   'welcome.exitExample': "Rangiza urugero",
   'onboarding.play': "Kanda Gukina kugirango urebe inziga, cyangwa ukurure umurongo w'ibihe.",
   'onboarding.check': "Hitamo ikibazo hepfo kugirango usimbukire kuri ako kanya.",

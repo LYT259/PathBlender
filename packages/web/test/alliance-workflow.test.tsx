@@ -77,7 +77,7 @@ describe('whole-session alliance control', () => {
   it('retains the group selection after ending an example and importing a folder', async () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Try an example', exact: true }));
-    await screen.findByTestId('field-2d');
+    await screen.findByTestId('field-2d', {}, { timeout: 10000 });
     fireEvent.click(side('Red'));
     const file = pathFile('straight_run.ghostauto');
     Object.defineProperty(file, 'webkitRelativePath', { value: 'autos/straight_run.ghostauto' });

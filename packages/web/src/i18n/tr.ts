@@ -29,7 +29,7 @@ export const tr: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'Örnek yol A',
   'welcome.exampleNameB': 'Örnek yol B',
   'welcome.exampleBadge': 'Örnek',
-  'welcome.exampleNotice': 'Uygulamayı keşfetmek için hazırlanmış kurgusal yollar.',
+  'welcome.exampleNotice': "FRC takımları 8814 ve 11019'un gerçek 2026 sezonu yolları.",
   'welcome.exitExample': 'Örneği bitir',
   'onboarding.play': 'Yolları görmek için Oynat’a basın veya zaman çizelgesinde ilerleyin.',
   'onboarding.check': 'İlgili ana gitmek için aşağıdan bir sorun seçin.',

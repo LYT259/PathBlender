@@ -16,8 +16,8 @@ function sessionInput() {
 
 async function openExample() {
   fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-  await screen.findByText('#AAAAAA', { selector: '.robot-name' });
-  expect(screen.getByText('#BBBBBB', { selector: '.robot-name' })).toBeInTheDocument();
+  await screen.findByText('#8814', { selector: '.robot-name' }, { timeout: 10000 });
+  expect(screen.getByText('#11019', { selector: '.robot-name' })).toBeInTheDocument();
 }
 
 beforeEach(() => localStorage.clear());
@@ -94,10 +94,11 @@ describe('welcome flow', () => {
   it('loads a paused 2D example and teaches playback and collision navigation using the working controls', async () => {
     render(<App />);
     await openExample();
-    expect(screen.getByText('Fictional paths for exploring the app.')).toBeInTheDocument();
+    expect(screen.getByText('Real 2026 routes from FRC teams 8814 and 11019.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '2D', exact: true })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('slider', { name: 'Playback position' })).toHaveValue('0');
-    expect(screen.getAllByText('20.00 s', { selector: '.robot-library-meta span' })).toHaveLength(2);
+    expect(screen.getByText('2.75 s', { selector: '.robot-library-meta span' })).toBeInTheDocument();
+    expect(screen.getByText('3.41 s', { selector: '.robot-library-meta span' })).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
     expect(screen.getByText(playHint)).toBeInTheDocument();
     expect(screen.getByText(checkHint)).toBeInTheDocument();
@@ -107,9 +108,9 @@ describe('welcome flow', () => {
     expect(screen.queryByText(playHint)).not.toBeInTheDocument();
     expect(localStorage.getItem('pb.tip.play.v1')).toBe('done');
 
-    fireEvent.click(screen.getByText('#AAAAAA × #BBBBBB', { selector: '.conflict-pair' }).closest('button')!);
+    fireEvent.click(screen.getByText('#8814 × #11019', { selector: '.conflict-pair' }).closest('button')!);
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
-    expect(Number((screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement).value)).toBeCloseTo(10);
+    expect(Number((screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement).value)).toBeCloseTo(0);
     expect(screen.queryByText(checkHint)).not.toBeInTheDocument();
     expect(localStorage.getItem('pb.tip.checks.v1')).toBe('done');
   });
@@ -137,10 +138,10 @@ describe('welcome flow', () => {
     fireEvent.drop(window, { dataTransfer: { files: [new File([sampleText], 'straight_run.ghostauto')] } });
     await screen.findByText('#0001', { selector: '.robot-name' });
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
-    expect(screen.queryByText('#AAAAAA', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(screen.queryByText('#BBBBBB', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('#8814', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('#11019', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.queryByText('Fictional paths for exploring the app.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Real 2026 routes from FRC teams 8814 and 11019.')).not.toBeInTheDocument();
   });
 
   it('adds a folder as its own team while the example is open, and keeps it after ending the example', async () => {
@@ -151,7 +152,8 @@ describe('welcome flow', () => {
     fireEvent.drop(window, { dataTransfer: { files: [route] } });
     await screen.findByRole('combobox', { name: 'Active route for #0001' });
     expect(document.querySelectorAll('.robot-library-row')).toHaveLength(3);
-    expect(screen.queryByRole('combobox', { name: 'Active route for #AAAAAA' })).toBeNull();
+    expect(screen.getByRole('combobox', { name: 'Active route for #8814' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Active route for #11019' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
     expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1);
     expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
@@ -164,8 +166,8 @@ describe('welcome flow', () => {
     await openExample();
     fireEvent.change(sessionInput(), { target: { files: [new File(['{"app":"not-a-session"}'], 'broken.pb')] } });
     await waitFor(() => expect(document.querySelector('.import-banner')).toHaveTextContent('broken.pb'));
-    expect(screen.getByText('#AAAAAA', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('#BBBBBB', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#8814', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#11019', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'End example' })).toBeInTheDocument();
   });
 

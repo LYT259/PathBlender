@@ -23,7 +23,7 @@ export const ta = {
   'welcome.exampleNameA': 'எடுத்துக்காட்டு பாதை A',
   'welcome.exampleNameB': 'எடுத்துக்காட்டு பாதை B',
   'welcome.exampleBadge': 'எடுத்துக்காட்டு',
-  'welcome.exampleNotice': 'பயன்பாட்டை ஆராய கற்பனை பாதைகள்.',
+  'welcome.exampleNotice': 'FRC அணிகள் 8814 மற்றும் 11019 இன் உண்மையான 2026 சீசன் பாதைகள்.',
   'welcome.exitExample': 'எடுத்துக்காட்டை முடி',
   'onboarding.play': 'பாதைகளைக் காண Play ஐ அழுத்தவும், அல்லது காலவரிசையைத் தேய்க்கவும்.',
   'onboarding.check': 'அந்த தருணத்திற்குச் செல்ல கீழே ஒரு சிக்கலைத் தேர்ந்தெடுக்கவும்.',
