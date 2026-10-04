@@ -138,6 +138,8 @@ export const fr: Record<MessageKey, string> = {
   'field.style.rendered': 'Rendu',
   'conflicts.title': 'Conflits',
   "conflicts.minSep": "approche minimale {d} m à t={t} s ({a} × {b})",
+  'conflicts.toleranceBadge': 'glissement ±{delta} s',
+  'checks.tolerance': 'Contrôle de tolérance : pire cas d’exécution ±{delta} s',
   'conflicts.item': '{start}–{end} s · minimum {d} m @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 

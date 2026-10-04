@@ -129,6 +129,8 @@ export const zh: Record<MessageKey, string> = {
   'field.style.rendered': '渲染图',
   'conflicts.title': '冲突',
   'conflicts.minSep': '最近间距 {d}，t={t} 秒（{a} × {b}）',
+  'conflicts.toleranceBadge': '±{delta} 秒滑移',
+  'checks.tolerance': '公差检查：起步执行最坏情况 ±{delta} 秒',
   'conflicts.item': '{start}–{end} 秒 · 最近 {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 

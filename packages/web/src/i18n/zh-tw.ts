@@ -133,6 +133,8 @@ export const zhTw: Record<MessageKey, string> = {
   'field.style.rendered': '渲染圖',
   'conflicts.title': '衝突',
   'conflicts.minSep': '最近間距 {d} 米，t={t} 秒（{a} × {b}）',
+  'conflicts.toleranceBadge': '±{delta} 秒滑移',
+  'checks.tolerance': '公差檢查：起步執行最壞情況 ±{delta} 秒',
   'conflicts.item': '{start}–{end} 秒 · 最近 {d} 米 @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 

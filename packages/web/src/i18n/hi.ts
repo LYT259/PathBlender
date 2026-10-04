@@ -123,6 +123,8 @@ export const hi = {
   'field.style.rendered': 'रेंडर',
   'conflicts.title': 'संघर्ष',
   'conflicts.minSep': 't={t} से पर निकटतम पहुंच {d} ({a} × {b})',
+  'conflicts.toleranceBadge': '±{delta} से विचलन',
+  'checks.tolerance': 'सहिष्णुता जाँच: सबसे खराब ±{delta} सेकंड आरंभ',
   'conflicts.item': '{start}–{end} से · निकटतम {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
   

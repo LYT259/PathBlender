@@ -140,8 +140,9 @@ export const ja: Record<MessageKey, string> = {
 
   'field.style.rendered': 'レンダリング',
   'conflicts.title': '競合',
-  'conflicts.minSep':
-    '最接近 {d}・t={t} s ({a} × {b})',
+  'conflicts.minSep': '最接近 {d}・t={t} s ({a} × {b})',
+'conflicts.toleranceBadge': '±{delta} 秒のずれ',
+  'checks.tolerance': '公差チェック：最悪ケース ±{delta} 秒のスタート実行',
   'conflicts.item': '{start}–{end} s · 最接近 {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 

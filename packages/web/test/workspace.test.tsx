@@ -99,7 +99,7 @@ describe('workspace workflow', () => {
 
     expect(screen.getByRole('button', { name: /^Play$/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /hide.*#0001/i })).toHaveAttribute('aria-pressed', 'true');
-    expect(Number((screen.getByRole('slider') as HTMLInputElement).value)).toBeGreaterThan(0);
+    expect(Number((screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement).value)).toBeGreaterThan(0);
     expect(conflictPair()).toBeInTheDocument();
   });
 

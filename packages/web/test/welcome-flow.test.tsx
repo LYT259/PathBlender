@@ -95,7 +95,7 @@ describe('welcome flow', () => {
     await openExample();
     expect(screen.getByText('Fictional paths for exploring the app.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '2D', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('slider')).toHaveValue('0');
+    expect(screen.getByRole('slider', { name: 'Playback position' })).toHaveValue('0');
     expect(screen.getAllByText('20.00 s', { selector: '.robot-library-meta span' })).toHaveLength(2);
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
     expect(screen.getByText(playHint)).toBeInTheDocument();
@@ -108,7 +108,7 @@ describe('welcome flow', () => {
 
     fireEvent.click(screen.getByText('#AAAAAA × #BBBBBB', { selector: '.conflict-pair' }).closest('button')!);
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
-    expect(Number((screen.getByRole('slider') as HTMLInputElement).value)).toBeCloseTo(10);
+    expect(Number((screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement).value)).toBeCloseTo(10);
     expect(screen.queryByText(checkHint)).not.toBeInTheDocument();
     expect(localStorage.getItem('pb.tip.checks.v1')).toBe('done');
   });

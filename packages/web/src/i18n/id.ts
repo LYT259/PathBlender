@@ -123,6 +123,8 @@ export const id = {
   'field.style.rendered': 'Dirender',
   'conflicts.title': 'Konflik',
   'conflicts.minSep': 'pendekatan terdekat {d} pada t={t} s ({a} × {b})',
+  'conflicts.toleranceBadge': 'geser ±{delta} d',
+  'checks.tolerance': 'Pemeriksaan toleransi: kasus terburuk ±{delta} detik',
   'conflicts.item': '{start}–{end} s · terdekat {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
   

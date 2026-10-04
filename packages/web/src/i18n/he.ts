@@ -142,8 +142,9 @@ export const he: Record<MessageKey, string> = {
 
   'field.style.rendered': 'מצויר',
   'conflicts.title': 'התנגשויות',
-  'conflicts.minSep':
-    'התקרבות מזערית {d} בזמן {t} ש׳ (\u2068{a} × {b}\u2069)',
+  'conflicts.minSep': 'התקרבות מזערית {d} בזמן {t} ש׳ (\u2068{a} × {b}\u2069)',
+'conflicts.toleranceBadge': 'החלקה ±{delta} ש׳',
+  'checks.tolerance': 'בדיקת טולרנס: מקרה גרוע ביותר ±{delta} שניות',
   'conflicts.item': '{start}–{end} ש׳ · הכי קרוב {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 
