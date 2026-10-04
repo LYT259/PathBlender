@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deserializeSession, serializeSession } from '@pathblender/core';
 import { createWelcomeExample } from '../src/welcome-example';
-import { isExampleRobot } from '../src/example-robot';
+import { isExampleRobot, refreshExampleRobots } from '../src/example-robot';
 
 describe('isExampleRobot (End-example affordance)', () => {
   it('recognizes fresh demo robots', () => {
@@ -45,5 +45,67 @@ describe('isExampleRobot (End-example affordance)', () => {
       trajectory: { ...robots[0]!.trajectory, id: crypto.randomUUID() },
     };
     expect(isExampleRobot(realSameName)).toBe(false);
+  });
+});
+
+describe('refreshExampleRobots (stale-example swap on restore, 2026-10-04)', () => {
+  it('replaces current-generation demo robots with a fresh example set', () => {
+    const { robots } = createWelcomeExample();
+    // A stale copy from an older build: same stable ids, old identity/routes.
+    const stale = robots.map((r, i) => ({
+      ...r,
+      routeOptions: [],
+      trajectory: { ...r.trajectory, teamNumber: `000${i + 1}` },
+    }));
+    const out = refreshExampleRobots(stale, createWelcomeExample().robots);
+    expect(out.map((r) => r.trajectory.teamNumber)).toEqual(['8814', '11019']);
+    expect(out.map((r) => r.routeOptions?.length)).toEqual([22, 20]);
+    expect(out.every(isExampleRobot)).toBe(true);
+  });
+
+  it('matches the pre-rename generation (0001/0002) by example ordinal', () => {
+    const { robots } = createWelcomeExample();
+    const legacy = robots.map((r, i) => ({
+      ...r,
+      trajectory: {
+        ...r.trajectory,
+        id: crypto.randomUUID(),
+        name: i === 0 ? '示例路径 A' : 'Example path B',
+        teamNumber: `000${i + 1}`,
+      },
+    }));
+    const out = refreshExampleRobots(legacy, createWelcomeExample().robots);
+    expect(out.map((r) => r.trajectory.teamNumber)).toEqual(['8814', '11019']);
+    expect(out.map((r) => r.routeOptions?.length)).toEqual([22, 20]);
+    expect(out.every(isExampleRobot)).toBe(true);
+  });
+
+  it('swaps only the example robot in a mixed session', () => {
+    const { robots } = createWelcomeExample();
+    const legacyExample = {
+      ...robots[0]!,
+      trajectory: { ...robots[0]!.trajectory, id: crypto.randomUUID(), name: '示例路径 A', teamNumber: '0001' },
+    };
+    // Adopted robot (routeId set): user work, never touched.
+    const mine = {
+      ...robots[1]!,
+      routeId: 'route-1',
+      trajectory: { ...robots[1]!.trajectory, id: 'my-robot', teamNumber: '1234' },
+    };
+    const out = refreshExampleRobots([legacyExample, mine], createWelcomeExample().robots);
+    expect(out).toHaveLength(2);
+    expect(out[0]!.trajectory.teamNumber).toBe('8814');
+    expect(out[1]).toBe(mine);
+  });
+
+  it('leaves surplus stale robots untouched rather than dropping them', () => {
+    const { robots } = createWelcomeExample();
+    const third = {
+      ...robots[0]!,
+      trajectory: { ...robots[0]!.trajectory, id: crypto.randomUUID(), name: 'Example path B', teamNumber: '0003' },
+    };
+    const out = refreshExampleRobots([...robots, third], createWelcomeExample().robots);
+    expect(out).toHaveLength(3);
+    expect(out[2]).toBe(third);
   });
 });

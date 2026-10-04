@@ -84,7 +84,7 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
           value={playbackRange}
           onChange={(event) => onPlaybackRangeChange(event.target.value as PlaybackRange)}
         >
-          <option value="full">{tr('timeline.rangeFull', { seconds: axisMax })}</option>
+          <option value="full">{tr('timeline.rangeFull')}</option>
           <option value="paths">{tr('timeline.rangePaths', { seconds: Number(playbackEnd(duration, autoPeriodS, 'paths').toFixed(2)) })}</option>
         </select>}
         {robots.length > 0 && (
