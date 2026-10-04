@@ -23,7 +23,7 @@ function ghostRobot(): SessionTrajectory {
   return { ...makeSession(trajectory), routeId: 'a', routeOptions: [{ id: 'a', relPath: 'team/A.ghostauto', trajectory }] };
 }
 
-beforeEach(() => { localStorage.clear(); localStorage.setItem('pb.lang', 'en'); vi.clearAllMocks(); });
+beforeEach(() => { localStorage.clear(); localStorage.setItem('pb.lang', 'en'); localStorage.setItem('pb.lengthUnit', 'm'); vi.clearAllMocks(); });
 
 describe('applyUploadedProfile', () => {
   it('applies the profile to the robot and every library route, regenerating PathPlanner timing', () => {
