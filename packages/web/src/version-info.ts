@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.22';
+export const APP_VERSION = '0.1.7-beta.23';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.23', date: '2026.10.04', note: {
+    en: 'Import hints point at attachable profile files; Choreo wheel forces near the traction limit now warn',
+    zh: '导入提示指向可附带的参数文件；Choreo 轮上力接近打滑极限时给出警示',
+    'zh-tw': '匯入提示指向可附帶的參數檔案；Choreo 輪上力接近打滑極限時給出警示',
+    cs: 'Tipy při importu odkazují na připojitelné soubory profilu; síly kol Choreo blízko limitu trakce nyní varují',
+    nl: 'Importtips verwijzen naar bij te voegen profielbestanden; wielkrachten van Choreo nabij de tractielimiet waarschuwen nu',
+    fr: 'Les conseils d’import pointent vers les fichiers de profil à joindre ; les forces de roue Choreo proches de la limite d’adhérence alertent désormais',
+    he: 'טיפים בייבוא מפנים לקבצי פרופיל ניתנים לצירוף; כוחות גלגל של Choreo קרובים לגבול האחיזה מתריעים כעת',
+    ja: 'インポートのヒントが添付可能なプロファイルファイルを示します；Choreo の車輪力がグリップ限界に近いと警告します',
+    ko: '가져오기 힌트가 첨부 가능한 프로필 파일을 알려주고, Choreo 휠 힘이 마찰 한계에 가까우면 경고합니다',
+    pl: 'Wskazówki importu odsyłają do plików profilu; siły kół Choreo blisko granicy przyczepności ostrzegają',
+    'pt-br': 'As dicas de importação apontam para arquivos de perfil anexáveis; forças de roda do Choreo perto do limite de tração agora avisam',
+    es: 'Las pistas de importación señalan archivos de perfil adjuntables; las fuerzas de rueda de Choreo cerca del límite de tracción ahora avisan',
+    tr: 'İçe aktarma ipuçları eklenebilir profil dosyalarını gösteriyor; çekiş sınırına yakın Choreo teker kuvvetleri artık uyarıyor',
+  } },
   { version: '0.1.7-beta.22', date: '2026.10.04', note: {
     en: 'Opponent mode: mark robots as opponents for faded rendering and defense-focused conflict notes; text conflict reports export',
     zh: '对手模式：可把机器人标记为对手（淡化渲染、冲突按防反标注），支持导出文字版冲突报告',
