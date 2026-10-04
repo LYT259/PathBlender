@@ -175,16 +175,36 @@ describe('welcome flow', () => {
     expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
   });
 
-  it('ends only the example paths after a real file is imported', async () => {
+  it('ending the example always returns to the welcome page, even with an imported robot present', async () => {
     render(<App />);
     await openExample();
     fireEvent.drop(window, { dataTransfer: { files: [new File([sampleText], 'straight_run.ghostauto')] } });
     await screen.findByText('#0001', { selector: '.robot-name' });
+    // User 2026-10-04: the old behavior re-shown the imported robot here,
+    // which read as "exiting into another workspace" instead of going home.
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
+    expect(screen.getByRole('region', { name: 'Import paths to get started' })).toBeInTheDocument();
+    expect(document.querySelectorAll('.robot-library-row')).toHaveLength(0);
     expect(screen.queryByText('#8814', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.queryByText('#11019', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.queryByText('Real 2026 routes from FRC teams 8814 and 11019.')).not.toBeInTheDocument();
+  });
+
+  it('ending the example lands on the welcome page after a route pick adopts a demo robot', async () => {
+    render(<App />);
+    await openExample();
+    // Picking a library route sets routeId, which adopts the robot — it is
+    // no longer an example robot (the reported "exits into another
+    // workspace" flow).
+    const picker = screen.getByRole('combobox', { name: 'Active route for #8814' });
+    const options = within(picker).getAllByRole('option') as HTMLOptionElement[];
+    fireEvent.change(picker, { target: { value: options[1]!.value } });
+    expect(screen.getByRole('button', { name: 'End example' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'End example' }));
+    expect(screen.getByRole('region', { name: 'Import paths to get started' })).toBeInTheDocument();
+    expect(document.querySelectorAll('.robot-library-row')).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: 'End example' })).not.toBeInTheDocument();
   });
 
   it('lists each route exactly once in the picker, with the library L1 as the current one', async () => {
@@ -230,7 +250,7 @@ describe('welcome flow', () => {
     expect(screen.getByText('#8814 × #11019', { selector: '.conflict-pair' })).toBeInTheDocument();
   });
 
-  it('adds a folder as its own team while the example is open, and keeps it after ending the example', async () => {
+  it('adding a folder team while the example is open, then ending, lands on the welcome page', async () => {
     render(<App />);
     await openExample();
     const route = new File([sampleText], 'straight_run.ghostauto');
@@ -241,8 +261,8 @@ describe('welcome flow', () => {
     expect(screen.getByRole('combobox', { name: 'Active route for #8814' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Active route for #11019' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
-    expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1);
-    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Import paths to get started' })).toBeInTheDocument();
+    expect(document.querySelectorAll('.robot-library-row')).toHaveLength(0);
     expect(document.querySelector('.route-library-panel')).toBeNull();
     expect(screen.queryByRole('button', { name: 'End example' })).not.toBeInTheDocument();
   });
