@@ -20,43 +20,44 @@ describe('bumper presentation', () => {
     expect(bounds.max.z).toBeCloseTo(-0.02 + 0.8 / 2, 6);
   });
 
-  it('builds four congruent mitered trapezoid rails on a square chassis (2026-10-04)', () => {
+  it('builds one continuous closed bumper ring around the footprint (2026-10-04)', () => {
     const square = {
       outer: { lengthM: 0.889, widthM: 0.889, offsetX: 0, offsetY: 0 },
       chassis: { lengthM: 0.8, widthM: 0.8, offsetX: 0, offsetY: 0 },
       bumperDepthM: 0.1016,
     };
     const { group } = buildChassis3D(square, [], bumperColor('red'));
-    const rails: THREE.Mesh[] = [];
-    group.traverse((o) => { if (o.name === 'bumper-rail') rails.push(o as THREE.Mesh); });
-    expect(rails).toHaveLength(4);
-    // Signed-tetrahedron volume of each rail, in world space.
-    const volume = (mesh: THREE.Mesh): number => {
-      mesh.updateWorldMatrix(true, false);
-      const pos = mesh.geometry.getAttribute('position');
-      const idx = mesh.geometry.getIndex();
-      const a = new THREE.Vector3(); const b = new THREE.Vector3(); const c = new THREE.Vector3();
-      const cross = new THREE.Vector3();
-      let vol = 0;
-      const tris = (idx ? idx.count : pos.count) / 3;
-      for (let t = 0; t < tris; t++) {
-        const [ia, ib, ic] = idx ? [idx.getX(t * 3), idx.getX(t * 3 + 1), idx.getX(t * 3 + 2)] : [t * 3, t * 3 + 1, t * 3 + 2];
-        a.fromBufferAttribute(pos, ia).applyMatrix4(mesh.matrixWorld);
-        b.fromBufferAttribute(pos, ib).applyMatrix4(mesh.matrixWorld);
-        c.fromBufferAttribute(pos, ic).applyMatrix4(mesh.matrixWorld);
-        vol += a.dot(cross.crossVectors(b, c)) / 6;
-      }
-      return Math.abs(vol);
-    };
-    const volumes = rails.map(volume);
-    // The user's core ask: every rail carries the SAME area/volume.
-    for (const v of volumes) expect(v).toBeCloseTo(volumes[0]!, 8);
-    // And each is the isosceles-trapezoid prism: (L + (L−2d))/2 × d × H.
-    const bounds = new THREE.Box3().setFromObject(rails[0]!);
+    const rings: THREE.Mesh[] = [];
+    group.traverse((o) => { if (o.name === 'bumper-rail') rings.push(o as THREE.Mesh); });
+    // The user's core ask: a single seamless band, not four rails.
+    expect(rings).toHaveLength(1);
+    // Signed-tetrahedron volume of the ring, in world space.
+    const mesh = rings[0]!;
+    mesh.updateWorldMatrix(true, false);
+    const pos = mesh.geometry.getAttribute('position');
+    const idx = mesh.geometry.getIndex();
+    const a = new THREE.Vector3(); const b = new THREE.Vector3(); const c = new THREE.Vector3();
+    const cross = new THREE.Vector3();
+    let vol = 0;
+    const tris = (idx ? idx.count : pos.count) / 3;
+    for (let t = 0; t < tris; t++) {
+      const [ia, ib, ic] = idx ? [idx.getX(t * 3), idx.getX(t * 3 + 1), idx.getX(t * 3 + 2)] : [t * 3, t * 3 + 1, t * 3 + 2];
+      a.fromBufferAttribute(pos, ia).applyMatrix4(mesh.matrixWorld);
+      b.fromBufferAttribute(pos, ib).applyMatrix4(mesh.matrixWorld);
+      c.fromBufferAttribute(pos, ic).applyMatrix4(mesh.matrixWorld);
+      vol += a.dot(cross.crossVectors(b, c)) / 6;
+    }
+    // Square ring prism: (outer square − inner square) × height.
+    const bounds = new THREE.Box3().setFromObject(mesh);
     const h = bounds.max.y - bounds.min.y;
     const L = 0.889; const d = 0.1016;
-    const expected = ((L + (L - 2 * d)) / 2) * d * h;
-    expect(volumes[0]!).toBeCloseTo(expected, 6);
+    const expected = (L * L - (L - 2 * d) * (L - 2 * d)) * h;
+    expect(Math.abs(vol)).toBeCloseTo(expected, 6);
+    // The ring spans the full outer square on both axes.
+    expect(bounds.min.x).toBeCloseTo(-L / 2, 6);
+    expect(bounds.max.x).toBeCloseTo(L / 2, 6);
+    expect(bounds.min.z).toBeCloseTo(-L / 2, 6);
+    expect(bounds.max.z).toBeCloseTo(L / 2, 6);
   });
 
   it('centers all four number decals and places both negative faces outside the rail', () => {
