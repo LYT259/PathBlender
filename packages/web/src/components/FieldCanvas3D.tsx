@@ -462,15 +462,29 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       camera.lookAt(controls.target);
       markDirty();
     };
-    // Scheme routing (verified against Onshape's settings table
-    // 2026-10-03; the pure table lives in mouse-controls.resolveMouseAction):
+    // Scheme routing (verified against Onshape's settings table 2026-10-03
+    // and SOLIDWORKS' view docs 2026-10-04; the pure table lives in
+    // mouse-controls.resolveMouseAction):
     //   onshape — right drag = orbit, Alt+right = constrained orbit,
     //             Ctrl+right OR middle = pan, wheel = zoom.
-    //   solidworks — middle = orbit, Alt+middle = constrained orbit,
-    //             Ctrl+middle = pan, Shift+middle = drag-zoom, wheel = zoom.
+    //   solidworks — middle = orbit, Alt+middle = ROLL (spin in the screen
+    //             plane), Ctrl+middle = pan, Shift+middle = drag-zoom,
+    //             wheel = zoom.
     // Left does nothing in either scheme (a viewer has no selection).
     const pan = { active: false, x: 0, y: 0 };
     const dragZoom = { active: false, lastY: 0 };
+    const roll = { active: false, x: 0 };
+    // Roll view (SOLIDWORKS Alt+middle): spin the camera about its own view
+    // axis — only the up vector moves, position/target (and therefore
+    // OrbitControls' spherical state) stay put. Drag right rolls the field
+    // clockwise on screen: the camera up-vector tips the opposite way.
+    // OrbitControls caches its up-frame quaternion at construction, so the
+    // moving up vector does not disturb damping or the polar clamps.
+    const applyRoll = (dx: number) => {
+      const axis = controls.target.clone().sub(camera.position).normalize();
+      camera.up.applyAxisAngle(axis, -dx * 0.0052);
+      camera.lookAt(controls.target);
+    };
     const onDragDown = (e: PointerEvent) => {
       // Pen gate: a stylus only drives the view when "use pen as mouse".
       if (e.pointerType === 'pen' && !penAsMouseRef.current) return;
@@ -492,6 +506,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         pan.active = true;
         pan.x = e.clientX;
         pan.y = e.clientY;
+      } else if (action.kind === 'roll') {
+        roll.active = true;
+        roll.x = e.clientX;
       } else {
         // dragZoom: aim the dolly at the press point (same NDC anchor the
         // pinch chase uses), then feed vertical drag through applyPinchStep.
@@ -534,6 +551,21 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       renderer.domElement.releasePointerCapture(e.pointerId);
       endInteraction();
     };
+    const onRollMove = (e: PointerEvent) => {
+      if (!roll.active) return;
+      const dx = e.clientX - roll.x;
+      roll.x = e.clientX;
+      if (dx === 0) return;
+      noteInteraction();
+      applyRoll(dx);
+      markDirty();
+    };
+    const onRollUp = (e: PointerEvent) => {
+      if (!roll.active) return;
+      roll.active = false;
+      renderer.domElement.releasePointerCapture(e.pointerId);
+      endInteraction();
+    };
     const onDragMove = (e: PointerEvent) => {
       if (!drag.active) return;
       const ROT = 0.0052; // rad per px — the flat-field-era sensitivity
@@ -567,6 +599,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     renderer.domElement.addEventListener('pointercancel', onPanUp);
     renderer.domElement.addEventListener('pointerup', onDragZoomUp);
     renderer.domElement.addEventListener('pointercancel', onDragZoomUp);
+    renderer.domElement.addEventListener('pointermove', onRollMove);
+    renderer.domElement.addEventListener('pointerup', onRollUp);
+    renderer.domElement.addEventListener('pointercancel', onRollUp);
 
     // Trackpad two-finger horizontal swipes arrive as wheel deltaX, which
     // OrbitControls ignores — turn them into azimuth rotation so "dragging
@@ -957,7 +992,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         pinchChase.factor = stepped.remaining;
         markDirty();
       }
-      const interacting = now < interactiveUntil || pinchChase.factor !== 1 || drag.active;
+      const interacting = now < interactiveUntil || pinchChase.factor !== 1 || drag.active || roll.active;
       if (interacting !== lowQuality) {
         setLowQuality(interacting);
         // Restore repaints immediately: setPixelRatio resizes (clears) the
@@ -997,6 +1032,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       renderer.domElement.removeEventListener('pointercancel', onDragUp);
       renderer.domElement.removeEventListener('pointerup', onPanUp);
       renderer.domElement.removeEventListener('pointercancel', onPanUp);
+      renderer.domElement.removeEventListener('pointermove', onDragZoomMove);
+      renderer.domElement.removeEventListener('pointerup', onDragZoomUp);
+      renderer.domElement.removeEventListener('pointercancel', onDragZoomUp);
+      renderer.domElement.removeEventListener('pointermove', onRollMove);
+      renderer.domElement.removeEventListener('pointerup', onRollUp);
+      renderer.domElement.removeEventListener('pointercancel', onRollUp);
       renderer.domElement.removeEventListener('wheel', onWheelX);
       host.removeEventListener('wheel', onWheelZoomSpeed, { capture: true });
       renderer.domElement.removeEventListener('gesturestart', onGestureStart);
