@@ -98,7 +98,7 @@ export const sq = {
   'robots.title': 'Robotë ({n})',
   'robots.remove': 'Hiq',
   'robots.collision': 'përplasje',
-  'robots.teamNumberEdit': 'Redakto numrin e ekipës',
+  'robots.teamNumberEdit': "Ndrysho emrin e shfaqur",
   'robots.alliance': 'aleancë',
   'robots.blue': 'Blu',
   'robots.red': 'Kuqe',

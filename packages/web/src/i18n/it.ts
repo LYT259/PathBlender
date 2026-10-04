@@ -120,7 +120,7 @@ export const it = {
   'robots.title': 'Robot ({n})',
   'robots.remove': 'Rimuovi',
   'robots.collision': 'collisione',
-  'robots.teamNumberEdit': 'Modifica numero team',
+  'robots.teamNumberEdit': "Modifica nome visualizzato",
   'robots.alliance': 'alleanza',
   'robots.blue': 'Blu',
   'robots.red': 'Rosso',

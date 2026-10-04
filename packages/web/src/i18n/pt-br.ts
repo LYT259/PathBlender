@@ -132,7 +132,7 @@ export const ptBR: Record<MessageKey, string> = {
   'robots.title': 'Robôs ({n})',
   'robots.remove': 'Remover',
   'robots.collision': 'colisão',
-  'robots.teamNumberEdit': 'Editar número do time',
+  'robots.teamNumberEdit': "Editar nome de exibição",
   'robots.alliance': 'aliança',
   'robots.blue': 'Azul',
   'robots.red': 'Vermelho',

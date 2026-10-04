@@ -98,7 +98,7 @@ export const hu = {
   'robots.title': 'Robotok ({n})',
   'robots.remove': 'Eltávolítás',
   'robots.collision': 'ütközés',
-  'robots.teamNumberEdit': 'Csapatszám szerkesztése',
+  'robots.teamNumberEdit': "Megjelenített név szerkesztése",
   'robots.alliance': 'szövetség',
   'robots.blue': 'Kék',
   'robots.red': 'Piros',

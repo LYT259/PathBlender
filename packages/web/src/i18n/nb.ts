@@ -98,7 +98,7 @@ export const nb = {
   'robots.title': 'Roboter ({n})',
   'robots.remove': "Fjern",
   'robots.collision': "kollisjon",
-  'robots.teamNumberEdit': "Rediger lagnummer",
+  'robots.teamNumberEdit': "Rediger visningsnavn",
   'robots.alliance': "allianse",
   'robots.blue': "Blå",
   'robots.red': "Rød",

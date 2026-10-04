@@ -98,7 +98,7 @@ export const bg = {
   'robots.title': 'Роботи ({n})',
   'robots.remove': 'Премахни',
   'robots.collision': 'сблъсък',
-  'robots.teamNumberEdit': 'Редактиране на номера на отряда',
+  'robots.teamNumberEdit': "Редактиране на показваното име",
   'robots.alliance': 'коалиция',
   'robots.blue': 'Синьо',
   'robots.red': 'Червено',

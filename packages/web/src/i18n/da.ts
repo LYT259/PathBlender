@@ -98,7 +98,7 @@ export const da = {
   'robots.title': 'Robotter ({n})',
   'robots.remove': "Fjern",
   'robots.collision': "kollision",
-  'robots.teamNumberEdit': "Rediger holdnummer",
+  'robots.teamNumberEdit': "Rediger visningsnavn",
   'robots.alliance': "alliance",
   'robots.blue': "Blå",
   'robots.red': "Rød",

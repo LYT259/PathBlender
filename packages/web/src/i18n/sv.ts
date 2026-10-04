@@ -98,7 +98,7 @@ export const sv = {
   'robots.title': 'Robotar ({n})',
   'robots.remove': 'Ta bort',
   'robots.collision': 'kollision',
-  'robots.teamNumberEdit': 'Redigera lagnummer',
+  'robots.teamNumberEdit': "Redigera visningsnamn",
   'robots.alliance': 'allians',
   'robots.blue': 'Blå',
   'robots.red': 'Röd',
