@@ -46,6 +46,7 @@ export const es: Record<MessageKey, string> = {
   'workspace.closeRobotDetails': "Cerrar detalles del robot",
   'workspace.undo': "Deshacer",
   'workspace.redo': "Rehacer",
+  'workspace.home': "Volver al inicio",
   "workspace.more": "Más acciones",
   "workspace.season": "Temporada",
   "workspace.edit2d": "Termina la edición para pasar a 3D",

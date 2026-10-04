@@ -50,6 +50,7 @@ export const cs: Record<MessageKey, string> = {
   'workspace.closeRobotDetails': "Zavřít podrobnosti robota",
   'workspace.undo': "Zpět",
   'workspace.redo': "Znovu",
+  'workspace.home': "Zpět na úvod",
   "workspace.more": "Další akce",
   "workspace.season": "Sezóna",
   "workspace.edit2d": "Pro přepnutí do 3D dokončete úpravy",

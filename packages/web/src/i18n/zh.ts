@@ -41,6 +41,7 @@ export const zh: Record<MessageKey, string> = {
   'workspace.closeRobotDetails': "关闭机器人详情",
   'workspace.undo': "撤销",
   'workspace.redo': "重做",
+  'workspace.home': "回到首页",
   "workspace.more": "更多操作",
   "workspace.season": "比赛赛季",
   "workspace.edit2d": "完成路径调整后可切换 3D",

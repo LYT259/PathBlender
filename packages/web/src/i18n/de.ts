@@ -39,6 +39,7 @@ export const de = {
   'workspace.closeRobotDetails': "Roboterdetails schließen",
   'workspace.undo': "Rückgängig",
   'workspace.redo': "Wiederholen",
+  'workspace.home': "Zurück zur Startseite",
   "workspace.more": "Weitere Aktionen",
   "workspace.season": "Spielsaison",
   "workspace.edit2d": "Bearbeitung beenden, um zu 3D zu wechseln",
