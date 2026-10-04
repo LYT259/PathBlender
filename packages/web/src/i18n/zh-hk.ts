@@ -25,6 +25,7 @@ export const zhHkOverrides: Partial<Record<MessageKey, string>> = {
   'updates.failed': '更新檢查失敗，請檢查網絡後重試',
   // "details": HK UI convention is 詳細資料; TW Microsoft uses 詳細資訊.
   'robots.selectPrompt': '選擇一台機器人查看詳細資料。',
+  'sequence.pickerDisabled': '已組為自動組合——請在機器人詳細資料面板中編輯。',
 };
 
 /** What `DICTS` consumes: the Taiwan dictionary with the HK rows applied. */
