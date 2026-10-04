@@ -102,7 +102,7 @@ describe('robot workspace controls', () => {
     const sample = robot();
     sample.trajectory.teamNumber = '0001';
     sample.trajectory.displayName = 'My Robot';
-    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} sequence={inspectorSequence(sample)} /></I18nProvider>);
     // Display names label the list, playback bar and field; the details
     // panel sticks to the imported #teamNumber/name rule.
     expect(screen.getByRole('heading', { name: '#0001' })).toBeInTheDocument();
