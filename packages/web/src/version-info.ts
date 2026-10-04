@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.16';
+export const APP_VERSION = '0.1.7-beta.17';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.17', date: '2026.10.04', note: { en: 'MK5i 模组盒子按官方图纸内移 41mm（轮子偏置靠角）/ MK5i box offset 41mm inboard, wheel biased to corner per SDS drawing' } },
   { version: '0.1.7-beta.16', date: '2026.10.04', note: {
     en: 'Settings: SOLIDWORKS Alt+middle now rolls the view, wheel direction follows each scheme, feet and yards are real units',
     zh: '设置：SOLIDWORKS 的 Alt+中键现在为滚转视图，滚轮方向跟随所选方案，英尺和码成为正式单位',
