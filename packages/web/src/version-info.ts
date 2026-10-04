@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.1';
+export const APP_VERSION = '0.1.8-beta.2';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.2', date: '2026.10.04', note: {
+    en: 'Welcome example now uses real 2026 route libraries from FRC teams 8814 and 11019',
+    zh: '体验示例换成真实队伍 8814 与 11019 的 2026 路线库',
+    'zh-tw': '體驗示例換成真實隊伍 8814 與 11019 的 2026 路線庫',
+    cs: 'Ukázkový příklad nyní používá skutečné trasy sezóny 2026 týmů FRC 8814 a 11019',
+    nl: 'Het welkomstvoorbeeld gebruikt nu echte 2026-routes van FRC-teams 8814 en 11019',
+    fr: 'L’exemple d’accueil utilise désormais les parcours réels 2026 des équipes FRC 8814 et 11019',
+    he: 'דוגמת הפתיחה מציגה כעת מסלולי 2026 אמיתיים של קבוצות FRC 8814 ו-11019',
+    ja: '体験サンプルが FRC チーム 8814・11019 の実際の 2026 ルートライブラリになりました',
+    ko: '체험 예시가 이제 FRC 팀 8814와 11019의 실제 2026 경로 라이브러리를 사용합니다',
+    pl: 'Przykład powitalny używa teraz prawdziwych tras sezonu 2026 drużyn FRC 8814 i 11019',
+    'pt-br': 'O exemplo de boas-vindas agora usa trajetórias reais de 2026 das equipes FRC 8814 e 11019',
+    es: 'El ejemplo de bienvenida ahora usa rutas reales de 2026 de los equipos FRC 8814 y 11019',
+    tr: 'Karşılama örneği artık FRC takımları 8814 ve 11019\'un gerçek 2026 rota kütüphanelerini kullanıyor',
+  } },
   { version: '0.1.8-beta.1', date: '2026.10.04', note: {
     en: 'MK5i module body shifted 41 mm inboard per the official SDS drawing — the wheel now sits biased to the drivebase corner',
     zh: 'MK5i 模组本体按 SDS 官方图纸内移 41mm——轮子改为偏置在底盘角上',

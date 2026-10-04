@@ -21,7 +21,7 @@ export const bs = {
   'welcome.exampleNameA': 'Primjer rute A',
   'welcome.exampleNameB': 'Primjer rute B',
   'welcome.exampleBadge': 'Primjer',
-  'welcome.exampleNotice': 'Izmišljene rute za istraživanje aplikacije.',
+  'welcome.exampleNotice': 'Stvarne rute za sezonu 2026 ekipa FRC 8814 i 11019.',
   'welcome.exitExample': 'Završi primjer',
   'onboarding.play': 'Pritisnite Reproduciraj da vidite rute ili prevucite vremensku liniju.',
   'onboarding.check': 'Odaberite problem dolje da skočite na taj trenutak.',

@@ -21,7 +21,7 @@ export const sq = {
   'welcome.exampleNameA': 'Rruga shembull A',
   'welcome.exampleNameB': 'Rruga shembull B',
   'welcome.exampleBadge': 'Shembull',
-  'welcome.exampleNotice': 'Rrugë fiktive për eksplorimin e aplikacionit.',
+  'welcome.exampleNotice': 'Rrugë reale të sezonit 2026 nga ekipet FRC 8814 dhe 11019.',
   'welcome.exitExample': 'Përfundo shembullin',
   'onboarding.play': 'Shtypni Luaj për të parë rrugët ose tërhiqni boshtin kohor.',
   'onboarding.check': 'Zgjidhni një problem më poshtë për të kaluar në atë moment.',

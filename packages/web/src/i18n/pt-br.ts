@@ -34,7 +34,7 @@ export const ptBR: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'Trajetória de exemplo A',
   'welcome.exampleNameB': 'Trajetória de exemplo B',
   'welcome.exampleBadge': 'Exemplo',
-  'welcome.exampleNotice': 'Trajetórias fictícias para explorar o aplicativo.',
+  'welcome.exampleNotice': 'Trajetórias reais da temporada 2026 das equipes FRC 8814 e 11019.',
   'welcome.exitExample': 'Encerrar exemplo',
   'onboarding.play': 'Pressione Reproduzir para ver as trajetórias, ou arraste a linha do tempo.',
   'onboarding.check': 'Selecione um item abaixo para pular para aquele momento.',

@@ -23,7 +23,7 @@ export const hi = {
   'welcome.exampleNameA': 'उदाहरण पथ A',
   'welcome.exampleNameB': 'उदाहरण पथ B',
   'welcome.exampleBadge': 'उदाहरण',
-  'welcome.exampleNotice': 'ऐप एक्सप्लोर करने के लिए काल्पनिक पथ।',
+  'welcome.exampleNotice': 'FRC टीमों 8814 और 11019 के 2026 सीज़न के वास्तविक मार्ग।',
   'welcome.exitExample': 'उदाहरण समाप्त करें',
   'onboarding.play': 'पथ देखने के लिए Play दबाएं, या टाइमलाइन स्क्रब करें।',
   'onboarding.check': 'उस क्षण पर जाने के लिए नीचे कोई समस्या चुनें।',

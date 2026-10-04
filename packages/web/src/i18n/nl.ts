@@ -34,7 +34,7 @@ export const nl: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'Voorbeeldroute A',
   'welcome.exampleNameB': 'Voorbeeldroute B',
   'welcome.exampleBadge': 'Voorbeeld',
-  'welcome.exampleNotice': 'Fictieve routes om de app te verkennen.',
+  'welcome.exampleNotice': 'Echte routes uit het seizoen 2026 van FRC-teams 8814 en 11019.',
   'welcome.exitExample': 'Voorbeeld beëindigen',
   'onboarding.play': 'Druk op Afspelen om de routes te zien, of sleep over de tijdlijn.',
   'onboarding.check': 'Selecteer hieronder een bevinding om naar dat moment te springen.',

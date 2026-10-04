@@ -23,7 +23,7 @@ export const fil = {
   'welcome.exampleNameA': 'Halimbawang path A',
   'welcome.exampleNameB': 'Halimbawang path B',
   'welcome.exampleBadge': 'Halimbawa',
-  'welcome.exampleNotice': 'Mga kathang-isip na path para tuklasin ang app.',
+  'welcome.exampleNotice': 'Totoong mga ruta ng 2026 season mula sa mga koponan ng FRC na 8814 at 11019.',
   'welcome.exitExample': 'Tapusin ang halimbawa',
   'onboarding.play': 'Pindutin ang Play para makita ang mga path, o i-scrub ang timeline.',
   'onboarding.check': 'Pumili ng isyu sa ibaba para tumalon sa sandaling iyon.',

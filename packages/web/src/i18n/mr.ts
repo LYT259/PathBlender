@@ -23,7 +23,7 @@ export const mr = {
   'welcome.exampleNameA': 'उदाहरण मार्ग A',
   'welcome.exampleNameB': 'उदाहरण मार्ग B',
   'welcome.exampleBadge': 'उदाहरण',
-  'welcome.exampleNotice': 'अ‍ॅप एक्सप्लोर करण्यासाठी काल्पनिक मार्ग.',
+  'welcome.exampleNotice': 'FRC संघ 8814 आणि 11019 चे 2026 हंगामातील खरे मार्ग.',
   'welcome.exitExample': 'उदाहरण संपवा',
   'onboarding.play': 'मार्ग पाहण्यासाठी Play दाबा किंवा टाइमलाइन स्क्रब करा.',
   'onboarding.check': 'त्या क्षणावर जाण्यासाठी खाली समस्या निवडा.',

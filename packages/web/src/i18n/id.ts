@@ -23,7 +23,7 @@ export const id = {
   'welcome.exampleNameA': 'Jalur contoh A',
   'welcome.exampleNameB': 'Jalur contoh B',
   'welcome.exampleBadge': 'Contoh',
-  'welcome.exampleNotice': 'Jalur fiktif untuk menjelajahi aplikasi.',
+  'welcome.exampleNotice': 'Rute asli musim 2026 dari tim FRC 8814 dan 11019.',
   'welcome.exitExample': 'Akhiri contoh',
   'onboarding.play': 'Tekan Putar untuk melihat jalur, atau geser linimasa.',
   'onboarding.check': 'Pilih masalah di bawah untuk melompat ke momen itu.',
