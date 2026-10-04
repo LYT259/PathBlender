@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.13';
+export const APP_VERSION = '0.1.8-beta.14';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.14', date: '2026.10.04', note: {
+    en: 'The settings window drags again from its top strip, and the sidebar color now runs continuously to the top of the window',
+    zh: '设置窗口顶部区域恢复可拖动，左侧边栏颜色向上贯穿到窗口顶边、不再有横向色差',
+    'zh-tw': '設定視窗頂部區域恢復可拖動，左側邊欄顏色向上貫穿到視窗頂邊、不再有橫向色差',
+    cs: 'Okno nastavení lze opět táhnout za horní pruh a barva postranního panelu nyní probíhá souvisle až k hornímu okraji okna',
+    nl: 'Het instellingenvenster sleept weer vanaf de bovenrand en de kleur van de zijbalk loopt nu ononderbroken door tot bovenin het venster',
+    fr: 'La fenêtre des réglages se déplace à nouveau depuis sa bande supérieure, et la couleur de la barre latérale court désormais en continu jusqu’en haut de la fenêtre',
+    he: 'חלון ההגדרות נגרר שוב מאזור החלק העליון, וצבע סרגל הצד רץ כעת ברציפות עד קצה החלון העליון',
+    ja: '設定ウィンドウが再び上部の帯からドラッグできるようになり、サイドバーの色がウィンドウの上端まで切れ目なく続くようになりました',
+    ko: '이제 설정 창을 상단 영역으로 다시 드래그할 수 있으며, 사이드바 색상이 창 상단까지 끊김 없이 이어집니다',
+    pl: 'Okno ustawień znów przeciąga się za górny pasek, a kolor panelu bocznego biegnie teraz nieprzerwanie aż do górnej krawędzi okna',
+    'pt-br': 'A janela de ajustes volta a ser arrastada pela faixa superior, e a cor da barra lateral agora segue contínua até o topo da janela',
+    es: 'La ventana de ajustes vuelve a arrastrarse desde su franja superior y el color de la barra lateral ahora llega continuo hasta el borde superior de la ventana',
+    tr: 'Ayarlar penceresi yine üst şeridinden sürüklenebiliyor ve kenar çubuğu rengi artık pencerenin üst kenarına kadar kesintisiz uzanıyor',
+  } },
   { version: '0.1.8-beta.13', date: '2026.10.04', note: {
     en: 'The macOS About window now shows the build\'s git commit hash, so any installed copy can be traced to its exact code',
     zh: 'macOS 关于窗口现在显示本次构建的 git 提交哈希，任何安装副本都能追溯到确切代码',
