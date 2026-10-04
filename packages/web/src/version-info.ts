@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.23';
+export const APP_VERSION = '0.1.7-beta.24';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.24', date: '2026.10.04', note: {
+    en: 'Colorblind-safe robot palette in settings; one-click demo mode replays the example match',
+    zh: '设置新增色盲安全配色；一键演示模式自动回放示例对局',
+    'zh-tw': '設定新增色盲安全配色；一鍵演示模式自動回放範例對局',
+    cs: 'Nastavení nabízí paletu bezpečnou pro barvoslepost; demo režim jedním klikem přehraje ukázkový zápas',
+    nl: 'Kleurenblind-veilig palet in instellingen; demomodus met één klik speelt de voorbeeldwedstrijd af',
+    fr: 'Palette daltonien dans les réglages ; le mode démo en un clic rejoue le match d’exemple',
+    he: 'פלטה בטוחה לעיוורי צבעים בהגדרות; מצב הדגמה בלחיצה אחת משחזר את משחק הדוגמה',
+    ja: '設定に色覚安全パレットを追加；ワンクリックのデモモードでサンプル試合を自動再生します',
+    ko: '설정에 색각 안전 팔레트 추가; 원클릭 데모 모드로 예시 경기를 자동 재생합니다',
+    pl: 'Paleta bezpieczna dla daltonistów w ustawieniach; tryb demo jednym kliknięciem odtwarza przykładowy mecz',
+    'pt-br': 'Paleta segura para daltonismo nas configurações; o modo demonstração com um clique reproduz a partida de exemplo',
+    es: 'Paleta segura para daltonismo en ajustes; el modo demo con un clic reproduce el partido de ejemplo',
+    tr: 'Ayarlarda renk körlüğüne uygun palet; tek tıkla demo modu örnek maçı oynatır',
+  } },
   { version: '0.1.7-beta.23', date: '2026.10.04', note: {
     en: 'Import hints point at attachable profile files; Choreo wheel forces near the traction limit now warn',
     zh: '导入提示指向可附带的参数文件；Choreo 轮上力接近打滑极限时给出警示',
