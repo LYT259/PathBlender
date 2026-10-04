@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.23';
+export const APP_VERSION = '0.1.7-beta.24';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.24', date: '2026.10.04', note: {
+    en: 'Restored the workspace toolbar: undo/redo (Cmd+Z), sidebar toggles and the inspector close button',
+    zh: '恢复工作区工具栏：撤销/重做（⌘Z）、侧栏折叠开关与检查器关闭按钮',
+    'zh-tw': '恢復工作區工具列：復原/重做（⌘Z）、側欄折疊開關與檢查器關閉按鈕',
+    cs: 'Obnoven panel nástrojů: zpět/znovu (⌘Z), přepínače bočních panelů a tlačítko zavření inspektoru',
+    nl: 'Werkbalk hersteld: ongedaan maken/opnieuw (⌘Z), zijpaneelschakelaars en de sluitknop van de inspecteur',
+    fr: 'Barre d\u2019outils restaurée : annuler/rétablir (⌘Z), bascules des panneaux latéraux et bouton de fermeture de l\u2019inspecteur',
+    he: 'סרגל הכלים שוחזר: ביטול/ביצוע מחדש (⌘Z), מתגי הלוחות הצדדיים וכפתור סגירת המפקח',
+    ja: 'ワークスペースのツールバーを復元：元に戻す／やり直す（⌘Z）、サイドバー切り替え、インスペクタの閉じるボタン',
+    ko: '작업공간 도구 모음 복원: 실행 취소/다시 실행(⌘Z), 사이드바 토글 및 인스펙터 닫기 버튼',
+    pl: 'Przywrócono pasek narzędzi: cofnij/ponów (⌘Z), przełączniki paneli bocznych i przycisk zamykania inspektora',
+    'pt-br': 'Barra de ferramentas restaurada: desfazer/refazer (⌘Z), alternadores das barras laterais e o botão de fechar do inspetor',
+    es: 'Barra de herramientas restaurada: deshacer/rehacer (⌘Z), conmutadores de paneles laterales y el botón de cerrar del inspector',
+    tr: 'Araç çubuğu geri geldi: geri al/yinele (⌘Z), yan panel anahtarları ve denetçi kapatma düğmesi',
+  } },
   { version: '0.1.7-beta.23', date: '2026.10.04', note: {
     en: 'Import hints point at attachable profile files; Choreo wheel forces near the traction limit now warn',
     zh: '导入提示指向可附带的参数文件；Choreo 轮上力接近打滑极限时给出警示',
