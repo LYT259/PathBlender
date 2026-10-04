@@ -28,6 +28,9 @@ export interface SessionTrajectory {
   /** UI display color; persisted in session files. */
   color: string;
   visible: boolean;
+  /** Opponent marker (red book §6.5-②): faded/dashed rendering + defense
+   *  notes in the conflict report instead of resolve notes. */
+  opponent?: boolean;
   /** Selected route inside this team's alternatives; older sessions may lack them. */
   routeId?: string;
   /** Alternatives belong to this team slot, including after save/restore. */
@@ -130,6 +133,8 @@ export interface SessionFileV1 {
     startDelayS: number;
     color: string;
     visible: boolean;
+    /** Optional since v1.7 files. */
+    opponent?: boolean;
     /** Route-library id when the robot's current route came from the library. */
     routeId?: string;
     routeOptions?: SessionRouteOption[];
@@ -184,6 +189,7 @@ export function serializeSession(
       startDelayS: st.startDelayS,
       color: st.color,
       visible: st.visible,
+      opponent: st.opponent,
       routeId: st.routeId,
       routeOptions: st.routeOptions,
       profileOptions: st.profileOptions,
@@ -254,6 +260,7 @@ export function deserializeSession(text: string): {
       startDelayS: r.startDelayS,
       color: r.color,
       visible: r.visible,
+      opponent: r.opponent === true ? true : undefined,
       routeId: r.routeId,
       routeOptions: readRouteOptions(r.routeOptions),
       profileOptions: readProfileOptions(r.profileOptions),

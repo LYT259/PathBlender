@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.21';
+export const APP_VERSION = '0.1.7-beta.22';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.22', date: '2026.10.04', note: {
+    en: 'Opponent mode: mark robots as opponents for faded rendering and defense-focused conflict notes; text conflict reports export',
+    zh: '对手模式：可把机器人标记为对手（淡化渲染、冲突按防反标注），支持导出文字版冲突报告',
+    'zh-tw': '對手模式：可把機器人標記為對手（淡化渲染、衝突按防反標註），支援匯出文字版衝突報告',
+    cs: 'Režim soupeře: roboty lze označit jako soupeře (vybledlé vykreslení, obranné poznámky) a exportovat textovou zprávu o konfliktech',
+    nl: 'Tegenstandermodus: robots markeren als tegenstander (vervaagd, defensie-notities) en tekstverslag van conflicten exporteren',
+    fr: 'Mode adversaire : marquez les robots adverses (rendu estompé, notes de défense) et exportez un rapport texte des conflits',
+    he: 'מצב יריב: סמנו רובוטים כיריבים (תצוגה דהויה, הערות הגנה) וייצוא דוח טקסט של התנגשויות',
+    ja: '対戦相手モード：ロボットを相手としてマーク（減衰表示・防御注記）し、テキストの衝突レポートを書き出せます',
+    ko: '상대 모드: 로봇을 상대로 표시(흐림 렌더링, 방어 주석)하고 텍스트 충돌 보고서를 내보냅니다',
+    pl: 'Tryb przeciwnika: oznaczaj roboty jako przeciwników (wyblakły render, notatki obronne) i eksportuj raport tekstowy konfliktów',
+    'pt-br': 'Modo adversário: marque robôs como adversários (render esmaecido, notas de defesa) e exporte o relatório de conflitos em texto',
+    es: 'Modo rival: marca robots como rivales (renderizado atenuado, notas de defensa) y exporta el informe de conflictos en texto',
+    tr: 'Rakip modu: robotları rakip olarak işaretleyin (soluk görünüm, savunma notları) ve metin çakışma raporu dışa aktarın',
+  } },
   { version: '0.1.7-beta.21', date: '2026.10.04', note: {
     en: 'Timing tolerance: rescans conflicts for worst-case start execution, tolerance-only findings are flagged separately',
     zh: '时序公差：按最坏起步执行重扫冲突，仅公差内出现的冲突单独标注',
