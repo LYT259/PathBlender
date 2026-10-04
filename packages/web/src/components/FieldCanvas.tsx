@@ -700,14 +700,36 @@ function drawRobot(
   ctx.lineWidth = collided || outOfBounds ? 3 : 2;
   // Only the four perimeter bands carry the alliance color — the base
   // plate inside stays transparent so the field artwork shows through
-  // (user request 2026-10-04).
+  // (user request 2026-10-04). Each band is an isosceles trapezoid,
+  // 45°-mitered at the corners like the 3D rails (same user request):
+  // on a square chassis all four bands are congruent, equal plan area.
   const bd = Math.min(vis.bumperDepthM * scale, L / 2, W / 2);
   ctx.fillStyle = bumperColor(r.trajectory.alliance);
   ctx.beginPath();
-  ctx.rect(ox - L / 2, -oy - W / 2, L, bd);                    // +y band
-  ctx.rect(ox - L / 2, -oy + W / 2 - bd, L, bd);               // −y band
-  ctx.rect(ox - L / 2, -oy - W / 2 + bd, bd, W - 2 * bd);      // −x band
-  ctx.rect(ox + L / 2 - bd, -oy - W / 2 + bd, bd, W - 2 * bd); // +x band
+  // +y band: outer edge spans the full side, inner edge shortens by bd both ends.
+  ctx.moveTo(ox - L / 2, -oy - W / 2);
+  ctx.lineTo(ox + L / 2, -oy - W / 2);
+  ctx.lineTo(ox + L / 2 - bd, -oy - W / 2 + bd);
+  ctx.lineTo(ox - L / 2 + bd, -oy - W / 2 + bd);
+  ctx.closePath();
+  // −y band.
+  ctx.moveTo(ox - L / 2, -oy + W / 2);
+  ctx.lineTo(ox + L / 2, -oy + W / 2);
+  ctx.lineTo(ox + L / 2 - bd, -oy + W / 2 - bd);
+  ctx.lineTo(ox - L / 2 + bd, -oy + W / 2 - bd);
+  ctx.closePath();
+  // −x band.
+  ctx.moveTo(ox - L / 2, -oy - W / 2);
+  ctx.lineTo(ox - L / 2, -oy + W / 2);
+  ctx.lineTo(ox - L / 2 + bd, -oy + W / 2 - bd);
+  ctx.lineTo(ox - L / 2 + bd, -oy - W / 2 + bd);
+  ctx.closePath();
+  // +x band.
+  ctx.moveTo(ox + L / 2, -oy - W / 2);
+  ctx.lineTo(ox + L / 2, -oy + W / 2);
+  ctx.lineTo(ox + L / 2 - bd, -oy + W / 2 - bd);
+  ctx.lineTo(ox + L / 2 - bd, -oy - W / 2 + bd);
+  ctx.closePath();
   ctx.fill();
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);

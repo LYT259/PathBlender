@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.4';
+export const APP_VERSION = '0.1.8-beta.5';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.5', date: '2026.10.04', note: {
+    en: 'Zoom holds full resolution through the whole gesture — no more waiting for finger lift; the four bumper rails are now identical isosceles trapezoids mitered at 45°, in 3D and the 2D top view alike',
+    zh: '缩放全程保持满分辨率——不再等松手才清晰；四根 bumper 改为全等等腰梯形 45° 斜接，3D 与 2D 俯视一致',
+    'zh-tw': '縮放全程保持滿解析度——不再等鬆手才清晰；四根 bumper 改為全等等腰梯形 45° 斜接，3D 與 2D 俯視一致',
+    cs: 'Přibližování drží plné rozlišení po celé gesto — ostrost už nečeká na zvednutí prstu; čtyři nárazníkové lišty jsou nyní shodné rovnoramenné lichoběžníky seříznuté pod 45°, ve 3D i v půdorysném 2D',
+    nl: 'Zoomen houdt de volle resolutie vast gedurende het hele gebaar — niet meer wachten tot de vinger loslaat; de vier bumperbalken zijn nu identieke gelijkbenige trapeziums met 45°-verstek, in 3D én in het 2D-bovenaanzicht',
+    fr: 'Le zoom garde la pleine résolution pendant tout le geste — plus besoin d\'attendre le relâchement ; les quatre pare-chocs sont désormais des trapèzes isocèles identiques assemblés à onglet à 45°, en 3D comme en vue 2D de dessus',
+    he: 'הזום שומר על רזולוציה מלאה לאורך כל המחווה — לא עוד מחכים להרמת האצבע; ארבע מסילות הפגוש הן כעת טרפזים שווי-שוקיים זהים בחיבור אלכסוני של 45°, בתלת-ממד ובמבט-על הדו-ממדי כאחד',
+    ja: 'ズームはジェスチャの最初から最後までフル解像度を維持——指を離すまで待つ必要はありません。4 本のバンパーレールは 45° 留め接ぎの全等な等脚台形になり、3D と 2D 上面図の両方に適用されます',
+    ko: '확대/축소 제스처 낂 전체 해상도를 유지합니다 — 손가락을 뗄 때까지 기다릴 필요가 없습니다. 네 개의 범퍼 레일은 이제 45° 마이터로 맞물린 동일한 등변사다리꼴이며 3D와 2D 평면 모두에 적용됩니다',
+    pl: 'Powiększanie zachowuje pełną rozdzielczość przez cały gest — koniec czekania na uniesienie palca; cztery belki zderzaka to teraz identyczne trapezy równoramienne cięte pod 45°, zarówno w 3D, jak i w widoku 2D z góry',
+    'pt-br': 'O zoom mantém a resolução máxima durante todo o gesto — sem esperar o dedo sair da tela; as quatro barras do para-choque agora são trapézios isósceles idênticos com junta a 45°, tanto no 3D quanto na vista 2D superior',
+    es: 'El zoom mantiene la resolución máxima durante todo el gesto — ya no hay que esperar a levantar el dedo; los cuatro parachoques son ahora trapecios isósceles idénticos unidos a inglete a 45°, tanto en 3D como en la vista 2D superior',
+    tr: 'Yakınlaştırma hareket boyunca tam çözünürlüğü koruyor — parmak kalkana kadar beklemek yok; dört tampon rayı artık 45° gönye birleşimli özdeş ikizkenar yamuklar, 3D ve 2D üst görünümde aynı',
+  } },
   { version: '0.1.8-beta.4', date: '2026.10.04', note: {
     en: 'Welcome screen keeps one example action that now plays back automatically',
     zh: '首页只保留一个体验示例入口，点进去自动播放',
