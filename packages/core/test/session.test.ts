@@ -128,3 +128,14 @@ describe('session id persistence (save/load keeps identity)', () => {
     expect(back.robots[0]?.trajectory.id).not.toBe(traj.id);
   });
 });
+
+describe('opponent flag round trip (red book §6.5-②)', () => {
+  it('persists through serialize → deserialize and stays optional for old files', () => {
+    const traj = parseTraj(read('traj/v3_swerve.traj'), 'v3_swerve.traj');
+    const robot = { ...makeSession(traj, 0), opponent: true };
+    const restored = deserializeSession(serializeSession([robot], 'rebuilt-2026'));
+    expect(restored.robots[0]!.opponent).toBe(true);
+    const plain = deserializeSession(serializeSession([makeSession(traj, 0)], 'rebuilt-2026'));
+    expect(plain.robots[0]!.opponent).toBeUndefined();
+  });
+});

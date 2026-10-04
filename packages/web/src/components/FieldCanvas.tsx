@@ -590,6 +590,9 @@ function drawRobot(
   ctx.translate(sx(pose.x), sy(pose.y));
   // Screen y is flipped relative to world y, so rotate by -heading.
   ctx.rotate(-pose.heading);
+  // Opponent rendering (§6.5-②): faded + dashed — clearly not "one of us".
+  const isOpponent = r.opponent === true;
+  if (isOpponent) ctx.globalAlpha = 0.55;
 
   // Bumper ring (the collision footprint — highlight rides on it).
   const L = outer.lengthM * scale;
@@ -611,7 +614,9 @@ function drawRobot(
   ctx.fill();
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
+  if (isOpponent) ctx.setLineDash([5, 4]);
   ctx.stroke();
+  if (isOpponent) ctx.setLineDash([]);
 
   // Chassis frame: four 1 in box-rail beams around the chassis
   // rectangle plus a corner block at each joint — the same "4 rails +
