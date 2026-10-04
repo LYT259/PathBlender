@@ -398,6 +398,16 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
 
     const { w, h } = sizeRef.current;
     const dpr = window.devicePixelRatio || 1;
+    // DPR can change without a resize (window dragged between Retina and
+    // 1x displays) — ResizeObserver only watches CSS size and misses it,
+    // leaving a stale backing store whose uncleared region ghosts the
+    // previous frame. Re-allocate (which wipes the bitmap) on any drift.
+    const bw = Math.round(w * dpr);
+    const bh = Math.round(h * dpr);
+    if (canvas.width !== bw || canvas.height !== bh) {
+      canvas.width = bw;
+      canvas.height = bh;
+    }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     // Best-available resampling for the field artwork and module sprite —
     // canvas defaults to low, which visibly softens both when zoomed.
