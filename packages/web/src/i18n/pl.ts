@@ -117,6 +117,10 @@ export const pl: Record<MessageKey, string> = {
   'robots.bumper': 'zderzak (m)',
   'robots.length': 'długość',
   'robots.width': 'szerokość',
+  'robots.mass': 'Masa',
+  'robots.drive': 'Napęd',
+  'robots.driveHolonomic': 'Omnikierunkowy',
+  'robots.driveDifferential': 'Różnicowy',
   'robots.visible': 'widoczny podczas odtwarzania i sprawdzania kolizji',
 
   // View-cube initials: the Polish abbreviations collide (Przód/Prawo both P),

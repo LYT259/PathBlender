@@ -8,6 +8,7 @@ import { PreferencesPanel } from './components/PreferencesPanel';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { UsageTip, useUsageTip } from './components/UsageTip';
 import {
+  applyProfileToTrajectory,
   CUSTOM_FIELD_ID,
   detectCollisions,
   detectFieldBounds,
@@ -382,8 +383,9 @@ function AppBody() {
       if (robot.trajectory.id !== robotId) return robot;
       const entry = robot.profileOptions?.find((profile) => profile.id === profileId);
       if (!entry) return robot;
-      return { ...robot, profileId: entry.id, trajectory: { ...robot.trajectory, geometry: entry.profile.geometry,
-        moduleLocations: entry.profile.moduleLocations, geometrySource: 'file' } };
+      // §6.6: geometry always applies; a dynamics-carrying profile also
+      // regenerates PathPlanner timelines against the real robot.
+      return { ...robot, profileId: entry.id, trajectory: applyProfileToTrajectory(robot.trajectory, entry.profile) };
     }));
   }, [setRobots]);
 

@@ -117,6 +117,10 @@ export const cs: Record<MessageKey, string> = {
   'robots.bumper': 'nárazník (m)',
   'robots.length': 'délka',
   'robots.width': 'šířka',
+  'robots.mass': 'Hmotnost',
+  'robots.drive': 'Pohon',
+  'robots.driveHolonomic': 'Omnidirekční',
+  'robots.driveDifferential': 'Diferenciální',
   'robots.visible': 'viditelný při přehrávání a kontrole kolizí',
 
   'vc.top': 'T',

@@ -117,6 +117,10 @@ export const nl: Record<MessageKey, string> = {
   'robots.bumper': 'bumper (m)',
   'robots.length': 'lengte',
   'robots.width': 'breedte',
+  'robots.mass': 'Massa',
+  'robots.drive': 'Aandrijving',
+  'robots.driveHolonomic': 'Holonomisch',
+  'robots.driveDifferential': 'Differentieel',
   'robots.visible': 'zichtbaar tijdens afspelen en botsingscontrole',
 
   'vc.top': 'T',
