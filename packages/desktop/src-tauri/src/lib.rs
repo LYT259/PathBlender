@@ -793,6 +793,11 @@ fn build_menu(app: &AppHandle, lang: &str) -> tauri::Result<tauri::menu::Menu<ta
             AboutMetadataBuilder::new()
                 .name(Some("PathBlender".to_string()))
                 .version(Some(env!("CARGO_PKG_VERSION").to_string()))
+                // The standard macOS About panel appends the build number in
+                // parentheses after the version; an empty one suppresses the
+                // tail, so the line reads "Version x.y.z" instead of
+                // "Version x.y.z (x.y.z)". (Only macOS consumes this field.)
+                .short_version(Some(String::new()))
                 .build(),
         ))
         .separator()
@@ -860,7 +865,7 @@ fn open_prefs(app: &AppHandle) {
         let _ = win.set_focus();
         return;
     }
-    let _ = WebviewWindowBuilder::new(
+    let builder = WebviewWindowBuilder::new(
         app,
         PREFS_WINDOW,
         WebviewUrl::App("index.html?window=prefs".into()),
@@ -868,8 +873,16 @@ fn open_prefs(app: &AppHandle) {
     .title("Preferences")
     .inner_size(780.0, 580.0)
     .min_inner_size(640.0, 480.0)
-    .resizable(true)
-    .build();
+    .resizable(true);
+    // Same chrome as the main window (user request 2026-10-04): an overlay
+    // title bar — no native divider, no "Preferences" title text; the
+    // traffic lights float over the web side's invisible drag strip.
+    #[cfg(target_os = "macos")]
+    let builder = builder
+        .title_bar_style(tauri::TitleBarStyle::Overlay)
+        .hidden_title(true)
+        .traffic_light_position(tauri::Position::Logical(tauri::LogicalPosition::new(18.0, 20.0)));
+    let _ = builder.build();
 }
 
 #[tauri::command]

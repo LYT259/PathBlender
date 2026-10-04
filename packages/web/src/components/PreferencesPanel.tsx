@@ -52,7 +52,10 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const [section, setSection] = useState<Section>('general');
   const [languageDraft, setLanguageDraft] = useState<LangChoice | null>(null);
   const [themeDraft, setThemeDraft] = useState<ThemeMode | null>(null);
-  const [colorblind, setColorblind] = useState(readColorblind);
+  // Colorblind stages like every other shared setting (user request
+  // 2026-10-04): the checkbox only drafts; Save persists + broadcasts.
+  const [savedColorblind, setSavedColorblind] = useState(readColorblind);
+  const [colorblindDraft, setColorblindDraft] = useState<boolean | null>(null);
   const [iconDraft, setIconDraft] = useState<IconAppearanceMode | null>(null);
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
   const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
@@ -74,9 +77,11 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const reverse = reverseDraft ?? reverseScroll;
   const constrained = constrainedDraft ?? defaultConstrained;
   const pen = penDraft ?? penAsMouse;
+  const colorblind = colorblindDraft ?? savedColorblind;
   const dirty = language !== langChoice || theme !== mode || icon !== iconMode ||
     updateChannel !== channel || mouse !== mouseControls || unit !== lengthUnit ||
-    reverse !== reverseScroll || constrained !== defaultConstrained || pen !== penAsMouse;
+    reverse !== reverseScroll || constrained !== defaultConstrained || pen !== penAsMouse ||
+    colorblind !== savedColorblind;
   const updateStatusText =
     updateCheck.kind === 'checking' ? t('prefs.checking')
       : updateCheck.kind === 'upToDate' ? t('updates.upToDate')
@@ -134,6 +139,10 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
     if (reverse !== reverseScroll) setReverseScroll(reverse);
     if (constrained !== defaultConstrained) setDefaultConstrained(constrained);
     if (pen !== penAsMouse) setPenAsMouse(pen);
+    if (colorblind !== savedColorblind) {
+      writeColorblind(colorblind);
+      setSavedColorblind(colorblind);
+    }
     // Save keeps the window open (user request 2026-10-02): drafts become
     // current, dirty clears, and the user closes via Cancel/Escape/⌘W when
     // done — matching System Settings' persist-in-place behavior.
@@ -177,7 +186,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
           {desktop && <IconAppearancePicker value={icon} onChange={setIconDraft} />}
           <label className="preferences-setting">
             <span>{t('prefs.colorblind')}</span>
-            <input type="checkbox" checked={colorblind} onChange={(e) => { setColorblind(e.target.checked); writeColorblind(e.target.checked); }} />
+            <input type="checkbox" checked={colorblind} onChange={(e) => setColorblindDraft(e.target.checked)} />
           </label>
           <p className="preferences-setting-description">{t('prefs.colorblindHint')}</p>
         </>}
