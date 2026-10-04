@@ -168,7 +168,7 @@ export const sq = {
   'updates.failed': 'Kontrolli i përditësimeve dështoi — kontrolloni lidhjen tuaj dhe provoni përsëri',
   'actions.saveHint': 'Ruani të gjithë robotët dhe cilësimet e sesionit (.pb). Rihapni me Import. Eksportoni rrugë individuale nga inspektori i robotit.',
   'actions.clearHint': 'Hiqni të gjithë robotët nga sesioni aktual (kurrë nuk prek skedarët e importuar)',
-  'rail.import': 'Import',
+  'rail.import': 'Importimi',
   'rail.save': 'Ruaj',
   'rail.png': 'PNG',
   'rail.prefs': 'Preferenca',

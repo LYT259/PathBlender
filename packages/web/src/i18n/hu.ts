@@ -168,7 +168,7 @@ export const hu = {
   'updates.failed': 'A frissítésellenőrzés sikertelen — ellenőrizd a kapcsolatot, és próbáld újra',
   'actions.saveHint': 'Mentsd el az összes robotot és a munkamenet-beállításokat (.pb). Újra megnyitás az Importálással. Egyedi útvonalakat a robotvizsgálóból exportálhatsz.',
   'actions.clearHint': 'Távolítsd el az összes robotot a jelenlegi munkamenetből (az importált fájlokat soha nem érinti)',
-  'rail.import': 'Import',
+  'rail.import': 'Importálás',
   'rail.save': 'Mentés',
   'rail.png': 'PNG',
   'rail.prefs': 'Beállítások',
