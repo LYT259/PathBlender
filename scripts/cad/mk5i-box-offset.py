@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# REVERTED 2026-10-04 — do not re-run. This 41 mm inboard shift moved
+# the module plate off the chassis corner mounting bolts (corner bolt
+# needs plate reach lz = +0.0763 m; shifted plate only reached
+# +0.0507 → bolt floated 25.6 mm off the plate at all 4 corners).
+# The shipped GLB is back to the pre-shift geometry; see
+# scripts/cad/README.md ("Box radial offset experiment — REVERTED").
 """Shift the mk5i-box vertices in the shipped MK5i module GLB (stdlib only).
 
 Run:

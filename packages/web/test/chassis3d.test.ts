@@ -42,7 +42,7 @@ const VIS: RobotVisualGeometry = {
   bumperDepthM: 0.0826,
 };
 
-/** The 2026 default layout: pods at ±10.375 in. */
+/** The 2026 default layout: pods at ±10.876 in (0.27625 m). */
 const MODULES: ModuleLocation[] = [
   { x: 0.27625, y: 0.27625 },
   { x: 0.27625, y: -0.27625 },

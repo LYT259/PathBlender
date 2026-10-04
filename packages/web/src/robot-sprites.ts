@@ -12,8 +12,7 @@ import mk5iModuleTop from '../../../assets/robots/mk5i-module-top.png';
 export const MK5I_MODULE_TOP_URL = mk5iModuleTop;
 
 /** World span of the square sprite image in meters — the ortho scale
- *  the render used (module bbox max |extent| 0.1336 m around the
- *  steering axis plus a 2% margin, printed by glb-topview.py as
- *  TOPVIEW world_size_m). One constant covers both axes; the real
- *  module never scales with the chassis. */
-export const MK5I_MODULE_TOP_WORLD_M = 0.272524;
+ *  the render used (module bbox ±0.1084 m plus a 2% margin, printed by
+ *  glb-topview.py as TOPVIEW world_size_m). One constant covers both
+ *  axes; the real module never scales with the chassis. */
+export const MK5I_MODULE_TOP_WORLD_M = 0.221077;
