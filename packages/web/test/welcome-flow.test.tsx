@@ -91,19 +91,24 @@ describe('welcome flow', () => {
     expect(screen.queryByRole('region', { name: 'Import paths to get started' })).not.toBeInTheDocument();
   });
 
-  it('loads the 2D example already playing, and teaches collision navigation using the working controls', async () => {
+  it('loads the 2D example paused at t=0, and teaches collision navigation using the working controls', async () => {
     render(<App />);
     await openExample();
     expect(screen.getByText('Real 2026 routes from FRC teams 8814 and 11019.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '2D', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    // The example starts playing on its own; the play tip is already moot.
-    await screen.findByRole('button', { name: 'Pause', exact: true });
-    await waitFor(() => expect(localStorage.getItem('pb.tip.play.v1')).toBe('done'));
+    // No autoplay (user request 2026-10-04): the example rests at t=0 until
+    // the user presses Play, so the play tip still shows.
+    expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
+    expect(Number((screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement).value)).toBeCloseTo(0);
+    expect(screen.getByText(playHint)).toBeInTheDocument();
     expect(screen.getByText('2.75 s', { selector: '.robot-library-meta span' })).toBeInTheDocument();
     expect(screen.getByText('3.41 s', { selector: '.robot-library-meta span' })).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
-    expect(screen.queryByText(playHint)).not.toBeInTheDocument();
     expect(screen.getByText(checkHint)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play', exact: true }));
+    await screen.findByRole('button', { name: 'Pause', exact: true });
+    await waitFor(() => expect(localStorage.getItem('pb.tip.play.v1')).toBe('done'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Pause', exact: true }));
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
@@ -118,9 +123,9 @@ describe('welcome flow', () => {
   it('remembers dismissed guidance when the app is reopened', async () => {
     const first = render(<App />);
     await openExample();
-    // Autoplay dismisses the play tip on its own; only the checks tip is left.
-    await waitFor(() => expect(localStorage.getItem('pb.tip.play.v1')).toBe('done'));
-    expect(screen.queryByText(playHint)).not.toBeInTheDocument();
+    // Nothing auto-plays anymore (2026-10-04): dismiss both tips by hand.
+    const playNote = screen.getByText(playHint).closest('[role="note"]')! as HTMLElement;
+    fireEvent.click(within(playNote).getByRole('button', { name: 'Dismiss tip' }));
     const note = screen.getByText(checkHint).closest('[role="note"]')! as HTMLElement;
     fireEvent.click(within(note).getByRole('button', { name: 'Dismiss tip' }));
     expect(screen.queryByRole('note')).not.toBeInTheDocument();
@@ -130,7 +135,44 @@ describe('welcome flow', () => {
     await openExample();
     expect(screen.queryByText(playHint)).not.toBeInTheDocument();
     expect(screen.queryByText(checkHint)).not.toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: 'Pause', exact: true })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+  });
+
+  it('replaces a stale example from an older build with the current example on restore', async () => {
+    // Autosave written by an old build: the pre-rename demo generation —
+    // legacy localized names, 0001/0002 team numbers, random ids.
+    const stale = [0, 1].map((i) => {
+      const robot = makeSession(parsePathFile(sampleText, 'straight_run.ghostauto'), i);
+      robot.trajectory = {
+        ...robot.trajectory,
+        id: crypto.randomUUID(),
+        name: i === 0 ? '示例路径 A' : 'Example path B',
+        teamNumber: `000${i + 1}`,
+      };
+      return robot;
+    });
+    localStorage.setItem('pb.autosave.v1', serializeSession(stale, 'rebuilt-2026'));
+
+    render(<App />);
+    await screen.findByText('#8814', { selector: '.robot-name' }, { timeout: 10000 });
+    expect(screen.getByText('#11019', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
+    // The refreshed example does not auto-play either.
+    expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
+  });
+
+  it('refreshes only the example robot when a restore mixes one with user paths', async () => {
+    const example = makeSession(parsePathFile(sampleText, 'straight_run.ghostauto'), 0);
+    example.trajectory = { ...example.trajectory, id: crypto.randomUUID(), name: '示例路径 A', teamNumber: '0001' };
+    const mine = makeSession(parsePathFile(sampleText, 'straight_run.ghostauto'), 1);
+    mine.trajectory = { ...mine.trajectory, id: 'my-robot', name: 'My Robot', teamNumber: '1234' };
+    localStorage.setItem('pb.autosave.v1', serializeSession([example, mine], 'rebuilt-2026'));
+
+    render(<App />);
+    await screen.findByText('#8814', { selector: '.robot-name' }, { timeout: 10000 });
+    expect(screen.getByText('#1234', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.queryByText('#11019', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
   });
 
   it('ends only the example paths after a real file is imported', async () => {

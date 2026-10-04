@@ -118,7 +118,7 @@ describe('i18n dictionaries', () => {
     // language (fr 'Pause'/'Collision'/'alliance', es 'Robot'/'General',
     // nl 'Timing'/'Updates'/'bumper (m)'/'Meters (m)' etc.).
     'prefs.section.general', // Spanish 'General' is identical.
-    'workspace.details', 'robots.identity', 'robots.title',
+    'workspace.details', 'robots.title',
     'robots.collision', 'robots.alliance', 'timeline.pause', 'timeline.collision',
     'site.version', 'about.version',
     // 'GIF' is the universal acronym every shipped language keeps;
