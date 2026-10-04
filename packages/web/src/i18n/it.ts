@@ -14,8 +14,6 @@ export const it = {
   'welcome.importFolderHint': 'Carica più percorsi e scegli quale riprodurre',
   'welcome.openSession': 'Apri sessione salvata',
   'welcome.openSessionHint': 'Apri un\'analisi salvata in precedenza',
-  'welcome.demo': 'Modalità demo',
-  'welcome.demoHint': 'Carica la partita di esempio e riproducila automaticamente',
   'welcome.tryExample': 'Prova un esempio',
   'welcome.exampleHint': 'Esplora riproduzione e controlli collisione con percorsi di esempio.',
   'welcome.loadingExample': 'Apertura esempio…',

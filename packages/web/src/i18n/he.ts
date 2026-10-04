@@ -30,8 +30,6 @@ export const he: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'טענו כמה מסלולים ובחרו אילו לנגן',
   'welcome.openSession': 'פתחו הפעלה שמורה',
   'welcome.openSessionHint': 'פתחו ניתוח שנשמר בעבר',
-  'welcome.demo': 'מצב הדגמה',
-  'welcome.demoHint': 'טעינת משחק לדוגמה והפעלה אוטומטית',
   'welcome.tryExample': 'נסו דוגמה',
   'welcome.exampleHint': 'חקרו ניגון ובדיקות התנגשות עם מסלולים לדוגמה.',
   'welcome.loadingExample': 'פותח דוגמה…',

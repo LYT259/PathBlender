@@ -253,8 +253,6 @@ export const nb = {
   'checks.estimated': "Noen dimensjoner er estimater. Kontroller robotdata før du stoler på disse resultatene.",
   'robots.bumperDefault': "standard",
   'robots.actions': "Robot­handlinger",
-  'welcome.demo': 'Demomodus',
-  'welcome.demoHint': 'Last inn eksempelkampen og spill den av automatisk',
   'workspace.togglePaths': 'Vis eller skjul stilisten',
   'workspace.toggleInspector': 'Vis eller skjul inspektøren',
   'workspace.closePanel': 'Lukk inspektøren',

@@ -253,8 +253,6 @@ export const nn = {
   'checks.estimated': "Summe dimensjonar er estimat. Kontroller robordata før du stolar på desse resultata.",
   'robots.bumperDefault': "standard",
   'robots.actions': "Robot­handlingar",
-  'welcome.demo': 'Demomodus',
-  'welcome.demoHint': 'Last inn eksempelkampen og spel han av automatisk',
   'workspace.togglePaths': 'Vis eller gøym stioversikta',
   'workspace.toggleInspector': 'Vis eller gøym inspektøren',
   'workspace.closePanel': 'Lukk inspektøren',

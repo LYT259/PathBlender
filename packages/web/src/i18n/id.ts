@@ -14,8 +14,6 @@ export const id = {
   'welcome.importFolderHint': 'Muat beberapa rute dan pilih mana yang diputar ulang',
   'welcome.openSession': 'Buka sesi tersimpan',
   'welcome.openSessionHint': 'Buka analisis yang tersimpan sebelumnya',
-  'welcome.demo': 'Mode demo',
-  'welcome.demoHint': 'Muat pertandingan contoh dan putar otomatis',
   'welcome.tryExample': 'Coba contoh',
   'welcome.exampleHint': 'Jelajahi pemutaran dan pemeriksaan tabrakan dengan jalur contoh.',
   'welcome.loadingExample': 'Membuka contoh…',

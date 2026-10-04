@@ -14,8 +14,6 @@ export const hi = {
   'welcome.importFolderHint': 'कई रूट लोड करें और चुनें कि किसे रीप्ले करना है',
   'welcome.openSession': 'सहेजी गई सत्र खोलें',
   'welcome.openSessionHint': 'पहले से सहेजा गया विश्लेषण खोलें',
-  'welcome.demo': 'डेमो मोड',
-  'welcome.demoHint': 'उदाहरण मैच लोड करें और स्वतः चलाएँ',
   'welcome.tryExample': 'उदाहरण आज़माएं',
   'welcome.exampleHint': 'नमूना पथों के साथ प्लेबैक और टकराव जाँच एक्सप्लोर करें।',
   'welcome.loadingExample': 'उदाहरण खोला जा रहा है…',

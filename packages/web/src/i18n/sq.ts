@@ -253,8 +253,6 @@ export const sq = {
   'checks.estimated': 'Disa dimensione janë vlerësime. Verifikoni të dhënat e robotit para se të mbështeteni në këto rezultate.',
   'robots.bumperDefault': 'i parazgjedhur',
   'robots.actions': 'Veprimet e robotit',
-  'welcome.demo': 'Mënyra demo',
-  'welcome.demoHint': 'Ngarko ndeshjen shembull dhe luaje automatikisht',
   'workspace.togglePaths': 'Shfaq ose fshih listën e shtigjeve',
   'workspace.toggleInspector': 'Shfaq ose fshih inspektorin',
   'workspace.closePanel': 'Mbyll inspektorin',

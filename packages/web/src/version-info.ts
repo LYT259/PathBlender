@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.3';
+export const APP_VERSION = '0.1.8-beta.4';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.4', date: '2026.10.04', note: {
+    en: 'Welcome screen keeps one example action that now plays back automatically',
+    zh: '首页只保留一个体验示例入口，点进去自动播放',
+    'zh-tw': '首頁只保留一個體驗範例入口，點進去自動播放',
+    cs: 'Uvítací obrazovka má jeden příklad, který se přehraje automaticky',
+    nl: 'Het welkomstscherm heeft één voorbeeld dat automatisch wordt afgespeeld',
+    fr: 'L’écran d’accueil garde un seul exemple, lancé en lecture automatique',
+    he: 'מסך הפתיחה שומר על דוגמה אחת שמתנגנת אוטומטית',
+    ja: 'ホーム画面の体験例は一つになり、自動再生されます',
+    ko: '시작 화면에 예제 하나만 남고 자동으로 재생됩니다',
+    pl: 'Ekran powitalny ma jeden przykład odtwarzany automatycznie',
+    'pt-br': 'A tela inicial mantém um único exemplo que é reproduzido automaticamente',
+    es: 'La pantalla de inicio conserva un único ejemplo que se reproduce automáticamente',
+    tr: 'Karşılama ekranında otomatik oynatılan tek bir örnek kaldı',
+  } },
   { version: '0.1.8-beta.3', date: '2026.10.04', note: {
     en: 'Opponent marker removed — folder import will later assign each team to red or blue',
     zh: '对手标记已移除——文件夹导入后续将支持逐队选择红蓝方',
