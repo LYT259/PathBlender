@@ -144,7 +144,10 @@ describe('workspace workflow', () => {
     await screen.findByText('#0002', { selector: '.robot-name' });
     expect(season).toHaveValue('chargedup-2023');
     expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(selectRobot('Stop And Score').getByRole('spinbutton', { name: 'Start 1' })).toHaveValue(1.25);
+    // The restored start delay surfaces in the bottom arrangement surface.
+    fireEvent.click(screen.getByRole('button', { name: 'Arrange timeline' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Stop And Score, 1\.25–/ }));
+    expect(screen.getByRole('spinbutton', { name: 'Start' })).toHaveValue(1.25);
   });
 
   it('undoes and redoes scene changes with the toolbar buttons and ⌘Z', async () => {

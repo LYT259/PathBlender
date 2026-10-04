@@ -36,6 +36,7 @@ interface Props {
   onSelect?: (id: string) => void;
   onJump?: (time: number, robotIds: string[]) => void;
   guide?: ReactNode;
+  composeAction?: ReactNode;
 }
 
 function TransportIcon({ kind }: { kind: 'rewind' | 'back' | 'play' | 'pause' | 'forward' }) {
@@ -50,7 +51,7 @@ function TransportIcon({ kind }: { kind: 'rewind' | 'back' | 'play' | 'pause' | 
   );
 }
 
-export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onJump, guide }: Props) {
+export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onJump, guide, composeAction }: Props) {
   const { t: tr } = useI18n();
   const { t, setT, playing, setPlaying, speed, setSpeed } = playback;
   const end = playbackEnd(duration, autoPeriodS, playbackRange);
@@ -78,6 +79,7 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
     <section className="timeline timeline-workspace" aria-label={tr('timeline.title')}>
       <div className="timeline-toolbar">
         <h2>{tr('timeline.title')}</h2>
+        {composeAction}
         {onPlaybackRangeChange && <select
           className="timeline-range"
           aria-label={tr('timeline.range')}
