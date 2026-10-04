@@ -147,19 +147,21 @@ describe('workspace workflow', () => {
     expect(selectRobot('Stop And Score').getByText('1.25 s')).toBeInTheDocument();
   });
 
-  it('undoes and redoes scene changes with the restored toolbar buttons and ⌘Z', async () => {
+  it('undoes and redoes scene changes with the toolbar buttons and ⌘Z', async () => {
     render(<App />);
     await importSamples('ghostauto/straight_run.ghostauto', 'ghostauto/stop_and_score.ghostauto');
 
-    // Restored workspace chrome (2026-10-04): undo/redo plus both sidebar
-    // toggles. The import itself is an undoable step, so Undo is already
-    // armed; Redo waits until something has been undone.
+    // Workspace chrome: undo/redo only — the side panels are not
+    // collapsible (2026-10-04), so the sidebar toggles are gone and both
+    // panels stay open. The import itself is an undoable step, so Undo is
+    // already armed; Redo waits until something has been undone.
     const undoBtn = screen.getByRole('button', { name: 'Undo' });
     const redoBtn = screen.getByRole('button', { name: 'Redo' });
     expect(undoBtn).toBeEnabled();
     expect(redoBtn).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Show or hide path list' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Show or hide inspector' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('button', { name: 'Show or hide path list' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show or hide inspector' })).not.toBeInTheDocument();
+    expect(document.querySelector('.workspace-inspector')).not.toHaveAttribute('hidden');
 
     // Clearing the session is one more undoable step.
     fireEvent.click(document.querySelector<HTMLElement>('summary[aria-label="More actions"]')!);

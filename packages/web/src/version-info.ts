@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.6';
+export const APP_VERSION = '0.1.8-beta.10';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,66 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.10', date: '2026.10.04', note: {
+    en: 'The colorblind-safe palette now applies only when you save preferences, and the settings window drops its English title bar and separator line',
+    zh: '色盲安全配色改为点击「保存」后才真正应用；设置窗口去掉了英文标题栏和分隔线',
+    'zh-tw': '色盲安全配色改為點擊「儲存」後才真正套用；設定視窗去掉了英文標題列和分隔線',
+    cs: 'Paleta pro barvoslepé se nyní použije až po uložení předvoleb a okno nastavení ztrácí anglický titulkový pruh a oddělovací čáru',
+    nl: 'Het kleurenblindvriendelijke palet wordt nu pas toegepast als je de voorkeuren opslaat, en het instellingenvenster verliest zijn Engelse titelbalk en scheidingslijn',
+    fr: 'La palette adaptée au daltonisme ne s’applique désormais qu’à l’enregistrement des préférences, et la fenêtre des réglages perd sa barre de titre anglaise et sa ligne de séparation',
+    he: 'ערכת הצבעים המותאמת לעיוורי צבעים מוחלת כעת רק בעת שמירת ההעדפות, וחלון ההגדרות מאבד את שורת הכותרת האנגלית ואת קו ההפרדה',
+    ja: '色覚バリアフリーのパレットは環境設定を保存したときだけ適用されるようになり、設定ウィンドウから英語のタイトルバーと区切り線がなくなりました',
+    ko: '색각 안전 팔레트가 이제 환경 설정을 저장할 때만 적용되며, 설정 창에서 영문 제목 표시줄과 구분선이 사라졌습니다',
+    pl: 'Paleta bezpieczna dla daltonistów działa teraz dopiero po zapisaniu preferencji, a okno ustawień traci angielski pasek tytułu i linię oddzielającą',
+    'pt-br': 'A paleta segura para daltônicos agora só é aplicada ao salvar as preferências, e a janela de ajustes perde a barra de título em inglês e a linha separadora',
+    es: 'La paleta segura para daltónicos ahora solo se aplica al guardar las preferencias, y la ventana de ajustes pierde su barra de título en inglés y la línea separadora',
+    tr: 'Renk körü güvenli palet artık yalnızca tercihler kaydedildiğinde uygulanıyor ve ayarlar penceresi İngilizce başlık çubuğu ile ayırıcı çizgisini kaybediyor',
+  } },
+  { version: '0.1.8-beta.9', date: '2026.10.04', note: {
+    en: 'The bumper is now one continuous closed square ring — no seams between rails, in 3D and the 2D top view alike',
+    zh: 'bumper 改为一个完全连续的封闭正方形环——四角再无接缝，3D 与 2D 俯视一致',
+    'zh-tw': 'bumper 改為一個完全連續的封閉正方形環——四角再無接縫，3D 與 2D 俯視一致',
+    cs: 'Nárazník je nyní jeden souvislý uzavřený čtvercový prstenec — žádné spoje mezi lištami, ve 3D i v půdorysném 2D',
+    nl: 'De bumper is nu één doorlopende gesloten vierkante ring — geen naden tussen de balken, in 3D én in het 2D-bovenaanzicht',
+    fr: 'Le pare-chocs forme désormais un anneau carré fermé continu — plus aucun joint entre les barres, en 3D comme en vue 2D de dessus',
+    he: 'הפגוש הוא כעת טבעת ריבועית סגורה ורציפה אחת — ללא תפרים בין המסילות, בתלת-ממד ובמבט-על הדו-ממדי כאחד',
+    ja: 'バンパーが継ぎ目のない一続きの四角いリングになりました——レール間の接続部がなくなり、3D と 2D 上面図の両方に適用されます',
+    ko: '범퍼가 이제 이음매 없는 하나의 닫힌 사각 링입니다 — 레일 사이 연결부가 없으며 3D와 2D 평면 모두에 적용됩니다',
+    pl: 'Zderzak to teraz jeden ciągły, zamknięty kwadratowy pierścień — bez łączeń między belkami, zarówno w 3D, jak i w widoku 2D z góry',
+    'pt-br': 'O para-choque agora é um anel quadrado fechado e contínuo — sem emendas entre as barras, tanto no 3D quanto na vista 2D superior',
+    es: 'El parachoques es ahora un anillo cuadrado cerrado y continuo — sin juntas entre las barras, tanto en 3D como en la vista 2D superior',
+    tr: 'Tampon artık tek parça, kapalı bir kare halka — raylar arasında birleşim yok, 3D ve 2D üst görünümde aynı',
+  } },
+  { version: '0.1.8-beta.8', date: '2026.10.04', note: {
+    en: 'The macOS About window now shows the version just once, without the repeated build number in parentheses',
+    zh: 'macOS 关于窗口的版本号现在只显示一次，不再重复括号里的构建号',
+    'zh-tw': 'macOS 關於視窗的版本號現在只顯示一次，不再重複括號裡的建置號',
+    cs: 'Okno O aplikaci v macOS nyní zobrazuje verzi jen jednou, bez opakovaného čísla sestavení v závorkách',
+    nl: 'Het macOS-venster Over toont de versie nu nog maar één keer, zonder het herhaalde buildnummer tussen haakjes',
+    fr: 'La fenêtre À propos de macOS n’affiche plus la version qu’une seule fois, sans répéter le numéro de build entre parenthèses',
+    he: 'חלון אודות ב-macOS מציג כעת את הגרסה פעם אחת בלבד, ללא חזרה על מספר ה-build בסוגריים',
+    ja: 'macOS の「この App について」ウィンドウはバージョンを一度だけ表示し、括弧内のビルド番号が重複しなくなりました',
+    ko: 'macOS 정보 윈도우가 버전을 한 번만 표시하며, 괄호 안의 빌드 번호가 더 이상 중복되지 않습니다',
+    pl: 'Okno Informacje w systemie macOS wyświetla teraz wersję tylko raz, bez powtórzonego numeru kompilacji w nawiasach',
+    'pt-br': 'A janela Sobre do macOS agora exibe a versão apenas uma vez, sem repetir o número de build entre parênteses',
+    es: 'La ventana Acerca de de macOS ahora muestra la versión una sola vez, sin repetir el número de compilación entre paréntesis',
+    tr: 'macOS Hakkında penceresi artık sürümü yalnızca bir kez gösteriyor, parantez içinde yinelenen derleme numarası olmadan',
+  } },
+  { version: '0.1.8-beta.7', date: '2026.10.04', note: {
+    en: '2D team-number callouts: centered leader dot, alliance-colored solid badge; side panels no longer collapsible',
+    zh: '2D 队号引线标注：圆点居中锚定、联盟色实色衬底；侧面板不再可折叠',
+    'zh-tw': '2D 隊號引線標註：圓點居中錨定、聯盟色實色襯底；側面板不再可摺疊',
+    cs: 'Popisky čísel týmů ve 2D: bod vodící čáry na středu, plný nápis v barvě aliance; boční panely již nelze sbalit',
+    nl: '2D-teamnummerlabels: leiderpunt gecentreerd, effen badge in alliantiekleur; zijpanelen niet meer inklapbaar',
+    fr: 'Étiquettes de numéros d’équipe en 2D : point de renvoi centré, badge plein aux couleurs de l’alliance ; panneaux latéraux non repliables',
+    he: 'תוויות מספרי קבוצה ב-2D: נקודת קו מרכזית, תג מלא בצבע הברית; הפאנלים הצדדיים אינם ניתנים עוד לקיפול',
+    ja: '2D チーム番号コールアウト：リーダー点を中央に固定、アライアンス色の実色バッジ。サイドパネルは折りたたみ不可に',
+    ko: '2D 팀 번호 콜아웃: 리더 점 중앙 고정, 얼라이언스 색 단색 배지; 측면 패널 더 이상 접을 수 없음',
+    pl: 'Oznaczenia numerów drużyn 2D: kropka odniesienia wyśrodkowana, pełna plakietka w kolorze sojuszu; panele boczne bez zwijania',
+    'pt-br': 'Rótulos 2D dos números das equipes: ponto-guia centralizado, selo sólido na cor da aliança; painéis laterais não são mais recolhíveis',
+    es: 'Rótulos 2D de números de equipo: punto guía centrado, insignia sólida en el color de la alianza; los paneles laterales ya no se pliegan',
+    tr: '2B takım numarası etiketleri: merkezde çizgi noktası, ittifak renginde düz rozet; yan paneller artık katlanamıyor',
+  } },
   { version: '0.1.8-beta.6', date: '2026.10.04', note: {
     en: 'Hidden robots take their conflicts and out-of-bounds entries with them; the route picker no longer lists the current route twice; the ground tape always shows the full path; the 2D heading arrow rides the bumper and points onto the path ahead',
     zh: '隐藏的机器人连同冲突与越界条目一起隐藏；路线选择框不再重复列出当前路线；地面轨迹带始终显示完整路径；2D 朝向箭头贴上保险杠并指向前方轨迹',
