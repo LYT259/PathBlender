@@ -935,7 +935,7 @@ function AppBody() {
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
             </div></div>
             {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} toleranceS={toleranceS} onToleranceChange={setToleranceS} fieldName={field.name} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
-            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} onRemove={removeRobot} libraryProfiles={selectedRobot?.profileOptions ?? []} onApplyProfile={applyProfile} sequence={{ routes: sequenceView.routes, segments: sequenceView.segments, onChange: changeSequence, joins: sequenceJoins, timing: sequenceTiming, onJump: jumpToSeam }} /></div>}
+            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot ? withSeasonGeometry(selectedRobot, field.year) : undefined} onRemove={removeRobot} libraryProfiles={selectedRobot?.profileOptions ?? []} onApplyProfile={applyProfile} sequence={{ routes: sequenceView.routes, segments: sequenceView.segments, onChange: changeSequence, joins: sequenceJoins, timing: sequenceTiming, onJump: jumpToSeam }} /></div>}
           </aside>
         </main>
 

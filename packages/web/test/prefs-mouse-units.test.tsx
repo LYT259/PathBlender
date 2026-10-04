@@ -37,7 +37,7 @@ describe('mouse controls & units settings', () => {
     const mouse = screen.getByLabelText(/mouse controls/i, { selector: 'select' }) as HTMLSelectElement;
     const units = screen.getByLabelText(/length unit/i, { selector: 'select' }) as HTMLSelectElement;
     expect(mouse.value).toBe('onshape');
-    expect(units.value).toBe('m');
+    expect(units.value).toBe('in');
     // Function rows carry the verified Onshape bindings (2026-10-03).
     expect(screen.getByText('Right mouse button drag')).toBeInTheDocument();
     expect(screen.getByText('Alt + Right mouse button drag')).toBeInTheDocument();
@@ -139,12 +139,12 @@ describe('mouse controls & units settings', () => {
     const save = screen.getByRole('button', { name: /save/i }) as HTMLButtonElement;
     expect(save.disabled).toBe(true);
 
-    fireEvent.change(screen.getByLabelText(/length unit/i, { selector: 'select' }), { target: { value: 'in' } });
+    fireEvent.change(screen.getByLabelText(/length unit/i, { selector: 'select' }), { target: { value: 'm' } });
     fireEvent.change(screen.getByLabelText(/mouse controls/i, { selector: 'select' }), { target: { value: 'solidworks' } });
     expect(save.disabled).toBe(false);
 
     fireEvent.click(save);
-    expect(localStorage.getItem('pb.lengthUnit')).toBe('in');
+    expect(localStorage.getItem('pb.lengthUnit')).toBe('m');
     expect(localStorage.getItem('pb.mouseControls')).toBe('solidworks');
     expect(save.disabled).toBe(true); // drafts became current
   });

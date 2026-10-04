@@ -56,11 +56,11 @@ const SEASONS: Readonly<Record<number, { frame: [number, number]; bumper: number
   2025: { frame: [30, 30], bumper: 4, src: '2025 R104 ≤120 in + R403 ≤4 in' },
   // 2026 tightened the perimeter itself: R104 ROBOT PERIMETER ≤ 110 in
   // (→ 27.5×27.5 in max square); R403 bumper ≤ 4.0 in per side.
-  // 2026 frame 27.0 (not the 27.5 rule max): the shipped CAD chassis
-  // (user-built Onshape frame, 2026-10-03) lands on the MK5i plate hole
-  // grid in whole-inch steps — 27.5 is unreachable, 27.0 is the largest
-  // legal档位. The CAD outline ships unscaled; the default follows it.
-  2026: { frame: [27, 27], bumper: 4, src: '2026 R104 ≤110 in + R403 ≤4.0 in' },
+  // 2026-10-04 user directive: the default is the season's rule maximum,
+  // so the frame is the 27.5 in max square (an earlier 27.0 followed the
+  // shipped CAD chassis instead; that CAD is still the 3D frame asset,
+  // scaled 27.5/27 for default-geometry robots).
+  2026: { frame: [27.5, 27.5], bumper: 4, src: '2026 R104 ≤110 in + R403 ≤4.0 in' },
 };
 
 const FALLBACK_YEAR = 2025;
