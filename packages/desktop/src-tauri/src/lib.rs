@@ -794,10 +794,13 @@ fn build_menu(app: &AppHandle, lang: &str) -> tauri::Result<tauri::menu::Menu<ta
                 .name(Some("PathBlender".to_string()))
                 .version(Some(env!("CARGO_PKG_VERSION").to_string()))
                 // The standard macOS About panel appends the build number in
-                // parentheses after the version; an empty one suppresses the
-                // tail, so the line reads "Version x.y.z" instead of
-                // "Version x.y.z (x.y.z)". (Only macOS consumes this field.)
-                .short_version(Some(String::new()))
+                // parentheses after the version; we show the git commit the
+                // build came from there (PB_GIT_HASH, set by build.rs via
+                // `git rev-parse --short HEAD`), so any installed copy is
+                // traceable to its exact code. Empty means "no hash" and the
+                // panel omits the parenthetical. Only macOS consumes this
+                // field.
+                .short_version(Some(env!("PB_GIT_HASH").to_string()))
                 .build(),
         ))
         .separator()
