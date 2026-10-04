@@ -1,30 +1,9 @@
-import type { SessionTrajectory } from '@pathblender/core';
-import { samplePoseAt } from '@pathblender/core';
-
-// Preserve the old 3D tube's 10 cm diameter as the tape width in both views.
+// The ground tape always shows each robot's full route, wherever the
+// playback head sits (user request 2026-10-04); the showTrail toggle only
+// decides whether the tape is drawn at all. Preserve the old 3D tube's
+// 10 cm diameter as the tape width in both views.
 export const TRAIL_WIDTH_M = 0.1;
 export const TRAIL_HEIGHT_M = 0.006;
-
-/** Index of the first sample after the playback clock, respecting start delays. */
-export function trailEndIndex(robot: SessionTrajectory, globalT: number): number {
-  const samples = robot.trajectory.samples;
-  const time = globalT - robot.startDelayS;
-  let lo = 0, hi = samples.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >>> 1;
-    if (samples[mid]!.t <= time) lo = mid + 1;
-    else hi = mid;
-  }
-  return lo;
-}
-
-export function trailPoints(robot: SessionTrajectory, globalT: number) {
-  const end = trailEndIndex(robot, globalT);
-  if (!end) return [];
-  const points = robot.trajectory.samples.slice(0, end).map(({ x, y }) => ({ x, y }));
-  if (end < robot.trajectory.samples.length) points.push(samplePoseAt(robot, globalT));
-  return points;
-}
 
 /** Flat, independent segment quads with small round joins. Each vertex carries
  * local trajectory time, allowing the GPU to reveal a partial segment without

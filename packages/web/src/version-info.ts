@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.5';
+export const APP_VERSION = '0.1.8-beta.6';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.6', date: '2026.10.04', note: {
+    en: 'Hidden robots take their conflicts and out-of-bounds entries with them; the route picker no longer lists the current route twice; the ground tape always shows the full path; the 2D heading arrow rides the bumper and points onto the path ahead',
+    zh: '隐藏的机器人连同冲突与越界条目一起隐藏；路线选择框不再重复列出当前路线；地面轨迹带始终显示完整路径；2D 朝向箭头贴上保险杠并指向前方轨迹',
+    'zh-tw': '隱藏的機器人連同衝突與越界條目一起隱藏；路線選擇框不再重複列出當前路線；地面軌跡帶始終顯示完整路徑；2D 朝向箭頭貼上保險桿並指向前方軌跡',
+    cs: 'Skrytí roboti zmizí i se svými konflikty a záznamy o překročení hranic; výběr tras už nezobrazuje aktuální trasu dvakrát; stopa na zemi vždy ukazuje celou cestu; 2D šipka směru přiléhá k nárazníku a míří na cestu vpřed',
+    nl: 'Verborgen robots verdwijnen samen met hun conflicten en meldingen buiten de veldgrenzen; de routekiezer toont de huidige route niet meer dubbel; de grondlijn toont altijd het volledige pad; de 2D-richtingspijl ligt tegen de bumper en wijst naar het pad vooruit',
+    fr: 'Les robots masqués emportent leurs conflits et leurs sorties de limites ; le sélecteur de trajectoire n’affiche plus la trajectoire courante en double ; la bande au sol montre toujours le chemin complet ; la flèche de cap 2D épouse le pare-chocs et pointe vers le chemin à venir',
+    he: 'רובוטים מוסתרים נעלמים יחד עם הקונפליקטים וחריגות הגבול שלהם; בורר המסלולים כבר לא מציג את המסלול הנוכחי פעמיים; סרט הקרקע תמיד מציג את הנתיב המלא; חץ הכיוון הדו-ממדי צמוד לפגוש ומצביע על הנתיב שלפניו',
+    ja: 'ロボットを隠すと衝突や境界逸脱の項目も一緒に非表示になります。ルート選択ボックスは現在のルートを重複表示しなくなり、地面の軌跡テープは常に経路全体を表示します。2D の向き矢印はバンパーに密着し、前方の経路を指します',
+    ko: '숨긴 로봇은 충돌 및 경계 이탈 항목과 함께 사라집니다. 경로 선택 상자가 현재 경로를 중복 표시하지 않으며, 지면 궤적 테이프가 항상 전체 경로를 표시합니다. 2D 방향 화살표는 범퍼에 붙어 앞쪽 경로를 가리킵니다',
+    pl: 'Ukryte roboty znikają wraz ze swoimi konfliktami i wpisami o wyjściu poza granice; selektor tras nie wyświetla już bieżącej trasy podwójnie; taśma na ziemi zawsze pokazuje pełną ścieżkę; strzałka kierunku 2D przylega do zderzaka i wskazuje ścieżkę przed robotem',
+    'pt-br': 'Robôs ocultos desaparecem junto com seus conflitos e registros de saída dos limites; o seletor de rotas não lista mais a rota atual duas vezes; a fita no chão sempre mostra o caminho completo; a seta de direção 2D fica rente ao para-choque e aponta para o caminho à frente',
+    es: 'Los robots ocultos desaparecen junto con sus conflictos y salidas de los límites; el selector de rutas ya no lista la ruta actual dos veces; la cinta en el suelo siempre muestra el camino completo; la flecha de dirección 2D se pega al parachoques y apunta al camino por delante',
+    tr: 'Gizlenen robotlar çakışma ve sınır ihlali kayıtlarıyla birlikte kaybolur; rota seçici artık geçerli rotayı iki kez listelemez; zemin şeridi her zaman tam yolu gösterir; 2D yön oku tampona yapışık durur ve öndeki yolu gösterir',
+  } },
   { version: '0.1.8-beta.5', date: '2026.10.04', note: {
     en: 'Zoom holds full resolution through the whole gesture — no more waiting for finger lift; the four bumper rails are now identical isosceles trapezoids mitered at 45°, in 3D and the 2D top view alike',
     zh: '缩放全程保持满分辨率——不再等松手才清晰；四根 bumper 改为全等等腰梯形 45° 斜接，3D 与 2D 俯视一致',
