@@ -112,6 +112,10 @@ export const tr: Record<MessageKey, string> = {
   "robots.bumper": "tampon (m)",
   'robots.length': 'uzunluk',
   'robots.width': 'genişlik',
+  'robots.mass': 'Kütle',
+  'robots.drive': 'Sürüş',
+  'robots.driveHolonomic': 'Holonomik',
+  'robots.driveDifferential': 'Diferansiyel',
   'robots.visible': 'oynatmada ve çarpışma denetiminde görünür',
 
   // View-cube initials: the Latin abbreviations collide (Alt/Arka), so this

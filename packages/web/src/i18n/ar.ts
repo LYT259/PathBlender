@@ -105,6 +105,10 @@ export const ar = {
   'robots.bumper': 'الصدام (م)',
   'robots.length': 'الطول',
   'robots.width': 'العرض',
+  'robots.mass': 'الكتلة',
+  'robots.drive': 'الدفع',
+  'robots.driveHolonomic': 'شامل الاتجاهات',
+  'robots.driveDifferential': 'تفاضلي',
   'robots.visible': 'مرئي في التشغيل وفحص التصادم',
   
   'vc.top': 'أع',

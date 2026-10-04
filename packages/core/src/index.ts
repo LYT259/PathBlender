@@ -53,7 +53,8 @@ export {
   ParseError,
 } from './parsers';
 export type { DetectedFormat, ParseErrorKind } from './parsers';
-export type { RobotProfile } from './parsers/robot-profile';
+export type { RobotProfile, ProfileDynamics, ProfileDefaultConstraints } from './parsers/robot-profile';
+export { applyProfileToTrajectory } from './profile-apply';
 export type { AutoSegment } from './parsers/pathplanner-auto';
 
 // PathPlanner trajectory generation (Phase 2 port, MIT-licensed upstream).

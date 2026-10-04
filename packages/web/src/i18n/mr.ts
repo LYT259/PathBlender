@@ -105,6 +105,10 @@ export const mr = {
   'robots.bumper': 'बंपर (मी)',
   'robots.length': 'लांबी',
   'robots.width': 'रुंदी',
+  'robots.mass': 'वस्तुमान',
+  'robots.drive': 'चालण',
+  'robots.driveHolonomic': 'सर्वदिश',
+  'robots.driveDifferential': 'विभेदक',
   'robots.visible': 'प्लेबॅक आणि टक्कर तपासणीत दृश्यमान',
   
   'vc.top': 'व',

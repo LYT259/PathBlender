@@ -112,6 +112,10 @@ export const zhTw: Record<MessageKey, string> = {
   'robots.bumper': '保險桿 (公尺)',
   'robots.length': '長',
   'robots.width': '寬',
+  'robots.mass': '質量',
+  'robots.drive': '驅動',
+  'robots.driveHolonomic': '全向',
+  'robots.driveDifferential': '差速',
   'robots.visible': '參與播放與碰撞檢查',
 
   'vc.top': '上',
