@@ -50,7 +50,7 @@ function TransportIcon({ kind }: { kind: 'rewind' | 'back' | 'play' | 'pause' | 
   );
 }
 
-export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, playback, playbackRange = 'paths', onPlaybackRangeChange, selectedId, onSelect, onJump, guide }: Props) {
+export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onJump, guide }: Props) {
   const { t: tr } = useI18n();
   const { t, setT, playing, setPlaying, speed, setSpeed } = playback;
   const end = playbackEnd(duration, autoPeriodS, playbackRange);
