@@ -2303,7 +2303,7 @@ dependencies = [
 
 [[package]]
 name = "pathblender-desktop"
-version = "0.1.7-beta.14"
+version = "0.1.7-beta.15"
 dependencies = [
  "base64 0.22.1",
  "objc2",

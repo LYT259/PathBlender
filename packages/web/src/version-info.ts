@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.14';
+export const APP_VERSION = '0.1.7-beta.15';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.15', date: '2026.10.04', note: {
+    en: 'Choreo .chor project files now import as robot data: bumper size, mass and module layout feed collision checking',
+    zh: 'Choreo .chor 项目文件现在可导入：读取保险杠尺寸、质量与模块布局用于碰撞检查',
+    'zh-tw': 'Choreo .chor 專案檔案現在可匯入：讀取保險桿尺寸、質量與模組佈局用於碰撞檢查',
+    cs: 'Soubory projektu Choreo .chor lze nyní importovat: rozměry nárazníku, hmotnost a rozložení modulů se načítají pro kontrolu kolizí',
+    nl: 'Choreo .chor-projectbestanden kunnen nu worden geïmporteerd: bumperafmetingen, massa en module-indeling worden gelezen voor botsingscontrole',
+    fr: 'Les fichiers projet Choreo .chor sont désormais importables : dimensions du pare-chocs, masse et disposition des modules alimentent la vérification des collisions',
+    he: 'קבצי פרויקט Choreo‏ .chor ניתנים כעת לייבוא: מידות הפגוש, המסה ופריסת המודולים מוזנים לבדיקת התנגשויות',
+    ja: 'Choreo の .chor プロジェクトファイルを取り込めるようになりました：バンパー寸法・質量・モジュール配置を衝突判定に反映します',
+    ko: 'Choreo .chor 프로젝트 파일을 가져올 수 있습니다: 범퍼 크기, 질량, 모듈 배치가 충돌 검사에 반영됩니다',
+    pl: 'Pliki projektu Choreo .chor można teraz importować: wymiary zderzaka, masa i rozmieszczenie modułów zasilają sprawdzanie kolizji',
+    'pt-br': 'Arquivos de projeto Choreo .chor agora podem ser importados: dimensões do para-choque, massa e disposição dos módulos alimentam a verificação de colisão',
+    es: 'Los archivos de proyecto Choreo .chor ya se pueden importar: las dimensiones del parachoques, la masa y la disposición de los módulos alimentan la comprobación de colisiones',
+    tr: 'Choreo .chor proje dosyaları artık robot verisi olarak içe aktarılıyor: tampon ölçüleri, kütle ve modül yerleşimi çarpışma kontrolüne yansıyor',
+  } },
   { version: '0.1.7-beta.14', date: '2026.10.04', note: { en: 'freeze swerve modules at installed angle / 模组锁定安装角' } },
   { version: '0.1.7-beta.13', date: '2026.10.04', note: {
     en: '2D: team number on a leader-line callout, alliance color only on the bumper bands',
