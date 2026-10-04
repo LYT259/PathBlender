@@ -127,8 +127,8 @@ describe('unified timeline', () => {
     );
     const scrubber = screen.getByRole('slider', { name: 'Playback position' });
     expect(scrubber).toHaveAttribute('max', '15');
-    // The final tick carries the unit (chart-axis convention): "15 Seconds".
-    expect(screen.getByText('15 Seconds', { selector: '.timeline-tick' })).toBeInTheDocument();
+    // Units stay in the label column, separate from centered tick numbers.
+    expect(screen.getByText('15', { selector: '.timeline-tick' })).toBeInTheDocument();
     expect(screen.getByText('6', { selector: '.timeline-tick' })).toHaveStyle({ left: '40%' });
     // A session running past the autonomous period keeps its own end.
     unmount();
