@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.30';
+export const APP_VERSION = '0.1.7';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7', date: '2026.10.04', note: {
+    en: 'Stable v0.1.7 — everything since v0.1.6',
+    zh: '0.1.7 正式版——汇集 0.1.6 以来全部改进',
+    'zh-tw': '0.1.7 正式版——匯集 0.1.6 以來全部改進',
+    cs: 'Stabilní v0.1.7 — vše od verze 0.1.6',
+    nl: 'Stabiel v0.1.7 — alles sinds v0.1.6',
+    fr: 'Version stable 0.1.7 — tout depuis la 0.1.6',
+    he: 'גרסה יציבה 0.1.7 — כל השיפורים מאז 0.1.6',
+    ja: '安定版 0.1.7——0.1.6 以降のすべての改善',
+    ko: '정식 버전 0.1.7 — 0.1.6 이후의 모든 개선 사항',
+    pl: 'Stabilna wersja 0.1.7 — wszystko od wersji 0.1.6',
+    'pt-br': 'Versão estável 0.1.7 — tudo desde a 0.1.6',
+    es: 'Versión estable 0.1.7 — todo lo añadido desde la 0.1.6',
+    tr: 'Kararlı sürüm 0.1.7 — 0.1.6\'ten bu yana her şey',
+  } },
   { version: '0.1.7-beta.30', date: '2026.10.04', note: {
     "en": "Even timeline ticks and a choice between full-timeline and path-length playback",
     "zh": "时间刻度间距统一，支持完整时间轴或当前路径时长播放",
