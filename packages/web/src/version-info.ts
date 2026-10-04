@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.10';
+export const APP_VERSION = '0.1.7-beta.11';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.11', date: '2026.10.04', note: {
+    en: 'Polish settings, hide inactive mouse labels and preview ordered length units',
+    zh: '统一设置界面、隐藏无功能鼠标标注，并按指定顺序预览长度单位',
+    'zh-tw': '統一設定介面、隱藏無功能滑鼠標註，並依指定順序預覽長度單位',
+    cs: 'Upravené nastavení, skryté popisky neaktivních tlačítek myši a náhled jednotek délky v určeném pořadí',
+    nl: 'Instellingen verfijnd, inactieve muislabels verborgen en lengte-eenheden in de gekozen volgorde weergegeven',
+    fr: 'Réglages harmonisés, libellés des boutons inactifs masqués et aperçu des unités de longueur dans l’ordre choisi',
+    he: 'עיצוב ההגדרות שופר, תוויות כפתורי עכבר ללא פעולה הוסתרו ונוסף תצוגה מקדימה של יחידות אורך בסדר שנבחר',
+    ja: '設定画面を整え、機能のないマウスボタンの注釈を非表示にし、長さの単位を指定順でプレビュー',
+    ko: '설정 화면을 정리하고 기능이 없는 마우스 버튼 표시를 숨겼으며 길이 단위를 지정된 순서로 미리 표시합니다',
+    pl: 'Ujednolicono ustawienia, ukryto opisy nieaktywnych przycisków myszy i dodano podgląd jednostek długości w ustalonej kolejności',
+    'pt-br': 'Ajustes refinados, rótulos de botões sem função ocultados e prévia das unidades de comprimento na ordem definida',
+    es: 'Ajustes unificados, etiquetas de botones sin función ocultas y vista previa de las unidades de longitud en el orden indicado',
+    tr: 'Ayarlar düzenlendi, işlevsiz fare düğmesi etiketleri gizlendi ve uzunluk birimleri belirlenen sırayla önizlendi',
+  } },
   { version: '0.1.7-beta.10', date: '2026.10.03', note: { en: '2D real frame + MK5i sprites, 3D max clarity, drop ViewCube home / 2D 真车架模组、3D 画质拉满、删主页按钮' } },
   { version: '0.1.7-beta.9', date: '2026.10.03', note: { en: 'MK5i modules seat on rails, turret-only steering / MK5i 模组贴梁、仅转塔转向' } },
   { version: '0.1.7-beta.8', date: '2026.10.03', note: {

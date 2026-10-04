@@ -77,19 +77,24 @@ describe('About section localizes the update notes', () => {
 
   it('shows the Chinese note when the UI language is Chinese', () => {
     renderAbout('zh');
-    expect(screen.getByText('删除设置里应用图标下方的提示行——图标选项保持不变')).toBeInTheDocument();
-    expect(screen.queryByText(/Removed the app icon hint line/)).not.toBeInTheDocument();
+    const { zh, en } = VERSION_NOTES[0].note;
+    expect(zh).toBeTruthy();
+    expect(zh).not.toBe(en);
+    expect(screen.getByText(zh!)).toBeInTheDocument();
+    expect(screen.queryByText(en)).not.toBeInTheDocument();
   });
 
   it('shows the English note when the UI language is English', () => {
     renderAbout('en');
-    expect(screen.getByText('Removed the app icon hint line in Settings — the icon choices stay')).toBeInTheDocument();
-    expect(screen.queryByText('删除设置里应用图标下方的提示行')).not.toBeInTheDocument();
+    const { zh, en } = VERSION_NOTES[0].note;
+    expect(screen.getByText(en)).toBeInTheDocument();
+    expect(screen.queryByText(zh!)).not.toBeInTheDocument();
   });
 
   it('renders the dotted date form', () => {
     renderAbout('en');
-    expect(screen.getAllByText('2026.10.03').length).toBeGreaterThan(0);
-    expect(screen.queryByText('2026-10-03')).not.toBeInTheDocument();
+    const { date } = VERSION_NOTES[0];
+    expect(screen.getAllByText(date).length).toBeGreaterThan(0);
+    expect(screen.queryByText(date.replaceAll('.', '-'))).not.toBeInTheDocument();
   });
 });
