@@ -4,7 +4,7 @@ import type {
   OutOfBoundsInterval,
   SessionTrajectory,
 } from '@pathblender/core';
-import { activeEndT } from '@pathblender/core';
+import { activeEndT, activeStartT, sequenceEventTimes } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import './Timeline.css';
 import { robotIdentity } from '../robot-identity';
@@ -106,7 +106,7 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
                 const robotBounds = bounds.filter((b) => b.robotId === trajectory.id);
                 const activityLabel = tr('timeline.activity', {
                   name: robotIdentity(trajectory),
-                  start: robot.startDelayS.toFixed(2),
+                  start: activeStartT(robot).toFixed(2),
                   end: activeEndT(robot).toFixed(2),
                 });
                 return (
@@ -125,7 +125,7 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
                     <div className="timeline-lane">
                       <div
                         className="timeline-activity"
-                        style={{ ...intervalStyle(robot.startDelayS, activeEndT(robot)), background: robot.color }}
+                        style={{ ...intervalStyle(activeStartT(robot), activeEndT(robot)), background: robot.color }}
                         role="img"
                         aria-label={activityLabel}
                         title={activityLabel}
@@ -146,10 +146,9 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
                         });
                         return <button key={`collision-${index}`} type="button" className="timeline-issue timeline-collision" style={intervalStyle(issue.startT, issue.endT)} aria-label={label} title={label} onClick={() => jump(issue.startT, [issue.aId, issue.bId], trajectory.id)} />;
                       })}
-                      {trajectory.events.map((event, index) => {
-                        const globalT = event.t + robot.startDelayS;
-                        const label = tr('timeline.eventAt', { name: event.name, t: globalT.toFixed(2) });
-                        return <button key={`event-${index}`} type="button" className="timeline-event" style={{ left: percent(globalT) }} title={label} aria-label={label} onClick={() => jump(globalT, [trajectory.id])} />;
+                      {sequenceEventTimes(robot).map((event, index) => {
+                        const label = tr('timeline.eventAt', { name: event.name, t: event.t.toFixed(2) });
+                        return <button key={`event-${index}`} type="button" className="timeline-event" style={{ left: percent(event.t) }} title={label} aria-label={label} onClick={() => jump(event.t, [trajectory.id])} />;
                       })}
                     </div>
                   </div>

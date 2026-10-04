@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.17';
+export const APP_VERSION = '0.1.8-beta.18';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,7 +32,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.8-beta.17', date: '2026.10.04', note: {
+  { version: '0.1.8-beta.18', date: '2026.10.04', note: {
     en: 'Fixed the 3D metal frame sinking into the floor — the module mounting plate\'s bottom face had been measured on the wrong surface (42 mm fork-arm underside instead of the true 92 mm plate face), so the frame now rides 31 mm higher, clear of the carpet',
     zh: '修复 3D 金属框架沉到地面——模组安装板底面此前测错了面（误用 42mm 叉臂底面，正确板面为 92mm），框架整体上抬 31mm、悬空于地毯上方',
     'zh-tw': '修復 3D 金屬框架沉到地面——模組安裝板底面先前測錯了面（誤用 42mm 叉臂底面，正確板面為 92mm），框架整體上抬 31mm、懸空於地毯上方',
@@ -46,6 +46,21 @@ export const VERSION_NOTES: VersionNote[] = [
     'pt-br': 'Corrigido o chassi metálico 3D afundando no piso — a face inferior da placa de montagem do módulo havia sido medida na superfície errada (42 mm sob o braço da garfo em vez dos 92 mm reais da placa); o chassi agora anda 31 mm mais alto, acima do carpete',
     es: 'Corregido el chasis metálico 3D que se hundía en el suelo — la cara inferior de la placa de montaje del módulo se había medido en la superficie equivocada (42 mm bajo el brazo de horquilla en lugar de los 92 mm reales de la placa); el chasis ahora va 31 mm más alto, sobre la alfombra',
     tr: '3B metal şasi zemine gömülüyordu, düzeltildi — modül montaj plakasının alt yüzü yanlış yüzeyden ölçülmüştü (gerçek plaka yüzü 92 mm yerine çatal kol altı 42 mm); şasi artık 31 mm daha yüksekte, halının üzerinde duruyor',
+  } },
+  { version: '0.1.8-beta.17', date: '2026.10.04', note: {
+    en: 'Compose several of a team’s routes into one multi-segment auto with start delay, waits and seam checks — playback, collisions and saved sessions all follow the composition',
+    zh: '多段自动组合：把本队多条路线按顺序拼成一台机器人的完整自动，支持起步等待与段间等待、接缝检查；回放、碰撞与保存全部跟随组合',
+    'zh-tw': '多段自動組合：把本隊多條路線按順序拼成一台機器人的完整自動，支援起步等待與段間等待、接縫檢查；回放、碰撞與儲存全部跟隨組合',
+    cs: 'Víceúsekové auto: složte několik tras týmu do jednoho auta s počátečním zpožděním a čekáním mezi úseky, kontrolou spojů — přehrávání, kolize i ukládání sledují složení',
+    nl: 'Multi-segment-auto: stel meerdere routes van een team samen tot één auto met startvertraging en wachttijden, plus naadcontroles — afspelen, botsingen en opslaan volgen de samenstelling',
+    fr: 'Auto multi-segments : composez plusieurs trajets d’une équipe en un seul auto avec délai de départ, attentes entre segments et contrôle des jonctions — lecture, collisions et enregistrement suivent la composition',
+    he: 'אוטו רב-מקטעים: חברו כמה מסלולים של קבוצה לאוטו אחד עם עיכוב התחלה, המתנות ובדיקת חיבורים — ניגון, התנגשויות ושמירה עוקבים אחר ההרכבה',
+    ja: 'マルチセグメント自動：チームの複数ルートを開始遅延・区間待機・接続チェック付きで 1 つの自動に組み立て。再生・衝突判定・保存がすべてこの組み立てに従います',
+    ko: '멀티 세그먼트 자동: 팀의 여러 경로를 시작 지연, 구간 대기, 이음새 검사와 함께 하나의 자동으로 구성합니다. 재생·충돌·저장이 모두 이 구성을 따릅니다',
+    pl: 'Auto wielosegmentowe: ułóż kilka tras zespołu w jedno auto z opóźnieniem startu, przerwami między segmentami i kontrolą łączeń — odtwarzanie, kolizje i zapis podążają za składem',
+    'pt-br': 'Auto de múltiplos segmentos: monte várias rotas da equipe em um único auto com atraso inicial, esperas entre segmentos e verificação de emendas — reprodução, colisões e salvamento seguem a composição',
+    es: 'Auto multisegmento: combina varias rutas del equipo en un solo auto con retraso inicial, esperas entre segmentos y comprobación de uniones — reproducción, colisiones y guardado siguen la composición',
+    tr: 'Çok segmentli oto: takımın birden çok rotasını başlangıç gecikmesi, segment arası beklemeler ve birleşim denetimiyle tek bir oto olarak düzenleyin — oynatma, çarpışmalar ve kaydetme bu düzenlemeyi izler',
   } },
   { version: '0.1.8-beta.16', date: '2026.10.04', note: {
     en: 'Reopen exactly where you left — route picks, selection, playhead and playback range all restored; boundary check forgives wall-kiss starts within 2 cm',
