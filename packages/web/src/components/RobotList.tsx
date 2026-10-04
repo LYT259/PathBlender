@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from 'react';
 import type { CollisionInterval, RobotGeometry, SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { VIEWER_ONLY } from '../viewer';
-import { displayName, type LibraryProfile, type LibraryRoute } from '../route-library';
+import { displayName, routeLabel, type LibraryProfile } from '../route-library';
 import './RobotList.css';
 import { robotIdentity } from '../robot-identity';
 
@@ -13,11 +13,8 @@ interface RobotListProps {
   onSelect: (id: string) => void;
   onImport: () => void;
   onUpdate: (id: string, patch: Partial<SessionTrajectory>) => void;
-  libraryRoutes: LibraryRoute[];
-  libraryProfiles: LibraryProfile[];
   /** Robot slot id → library route id. */
   onPickRoute: (robotId: string, routeId: string) => void;
-  onAddRoute: (routeId: string) => void;
 }
 
 interface RobotInspectorProps {
@@ -52,7 +49,7 @@ function TeamNumberCell({ robot, onUpdate, children }: {
         aria-label={t('robots.teamNumberEdit')}
         onClick={() => {
           committed.current = false;
-          setDraft(robot.trajectory.teamNumber);
+          setDraft(/^[A-Z]{6}$/.test(robot.trajectory.teamNumber) ? '' : robot.trajectory.teamNumber);
           setEditing(true);
         }}
       >
@@ -65,6 +62,7 @@ function TeamNumberCell({ robot, onUpdate, children }: {
     committed.current = true;
     setEditing(false);
     const v = draft.replace(/\D/g, '').slice(0, 5);
+    if (!v && /^[A-Z]{6}$/.test(robot.trajectory.teamNumber)) return;
     if (v !== robot.trajectory.teamNumber) {
       onUpdate(robot.trajectory.id, { trajectory: { ...robot.trajectory, teamNumber: v } });
     }
@@ -73,6 +71,7 @@ function TeamNumberCell({ robot, onUpdate, children }: {
     <div className="robot-team-editor"><span className="band-dot" style={{ background: robot.color }} aria-hidden="true" /><input
       className="robot-team-input"
       value={draft}
+      placeholder={/^[A-Z]{6}$/.test(robot.trajectory.teamNumber) ? robot.trajectory.teamNumber : undefined}
       inputMode="numeric"
       maxLength={5}
       autoFocus
@@ -89,7 +88,7 @@ function TeamNumberCell({ robot, onUpdate, children }: {
 }
 
 /** Selection lives in the workspace so the list, field and inspector agree. */
-export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, libraryRoutes, libraryProfiles, onPickRoute, onAddRoute }: RobotListProps) {
+export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onPickRoute }: RobotListProps) {
   const { t } = useI18n();
   return (
     <aside className="robot-list robot-library" aria-label={t('robots.title', { n: robots.length })}>
@@ -115,6 +114,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
               `${trajectory.durationS.toFixed(2)} s`,
               hit ? t('robots.collision') : '',
             ].filter(Boolean).join(', ');
+            const libraryRoutes = robot.routeOptions ?? [];
             const currentRoute = libraryRoutes.find((r) => r.id === robot.routeId);
             return (
               <li key={trajectory.id} className={`robot-library-row${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
@@ -142,7 +142,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     {!currentRoute && <option value="">{displayName(trajectory)}</option>}
                     {libraryRoutes.map((route) => (
                       <option key={route.id} value={route.id} title={route.relPath}>
-                        {displayName(route.trajectory)} · {route.trajectory.durationS.toFixed(1)} s
+                        {routeLabel(route, libraryRoutes)}
                       </option>
                     ))}
                   </select>
@@ -155,37 +155,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
           })}
         </ul>
       )}
-      {(libraryRoutes.length > 0 || libraryProfiles.length > 0) && (
-        <section className="route-library-panel" aria-label={t('library.title')}>
-          <h3>{t('library.title', { n: libraryRoutes.length })}</h3>
-          {libraryRoutes.length > 0 && (
-            <ul className="route-library-items">
-              {libraryRoutes.map((route) => (
-                <li key={route.id} className="route-library-item" title={route.relPath}>
-                  <span className="route-library-item-body">
-                    <span className="route-library-item-name">{displayName(route.trajectory)}</span>
-                    <span className="route-library-item-meta">{sourceLabel(route.trajectory.source)} · {route.trajectory.durationS.toFixed(1)} s</span>
-                  </span>
-                  <button className="route-library-add-btn" onClick={() => onAddRoute(route.id)} aria-label={t('library.add', { name: displayName(route.trajectory) })} title={t('library.add', { name: displayName(route.trajectory) })}>+</button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {libraryProfiles.length > 0 && (
-            <ul className="route-library-items route-library-profiles">
-              {libraryProfiles.map((entry) => (
-                <li key={entry.id} className="route-library-item" title={entry.relPath}>
-                  <span className="route-library-item-body">
-                    <span className="route-library-item-name">{entry.profile.name}</span>
-                    <span className="route-library-item-meta">{t('robots.profileEntry', { l: entry.profile.geometry.lengthM.toFixed(2), w: entry.profile.geometry.widthM.toFixed(2) })}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="route-library-note">{t('library.hint')}</p>
-        </section>
-      )}
+
     </aside>
   );
 }
