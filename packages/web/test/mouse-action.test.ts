@@ -40,9 +40,16 @@ describe('resolveMouseAction (verified Onshape/SolidWorks bindings)', () => {
       expect(resolveMouseAction('solidworks', 1, shift, false)).toEqual({ kind: 'dragZoom' });
     });
 
-    it('Alt+middle drag is constrained rotate', () => {
-      expect(resolveMouseAction('solidworks', 1, alt, false)).toEqual({ kind: 'orbit', constrained: true });
-      expect(resolveMouseAction('solidworks', 1, alt, true)).toEqual({ kind: 'orbit', constrained: false });
+    it('Alt+middle drag is Roll View, never constrained rotate', () => {
+      // SOLIDWORKS Roll View spins the view in the screen plane; the
+      // default-constrained checkbox does not remap this binding.
+      expect(resolveMouseAction('solidworks', 1, alt, false)).toEqual({ kind: 'roll' });
+      expect(resolveMouseAction('solidworks', 1, alt, true)).toEqual({ kind: 'roll' });
+    });
+
+    it('the default-constrained checkbox only re-tunes plain middle drag', () => {
+      expect(resolveMouseAction('solidworks', 1, none, false)).toEqual({ kind: 'orbit', constrained: false });
+      expect(resolveMouseAction('solidworks', 1, none, true)).toEqual({ kind: 'orbit', constrained: true });
     });
   });
 });
