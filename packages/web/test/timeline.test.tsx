@@ -72,7 +72,7 @@ describe('unified timeline', () => {
     const state = playback(7.8);
     render(
       <I18nProvider>
-        <Timeline robots={[delayedRobot]} conflicts={[]} bounds={[]} autoPeriodS={20} duration={8} playback={state} />
+        <Timeline robots={[delayedRobot]} conflicts={[]} bounds={[]} autoPeriodS={20} duration={8} playback={state} playbackRange="paths" />
       </I18nProvider>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Forward 0.5 seconds' }));
