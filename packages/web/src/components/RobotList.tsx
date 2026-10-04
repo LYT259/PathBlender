@@ -108,7 +108,6 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
             const { trajectory } = robot;
             const hit = conflicts.some((c) => c.aId === trajectory.id || c.bId === trajectory.id);
             const visibilityLabel = t(robot.visible ? 'robots.hide' : 'robots.show', { name: robotIdentity(trajectory) });
-            const opponentLabel = t(robot.opponent ? 'robots.unmarkOpponent' : 'robots.markOpponent', { name: robotIdentity(trajectory) });
             const selectionLabel = [
               robotIdentity(trajectory),
               sourceLabel(trajectory.source),
@@ -148,9 +147,6 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     ))}
                   </select>
                 )}
-                <button className={`robot-library-visibility opponent-toggle${robot.opponent ? ' is-opponent' : ''}`} aria-label={opponentLabel} title={opponentLabel} aria-pressed={robot.opponent === true} onClick={() => onUpdate(trajectory.id, { opponent: !robot.opponent })}>
-                  <OpponentIcon opponent={robot.opponent === true} />
-                </button>
                 <button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
                   <EyeIcon visible={robot.visible} />
                 </button>
@@ -245,11 +241,6 @@ export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfil
       )}
     </section>
   );
-}
-
-function OpponentIcon({ opponent }: { opponent: boolean }) {
-  // Shield glyph — filled when the robot reads as an opponent (defense view).
-  return <svg viewBox="0 0 20 20" width="17" height="17" fill={opponent ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 2.5 4.5 5v4c0 3.5 2.4 6 5.5 8 3.1-2 5.5-4.5 5.5-8V5Z" /></svg>;
 }
 
 function EyeIcon({ visible }: { visible: boolean }) {
