@@ -14,8 +14,6 @@ export const en = {
   'welcome.importFolderHint': 'Load several routes and choose which to replay',
   'welcome.openSession': 'Open saved session',
   'welcome.openSessionHint': 'Open a previously saved analysis',
-  'welcome.demo': 'Demo mode',
-  'welcome.demoHint': 'Load the example match and play it back automatically',
   'welcome.tryExample': 'Try an example',
   'welcome.exampleHint': 'Explore playback and collision checks with sample paths.',
   'welcome.loadingExample': 'Opening example…',

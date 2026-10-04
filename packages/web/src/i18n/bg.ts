@@ -253,8 +253,6 @@ export const bg = {
   'checks.estimated': 'Някои размери са оценки. Проверете роботските данни, преди да разчитате на тези резултати.',
   'robots.bumperDefault': 'по подразбиране',
   'robots.actions': 'Роботски действия',
-  'welcome.demo': 'Демо режим',
-  'welcome.demoHint': 'Заредете примерния мач и го пуснете автоматично',
   'workspace.togglePaths': 'Показване/скриване на списъка с пътища',
   'workspace.toggleInspector': 'Показване/скриване на инспектора',
   'workspace.closePanel': 'Затвори инспектора',

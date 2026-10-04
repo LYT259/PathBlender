@@ -26,8 +26,6 @@ export const ja: Record<MessageKey, string> = {
   'welcome.importFolderHint': '複数のルートを読み込み、再生するものを選べます',
   'welcome.openSession': '保存したセッションを開く',
   'welcome.openSessionHint': '以前保存した解析を開きます',
-  'welcome.demo': 'デモモード',
-  'welcome.demoHint': 'サンプル試合を読み込み自動再生します',
   'welcome.tryExample': 'サンプルを試す',
   'welcome.exampleHint': 'サンプルパスで再生と衝突チェックを体験できます。',
   'welcome.loadingExample': 'サンプルを開いています…',

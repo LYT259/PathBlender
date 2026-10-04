@@ -253,8 +253,6 @@ export const bs = {
   'checks.estimated': "Neke dimenzije su procjene. Provjerite podatke o robotu prije nego se oslonite na ove rezultate.",
   'robots.bumperDefault': "zadano",
   'robots.actions': "Radnje robota",
-  'welcome.demo': 'Demo režim',
-  'welcome.demoHint': 'Učitaj primjer meča i pusti ga automatski',
   'workspace.togglePaths': 'Prikaži/sakrij listu putanja',
   'workspace.toggleInspector': 'Prikaži/sakrij inspektora',
   'workspace.closePanel': 'Zatvori inspektora',

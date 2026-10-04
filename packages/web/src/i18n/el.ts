@@ -253,8 +253,6 @@ export const el = {
   'checks.estimated': 'Ορισμένες διαστάσεις είναι εκτιμήσεις. Επαληθεύστε τα δεδομένα ρομπότ πριν βασιστείτε σε αυτά τα αποτελέσματα.',
   'robots.bumperDefault': 'προεπιλογή',
   'robots.actions': 'Ενέργειες ρομπότ',
-  'welcome.demo': 'Λειτουργία επίδειξης',
-  'welcome.demoHint': 'Φόρτωση του αγώνα-παραδείγματος και αυτόματη αναπαραγωγή',
   'workspace.togglePaths': 'Εμφάνιση/απόκρυψη λίστας διαδρομών',
   'workspace.toggleInspector': 'Εμφάνιση/απόκρυψη επιθεωρητή',
   'workspace.closePanel': 'Κλείσιμο επιθεωρητή',

@@ -253,8 +253,6 @@ export const da = {
   'checks.estimated': "Nogle dimensioner er estimerede. Bekræft robotdata, før du stoler på disse resultater.",
   'robots.bumperDefault': "standard",
   'robots.actions': "Robot-handlinger",
-  'welcome.demo': 'Demotilstand',
-  'welcome.demoHint': 'Indlæs eksempelkampen og afspil den automatisk',
   'workspace.togglePaths': 'Vis eller skjul sti-listen',
   'workspace.toggleInspector': 'Vis eller skjul inspektøren',
   'workspace.closePanel': 'Luk inspektøren',

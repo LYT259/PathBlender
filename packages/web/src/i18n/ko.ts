@@ -25,8 +25,6 @@ export const ko: Record<MessageKey, string> = {
   'welcome.importFolderHint': '여러 경로를 불러와 재생할 경로를 선택합니다',
   'welcome.openSession': '저장된 세션 열기',
   'welcome.openSessionHint': '이전에 저장한 분석을 엽니다',
-  'welcome.demo': '데모 모드',
-  'welcome.demoHint': '예시 경기를 불러와 자동 재생합니다',
   'welcome.tryExample': '예제 사용해 보기',
   'welcome.exampleHint': '샘플 경로로 재생과 충돌 검사를 살펴봅니다.',
   'welcome.loadingExample': '예제 여는 중…',

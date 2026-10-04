@@ -14,8 +14,6 @@ export const ms = {
   'welcome.importFolderHint': 'Muatkan beberapa laluan dan pilih yang mana untuk dimainkan semula',
   'welcome.openSession': 'Buka sesi tersimpan',
   'welcome.openSessionHint': 'Buka analisis yang disimpan sebelum ini',
-  'welcome.demo': 'Mod demo',
-  'welcome.demoHint': 'Muat perlawanan contoh dan mainkan secara automatik',
   'welcome.tryExample': 'Cuba contoh',
   'welcome.exampleHint': 'Terokai main semula dan semakan perlanggaran dengan laluan contoh.',
   'welcome.loadingExample': 'Membuka contoh…',

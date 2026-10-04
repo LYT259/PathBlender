@@ -253,8 +253,6 @@ export const hr = {
   'checks.estimated': 'Neke dimenzije su procjene. Provjerite podatke robota prije nego što se oslonite na ove rezultate.',
   'robots.bumperDefault': 'zadano',
   'robots.actions': 'Radnje robota',
-  'welcome.demo': 'Demo način',
-  'welcome.demoHint': 'Učitaj primjer utakmice i automatski je pusti',
   'workspace.togglePaths': 'Prikaži/sakrij popis putanja',
   'workspace.toggleInspector': 'Prikaži/sakrij inspektora',
   'workspace.closePanel': 'Zatvori inspektora',

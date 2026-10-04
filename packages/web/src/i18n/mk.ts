@@ -253,8 +253,6 @@ export const mk = {
   'checks.estimated': 'Некои димензии се проценки. Проверете ги податоците за роботот пред да се потпрете на овие резултати.',
   'robots.bumperDefault': 'стандардно',
   'robots.actions': 'Дејства на робот',
-  'welcome.demo': 'Демо режим',
-  'welcome.demoHint': 'Вчитај го примерот натпревар и пушти го автоматски',
   'workspace.togglePaths': 'Прикажи/скриј ја листата со патеки',
   'workspace.toggleInspector': 'Прикажи/скриј го инспекторот',
   'workspace.closePanel': 'Затвори го инспекторот',

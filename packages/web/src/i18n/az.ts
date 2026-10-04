@@ -253,8 +253,6 @@ export const az = {
   'checks.estimated': 'Bəzi ölçülər təxminlərdir. Bu nəticələrə etibar etməzdən əvvəl robot məlumatlarını yoxlayın.',
   'robots.bumperDefault': 'standart',
   'robots.actions': 'Robot hərəkətləri',
-  'welcome.demo': 'Demo rejimi',
-  'welcome.demoHint': 'Nümunə oyunu yükləyib avtomatik oxut',
   'workspace.togglePaths': 'Yol siyahısını göstər/gizlə',
   'workspace.toggleInspector': 'Müfəttişi göstər/gizlə',
   'workspace.closePanel': 'Müfəttişi bağla',

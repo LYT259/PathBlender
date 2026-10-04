@@ -21,8 +21,6 @@ export const es: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Carga varias rutas y elige cuál reproducir',
   'welcome.openSession': 'Abrir una sesión guardada',
   'welcome.openSessionHint': 'Abre un análisis guardado anteriormente',
-  'welcome.demo': 'Modo demo',
-  'welcome.demoHint': 'Cargar el partido de ejemplo y reproducirlo automáticamente',
   'welcome.tryExample': 'Probar un ejemplo',
   'welcome.exampleHint': 'Explora la reproducción y la detección de colisiones con rutas de ejemplo.',
   'welcome.loadingExample': 'Abriendo ejemplo…',
