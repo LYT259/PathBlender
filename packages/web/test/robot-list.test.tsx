@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeSession, parseGhostAuto, type SessionTrajectory } from '@pathblender/core';
 import { I18nProvider } from '../src/i18n';
 import { RobotInspector, RobotList } from '../src/components/RobotList';
+import { sequenceViewFor } from '../src/auto-sequence-state';
 
 const mode = vi.hoisted(() => ({ viewerOnly: false }));
 vi.mock('../src/viewer', () => ({ get VIEWER_ONLY() { return mode.viewerOnly; } }));
@@ -12,6 +13,12 @@ vi.mock('../src/viewer', () => ({ get VIEWER_ONLY() { return mode.viewerOnly; } 
 function robot() {
   const source = readFileSync(resolve(__dirname, '../../../samples/ghostauto/straight_run.ghostauto'), 'utf8');
   return makeSession(parseGhostAuto(source, 'straight_run.ghostauto'));
+}
+
+/** The composition editor is part of the inspector now; a read-only view of it. */
+function inspectorSequence(sample: ReturnType<typeof robot>) {
+  const view = sequenceViewFor(sample);
+  return { routes: view.routes, segments: view.segments, onChange: vi.fn(), joins: [] };
 }
 
 function inspectorCallbacks() {
@@ -55,19 +62,23 @@ describe('robot workspace controls', () => {
 
   it('shows dimensions read-only for every source — the app is a pure viewer', () => {
     const sample = robot();
-    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} sequence={inspectorSequence(sample)} /></I18nProvider>);
 
-    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    // The composition editor adds one Start spinbutton; dimensions and
+    // geometry stay read-only (no length/width inputs).
+    expect(screen.queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
     expect(screen.getAllByText(`${sample.trajectory.geometry.lengthM.toFixed(2)} m`).length).toBeGreaterThan(0);
     expect(screen.getAllByText(`${sample.trajectory.geometry.widthM.toFixed(2)} m`).length).toBeGreaterThan(0);
   });
 
   it('exposes no editing affordances anywhere on the card', () => {
     const sample = robot();
-    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} sequence={inspectorSequence(sample)} /></I18nProvider>);
     // Pure viewer (2026-09-30): no team-number input, no alliance toggle,
-    // no delay/geometry spinbuttons, no edit/reset/export actions.
-    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    // no geometry spinbuttons, no edit/reset/export actions. The composition
+    // editor's start-time fields are the one deliberate editing surface
+    // (multi-segment auto, red book v1.38).
+    expect(screen.queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /edit path/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^\.path$|\.traj$|\.ghostauto$/ })).not.toBeInTheDocument();
@@ -76,13 +87,14 @@ describe('robot workspace controls', () => {
   it('no longer repeats team identity under the robot name (removed 2026-10-04)', () => {
     const sample = robot();
     sample.trajectory.teamName = 'The Cheesy Poofs';
-    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} sequence={inspectorSequence(sample)} /></I18nProvider>);
     // The whole identity block (team name / team # / alliance rows) is gone —
     // that identity is already obvious from the robot card and alliance bar.
     expect(screen.queryByText('team #')).not.toBeInTheDocument();
     expect(screen.queryByText('alliance')).not.toBeInTheDocument();
     expect(screen.queryByText('The Cheesy Poofs')).not.toBeInTheDocument();
-    expect(screen.getByText('Timing')).toBeInTheDocument();
+    // The read-only Timing row was replaced by the composition editor.
+    expect(screen.getByText('Auto sequence')).toBeInTheDocument();
     expect(screen.getByText('Robot data')).toBeInTheDocument();
   });
 
@@ -90,7 +102,7 @@ describe('robot workspace controls', () => {
     const sample = robot();
     sample.trajectory.teamNumber = '0001';
     sample.trajectory.displayName = 'My Robot';
-    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} sequence={inspectorSequence(sample)} /></I18nProvider>);
     // Display names label the list, playback bar and field; the details
     // panel sticks to the imported #teamNumber/name rule.
     expect(screen.getByRole('heading', { name: '#0001' })).toBeInTheDocument();
@@ -101,8 +113,8 @@ describe('robot workspace controls', () => {
     mode.viewerOnly = true;
     const sample = robot();
     sample.trajectory.geometrySource = 'default';
-    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
-    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} sequence={inspectorSequence(sample)} /></I18nProvider>);
+    expect(screen.queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'edit path' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '.ghostauto' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Remove from session' })).not.toBeInTheDocument();
