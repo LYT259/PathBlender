@@ -83,10 +83,10 @@ describe('welcome example', () => {
     // No start delay untangles two robots parked on the same spot — the
     // example teaches moving a start, not delaying it.
     expect(detectCollisions(autoResolveConflicts(robots))).toHaveLength(1);
-    // Both autos begin with a bumper hair over the line (real Choreo data).
-    const bounds = detectFieldBounds(robots, REBUILT_2026);
-    expect(bounds).toHaveLength(2);
-    for (const issue of bounds) expect(issue.maxPenetrationM).toBeLessThan(0.005);
+    // Both autos begin with a bumper hair over the line (real Choreo data,
+    // millimetre-level) — inside BOUNDS_TOLERANCE_M (2026-10-04), so the
+    // boundary check forgives the wall-kiss start and reports nothing.
+    expect(detectFieldBounds(robots, REBUILT_2026)).toHaveLength(0);
   });
 
   it('creates every example fresh: calls are equal and edits never leak across', () => {

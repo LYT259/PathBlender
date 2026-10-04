@@ -31,7 +31,7 @@ import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } fro
 import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
 import { displayName, robotsFromImport, type LibraryProfile, type LibraryRoute } from './route-library';
 import { withTeamPlaceholders } from './team-placeholder';
-import { loadAutosave, saveAutosave } from './autosave';
+import { loadAutosave, readSessionUi, saveAutosave } from './autosave';
 import { saveText } from './download';
 import { fieldImageFor } from './field-images';
 import { FIELD3D_MODELS } from './field3d-models';
@@ -283,13 +283,20 @@ function AppBody() {
       if (!fromFolder && isSessionFileName(relPath)) {
         try {
           const restored = deserializeSession(text);
+          const ui = readSessionUi(text);
           pathTextsRef.current.clear();
           pendingProfilesRef.current = [];
           setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(restored.robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
-          setSelectedId(restored.robots[0]?.trajectory.id ?? null);
+          const ids = new Set(restored.robots.map((r) => r.trajectory.id));
+          setSelectedId(
+            ui?.selectedId && ids.has(ui.selectedId)
+              ? ui.selectedId
+              : restored.robots[0]?.trajectory.id ?? null,
+          );
+          if (ui?.playbackRange) setPlaybackRange(ui.playbackRange);
           setInspectorMode('checks');
           playback.setPlaying(false);
-          setT(0);
+          pendingRestoreT.current = ui?.t ?? 0;
           setErrors([]);
           return;
         } catch {
@@ -475,17 +482,16 @@ function AppBody() {
   }, []);
 
   const saveSession = useCallback(() => {
-    const text = serializeSession(
-      robots,
-      fieldId,
-      fieldId === CUSTOM_FIELD_ID ? field : undefined,
-    );
+    const file = JSON.parse(
+      serializeSession(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined),
+    ) as Record<string, unknown>;
+    file.ui = { selectedId, t, playbackRange };
     void saveText(
       `session-${new Date().toISOString().slice(0, 10)}${SESSION_EXT}`,
       'json',
-      text,
+      JSON.stringify(file, null, 2),
     );
-  }, [robots, fieldId, field]);
+  }, [robots, fieldId, field, selectedId, t, playbackRange]);
 
   // ⌘Z / Ctrl+Z undo, Shift = redo (restored 2026-10-04). Ignored while an
   // input, select, textarea or modal owns focus, so typing stays untouched.
@@ -509,7 +515,19 @@ function AppBody() {
     if (!restored) return;
     const apply = (robots: typeof restored.robots) => {
       setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
-      setSelectedId(robots[0]?.trajectory.id ?? null);
+      // Reopen exactly where the user left (2026-10-04): saved selection
+      // (validated — a refreshed example robot may have carried the old id
+      // away), playback range, and the playhead. The playhead goes through
+      // pendingRestoreT because setT clamps against the current duration,
+      // which is still 0 in this mount render.
+      const ids = new Set(robots.map((r) => r.trajectory.id));
+      setSelectedId(
+        restored.ui?.selectedId && ids.has(restored.ui.selectedId)
+          ? restored.ui.selectedId
+          : robots[0]?.trajectory.id ?? null,
+      );
+      if (restored.ui?.playbackRange) setPlaybackRange(restored.ui.playbackRange);
+      pendingRestoreT.current = restored.ui?.t ?? 0;
     };
     // A restored example is whatever the demo looked like when it was saved;
     // swap in the current example set so a relaunch shows today's demo (the
@@ -524,15 +542,34 @@ function AppBody() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
   }, []);
 
+  // Playhead waiting for its duration: the restore effect runs while the
+  // scene is still empty (duration 0), where setT would clamp to 0.
+  const pendingRestoreT = useRef<number | null>(null);
+  useEffect(() => {
+    if (pendingRestoreT.current === null || duration === 0) return;
+    setT(pendingRestoreT.current);
+    pendingRestoreT.current = null;
+  }, [duration, setT]);
+
   // Keep the autosave current (debounced; removing the last robot clears
-  // the slot so the next launch opens on the welcome page again).
+  // the slot so the next launch opens on the welcome page again). The ui
+  // slot makes the reopen land where the user left: selection, playhead
+  // and playback range ride along with the robots.
   useEffect(() => {
     const id = setTimeout(
-      () => saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined),
+      () => saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, { selectedId, t, playbackRange }),
       600,
     );
     return () => clearTimeout(id);
-  }, [robots, fieldId, field]);
+  }, [robots, fieldId, field, selectedId, t, playbackRange]);
+
+  // The debounce never fires between the last edit and Cmd+Q — flush
+  // synchronously on unload so a quit loses nothing (route pick included).
+  useEffect(() => {
+    const flush = () => saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, { selectedId, t, playbackRange });
+    window.addEventListener('beforeunload', flush);
+    return () => window.removeEventListener('beforeunload', flush);
+  }, [robots, fieldId, field, selectedId, t, playbackRange]);
 
   const exportPng = useCallback(() => {
     if (view3D) {

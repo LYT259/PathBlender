@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.15';
+export const APP_VERSION = '0.1.8-beta.16';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.16', date: '2026.10.04', note: {
+    en: 'Reopen exactly where you left — route picks, selection, playhead and playback range all restored; boundary check forgives wall-kiss starts within 2 cm',
+    zh: '重开 App 回到你退出的地方——路线选择、选中机器人、播放头与回放范围全部保真恢复；边界检测对 2 厘米内的贴墙起步不再报越界',
+    'zh-tw': '重開 App 回到你離開的地方——路線選擇、選中機器人、播放頭與回放範圍全部保真恢復；邊界偵測對 2 公分內的貼牆起步不再報越界',
+    cs: 'Znovuotevření přesně tam, kde jste skončili — volby tras, výběr, pozice přehrávání i rozsah přehrávání se obnoví; kontrola hranic odpouští starty u zdi do 2 cm',
+    nl: 'Heropen precies waar je was gebleven — routekeuzes, selectie, afspeelpositie en afspeelbereik worden hersteld; de grenscontrole vergeeft muurstarten binnen 2 cm',
+    fr: 'Rouvrez exactement où vous étiez — choix de trajectoires, sélection, tête de lecture et plage de lecture restaurés ; le contrôle des limites pardonne les départs collés au mur à moins de 2 cm',
+    he: 'פתיחה מחדש בדיוק מאיפה שהפסקת — בחירות מסלול, בחירה, ראש נגינה וטווח נגינה משוחזרים; בדיקת הגבולות סולחת על התחלות צמודות לקיר עד 2 ס״מ',
+    ja: '終了した場所にそのまま戻ります——ルート選択、選択中のロボット、再生位置、再生範囲がすべて復元されます。境界チェックは壁際 2 cm 以内のスタートを越界とみなしません',
+    ko: '종료한 곳에서 그대로 다시 시작합니다 — 경로 선택, 선택된 로봇, 재생 위치, 재생 범위가 모두 복원됩니다. 경계 검사는 벽에 붙인 2 cm 이내의 시작을 용인합니다',
+    pl: 'Otwórz dokładnie tam, gdzie skończyłeś — wybory tras, zaznaczenie, głowica odtwarzania i zakres odtwarzania są przywracane; kontrola granic wybacza starty przy ścianie do 2 cm',
+    'pt-br': 'Reabra exatamente onde você parou — escolhas de rota, seleção, posição de reprodução e intervalo de reprodução restaurados; a verificação de limites perdoa largadas encostadas na parede em até 2 cm',
+    es: 'Reabre exactamente donde lo dejaste: selecciones de ruta, selección, cabezal de reproducción y rango de reproducción restaurados; la comprobación de límites perdona las salidas pegadas al muro dentro de 2 cm',
+    tr: 'Bıraktığınız yerden tam olarak devam edin — rota seçimleri, seçim, oynatma kafası ve oynatma aralığı geri yüklenir; sınır denetimi 2 cm içindeki duvara yapışık başlangıçları hoş görür',
+  } },
   { version: '0.1.8-beta.15', date: '2026.10.04', note: {
     en: 'Free-text robot display names across the list, playback bar, 2D callouts and 3D bumpers; rounded 2D route-tape ends',
     zh: '机器人可自由填写显示名称，同步用于列表、播放栏、2D 标注与 3D 保险杠；2D 完整路径改用圆形端点',
