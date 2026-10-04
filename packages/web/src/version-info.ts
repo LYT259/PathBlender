@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.13';
+export const APP_VERSION = '0.1.7-beta.14';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.14', date: '2026.10.04', note: { en: 'freeze swerve modules at installed angle / 模组锁定安装角' } },
   { version: '0.1.7-beta.13', date: '2026.10.04', note: {
     en: '2D: team number on a leader-line callout, alliance color only on the bumper bands',
     zh: '2D：队号改为引线标注显示，且只有 bumper 四边保留联盟色',
