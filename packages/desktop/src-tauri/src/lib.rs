@@ -793,6 +793,11 @@ fn build_menu(app: &AppHandle, lang: &str) -> tauri::Result<tauri::menu::Menu<ta
             AboutMetadataBuilder::new()
                 .name(Some("PathBlender".to_string()))
                 .version(Some(env!("CARGO_PKG_VERSION").to_string()))
+                // The standard macOS About panel appends the build number in
+                // parentheses after the version; an empty one suppresses the
+                // tail, so the line reads "Version x.y.z" instead of
+                // "Version x.y.z (x.y.z)". (Only macOS consumes this field.)
+                .short_version(Some(String::new()))
                 .build(),
         ))
         .separator()
