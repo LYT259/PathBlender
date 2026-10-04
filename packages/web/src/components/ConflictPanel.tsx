@@ -36,8 +36,7 @@ export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump
     lines.push(`${t('checks.reportGenerated')} ${when}`);
     lines.push('');
     for (const c of conflicts) {
-      const involvesOpponent = [c.aId, c.bId].some((id) => robots.find((r) => r.trajectory.id === id)?.opponent);
-      lines.push(`- ${nameOf(c.aId)} × ${nameOf(c.bId)}: ${c.startT.toFixed(2)}–${c.endT.toFixed(2)} s, ${t('checks.reportClosest')} ${formatLength(c.minCenterDistanceM, unit)} @ t=${c.closestT.toFixed(2)} [${t(involvesOpponent ? 'conflicts.opponentNote' : 'conflicts.teammateNote')}]`);
+      lines.push(`- ${nameOf(c.aId)} × ${nameOf(c.bId)}: ${c.startT.toFixed(2)}–${c.endT.toFixed(2)} s, ${t('checks.reportClosest')} ${formatLength(c.minCenterDistanceM, unit)} @ t=${c.closestT.toFixed(2)}`);
     }
     for (const b of bounds) {
       lines.push(`- ${nameOf(b.robotId)}: ${t('checks.reportOutOfBounds')} ${t('bounds.item', { start: b.startT.toFixed(2), end: b.endT.toFixed(2), depth: formatLength(b.maxPenetrationM, unit), edge: b.edges.map((e) => t(`edges.${e}` as const)).join('/') })}`);
@@ -77,12 +76,10 @@ export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump
       </label>
     )}
     {conflicts.length > 0 && <ul className="conflict-list">{conflicts.map((c) => {
-      const involvesOpponent = [c.aId, c.bId].some((id) => robots.find((r) => r.trajectory.id === id)?.opponent);
       return <li key={`${c.aId}-${c.bId}-${c.startT}-${c.kind}`} className={`conflict-item${c.kind === 'tolerance' ? ' is-tolerance' : ''}`}>
       <button className="conflict-jump" onClick={() => onJump(c.closestT, [c.aId, c.bId])} title={t('checks.jump')}>
         <span className="conflict-pair">{t('conflicts.pair', { a: nameOf(c.aId), b: nameOf(c.bId) })}{c.kind === 'tolerance' && <em className="tolerance-badge">{t('conflicts.toleranceBadge', { delta: c.toleranceS ?? toleranceS })}</em>}</span>
         <span className="conflict-when">{t('conflicts.item', { start: c.startT.toFixed(2), end: c.endT.toFixed(2), d: formatLength(c.minCenterDistanceM, unit), x: ((c.closestA.x + c.closestB.x) / 2).toFixed(1), y: ((c.closestA.y + c.closestB.y) / 2).toFixed(1) })}</span>
-        <span className={`conflict-note${involvesOpponent ? ' is-opponent' : ''}`}>{t(involvesOpponent ? 'conflicts.opponentNote' : 'conflicts.teammateNote')}</span>
         <span className="issue-action">{t('checks.jump')} →</span>
       </button>
     </li>;

@@ -110,10 +110,10 @@ function robot(x: number, teamNumber = '11019', opts: RobotOpts = {}): SessionTr
   };
 }
 
-function makeScene(robots: SessionTrajectory[], t = 0) {
+function makeScene(robots: SessionTrajectory[], t = 0, showTrail = false) {
   return (
     <I18nProvider>
-      <FieldCanvas field={field} robots={robots} currentT={t} conflicts={[]} bounds={[]} showTrail={false} />
+      <FieldCanvas field={field} robots={robots} currentT={t} conflicts={[]} bounds={[]} showTrail={showTrail} />
     </I18nProvider>
   );
 }
@@ -133,8 +133,8 @@ function runFrames() {
   act(() => pending.forEach((callback) => callback(16)));
 }
 
-function paint(robots: SessionTrajectory[]) {
-  render(makeScene(robots));
+function paint(robots: SessionTrajectory[], opts: { currentT?: number; showTrail?: boolean } = {}) {
+  render(makeScene(robots, opts.currentT ?? 0, opts.showTrail ?? false));
   sizeWrap();
   runFrames();
 }
@@ -177,17 +177,36 @@ function leaderIndex() {
 }
 
 describe('2D robot bumper and team-number callout', () => {
-  it('fills only the four bumper bands with the alliance color, never the base plate', () => {
+  it('fills four mitered trapezoid bumper bands with the alliance color, never the base plate', () => {
     paint([robot(2)]);
     const fills = paths('fill');
-    const bands = fills.find((p) => p.length === 4 && p.every((c) => c.name === 'rect'));
+    // One fill path holds four trapezoid subpaths, each moveTo + 3×lineTo
+    // + closePath (2026-10-04: bands went from two-long/two-short rects to
+    // congruent 45°-mitered isosceles trapezoids — equal plan area).
+    const bands = fills.find((p) => p.length === 20 && p.filter((c) => c.name === 'moveTo').length === 4);
     expect(bands).toBeDefined();
-    const [top, bottom, left, right] = bands!;
-    expectArgs(top!, [-17.78, -17.78, 35.56, 4.064]);
-    expectArgs(bottom!, [-17.78, 13.716, 35.56, 4.064]);
-    expectArgs(left!, [-17.78, -13.716, 4.064, 27.432]);
-    expectArgs(right!, [13.716, -13.716, 4.064, 27.432]);
-    for (const band of bands!) expect(band.style.fillStyle).toBe('#c8323e');
+    // Split into subpaths at each moveTo.
+    const subs: Call[][] = [];
+    for (const call of bands!) {
+      if (call.name === 'moveTo') subs.push([]);
+      subs[subs.length - 1]!.push(call);
+    }
+    expect(subs).toHaveLength(4);
+    const [top, bottom, left, right] = subs;
+    const h = 17.78; // L/2 = W/2 (35.56 px square)
+    const i = 13.716; // h − bd (4.064 px)
+    for (const sub of subs!) {
+      expect(sub.map((c) => c.name)).toEqual(['moveTo', 'lineTo', 'lineTo', 'lineTo', 'closePath']);
+      expect(sub[0]!.style.fillStyle).toBe('#c8323e');
+    }
+    expectArgs(top![0]!, [-h, -h]); expectArgs(top![1]!, [h, -h]);
+    expectArgs(top![2]!, [i, -i]); expectArgs(top![3]!, [-i, -i]);
+    expectArgs(bottom![0]!, [-h, h]); expectArgs(bottom![1]!, [h, h]);
+    expectArgs(bottom![2]!, [i, i]); expectArgs(bottom![3]!, [-i, i]);
+    expectArgs(left![0]!, [-h, -h]); expectArgs(left![1]!, [-h, h]);
+    expectArgs(left![2]!, [-i, i]); expectArgs(left![3]!, [-i, -i]);
+    expectArgs(right![0]!, [h, -h]); expectArgs(right![1]!, [h, h]);
+    expectArgs(right![2]!, [i, i]); expectArgs(right![3]!, [i, -i]);
     // The full 35.56×35.56 outline is stroked (collision footprint), never filled.
     const filled = fills.some((p) =>
       p.some((c) => c.name === 'rect' && Math.abs((c.args[2] as number) - 35.56) < 1e-6 && Math.abs((c.args[3] as number) - 35.56) < 1e-6));
@@ -316,6 +335,47 @@ describe('2D robot bumper and team-number callout', () => {
     expect(calls.some((c) => c.name === 'arc')).toBe(false);
     expect(calls.some((c) => c.name === 'roundRect')).toBe(false);
     expect(calls.some((c) => (c.name === 'fillText' || c.name === 'strokeText') && c.args[0] === '')).toBe(false);
+  });
+
+  it('rides the heading wedge on the front bumper band, tip reaching the tape', () => {
+    paint([robot(2)]);
+    // Scene math: 40 px/m, L/2 = 17.78 px, bumper band bd = 4.064 px.
+    // Base pinned to the band inner edge (13.716 = 17.78 - 4.064 — never
+    // on the chassis rails), tip max(bd, 10 - bd) = 5.936 px past the face.
+    const wedge = paths('fill').find((p) =>
+      p.length === 4 && p[0]!.name === 'moveTo' && p[1]!.name === 'lineTo' &&
+      p[2]!.name === 'lineTo' && p[3]!.name === 'closePath' && p[0]!.style.fillStyle === '#00E5FF');
+    expect(wedge).toBeDefined();
+    expectArgs(wedge![0]!, [23.716, 0]);
+    expectArgs(wedge![1]!, [13.716, -3.048]);
+    expectArgs(wedge![2]!, [13.716, 3.048]);
+  });
+
+  it('strokes the full route tape at any playback position', () => {
+    const runner = robot(2);
+    runner.trajectory = {
+      ...runner.trajectory,
+      samples: [
+        { t: 0, x: 2, y: 2.5, heading: 0, vx: 4, vy: 0, omega: 0 },
+        { t: 0.5, x: 4, y: 2.5, heading: 0, vx: 4, vy: 0, omega: 0 },
+        { t: 1, x: 6, y: 3.5, heading: 0, vx: 0, vy: 4, omega: 0 },
+      ],
+    };
+    // strokeStyle is set between the path commands and stroke(), so the
+    // commands themselves carry the earlier lineWidth (4 px = 10 cm tape).
+    const tape = () => paths('stroke').find((p) =>
+      p.length === 3 && p[0]!.name === 'moveTo' && p[1]!.name === 'lineTo' &&
+      p[2]!.name === 'lineTo' && p[0]!.style.lineWidth === 4);
+    for (const currentT of [0, 0.5, 1]) {
+      cleanup();
+      calls = [];
+      paint([runner], { currentT, showTrail: true });
+      const stroke = tape();
+      expect(stroke).toBeDefined();
+      expectArgs(stroke![0]!, [100, 120]);
+      expectArgs(stroke![1]!, [180, 120]);
+      expectArgs(stroke![2]!, [260, 80]);
+    }
   });
 
   it('re-allocates the canvas backing store when devicePixelRatio changes without a resize', () => {

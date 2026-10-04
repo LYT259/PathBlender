@@ -241,12 +241,16 @@ function AppBody() {
   const [showHeatmap, setShowHeatmap] = useState(false);
   // A-B compare: first click snapshots the scenario, second reports deltas.
   const abBaselineRef = useRef<SessionTrajectory[] | null>(null);
+  // Hidden robots are absent for checks too (user request 2026-10-04):
+  // their conflict rings, bounds notes and panel entries disappear with
+  // the robot and come back when it does — detection and display both
+  // follow the visible set.
   const conflicts = useMemo(
-    () => detectCollisions(seasonRobots, { toleranceS: toleranceS > 0 ? toleranceS : undefined }),
-    [seasonRobots, toleranceS],
+    () => detectCollisions(visible, { toleranceS: toleranceS > 0 ? toleranceS : undefined }),
+    [visible, toleranceS],
   );
-  const bounds = useMemo(() => detectFieldBounds(seasonRobots, field), [seasonRobots, field]);
-  const minSep = useMemo(() => minimumSeparation(seasonRobots), [seasonRobots]);
+  const bounds = useMemo(() => detectFieldBounds(visible, field), [visible, field]);
+  const minSep = useMemo(() => minimumSeparation(visible), [visible]);
 
   // .path texts stay available so later .auto imports can resolve their
   // pathName references (within the same batch or across this session).
@@ -663,13 +667,20 @@ function AppBody() {
 
   const hasRobots = robots.length > 0;
   const hasExample = robots.some(isExampleRobot);
+  // Autoplay the welcome example. This cannot live in tryExample: the clock
+  // clamps play off while duration is 0, which is still true in the render
+  // that loads the example — the start has to wait for its robots to land.
+  // Keying on hasExample (not playback) means pausing stays paused.
+  useEffect(() => {
+    if (hasExample) playback.setPlaying(true);
+  }, [hasExample]);
   // Both side panels stay open while robots exist — there is no collapse
   // entry point left, so a panel can never be closed without a way back.
   const leftOpen = hasRobots;
   const issueCount = conflicts.length + bounds.length;
   const rightOpen = hasRobots;
   const openImport = () => importInputRef.current?.click();
-  const tryExample = async (autoplay = false) => {
+  const tryExample = async () => {
     const request = ++exampleRequest.current;
     setExampleLoading(true);
     try {
@@ -691,7 +702,6 @@ function AppBody() {
       setView3D(false);
       setShowTrail(true);
       setErrors([]);
-      playback.setPlaying(autoplay);
       setT(0);
     } catch {
       if (request === exampleRequest.current) flash(tr('welcome.exampleFailed'), 'error');
@@ -714,9 +724,8 @@ function AppBody() {
     if (robotIds[0]) {
       setSelectedId(robotIds[0]);
     }
-    // A located problem must be visible even if its paths were hidden.
-    if (robotIds.some((id) => robots.some((r) => r.trajectory.id === id && !r.visible)))
-      setRobots((previous) => previous.map((r) => robotIds.includes(r.trajectory.id) ? { ...r, visible: true } : r));
+    // Checks run on the visible set only, so a located problem always
+    // belongs to a robot that is already on the field.
   };
   return (
     <div className={`app${hasRobots ? '' : ' is-welcome'}`}>
@@ -846,7 +855,7 @@ function AppBody() {
                 <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
                 <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} onDemo={() => void tryExample(true)} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
                 <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => setInspectorMode('checks')} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}

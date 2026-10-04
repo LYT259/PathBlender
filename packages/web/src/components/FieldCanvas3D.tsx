@@ -792,27 +792,29 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       }
     };
 
-    // Adaptive interaction quality (round 5): the official field models
-    // (14–20 MB GLB) make full-quality renders hog the main thread, which
-    // is what batched the gesture events in the first place. While a pinch
-    // or drag runs (plus this linger window), render at pixel ratio 1 with
-    // the shadow map frozen; restore full quality once interaction settles.
+    // Interaction shadow freeze (round 5 kept; round 6 changed the rest):
+    // the official field models (14–20 MB GLB) make full-quality renders
+    // hog the main thread, which is what batched the gesture events in the
+    // first place. While a pinch or drag runs (plus this linger window),
+    // the shadow map stays frozen — invisible, since a camera-only move
+    // never changes shadow content. The pixel ratio used to drop to 1 here
+    // too, but the user reads fine detail MID-gesture (2026-10-04: "keep
+    // it razor sharp while I'm still pinching"), so resolution now stays
+    // at full DPR the whole time.
     const INTERACTIVE_LINGER_MS = 100;
     let interactiveUntil = 0;
-    let lowQuality = false;
-    const setLowQuality = (on: boolean) => {
-      lowQuality = on;
-      renderer.setPixelRatio(on ? 1 : (window.devicePixelRatio || 1));
+    let shadowsFrozen = false;
+    const setShadowsFrozen = (on: boolean) => {
+      shadowsFrozen = on;
       renderer.shadowMap.autoUpdate = !on;
       if (!on) renderer.shadowMap.needsUpdate = true; // refresh frozen shadows once
     };
     const noteInteraction = () => {
       interactiveUntil = performance.now() + INTERACTIVE_LINGER_MS;
     };
-    // Finger lift / gesture end: drop the linger so the next frame is
-    // back at full pixel ratio — zooming in to inspect detail went
-    // visibly soft when the low ratio waited out the window (wheel
-    // streams still get the short debounce via noteInteraction).
+    // Finger lift / gesture end: drop the linger so the next frame's
+    // shadow map refreshes right away (wheel streams still get the short
+    // debounce via noteInteraction).
     const endInteraction = () => {
       interactiveUntil = 0;
     };
@@ -992,19 +994,19 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         markDirty();
       }
       const interacting = now < interactiveUntil || pinchChase.factor !== 1 || drag.active || roll.active;
-      if (interacting !== lowQuality) {
-        setLowQuality(interacting);
-        // Restore repaints immediately: setPixelRatio resizes (clears) the
-        // buffer, and with damping already settled nothing else would mark
-        // this frame dirty — leaving the blurry low-quality frame up.
+      if (interacting !== shadowsFrozen) {
+        setShadowsFrozen(interacting);
+        // Restore repaints immediately when the freeze lifts: the shadow
+        // refresh changes the frame, and with damping already settled
+        // nothing else would mark this frame dirty.
         if (!interacting) needsDraw = true;
       }
       const moved = controls.update();
       // DPR can change without a resize (window dragged between Retina and
       // 1x displays) — ResizeObserver misses it, leaving the buffer at the
-      // stale density. Re-sync the pixel ratio (preserving the interactive
-      // low-quality override); setPixelRatio re-allocates the buffer.
-      const dprWant = lowQuality ? 1 : (window.devicePixelRatio || 1);
+      // stale density. Re-sync the pixel ratio — ALWAYS the full DPR,
+      // gestures included; setPixelRatio re-allocates the buffer.
+      const dprWant = window.devicePixelRatio || 1;
       if (renderer.getPixelRatio() !== dprWant) {
         renderer.setPixelRatio(dprWant);
         needsDraw = true;
@@ -1425,16 +1427,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // chassis rectangle, so file-sized robots still fit exactly.
       const frameSize: FrameSize = field.year === 2026 ? '27' : '30';
       const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplates[frameSize] ?? null, st.renderer.capabilities.getMaxAnisotropy());
-      // Opponent rendering (§6.5-②): faded ghost in 3D — dashed outlines
-      // are a 2D idiom; opacity carries the same "not one of us" read.
-      if (r.opponent) {
-        chassis.group.traverse((child) => {
-          const mesh = child as THREE.Mesh;
-          const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
-          if (Array.isArray(mat)) mat.forEach((m) => { m.transparent = true; m.opacity = 0.45; });
-          else if (mat) { mat.transparent = true; mat.opacity = 0.45; }
-        });
-      }
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,
@@ -1450,13 +1442,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
-    for (const { mesh, robot } of st.trails) {
-      const time = currentT - robot.startDelayS;
-      mesh.visible = showTrail && time > (robot.trajectory.samples[0]?.t ?? 0);
-      mesh.material.uniforms.cutoff!.value = time;
+    // Full-route tape: only the toggle gates visibility, never the clock.
+    for (const { mesh } of st.trails) {
+      mesh.visible = showTrail;
     }
     st.dirty();
-  }, [currentT, showTrail, robots, field, moduleTemplate, frameTemplates]);
+  }, [showTrail, robots, field, moduleTemplate, frameTemplates]);
 
   // Drive the chassis rigs along the shared clock: pose from the shared
   // sampler. Modules stay bolted at the installed angle the whole time --
