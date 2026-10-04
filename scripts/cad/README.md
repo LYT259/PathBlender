@@ -99,6 +99,34 @@ bolted to the rail.
   (20× 2-1/2 in long bolts — 5 per corner in an L pattern — plus 24
   short bolts and 20 nuts); positions match the STEP within 0.33 mm.
 
+## Mount height — plate-bottom face (CORRECTED 2026-10-04)
+
+The frame/module stack-up in `chassis3d.ts` (`MODULE_MOUNT_Y_M`) needs
+the module mounting-plate BOTTOM face height above the wheel floor,
+measured on the shipped module GLB.
+
+- **Correct value: module-y 0.092126 m** — the GLB's largest
+  full-footprint downward-facing plane (area ≈ 0.037 m² ≈ the whole
+  module plan). Internal consistency: fork top 0.0775 < plate 0.0921 ✓;
+  wheel top 0.1016 pokes 9.5 mm through the plate cutout ✓; frame bolt
+  heads (frame-y 0.0695 + 0.0306 lift ≈ 0.1001) stand ~4 mm over the
+  plate top ≈ 0.0961 ✓.
+- **The earlier 0.042118 m reading was a misidentified face** — the
+  fork/gearbox underside. It put the plate BELOW the fork top
+  (impossible), sank the frame assembly 19.4 mm UNDER the field floor
+  ("metal frame touches the ground", user 2026-10-04) and floated the
+  real plate 50 mm above the rails.
+- Result: `MODULE_MOUNT_Y_M = 0.061516 (rail top, frame-y) − 0.092126
+  = −0.030610` — NEGATIVE, i.e. the frame assembly RISES 30.6 mm;
+  belly pan clears the floor by 30.6 mm, wheels stay on the floor.
+  Guard test: `chassis3d.test.ts` asserts `frame-assembly`.position.y
+  > 0.
+- The chassis STEP cannot corroborate module-internal heights (its
+  module placement is the known mis-mated one, 55–87 mm below the
+  wheel floor), and the DesignApp module STEP is no longer on disk —
+  the shipped GLB is the authority, and the plate↔rail contact makes
+  the render self-consistent by construction.
+
 ## Box radial offset experiment — wheel biased to the corner (REVERTED 2026-10-04)
 
 The DesignApp replica centers the wheel column in the module

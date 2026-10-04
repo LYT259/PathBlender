@@ -89,6 +89,16 @@ describe('buildChassis3D', () => {
     }
   });
 
+  it('raises the frame assembly so the belly pan never sinks under the floor', () => {
+    const c = buildChassis3D(VIS, MODULES, '#ff0000', splitTemplate());
+    const frameAsm = c.group.getObjectByName('frame-assembly')!;
+    // MODULE_MOUNT_Y_M is negative (rail top frame-y 0.061516 sits below the
+    // module plate-bottom module-y 0.092126), so the frame must RISE — the
+    // 2026-10-04 "metal frame touches the ground" bug was a positive mount
+    // height dropping the belly pan 19.4 mm under the floor.
+    expect(frameAsm.position.y).toBeGreaterThan(0);
+  });
+
   it('falls back to whole-pod steering when the template has no turret nodes', () => {
     const c = buildChassis3D(VIS, MODULES, '#ff0000', boxTemplate(0.2165, 0.1564, 0.1843));
     for (let i = 0; i < MODULES.length; i++) expect(c.turrets[i]).toBe(c.pods[i]);
