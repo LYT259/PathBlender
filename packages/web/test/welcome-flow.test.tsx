@@ -16,8 +16,8 @@ function sessionInput() {
 
 async function openExample() {
   fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-  await screen.findByText('#00001', { selector: '.robot-name' });
-  expect(screen.getByText('#00002', { selector: '.robot-name' })).toBeInTheDocument();
+  await screen.findByText('#AAAAAA', { selector: '.robot-name' });
+  expect(screen.getByText('#BBBBBB', { selector: '.robot-name' })).toBeInTheDocument();
 }
 
 beforeEach(() => localStorage.clear());
@@ -106,7 +106,7 @@ describe('welcome flow', () => {
     expect(screen.queryByText(playHint)).not.toBeInTheDocument();
     expect(localStorage.getItem('pb.tip.play.v1')).toBe('done');
 
-    fireEvent.click(screen.getByText('#00001 × #00002', { selector: '.conflict-pair' }).closest('button')!);
+    fireEvent.click(screen.getByText('#AAAAAA × #BBBBBB', { selector: '.conflict-pair' }).closest('button')!);
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
     expect(Number((screen.getByRole('slider') as HTMLInputElement).value)).toBeCloseTo(10);
     expect(screen.queryByText(checkHint)).not.toBeInTheDocument();
@@ -136,43 +136,25 @@ describe('welcome flow', () => {
     fireEvent.drop(window, { dataTransfer: { files: [new File([sampleText], 'straight_run.ghostauto')] } });
     await screen.findByText('#0001', { selector: '.robot-name' });
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
-    expect(screen.queryByText('#00001', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(screen.queryByText('#00002', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('#AAAAAA', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('#BBBBBB', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.queryByText('Fictional paths for exploring the app.')).not.toBeInTheDocument();
   });
 
-  it('preserves a real library route that replaced an example robot when ending the example', async () => {
+  it('adds a folder as its own team while the example is open, and keeps it after ending the example', async () => {
     render(<App />);
     await openExample();
     const route = new File([sampleText], 'straight_run.ghostauto');
     Object.defineProperty(route, 'webkitRelativePath', { value: 'routes/straight_run.ghostauto' });
     fireEvent.drop(window, { dataTransfer: { files: [route] } });
-    const picker = await screen.findByRole('combobox', { name: 'Active route for #00001' });
-    const importedOption = within(picker).getByRole('option', { name: /Straight Run/ }) as HTMLOptionElement;
-    fireEvent.change(picker, { target: { value: importedOption.value } });
-    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('#00002', { selector: '.robot-name' })).toBeInTheDocument();
-
+    await screen.findByRole('combobox', { name: 'Active route for #0001' });
+    expect(document.querySelectorAll('.robot-library-row')).toHaveLength(3);
+    expect(screen.queryByRole('combobox', { name: 'Active route for #AAAAAA' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
+    expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1);
     expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.queryByText('#00002', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'End example' })).not.toBeInTheDocument();
-  });
-
-  it('keeps routes from a folder accessible when the example ends before a route is selected', async () => {
-    render(<App />);
-    await openExample();
-    const route = new File([sampleText], 'straight_run.ghostauto');
-    Object.defineProperty(route, 'webkitRelativePath', { value: 'routes/straight_run.ghostauto' });
-    fireEvent.drop(window, { dataTransfer: { files: [route] } });
-    await screen.findByRole('combobox', { name: 'Active route for #00001' });
-    fireEvent.click(screen.getByRole('button', { name: 'End example' }));
-
-    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('Route library (1)')).toBeInTheDocument();
-    expect(screen.queryByText('#00001', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(screen.queryByText('#00002', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(document.querySelector('.route-library-panel')).toBeNull();
     expect(screen.queryByRole('button', { name: 'End example' })).not.toBeInTheDocument();
   });
 
@@ -181,8 +163,8 @@ describe('welcome flow', () => {
     await openExample();
     fireEvent.change(sessionInput(), { target: { files: [new File(['{"app":"not-a-session"}'], 'broken.pb')] } });
     await waitFor(() => expect(document.querySelector('.import-banner')).toHaveTextContent('broken.pb'));
-    expect(screen.getByText('#00001', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('#00002', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#AAAAAA', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#BBBBBB', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'End example' })).toBeInTheDocument();
   });
 

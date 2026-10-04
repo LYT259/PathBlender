@@ -3,7 +3,7 @@ import { deserializeSession, serializeSession } from '@pathblender/core';
 import { createWelcomeExample } from '../src/welcome-example';
 import { isExampleRobot } from '../src/example-robot';
 
-const NAMES = { a: '00001', b: '00002' };
+const NAMES = { a: 'AAAAAA', b: 'BBBBBB' };
 
 describe('isExampleRobot (End-example affordance)', () => {
   it('recognizes fresh demo robots', () => {
