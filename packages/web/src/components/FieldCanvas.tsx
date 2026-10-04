@@ -13,12 +13,12 @@ import {
   chassisModules,
   fieldImageWorldRect,
   moduleBaseYaw,
-  moduleSteeringAngles,
   robotVisualGeometry,
   samplePoseAt,
   sampleStateAt,
 } from '@pathblender/core';
 import { trailPoints, TRAIL_WIDTH_M } from '../ground-trail';
+import { MK5I_MODULE_TOP_URL, MK5I_MODULE_TOP_WORLD_M } from '../robot-sprites';
 import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { useI18n } from '../i18n';
@@ -91,9 +91,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
-  // Last drawn wheel-steering angles per robot (radians, robot frame) —
-  // MK5i-style pods hold their pointing when the robot stands still.
-  const steerRef = useRef(new Map<string, number[]>());
+  // MK5i module top-view sprite (shared imageCache entry, see below).
+  const spriteRef = useRef<HTMLImageElement | null>(null);
+  const [spriteReady, setSpriteReady] = useState(false);
   const [imgReady, setImgReady] = useState(false);
   const viewRef = useRef<View>({ scale: 40, cx: field.lengthM / 2, cy: field.widthM / 2 });
   // Last fitted px/m — anchors the zoom-out floor (field stays ≥ half the
@@ -137,6 +137,26 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     img.src = fieldImageUrl;
     return () => { img.onload = null; };
   }, [fieldImageUrl, field.id]);
+
+  // Load the module sprite once (build-time constant URL). Mirrors the
+  // field image's cache-then-ready pattern so a warm switch paints instantly.
+  useEffect(() => {
+    const hit = imageCache.get(MK5I_MODULE_TOP_URL);
+    if (hit) {
+      spriteRef.current = hit;
+      setSpriteReady(true);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      if (imageCache.size >= 12) imageCache.delete(imageCache.keys().next().value as string);
+      imageCache.set(MK5I_MODULE_TOP_URL, img);
+      spriteRef.current = img;
+      setSpriteReady(true);
+    };
+    img.src = MK5I_MODULE_TOP_URL;
+    return () => { img.onload = null; };
+  }, []);
 
   const fit = useCallback(() => {
     autoFitRef.current = true;
@@ -372,6 +392,10 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     const { w, h } = sizeRef.current;
     const dpr = window.devicePixelRatio || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Best-available resampling for the field artwork and module sprite —
+    // canvas defaults to low, which visibly softens both when zoomed.
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = cssVar('--canvas-bg', '#1c1c1e');
     ctx.fillRect(0, 0, w, h);
@@ -482,21 +506,6 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       const vis = robotVisualGeometry(r.trajectory, field.year);
       const modules = chassisModules(r.trajectory, vis.chassis);
       const id = r.trajectory.id;
-      let last = steerRef.current.get(id);
-      if (!last || last.length !== modules.length) {
-        // Parked at the installed angle; steering replaces it once moving.
-        last = modules.map((m) => moduleBaseYaw(m));
-        steerRef.current.set(id, last);
-      }
-      const angles = moduleSteeringAngles(
-        state ?? { heading: pose.heading, vx: 0, vy: 0, omega: 0 },
-        modules,
-      );
-      const wheels = angles.map((a, i) => {
-        const angle = a ?? last![i]!;
-        last![i] = angle;
-        return angle;
-      });
       drawRobot(
         ctx,
         sx,
@@ -505,7 +514,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         r,
         vis,
         modules,
-        wheels,
+        spriteRef.current,
         v.scale,
         inCollisionNow.has(id),
         outOfBoundsNow.has(id),
@@ -518,7 +527,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     ctx.fillText(t('canvas.clock', { t: currentT.toFixed(2) }), 12, 20);
     };
     requestDraw();
-  }, [field, robots, currentT, conflicts, bounds, showTrail, imgReady, theme, t, requestDraw]);
+  }, [field, robots, currentT, conflicts, bounds, showTrail, imgReady, spriteReady, theme, t, requestDraw]);
 
   useImperativeHandle(ref, () => ({
     exportPng: (onDone?: (ok: boolean) => void) => {
@@ -569,7 +578,7 @@ function drawRobot(
   r: SessionTrajectory,
   vis: RobotVisualGeometry,
   modules: ModuleLocation[],
-  wheels: number[],
+  sprite: HTMLImageElement | null,
   scale: number,
   collided: boolean,
   outOfBounds: boolean,
@@ -593,39 +602,59 @@ function drawRobot(
   ctx.fill();
   ctx.stroke();
 
-  // Chassis frame inside the bumper ring.
+  // Chassis frame: four 1 in box-rail beams around the chassis
+  // rectangle plus a corner block at each joint — the same "4 rails +
+  // 4 corners" read as the 3D frame model, in theme-aware metal gray.
+  // Rail width follows the 3D frame scaling (chassis.lengthM/0.6858),
+  // so file-sized robots get proportionally thinner rails.
   const cL = chassis.lengthM * scale;
   const cW = chassis.widthM * scale;
   const cox = chassis.offsetX * scale;
   const coy = chassis.offsetY * scale;
-  ctx.fillStyle = cssVar('--bg-panel', '#29292c');
-  ctx.strokeStyle = hexAlpha(r.color, 0.9);
+  const bw = Math.max(0.0254 * (chassis.lengthM / 0.6858) * scale, 1.5);
+  const left = cox - cL / 2;
+  const top = -coy - cW / 2;
+  ctx.fillStyle = cssVar('--fg-dim', '#8e8e93');
+  ctx.strokeStyle = hexAlpha(cssVar('--fg', '#e6e6e8'), 0.45);
   ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.rect(cox - cL / 2, -coy - cW / 2, cL, cW);
-  ctx.fill();
-  ctx.stroke();
+  for (const [bx, by, rw, rh] of [
+    [left, top, cL, bw],                       // +y rail (screen top)
+    [left, top + cW - bw, cL, bw],             // −y rail (screen bottom)
+    [left, top + bw, bw, cW - 2 * bw],         // −x rail
+    [left + cL - bw, top + bw, bw, cW - 2 * bw], // +x rail
+  ] as const) {
+    ctx.fillRect(bx, by, rw, rh);
+    ctx.strokeRect(bx, by, rw, rh);
+  }
+  // Corner blocks tying the rails together (the real frame's corner
+  // gussets), a step lighter so the joints read at any zoom.
+  const cb = Math.min(bw * 1.6, cL / 2, cW / 2);
+  ctx.fillStyle = cssVar('--fg', '#e6e6e8');
+  for (const cxx of [left, left + cL - cb]) {
+    for (const cyy of [top, top + cW - cb]) {
+      ctx.fillRect(cxx, cyy, cb, cb);
+      ctx.strokeRect(cxx, cyy, cb, cb);
+    }
+  }
 
-  // MK5i-style wheel pods: each roller points along its own steering
-  // angle (swerve kinematics; degenerates to heading-aligned wheels for
-  // differential drives). Drawn at chassis scale with a pixel floor so
-  // they stay visible when the whole field is on screen.
-  for (let i = 0; i < modules.length; i++) {
-    const m = modules[i]!;
-    const angle = wheels[i] ?? 0;
-    const wl = Math.max(0.17 * scale, 5);
-    const ww = Math.max(0.05 * scale, 2.5);
-    ctx.save();
-    ctx.translate(m.x * scale, -m.y * scale);
-    ctx.rotate(-angle);
-    ctx.fillStyle = cssVar('--fg', '#e6e6e8');
-    roundedRect(ctx, -wl / 2, -ww / 2, wl, ww, ww / 2);
-    ctx.fill();
-    ctx.fillStyle = r.color;
-    ctx.beginPath();
-    ctx.arc(0, 0, ww * 0.62, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+  // MK5i modules: the Blender-rendered top view of the real CAD module
+  // parked at each corner's installed yaw (2D shows no steering
+  // animation — user decision 2026-10-03: the wheels are not visible
+  // turning anyway). Real hardware size always: the sprite spans its
+  // render ortho scale regardless of chassis scaling, matching 3D
+  // where the module GLB is never scaled. The render's image-up is
+  // robot-frame −Y (camera up = glTF −Z), so the draw flips
+  // vertically — mirroring the 3D mount's rotation.y = −yaw.
+  if (sprite) {
+    const S = MK5I_MODULE_TOP_WORLD_M * scale;
+    for (const m of modules) {
+      ctx.save();
+      ctx.translate(m.x * scale, -m.y * scale);
+      ctx.rotate(-moduleBaseYaw(m));
+      ctx.scale(1, -1);
+      ctx.drawImage(sprite, -S / 2, -S / 2, S, S);
+      ctx.restore();
+    }
   }
 
   // Heading wedge on the +x end.
@@ -672,25 +701,6 @@ function drawRobot(
     }
     ctx.restore();
   }
-}
-
-/** Rounded-rect path without relying on CanvasRenderingContext2D.roundRect. */
-function roundedRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  radius: number,
-) {
-  const rr = Math.min(radius, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + rr, y);
-  ctx.arcTo(x + w, y, x + w, y + h, rr);
-  ctx.arcTo(x + w, y + h, x, y + h, rr);
-  ctx.arcTo(x, y + h, x, y, rr);
-  ctx.arcTo(x, y, x + w, y, rr);
-  ctx.closePath();
 }
 
 function hexAlpha(hex: string, alpha: number): string {

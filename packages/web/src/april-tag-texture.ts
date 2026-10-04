@@ -52,7 +52,7 @@ const BIT_Y = [
 const cache = new Map<number, THREE.CanvasTexture>();
 
 /** 36h11 tag face for `id` (FRC layouts use ids 0..59). */
-export function aprilTagTexture(id: number): THREE.CanvasTexture {
+export function aprilTagTexture(id: number, anisotropy = 8): THREE.CanvasTexture {
   const hit = cache.get(id);
   if (hit) return hit;
   const M = 24; // px per module — 240px tag, crisp at field scale
@@ -73,7 +73,7 @@ export function aprilTagTexture(id: number): THREE.CanvasTexture {
   }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 8;
+  tex.anisotropy = anisotropy;
   cache.set(id, tex);
   return tex;
 }
