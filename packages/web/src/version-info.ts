@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.9';
+export const APP_VERSION = '0.1.8-beta.10';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.10', date: '2026.10.04', note: {
+    en: 'The colorblind-safe palette now applies only when you save preferences, and the settings window drops its English title bar and separator line',
+    zh: '色盲安全配色改为点击「保存」后才真正应用；设置窗口去掉了英文标题栏和分隔线',
+    'zh-tw': '色盲安全配色改為點擊「儲存」後才真正套用；設定視窗去掉了英文標題列和分隔線',
+    cs: 'Paleta pro barvoslepé se nyní použije až po uložení předvoleb a okno nastavení ztrácí anglický titulkový pruh a oddělovací čáru',
+    nl: 'Het kleurenblindvriendelijke palet wordt nu pas toegepast als je de voorkeuren opslaat, en het instellingenvenster verliest zijn Engelse titelbalk en scheidingslijn',
+    fr: 'La palette adaptée au daltonisme ne s’applique désormais qu’à l’enregistrement des préférences, et la fenêtre des réglages perd sa barre de titre anglaise et sa ligne de séparation',
+    he: 'ערכת הצבעים המותאמת לעיוורי צבעים מוחלת כעת רק בעת שמירת ההעדפות, וחלון ההגדרות מאבד את שורת הכותרת האנגלית ואת קו ההפרדה',
+    ja: '色覚バリアフリーのパレットは環境設定を保存したときだけ適用されるようになり、設定ウィンドウから英語のタイトルバーと区切り線がなくなりました',
+    ko: '색각 안전 팔레트가 이제 환경 설정을 저장할 때만 적용되며, 설정 창에서 영문 제목 표시줄과 구분선이 사라졌습니다',
+    pl: 'Paleta bezpieczna dla daltonistów działa teraz dopiero po zapisaniu preferencji, a okno ustawień traci angielski pasek tytułu i linię oddzielającą',
+    'pt-br': 'A paleta segura para daltônicos agora só é aplicada ao salvar as preferências, e a janela de ajustes perde a barra de título em inglês e a linha separadora',
+    es: 'La paleta segura para daltónicos ahora solo se aplica al guardar las preferencias, y la ventana de ajustes pierde su barra de título en inglés y la línea separadora',
+    tr: 'Renk körü güvenli palet artık yalnızca tercihler kaydedildiğinde uygulanıyor ve ayarlar penceresi İngilizce başlık çubuğu ile ayırıcı çizgisini kaybediyor',
+  } },
   { version: '0.1.8-beta.9', date: '2026.10.04', note: {
     en: 'The bumper is now one continuous closed square ring — no seams between rails, in 3D and the 2D top view alike',
     zh: 'bumper 改为一个完全连续的封闭正方形环——四角再无接缝，3D 与 2D 俯视一致',
