@@ -797,13 +797,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // is what batched the gesture events in the first place. While a pinch
     // or drag runs (plus this linger window), render at pixel ratio 1 with
     // the shadow map frozen; restore full quality once interaction settles.
-    const BASE_PIXEL_RATIO = (window.devicePixelRatio || 1);
     const INTERACTIVE_LINGER_MS = 100;
     let interactiveUntil = 0;
     let lowQuality = false;
     const setLowQuality = (on: boolean) => {
       lowQuality = on;
-      renderer.setPixelRatio(on ? 1 : BASE_PIXEL_RATIO);
+      renderer.setPixelRatio(on ? 1 : (window.devicePixelRatio || 1));
       renderer.shadowMap.autoUpdate = !on;
       if (!on) renderer.shadowMap.needsUpdate = true; // refresh frozen shadows once
     };
@@ -1001,6 +1000,20 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         if (!interacting) needsDraw = true;
       }
       const moved = controls.update();
+      // DPR can change without a resize (window dragged between Retina and
+      // 1x displays) — ResizeObserver misses it, leaving the buffer at the
+      // stale density. Re-sync the pixel ratio (preserving the interactive
+      // low-quality override); setPixelRatio re-allocates the buffer.
+      const dprWant = lowQuality ? 1 : (window.devicePixelRatio || 1);
+      if (renderer.getPixelRatio() !== dprWant) {
+        renderer.setPixelRatio(dprWant);
+        needsDraw = true;
+      }
+      const cubeDprWant = Math.min(window.devicePixelRatio || 1, 3);
+      if (cubeRenderer.getPixelRatio() !== cubeDprWant) {
+        cubeRenderer.setPixelRatio(cubeDprWant);
+        needsDraw = true;
+      }
       if (needsDraw || moved) {
         needsDraw = false;
         renderer.render(scene, camera);
