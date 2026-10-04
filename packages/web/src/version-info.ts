@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.2';
+export const APP_VERSION = '0.1.8-beta.3';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.3', date: '2026.10.04', note: {
+    en: '2D team-number callouts: centered leader dot, alliance-colored solid badge; side panels no longer collapsible',
+    zh: '2D 队号引线标注：圆点居中锚定、联盟色实色衬底；侧面板不再可折叠',
+    'zh-tw': '2D 隊號引線標註：圓點居中錨定、聯盟色實色襯底；側面板不再可摺疊',
+    cs: 'Popisky čísel týmů ve 2D: bod vodící čáry na středu, plný nápis v barvě aliance; boční panely již nelze sbalit',
+    nl: '2D-teamnummerlabels: leiderpunt gecentreerd, effen badge in alliantiekleur; zijpanelen niet meer inklapbaar',
+    fr: 'Étiquettes de numéros d’équipe en 2D : point de renvoi centré, badge plein aux couleurs de l’alliance ; panneaux latéraux non repliables',
+    he: 'תוויות מספרי קבוצה ב-2D: נקודת קו מרכזית, תג מלא בצבע הברית; הפאנלים הצדדיים אינם ניתנים עוד לקיפול',
+    ja: '2D チーム番号コールアウト：リーダー点を中央に固定、アライアンス色の実色バッジ。サイドパネルは折りたたみ不可に',
+    ko: '2D 팀 번호 콜아웃: 리더 점 중앙 고정, 얼라이언스 색 단색 배지; 측면 패널 더 이상 접을 수 없음',
+    pl: 'Oznaczenia numerów drużyn 2D: kropka odniesienia wyśrodkowana, pełna plakietka w kolorze sojuszu; panele boczne bez zwijania',
+    'pt-br': 'Rótulos 2D dos números das equipes: ponto-guia centralizado, selo sólido na cor da aliança; painéis laterais não são mais recolhíveis',
+    es: 'Rótulos 2D de números de equipo: punto guía centrado, insignia sólida en el color de la alianza; los paneles laterales ya no se pliegan',
+    tr: '2B takım numarası etiketleri: merkezde çizgi noktası, ittifak renginde düz rozet; yan paneller artık katlanamıyor',
+  } },
   { version: '0.1.8-beta.2', date: '2026.10.04', note: {
     en: 'Welcome example now uses real 2026 route libraries from FRC teams 8814 and 11019',
     zh: '体验示例换成真实队伍 8814 与 11019 的 2026 路线库',
