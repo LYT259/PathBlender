@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.10';
+export const APP_VERSION = '0.1.8-beta.11';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,20 +32,35 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.11', date: '2026.10.04', note: {
+    en: 'Restored example sessions refresh to the current demo and no longer auto-play; the Full timeline option drops its seconds; the robot identity rows leave the inspector',
+    zh: '恢复的示例会话会刷新为当前示例，且进入示例不再自动播放；回放范围「完整时间轴」去掉秒数；检查区不再显示机器人身份三行',
+    'zh-tw': '恢復的範例工作階段會刷新為目前範例，且進入範例不再自動播放；回放範圍「完整時間軸」去掉秒數；檢查區不再顯示機器人身分三行',
+    cs: 'Obnovené ukázkové relace se aktualizují na aktuální ukázku a už se nepřehrávají automaticky; možnost Celá časová osa ztrácí sekundy; řádky identity robota mizí z inspektoru',
+    nl: 'Herstelde voorbeeldsessies worden ververst naar het huidige voorbeeld en spelen niet meer automatisch af; de optie Volledige tijdlijn verliest de seconden; de robot-identiteitsregels verdwijnen uit de inspector',
+    fr: 'Les sessions d’exemple restaurées se rafraîchissent vers la démo actuelle et ne se lancent plus automatiquement ; l’option Chronologie complète perd ses secondes ; les lignes d’identité du robot quittent l’inspecteur',
+    he: 'הפעלות לדוגמה משוחזרות מתרעננות להדגמה הנוכחית וכבר לא מתנגנות אוטומטית; אפשרות ציר הזמן המלא מאבדת את השניות; שורות זהות הרובוט יוצאות מהמפקח',
+    ja: '復元されたサンプルセッションは現在のデモに刷新され、自動再生されなくなりました。「タイムライン全体」オプションから秒数が消え、ロボットの識別情報行がインスペクタから削除されました',
+    ko: '복원된 예제 세션이 현재 데모로 새로고침되며 더 이상 자동 재생되지 않습니다. 전체 타임라인 옵션에서 초 표시가 사라지고, 로봇 식별 정보 행이 인스펙터에서 제거됩니다',
+    pl: 'Przywrócone sesje przykładowe odświeżają się do bieżącego demo i nie odtwarzają się automatycznie; opcja Pełna oś czasu traci sekundy; wiersze tożsamości robota znikają z inspektora',
+    'pt-br': 'Sessões de exemplo restauradas são atualizadas para a demonstração atual e não reproduzem mais automaticamente; a opção Linha do tempo completa perde os segundos; as linhas de identidade do robô saem do inspetor',
+    es: 'Las sesiones de ejemplo restauradas se actualizan a la demostración actual y ya no se reproducen automáticamente; la opción Línea de tiempo completa pierde los segundos; las filas de identidad del robot desaparecen del inspector',
+    tr: 'Geri yüklenen örnek oturumlar güncel demoya yenilenir ve artık otomatik oynatılmaz; Tam zaman çizelgesi seçeneği saniyeleri bırakır; robot kimlik satırları denetçiden kalkar',
+  } },
   { version: '0.1.8-beta.10', date: '2026.10.04', note: {
-    en: 'Reverted the 41 mm inboard shift of the MK5i module body — the module plate covers all 20 chassis mounting bolts again (the corner bolt floated 26 mm off the plate) and the module sits back on its CAD-verified seat on the rails',
-    zh: '撤销 MK5i 模组本体的 41mm 内移——模组安装板重新盖住全部 20 颗底盘安装螺栓（角上螺栓曾悬空偏离板面 26mm），模组回到经 CAD 验证的轨道安装位',
-    'zh-tw': '撤銷 MK5i 模組本體的 41mm 內移——模組安裝板重新蓋住全部 20 顆底盤安裝螺栓（角上螺栓曾懸空偏離板面 26mm），模組回到經 CAD 驗證的軌道安裝位',
-    cs: 'Posun těla modulu MK5i o 41 mm dovnitř byl vrácen — montážní deska modulu opět zakrývá všech 20 šroubů podvozku (rohový šroub visel 26 mm mimo desku) a modul znovu sedí na svém CAD ověřeném místě na lištách',
-    nl: 'De 41 mm naar binnen geschoven MK5i-modulebehuizing is teruggedraaid — de moduleplaat dekt weer alle 20 chassisbevestigingsbouten (de hoekbout zweefde 26 mm naast de plaat) en de module zit weer op zijn CAD-geverifieerde plek op de balken',
-    fr: 'Le décalage de 41 mm vers l’intérieur du corps du module MK5i est annulé — la plaque du module recouvre de nouveau les 20 boulons de fixation du châssis (le boulon d’angle flottait à 26 mm de la plaque) et le module retrouve son assise vérifiée par CAO sur les rails',
-    he: 'הוזזה חזרה הזזת גוף המודול MK5i של 41 מ"מ פנימה — לוחית המודול שוב מכסה את כל 20 ברגי ההרכבה של השלדה (בורג הפינה ריחף 26 מ"מ מחוץ ללוחית) והמודול חוזר למושבו המאומת ב-CAD על המסילות',
-    ja: 'MK5i モジュール本体の 41mm 内側移動を取り消し——モジュールプレートが 20 本のシャーシ取り付けボルトを再びすべてカバーし（角のボルトはプレートから 26mm 外れていました）、モジュールは CAD で検証済みのレール上の位置に戻りました',
-    ko: 'MK5i 모듈 본체의 41mm 안쪽 이동을 되돌렸습니다 — 모듈 플레이트가 20개의 섀시 장착 볼트를 다시 모두 덮고(모서리 볼트가 플레이트에서 26mm 벗어나 있었습니다), 모듈이 CAD로 검증된 레일 위 원래 위치로 돌아갑니다',
-    pl: 'Cofnięto przesunięcie korpusu modułu MK5i o 41 mm do środka — płyta modułu znowu zakrywa wszystkie 20 śrub montażowych podwozia (narożna śruba wystawała 26 mm poza płytę), a moduł wraca na zweryfikowane w CAD miejsce na belkach',
-    'pt-br': 'Revertido o deslocamento de 41 mm para dentro do corpo do módulo MK5i — a placa do módulo volta a cobrir todos os 20 parafusos de fixação do chassi (o parafuso do canto ficava 26 mm fora da placa) e o módulo retorna ao seu assento verificado em CAD sobre as barras',
-    es: 'Revertido el desplazamiento de 41 mm hacia dentro del cuerpo del módulo MK5i — la placa del módulo vuelve a cubrir los 20 pernos de montaje del chasis (el perno de la esquina quedaba 26 mm fuera de la placa) y el módulo regresa a su asiento verificado por CAD sobre los rieles',
-    tr: 'MK5i modül gövdesinin 41 mm içeri kaydırılması geri alındı — modül plakası 20 şasi bağlantı civatasının hepsini yeniden örtüyor (köşe civatası plakanın 26 mm dışında kalıyordu) ve modül raylar üzerindeki CAD doğrulamalı yerine geri oturuyor',
+    en: 'The colorblind-safe palette now applies only when you save preferences, and the settings window drops its English title bar and separator line',
+    zh: '色盲安全配色改为点击「保存」后才真正应用；设置窗口去掉了英文标题栏和分隔线',
+    'zh-tw': '色盲安全配色改為點擊「儲存」後才真正套用；設定視窗去掉了英文標題列和分隔線',
+    cs: 'Paleta pro barvoslepé se nyní použije až po uložení předvoleb a okno nastavení ztrácí anglický titulkový pruh a oddělovací čáru',
+    nl: 'Het kleurenblindvriendelijke palet wordt nu pas toegepast als je de voorkeuren opslaat, en het instellingenvenster verliest zijn Engelse titelbalk en scheidingslijn',
+    fr: 'La palette adaptée au daltonisme ne s’applique désormais qu’à l’enregistrement des préférences, et la fenêtre des réglages perd sa barre de titre anglaise et sa ligne de séparation',
+    he: 'ערכת הצבעים המותאמת לעיוורי צבעים מוחלת כעת רק בעת שמירת ההעדפות, וחלון ההגדרות מאבד את שורת הכותרת האנגלית ואת קו ההפרדה',
+    ja: '色覚バリアフリーのパレットは環境設定を保存したときだけ適用されるようになり、設定ウィンドウから英語のタイトルバーと区切り線がなくなりました',
+    ko: '색각 안전 팔레트가 이제 환경 설정을 저장할 때만 적용되며, 설정 창에서 영문 제목 표시줄과 구분선이 사라졌습니다',
+    pl: 'Paleta bezpieczna dla daltonistów działa teraz dopiero po zapisaniu preferencji, a okno ustawień traci angielski pasek tytułu i linię oddzielającą',
+    'pt-br': 'A paleta segura para daltônicos agora só é aplicada ao salvar as preferências, e a janela de ajustes perde a barra de título em inglês e a linha separadora',
+    es: 'La paleta segura para daltónicos ahora solo se aplica al guardar las preferencias, y la ventana de ajustes pierde su barra de título en inglés y la línea separadora',
+    tr: 'Renk körü güvenli palet artık yalnızca tercihler kaydedildiğinde uygulanıyor ve ayarlar penceresi İngilizce başlık çubuğu ile ayırıcı çizgisini kaybediyor',
   } },
   { version: '0.1.8-beta.9', date: '2026.10.04', note: {
     en: 'The bumper is now one continuous closed square ring — no seams between rails, in 3D and the 2D top view alike',

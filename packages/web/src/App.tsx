@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSessionHistory } from './session-history';
 import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
-import { isExampleRobot } from './example-robot';
+import { isExampleRobot, refreshExampleRobots } from './example-robot';
 import { compareScenarios, remapColorblind } from '@pathblender/core';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
@@ -505,10 +505,21 @@ function AppBody() {
   // open-with file that arrives later simply replaces whatever this restored.
   useEffect(() => {
     const restored = loadAutosave();
-    if (restored) {
-      setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(restored.robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
-      setSelectedId(restored.robots[0]?.trajectory.id ?? null);
+    if (!restored) return;
+    const apply = (robots: typeof restored.robots) => {
+      setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
+      setSelectedId(robots[0]?.trajectory.id ?? null);
+    };
+    // A restored example is whatever the demo looked like when it was saved;
+    // swap in the current example set so a relaunch shows today's demo (the
+    // lazy import keeps the 1.6 MB of route text off sessions without one).
+    if (restored.robots.some(isExampleRobot)) {
+      void import('./welcome-example').then(({ createWelcomeExample }) => {
+        apply(refreshExampleRobots(restored.robots, createWelcomeExample().robots));
+      });
+      return;
     }
+    apply(restored.robots);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
   }, []);
 
@@ -667,13 +678,6 @@ function AppBody() {
 
   const hasRobots = robots.length > 0;
   const hasExample = robots.some(isExampleRobot);
-  // Autoplay the welcome example. This cannot live in tryExample: the clock
-  // clamps play off while duration is 0, which is still true in the render
-  // that loads the example — the start has to wait for its robots to land.
-  // Keying on hasExample (not playback) means pausing stays paused.
-  useEffect(() => {
-    if (hasExample) playback.setPlaying(true);
-  }, [hasExample]);
   // Both side panels stay open while robots exist — there is no collapse
   // entry point left, so a panel can never be closed without a way back.
   const leftOpen = hasRobots;

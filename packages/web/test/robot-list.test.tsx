@@ -73,6 +73,19 @@ describe('robot workspace controls', () => {
     expect(screen.queryByRole('button', { name: /^\.path$|\.traj$|\.ghostauto$/ })).not.toBeInTheDocument();
   });
 
+  it('no longer repeats team identity under the robot name (removed 2026-10-04)', () => {
+    const sample = robot();
+    sample.trajectory.teamName = 'The Cheesy Poofs';
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
+    // The whole identity block (team name / team # / alliance rows) is gone —
+    // that identity is already obvious from the robot card and alliance bar.
+    expect(screen.queryByText('team #')).not.toBeInTheDocument();
+    expect(screen.queryByText('alliance')).not.toBeInTheDocument();
+    expect(screen.queryByText('The Cheesy Poofs')).not.toBeInTheDocument();
+    expect(screen.getByText('Timing')).toBeInTheDocument();
+    expect(screen.getByText('Robot data')).toBeInTheDocument();
+  });
+
   it('preserves viewer-only limits while showing robot data', () => {
     mode.viewerOnly = true;
     const sample = robot();
