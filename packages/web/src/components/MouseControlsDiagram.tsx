@@ -3,10 +3,12 @@ import type { IconAppearanceMode } from '../app-icon';
 import dayIcon from '../assets/app-icon-day.png';
 import nightIcon from '../assets/app-icon-night.png';
 import { useI18n } from '../i18n';
-import type { MouseControlsScheme } from '../mouse-controls';
+import { resolveMouseAction, type MouseControlsScheme } from '../mouse-controls';
+
+type MouseCallout = { button: 'left' | 'right' | 'middle' | 'wheel'; action: 'rotate' | 'constrained' | 'pan' | 'zoom' };
 
 /** Flat mouse illustration; leader lines remain physically left/right in RTL. */
-export function MouseControlsDiagram({ scheme, iconMode = 'system' }: { scheme: MouseControlsScheme; iconMode?: IconAppearanceMode }) {
+export function MouseControlsDiagram({ scheme, iconMode = 'system', constrained = false }: { scheme: MouseControlsScheme; iconMode?: IconAppearanceMode; constrained?: boolean }) {
   const { t } = useI18n();
   const [systemDark, setSystemDark] = useState(() => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true);
   useEffect(() => {
@@ -16,6 +18,17 @@ export function MouseControlsDiagram({ scheme, iconMode = 'system' }: { scheme: 
     media.addEventListener('change', change);
     return () => media.removeEventListener('change', change);
   }, []);
+  const buttons = (['left', 'right', 'middle', 'wheel'] as const).flatMap<MouseCallout>((button) => {
+    if (button === 'wheel') return [{ button, action: 'zoom' as const }];
+    const action = resolveMouseAction(scheme, { left: 0, middle: 1, right: 2 }[button], { ctrlKey: false, altKey: false, shiftKey: false }, constrained);
+    if (action.kind === 'none') return [];
+    return [{ button, action: action.kind === 'orbit' ? (action.constrained ? 'constrained' as const : 'rotate' as const) : action.kind === 'pan' ? 'pan' as const : 'zoom' as const }];
+  });
+  const leaders = {
+    left: 'M215 60H144', right: 'M265 60H336',
+    middle: 'M240 70.5L144 177', wheel: 'M244 57L336 177 M244 84L336 177',
+  };
+  const anchors = { left: [215, 60], right: [265, 60], middle: [240, 70.5] };
   const darkIcon = iconMode === 'dark' || (iconMode === 'system' && systemDark);
   return <figure className="mouse-controls-diagram" aria-label={t('prefs.mouse.table')}>
     <svg className="mouse-controls-drawing" viewBox="0 0 480 240" aria-hidden="true" focusable="false">
@@ -23,19 +36,16 @@ export function MouseControlsDiagram({ scheme, iconMode = 'system' }: { scheme: 
       <path className="mouse-seam" d="M240 19V53 M185 104Q240 117 295 104" />
       <rect className="mouse-wheel" x="233" y="51" width="14" height="39" rx="7" />
       <path className="mouse-wheel-grooves" d="M236 61H244 M236 68H244 M236 75H244 M236 82H244" />
-      <g className="mouse-leaders">
-        <path d="M215 60H144 M265 60H336 M240 70.5L144 177 M244 57L336 177 M244 84L336 177" />
-      </g>
-      <g className="mouse-anchors">
-        <circle cx="215" cy="60" r="3" /><circle cx="265" cy="60" r="3" />
-        <circle cx="240" cy="70.5" r="3" />
-      </g>
+      {buttons.map(({ button }) => <g key={button} data-mouse-button={button}>
+        <path className="mouse-leaders" d={leaders[button]} />
+        {button !== 'wheel' && <circle className="mouse-anchors" cx={anchors[button][0]} cy={anchors[button][1]} r="3" />}
+      </g>)}
       <path className="mouse-scroll-arrows" d="M237 60l3-3 3 3 M237 81l3 3 3-3" />
       <image href={darkIcon ? nightIcon : dayIcon} x="221" y="145" width="38" height="38" />
     </svg>
-    {(['left', 'right', 'middle', 'wheel'] as const).map((button) => <div key={button} className={`mouse-callout mouse-callout-${button}`}>
+    {buttons.map(({ button, action }) => <div key={button} className={`mouse-callout mouse-callout-${button}`}>
       <span>{t(`prefs.mouse.btn.${button}`)}</span>
-      <strong>{t(`prefs.mouse.${scheme}.${button}`)}</strong>
+      <strong>{t(`prefs.mouse.${action}`)}</strong>
     </div>)}
   </figure>;
 }
