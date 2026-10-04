@@ -105,6 +105,10 @@ export const hi = {
   'robots.bumper': 'बम्पर (मी)',
   'robots.length': 'लंबाई',
   'robots.width': 'चौड़ाई',
+  'robots.mass': 'द्रव्यमान',
+  'robots.drive': 'संचालन',
+  'robots.driveHolonomic': 'सर्वदिशात्मक',
+  'robots.driveDifferential': 'विभेदक',
   'robots.visible': 'प्लेबैक और टकराव जाँच में दृश्यमान',
   
   'vc.top': 'ऊ',

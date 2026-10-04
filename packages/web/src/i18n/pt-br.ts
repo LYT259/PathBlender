@@ -117,6 +117,10 @@ export const ptBR: Record<MessageKey, string> = {
   'robots.bumper': 'para-choque (m)',
   'robots.length': 'comprimento',
   'robots.width': 'largura',
+  'robots.mass': 'Massa',
+  'robots.drive': 'Tração',
+  'robots.driveHolonomic': 'Holonômico',
+  'robots.driveDifferential': 'Diferencial',
   'robots.visible': 'visível na reprodução e na verificação de colisão',
 
   'vc.top': 'T',

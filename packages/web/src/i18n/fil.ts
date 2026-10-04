@@ -105,6 +105,10 @@ export const fil = {
   'robots.bumper': 'bumper (m)',
   'robots.length': 'haba',
   'robots.width': 'lapad',
+  'robots.mass': 'Massa',
+  'robots.drive': 'Pagtakbo',
+  'robots.driveHolonomic': 'Holonomiko',
+  'robots.driveDifferential': 'Diferensyal',
   'robots.visible': 'nakikita sa playback at collision check',
   
   'vc.top': 'T',

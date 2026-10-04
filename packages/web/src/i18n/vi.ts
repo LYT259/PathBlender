@@ -105,6 +105,10 @@ export const vi = {
   'robots.bumper': 'chắn bùn (m)',
   'robots.length': 'dài',
   'robots.width': 'rộng',
+  'robots.mass': 'Khối lượng',
+  'robots.drive': 'Lái',
+  'robots.driveHolonomic': 'Đa hướng',
+  'robots.driveDifferential': 'Vi sai',
   'robots.visible': 'hiện trong phát lại và kiểm tra va chạm',
   
   'vc.top': 'T',

@@ -106,6 +106,10 @@ export const en = {
   'robots.bumper': 'bumper (m)',
   'robots.length': 'length',
   'robots.width': 'width',
+  'robots.mass': 'Mass',
+  'robots.drive': 'Drive',
+  'robots.driveHolonomic': 'Holonomic',
+  'robots.driveDifferential': 'Differential',
   'robots.visible': 'visible in playback & collision check',
 
   'vc.top': 'T',

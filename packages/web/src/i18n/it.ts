@@ -105,6 +105,10 @@ export const it = {
   'robots.bumper': 'paraurti (m)',
   'robots.length': 'lunghezza',
   'robots.width': 'larghezza',
+  'robots.mass': 'Massa',
+  'robots.drive': 'Trazione',
+  'robots.driveHolonomic': 'Olonomo',
+  'robots.driveDifferential': 'Differenziale',
   'robots.visible': 'visibile in riproduzione e controllo collisioni',
   
   'vc.top': 'T',

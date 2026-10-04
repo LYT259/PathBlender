@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.19';
+export const APP_VERSION = '0.1.7-beta.20';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.20', date: '2026.10.04', note: {
+    en: 'Real robot data now drives PathPlanner timelines: mass, inertia, drive limits and project constraint defaults are consumed from profile files',
+    zh: '机器人参数文件现在驱动 PathPlanner 时间轴：质量、惯量、驱动极限与项目默认约束均已消费',
+    'zh-tw': '機器人參數檔案現在驅動 PathPlanner 時間軸：質量、慣量、驅動極限與專案預設約束均已消費',
+    cs: 'Data profilu robota nyní řídí časovou osu PathPlanner: hmotnost, setrvačnost, limity pohonu a výchozí omezení projektu jsou spotřebována',
+    nl: 'Robotprofieldata stuurt nu de PathPlanner-tijdlijn: massa, traagheid, aandrijvingslimieten en projectstandaardbeperkingen worden gebruikt',
+    fr: 'Les données de profil robot pilotent désormais la chronologie PathPlanner : masse, inertie, limites de transmission et contraintes par défaut du projet sont consommées',
+    he: 'נתוני פרופיל הרובוט מניעים כעת את ציר הזמן של PathPlanner: מסה, אינרציה, מגבלות הנעה וברירות מחדל של אילוצי הפרויקט נצרכים',
+    ja: 'ロボットプロファイルデータが PathPlanner のタイムラインを駆動：質量・慣性・ドライブ限界・プロジェクト既定制約を消費します',
+    ko: '로봇 프로필 데이터가 PathPlanner 타임라인을 구동합니다: 질량, 관성, 구동 한계, 프로젝트 기본 제약을 소비합니다',
+    pl: 'Dane profilu robota napędzają teraz oś czasu PathPlanner: masa, bezwładność, limity napędu i domyślne ograniczenia projektu są zużywane',
+    'pt-br': 'Os dados do perfil do robô agora dirigem a linha do tempo do PathPlanner: massa, inércia, limites de transmissão e restrições padrão do projeto são consumidos',
+    es: 'Los datos del perfil del robot ahora impulsan la línea de tiempo de PathPlanner: se consumen masa, inercia, límites de transmisión y restricciones predeterminadas del proyecto',
+    tr: 'Robot profil verileri artık PathPlanner zaman çizelgesini sürüyor: kütle, atalet, sürücü limitleri ve proje varsayılan kısıtlamaları tüketiliyor',
+  } },
   { version: '0.1.7-beta.19', date: '2026.10.04', note: {
     en: 'Version notes are now enforced in every UI language for all entries, not just the newest',
     zh: '更新说明改为对全部条目按全部界面语言校验，不再只查最新一条',

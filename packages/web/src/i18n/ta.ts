@@ -105,6 +105,10 @@ export const ta = {
   'robots.bumper': 'பம்பர் (மீ)',
   'robots.length': 'நீளம்',
   'robots.width': 'அகலம்',
+  'robots.mass': 'திணிவு',
+  'robots.drive': 'இயக்கம்',
+  'robots.driveHolonomic': 'அனைத்துதிசை',
+  'robots.driveDifferential': 'வேறுபாட்டு',
   'robots.visible': 'மீண்டும் இயக்கம் & மோதல் சரிபார்ப்பில் தெரியும்',
   
   'vc.top': 'மே',

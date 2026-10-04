@@ -122,6 +122,10 @@ export const he: Record<MessageKey, string> = {
   'robots.bumper': 'פגוש (מ׳)',
   'robots.length': 'אורך',
   'robots.width': 'רוחב',
+  'robots.mass': 'מסה',
+  'robots.drive': 'הנעה',
+  'robots.driveHolonomic': 'הולונומי',
+  'robots.driveDifferential': 'דיפרנציאלי',
   'robots.visible': 'נראה בניגון ובבדיקת התנגשות',
 
   'vc.top': 'T',
