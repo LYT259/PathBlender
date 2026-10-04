@@ -123,6 +123,8 @@ export const it = {
   'field.style.rendered': 'Renderizzato',
   'conflicts.title': 'Conflitti',
   'conflicts.minSep': 'avvicinamento minimo {d} a t={t} s ({a} × {b})',
+  'conflicts.toleranceBadge': 'scarto ±{delta} s',
+  'checks.tolerance': 'Controllo tolleranza: caso peggiore ±{delta} s',
   'conflicts.item': '{start}–{end} s · minimo {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
   

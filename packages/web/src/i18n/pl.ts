@@ -140,8 +140,9 @@ export const pl: Record<MessageKey, string> = {
 
   'field.style.rendered': 'Renderowany',
   'conflicts.title': 'Konflikty',
-  'conflicts.minSep':
-    'minimalne zbliżenie {d} przy t={t} s ({a} × {b})',
+  'conflicts.minSep': 'minimalne zbliżenie {d} przy t={t} s ({a} × {b})',
+'conflicts.toleranceBadge': 'poślizg ±{delta} s',
+  'checks.tolerance': 'Kontrola tolerancji: najgorszy przypadek ±{delta} s startu',
   'conflicts.item': '{start}–{end} s · najbliżej {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 

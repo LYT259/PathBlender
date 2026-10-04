@@ -123,6 +123,8 @@ export const ar = {
   'field.style.rendered': 'مصيّر',
   'conflicts.title': 'التعارضات',
   'conflicts.minSep': 'أقرب اقتراب {d} عند t={t} ث ({a} × {b})',
+  'conflicts.toleranceBadge': 'انزلاق ±{delta} ث',
+  'checks.tolerance': 'فحص التسامح: أسوأ حالة ±{delta} ثانية',
   'conflicts.item': '{start}–{end} ث · الأقرب {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
   

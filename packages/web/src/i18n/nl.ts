@@ -137,8 +137,9 @@ export const nl: Record<MessageKey, string> = {
 
   'field.style.rendered': 'Gerenderd',
   'conflicts.title': 'Conflicten',
-  'conflicts.minSep':
-    'kleinste nadering {d} bij t={t} s ({a} × {b})',
+  'conflicts.minSep': 'kleinste nadering {d} bij t={t} s ({a} × {b})',
+'conflicts.toleranceBadge': 'slip ±{delta} s',
+  'checks.tolerance': 'Tolerantiecontrole: worst case ±{delta} s start',
   'conflicts.item': '{start}–{end} s · kleinste nadering {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 

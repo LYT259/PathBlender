@@ -123,6 +123,8 @@ export const mr = {
   'field.style.rendered': 'रेंडर',
   'conflicts.title': 'संघर्ष',
   'conflicts.minSep': 't={t} से वर सर्वात जवळचा दृष्टिकोन {d} ({a} × {b})',
+  'conflicts.toleranceBadge': '±{delta} से विचलन',
+  'checks.tolerance': 'सहिष्णुता तपासणी: सर्वात वाईट ±{delta} सेकंद',
   'conflicts.item': '{start}–{end} से · सर्वात जवळचे {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
   
