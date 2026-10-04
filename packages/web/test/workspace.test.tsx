@@ -140,4 +140,38 @@ describe('workspace workflow', () => {
     expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(selectRobot('Stop And Score').getByText('1.25 s')).toBeInTheDocument();
   });
+
+  it('undoes and redoes scene changes with the restored toolbar buttons and ⌘Z', async () => {
+    render(<App />);
+    await importSamples('ghostauto/straight_run.ghostauto', 'ghostauto/stop_and_score.ghostauto');
+
+    // Restored workspace chrome (2026-10-04): undo/redo plus both sidebar
+    // toggles. The import itself is an undoable step, so Undo is already
+    // armed; Redo waits until something has been undone.
+    const undoBtn = screen.getByRole('button', { name: 'Undo' });
+    const redoBtn = screen.getByRole('button', { name: 'Redo' });
+    expect(undoBtn).toBeEnabled();
+    expect(redoBtn).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Show or hide path list' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Show or hide inspector' })).toHaveAttribute('aria-pressed', 'true');
+
+    // Clearing the session is one more undoable step.
+    fireEvent.click(document.querySelector<HTMLElement>('summary[aria-label="More actions"]')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(0));
+    expect(undoBtn).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Show or hide path list' })).not.toBeInTheDocument();
+
+    // ⌘Z restores both robots. The controls unmount with the last robot,
+    // so re-query rather than reuse the pre-clear references.
+    fireEvent.keyDown(window, { key: 'z', metaKey: true });
+    await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
+    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
+    const redoBtnAgain = screen.getByRole('button', { name: 'Redo' });
+    expect(redoBtnAgain).toBeEnabled();
+
+    // Redo clears again.
+    fireEvent.click(redoBtnAgain);
+    await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(0));
+  });
 });
