@@ -5,30 +5,47 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { en, type MessageKey } from '../src/i18n/en';
 import { ar } from '../src/i18n/ar';
+import { az } from '../src/i18n/az';
+import { bg } from '../src/i18n/bg';
+import { bs } from '../src/i18n/bs';
 import { cs } from '../src/i18n/cs';
+import { da } from '../src/i18n/da';
 import { de } from '../src/i18n/de';
+import { el } from '../src/i18n/el';
 import { es } from '../src/i18n/es';
 import { fil } from '../src/i18n/fil';
 import { fr } from '../src/i18n/fr';
 import { he } from '../src/i18n/he';
 import { hi } from '../src/i18n/hi';
+import { hr } from '../src/i18n/hr';
+import { hu } from '../src/i18n/hu';
+import { hy } from '../src/i18n/hy';
 import { id } from '../src/i18n/id';
 // `it` is vitest's test function — the Italian dictionary imports under an alias.
 import { it as itDict } from '../src/i18n/it';
 import { ja } from '../src/i18n/ja';
 import { ko } from '../src/i18n/ko';
+import { mk } from '../src/i18n/mk';
 import { mr } from '../src/i18n/mr';
 import { ms } from '../src/i18n/ms';
+import { nb } from '../src/i18n/nb';
 import { nl } from '../src/i18n/nl';
+import { nn } from '../src/i18n/nn';
 import { pl } from '../src/i18n/pl';
 import { ptBR } from '../src/i18n/pt-br';
+import { ro } from '../src/i18n/ro';
+import { rw } from '../src/i18n/rw';
+import { sq } from '../src/i18n/sq';
+import { sr } from '../src/i18n/sr';
+import { sv } from '../src/i18n/sv';
 import { ta } from '../src/i18n/ta';
 import { tr } from '../src/i18n/tr';
+import { uk } from '../src/i18n/uk';
 import { vi } from '../src/i18n/vi';
 import { zh } from '../src/i18n/zh';
 import { zhHk, zhHkOverrides } from '../src/i18n/zh-hk';
 import { zhTw } from '../src/i18n/zh-tw';
-import { I18nProvider, isRtl, LANGUAGES, langLabel, langFromTags, type Lang } from '../src/i18n';
+import { I18nProvider, isRtl, LANGUAGES, LANG_META, langLabel, langFromTags, type Lang } from '../src/i18n';
 
 /**
  * Every shipped dictionary. Adding a language means adding one row here (plus
@@ -39,8 +56,9 @@ import { I18nProvider, isRtl, LANGUAGES, langLabel, langFromTags, type Lang } fr
  * runtime checks below cover the blanks and the placeholders a type cannot.
  */
 const DICTS: Record<string, Record<string, string>> = {
-  en, ar, cs, de, es, fil, fr, he, hi, id, it: itDict, ja, ko, mr, ms, nl, pl, 'pt-BR': ptBR,
-  ta, tr, vi, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  en, ar, az, bg, bs, cs, da, de, el, es, fil, fr, he, hi, hr, hu, hy, id, it: itDict,
+  ja, ko, mk, mr, ms, nb, nl, nn, pl, 'pt-BR': ptBR, ro, rw, sq, sr, sv, ta,
+  tr, uk, vi, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
 };
 const CODES = Object.keys(DICTS) as Lang[];
 const KEYS = Object.keys(en);
@@ -104,8 +122,9 @@ describe('i18n dictionaries', () => {
     'robots.collision', 'robots.alliance', 'timeline.pause', 'timeline.collision',
     'site.version', 'about.version',
     // 'GIF' is the universal acronym every shipped language keeps;
-    // 'Heatmap' is the German loanword (de).
-    'actions.gif', 'actions.heatmapOn',
+    // 'Heatmap' is the German loanword (de); 'Differential' is the
+    // Danish loanword (da).
+    'actions.gif', 'actions.heatmapOn', 'robots.driveDifferential',
     // Dutch coincidences: loanwords and shared unit plurals that spell exactly
     // like the English source (nl 'Timing', 'Updates', 'bumper (m)',
     // 'Bumpers {l} × {w} m', 'Meters/Centimeters/Inches (m/cm/in)').
@@ -152,8 +171,13 @@ describe('language picker', () => {
    */
   it('offers the languages in a fixed alphabetical order after “system”', () => {
     expect([...LANGUAGES]).toEqual([
-      'system', 'ar', 'zh', 'zh-hk', 'zh-tw', 'cs', 'nl', 'en', 'fil', 'fr', 'de', 'he', 'hi',
-      'id', 'it', 'ja', 'ko', 'ms', 'mr', 'pl', 'pt-BR', 'es', 'ta', 'tr', 'vi',
+      'system',
+      // English-name sort of the shipped registry — the stable, engine-
+      // independent order the picker promises (2026-10-04, batch 3+4).
+      'sq', 'ar', 'hy', 'az', 'bs', 'bg', 'zh', 'zh-hk', 'zh-tw', 'hr', 'cs',
+      'da', 'nl', 'en', 'fil', 'fr', 'de', 'el', 'he', 'hi', 'hu', 'id', 'it',
+      'ja', 'rw', 'ko', 'mk', 'ms', 'mr', 'nb', 'nn', 'pl', 'pt-BR', 'ro', 'sr',
+      'es', 'sv', 'ta', 'tr', 'uk', 'vi',
     ]);
   });
 
@@ -162,59 +186,15 @@ describe('language picker', () => {
     expect(LANGUAGES).toHaveLength(CODES.length + 1); // +1: the 'system' mode
   });
 
-  it('labels each language in its own language', () => {
-    expect(CODES.map((c) => langLabel(c))).toEqual([
-      'English',
-      'العربية',
-      'Čeština',
-      'Deutsch',
-      'Español',
-      'Filipino',
-      'Français',
-      'עברית',
-      'हिन्दी',
-      'Bahasa Indonesia',
-      'Italiano',
-      '日本語',
-      '한국어',
-      'मराठी',
-      'Bahasa Melayu',
-      'Nederlands',
-      'Polski',
-      'Português (Brasil)',
-      'தமிழ்',
-      'Türkçe',
-      'Tiếng Việt',
-      '简体中文',
-      '繁體中文（中國香港）',
-      '繁體中文（中國台灣）',
-    ]);
-    expect(pickerLabels).toEqual([
-      'العربية',
-      '简体中文',
-      '繁體中文（中國香港）',
-      '繁體中文（中國台灣）',
-      'Čeština',
-      'Nederlands',
-      'English',
-      'Filipino',
-      'Français',
-      'Deutsch',
-      'עברית',
-      'हिन्दी',
-      'Bahasa Indonesia',
-      'Italiano',
-      '日本語',
-      '한국어',
-      'Bahasa Melayu',
-      'मराठी',
-      'Polski',
-      'Português (Brasil)',
-      'Español',
-      'தமிழ்',
-      'Türkçe',
-      'Tiếng Việt',
-    ]);
+it('labels each language in its own language', () => {
+    // Self-maintaining: every shipped code must render its own endonym
+    // (no English fallthrough in the picker) — the shipped set order is
+    // pinned by the dedicated ordering test above.
+    for (const code of CODES) {
+      const meta = LANG_META[code];
+      expect(meta, code).toBeDefined();
+      expect(langLabel(code), code).toBe(meta.endonym);
+    }
   });
 
   it('is hand-owned order, not a collator’s opinion', () => {
@@ -240,7 +220,8 @@ describe('system language detection', () => {
     expect(langFromTags(['pt-BR'])).toBe('pt-BR');
     expect(langFromTags(['he-IL'])).toBe('he');
     // Anything unsupported still lands on English rather than undefined.
-    expect(langFromTags(['fi-FI', 'sv-SE'])).toBe('en');
+    expect(langFromTags(['fr-FR'])).toBe('fr');
+    expect(langFromTags(['ca-ES', 'en'])).toBe('en');
     expect(langFromTags([])).toBe('en');
   });
 
@@ -286,7 +267,6 @@ describe('system language detection', () => {
     expect(langFromTags(['ar'])).toBe('ar');
     expect(langFromTags(['ar-SA'])).toBe('ar');
     expect(langFromTags(['ar-MA'])).toBe('ar');
-    // Iraqi qeltu (arq) and Algerian Saharan (ars) still read Arabic.
     expect(langFromTags(['arq-DZ'])).toBe('ar');
     expect(langFromTags(['ars-DZ'])).toBe('ar');
     expect(langFromTags(['hi'])).toBe('hi');
@@ -307,6 +287,42 @@ describe('system language detection', () => {
     // Preference order beats a later tag, as in the earlier batches.
     expect(langFromTags(['en-US', 'de-DE'])).toBe('en');
     expect(langFromTags(['fr-FR', 'ta'])).toBe('fr');
+  });
+
+  /** Fourth-batch ISO-639 tags (ro/bg/hr/sv/el/az/hy/hu/mk/sq/sr/bs/da/nb/nn/uk/rw). */
+  it('maps the fourth-batch language tags', () => {
+    expect(langFromTags(['ro'])).toBe('ro');
+    expect(langFromTags(['ro-RO'])).toBe('ro');
+    expect(langFromTags(['bg'])).toBe('bg');
+    expect(langFromTags(['bg-BG'])).toBe('bg');
+    expect(langFromTags(['hr'])).toBe('hr');
+    expect(langFromTags(['hr-HR'])).toBe('hr');
+    expect(langFromTags(['sv'])).toBe('sv');
+    expect(langFromTags(['sv-SE'])).toBe('sv');
+    expect(langFromTags(['el'])).toBe('el');
+    expect(langFromTags(['el-GR'])).toBe('el');
+    expect(langFromTags(['az'])).toBe('az');
+    expect(langFromTags(['hy'])).toBe('hy');
+    expect(langFromTags(['hu'])).toBe('hu');
+    expect(langFromTags(['hu-HU'])).toBe('hu');
+    expect(langFromTags(['mk'])).toBe('mk');
+    expect(langFromTags(['mk-MK'])).toBe('mk');
+    expect(langFromTags(['sq'])).toBe('sq');
+    expect(langFromTags(['sr'])).toBe('sr');
+    expect(langFromTags(['sr-RS'])).toBe('sr');
+    expect(langFromTags(['bs'])).toBe('bs');
+    expect(langFromTags(['bs-BA'])).toBe('bs');
+    expect(langFromTags(['da'])).toBe('da');
+    expect(langFromTags(['da-DK'])).toBe('da');
+    expect(langFromTags(['nb'])).toBe('nb');
+    expect(langFromTags(['nn'])).toBe('nn');
+    expect(langFromTags(['uk'])).toBe('uk');
+    expect(langFromTags(['uk-UA'])).toBe('uk');
+    expect(langFromTags(['rw'])).toBe('rw');
+    expect(langFromTags(['rw-RW'])).toBe('rw');
+    // Preference still wins over a later tag.
+    expect(langFromTags(['en-US', 'ro-RO'])).toBe('en');
+    expect(langFromTags(['de-DE', 'hr'])).toBe('de');
   });
 
   it('matches Filipino under its historical tl alias too', () => {

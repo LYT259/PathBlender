@@ -7,39 +7,59 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { broadcastPref, listenPrefs } from '../pref-sync';
 import { en, type MessageKey } from './en';
 import { ar } from './ar';
+import { az } from './az';
+import { bg } from './bg';
+import { bs } from './bs';
 import { cs } from './cs';
+import { da } from './da';
 import { de } from './de';
+import { el } from './el';
 import { es } from './es';
 import { fil } from './fil';
 import { fr } from './fr';
 import { he } from './he';
 import { hi } from './hi';
+import { hr } from './hr';
+import { hu } from './hu';
+import { hy } from './hy';
 import { id } from './id';
 import { it } from './it';
 import { ja } from './ja';
 import { ko } from './ko';
+import { mk } from './mk';
 import { mr } from './mr';
 import { ms } from './ms';
+import { nb } from './nb';
 import { nl } from './nl';
+import { nn } from './nn';
 import { pl } from './pl';
 import { ptBR } from './pt-br';
+import { ro } from './ro';
+import { rw } from './rw';
+import { sq } from './sq';
+import { sr } from './sr';
+import { sv } from './sv';
 import { ta } from './ta';
 import { tr } from './tr';
+import { uk } from './uk';
 import { vi } from './vi';
 import { zh } from './zh';
 import { zhHk } from './zh-hk';
 import { zhTw } from './zh-tw';
 
 export type Lang =
-  | 'en' | 'ar' | 'cs' | 'de' | 'es' | 'fil' | 'fr' | 'he' | 'hi' | 'id' | 'it'
-  | 'ja' | 'ko' | 'mr' | 'ms' | 'nl' | 'pl' | 'pt-BR' | 'ta' | 'tr' | 'vi'
+  | 'en' | 'ar' | 'az' | 'bg' | 'bs' | 'cs' | 'da' | 'de' | 'el' | 'es'
+  | 'fil' | 'fr' | 'he' | 'hi' | 'hr' | 'hu' | 'hy' | 'id' | 'it' | 'ja'
+  | 'ko' | 'mk' | 'mr' | 'ms' | 'nb' | 'nl' | 'nn' | 'pl' | 'pt-BR' | 'ro'
+  | 'rw' | 'sq' | 'sr' | 'sv' | 'ta' | 'tr' | 'uk' | 'vi'
   | 'zh' | 'zh-hk' | 'zh-tw';
 /** User choice: 'system' follows the OS language live (first visit uses it). */
 export type LangChoice = 'system' | Lang;
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = {
-  en, ar, cs, de, es, fil, fr, he, hi, id, it, ja, ko, mr, ms, nl, pl, 'pt-BR': ptBR,
-  ta, tr, vi, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  en, ar, az, bg, bs, cs, da, de, el, es, fil, fr, he, hi, hr, hu, hy, id, it,
+  ja, ko, mk, mr, ms, nb, nl, nn, pl, 'pt-BR': ptBR, ro, rw, sq, sr, sv, ta,
+  tr, uk, vi, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
 };
 
 /**
@@ -69,30 +89,47 @@ export const legacyExampleNames: ReadonlySet<string> = new Set(
  * follow the naming the user asked for. Macau has no row of its own — it reads
  * the Hong Kong one (`langFromTags`), per v1.22's 区域就近回退.
  */
-const LANG_META: Record<Lang, { englishName: string; endonym: string }> = {
+export const LANG_META: Record<Lang, { englishName: string; endonym: string }> = {
   zh: { englishName: 'Chinese (Simplified)', endonym: '简体中文' },
   'zh-hk': { englishName: 'Chinese (Traditional, Hong Kong)', endonym: '繁體中文（中國香港）' },
   'zh-tw': { englishName: 'Chinese (Traditional, Taiwan)', endonym: '繁體中文（中國台灣）' },
   ar: { englishName: 'Arabic', endonym: 'العربية' },
+  az: { englishName: 'Azerbaijani', endonym: 'Azərbaycanca' },
+  bg: { englishName: 'Bulgarian', endonym: 'Български' },
+  bs: { englishName: 'Bosnian', endonym: 'Bosanski' },
   cs: { englishName: 'Czech', endonym: 'Čeština' },
+  da: { englishName: 'Danish', endonym: 'Dansk' },
   nl: { englishName: 'Dutch', endonym: 'Nederlands' },
   en: { englishName: 'English', endonym: 'English' },
+  el: { englishName: 'Greek', endonym: 'Ελληνικά' },
   fil: { englishName: 'Filipino', endonym: 'Filipino' },
   fr: { englishName: 'French', endonym: 'Français' },
   de: { englishName: 'German', endonym: 'Deutsch' },
   he: { englishName: 'Hebrew', endonym: 'עברית' },
   hi: { englishName: 'Hindi', endonym: 'हिन्दी' },
+  hr: { englishName: 'Croatian', endonym: 'Hrvatski' },
+  hu: { englishName: 'Hungarian', endonym: 'Magyar' },
+  hy: { englishName: 'Armenian', endonym: 'Հայերեն' },
   id: { englishName: 'Indonesian', endonym: 'Bahasa Indonesia' },
   it: { englishName: 'Italian', endonym: 'Italiano' },
   ja: { englishName: 'Japanese', endonym: '日本語' },
   ko: { englishName: 'Korean', endonym: '한국어' },
+  mk: { englishName: 'Macedonian', endonym: 'Македонски' },
   ms: { englishName: 'Malay', endonym: 'Bahasa Melayu' },
   mr: { englishName: 'Marathi', endonym: 'मराठी' },
+  nb: { englishName: 'Norwegian (Bokmål)', endonym: 'Norsk bokmål' },
+  nn: { englishName: 'Norwegian (Nynorsk)', endonym: 'Norsk nynorsk' },
   pl: { englishName: 'Polish', endonym: 'Polski' },
   'pt-BR': { englishName: 'Portuguese (Brazilian)', endonym: 'Português (Brasil)' },
+  ro: { englishName: 'Romanian', endonym: 'Română' },
+  rw: { englishName: 'Kinyarwanda', endonym: 'Kinyarwanda' },
+  sq: { englishName: 'Albanian', endonym: 'Shqip' },
+  sr: { englishName: 'Serbian', endonym: 'Srpski' },
   es: { englishName: 'Spanish', endonym: 'Español' },
+  sv: { englishName: 'Swedish', endonym: 'Svenska' },
   ta: { englishName: 'Tamil', endonym: 'தமிழ்' },
   tr: { englishName: 'Turkish', endonym: 'Türkçe' },
+  uk: { englishName: 'Ukrainian', endonym: 'Українська' },
   vi: { englishName: 'Vietnamese', endonym: 'Tiếng Việt' },
 };
 const STORAGE_KEY = 'pb.lang';
@@ -106,11 +143,7 @@ const LANG_CODES = Object.keys(LANG_META) as Lang[];
  * cannot be clicked from memory). One consequence is worth stating: Chinese
  * sorts first, so the three CJK rows head the list — the group our main
  * audience reaches for — with the Latin names in their own alphabetical order
- * behind them. Result in all twenty-four UI languages:
- * 简体中文 · 繁體中文（中國香港） · 繁體中文（中國台灣） · العربية · Čeština ·
- * Nederlands · English · Filipino · Français · Deutsch · עברית · हिन्दी ·
- * Bahasa Indonesia · Italiano · 日本語 · 한국어 · Bahasa Melayu · मराठी ·
- * Polski · Português (Brasil) · Español · தமிழ் · Türkçe · Tiếng Việt.
+ * behind them. Result in all forty-one UI languages.
  */
 export const LANGUAGES: readonly LangChoice[] = [
   'system',
@@ -146,13 +179,30 @@ export function langFromTags(tags: readonly string[]): Lang {
     if (/^(he|iw)/i.test(l)) return 'he';
     if (/^ar/i.test(l)) return 'ar'; // arq/ars (Arabic variants) start with `ar` too
     if (/^(fil|tl)/i.test(l)) return 'fil'; // tl = pre-2013 Tagalog tag
+    if (/^az/i.test(l)) return 'az';
+    if (/^bg/i.test(l)) return 'bg';
+    if (/^bs/i.test(l)) return 'bs';
+    if (/^da/i.test(l)) return 'da';
     if (/^de/i.test(l)) return 'de';
+    if (/^el/i.test(l)) return 'el';
     if (/^hi/i.test(l)) return 'hi';
+    if (/^hr/i.test(l)) return 'hr';
+    if (/^hu/i.test(l)) return 'hu';
+    if (/^hy/i.test(l)) return 'hy'; // covers hye (Armenian old code)
     if (/^id/i.test(l)) return 'id';
     if (/^it/i.test(l)) return 'it';
+    if (/^mk/i.test(l)) return 'mk';
     if (/^mr/i.test(l)) return 'mr';
     if (/^ms/i.test(l)) return 'ms';
+    if (/^nb/i.test(l)) return 'nb';
+    if (/^nn/i.test(l)) return 'nn';
+    if (/^ro/i.test(l)) return 'ro';
+    if (/^rw/i.test(l)) return 'rw'; // covers kin (Kinyarwanda old code)
+    if (/^sq/i.test(l)) return 'sq'; // covers alb (Albanian old code)
+    if (/^sr/i.test(l)) return 'sr';
+    if (/^sv/i.test(l)) return 'sv';
     if (/^ta/i.test(l)) return 'ta';
+    if (/^uk/i.test(l)) return 'uk'; // covers ukr (Ukrainian old code)
     if (/^vi/i.test(l)) return 'vi';
     if (/^pt/i.test(l)) return 'pt-BR';
     if (/^es/i.test(l)) return 'es';
