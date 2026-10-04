@@ -45,6 +45,14 @@ export const ms = {
   "checks.clearTitle": "Tiada konflik dikesan",
   "checks.clearBody": "Untuk laluan yang diimport dan dimensi robot semasa.",
   "checks.issues": "{n} item untuk disemak",
+  "actions.heatmapOn": "Peta haba",
+  "actions.heatmapOff": "Sembunyikan peta haba",
+  "actions.abCompare": "Banding A-B",
+  "checks.abBaselineSet": "Garis dasar disimpan — ubah senario lalu banding semula",
+  "checks.abNoPairs": "Tiada pasangan setanding antara kedua-dua senario",
+  "checks.abDelta": "Pasangan paling rapat {dir} sebanyak {d} m",
+  "checks.abSafer": "lebih selamat",
+  "checks.abTighter": "lebih rapat",
   "checks.exportReport": "Eksport laporan teks",
   "checks.reportTitle": "Laporan konflik",
   "checks.reportGenerated": "Dijana pada",
@@ -100,6 +108,7 @@ export const ms = {
   'app.title': 'PathBlender',
   'actions.import': 'Import fail',
   'actions.save': 'Simpan sesi',
+  'actions.gif': 'GIF',
   'actions.png': 'Eksport PNG',
   'actions.clear': 'Kosongkan',
   
@@ -143,6 +152,14 @@ export const ms = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'perlanggaran {start}–{end} s',
+  
+  'toast.gifOnly2d': 'Eksport GIF hanya 2D',
+  
+  'toast.gifRendering': 'Merender GIF…',
+  
+  'toast.gifSaved': 'GIF disimpan',
+  
+  'toast.gifFailed': 'GIF gagal',
   
   'toast.pngOnly2d': 'Eksport PNG hanya 2D',
   'toast.pngSaved': 'PNG disimpan',

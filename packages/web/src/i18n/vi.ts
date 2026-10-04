@@ -45,6 +45,14 @@ export const vi = {
   "checks.clearTitle": "Không phát hiện xung đột",
   "checks.clearBody": "Cho các đường đi đã nhập và kích thước robot hiện tại.",
   "checks.issues": "{n} mục cần xem xét",
+  "actions.heatmapOn": "Bản đồ nhiệt",
+  "actions.heatmapOff": "Ẩn bản đồ nhiệt",
+  "actions.abCompare": "So sánh A-B",
+  "checks.abBaselineSet": "Đã lưu mốc — thay đổi kịch bản rồi so sánh lại",
+  "checks.abNoPairs": "Không có cặp nào so sánh được giữa hai kịch bản",
+  "checks.abDelta": "Cặp khít nhất {dir} {d} m",
+  "checks.abSafer": "an toàn hơn",
+  "checks.abTighter": "khít hơn",
   "checks.exportReport": "Xuất báo cáo văn bản",
   "checks.reportTitle": "Báo cáo va chạm",
   "checks.reportGenerated": "Được tạo lúc",
@@ -100,6 +108,7 @@ export const vi = {
   'app.title': 'PathBlender',
   'actions.import': 'Nhập tệp',
   'actions.save': 'Lưu phiên',
+  'actions.gif': 'GIF',
   'actions.png': 'Xuất PNG',
   'actions.clear': 'Xóa',
   
@@ -143,6 +152,14 @@ export const vi = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'va chạm {start}–{end} s',
+  
+  'toast.gifOnly2d': 'Xuất GIF chỉ ở 2D',
+  
+  'toast.gifRendering': 'Đang dựng GIF…',
+  
+  'toast.gifSaved': 'Đã lưu GIF',
+  
+  'toast.gifFailed': 'GIF thất bại',
   
   'toast.pngOnly2d': 'Xuất PNG chỉ ở chế độ 2D',
   'toast.pngSaved': 'Đã lưu PNG',
