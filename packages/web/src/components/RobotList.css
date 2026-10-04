@@ -74,3 +74,10 @@
 /* Keep the full six-character identity beside its route selector. */
 .robot-library-row .robot-team-chip { width: 24px; min-width: 24px; }
 .robot-library-row .robot-library-visibility { width: 24px; }
+
+/* Keep the pencil beside the identity instead of pushing it to the route picker. */
+.robot-identity-cell { display: grid; grid-template-columns: minmax(0, max-content) 24px minmax(0, 1fr); align-items: start; flex: 1; min-width: 0; }
+.robot-identity-cell .robot-library-select { grid-column: 1; padding-bottom: 0; }
+.robot-identity-cell .robot-team-chip { grid-column: 2; }
+.robot-identity-cell > .robot-library-meta { grid-column: 1 / -1; margin: 5px 0 11px 26px; }
+.robot-identity-cell .robot-library-team { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

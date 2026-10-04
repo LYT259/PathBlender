@@ -98,7 +98,7 @@ export const hr = {
   'robots.title': 'Roboti ({n})',
   'robots.remove': 'Ukloni',
   'robots.collision': 'sudar',
-  'robots.teamNumberEdit': 'Uredi broj momčadi',
+  'robots.teamNumberEdit': "Uredi prikazano ime",
   'robots.alliance': 'savez',
   'robots.blue': 'Plava',
   'robots.red': 'Crvena',

@@ -132,7 +132,7 @@ export const cs: Record<MessageKey, string> = {
   'robots.title': 'Roboti ({n})',
   'robots.remove': 'Odebrat',
   'robots.collision': 'kolize',
-  'robots.teamNumberEdit': 'Upravit číslo týmu',
+  'robots.teamNumberEdit': "Upravit zobrazovaný název",
   'robots.alliance': 'aliance',
   'robots.blue': 'Modrá',
   'robots.red': 'Červená',

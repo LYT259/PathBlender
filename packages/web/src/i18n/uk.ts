@@ -98,7 +98,7 @@ export const uk = {
   'robots.title': 'Роботи ({n})',
   'robots.remove': "Видалити",
   'robots.collision': "зіткнення",
-  'robots.teamNumberEdit': "Редагувати номер команди",
+  'robots.teamNumberEdit': "Змінити відображуване ім’я",
   'robots.alliance': "альянс",
   'robots.blue': "Синій",
   'robots.red': "Червоний",

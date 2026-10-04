@@ -1,4 +1,4 @@
-import { bumperColor } from '../robot-identity';
+import { bumperColor, robotAnnotation } from '../robot-identity';
 import {
   forwardRef,
   useCallback,
@@ -494,7 +494,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     if (showTrail) {
       ctx.save();
       ctx.lineJoin = 'round';
-      ctx.lineCap = 'butt';
+      ctx.lineCap = 'round';
       ctx.lineWidth = TRAIL_WIDTH_M * v.scale;
       for (const r of robots) {
         const samples = r.trajectory.samples;
@@ -791,8 +791,8 @@ function drawRobot(
   // a leader line + anchor dot like the Preferences mouse diagram, the
   // number itself at the leader tip. Screen-space throughout: the
   // number stays upright and constant-size at any heading and zoom.
-  if (r.trajectory.teamNumber) {
-    const num = r.trajectory.teamNumber;
+  const num = robotAnnotation(r.trajectory);
+  if (num) {
     // The visible footprint can be offset from the trajectory origin.
     // Rotate that local offset exactly as the bumper/chassis above.
     const cos = Math.cos(pose.heading);

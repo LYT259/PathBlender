@@ -120,7 +120,7 @@ export const ta = {
   'robots.title': 'ரோபோக்கள் ({n})',
   'robots.remove': 'நீக்கு',
   'robots.collision': 'மோதல்',
-  'robots.teamNumberEdit': 'அணி எண்ணைத் திருத்தவும்',
+  'robots.teamNumberEdit': "காட்டப்படும் பெயரைத் திருத்தவும்",
   'robots.alliance': 'கூட்டணி',
   'robots.blue': 'நீலம்',
   'robots.red': 'சிவப்பு',

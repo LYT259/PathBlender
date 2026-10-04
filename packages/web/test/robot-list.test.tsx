@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { makeSession, parseGhostAuto } from '@pathblender/core';
+import { makeSession, parseGhostAuto, type SessionTrajectory } from '@pathblender/core';
 import { I18nProvider } from '../src/i18n';
 import { RobotInspector, RobotList } from '../src/components/RobotList';
 
@@ -86,6 +86,17 @@ describe('robot workspace controls', () => {
     expect(screen.getByText('Robot data')).toBeInTheDocument();
   });
 
+  it('the details heading keeps the original identity even when a display name is set', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    sample.trajectory.displayName = 'My Robot';
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
+    // Display names label the list, playback bar and field; the details
+    // panel sticks to the imported #teamNumber/name rule.
+    expect(screen.getByRole('heading', { name: '#0001' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'My Robot' })).not.toBeInTheDocument();
+  });
+
   it('preserves viewer-only limits while showing robot data', () => {
     mode.viewerOnly = true;
     const sample = robot();
@@ -99,58 +110,118 @@ describe('robot workspace controls', () => {
   });
 });
 
-describe('team number chip (metadata edit, 2026-10-02)', () => {
-  it('edits the team number inline from the row', () => {
-    const sample = robot();
-    sample.trajectory.teamNumber = '0001';
-    const onUpdate = vi.fn();
+describe('display name editor (free-text label, 2026-10-04)', () => {
+  function renderList(robots: SessionTrajectory[], onUpdate = vi.fn()) {
     render(
       <I18nProvider>
         <RobotList
-          robots={[sample]}
+          robots={robots}
           conflicts={[]}
           selectedId={null}
           onSelect={vi.fn()}
           onImport={vi.fn()}
           onUpdate={onUpdate}
           onPickRoute={vi.fn()}
-
         />
       </I18nProvider>,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Edit team number' }));
-    const input = screen.getByRole('textbox');
+    return onUpdate;
+  }
+  function openEditor(): HTMLInputElement {
+    fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
+    return screen.getByRole('textbox', { name: 'Edit display name' }) as HTMLInputElement;
+  }
+  function committedTrajectory(onUpdate: ReturnType<typeof vi.fn>) {
+    const patch = onUpdate.mock.calls[0]![1] as { trajectory: SessionTrajectory['trajectory'] };
+    return patch.trajectory;
+  }
+
+  it('edits the display name inline without touching the imported team number', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    const onUpdate = renderList([sample]);
+    const input = openEditor();
+    expect(input).toHaveValue('0001');
     fireEvent.change(input, { target: { value: '2910' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onUpdate).toHaveBeenCalledTimes(1);
-    const [id, patch] = onUpdate.mock.calls[0]!;
-    expect(id).toBe(sample.trajectory.id);
-    expect((patch as { trajectory: { teamNumber: string } }).trajectory.teamNumber).toBe('2910');
+    expect(onUpdate.mock.calls[0]![0]).toBe(sample.trajectory.id);
+    const trajectory = committedTrajectory(onUpdate);
+    expect(trajectory.displayName).toBe('2910');
+    expect(trajectory.teamNumber).toBe('0001');
   });
 
-  it('strips non-digits and discards on Escape', () => {
+  it('accepts free text in any language and commits on blur', () => {
     const sample = robot();
     sample.trajectory.teamNumber = '0001';
-    const onUpdate = vi.fn();
-    render(
-      <I18nProvider>
-        <RobotList
-          robots={[sample]}
-          conflicts={[]}
-          selectedId={null}
-          onSelect={vi.fn()}
-          onImport={vi.fn()}
-          onUpdate={onUpdate}
-          onPickRoute={vi.fn()}
+    const onUpdate = renderList([sample]);
+    const input = openEditor();
+    fireEvent.change(input, { target: { value: '红队射手' } });
+    fireEvent.blur(input);
+    expect(committedTrajectory(onUpdate).displayName).toBe('红队射手');
+  });
 
-        />
-      </I18nProvider>,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Edit team number' }));
-    const input = screen.getByRole('textbox');
+  it('keeps mixed text verbatim — no digit filtering', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    const onUpdate = renderList([sample]);
+    const input = openEditor();
     fireEvent.change(input, { target: { value: '29a1b0' } });
-    expect(input).toHaveValue('2910');
+    expect(input).toHaveValue('29a1b0');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(committedTrajectory(onUpdate).displayName).toBe('29a1b0');
+  });
+
+  it('caps the draft at 64 characters', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    renderList([sample]);
+    expect(openEditor()).toHaveAttribute('maxlength', '64');
+  });
+
+  it('discards the draft on Escape', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    const onUpdate = renderList([sample]);
+    const input = openEditor();
+    fireEvent.change(input, { target: { value: 'x' } });
     fireEvent.keyDown(input, { key: 'Escape' });
     expect(onUpdate).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
+  it('clearing the input restores the original identity display', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    sample.trajectory.displayName = 'My Robot';
+    const onUpdate = renderList([sample]);
+    const input = openEditor();
+    expect(input).toHaveValue('My Robot');
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    const trajectory = committedTrajectory(onUpdate);
+    expect(trajectory.displayName).toBeUndefined();
+    expect(trajectory.teamNumber).toBe('0001');
+  });
+
+  it('leaving the editor unchanged commits nothing', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    const onUpdate = renderList([sample]);
+    fireEvent.blur(openEditor());
+    expect(onUpdate).not.toHaveBeenCalled();
+  });
+
+  it('ignores Enter while an IME composition is in flight', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    const onUpdate = renderList([sample]);
+    const input = openEditor();
+    fireEvent.change(input, { target: { value: '红队' } });
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(committedTrajectory(onUpdate).displayName).toBe('红队');
   });
 });
