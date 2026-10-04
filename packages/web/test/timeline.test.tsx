@@ -72,7 +72,7 @@ describe('unified timeline', () => {
     const state = playback(7.8);
     render(
       <I18nProvider>
-        <Timeline robots={[delayedRobot]} conflicts={[]} bounds={[]} autoPeriodS={20} duration={8} playback={state} />
+        <Timeline robots={[delayedRobot]} conflicts={[]} bounds={[]} autoPeriodS={20} duration={8} playback={state} playbackRange="paths" />
       </I18nProvider>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Forward 0.5 seconds' }));
@@ -127,8 +127,8 @@ describe('unified timeline', () => {
     );
     const scrubber = screen.getByRole('slider', { name: 'Playback position' });
     expect(scrubber).toHaveAttribute('max', '15');
-    // The final tick carries the unit (chart-axis convention): "15 Seconds".
-    expect(screen.getByText('15 Seconds', { selector: '.timeline-tick' })).toBeInTheDocument();
+    // Units stay in the label column, separate from centered tick numbers.
+    expect(screen.getByText('15', { selector: '.timeline-tick' })).toBeInTheDocument();
     expect(screen.getByText('6', { selector: '.timeline-tick' })).toHaveStyle({ left: '40%' });
     // A session running past the autonomous period keeps its own end.
     unmount();
