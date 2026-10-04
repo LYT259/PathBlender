@@ -10,7 +10,7 @@ import {
   useReverseScrollZoom,
   type MouseControlsScheme,
 } from '../mouse-controls';
-import { lengthUnitExample, useLengthUnit } from '../length-units';
+import { LENGTH_UNITS, lengthUnitExample, useLengthUnit, type LengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
 import { checkForUpdate, installPendingUpdate } from '../update-check';
 import { APP_VERSION, noteText, VERSION_NOTES } from '../version-info';
@@ -20,7 +20,6 @@ import { Icon } from './Icon';
 import { MouseControlsDiagram } from './MouseControlsDiagram';
 import { IconAppearancePicker } from './IconAppearancePicker';
 import './PreferencesPanel.css';
-import { LENGTH_UNIT_CHOICES, LENGTH_UNIT_PREVIEWS, isSupportedLengthUnit, type LengthUnitChoice } from './length-unit-options';
 
 type Section = 'general' | 'controls' | 'updates' | 'about';
 
@@ -55,7 +54,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const [iconDraft, setIconDraft] = useState<IconAppearanceMode | null>(null);
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
   const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
-  const [unitDraft, setUnitDraft] = useState<LengthUnitChoice | null>(null);
+  const [unitDraft, setUnitDraft] = useState<LengthUnit | null>(null);
   const [reverseDraft, setReverseDraft] = useState<boolean | null>(null);
   const [constrainedDraft, setConstrainedDraft] = useState<boolean | null>(null);
   const [penDraft, setPenDraft] = useState<boolean | null>(null);
@@ -70,12 +69,11 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const updateChannel = channelDraft ?? channel;
   const mouse = mouseDraft ?? mouseControls;
   const unit = unitDraft ?? lengthUnit;
-  const supportedUnit = isSupportedLengthUnit(unit);
   const reverse = reverseDraft ?? reverseScroll;
   const constrained = constrainedDraft ?? defaultConstrained;
   const pen = penDraft ?? penAsMouse;
   const dirty = language !== langChoice || theme !== mode || icon !== iconMode ||
-    updateChannel !== channel || mouse !== mouseControls || (supportedUnit && unit !== lengthUnit) ||
+    updateChannel !== channel || mouse !== mouseControls || unit !== lengthUnit ||
     reverse !== reverseScroll || constrained !== defaultConstrained || pen !== penAsMouse;
   const updateStatusText =
     updateCheck.kind === 'checking' ? t('prefs.checking')
@@ -130,7 +128,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
       setUpdateCheck({ kind: 'idle' });
     }
     if (mouse !== mouseControls) setMouseControls(mouse);
-    if (isSupportedLengthUnit(unit) && unit !== lengthUnit) setLengthUnit(unit);
+    if (unit !== lengthUnit) setLengthUnit(unit);
     if (reverse !== reverseScroll) setReverseScroll(reverse);
     if (constrained !== defaultConstrained) setDefaultConstrained(constrained);
     if (pen !== penAsMouse) setPenAsMouse(pen);
@@ -179,12 +177,12 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
         {section === 'controls' && <>
           <div className="preferences-group preferences-units-group">
             <label className="preferences-setting"><span>{t('prefs.units')}</span>
-              <select value={unit} onChange={(event) => setUnitDraft(event.target.value as LengthUnitChoice)}>
+              <select value={unit} onChange={(event) => setUnitDraft(event.target.value as LengthUnit)}>
                 {lengthUnit === 'ftin' && <option value="ftin" hidden disabled>{t('prefs.unit.ftin')}</option>}
-                {LENGTH_UNIT_CHOICES.map((choice) => <option key={choice} value={choice}>{t(`prefs.unit.${choice}`)}</option>)}
+                {LENGTH_UNITS.map((choice) => <option key={choice} value={choice}>{t(`prefs.unit.${choice}`)}</option>)}
               </select>
             </label>
-            <p className="preferences-setting-description">{isSupportedLengthUnit(unit) ? `${t('prefs.units.hint')} ${lengthUnitExample(unit)}` : t('prefs.units.preview', { value: LENGTH_UNIT_PREVIEWS[unit] })}</p>
+            <p className="preferences-setting-description">{`${t('prefs.units.hint')} ${lengthUnitExample(unit)}`}</p>
           </div>
           <div className="preferences-group preferences-mouse-group">
             <label className="preferences-setting"><span>{t('prefs.mouseControls')}</span>
@@ -195,9 +193,25 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
             <MouseControlsDiagram scheme={mouse} iconMode={icon} constrained={constrained} />
             <details className="preferences-mouse-details"><summary>{t('prefs.mouse.shortcuts')}</summary>
             <div className="preferences-mouse-table">
-              {(['rotate', 'constrained', 'pan', 'zoom'] as const).map((action) => <div key={action} className="preferences-mouse-row">
-                <span>{t(`prefs.mouse.${constrained && action === 'rotate' ? 'constrained' : constrained && action === 'constrained' ? 'rotate' : action}`)}</span>
-                <strong>{t(`prefs.mouse.${mouse}.${action}`)}</strong>
+              {(mouse === 'solidworks'
+                // SOLIDWORKS: Alt+middle is Roll View (its own row); the
+                // constrained checkbox only re-tunes plain middle drag.
+                ? [
+                  { label: constrained ? 'prefs.mouse.constrained' : 'prefs.mouse.rotate', bind: 'prefs.mouse.solidworks.rotate' },
+                  { label: 'prefs.mouse.roll', bind: 'prefs.mouse.solidworks.roll' },
+                  { label: 'prefs.mouse.pan', bind: 'prefs.mouse.solidworks.pan' },
+                  { label: 'prefs.mouse.zoom', bind: 'prefs.mouse.solidworks.zoom' },
+                ] as const
+                // Onshape: the constrained checkbox swaps the plain/Alt rows.
+                : [
+                  { label: constrained ? 'prefs.mouse.constrained' : 'prefs.mouse.rotate', bind: 'prefs.mouse.onshape.rotate' },
+                  { label: constrained ? 'prefs.mouse.rotate' : 'prefs.mouse.constrained', bind: 'prefs.mouse.onshape.constrained' },
+                  { label: 'prefs.mouse.pan', bind: 'prefs.mouse.onshape.pan' },
+                  { label: 'prefs.mouse.zoom', bind: 'prefs.mouse.onshape.zoom' },
+                ] as const
+              ).map((row) => <div key={row.bind} className="preferences-mouse-row">
+                <span>{t(row.label)}</span>
+                <strong>{t(row.bind)}</strong>
               </div>)}
             </div></details>
             <div className="preferences-mouse-options">

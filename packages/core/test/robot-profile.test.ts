@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { parseRobotProfile, deserializeSession, serializeSession, makeSession, parseTraj } from '../src';
 import { ParseError } from '../src';
 
@@ -7,6 +9,10 @@ const trajText = JSON.stringify({
   name: 'L1',
   trajectory: { samples: [{ t: 0, x: 1, y: 1, heading: 0, vx: 1, vy: 0, omega: 0 }, { t: 2, x: 3, y: 1, heading: 0, vx: 0, vy: 0, omega: 0 }] },
 });
+
+// Real Choreo project file (BLACKHOLE2026 deploy, committed 2026-10-04):
+// project-form config wraps every value as {exp, val} ("17.73623005 in").
+const chorSample = readFileSync(resolve(__dirname, '../../../samples/choreo/choreo.chor'), 'utf-8');
 
 describe('parseRobotProfile (PathPlanner settings.json, both generations)', () => {
   it('reads the 2024+ nested robotConfig shape', () => {
@@ -68,6 +74,77 @@ describe('parseRobotProfile (PathPlanner settings.json, both generations)', () =
 
   it('throws the shared invalid-json error for non-JSON text', () => {
     expect(() => parseRobotProfile('not json', 'settings.json')).toThrow(ParseError);
+  });
+});
+
+describe('parseRobotProfile (Choreo project .chor, red book v1.15 companion read)', () => {
+  it('parses the real committed sample: bumper, mirrored modules, mass, drive type', () => {
+    const profile = parseRobotProfile(chorSample, 'BLACKHOLE2026-auto-paths/choreo/choreo.chor');
+    expect(profile).not.toBeNull();
+    expect(profile!.name).toBe('choreo'); // nearest folder, mirroring settings.json
+    // bumper front+back = 0.901 m overall; side*2 = 0.901 m.
+    expect(profile!.geometry.lengthM).toBeCloseTo(0.90100048654, 9);
+    expect(profile!.geometry.widthM).toBeCloseTo(0.90100048654, 9);
+    expect(profile!.geometry.offsetX).toBe(0);
+    expect(profile!.moduleLocations).toHaveLength(4);
+    expect(profile!.moduleLocations[0]).toEqual({ x: 0.281499945, y: 0.289000057 });
+    expect(profile!.moduleLocations[1]).toEqual({ x: 0.281499945, y: -0.289000057 });
+    expect(profile!.massKG).toBe(65);
+    expect(profile!.holonomic).toBe(true); // type: "Swerve"
+  });
+
+  it('unwraps {exp, val} pairs and reads Differential as non-holonomic', () => {
+    const text = JSON.stringify({
+      name: 'choreo',
+      version: 2,
+      type: 'Differential',
+      config: {
+        mass: { exp: '65 kg', val: 65 },
+        bumper: {
+          front: { exp: '14 in', val: 0.3556 },
+          side: { exp: '12 in', val: 0.3048 },
+          back: { exp: '14 in', val: 0.3556 },
+        },
+      },
+    });
+    const profile = parseRobotProfile(text, 'team/choreo.chor');
+    expect(profile).not.toBeNull();
+    expect(profile!.geometry.lengthM).toBeCloseTo(0.7112, 9);
+    expect(profile!.geometry.widthM).toBeCloseTo(0.6096, 9);
+    expect(profile!.moduleLocations).toEqual([]); // no module corners carried
+    expect(profile!.massKG).toBe(65);
+    expect(profile!.holonomic).toBe(false);
+  });
+
+  it('also accepts plain-number config values (embedded .traj form)', () => {
+    const text = JSON.stringify({
+      type: 'Swerve',
+      config: {
+        mass: 65,
+        bumper: { front: 0.45, side: 0.45, back: 0.45 },
+        frontLeft: { x: 0.28, y: 0.29 },
+        backLeft: { x: -0.28, y: 0.29 },
+      },
+    });
+    const profile = parseRobotProfile(text, 'choreo.chor');
+    expect(profile).not.toBeNull();
+    expect(profile!.geometry.lengthM).toBeCloseTo(0.9);
+    expect(profile!.moduleLocations).toHaveLength(4);
+    expect(profile!.massKG).toBe(65);
+  });
+
+  it('returns null without a usable bumper so the caller falls through', () => {
+    expect(parseRobotProfile(JSON.stringify({ type: 'Swerve', variables: {}, config: { mass: 65 } }), 'a/choreo.chor')).toBeNull();
+    expect(parseRobotProfile(JSON.stringify({ type: 'Swerve', config: { bumper: { front: 9, side: 9, back: 9 } } }), 'a/choreo.chor')).toBeNull();
+  });
+
+  it('returns null for .traj files whose config is nested under trajectory', () => {
+    const nested = JSON.stringify({
+      name: 'L1',
+      version: 3,
+      trajectory: { config: { bumper: { front: 0.45, side: 0.45, back: 0.45 } }, samples: [] },
+    });
+    expect(parseRobotProfile(nested, 'L1.traj')).toBeNull();
   });
 });
 

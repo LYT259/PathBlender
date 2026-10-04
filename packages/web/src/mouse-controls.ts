@@ -1,14 +1,17 @@
 /**
  * Mouse-controls preferences (user request 2026-10-02, verified against
- * Onshape's production UI 2026-10-03): the view-manipulation scheme plus
+ * Onshape's production UI 2026-10-03 and SOLIDWORKS' official view-
+ * manipulation docs 2026-10-04): the view-manipulation scheme plus
  * Onshape's three view checkboxes. Two schemes ship, with bindings taken
- * verbatim from Onshape's own settings table:
+ * verbatim from each vendor's own table:
  *
  * - onshape (default): right drag = rotate, Alt+right drag = constrained
- *   rotate, Ctrl+right drag OR middle drag = pan, wheel = zoom.
- * - solidworks: middle drag = rotate, Alt+middle drag = constrained
- *   rotate, Ctrl+middle drag = pan, wheel OR Shift+middle drag = zoom.
- *   (Also how the real SOLIDWORKS desktop works.)
+ *   rotate, Ctrl+right drag OR middle drag = pan, wheel = zoom (scroll up
+ *   zooms IN — Onshape's factory default).
+ * - solidworks: middle drag = rotate, Alt+middle drag = ROLL VIEW (spin
+ *   in the screen plane — NOT constrained rotate; that was a bug fixed
+ *   2026-10-04), Ctrl+middle drag = pan, wheel OR Shift+middle drag =
+ *   zoom (scroll up zooms OUT — SOLIDWORKS' factory default).
  *
  * Storage/broadcast follows the theme.tsx pattern (localStorage +
  * pref-sync events) so the settings window, the desktop shell and open
@@ -71,13 +74,15 @@ export function useMouseControls(): [MouseControlsScheme, (s: MouseControlsSchem
  * What a pressed mouse button does in the 3D view — the pure routing table
  * behind the schemes above (unit-tested; the canvas handlers stay thin).
  * `defaultConstrained` is Onshape's "set default rotation behavior to
- * constrained rotate" checkbox: it swaps which of plain/Alt drags is the
- * turntable-only rotation.
+ * constrained rotate" checkbox: in the Onshape scheme it swaps which of
+ * plain/Alt drags is the turntable-only rotation; in the SOLIDWORKS scheme
+ * it only re-tunes plain middle drag (Alt+middle stays Roll View).
  */
 export type ViewMouseAction =
   | { kind: 'orbit'; constrained: boolean }
   | { kind: 'pan' }
   | { kind: 'dragZoom' }
+  | { kind: 'roll' }
   | { kind: 'none' };
 
 export function resolveMouseAction(
@@ -86,20 +91,34 @@ export function resolveMouseAction(
   mods: { ctrlKey: boolean; shiftKey: boolean; altKey: boolean },
   defaultConstrained: boolean,
 ): ViewMouseAction {
-  const constrained = mods.altKey ? !defaultConstrained : defaultConstrained;
   if (scheme === 'solidworks') {
     if (button !== 1) return { kind: 'none' };
     if (mods.shiftKey) return { kind: 'dragZoom' };
     if (mods.ctrlKey) return { kind: 'pan' };
-    return { kind: 'orbit', constrained };
+    // SOLIDWORKS Roll View: Alt+middle spins the view in the screen plane
+    // (the default-constrained checkbox does not touch this binding).
+    if (mods.altKey) return { kind: 'roll' };
+    return { kind: 'orbit', constrained: defaultConstrained };
   }
-  // onshape
+  // onshape: Alt swaps plain/constrained rotate.
+  const constrained = mods.altKey ? !defaultConstrained : defaultConstrained;
   if (button === 2) {
     if (mods.ctrlKey) return { kind: 'pan' };
     return { kind: 'orbit', constrained };
   }
   if (button === 1) return { kind: 'pan' };
   return { kind: 'none' };
+}
+
+/**
+ * Wheel direction each scheme ships with, combined with the user's
+ * reverse-scroll checkbox: Onshape's factory default zooms IN on scroll
+ * up (reverse flag off), SOLIDWORKS' zooms OUT — so the SOLIDWORKS scheme
+ * flips the flag. The checkbox then reverses whichever default applies,
+ * exactly like both vendors' own "reverse wheel zoom" options.
+ */
+export function effectiveReverseScroll(scheme: MouseControlsScheme, reversePref: boolean): boolean {
+  return scheme === 'solidworks' ? !reversePref : reversePref;
 }
 
 /** Onshape's three view checkboxes as boolean prefs ('on'/'off' storage). */
