@@ -177,39 +177,25 @@ function leaderIndex() {
 }
 
 describe('2D robot bumper and team-number callout', () => {
-  it('fills four mitered trapezoid bumper bands with the alliance color, never the base plate', () => {
+  it('fills one continuous square bumper ring with the alliance color, never the base plate', () => {
     paint([robot(2)]);
     const fills = paths('fill');
-    // One fill path holds four trapezoid subpaths, each moveTo + 3×lineTo
-    // + closePath (2026-10-04: bands went from two-long/two-short rects to
-    // congruent 45°-mitered isosceles trapezoids — equal plan area).
-    const bands = fills.find((p) => p.length === 20 && p.filter((c) => c.name === 'moveTo').length === 4);
-    expect(bands).toBeDefined();
-    // Split into subpaths at each moveTo.
-    const subs: Call[][] = [];
-    for (const call of bands!) {
-      if (call.name === 'moveTo') subs.push([]);
-      subs[subs.length - 1]!.push(call);
-    }
-    expect(subs).toHaveLength(4);
-    const [top, bottom, left, right] = subs;
+    // One fill path holds the ring: outer square + inner square punched
+    // with the even-odd rule (2026-10-04, second pass: bands went from
+    // four separate trapezoids to a single seamless closed ring).
+    const ring = fills.find((p) => p.length === 2 && p.every((c) => c.name === 'rect'));
+    expect(ring).toBeDefined();
+    expect(ring![0]!.style.fillStyle).toBe('#c8323e');
     const h = 17.78; // L/2 = W/2 (35.56 px square)
     const i = 13.716; // h − bd (4.064 px)
-    for (const sub of subs!) {
-      expect(sub.map((c) => c.name)).toEqual(['moveTo', 'lineTo', 'lineTo', 'lineTo', 'closePath']);
-      expect(sub[0]!.style.fillStyle).toBe('#c8323e');
-    }
-    expectArgs(top![0]!, [-h, -h]); expectArgs(top![1]!, [h, -h]);
-    expectArgs(top![2]!, [i, -i]); expectArgs(top![3]!, [-i, -i]);
-    expectArgs(bottom![0]!, [-h, h]); expectArgs(bottom![1]!, [h, h]);
-    expectArgs(bottom![2]!, [i, i]); expectArgs(bottom![3]!, [-i, i]);
-    expectArgs(left![0]!, [-h, -h]); expectArgs(left![1]!, [-h, h]);
-    expectArgs(left![2]!, [-i, i]); expectArgs(left![3]!, [-i, -i]);
-    expectArgs(right![0]!, [h, -h]); expectArgs(right![1]!, [h, h]);
-    expectArgs(right![2]!, [i, i]); expectArgs(right![3]!, [i, -i]);
-    // The full 35.56×35.56 outline is stroked (collision footprint), never filled.
+    expectArgs(ring![0]!, [-h, -h, 2 * h, 2 * h]);
+    expectArgs(ring![1]!, [-i, -i, 2 * i, 2 * i]);
+    // The hole only opens with the even-odd fill rule.
+    expect(calls.some((c) => c.name === 'fill' && c.args[0] === 'evenodd')).toBe(true);
+    // The base plate is never solid-filled: no fill path is a lone
+    // full-outline rect.
     const filled = fills.some((p) =>
-      p.some((c) => c.name === 'rect' && Math.abs((c.args[2] as number) - 35.56) < 1e-6 && Math.abs((c.args[3] as number) - 35.56) < 1e-6));
+      p.length === 1 && p[0]!.name === 'rect' && Math.abs((p[0]!.args[2] as number) - 35.56) < 1e-6 && Math.abs((p[0]!.args[3] as number) - 35.56) < 1e-6);
     expect(filled).toBe(false);
     const strokes = paths('stroke');
     const outline = strokes.find((p) => p.length === 1 && p[0]!.name === 'rect' && Math.abs((p[0]!.args[2] as number) - 35.56) < 1e-6);
