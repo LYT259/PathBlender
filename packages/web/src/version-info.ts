@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.18';
+export const APP_VERSION = '0.1.8-beta.19';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.19', date: '2026.10.04', note: {
+    en: 'Fixed the 3D metal frame sinking into the floor — the module mounting plate\'s bottom face had been measured on the wrong surface (42 mm fork-arm underside instead of the true 92 mm plate face), so the frame now rides 31 mm higher, clear of the carpet',
+    zh: '修复 3D 金属框架沉到地面——模组安装板底面此前测错了面（误用 42mm 叉臂底面，正确板面为 92mm），框架整体上抬 31mm、悬空于地毯上方',
+    'zh-tw': '修復 3D 金屬框架沉到地面——模組安裝板底面先前測錯了面（誤用 42mm 叉臂底面，正確板面為 92mm），框架整體上抬 31mm、懸空於地毯上方',
+    cs: 'Opraveno kovové 3D rámové sestavení podvozku klesající na podlahu — spodní plocha montážní desky modulu byla změřena na nesprávném povrchu (42 mm spodek vidlicového ramene místo skutečných 92 mm plochy desky), rám je nyní o 31 mm výše, nad kobercem',
+    nl: '3D-metalen frame dat in de vloer wegzakte verholpen — de onderrand van de montageplaat was op het verkeerde vlak gemeten (42 mm vorkarm-onderkant i.p.v. de echte plaat op 92 mm), het frame rijdt nu 31 mm hoger, vrij van het tapijt',
+    fr: 'Le châssis métallique 3D qui s’enfonçait dans le sol est corrigé — la face inférieure de la plaque de montage du module avait été mesurée sur la mauvaise surface (42 mm sous le bras de fourche au lieu des 92 mm réels de la plaque), le châssis roule désormais 31 mm plus haut, au-dessus du tapis',
+    he: 'תוקנה מסגרת המתכת התלת-ממדית ששקעה לרצפה — הפאה התחתונה של לוחית ההרכבה נמדדה על משטח שגוי (42 מ"מ מתחת לזרוע המזלג במקום 92 מ"מ של הלוחית האמיתית), והמסגרת רוכבת כעת 31 מ"מ גבוה יותר, מעל השטיח',
+    ja: '3D の金属フレームが床に沈み込む問題を修正——モジュール取り付けプレートの底面を誤った面で測定していました（実際のプレート面 92mm に対し、フォークアーム下面の 42mm を使用）。フレームが 31mm 高くなり、カーペットから浮きました',
+    ko: '3D 금속 프레임이 바닥에 가라앉던 문제 수정 — 모듈 장착 플레이트의 밑면을 잘못된 면에서 측정했습니다(실제 플레이트 면 92mm 대신 포크 암 밑면 42mm). 프레임이 31mm 높아져 카펫 위에 떠 있습니다',
+    pl: 'Naprawiono metalową ramę 3D zagłębiającą się w podłogę — dolna powierzchnia płyty montażowej modułu była zmierzona na złej powierzchni (42 mm spodu wahacza zamiast właściwej płyty 92 mm), rama jedzie teraz 31 mm wyżej, nad wykładziną',
+    'pt-br': 'Corrigido o chassi metálico 3D afundando no piso — a face inferior da placa de montagem do módulo havia sido medida na superfície errada (42 mm sob o braço da garfo em vez dos 92 mm reais da placa); o chassi agora anda 31 mm mais alto, acima do carpete',
+    es: 'Corregido el chasis metálico 3D que se hundía en el suelo — la cara inferior de la placa de montaje del módulo se había medido en la superficie equivocada (42 mm bajo el brazo de horquilla en lugar de los 92 mm reales de la placa); el chasis ahora va 31 mm más alto, sobre la alfombra',
+    tr: '3B metal şasi zemine gömülüyordu, düzeltildi — modül montaj plakasının alt yüzü yanlış yüzeyden ölçülmüştü (gerçek plaka yüzü 92 mm yerine çatal kol altı 42 mm); şasi artık 31 mm daha yüksekte, halının üzerinde duruyor',
+  } },
   { version: '0.1.8-beta.18', date: '2026.10.04', note: {
     en: 'The settings window traffic lights now sit at the exact same spot as the main window',
     zh: '设置窗口的红绿灯按钮现在与主窗口位于完全相同的位置',
