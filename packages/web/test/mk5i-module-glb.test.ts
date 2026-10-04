@@ -1,18 +1,25 @@
 /**
  * Shipped mk5i-module.glb geometry contract — the numbers behind the
- * runtime `validateModuleTemplate` sanity check plus the wheel-bias
- * invariant baked in 2026-10-04 (scripts/cad/mk5i-box-offset.py):
+ * runtime `validateModuleTemplate` sanity check plus the module-plate
+ * bolt-coverage invariant:
  *
- * On the real MK5i the wheel is biased to the corner of the drivebase
- * — the steering axis sits 2.58–2.62 in / 2.55 in from two edges of
- * the 7.45 in square module envelope (official SDS MK5i layout
- * drawing, measured at 140.3 px/in). Trajectory `moduleLocations` are
- * steering-axis positions, so the shipped GLB must keep the turret
- * (fork + wheel) centered on the origin while the box body (top
- * plate, Krakens, L plate) reaches mostly toward local −Z (radially
- * inward in the parked windmill pose, +X = rolling). The pre-2026-10-04
- * GLB centered the box on the axis and rendered every module hanging
- * ~4 cm past the frame rails into the bumper zone.
+ * Trajectory `moduleLocations` are steering-axis positions, so the
+ * shipped GLB keeps the turret (fork + wheel) centered on the origin
+ * while the box body (top plate, Krakens, L plate) spans nearly
+ * symmetric local ±Z (+X = rolling). A 2026-10-04 experiment shifted
+ * the box 41 mm toward local −Z (radially inward in the parked
+ * windmill pose, scripts/cad/mk5i-box-offset.py) to match the
+ * official SDS MK5i layout drawing (steering axis 2.58–2.62 in /
+ * 2.55 in from two edges of the 7.45 in square envelope, measured at
+ * 140.3 px/in) — REVERTED the same day: the governing ground truth is
+ * the chassis CAD, not the envelope drawing. In mk5i-frame.glb the 20
+ * long module mounting bolts sit in (±0.3302, ±0.3302) corner L
+ * patterns; relative to the steering axis (±0.27625 m, diagonal
+ * parked yaw) the corner bolt needs plate outboard reach
+ * lz = +0.0763 m, and the shifted plate only reached +0.0507 — the
+ * bolt floated 25.6 mm off the plate at every corner. The restored
+ * (pre-shift) plate covers all 20 bolts with ≥15 mm margin. Full
+ * story in scripts/cad/README.md.
  *
  * Accessor AABBs are read straight from the JSON chunk and composed
  * through node transforms — same technique as field3d-model.test.ts.
@@ -115,13 +122,20 @@ describe('shipped mk5i-module.glb', () => {
     expect(turret.max.z).toBeLessThanOrEqual(0.06);
   });
 
-  it('biases the box toward local −Z — the wheel sits at the drivebase corner', () => {
-    // Measured 2026-10-04 after mk5i-box-offset.py: z −0.1336..+0.0507,
-    // vs the SDS drawing's 4.90 in / 2.55 in envelope margins.
-    expect(box.min.z).toBeLessThanOrEqual(-0.12);
-    expect(box.max.z).toBeGreaterThanOrEqual(0.03);
-    expect(box.max.z).toBeLessThanOrEqual(0.075);
-    expect(-box.min.z).toBeGreaterThanOrEqual(2 * box.max.z);
+  it('centers the box on the steering axis — the plate covers every chassis mounting bolt', () => {
+    // Governing ground truth (2026-10-04 mk5i-frame.glb measurement):
+    // the 20 long module bolts sit in (±0.3302, ±0.3302) corner L
+    // patterns; relative to the steering axis (±0.27625 m, diagonal
+    // parked yaw) the corner bolt needs plate outboard reach
+    // lz = +0.0763 m. The reverted 41 mm inboard shift reached only
+    // +0.0507 and floated the bolt 25.6 mm off the plate at all four
+    // corners; the restored plate covers all 20 bolts ≥15 mm margin.
+    expect(box.max.z).toBeGreaterThanOrEqual(0.0763);
+    // Restored geometry measured 2026-10-04 (GLB byte-identical to
+    // a0f2639): box z −0.0926..+0.0917 — symmetric within ~1 mm.
+    expect(box.min.z).toBeLessThanOrEqual(-0.09);
+    expect(box.max.z).toBeGreaterThanOrEqual(0.09);
+    expect(Math.abs(box.min.z + box.max.z)).toBeLessThanOrEqual(0.005);
     // Rolling axis stays symmetric about the steering axis.
     expect(Math.abs(box.min.x + box.max.x)).toBeLessThanOrEqual(0.005);
   });

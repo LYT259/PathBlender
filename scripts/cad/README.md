@@ -99,7 +99,7 @@ bolted to the rail.
   (20× 2-1/2 in long bolts — 5 per corner in an L pattern — plus 24
   short bolts and 20 nuts); positions match the STEP within 0.33 mm.
 
-## Box radial offset — wheel biased to the corner (2026-10-04)
+## Box radial offset experiment — wheel biased to the corner (REVERTED 2026-10-04)
 
 The DesignApp replica centers the wheel column in the module
 footprint, but on the real MK5i the wheel is biased to the corner of
@@ -107,26 +107,40 @@ the drivebase: the steering axis sits 2.58-2.62 in / 2.55 in from two
 edges of the 7.45 in square module envelope (official SDS MK5i layout
 drawing, measured at 140.3 px/in; grid overlay in
 /tmp/mk5i-grid.png). Rendered as-was, the box hung ~4 cm past the
-frame rails into the bumper zone.
+frame rails into the bumper zone — so on 2026-10-04 the box was
+shifted 41 mm toward local -Z (radially inward in the parked windmill
+pose) and the 2D sprite re-rendered. **Reverted the same day**: the
+SDS envelope drawing is the wrong ground truth — the chassis CAD
+governs, and the shift moved the module plate off the frame-corner
+mounting bolts.
 
-- **Tool** — `scripts/cad/mk5i-box-offset.py`, pure python3 stdlib
-  (same in-place GLB patching technique as mk5i-split-glb.py):
+- **Tool (do NOT re-run)** — `scripts/cad/mk5i-box-offset.py`, pure
+  python3 stdlib (same in-place GLB patching technique as
+  mk5i-split-glb.py):
 
   ```sh
-  python3 scripts/cad/mk5i-box-offset.py     packages/web/public/models/mk5i-module.glb     packages/web/public/models/mk5i-module.glb -0.041
+  python3 scripts/cad/mk5i-box-offset.py \
+    packages/web/public/models/mk5i-module.glb \
+    packages/web/public/models/mk5i-module.glb -0.041
   ```
 
-  Translates every `mk5i-box` POSITION vertex by dz=-0.041 m (local
-  -Z = radially inward in the parked windmill pose; verified on the
-  3D top view: all four boxes moved toward the chassis center) and
-  updates the accessor min/max. The turret is NOT moved — trajectory
-  moduleLocations are steering-axis positions. Result: box z
-  -0.1336..+0.0507 m (drawing: 4.90 in / 2.55 in margins), x stays
-  +/-0.108, turret +/-0.0518 centered. Guarded by
-  `packages/web/test/mk5i-module-glb.test.ts`.
-- The 2D top-view sprite was re-rendered afterwards (glb-topview.py,
-  world_size_m 0.221077 -> 0.272524, mirrored as
+  It translated every `mk5i-box` POSITION vertex by dz=-0.041 m and
+  updated the accessor min/max; the turret was NOT moved (trajectory
+  moduleLocations are steering-axis positions). Result was box z
+  -0.1336..+0.0507 m, x +/-0.108.
+- **Why reverted (2026-10-04)** — in mk5i-frame.glb the 20 long
+  module mounting bolts sit in (±0.3302, ±0.3302) corner L patterns;
+  relative to the steering axis (±0.27625 m, diagonal parked yaw) the
+  corner bolt needs plate outboard reach lz = +0.0763 m. The shifted
+  plate reached only +0.0507 — the corner bolt floated 25.6 mm off
+  the plate at all four corners. The restored pre-shift plate (box z
+  -0.0926..+0.0917) covers all 20 bolts with >=15 mm margin.
+- **Restored artifacts** — GLB byte-identical to git `a0f2639`
+  (`git checkout a0f2639 -- packages/web/public/models/mk5i-module.glb`),
+  sprite PNG from git `4b3b36b` (world_size_m back to 0.221077 =
   `MK5I_MODULE_TOP_WORLD_M` in packages/web/src/robot-sprites.ts).
+  Geometry guarded by `packages/web/test/mk5i-module-glb.test.ts`,
+  including an explicit lz = +0.0763 corner-bolt coverage assertion.
 
 ## Top-view sprite for the 2D canvas (2026-10-03)
 
