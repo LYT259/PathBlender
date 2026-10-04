@@ -39,6 +39,7 @@ export const id = {
   'workspace.closeRobotDetails': "Tutup detail robot",
   'workspace.undo': "Urungkan",
   'workspace.redo': "Ulangi",
+  'workspace.home': "Kembali ke beranda",
   "workspace.more": "Tindakan lain",
   "workspace.season": "Musim permainan",
   "workspace.edit2d": "Selesaikan penyuntingan untuk beralih ke 3D",

@@ -39,6 +39,7 @@ export const ms = {
   'workspace.closeRobotDetails': "Tutup butiran robot",
   'workspace.undo': "Buat asal",
   'workspace.redo': "Buat semula",
+  'workspace.home': "Kembali ke utama",
   "workspace.more": "Tindakan lain",
   "workspace.season": "Musim permainan",
   "workspace.edit2d": "Selesaikan penyuntingan untuk beralih ke 3D",

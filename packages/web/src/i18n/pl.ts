@@ -50,6 +50,7 @@ export const pl: Record<MessageKey, string> = {
   'workspace.closeRobotDetails': "Zamknij szczegóły robota",
   'workspace.undo': "Cofnij",
   'workspace.redo': "Ponów",
+  'workspace.home': "Wróć do strony głównej",
   'workspace.more': 'Więcej akcji',
   'workspace.season': 'Sezon rozgrywek',
   'workspace.edit2d': 'Zakończ edycję, aby przełączyć na 3D',

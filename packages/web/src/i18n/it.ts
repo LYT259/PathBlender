@@ -39,6 +39,7 @@ export const it = {
   'workspace.closeRobotDetails': "Chiudi dettagli robot",
   'workspace.undo': "Annulla",
   'workspace.redo': "Ripeti",
+  'workspace.home': "Torna alla home",
   "workspace.more": "Altre azioni",
   "workspace.season": "Stagione di gioco",
   "workspace.edit2d": "Termina modifica per passare a 3D",
