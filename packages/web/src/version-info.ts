@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.18';
+export const APP_VERSION = '0.1.7-beta.19';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,7 +32,36 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.7-beta.18', date: '2026.10.04', note: { en: 'i18n: 10 more languages — German, Italian, Arabic, Hindi, Marathi, Malay, Tamil, Filipino, Vietnamese, Indonesian' } },
+  { version: '0.1.7-beta.19', date: '2026.10.04', note: {
+    en: 'Version notes are now enforced in every UI language for all entries, not just the newest',
+    zh: '更新说明改为对全部条目按全部界面语言校验，不再只查最新一条',
+    'zh-tw': '更新說明改為對全部條目按全部介面語言校驗，不再只查最新一條',
+    cs: 'Poznámky k verzím se nyní u všech položek ověřují ve všech jazycích rozhraní, ne jen u nejnovější',
+    nl: 'Versienotities worden nu voor alle items in elke UI-taal gecontroleerd, niet alleen de nieuwste',
+    fr: 'Les notes de version sont désormais vérifiées dans toutes les langues de l’interface pour toutes les entrées, pas seulement la plus récente',
+    he: 'הערות הגרסה נאכפות כעת בכל שפות הממשק עבור כל הרשומות, לא רק החדשה ביותר',
+    ja: 'バージョンノートは最新版だけでなく全エントリに対して全 UI 言語で検証されるようになりました',
+    ko: '버전 노트가 이제 최신 항목만이 아니라 모든 항목에 대해 전체 UI 언어로 검증됩니다',
+    pl: 'Notki wersji są teraz egzekwowane w każdym języku interfejsu dla wszystkich wpisów, nie tylko najnowszego',
+    'pt-br': 'As notas de versão agora são aplicadas em todos os idiomas da interface para todas as entradas, não apenas a mais recente',
+    es: 'Las notas de versión ahora se aplican en todos los idiomas de la interfaz para todas las entradas, no solo la más reciente',
+    tr: 'Sürüm notları artık yalnızca en yenisi için değil, tüm girdiler için her arayüz dilinde zorunlu',
+  } },
+  { version: '0.1.7-beta.18', date: '2026.10.04', note: {
+    en: 'i18n: 10 more languages — German, Italian, Arabic, Hindi, Marathi, Malay, Tamil, Filipino, Vietnamese, Indonesian',
+    zh: 'i18n：新增 10 种语言——德语、意大利语、阿拉伯语、印地语、马拉地语、马来语、泰米尔语、菲律宾语、越南语、印尼语',
+    'zh-tw': 'i18n：新增 10 種語言——德語、義大利語、阿拉伯語、印地語、馬拉地語、馬來語、坦米爾語、菲律賓語、越南語、印尼語',
+    cs: 'i18n: 10 dalších jazyků — němčina, italština, arabština, hindština, maráthština, malajština, tamilština, filipínština, vietnamština, indonéština',
+    nl: 'i18n: 10 extra talen — Duits, Italiaans, Arabisch, Hindi, Marathi, Maleis, Tamil, Filipijns, Vietnamees, Indonesisch',
+    fr: 'i18n : 10 langues de plus — allemand, italien, arabe, hindi, marathe, malais, tamoul, philippin, vietnamien, indonésien',
+    he: 'i18n: 10 שפות נוספות — גרמנית, איטלקית, ערבית, הינדית, מראטהי, מלאית, טמילית, פיליפינית, וייטנאמית, אינדונזית',
+    ja: 'i18n：10言語追加——ドイツ語、イタリア語、アラビア語、ヒンディー語、マラーティー語、マレー語、タミル語、フィリピン語、ベトナム語、インドネシア語',
+    ko: 'i18n: 10개 언어 추가 — 독일어, 이탈리아어, 아랍어, 힌디어, 마라티어, 말레이어, 타밀어, 필리핀어, 베트남어, 인도네시아어',
+    pl: 'i18n: 10 kolejnych języków — niemiecki, włoski, arabski, hindi, marathi, malajski, tamilski, filipiński, wietnamski, indonezyjski',
+    'pt-br': 'i18n: 10 idiomas a mais — alemão, italiano, árabe, híndi, marata, malaio, tâmil, filipino, vietnamita, indonésio',
+    es: 'i18n: 10 idiomas más — alemán, italiano, árabe, hindi, marati, malayo, tamil, filipino, vietnamita, indonesio',
+    tr: 'i18n: 10 dil daha — Almanca, İtalyanca, Arapça, Hintçe, Marathi, Malayca, Tamilce, Filipince, Vietnamca, Endonezce',
+  } },
   { version: '0.1.7-beta.17', date: '2026.10.04', note: {
     "en": "Folder imports create independent teams with saved route choices and distinct placeholder numbers",
     "zh": "每个文件夹独立为一个队伍，保留路径切换选项，并使用不同的字母占位队号",
@@ -78,7 +107,21 @@ export const VERSION_NOTES: VersionNote[] = [
     es: 'Los archivos de proyecto Choreo .chor ya se pueden importar: las dimensiones del parachoques, la masa y la disposición de los módulos alimentan la comprobación de colisiones',
     tr: 'Choreo .chor proje dosyaları artık robot verisi olarak içe aktarılıyor: tampon ölçüleri, kütle ve modül yerleşimi çarpışma kontrolüne yansıyor',
   } },
-  { version: '0.1.7-beta.14', date: '2026.10.04', note: { en: 'freeze swerve modules at installed angle / 模组锁定安装角' } },
+  { version: '0.1.7-beta.14', date: '2026.10.04', note: {
+    en: 'Freeze swerve modules at installed angle',
+    zh: '模组全程锁定安装角',
+    'zh-tw': '模組全程鎖定安裝角',
+    cs: 'Moduly jsou zafixovány v montážním úhlu',
+    nl: 'Modules vergrendeld op de geïnstalleerde hoek',
+    fr: 'Modules figés à leur angle de montage',
+    he: 'המודולים ננעלים בזווית ההתקנה',
+    ja: 'モジュールを取り付け角で固定',
+    ko: '모듈을 설치 각도로 고정',
+    pl: 'Moduły zablokowane pod kątem montażowym',
+    'pt-br': 'Módulos fixos no ângulo instalado',
+    es: 'Módulos fijos en el ángulo de instalación',
+    tr: 'Modüller takma açıda sabitlendi',
+  } },
   { version: '0.1.7-beta.13', date: '2026.10.04', note: {
     en: '2D: team number on a leader-line callout, alliance color only on the bumper bands',
     zh: '2D：队号改为引线标注显示，且只有 bumper 四边保留联盟色',
