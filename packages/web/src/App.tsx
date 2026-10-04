@@ -1,13 +1,15 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSessionState } from './session-state';
+import { useSessionHistory } from './session-history';
 import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
 import { isExampleRobot } from './example-robot';
+import { compareScenarios, remapColorblind } from '@pathblender/core';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
 import { PreferencesPanel } from './components/PreferencesPanel';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { UsageTip, useUsageTip } from './components/UsageTip';
 import {
+  applyProfileToTrajectory,
   CUSTOM_FIELD_ID,
   detectCollisions,
   detectFieldBounds,
@@ -45,7 +47,7 @@ import { I18nProvider, useI18n } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
-import { listenPrefs } from './pref-sync';
+import { listenPrefs, readColorblind } from './pref-sync';
 import { effectiveReverseScroll, useMouseControls, useReverseScrollZoom } from './mouse-controls';
 import { setReverseScrollZoom } from './zoom';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from './viewer';
@@ -136,8 +138,13 @@ function AppBody() {
   }, [mouseControlsScheme, reverseScroll]);
   const { channel: updateChannel } = useUpdateChannel();
   const [initialFieldPref] = useState(loadFieldPref);
-  const { robots: sourceRobots, alliance, setRobots, setScene, fieldId, fieldVariant, fieldStyle, customField, customImageUrl } = useSessionState(initialFieldPref);
+  const { robots: sourceRobots, alliance, setRobots, setScene, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, canUndo, canRedo } = useSessionHistory(initialFieldPref);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Sidebar toggles (restored 2026-10-04): defaults open on wide screens,
+  // and the toolbar buttons stay visible whenever robots exist, so a panel
+  // can never be closed without a way to reopen it.
+  const [pathsOpen, setPathsOpen] = useState(() => window.innerWidth > 640);
+  const [inspectorOpen, setInspectorOpen] = useState(() => window.innerWidth > 900);
   const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot'>('checks');
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
   const [view3D, setView3D] = useState(loadView3D);
@@ -206,11 +213,40 @@ function AppBody() {
   useEffect(() => {
     if ((playback.playing || t > 0) && showPlayTip) dismissPlayTip();
   }, [playback.playing, t, showPlayTip, dismissPlayTip]);
+  // Undo/redo (restored 2026-10-04) — like every history step, they cancel
+  // playback and a pending example so the restored scene is what you see.
+  const undoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); undo(); }, [playback.setPlaying, undo]);
+  const redoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); redo(); }, [playback.setPlaying, redo]);
 
   const visible = useMemo(() => seasonRobots.filter((r) => r.visible), [seasonRobots]);
+  // Colorblind-safe robot palette (§7.3-3): the toggle remaps default
+  // palette colors in place; custom colors pass through (core remap).
+  const [colorblind, setColorblind] = useState(readColorblind);
+  useEffect(() => {
+    setRobots((prev) =>
+      prev.length === 0 ? prev : prev.map((r) => ({ ...r, color: remapColorblind(r.color, colorblind) })),
+    );
+    // The preference itself persists via the settings panel; the remap
+    // effect above only needs to run when the toggle flips.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colorblind]);
+  useEffect(
+    () =>
+      listenPrefs((key, v) => {
+        if (key === 'colorblindPalette') setColorblind(v === '1');
+      }),
+    [],
+  );
+
+  // §6.5-①: the tolerance slider rescans pair windows at relative start
+  // shifts ±2δ — worst-case execution timing, not just the paper plan.
+  const [toleranceS, setToleranceS] = useState(0);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  // A-B compare: first click snapshots the scenario, second reports deltas.
+  const abBaselineRef = useRef<SessionTrajectory[] | null>(null);
   const conflicts = useMemo(
-    () => detectCollisions(seasonRobots),
-    [seasonRobots],
+    () => detectCollisions(seasonRobots, { toleranceS: toleranceS > 0 ? toleranceS : undefined }),
+    [seasonRobots, toleranceS],
   );
   const bounds = useMemo(() => detectFieldBounds(seasonRobots, field), [seasonRobots, field]);
   const minSep = useMemo(() => minimumSeparation(seasonRobots), [seasonRobots]);
@@ -251,6 +287,8 @@ function AppBody() {
           setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(restored.robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
           setSelectedId(restored.robots[0]?.trajectory.id ?? null);
           setInspectorMode('checks');
+          setInspectorOpen(window.innerWidth > 900);
+          if (window.innerWidth <= 640) setPathsOpen(false);
           playback.setPlaying(false);
           setT(0);
           setErrors([]);
@@ -313,6 +351,8 @@ function AppBody() {
       setRobots((prev) => withTeamPlaceholders([...prev, ...additions]));
       setSelectedId(additions[0]!.trajectory.id);
       setInspectorMode('checks');
+      setInspectorOpen(window.innerWidth > 900);
+      if (window.innerWidth <= 640) setPathsOpen(false);
       flash(tr('library.imported', { n: addedRoutes.length, m: addedProfiles.length }));
     } else if (!fromFolder && addedProfiles.length > 0 && sourceRobots.length > 0) {
       const targetId = selectedId ?? sourceRobots[0]!.trajectory.id;
@@ -321,6 +361,8 @@ function AppBody() {
         : robot));
       setSelectedId(targetId);
       setInspectorMode('robot');
+      setInspectorOpen(true);
+      if (window.innerWidth <= 640) setPathsOpen(false);
       flash(tr('library.imported', { n: 0, m: addedProfiles.length }));
     } else if (!fromFolder && addedProfiles.length > 0) {
       pendingProfilesRef.current.push(...addedProfiles);
@@ -382,8 +424,9 @@ function AppBody() {
       if (robot.trajectory.id !== robotId) return robot;
       const entry = robot.profileOptions?.find((profile) => profile.id === profileId);
       if (!entry) return robot;
-      return { ...robot, profileId: entry.id, trajectory: { ...robot.trajectory, geometry: entry.profile.geometry,
-        moduleLocations: entry.profile.moduleLocations, geometrySource: 'file' } };
+      // §6.6: geometry always applies; a dynamics-carrying profile also
+      // regenerates PathPlanner timelines against the real robot.
+      return { ...robot, profileId: entry.id, trajectory: applyProfileToTrajectory(robot.trajectory, entry.profile) };
     }));
   }, [setRobots]);
 
@@ -424,6 +467,8 @@ function AppBody() {
   const selectRobot = useCallback((id: string) => {
     setSelectedId(id);
     setInspectorMode('robot');
+    setInspectorOpen(true);
+    if (window.innerWidth <= 640) setPathsOpen(false);
   }, []);
   const selectedRobot = robots.find((r) => r.trajectory.id === selectedId) ?? robots[0];
 
@@ -448,6 +493,19 @@ function AppBody() {
     );
   }, [robots, fieldId, field]);
 
+  // ⌘Z / Ctrl+Z undo, Shift = redo (restored 2026-10-04). Ignored while an
+  // input, select, textarea or modal owns focus, so typing stays untouched.
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      const element = e.target instanceof Element ? e.target : null;
+      if ((!e.metaKey && !e.ctrlKey) || e.key.toLowerCase() !== 'z' || e.altKey || element?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]') || document.querySelector('[aria-modal="true"]')) return;
+      e.preventDefault();
+      if (e.shiftKey) redoSession(); else undoSession();
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [undoSession, redoSession]);
+
   // Launch continuity (user report 2026-10-02: quitting in 3D reopened to
   // the welcome page — the 3D pref was honored but only after a fresh
   // import). Restore the autosaved session once on mount; a desktop
@@ -457,6 +515,8 @@ function AppBody() {
     if (restored) {
       setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(restored.robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
       setSelectedId(restored.robots[0]?.trajectory.id ?? null);
+      setInspectorOpen(window.innerWidth > 900);
+      if (window.innerWidth <= 640) setPathsOpen(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
   }, []);
@@ -478,6 +538,34 @@ function AppBody() {
     }
     canvasRef.current?.exportPng((ok) => flash(tr(ok ? 'toast.pngSaved' : 'toast.pngFailed'), ok ? 'ok' : 'error'));
   }, [view3D, flash, tr]);
+
+  const exportGif = useCallback(() => {
+    if (view3D) {
+      flash(tr('toast.gifOnly2d'));
+      return;
+    }
+    flash(tr('toast.gifRendering'));
+    canvasRef.current?.exportGif((ok) => flash(tr(ok ? 'toast.gifSaved' : 'toast.gifFailed'), ok ? 'ok' : 'error'));
+  }, [view3D, flash, tr]);
+
+  const abToggle = useCallback(() => {
+    if (abBaselineRef.current === null) {
+      abBaselineRef.current = robots;
+      flash(tr('checks.abBaselineSet'));
+      return;
+    }
+    const result = compareScenarios(abBaselineRef.current, robots);
+    abBaselineRef.current = null;
+    if (result.pairs.length === 0) {
+      flash(tr('checks.abNoPairs'));
+      return;
+    }
+    const tightest = result.pairs[0]!;
+    flash(tr('checks.abDelta', {
+      d: Math.abs(tightest.deltaM).toFixed(2),
+      dir: tightest.deltaM >= 0 ? tr('checks.abSafer') : tr('checks.abTighter'),
+    }));
+  }, [robots, flash, tr]);
 
   // Native "Check for Updates…" and channel switches. The Rust shell owns
   // the channel→feed mapping (check_update); feed unreachable (offline, or
@@ -588,11 +676,11 @@ function AppBody() {
 
   const hasRobots = robots.length > 0;
   const hasExample = robots.some(isExampleRobot);
-  const leftOpen = hasRobots;
+  const leftOpen = pathsOpen && hasRobots;
   const issueCount = conflicts.length + bounds.length;
-  const rightOpen = hasRobots;
+  const rightOpen = inspectorOpen && hasRobots;
   const openImport = () => importInputRef.current?.click();
-  const tryExample = async () => {
+  const tryExample = async (autoplay = false) => {
     const request = ++exampleRequest.current;
     setExampleLoading(true);
     try {
@@ -611,10 +699,12 @@ function AppBody() {
       });
       setSelectedId(example.robots[0]?.trajectory.id ?? null);
       setInspectorMode('checks');
+      setPathsOpen(window.innerWidth > 640);
+      setInspectorOpen(window.innerWidth > 900);
       setView3D(false);
       setShowTrail(true);
       setErrors([]);
-      playback.setPlaying(false);
+      playback.setPlaying(autoplay);
       setT(0);
     } catch {
       if (request === exampleRequest.current) flash(tr('welcome.exampleFailed'), 'error');
@@ -644,6 +734,7 @@ function AppBody() {
   return (
     <div className={`app${hasRobots ? '' : ' is-welcome'}`}>
       <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label="primary">
+        {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.togglePaths')} aria-pressed={leftOpen} onClick={() => { setPathsOpen(!pathsOpen); if (!pathsOpen && window.innerWidth <= 640) setInspectorOpen(false); }}><Icon name="sidebar" /></button>}
         {hasRobots && <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>}
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
         {!VIEWER_ONLY && (
@@ -686,6 +777,11 @@ function AppBody() {
           if (!isSessionFileName(file.name)) { setErrors([{ fileName: file.name, message: tr('import.notSession') }]); return; }
           void importFiles([file]);
         }} />
+        {hasRobots && <button className="tool-btn square" title={tr('workspace.home')} aria-label={tr('workspace.home')} onClick={clearAll}><Icon name="home" /></button>}
+        {hasRobots && <div className="history-controls">
+          <button className="tool-btn square" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
+          <button className="tool-btn square" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
+        </div>}
         <span className="toolbar-spacer" data-tauri-drag-region="" />
         {!VIEWER_ONLY && hasRobots && <button className="tool-btn save-action" onClick={saveSession} title={tr('actions.saveHint')}>{tr('actions.save')}</button>}
         {hasRobots && <details className="workspace-menu">
@@ -693,12 +789,16 @@ function AppBody() {
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
             {!VIEWER_ONLY && <button className="menu-save-action" disabled={!hasRobots} onClick={saveSession}>{tr('actions.save')}</button>}
             {!VIEWER_ONLY && <button disabled={!hasRobots || view3D} onClick={exportPng} title={view3D ? tr('toast.pngOnly2d') : undefined}>{tr('actions.png')}</button>}
+            {!VIEWER_ONLY && <button disabled={!hasRobots || view3D} onClick={exportGif} title={view3D ? tr('toast.gifOnly2d') : undefined}>{tr('actions.gif')}</button>}
+            {hasRobots && <button onClick={() => setShowHeatmap((v) => !v)} aria-pressed={showHeatmap}>{tr(showHeatmap ? 'actions.heatmapOff' : 'actions.heatmapOn')}</button>}
+            {hasRobots && <button onClick={abToggle}>{tr('actions.abCompare')}</button>}
             <button disabled={!hasRobots} onClick={clearAll}>{tr('actions.clear')}</button>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub ↗</a>
             {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
           </div>
         </details>}
         <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={openPreferences}><Icon name="settings" /></button>
+        {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.toggleInspector')} aria-pressed={rightOpen} onClick={() => { setInspectorOpen(!inspectorOpen); if (!inspectorOpen && window.innerWidth <= 640) setPathsOpen(false); }}><Icon name="inspector" /></button>}
       </header>
       {VIEWER_ONLY && SITE_PREVIEW && <div className="site-preview-banner" role="contentinfo"><span>{tr('site.previewNote')}</span><a href={SITE_URLS.stable}>{tr('site.backStable')}</a></div>}
       <div className="app-col">
@@ -761,18 +861,23 @@ function AppBody() {
                 <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
                 <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} onDemo={() => void tryExample(true)} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
                 <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
-            {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
+            {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); setInspectorOpen(true); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
             {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} playback={playback} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
           </section>
           <aside className="workspace-inspector" hidden={!rightOpen}>
             <div className="inspector-header"><div className="seg inspector-tabs" role="group" aria-label={tr('workspace.panels')}>
               <button className={inspectorMode === 'checks' ? 'on' : ''} aria-pressed={inspectorMode === 'checks'} onClick={() => setInspectorMode('checks')}>{tr('workspace.checks')}{issueCount > 0 && <span className="tab-count">{issueCount}</span>}</button>
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
-            </div></div>
-            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
+            </div><button className="tool-btn square inspector-close" title={tr(inspectorMode === 'robot' ? 'workspace.closeRobotDetails' : 'workspace.closePanel')} aria-label={tr(inspectorMode === 'robot' ? 'workspace.closeRobotDetails' : 'workspace.closePanel')} onClick={() => {
+              // Closing a robot detail page returns to checks. The toolbar's
+              // inspector toggle still controls the whole sidebar.
+              if (inspectorMode === 'robot') setInspectorMode('checks');
+              else setInspectorOpen(false);
+            }}><Icon name="close" size={14} /></button></div>
+            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} toleranceS={toleranceS} onToleranceChange={setToleranceS} fieldName={field.name} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
             {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} onRemove={removeRobot} libraryProfiles={selectedRobot?.profileOptions ?? []} onApplyProfile={applyProfile} /></div>}
           </aside>
         </main>

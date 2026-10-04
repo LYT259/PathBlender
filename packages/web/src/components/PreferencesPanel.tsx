@@ -2,6 +2,7 @@ import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { LANGUAGES, langLabel, useI18n, type LangChoice } from '../i18n';
 import { useTheme, type ThemeMode } from '../theme';
 import { useAppIcon, type IconAppearanceMode } from '../app-icon';
+import { readColorblind, writeColorblind } from '../pref-sync';
 import {
   MOUSE_SCHEMES,
   useDefaultConstrained,
@@ -51,6 +52,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const [section, setSection] = useState<Section>('general');
   const [languageDraft, setLanguageDraft] = useState<LangChoice | null>(null);
   const [themeDraft, setThemeDraft] = useState<ThemeMode | null>(null);
+  const [colorblind, setColorblind] = useState(readColorblind);
   const [iconDraft, setIconDraft] = useState<IconAppearanceMode | null>(null);
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
   const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
@@ -173,6 +175,11 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
             </div>
           </fieldset>
           {desktop && <IconAppearancePicker value={icon} onChange={setIconDraft} />}
+          <label className="preferences-setting">
+            <span>{t('prefs.colorblind')}</span>
+            <input type="checkbox" checked={colorblind} onChange={(e) => { setColorblind(e.target.checked); writeColorblind(e.target.checked); }} />
+          </label>
+          <p className="preferences-setting-description">{t('prefs.colorblindHint')}</p>
         </>}
         {section === 'controls' && <>
           <div className="preferences-group preferences-units-group">
