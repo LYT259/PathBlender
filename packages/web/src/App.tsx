@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSessionState } from './session-state';
+import { useSessionHistory } from './session-history';
 import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
 import { isExampleRobot } from './example-robot';
 import { Icon } from './components/Icon';
@@ -137,8 +137,13 @@ function AppBody() {
   }, [mouseControlsScheme, reverseScroll]);
   const { channel: updateChannel } = useUpdateChannel();
   const [initialFieldPref] = useState(loadFieldPref);
-  const { robots: sourceRobots, alliance, setRobots, setScene, fieldId, fieldVariant, fieldStyle, customField, customImageUrl } = useSessionState(initialFieldPref);
+  const { robots: sourceRobots, alliance, setRobots, setScene, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, canUndo, canRedo } = useSessionHistory(initialFieldPref);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Sidebar toggles (restored 2026-10-04): defaults open on wide screens,
+  // and the toolbar buttons stay visible whenever robots exist, so a panel
+  // can never be closed without a way to reopen it.
+  const [pathsOpen, setPathsOpen] = useState(() => window.innerWidth > 640);
+  const [inspectorOpen, setInspectorOpen] = useState(() => window.innerWidth > 900);
   const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot'>('checks');
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
   const [view3D, setView3D] = useState(loadView3D);
@@ -207,6 +212,10 @@ function AppBody() {
   useEffect(() => {
     if ((playback.playing || t > 0) && showPlayTip) dismissPlayTip();
   }, [playback.playing, t, showPlayTip, dismissPlayTip]);
+  // Undo/redo (restored 2026-10-04) — like every history step, they cancel
+  // playback and a pending example so the restored scene is what you see.
+  const undoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); undo(); }, [playback.setPlaying, undo]);
+  const redoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); redo(); }, [playback.setPlaying, redo]);
 
   const visible = useMemo(() => seasonRobots.filter((r) => r.visible), [seasonRobots]);
   // §6.5-①: the tolerance slider rescans pair windows at relative start
@@ -255,6 +264,8 @@ function AppBody() {
           setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(restored.robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
           setSelectedId(restored.robots[0]?.trajectory.id ?? null);
           setInspectorMode('checks');
+          setInspectorOpen(window.innerWidth > 900);
+          if (window.innerWidth <= 640) setPathsOpen(false);
           playback.setPlaying(false);
           setT(0);
           setErrors([]);
@@ -317,6 +328,8 @@ function AppBody() {
       setRobots((prev) => withTeamPlaceholders([...prev, ...additions]));
       setSelectedId(additions[0]!.trajectory.id);
       setInspectorMode('checks');
+      setInspectorOpen(window.innerWidth > 900);
+      if (window.innerWidth <= 640) setPathsOpen(false);
       flash(tr('library.imported', { n: addedRoutes.length, m: addedProfiles.length }));
     } else if (!fromFolder && addedProfiles.length > 0 && sourceRobots.length > 0) {
       const targetId = selectedId ?? sourceRobots[0]!.trajectory.id;
@@ -325,6 +338,8 @@ function AppBody() {
         : robot));
       setSelectedId(targetId);
       setInspectorMode('robot');
+      setInspectorOpen(true);
+      if (window.innerWidth <= 640) setPathsOpen(false);
       flash(tr('library.imported', { n: 0, m: addedProfiles.length }));
     } else if (!fromFolder && addedProfiles.length > 0) {
       pendingProfilesRef.current.push(...addedProfiles);
@@ -429,6 +444,8 @@ function AppBody() {
   const selectRobot = useCallback((id: string) => {
     setSelectedId(id);
     setInspectorMode('robot');
+    setInspectorOpen(true);
+    if (window.innerWidth <= 640) setPathsOpen(false);
   }, []);
   const selectedRobot = robots.find((r) => r.trajectory.id === selectedId) ?? robots[0];
 
@@ -453,6 +470,19 @@ function AppBody() {
     );
   }, [robots, fieldId, field]);
 
+  // ⌘Z / Ctrl+Z undo, Shift = redo (restored 2026-10-04). Ignored while an
+  // input, select, textarea or modal owns focus, so typing stays untouched.
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      const element = e.target instanceof Element ? e.target : null;
+      if ((!e.metaKey && !e.ctrlKey) || e.key.toLowerCase() !== 'z' || e.altKey || element?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]') || document.querySelector('[aria-modal="true"]')) return;
+      e.preventDefault();
+      if (e.shiftKey) redoSession(); else undoSession();
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [undoSession, redoSession]);
+
   // Launch continuity (user report 2026-10-02: quitting in 3D reopened to
   // the welcome page — the 3D pref was honored but only after a fresh
   // import). Restore the autosaved session once on mount; a desktop
@@ -462,6 +492,8 @@ function AppBody() {
     if (restored) {
       setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(restored.robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
       setSelectedId(restored.robots[0]?.trajectory.id ?? null);
+      setInspectorOpen(window.innerWidth > 900);
+      if (window.innerWidth <= 640) setPathsOpen(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
   }, []);
@@ -593,9 +625,9 @@ function AppBody() {
 
   const hasRobots = robots.length > 0;
   const hasExample = robots.some(isExampleRobot);
-  const leftOpen = hasRobots;
+  const leftOpen = pathsOpen && hasRobots;
   const issueCount = conflicts.length + bounds.length;
-  const rightOpen = hasRobots;
+  const rightOpen = inspectorOpen && hasRobots;
   const openImport = () => importInputRef.current?.click();
   const tryExample = async () => {
     const request = ++exampleRequest.current;
@@ -616,6 +648,8 @@ function AppBody() {
       });
       setSelectedId(example.robots[0]?.trajectory.id ?? null);
       setInspectorMode('checks');
+      setPathsOpen(window.innerWidth > 640);
+      setInspectorOpen(window.innerWidth > 900);
       setView3D(false);
       setShowTrail(true);
       setErrors([]);
@@ -649,6 +683,7 @@ function AppBody() {
   return (
     <div className={`app${hasRobots ? '' : ' is-welcome'}`}>
       <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label="primary">
+        {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.togglePaths')} aria-pressed={leftOpen} onClick={() => { setPathsOpen(!pathsOpen); if (!pathsOpen && window.innerWidth <= 640) setInspectorOpen(false); }}><Icon name="sidebar" /></button>}
         {hasRobots && <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>}
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
         {!VIEWER_ONLY && (
@@ -691,6 +726,10 @@ function AppBody() {
           if (!isSessionFileName(file.name)) { setErrors([{ fileName: file.name, message: tr('import.notSession') }]); return; }
           void importFiles([file]);
         }} />
+        {hasRobots && <div className="history-controls">
+          <button className="tool-btn square" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
+          <button className="tool-btn square" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
+        </div>}
         <span className="toolbar-spacer" data-tauri-drag-region="" />
         {!VIEWER_ONLY && hasRobots && <button className="tool-btn save-action" onClick={saveSession} title={tr('actions.saveHint')}>{tr('actions.save')}</button>}
         {hasRobots && <details className="workspace-menu">
@@ -704,6 +743,7 @@ function AppBody() {
           </div>
         </details>}
         <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={openPreferences}><Icon name="settings" /></button>
+        {hasRobots && <button className="tool-btn square" aria-label={tr('workspace.toggleInspector')} aria-pressed={rightOpen} onClick={() => { setInspectorOpen(!inspectorOpen); if (!inspectorOpen && window.innerWidth <= 640) setPathsOpen(false); }}><Icon name="inspector" /></button>}
       </header>
       {VIEWER_ONLY && SITE_PREVIEW && <div className="site-preview-banner" role="contentinfo"><span>{tr('site.previewNote')}</span><a href={SITE_URLS.stable}>{tr('site.backStable')}</a></div>}
       <div className="app-col">
@@ -769,14 +809,19 @@ function AppBody() {
               {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
                 <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
-            {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
+            {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); setInspectorOpen(true); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
             {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} playback={playback} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
           </section>
           <aside className="workspace-inspector" hidden={!rightOpen}>
             <div className="inspector-header"><div className="seg inspector-tabs" role="group" aria-label={tr('workspace.panels')}>
               <button className={inspectorMode === 'checks' ? 'on' : ''} aria-pressed={inspectorMode === 'checks'} onClick={() => setInspectorMode('checks')}>{tr('workspace.checks')}{issueCount > 0 && <span className="tab-count">{issueCount}</span>}</button>
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
-            </div></div>
+            </div><button className="tool-btn square inspector-close" title={tr(inspectorMode === 'robot' ? 'workspace.closeRobotDetails' : 'workspace.closePanel')} aria-label={tr(inspectorMode === 'robot' ? 'workspace.closeRobotDetails' : 'workspace.closePanel')} onClick={() => {
+              // Closing a robot detail page returns to checks. The toolbar's
+              // inspector toggle still controls the whole sidebar.
+              if (inspectorMode === 'robot') setInspectorMode('checks');
+              else setInspectorOpen(false);
+            }}><Icon name="close" size={14} /></button></div>
             {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} toleranceS={toleranceS} onToleranceChange={setToleranceS} fieldName={field.name} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
             {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} onRemove={removeRobot} libraryProfiles={selectedRobot?.profileOptions ?? []} onApplyProfile={applyProfile} /></div>}
           </aside>
