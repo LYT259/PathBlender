@@ -4,16 +4,27 @@ import { createElement } from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { en, type MessageKey } from '../src/i18n/en';
+import { ar } from '../src/i18n/ar';
 import { cs } from '../src/i18n/cs';
+import { de } from '../src/i18n/de';
 import { es } from '../src/i18n/es';
+import { fil } from '../src/i18n/fil';
 import { fr } from '../src/i18n/fr';
 import { he } from '../src/i18n/he';
+import { hi } from '../src/i18n/hi';
+import { id } from '../src/i18n/id';
+// `it` is vitest's test function — the Italian dictionary imports under an alias.
+import { it as itDict } from '../src/i18n/it';
 import { ja } from '../src/i18n/ja';
 import { ko } from '../src/i18n/ko';
+import { mr } from '../src/i18n/mr';
+import { ms } from '../src/i18n/ms';
 import { nl } from '../src/i18n/nl';
 import { pl } from '../src/i18n/pl';
 import { ptBR } from '../src/i18n/pt-br';
+import { ta } from '../src/i18n/ta';
 import { tr } from '../src/i18n/tr';
+import { vi } from '../src/i18n/vi';
 import { zh } from '../src/i18n/zh';
 import { zhHk, zhHkOverrides } from '../src/i18n/zh-hk';
 import { zhTw } from '../src/i18n/zh-tw';
@@ -28,7 +39,8 @@ import { I18nProvider, isRtl, LANGUAGES, langLabel, langFromTags, type Lang } fr
  * runtime checks below cover the blanks and the placeholders a type cannot.
  */
 const DICTS: Record<string, Record<string, string>> = {
-  en, cs, es, fr, he, ja, ko, nl, pl, 'pt-BR': ptBR, tr, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  en, ar, cs, de, es, fil, fr, he, hi, id, it: itDict, ja, ko, mr, ms, nl, pl, 'pt-BR': ptBR,
+  ta, tr, vi, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
 };
 const CODES = Object.keys(DICTS) as Lang[];
 const KEYS = Object.keys(en);
@@ -80,8 +92,9 @@ describe('i18n dictionaries', () => {
     'conflicts.pair', 'customField.ppm', 'timeline.speed', 'timeline.clock',
     'timeline.activity', 'timeline.band', 'canvas.clock', 'rail.png',
     // View-cube initials: the Latin abbreviations collide, so the Latin-script
-    // dictionaries keep the English letters (the CJK ones — zh/zh-tw, and
-    // second-batch ja/ko — use single ideographs instead).
+    // dictionaries keep the English letters. Non-Latin scripts ship native
+    // initials: zh/zh-tw and ja/ko use single ideographs, and the third-batch
+    // ar/hi/mr/ta use script-native abbreviations instead.
     'vc.top', 'vc.bottom', 'vc.front', 'vc.back', 'vc.left', 'vc.right',
     // Words that genuinely coincide with English in at least one shipped
     // language (fr 'Pause'/'Collision'/'alliance', es 'Robot'/'General',
@@ -96,6 +109,9 @@ describe('i18n dictionaries', () => {
     'robots.timing', 'prefs.section.updates', 'robots.bumper', 'robots.profileEntry',
     'prefs.unit.m', 'prefs.unit.cm', 'prefs.unit.in',
     'prefs.unit.yd', // French 'Yards (yd)' is the same unit name.
+    // Vietnamese keeps 'Feet (ft)': the loanword is its standard written form
+    // for the imperial foot (vi 'foot' has no common native name).
+    'prefs.unit.ft',
     // Tokens sent to the OS unchanged.
     'prefs.channel.stable', 'prefs.channel.beta',
   ]);
@@ -133,7 +149,8 @@ describe('language picker', () => {
    */
   it('offers the languages in a fixed alphabetical order after “system”', () => {
     expect([...LANGUAGES]).toEqual([
-      'system', 'zh', 'zh-hk', 'zh-tw', 'cs', 'nl', 'en', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-BR', 'es', 'tr',
+      'system', 'ar', 'zh', 'zh-hk', 'zh-tw', 'cs', 'nl', 'en', 'fil', 'fr', 'de', 'he', 'hi',
+      'id', 'it', 'ja', 'ko', 'ms', 'mr', 'pl', 'pt-BR', 'es', 'ta', 'tr', 'vi',
     ]);
   });
 
@@ -145,35 +162,55 @@ describe('language picker', () => {
   it('labels each language in its own language', () => {
     expect(CODES.map((c) => langLabel(c))).toEqual([
       'English',
+      'العربية',
       'Čeština',
+      'Deutsch',
       'Español',
+      'Filipino',
       'Français',
       'עברית',
+      'हिन्दी',
+      'Bahasa Indonesia',
+      'Italiano',
       '日本語',
       '한국어',
+      'मराठी',
+      'Bahasa Melayu',
       'Nederlands',
       'Polski',
       'Português (Brasil)',
+      'தமிழ்',
       'Türkçe',
+      'Tiếng Việt',
       '简体中文',
       '繁體中文（中國香港）',
       '繁體中文（中國台灣）',
     ]);
     expect(pickerLabels).toEqual([
+      'العربية',
       '简体中文',
       '繁體中文（中國香港）',
       '繁體中文（中國台灣）',
       'Čeština',
       'Nederlands',
       'English',
+      'Filipino',
       'Français',
+      'Deutsch',
       'עברית',
+      'हिन्दी',
+      'Bahasa Indonesia',
+      'Italiano',
       '日本語',
       '한국어',
+      'Bahasa Melayu',
+      'मराठी',
       'Polski',
       'Português (Brasil)',
       'Español',
+      'தமிழ்',
       'Türkçe',
+      'Tiếng Việt',
     ]);
   });
 
@@ -200,7 +237,7 @@ describe('system language detection', () => {
     expect(langFromTags(['pt-BR'])).toBe('pt-BR');
     expect(langFromTags(['he-IL'])).toBe('he');
     // Anything unsupported still lands on English rather than undefined.
-    expect(langFromTags(['de-DE', 'it-IT'])).toBe('en');
+    expect(langFromTags(['fi-FI', 'sv-SE'])).toBe('en');
     expect(langFromTags([])).toBe('en');
   });
 
@@ -219,7 +256,7 @@ describe('system language detection', () => {
     expect(langFromTags(['cs-CZ'])).toBe('cs');
     // Preference order still wins over any single tag.
     expect(langFromTags(['en-US', 'ja-JP'])).toBe('en');
-    expect(langFromTags(['de-DE', 'ko-KR', 'en'])).toBe('ko');
+    expect(langFromTags(['ru-RU', 'ko-KR', 'en'])).toBe('ko');
   });
 
   it('routes every Portuguese tag to the one shipped Portuguese dictionary', () => {
@@ -234,6 +271,45 @@ describe('system language detection', () => {
     // Pre-2004 browsers/OS locales still send `iw` for Hebrew.
     expect(langFromTags(['iw-IL'])).toBe('he');
     expect(langFromTags(['iw'])).toBe('he');
+  });
+
+  it('maps the third-batch language tags (de/it/ar/hi/mr/ms/ta/fil/vi/id)', () => {
+    // Bare tags and the regions those communities actually send.
+    expect(langFromTags(['de'])).toBe('de');
+    expect(langFromTags(['de-DE'])).toBe('de');
+    expect(langFromTags(['de-CH'])).toBe('de');
+    expect(langFromTags(['it'])).toBe('it');
+    expect(langFromTags(['it-IT'])).toBe('it');
+    expect(langFromTags(['ar'])).toBe('ar');
+    expect(langFromTags(['ar-SA'])).toBe('ar');
+    expect(langFromTags(['ar-MA'])).toBe('ar');
+    // Iraqi qeltu (arq) and Algerian Saharan (ars) still read Arabic.
+    expect(langFromTags(['arq-DZ'])).toBe('ar');
+    expect(langFromTags(['ars-DZ'])).toBe('ar');
+    expect(langFromTags(['hi'])).toBe('hi');
+    expect(langFromTags(['hi-IN'])).toBe('hi');
+    expect(langFromTags(['mr'])).toBe('mr');
+    expect(langFromTags(['mr-IN'])).toBe('mr');
+    expect(langFromTags(['ms'])).toBe('ms');
+    expect(langFromTags(['ms-MY'])).toBe('ms');
+    expect(langFromTags(['ta'])).toBe('ta');
+    expect(langFromTags(['ta-IN'])).toBe('ta');
+    expect(langFromTags(['ta-SG'])).toBe('ta');
+    expect(langFromTags(['fil'])).toBe('fil');
+    expect(langFromTags(['fil-PH'])).toBe('fil');
+    expect(langFromTags(['vi'])).toBe('vi');
+    expect(langFromTags(['vi-VN'])).toBe('vi');
+    expect(langFromTags(['id'])).toBe('id');
+    expect(langFromTags(['id-ID'])).toBe('id');
+    // Preference order beats a later tag, as in the earlier batches.
+    expect(langFromTags(['en-US', 'de-DE'])).toBe('en');
+    expect(langFromTags(['fr-FR', 'ta'])).toBe('fr');
+  });
+
+  it('matches Filipino under its historical tl alias too', () => {
+    // Pre-2013 OS locale tags still send `tl` (Tagalog) for Filipino.
+    expect(langFromTags(['tl-PH'])).toBe('fil');
+    expect(langFromTags(['tl'])).toBe('fil');
   });
 
   it('splits Traditional Chinese by region, with Macau reading Hong Kong', () => {
@@ -258,15 +334,16 @@ describe('system language detection', () => {
     // Regression: 'en' had no branch at all, so ['en-US', 'zh-CN'] — a Chrome
     // list that means "English, then Chinese" — opened in Chinese.
     expect(langFromTags(['en-US', 'zh-CN'])).toBe('en');
-    expect(langFromTags(['de-DE', 'fr-FR', 'en'])).toBe('fr');
+    expect(langFromTags(['ru-RU', 'fr-FR', 'en'])).toBe('fr');
   });
 });
 
-describe('RTL (Hebrew)', () => {
-  it('flags Hebrew and nothing else', () => {
+describe('RTL (Arabic and Hebrew)', () => {
+  it('flags the RTL languages and nothing else', () => {
     expect(isRtl('he')).toBe(true);
+    expect(isRtl('ar')).toBe(true);
     for (const code of CODES) {
-      if (code !== 'he') expect(isRtl(code), code).toBe(false);
+      if (code !== 'he' && code !== 'ar') expect(isRtl(code), code).toBe(false);
     }
   });
 
