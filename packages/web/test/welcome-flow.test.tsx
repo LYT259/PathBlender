@@ -26,15 +26,15 @@ describe('welcome flow', () => {
   it('shows the brand and starting actions while retaining accessible descriptions', () => {
     render(<App />);
     const welcome = screen.getByRole('region', { name: 'Import paths to get started' });
-    expect(within(welcome).getAllByRole('button')).toHaveLength(5);
+    expect(within(welcome).getAllByRole('button')).toHaveLength(4);
     expect(within(welcome).getByRole('heading', { name: 'PathBlender' })).toBeInTheDocument();
-    expect(welcome.textContent).toBe('PathBlenderImport path filesImport folderOpen saved sessionTry an exampleDemo mode');
+    expect(welcome.textContent).toBe('PathBlenderImport path filesImport folderOpen saved sessionTry an example');
     expect(within(welcome).getByRole('button', { name: 'Import path files' })).toHaveAccessibleDescription(/Choreo or PathPlanner/);
     const folder = within(welcome).getByRole('button', { name: 'Import folder' });
     expect(folder).toHaveAccessibleDescription(/several routes.*choose which to replay/);
     expect(within(welcome).getByRole('button', { name: 'Open saved session' })).toHaveAccessibleDescription(/previously saved analysis/);
     expect(within(welcome).getByRole('button', { name: 'Try an example' })).toHaveAccessibleDescription(/playback and collision checks/);
-    expect(within(welcome).getByRole('button', { name: 'Demo mode' })).toHaveAccessibleDescription(/automatically/);
+    expect(within(welcome).queryByRole('button', { name: 'Demo mode' })).not.toBeInTheDocument();
     expect(within(welcome).queryByText('You can also drop files or a folder into this window')).not.toBeInTheDocument();
 
     const toolbar = within(document.querySelector<HTMLElement>('.toolbar')!);
@@ -91,22 +91,22 @@ describe('welcome flow', () => {
     expect(screen.queryByRole('region', { name: 'Import paths to get started' })).not.toBeInTheDocument();
   });
 
-  it('loads a paused 2D example and teaches playback and collision navigation using the working controls', async () => {
+  it('loads the 2D example already playing, and teaches collision navigation using the working controls', async () => {
     render(<App />);
     await openExample();
     expect(screen.getByText('Real 2026 routes from FRC teams 8814 and 11019.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '2D', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('slider', { name: 'Playback position' })).toHaveValue('0');
+    // The example starts playing on its own; the play tip is already moot.
+    await screen.findByRole('button', { name: 'Pause', exact: true });
+    await waitFor(() => expect(localStorage.getItem('pb.tip.play.v1')).toBe('done'));
     expect(screen.getByText('2.75 s', { selector: '.robot-library-meta span' })).toBeInTheDocument();
     expect(screen.getByText('3.41 s', { selector: '.robot-library-meta span' })).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
-    expect(screen.getByText(playHint)).toBeInTheDocument();
+    expect(screen.queryByText(playHint)).not.toBeInTheDocument();
     expect(screen.getByText(checkHint)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Play', exact: true }));
-    expect(screen.getByRole('button', { name: 'Pause', exact: true })).toBeInTheDocument();
-    expect(screen.queryByText(playHint)).not.toBeInTheDocument();
-    expect(localStorage.getItem('pb.tip.play.v1')).toBe('done');
+    fireEvent.click(screen.getByRole('button', { name: 'Pause', exact: true }));
+    expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('#8814 × #11019', { selector: '.conflict-pair' }).closest('button')!);
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
@@ -118,10 +118,11 @@ describe('welcome flow', () => {
   it('remembers dismissed guidance when the app is reopened', async () => {
     const first = render(<App />);
     await openExample();
-    for (const hint of [playHint, checkHint]) {
-      const note = screen.getByText(hint).closest('[role="note"]')! as HTMLElement;
-      fireEvent.click(within(note).getByRole('button', { name: 'Dismiss tip' }));
-    }
+    // Autoplay dismisses the play tip on its own; only the checks tip is left.
+    await waitFor(() => expect(localStorage.getItem('pb.tip.play.v1')).toBe('done'));
+    expect(screen.queryByText(playHint)).not.toBeInTheDocument();
+    const note = screen.getByText(checkHint).closest('[role="note"]')! as HTMLElement;
+    fireEvent.click(within(note).getByRole('button', { name: 'Dismiss tip' }));
     expect(screen.queryByRole('note')).not.toBeInTheDocument();
     first.unmount();
 
@@ -129,7 +130,7 @@ describe('welcome flow', () => {
     await openExample();
     expect(screen.queryByText(playHint)).not.toBeInTheDocument();
     expect(screen.queryByText(checkHint)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+    expect(await screen.findByRole('button', { name: 'Pause', exact: true })).toBeEnabled();
   });
 
   it('ends only the example paths after a real file is imported', async () => {
@@ -142,6 +143,48 @@ describe('welcome flow', () => {
     expect(screen.queryByText('#11019', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.queryByText('Real 2026 routes from FRC teams 8814 and 11019.')).not.toBeInTheDocument();
+  });
+
+  it('lists each route exactly once in the picker, with the library L1 as the current one', async () => {
+    render(<App />);
+    await openExample();
+    // Regression: the off-library pseudo option duplicated L1 next to the
+    // library's own L1 (the example robot carries no routeId by design).
+    const picker = screen.getByRole('combobox', { name: 'Active route for #8814' });
+    const options = within(picker).getAllByRole('option') as HTMLOptionElement[];
+    expect(options).toHaveLength(22);
+    expect(options.filter((o) => o.textContent === 'L1')).toHaveLength(1);
+    expect(options.every((o) => o.value !== '')).toBe(true);
+    expect(picker).toHaveValue(options.find((o) => o.textContent === 'L1')!.value);
+    const second = screen.getByRole('combobox', { name: 'Active route for #11019' });
+    const secondOptions = within(second).getAllByRole('option') as HTMLOptionElement[];
+    expect(secondOptions).toHaveLength(20);
+    expect(secondOptions.filter((o) => o.textContent === 'L1')).toHaveLength(1);
+    expect(second).toHaveValue(secondOptions.find((o) => o.textContent === 'L1')!.value);
+  });
+
+  it("hides a robot's conflicts and bounds with the robot, and brings them back", async () => {
+    render(<App />);
+    await openExample();
+    // Both L1s share a start pose: one conflict pair; both robots also
+    // start a hair over the line.
+    expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
+    expect(screen.getByText('2', { selector: '.bounds-count' })).toBeInTheDocument();
+    expect(screen.getByText('#8814 × #11019', { selector: '.conflict-pair' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide #8814 on field' }));
+    expect(screen.getByText('0', { selector: '.conflict-count' })).toBeInTheDocument();
+    expect(screen.queryByText('#8814 × #11019', { selector: '.conflict-pair' })).not.toBeInTheDocument();
+    expect(screen.getByText('1', { selector: '.bounds-count' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide #11019 on field' }));
+    expect(screen.queryByText('1', { selector: '.bounds-count' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show #8814 on field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show #11019 on field' }));
+    expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
+    expect(screen.getByText('2', { selector: '.bounds-count' })).toBeInTheDocument();
+    expect(screen.getByText('#8814 × #11019', { selector: '.conflict-pair' })).toBeInTheDocument();
   });
 
   it('adds a folder as its own team while the example is open, and keeps it after ending the example', async () => {

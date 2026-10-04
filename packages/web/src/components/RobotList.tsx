@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from 'react';
 import type { CollisionInterval, RobotGeometry, SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { VIEWER_ONLY } from '../viewer';
-import { displayName, routeLabel, type LibraryProfile } from '../route-library';
+import { displayName, routeLabel, sameRouteTrajectory, type LibraryProfile } from '../route-library';
 import './RobotList.css';
 import { robotIdentity } from '../robot-identity';
 
@@ -108,7 +108,6 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
             const { trajectory } = robot;
             const hit = conflicts.some((c) => c.aId === trajectory.id || c.bId === trajectory.id);
             const visibilityLabel = t(robot.visible ? 'robots.hide' : 'robots.show', { name: robotIdentity(trajectory) });
-            const opponentLabel = t(robot.opponent ? 'robots.unmarkOpponent' : 'robots.markOpponent', { name: robotIdentity(trajectory) });
             const selectionLabel = [
               robotIdentity(trajectory),
               sourceLabel(trajectory.source),
@@ -116,7 +115,11 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
               hit ? t('robots.collision') : '',
             ].filter(Boolean).join(', ');
             const libraryRoutes = robot.routeOptions ?? [];
-            const currentRoute = libraryRoutes.find((r) => r.id === robot.routeId);
+            // No stored routeId? The current trajectory may still BE one of
+            // the library options (welcome example, pre-routeId sessions) —
+            // select that option instead of adding a duplicate pseudo-entry.
+            const currentRoute = libraryRoutes.find((r) => r.id === robot.routeId)
+              ?? libraryRoutes.find((r) => sameRouteTrajectory(r.trajectory, trajectory));
             return (
               <li key={trajectory.id} className={`robot-library-row${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
                 <TeamNumberCell robot={robot} onUpdate={onUpdate}><button className="robot-library-select" aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
@@ -135,7 +138,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                 {libraryRoutes.length > 0 && (
                   <select
                     className="route-picker"
-                    value={robot.routeId ?? ''}
+                    value={robot.routeId ?? currentRoute?.id ?? ''}
                     title={currentRoute ? currentRoute.relPath : t('library.routeOffLibrary')}
                     aria-label={t('library.routePicker', { name: robotIdentity(trajectory) })}
                     onChange={(e) => onPickRoute(trajectory.id, e.target.value)}
@@ -148,9 +151,6 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     ))}
                   </select>
                 )}
-                <button className={`robot-library-visibility opponent-toggle${robot.opponent ? ' is-opponent' : ''}`} aria-label={opponentLabel} title={opponentLabel} aria-pressed={robot.opponent === true} onClick={() => onUpdate(trajectory.id, { opponent: !robot.opponent })}>
-                  <OpponentIcon opponent={robot.opponent === true} />
-                </button>
                 <button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
                   <EyeIcon visible={robot.visible} />
                 </button>
@@ -245,11 +245,6 @@ export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfil
       )}
     </section>
   );
-}
-
-function OpponentIcon({ opponent }: { opponent: boolean }) {
-  // Shield glyph — filled when the robot reads as an opponent (defense view).
-  return <svg viewBox="0 0 20 20" width="17" height="17" fill={opponent ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 2.5 4.5 5v4c0 3.5 2.4 6 5.5 8 3.1-2 5.5-4.5 5.5-8V5Z" /></svg>;
 }
 
 function EyeIcon({ visible }: { visible: boolean }) {

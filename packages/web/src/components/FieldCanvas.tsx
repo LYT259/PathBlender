@@ -17,7 +17,7 @@ import {
   samplePoseAt,
   sampleStateAt,
 } from '@pathblender/core';
-import { trailPoints, TRAIL_WIDTH_M } from '../ground-trail';
+import { TRAIL_WIDTH_M } from '../ground-trail';
 import { MK5I_MODULE_TOP_URL, MK5I_MODULE_TOP_WORLD_M } from '../robot-sprites';
 import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
@@ -489,17 +489,18 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       ctx.restore();
     }
 
-    // Ground tape grows only along the already-travelled part of each route.
+    // Ground tape: always the full route, so the tape runs continuously
+    // under the robot and into the heading wedge on the front bumper.
     if (showTrail) {
       ctx.save();
       ctx.lineJoin = 'round';
       ctx.lineCap = 'butt';
       ctx.lineWidth = TRAIL_WIDTH_M * v.scale;
       for (const r of robots) {
-        const points = trailPoints(r, currentT);
-        if (points.length < 2) continue;
+        const samples = r.trajectory.samples;
+        if (samples.length < 2) continue;
         ctx.beginPath();
-        points.forEach((p, i) => {
+        samples.forEach((p, i) => {
           if (i === 0) ctx.moveTo(sx(p.x), sy(p.y));
           else ctx.lineTo(sx(p.x), sy(p.y));
         });
@@ -691,9 +692,6 @@ function drawRobot(
   ctx.translate(sx(pose.x), sy(pose.y));
   // Screen y is flipped relative to world y, so rotate by -heading.
   ctx.rotate(-pose.heading);
-  // Opponent rendering (§6.5-②): faded + dashed — clearly not "one of us".
-  const isOpponent = r.opponent === true;
-  if (isOpponent) ctx.globalAlpha = 0.55;
 
   // Bumper ring (the collision footprint — highlight rides on it).
   const L = outer.lengthM * scale;
@@ -704,20 +702,40 @@ function drawRobot(
   ctx.lineWidth = collided || outOfBounds ? 3 : 2;
   // Only the four perimeter bands carry the alliance color — the base
   // plate inside stays transparent so the field artwork shows through
-  // (user request 2026-10-04).
+  // (user request 2026-10-04). Each band is an isosceles trapezoid,
+  // 45°-mitered at the corners like the 3D rails (same user request):
+  // on a square chassis all four bands are congruent, equal plan area.
   const bd = Math.min(vis.bumperDepthM * scale, L / 2, W / 2);
   ctx.fillStyle = bumperColor(r.trajectory.alliance);
   ctx.beginPath();
-  ctx.rect(ox - L / 2, -oy - W / 2, L, bd);                    // +y band
-  ctx.rect(ox - L / 2, -oy + W / 2 - bd, L, bd);               // −y band
-  ctx.rect(ox - L / 2, -oy - W / 2 + bd, bd, W - 2 * bd);      // −x band
-  ctx.rect(ox + L / 2 - bd, -oy - W / 2 + bd, bd, W - 2 * bd); // +x band
+  // +y band: outer edge spans the full side, inner edge shortens by bd both ends.
+  ctx.moveTo(ox - L / 2, -oy - W / 2);
+  ctx.lineTo(ox + L / 2, -oy - W / 2);
+  ctx.lineTo(ox + L / 2 - bd, -oy - W / 2 + bd);
+  ctx.lineTo(ox - L / 2 + bd, -oy - W / 2 + bd);
+  ctx.closePath();
+  // −y band.
+  ctx.moveTo(ox - L / 2, -oy + W / 2);
+  ctx.lineTo(ox + L / 2, -oy + W / 2);
+  ctx.lineTo(ox + L / 2 - bd, -oy + W / 2 - bd);
+  ctx.lineTo(ox - L / 2 + bd, -oy + W / 2 - bd);
+  ctx.closePath();
+  // −x band.
+  ctx.moveTo(ox - L / 2, -oy - W / 2);
+  ctx.lineTo(ox - L / 2, -oy + W / 2);
+  ctx.lineTo(ox - L / 2 + bd, -oy + W / 2 - bd);
+  ctx.lineTo(ox - L / 2 + bd, -oy - W / 2 + bd);
+  ctx.closePath();
+  // +x band.
+  ctx.moveTo(ox + L / 2, -oy - W / 2);
+  ctx.lineTo(ox + L / 2, -oy + W / 2);
+  ctx.lineTo(ox + L / 2 - bd, -oy + W / 2 - bd);
+  ctx.lineTo(ox + L / 2 - bd, -oy - W / 2 + bd);
+  ctx.closePath();
   ctx.fill();
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
-  if (isOpponent) ctx.setLineDash([5, 4]);
   ctx.stroke();
-  if (isOpponent) ctx.setLineDash([]);
 
   // Chassis frame: four 1 in box-rail beams around the chassis
   // rectangle plus a corner block at each joint — the same "4 rails +
@@ -774,12 +792,18 @@ function drawRobot(
     }
   }
 
-  // Heading wedge on the +x end.
+  // Heading wedge rides the front bumper band (user request 2026-10-04):
+  // base pinned to the band's inner edge — never on the chassis rails —
+  // tip one band depth past the outer face, onto the outgoing ground
+  // tape. The 10 px screen floor keeps it readable at small zoom; any
+  // extra length goes outward, never inward.
+  const tipOut = Math.max(bd, 10 - bd);
+  const halfW = Math.max(0.75 * bd, 2);
   ctx.fillStyle = r.color;
   ctx.beginPath();
-  ctx.moveTo(ox + L / 2, 0);
-  ctx.lineTo(ox + L / 2 - 6, -5);
-  ctx.lineTo(ox + L / 2 - 6, 5);
+  ctx.moveTo(ox + L / 2 + tipOut, 0);
+  ctx.lineTo(ox + L / 2 - bd, -halfW);
+  ctx.lineTo(ox + L / 2 - bd, halfW);
   ctx.closePath();
   ctx.fill();
   ctx.restore();

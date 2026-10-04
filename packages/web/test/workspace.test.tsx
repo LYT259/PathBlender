@@ -82,7 +82,7 @@ describe('workspace workflow', () => {
     expect(screen.getByRole('region', { name: 'Stop And Score', exact: true })).toBeVisible();
   });
 
-  it('keeps hidden robots in collision analysis, then reveals and pauses at a selected conflict', async () => {
+  it('drops hidden robots from collision analysis until they are shown again, then pauses at a selected conflict', async () => {
     render(<App />);
     await importSamples('ghostauto/straight_run.ghostauto', 'ghostauto/stop_and_score.ghostauto');
     expect(conflictPair()).toBeInTheDocument();
@@ -90,6 +90,13 @@ describe('workspace workflow', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /hide.*#0001/i }));
     expect(screen.getByRole('button', { name: /show.*#0001/i })).toHaveAttribute('aria-pressed', 'false');
+    // Hidden means absent for checks too (user request 2026-10-04): the
+    // conflict pair and its count leave with the robot…
+    expect(screen.queryByText('#0001 × #0002', { selector: '.conflict-pair' })).not.toBeInTheDocument();
+    expect(screen.getByText('0', { selector: '.conflict-count' })).toBeInTheDocument();
+
+    // …and come back when it does.
+    fireEvent.click(screen.getByRole('button', { name: /show.*#0001/i }));
     expect(conflictPair()).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
 
@@ -98,7 +105,6 @@ describe('workspace workflow', () => {
     fireEvent.click(conflictPair().closest('button')!);
 
     expect(screen.getByRole('button', { name: /^Play$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /hide.*#0001/i })).toHaveAttribute('aria-pressed', 'true');
     expect(Number((screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement).value)).toBeGreaterThan(0);
     expect(conflictPair()).toBeInTheDocument();
   });

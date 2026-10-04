@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.3';
+export const APP_VERSION = '0.1.8-beta.6';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,20 +32,65 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.6', date: '2026.10.04', note: {
+    en: 'Hidden robots take their conflicts and out-of-bounds entries with them; the route picker no longer lists the current route twice; the ground tape always shows the full path; the 2D heading arrow rides the bumper and points onto the path ahead',
+    zh: '隐藏的机器人连同冲突与越界条目一起隐藏；路线选择框不再重复列出当前路线；地面轨迹带始终显示完整路径；2D 朝向箭头贴上保险杠并指向前方轨迹',
+    'zh-tw': '隱藏的機器人連同衝突與越界條目一起隱藏；路線選擇框不再重複列出當前路線；地面軌跡帶始終顯示完整路徑；2D 朝向箭頭貼上保險桿並指向前方軌跡',
+    cs: 'Skrytí roboti zmizí i se svými konflikty a záznamy o překročení hranic; výběr tras už nezobrazuje aktuální trasu dvakrát; stopa na zemi vždy ukazuje celou cestu; 2D šipka směru přiléhá k nárazníku a míří na cestu vpřed',
+    nl: 'Verborgen robots verdwijnen samen met hun conflicten en meldingen buiten de veldgrenzen; de routekiezer toont de huidige route niet meer dubbel; de grondlijn toont altijd het volledige pad; de 2D-richtingspijl ligt tegen de bumper en wijst naar het pad vooruit',
+    fr: 'Les robots masqués emportent leurs conflits et leurs sorties de limites ; le sélecteur de trajectoire n’affiche plus la trajectoire courante en double ; la bande au sol montre toujours le chemin complet ; la flèche de cap 2D épouse le pare-chocs et pointe vers le chemin à venir',
+    he: 'רובוטים מוסתרים נעלמים יחד עם הקונפליקטים וחריגות הגבול שלהם; בורר המסלולים כבר לא מציג את המסלול הנוכחי פעמיים; סרט הקרקע תמיד מציג את הנתיב המלא; חץ הכיוון הדו-ממדי צמוד לפגוש ומצביע על הנתיב שלפניו',
+    ja: 'ロボットを隠すと衝突や境界逸脱の項目も一緒に非表示になります。ルート選択ボックスは現在のルートを重複表示しなくなり、地面の軌跡テープは常に経路全体を表示します。2D の向き矢印はバンパーに密着し、前方の経路を指します',
+    ko: '숨긴 로봇은 충돌 및 경계 이탈 항목과 함께 사라집니다. 경로 선택 상자가 현재 경로를 중복 표시하지 않으며, 지면 궤적 테이프가 항상 전체 경로를 표시합니다. 2D 방향 화살표는 범퍼에 붙어 앞쪽 경로를 가리킵니다',
+    pl: 'Ukryte roboty znikają wraz ze swoimi konfliktami i wpisami o wyjściu poza granice; selektor tras nie wyświetla już bieżącej trasy podwójnie; taśma na ziemi zawsze pokazuje pełną ścieżkę; strzałka kierunku 2D przylega do zderzaka i wskazuje ścieżkę przed robotem',
+    'pt-br': 'Robôs ocultos desaparecem junto com seus conflitos e registros de saída dos limites; o seletor de rotas não lista mais a rota atual duas vezes; a fita no chão sempre mostra o caminho completo; a seta de direção 2D fica rente ao para-choque e aponta para o caminho à frente',
+    es: 'Los robots ocultos desaparecen junto con sus conflictos y salidas de los límites; el selector de rutas ya no lista la ruta actual dos veces; la cinta en el suelo siempre muestra el camino completo; la flecha de dirección 2D se pega al parachoques y apunta al camino por delante',
+    tr: 'Gizlenen robotlar çakışma ve sınır ihlali kayıtlarıyla birlikte kaybolur; rota seçici artık geçerli rotayı iki kez listelemez; zemin şeridi her zaman tam yolu gösterir; 2D yön oku tampona yapışık durur ve öndeki yolu gösterir',
+  } },
+  { version: '0.1.8-beta.5', date: '2026.10.04', note: {
+    en: 'Zoom holds full resolution through the whole gesture — no more waiting for finger lift; the four bumper rails are now identical isosceles trapezoids mitered at 45°, in 3D and the 2D top view alike',
+    zh: '缩放全程保持满分辨率——不再等松手才清晰；四根 bumper 改为全等等腰梯形 45° 斜接，3D 与 2D 俯视一致',
+    'zh-tw': '縮放全程保持滿解析度——不再等鬆手才清晰；四根 bumper 改為全等等腰梯形 45° 斜接，3D 與 2D 俯視一致',
+    cs: 'Přibližování drží plné rozlišení po celé gesto — ostrost už nečeká na zvednutí prstu; čtyři nárazníkové lišty jsou nyní shodné rovnoramenné lichoběžníky seříznuté pod 45°, ve 3D i v půdorysném 2D',
+    nl: 'Zoomen houdt de volle resolutie vast gedurende het hele gebaar — niet meer wachten tot de vinger loslaat; de vier bumperbalken zijn nu identieke gelijkbenige trapeziums met 45°-verstek, in 3D én in het 2D-bovenaanzicht',
+    fr: 'Le zoom garde la pleine résolution pendant tout le geste — plus besoin d\'attendre le relâchement ; les quatre pare-chocs sont désormais des trapèzes isocèles identiques assemblés à onglet à 45°, en 3D comme en vue 2D de dessus',
+    he: 'הזום שומר על רזולוציה מלאה לאורך כל המחווה — לא עוד מחכים להרמת האצבע; ארבע מסילות הפגוש הן כעת טרפזים שווי-שוקיים זהים בחיבור אלכסוני של 45°, בתלת-ממד ובמבט-על הדו-ממדי כאחד',
+    ja: 'ズームはジェスチャの最初から最後までフル解像度を維持——指を離すまで待つ必要はありません。4 本のバンパーレールは 45° 留め接ぎの全等な等脚台形になり、3D と 2D 上面図の両方に適用されます',
+    ko: '확대/축소 제스처 낂 전체 해상도를 유지합니다 — 손가락을 뗄 때까지 기다릴 필요가 없습니다. 네 개의 범퍼 레일은 이제 45° 마이터로 맞물린 동일한 등변사다리꼴이며 3D와 2D 평면 모두에 적용됩니다',
+    pl: 'Powiększanie zachowuje pełną rozdzielczość przez cały gest — koniec czekania na uniesienie palca; cztery belki zderzaka to teraz identyczne trapezy równoramienne cięte pod 45°, zarówno w 3D, jak i w widoku 2D z góry',
+    'pt-br': 'O zoom mantém a resolução máxima durante todo o gesto — sem esperar o dedo sair da tela; as quatro barras do para-choque agora são trapézios isósceles idênticos com junta a 45°, tanto no 3D quanto na vista 2D superior',
+    es: 'El zoom mantiene la resolución máxima durante todo el gesto — ya no hay que esperar a levantar el dedo; los cuatro parachoques son ahora trapecios isósceles idénticos unidos a inglete a 45°, tanto en 3D como en la vista 2D superior',
+    tr: 'Yakınlaştırma hareket boyunca tam çözünürlüğü koruyor — parmak kalkana kadar beklemek yok; dört tampon rayı artık 45° gönye birleşimli özdeş ikizkenar yamuklar, 3D ve 2D üst görünümde aynı',
+  } },
+  { version: '0.1.8-beta.4', date: '2026.10.04', note: {
+    en: 'Welcome screen keeps one example action that now plays back automatically',
+    zh: '首页只保留一个体验示例入口，点进去自动播放',
+    'zh-tw': '首頁只保留一個體驗範例入口，點進去自動播放',
+    cs: 'Uvítací obrazovka má jeden příklad, který se přehraje automaticky',
+    nl: 'Het welkomstscherm heeft één voorbeeld dat automatisch wordt afgespeeld',
+    fr: 'L’écran d’accueil garde un seul exemple, lancé en lecture automatique',
+    he: 'מסך הפתיחה שומר על דוגמה אחת שמתנגנת אוטומטית',
+    ja: 'ホーム画面の体験例は一つになり、自動再生されます',
+    ko: '시작 화면에 예제 하나만 남고 자동으로 재생됩니다',
+    pl: 'Ekran powitalny ma jeden przykład odtwarzany automatycznie',
+    'pt-br': 'A tela inicial mantém um único exemplo que é reproduzido automaticamente',
+    es: 'La pantalla de inicio conserva un único ejemplo que se reproduce automáticamente',
+    tr: 'Karşılama ekranında otomatik oynatılan tek bir örnek kaldı',
+  } },
   { version: '0.1.8-beta.3', date: '2026.10.04', note: {
-    en: '2D team-number callouts: centered leader dot, alliance-colored solid badge; side panels no longer collapsible',
-    zh: '2D 队号引线标注：圆点居中锚定、联盟色实色衬底；侧面板不再可折叠',
-    'zh-tw': '2D 隊號引線標註：圓點居中錨定、聯盟色實色襯底；側面板不再可摺疊',
-    cs: 'Popisky čísel týmů ve 2D: bod vodící čáry na středu, plný nápis v barvě aliance; boční panely již nelze sbalit',
-    nl: '2D-teamnummerlabels: leiderpunt gecentreerd, effen badge in alliantiekleur; zijpanelen niet meer inklapbaar',
-    fr: 'Étiquettes de numéros d’équipe en 2D : point de renvoi centré, badge plein aux couleurs de l’alliance ; panneaux latéraux non repliables',
-    he: 'תוויות מספרי קבוצה ב-2D: נקודת קו מרכזית, תג מלא בצבע הברית; הפאנלים הצדדיים אינם ניתנים עוד לקיפול',
-    ja: '2D チーム番号コールアウト：リーダー点を中央に固定、アライアンス色の実色バッジ。サイドパネルは折りたたみ不可に',
-    ko: '2D 팀 번호 콜아웃: 리더 점 중앙 고정, 얼라이언스 색 단색 배지; 측면 패널 더 이상 접을 수 없음',
-    pl: 'Oznaczenia numerów drużyn 2D: kropka odniesienia wyśrodkowana, pełna plakietka w kolorze sojuszu; panele boczne bez zwijania',
-    'pt-br': 'Rótulos 2D dos números das equipes: ponto-guia centralizado, selo sólido na cor da aliança; painéis laterais não são mais recolhíveis',
-    es: 'Rótulos 2D de números de equipo: punto guía centrado, insignia sólida en el color de la alianza; los paneles laterales ya no se pliegan',
-    tr: '2B takım numarası etiketleri: merkezde çizgi noktası, ittifak renginde düz rozet; yan paneller artık katlanamıyor',
+    en: 'Opponent marker removed — folder import will later assign each team to red or blue',
+    zh: '对手标记已移除——文件夹导入后续将支持逐队选择红蓝方',
+    'zh-tw': '對手標記已移除——資料夾匯入後續將支援逐隊選擇紅藍方',
+    cs: 'Označení soupeře odebráno — import složky později každému týmu přiřadí červenou nebo modrou stranu',
+    nl: 'Tegenstandermarkering verwijderd — mapimport wijst later elk team de rode of blauwe zijde toe',
+    fr: 'Marque d’adversaire retirée — l’import de dossier permettra plus tard d’attribuer le rouge ou le bleu à chaque équipe',
+    he: 'סימון יריב הוסר — ייבוא תיקייה יאפשר בעתיד להקצות לכל קבוצה אדום או כחול',
+    ja: '相手マークを削除しました——フォルダー読み込みでチームごとに赤・青を割り当てる方式へ今後変更予定です',
+    ko: '상대 표시를 제거했습니다 — 폴더 가져오기에서 팀별로 빨강/파랑을 지정하는 방식으로 이후 변경될 예정입니다',
+    pl: 'Usunięto oznaczenie przeciwnika — import folderu będzie później przypisywać każdej drużynie stronę czerwoną lub niebieską',
+    'pt-br': 'Marcação de adversário removida — a importação de pasta atribuirá depois o lado vermelho ou azul a cada equipe',
+    es: 'Se eliminó la marca de rival — la importación de carpeta asignará más adelante el lado rojo o azul a cada equipo',
+    tr: 'Rakip işareti kaldırıldı — klasör içe aktarma daha sonra her takıma kırmızı veya mavi tarafı atayacak',
   } },
   { version: '0.1.8-beta.2', date: '2026.10.04', note: {
     en: 'Welcome example now uses real 2026 route libraries from FRC teams 8814 and 11019',
