@@ -11,7 +11,7 @@
 
 export const APP_VERSION = '0.1.7-beta.18';
 
-export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
+export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'ar', 'az', 'bg', 'bs', 'cs', 'da', 'de', 'el', 'es', 'fil', 'fr', 'he', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'ja', 'ko', 'mk', 'mr', 'ms', 'nb', 'nl', 'nn', 'pl', 'pt-br', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'tr', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
 
 export interface VersionNote {
@@ -32,7 +32,11 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.7-beta.18', date: '2026.10.04', note: { en: 'i18n: 10 more languages — German, Italian, Arabic, Hindi, Marathi, Malay, Tamil, Filipino, Vietnamese, Indonesian' } },
+  { version: '0.1.7-beta.18', date: '2026.10.04', note: {
+    en: 'i18n: 10 more languages — German, Italian, Arabic, Hindi, Marathi, Malay, Tamil, Filipino, Vietnamese, Indonesian',
+    zh: '第四批 i18n：增加德语、意大利语、阿拉伯语（RTL）、印地语、马拉地语、马来语、泰米尔语、菲律宾语、越南语、印尼语，共 41 种界面语言',
+    'zh-tw': '第四批 i18n：新增德語、義大利語、阿拉伯語（RTL）、印地語、馬拉地語、馬來語、泰米爾語、菲律賓語、越南語、印尼語，共 41 種介面語言',
+  } },
   { version: '0.1.7-beta.17', date: '2026.10.04', note: {
     "en": "Folder imports create independent teams with saved route choices and distinct placeholder numbers",
     "zh": "每个文件夹独立为一个队伍，保留路径切换选项，并使用不同的字母占位队号",
