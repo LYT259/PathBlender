@@ -120,7 +120,7 @@ export const vi = {
   'robots.title': 'Robot ({n})',
   'robots.remove': 'Xóa',
   'robots.collision': 'va chạm',
-  'robots.teamNumberEdit': 'Sửa số đội',
+  'robots.teamNumberEdit': "Chỉnh sửa tên hiển thị",
   'robots.alliance': 'liên minh',
   'robots.blue': 'Xanh dương',
   'robots.red': 'Đỏ',

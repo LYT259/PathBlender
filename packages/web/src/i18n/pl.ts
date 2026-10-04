@@ -132,7 +132,7 @@ export const pl: Record<MessageKey, string> = {
   'robots.title': 'Roboty ({n})',
   'robots.remove': 'Usuń',
   'robots.collision': 'kolizja',
-  'robots.teamNumberEdit': 'Edytuj numer drużyny',
+  'robots.teamNumberEdit': "Edytuj nazwę wyświetlaną",
   'robots.alliance': 'sojusz',
   'robots.blue': 'Niebieski',
   'robots.red': 'Czerwony',

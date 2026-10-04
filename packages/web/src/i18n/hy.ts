@@ -98,7 +98,7 @@ export const hy = {
   'robots.title': 'Ռոբոտներ ({n})',
   'robots.remove': 'Հեռացնել',
   'robots.collision': 'բախում',
-  'robots.teamNumberEdit': 'Խմբագրել թիմի համարը',
+  'robots.teamNumberEdit': "Խմբագրել ցուցադրվող անունը",
   'robots.alliance': 'դաշինք',
   'robots.blue': 'Կապույտ',
   'robots.red': 'Կարմիր',

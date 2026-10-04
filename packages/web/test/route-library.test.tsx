@@ -53,41 +53,59 @@ describe('team folder workflow', () => {
     expect(second).toHaveValue(choices(second)[1]!.value);
   });
 
-  it('keeps edited team identity, alliance and route choices when switching and reopening a saved session', async () => {
+  it('keeps the display name, alliance and route choices when switching and reopening a saved session', async () => {
     render(<App />);
     importFolder([folderFile('choreo/L3.traj'), folderFile('choreo/L1.traj')]);
     const picker = await screen.findByRole('combobox', { name: 'Active route for #AAAAAA' });
-    fireEvent.click(screen.getByRole('button', { name: 'Edit team number' }));
-    const input = screen.getByRole('textbox', { name: 'Edit team number' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
+    const input = screen.getByRole('textbox', { name: 'Edit display name' });
     expect(input).toHaveAttribute('placeholder', 'AAAAAA');
     fireEvent.change(input, { target: { value: '254' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     fireEvent.click(screen.getByRole('button', { name: 'Red', exact: true }));
     fireEvent.change(picker, { target: { value: choices(picker)[1]!.value } });
-    expect(screen.getByText('#254', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Select #254' })).toBeInTheDocument();
+    expect(screen.getByText('254', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Select 254' })).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
     const text = vi.mocked(saveText).mock.calls.at(-1)![2];
     const stored = JSON.parse(text);
-    expect(stored.robots[0].teamNumber).toBe('254');
+    expect(stored.robots[0].displayName).toBe('254');
+    expect(stored.robots[0].teamNumber).toBe('AAAAAA'); // imported identity untouched
     expect(stored.robots[0].alliance).toBe('red');
     expect(stored.robots[0].routeOptions).toHaveLength(2);
     importFolder([new File([text], 'restored.pb')]);
     await waitFor(() => expect(rows()).toHaveLength(1));
-    const restored = await screen.findByRole('combobox', { name: 'Active route for #254' });
+    const restored = await screen.findByRole('combobox', { name: 'Active route for 254' });
     expect(restored).toHaveValue(choices(restored)[1]!.value);
     fireEvent.change(restored, { target: { value: choices(restored)[0]!.value } });
     expect(screen.getByRole('button', { name: 'Red', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText('#254', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('254', { selector: '.robot-name' })).toBeInTheDocument();
   });
 
-  it('does not erase a placeholder when the number editor is opened and left unchanged', async () => {
+  it('does not erase a placeholder when the editor is opened and left unchanged', async () => {
     render(<App />);
     importFolder([folderFile('choreo/L1.traj')]);
     await screen.findByText('#AAAAAA', { selector: '.robot-name' });
-    fireEvent.click(screen.getByRole('button', { name: 'Edit team number' }));
-    fireEvent.blur(screen.getByRole('textbox', { name: 'Edit team number' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
+    fireEvent.blur(screen.getByRole('textbox', { name: 'Edit display name' }));
     expect(screen.getByText('#AAAAAA', { selector: '.robot-name' })).toBeInTheDocument();
+  });
+
+  it('clearing the display name restores the original placeholder identity everywhere', async () => {
+    render(<App />);
+    importFolder([folderFile('choreo/L1.traj')]);
+    await screen.findByText('#AAAAAA', { selector: '.robot-name' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
+    const input = screen.getByRole('textbox', { name: 'Edit display name' });
+    fireEvent.change(input, { target: { value: 'Choreo 主力' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(screen.getByText('Choreo 主力', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Active route for Choreo 主力' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Edit display name' }), { target: { value: '' } });
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Edit display name' }), { key: 'Enter' });
+    expect(screen.getByText('#AAAAAA', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Active route for #AAAAAA' })).toBeInTheDocument();
   });
 
   it('keeps each team\'s configuration choices separate', async () => {

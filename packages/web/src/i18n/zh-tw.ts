@@ -127,7 +127,7 @@ export const zhTw: Record<MessageKey, string> = {
   'robots.title': '機器人 ({n})',
   'robots.remove': '移除',
   'robots.collision': '碰撞',
-  'robots.teamNumberEdit': '修改隊號',
+  'robots.teamNumberEdit': "修改顯示名稱",
   'robots.alliance': '聯盟',
   'robots.blue': '藍方',
   'robots.red': '紅方',

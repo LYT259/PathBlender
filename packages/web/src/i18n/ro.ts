@@ -98,7 +98,7 @@ export const ro = {
   'robots.title': 'Roboți ({n})',
   'robots.remove': 'Elimină',
   'robots.collision': 'coliziune',
-  'robots.teamNumberEdit': 'Editează numărul echipei',
+  'robots.teamNumberEdit': "Editează numele afișat",
   'robots.alliance': 'alianță',
   'robots.blue': 'Albastru',
   'robots.red': 'Roșu',

@@ -29,7 +29,7 @@ let frames: Map<number, FrameRequestCallback>;
 let observed: Element | undefined;
 let notifyResize: () => void;
 
-const styleKeys = ['fillStyle', 'strokeStyle', 'lineWidth', 'textAlign', 'textBaseline'] as const;
+const styleKeys = ['fillStyle', 'strokeStyle', 'lineWidth', 'textAlign', 'textBaseline', 'lineCap', 'lineJoin'] as const;
 
 function record(name: string, args: unknown[]) {
   calls.push({ name, args, style: { ...currentStyle } });
@@ -323,6 +323,29 @@ describe('2D robot bumper and team-number callout', () => {
     expect(calls.some((c) => (c.name === 'fillText' || c.name === 'strokeText') && c.args[0] === '')).toBe(false);
   });
 
+  it('badges the display name instead of the team number when one is set', () => {
+    const display = robot(2, '11019');
+    display.trajectory.displayName = '甲队';
+    paint([display]);
+    expect(calls.filter((c) => c.name === 'fillText' && c.args[0] === '甲队')).toHaveLength(1);
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === '11019')).toBe(false);
+  });
+
+  it('badges the display name even when the trajectory carries no team number', () => {
+    const display = robot(2, '');
+    display.trajectory.displayName = 'No Number';
+    paint([display]);
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'No Number')).toBe(true);
+    expect(calls.some((c) => c.name === 'arc')).toBe(true);
+  });
+
+  it('falls back to the team number when the display name is blank whitespace', () => {
+    const display = robot(2, '11019');
+    display.trajectory.displayName = '   ';
+    paint([display]);
+    expect(calls.filter((c) => c.name === 'fillText' && c.args[0] === '11019')).toHaveLength(1);
+  });
+
   it('rides the heading wedge on the front bumper band, tip reaching the tape', () => {
     paint([robot(2)]);
     // Scene math: 40 px/m, L/2 = 17.78 px, bumper band bd = 4.064 px.
@@ -362,6 +385,16 @@ describe('2D robot bumper and team-number callout', () => {
       expectArgs(stroke![1]!, [180, 120]);
       expectArgs(stroke![2]!, [260, 80]);
     }
+  });
+
+  it('strokes the tape with round caps and joins (2026-10-04: rounded tape ends)', () => {
+    paint([robot(2)], { showTrail: true });
+    const tape = paths('stroke').find((p) =>
+      p.length === 2 && p[0]!.name === 'moveTo' && p[1]!.name === 'lineTo' &&
+      p[0]!.style.lineWidth === 4);
+    expect(tape).toBeDefined();
+    expect(tape![0]!.style.lineCap).toBe('round');
+    expect(tape![0]!.style.lineJoin).toBe('round');
   });
 
   it('re-allocates the canvas backing store when devicePixelRatio changes without a resize', () => {
