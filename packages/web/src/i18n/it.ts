@@ -14,6 +14,8 @@ export const it = {
   'welcome.importFolderHint': 'Carica più percorsi e scegli quale riprodurre',
   'welcome.openSession': 'Apri sessione salvata',
   'welcome.openSessionHint': 'Apri un\'analisi salvata in precedenza',
+  'welcome.demo': 'Modalità demo',
+  'welcome.demoHint': 'Carica la partita di esempio e riproducila automaticamente',
   'welcome.tryExample': 'Prova un esempio',
   'welcome.exampleHint': 'Esplora riproduzione e controlli collisione con percorsi di esempio.',
   'welcome.loadingExample': 'Apertura esempio…',
@@ -49,6 +51,14 @@ export const it = {
   "checks.clearTitle": "Nessun conflitto rilevato",
   "checks.clearBody": "Per i percorsi importati e le dimensioni attuali del robot.",
   "checks.issues": "{n} elementi da rivedere",
+  "actions.heatmapOn": "Mappa di calore",
+  "actions.heatmapOff": "Nascondi mappa di calore",
+  "actions.abCompare": "Confronto A-B",
+  "checks.abBaselineSet": "Riferimento salvato — modifica lo scenario e confronta di nuovo",
+  "checks.abNoPairs": "Nessuna coppia confrontabile tra gli scenari",
+  "checks.abDelta": "Coppia più stretta {dir} di {d} m",
+  "checks.abSafer": "più sicura",
+  "checks.abTighter": "più stretta",
   "checks.exportReport": "Esporta rapporto testuale",
   "checks.reportTitle": "Rapporto conflitti",
   "checks.reportGenerated": "Generato il",
@@ -104,6 +114,7 @@ export const it = {
   'app.title': 'PathBlender',
   'actions.import': 'Importa file',
   'actions.save': 'Salva sessione',
+  'actions.gif': 'GIF',
   'actions.png': 'Esporta PNG',
   'actions.clear': 'Cancella',
   
@@ -147,6 +158,14 @@ export const it = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'collisione {start}–{end} s',
+  
+  'toast.gifOnly2d': 'L’esportazione GIF è solo 2D',
+  
+  'toast.gifRendering': 'Creazione GIF…',
+  
+  'toast.gifSaved': 'GIF salvato',
+  
+  'toast.gifFailed': 'GIF non riuscito',
   
   'toast.pngOnly2d': 'Esportazione PNG solo 2D',
   'toast.pngSaved': 'PNG salvato',
@@ -257,6 +276,8 @@ export const it = {
   'prefs.unit.in': 'Pollici (in)',
   'prefs.unit.ftin': 'Piedi + pollici (3′2″)',
   'prefs.units.hint': 'Le distanze nel pannello controlli usano questa unità, es.',
+  'prefs.colorblind': 'Tavolozza daltonici',
+  'prefs.colorblindHint': 'Sostituisci i colori dei robot con un set sicuro per daltonici (Okabe-Ito)',
   'prefs.theme': 'Tema',
   'theme.system': 'Segui sistema',
   'theme.dark': 'Scuro',

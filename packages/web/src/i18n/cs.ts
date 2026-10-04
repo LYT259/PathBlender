@@ -25,6 +25,8 @@ export const cs: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Načtěte více tras a vyberte, které přehrát',
   'welcome.openSession': 'Otevřít uloženou relaci',
   'welcome.openSessionHint': 'Otevřete dříve uloženou analýzu',
+  'welcome.demo': 'Režim ukázky',
+  'welcome.demoHint': 'Načíst ukázkový zápas a automaticky ho přehrát',
   'welcome.tryExample': 'Vyzkoušet ukázku',
   'welcome.exampleHint': 'Vyzkoušejte přehrávání a kontrolu kolizí na ukázkových trasách.',
   'welcome.loadingExample': 'Otevírání ukázky…',
@@ -60,6 +62,14 @@ export const cs: Record<MessageKey, string> = {
   "checks.clearTitle": "Nebyly zjištěny žádné konflikty",
   "checks.clearBody": "Pro importované trasy a aktuální rozměry robotů.",
   "checks.issues": "Položky k přezkoumání: {n}",
+  "actions.heatmapOn": "Teplotní mapa",
+  "actions.heatmapOff": "Skrýt teplotní mapu",
+  "actions.abCompare": "Porovnání A-B",
+  "checks.abBaselineSet": "Základ uložen — změňte scénář a porovnejte znovu",
+  "checks.abNoPairs": "Mezi scénáři nejsou srovnatelné páry",
+  "checks.abDelta": "Nejtěsnější pár {dir} o {d} m",
+  "checks.abSafer": "bezpečnější",
+  "checks.abTighter": "těsnější",
   "checks.exportReport": "Exportovat textovou zprávu",
   "checks.reportTitle": "Zpráva o konfliktech",
   "checks.reportGenerated": "Vygenerováno",
@@ -115,6 +125,7 @@ export const cs: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': 'Importovat soubory',
   'actions.save': 'Uložit relaci',
+  'actions.gif': 'GIF',
   'actions.png': 'Exportovat PNG',
   'actions.clear': 'Vymazat',
 
@@ -162,6 +173,14 @@ export const cs: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'kolize {start}–{end} s',
+
+  'toast.gifOnly2d': 'Export GIF přehrávání je jen 2D',
+
+  'toast.gifRendering': 'Vykresluji GIF…',
+
+  'toast.gifSaved': 'GIF uložen',
+
+  'toast.gifFailed': 'GIF selhal',
 
   'toast.pngOnly2d': 'Export PNG je k dispozici pouze ve 2D',
   'toast.pngSaved': 'PNG uložen',
@@ -274,6 +293,8 @@ export const cs: Record<MessageKey, string> = {
   'prefs.unit.in': 'Palce (in)',
   'prefs.unit.ftin': 'Stopy + palce (3′2″)',
   'prefs.units.hint': 'Vzdálenosti v panelu kontrol používají tuto jednotku, např.',
+  'prefs.colorblind': 'Paleta pro barvoslepost',
+  'prefs.colorblindHint': 'Vyměňte barvy robotů za sadu bezpečnou pro poruchy barvocitu (Okabe-Ito)',
   'prefs.theme': 'Motiv',
   'theme.system': 'Podle systému',
   'theme.dark': 'Tmavý',

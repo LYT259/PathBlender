@@ -20,6 +20,8 @@ export const tr: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Birden fazla rota yükleyin ve oynatılacak rotayı seçin',
   'welcome.openSession': 'Kayıtlı oturumu aç',
   'welcome.openSessionHint': 'Daha önce kaydedilmiş bir analizi açın',
+  'welcome.demo': 'Demo modu',
+  'welcome.demoHint': 'Örnek maçı yükleyip otomatik oynatır',
   'welcome.tryExample': 'Bir örnek deneyin',
   'welcome.exampleHint': 'Örnek yollarla oynatma ve çarpışma denetimlerini keşfedin.',
   'welcome.loadingExample': 'Örnek açılıyor…',
@@ -55,6 +57,14 @@ export const tr: Record<MessageKey, string> = {
   "checks.clearTitle": "Çakışma tespit edilmedi",
   "checks.clearBody": "İçe aktarılan yollar ve mevcut robot boyutları için.",
   "checks.issues": "İncelenecek {n} öğe",
+  "actions.heatmapOn": "Isı haritası",
+  "actions.heatmapOff": "Isı haritasını gizle",
+  "actions.abCompare": "A-B karşılaştır",
+  "checks.abBaselineSet": "Temel kaydedildi — senaryoyu değiştirip tekrar karşılaştırın",
+  "checks.abNoPairs": "Senaryolar arasında karşılaştırılabilir çift yok",
+  "checks.abDelta": "En sıkı çift {d} m {dir}",
+  "checks.abSafer": "daha güvenli",
+  "checks.abTighter": "daha sıkı",
   "checks.exportReport": "Metin raporunu dışa aktar",
   "checks.reportTitle": "Çakışma raporu",
   "checks.reportGenerated": "Oluşturulma",
@@ -110,6 +120,7 @@ export const tr: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': 'Dosyaları içe aktar',
   'actions.save': 'Oturumu kaydet',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG dışa aktar',
   'actions.clear': 'Temizle',
 
@@ -160,6 +171,14 @@ export const tr: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'çarpışma {start}–{end} s',
+
+  'toast.gifOnly2d': 'GIF dışa aktarımı yalnızca 2D',
+
+  'toast.gifRendering': 'GIF oluşturuluyor…',
+
+  'toast.gifSaved': 'GIF kaydedildi',
+
+  'toast.gifFailed': 'GIF başarısız',
 
   'toast.pngOnly2d': "PNG dışa aktarma yalnızca 2B",
   'toast.pngSaved': 'PNG kaydedildi',
@@ -272,6 +291,8 @@ export const tr: Record<MessageKey, string> = {
   'prefs.unit.in': 'İnç (in)',
   'prefs.unit.ftin': 'Fit + inç (3′2″)',
   'prefs.units.hint': 'Kontrol panelindeki mesafeler bu birimi kullanır, örn.',
+  'prefs.colorblind': 'Renk körlüğü paleti',
+  'prefs.colorblindHint': 'Robot renklerini renk körlüğüne uygun bir sete geçirin (Okabe-Ito)',
   'prefs.theme': 'Tema',
   'theme.system': 'Sistemi izleyin',
   'theme.dark': 'Koyu',

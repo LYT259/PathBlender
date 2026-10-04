@@ -22,6 +22,8 @@ export const fr: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Chargez plusieurs trajets et choisissez celui à rejouer',
   'welcome.openSession': 'Ouvrir une session enregistrée',
   'welcome.openSessionHint': 'Ouvrez une analyse précédemment enregistrée',
+  'welcome.demo': 'Mode démo',
+  'welcome.demoHint': 'Charger le match d’exemple et le lire automatiquement',
   'welcome.tryExample': 'Essayer un exemple',
   'welcome.exampleHint': 'Découvrez la lecture et la détection des collisions avec des parcours de démonstration.',
   'welcome.loadingExample': 'Ouverture de l’exemple…',
@@ -57,6 +59,14 @@ export const fr: Record<MessageKey, string> = {
   "checks.clearTitle": "Aucun conflit détecté",
   "checks.clearBody": "Pour les parcours importés et les dimensions de robots actuelles.",
   "checks.issues": "{n} éléments à examiner",
+  "actions.heatmapOn": "Carte thermique",
+  "actions.heatmapOff": "Masquer la carte thermique",
+  "actions.abCompare": "Comparer A-B",
+  "checks.abBaselineSet": "Référence enregistrée — modifiez le scénario puis comparez",
+  "checks.abNoPairs": "Aucune paire comparable entre les scénarios",
+  "checks.abDelta": "Paire la plus serrée {dir} de {d} m",
+  "checks.abSafer": "plus sûr",
+  "checks.abTighter": "plus serré",
   "checks.exportReport": "Exporter le rapport texte",
   "checks.reportTitle": "Rapport de conflits",
   "checks.reportGenerated": "Généré le",
@@ -113,6 +123,7 @@ export const fr: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': 'Importer des fichiers',
   'actions.save': 'Enregistrer la session',
+  'actions.gif': 'GIF',
   'actions.png': 'Exporter en PNG',
   'actions.clear': 'Effacer',
 
@@ -162,6 +173,14 @@ export const fr: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'collision {start}–{end} s',
+
+  "toast.gifOnly2d": "L’export GIF ne fonctionne qu’en 2D",
+
+  "toast.gifRendering": "Rendu du GIF…",
+
+  "toast.gifSaved": "GIF enregistré",
+
+  "toast.gifFailed": "Échec du GIF",
 
   "toast.pngOnly2d": "L'export PNG n'est possible qu'en 2D",
   'toast.pngSaved': 'PNG enregistré',
@@ -272,6 +291,8 @@ export const fr: Record<MessageKey, string> = {
   'prefs.unit.in': 'Pouces (in)',
   'prefs.unit.ftin': 'Pieds + pouces (3′2″)',
   'prefs.units.hint': 'Les distances du panneau de contrôles utilisent cette unité, ex. :',
+  'prefs.colorblind': 'Palette daltonien',
+  'prefs.colorblindHint': 'Remplacez les couleurs des robots par un jeu sûr pour les daltoniens (Okabe-Ito)',
   'prefs.theme': 'Thème',
   'theme.system': 'Suivre le système',
   'theme.dark': 'Sombre',

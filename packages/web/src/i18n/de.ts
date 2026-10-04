@@ -14,6 +14,8 @@ export const de = {
   'welcome.importFolderHint': 'Mehrere Routen laden und auswählen, welche abgespielt werden soll',
   'welcome.openSession': 'Gespeicherte Sitzung öffnen',
   'welcome.openSessionHint': 'Eine zuvor gespeicherte Analyse öffnen',
+  'welcome.demo': 'Demo-Modus',
+  'welcome.demoHint': 'Beispielspiel laden und automatisch abspielen',
   'welcome.tryExample': 'Beispiel ausprobieren',
   'welcome.exampleHint': 'Wiedergabe und Kollisionsprüfung mit Beispielpfaden erkunden.',
   'welcome.loadingExample': 'Beispiel wird geöffnet…',
@@ -49,6 +51,14 @@ export const de = {
   "checks.clearTitle": "Keine Konflikte erkannt",
   "checks.clearBody": "Für die importierten Pfade und aktuellen Roboterabmessungen.",
   "checks.issues": "{n} Punkte zu überprüfen",
+  "actions.heatmapOn": "Heatmap",
+  "actions.heatmapOff": "Heatmap ausblenden",
+  "actions.abCompare": "A-B-Vergleich",
+  "checks.abBaselineSet": "Baseline gespeichert — Szenario ändern und erneut vergleichen",
+  "checks.abNoPairs": "Keine vergleichbaren Paare zwischen den Szenarien",
+  "checks.abDelta": "Engstes Paar {dir} um {d} m",
+  "checks.abSafer": "sicherer",
+  "checks.abTighter": "enger",
   "checks.exportReport": "Textbericht exportieren",
   "checks.reportTitle": "Konfliktbericht",
   "checks.reportGenerated": "Erstellt am",
@@ -104,6 +114,7 @@ export const de = {
   'app.title': 'PathBlender',
   'actions.import': 'Dateien importieren',
   'actions.save': 'Sitzung speichern',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG exportieren',
   'actions.clear': 'Löschen',
   
@@ -147,6 +158,14 @@ export const de = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'Kollision {start}–{end} s',
+  
+  'toast.gifOnly2d': 'GIF-Export nur in 2D',
+  
+  'toast.gifRendering': 'GIF wird gerendert…',
+  
+  'toast.gifSaved': 'GIF gespeichert',
+  
+  'toast.gifFailed': 'GIF fehlgeschlagen',
   
   'toast.pngOnly2d': 'PNG-Export ist nur 2D',
   'toast.pngSaved': 'PNG gespeichert',
@@ -257,6 +276,8 @@ export const de = {
   'prefs.unit.in': 'Zoll (in)',
   'prefs.unit.ftin': 'Fuß + Zoll (3′2″)',
   'prefs.units.hint': 'Abstände im Prüfungsbereich verwenden diese Einheit, z.B.',
+  'prefs.colorblind': 'Farbenblind-Palette',
+  'prefs.colorblindHint': 'Robotfarben gegen ein farbenblind-sicheres Set tauschen (Okabe-Ito)',
   'prefs.theme': 'Design',
   'theme.system': 'System folgen',
   'theme.dark': 'Dunkel',

@@ -25,6 +25,8 @@ export const pl: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Wczytaj kilka tras i wybierz, którą odtworzyć',
   'welcome.openSession': 'Otwórz zapisaną sesję',
   'welcome.openSessionHint': 'Otwórz wcześniej zapisaną analizę',
+  'welcome.demo': 'Tryb demo',
+  'welcome.demoHint': 'Załaduj przykładowy mecz i odtwórz go automatycznie',
   'welcome.tryExample': 'Wypróbuj przykład',
   'welcome.exampleHint': 'Poznaj odtwarzanie i sprawdzanie kolizji na przykładowych trasach.',
   'welcome.loadingExample': 'Otwieranie przykładu…',
@@ -60,6 +62,14 @@ export const pl: Record<MessageKey, string> = {
   'checks.clearTitle': 'Nie wykryto konfliktów',
   'checks.clearBody': 'Dla zaimportowanych tras i bieżących wymiarów robotów.',
   'checks.issues': 'Do przejrzenia: {n}',
+  'actions.heatmapOn': 'Mapa cieplna',
+  'actions.heatmapOff': 'Ukryj mapę cieplną',
+  'actions.abCompare': 'Porównanie A-B',
+  'checks.abBaselineSet': 'Zapisano punkt odniesienia — zmień scenariusz i porównaj ponownie',
+  'checks.abNoPairs': 'Brak porównywalnych par między scenariuszami',
+  'checks.abDelta': 'Najciaśniejsza para {dir} o {d} m',
+  'checks.abSafer': 'bezpieczniej',
+  'checks.abTighter': 'ciaśniej',
   'checks.exportReport': 'Eksportuj raport tekstowy',
   'checks.reportTitle': 'Raport konfliktów',
   'checks.reportGenerated': 'Wygenerowano',
@@ -115,6 +125,7 @@ export const pl: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': 'Importuj pliki',
   'actions.save': 'Zapisz sesję',
+  'actions.gif': 'GIF',
   'actions.png': 'Eksportuj PNG',
   'actions.clear': 'Wyczyść',
 
@@ -165,6 +176,14 @@ export const pl: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'kolizja {start}–{end} s',
+
+  'toast.gifOnly2d': 'Eksport GIF działa tylko w 2D',
+
+  'toast.gifRendering': 'Renderowanie GIF…',
+
+  'toast.gifSaved': 'GIF zapisany',
+
+  'toast.gifFailed': 'GIF nieudany',
 
   'toast.pngOnly2d': 'Eksport PNG działa tylko w 2D',
   'toast.pngSaved': 'Zapisano PNG',
@@ -277,6 +296,8 @@ export const pl: Record<MessageKey, string> = {
   'prefs.unit.in': 'Cale (in)',
   'prefs.unit.ftin': 'Stopy + cale (3′2″)',
   'prefs.units.hint': 'Odległości w panelu sprawdzeń używają tej jednostki, np.',
+  'prefs.colorblind': 'Paleta dla daltonistów',
+  'prefs.colorblindHint': 'Zamień kolory robotów na zestaw bezpieczny dla daltonistów (Okabe-Ito)',
   'prefs.theme': 'Motyw',
   'theme.system': 'Zgodnie z systemem',
   'theme.dark': 'Ciemny',

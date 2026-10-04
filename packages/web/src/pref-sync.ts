@@ -9,7 +9,7 @@
  */
 
 type PrefKey = 'lang' | 'theme' | 'appIcon' | 'updateChannel' | 'mouseControls' | 'lengthUnit'
-  | 'reverseScroll' | 'defaultConstrained' | 'penAsMouse';
+  | 'reverseScroll' | 'defaultConstrained' | 'penAsMouse' | 'colorblindPalette';
 
 // `__TAURI_INTERNALS__` covers Linux/Windows (http(s)-served webviews);
 // protocol-only detection would skip pref sync there (same check as
@@ -28,6 +28,17 @@ export function broadcastPref(key: PrefKey, value: string): void {
 }
 
 /** Subscribe; returns an unlisten (no-op outside the desktop shell). */
+const COLORBLIND_KEY = 'pb.colorblind';
+
+export function readColorblind(): boolean {
+  return localStorage.getItem(COLORBLIND_KEY) === '1';
+}
+
+export function writeColorblind(on: boolean): void {
+  localStorage.setItem(COLORBLIND_KEY, on ? '1' : '0');
+  broadcastPref('colorblindPalette', on ? '1' : '0');
+}
+
 export function listenPrefs(
   handler: (key: PrefKey, value: string) => void,
 ): () => void {

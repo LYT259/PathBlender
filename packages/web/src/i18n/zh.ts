@@ -16,6 +16,8 @@ export const zh: Record<MessageKey, string> = {
   'welcome.importFolderHint': '一次载入多条路线，选择要回放的路径',
   'welcome.openSession': '打开已保存的会话',
   'welcome.openSessionHint': '打开之前保存的分析',
+  'welcome.demo': '演示模式',
+  'welcome.demoHint': '载入示例对局并自动回放',
   'welcome.tryExample': '体验示例',
   'welcome.exampleHint': '无需准备文件，用示例路径了解回放和冲突检查。',
   'welcome.loadingExample': '正在打开示例…',
@@ -51,6 +53,14 @@ export const zh: Record<MessageKey, string> = {
   "checks.clearTitle": "未发现路径冲突",
   "checks.clearBody": "基于当前导入的路径与机器人尺寸。",
   "checks.issues": "有 {n} 项需要检查",
+  "actions.heatmapOn": "热力图",
+  "actions.heatmapOff": "隐藏热力图",
+  "actions.abCompare": "A-B 对比",
+  "checks.abBaselineSet": "基准已保存——改动场景后再次对比",
+  "checks.abNoPairs": "两场景无可比对的机对",
+  "checks.abDelta": "最紧的一对{dir}了 {d} 米",
+  "checks.abSafer": "更安全",
+  "checks.abTighter": "更紧张",
   "checks.exportReport": "导出文字版冲突报告",
   "checks.reportTitle": "冲突报告",
   "checks.reportGenerated": "生成于",
@@ -106,6 +116,7 @@ export const zh: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': '导入文件',
   'actions.save': '保存会话',
+  'actions.gif': '回放 GIF',
   'actions.png': '导出 PNG',
   'actions.clear': '清空',
 
@@ -153,6 +164,14 @@ export const zh: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} 秒',
   'timeline.band': '碰撞 {start}–{end} 秒',
+
+  'toast.gifOnly2d': 'GIF 回放导出仅支持 2D',
+
+  'toast.gifRendering': '正在渲染 GIF…',
+
+  'toast.gifSaved': 'GIF 已保存',
+
+  'toast.gifFailed': 'GIF 失败',
 
   'toast.pngOnly2d': '截图仅支持 2D 视图',
   'toast.pngSaved': '截图已保存',
@@ -264,6 +283,8 @@ export const zh: Record<MessageKey, string> = {
   'prefs.unit.in': '英寸 (in)',
   'prefs.unit.ftin': '英尺+英寸 (3′2″)',
   'prefs.units.hint': '检查面板中的距离使用此单位，例：',
+  'prefs.colorblind': '色盲安全配色',
+  'prefs.colorblindHint': '把机器人颜色换成色觉障碍友好配色（Okabe-Ito）',
   'prefs.theme': '主题',
   'theme.system': '跟随系统',
   'theme.dark': '深色',

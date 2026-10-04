@@ -14,6 +14,8 @@ export const vi = {
   'welcome.importFolderHint': 'Nạp nhiều tuyến và chọn tuyến muốn phát lại',
   'welcome.openSession': 'Mở phiên đã lưu',
   'welcome.openSessionHint': 'Mở phân tích đã lưu trước đó',
+  'welcome.demo': 'Chế độ demo',
+  'welcome.demoHint': 'Tải trận mẫu và phát lại tự động',
   'welcome.tryExample': 'Thử ví dụ',
   'welcome.exampleHint': 'Khám phá phát lại và kiểm tra va chạm với đường đi mẫu.',
   'welcome.loadingExample': 'Đang mở ví dụ…',
@@ -49,6 +51,14 @@ export const vi = {
   "checks.clearTitle": "Không phát hiện xung đột",
   "checks.clearBody": "Cho các đường đi đã nhập và kích thước robot hiện tại.",
   "checks.issues": "{n} mục cần xem xét",
+  "actions.heatmapOn": "Bản đồ nhiệt",
+  "actions.heatmapOff": "Ẩn bản đồ nhiệt",
+  "actions.abCompare": "So sánh A-B",
+  "checks.abBaselineSet": "Đã lưu mốc — thay đổi kịch bản rồi so sánh lại",
+  "checks.abNoPairs": "Không có cặp nào so sánh được giữa hai kịch bản",
+  "checks.abDelta": "Cặp khít nhất {dir} {d} m",
+  "checks.abSafer": "an toàn hơn",
+  "checks.abTighter": "khít hơn",
   "checks.exportReport": "Xuất báo cáo văn bản",
   "checks.reportTitle": "Báo cáo va chạm",
   "checks.reportGenerated": "Được tạo lúc",
@@ -104,6 +114,7 @@ export const vi = {
   'app.title': 'PathBlender',
   'actions.import': 'Nhập tệp',
   'actions.save': 'Lưu phiên',
+  'actions.gif': 'GIF',
   'actions.png': 'Xuất PNG',
   'actions.clear': 'Xóa',
   
@@ -147,6 +158,14 @@ export const vi = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'va chạm {start}–{end} s',
+  
+  'toast.gifOnly2d': 'Xuất GIF chỉ ở 2D',
+  
+  'toast.gifRendering': 'Đang dựng GIF…',
+  
+  'toast.gifSaved': 'Đã lưu GIF',
+  
+  'toast.gifFailed': 'GIF thất bại',
   
   'toast.pngOnly2d': 'Xuất PNG chỉ ở chế độ 2D',
   'toast.pngSaved': 'Đã lưu PNG',
@@ -257,6 +276,8 @@ export const vi = {
   'prefs.unit.in': 'Inch (in)',
   'prefs.unit.ftin': 'Feet + inch (3′2″)',
   'prefs.units.hint': 'Khoảng cách trong bảng kiểm tra dùng đơn vị này, ví dụ',
+  'prefs.colorblind': 'Bảng màu an toàn mù màu',
+  'prefs.colorblindHint': 'Đổi màu robot sang bộ an toàn cho người mù màu (Okabe-Ito)',
   'prefs.theme': 'Giao diện',
   'theme.system': 'Theo hệ thống',
   'theme.dark': 'Tối',

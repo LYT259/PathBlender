@@ -14,6 +14,8 @@ export const ar = {
   'welcome.importFolderHint': 'حمّل عدة مسارات واختر أيها تريد تشغيله',
   'welcome.openSession': 'فتح جلسة محفوظة',
   'welcome.openSessionHint': 'افتح تحليلًا محفوظًا سابقًا',
+  'welcome.demo': 'وضع العرض',
+  'welcome.demoHint': 'تحميل المباراة النموذجية وتشغيلها تلقائيًا',
   'welcome.tryExample': 'جرّب مثالًا',
   'welcome.exampleHint': 'استكشف التشغيل وفحوصات التصادم مع مسارات نموذجية.',
   'welcome.loadingExample': 'جاري فتح المثال…',
@@ -49,6 +51,14 @@ export const ar = {
   "checks.clearTitle": "لم يتم اكتشاف تعارضات",
   "checks.clearBody": "للمسارات المستوردة وأبعاد الروبوت الحالية.",
   "checks.issues": "{n} عناصر للمراجعة",
+  "actions.heatmapOn": "خريطة حرارية",
+  "actions.heatmapOff": "إخفاء الخريطة الحرارية",
+  "actions.abCompare": "مقارنة A-B",
+  "checks.abBaselineSet": "حُفظ الأساس — غيّر السيناريو ثم قارن مجددًا",
+  "checks.abNoPairs": "لا أزواج قابلة للمقارنة بين السيناريوهين",
+  "checks.abDelta": "أضيق زوج {dir} بمقدار {d} م",
+  "checks.abSafer": "أكثر أمانًا",
+  "checks.abTighter": "أضيق",
   "checks.exportReport": "تصدير تقرير نصي",
   "checks.reportTitle": "تقرير التصادمات",
   "checks.reportGenerated": "أُنشئ في",
@@ -104,6 +114,7 @@ export const ar = {
   'app.title': 'PathBlender',
   'actions.import': 'استيراد ملفات',
   'actions.save': 'حفظ الجلسة',
+  'actions.gif': 'صورة GIF متحركة',
   'actions.png': 'تصدير PNG',
   'actions.clear': 'مسح',
   
@@ -147,6 +158,14 @@ export const ar = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} ث',
   'timeline.band': 'تصادم {start}–{end} ث',
+  
+  'toast.gifOnly2d': 'تصدير GIF للثنائي الأبعاد فقط',
+  
+  'toast.gifRendering': 'جارٍ إنشاء GIF…',
+  
+  'toast.gifSaved': 'تم حفظ GIF',
+  
+  'toast.gifFailed': 'فشل GIF',
   
   'toast.pngOnly2d': 'تصدير PNG ثنائي الأبعاد فقط',
   'toast.pngSaved': 'تم حفظ PNG',
@@ -257,6 +276,8 @@ export const ar = {
   'prefs.unit.in': 'بوصة (in)',
   'prefs.unit.ftin': 'قدم + بوصة (3′2″)',
   'prefs.units.hint': 'المسافات في لوحة الفحوصات تستخدم هذه الوحدة، مثلًا',
+  'prefs.colorblind': 'لوحة لعمى الألوان',
+  'prefs.colorblindHint': 'استبدل ألوان الروبوتات بطقم آمن لعمى الألوان (Okabe-Ito)',
   'prefs.theme': 'المظهر',
   'theme.system': 'متابعة النظام',
   'theme.dark': 'داكن',
