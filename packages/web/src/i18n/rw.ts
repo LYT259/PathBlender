@@ -98,7 +98,7 @@ export const rw = {
   'robots.title': "Roboti ({n})",
   'robots.remove': "Kuraho",
   'robots.collision': "guhura",
-  'robots.teamNumberEdit': "Hindura nimero y'itsinda",
+  'robots.teamNumberEdit': "Hindura izina rigaragara",
   'robots.alliance': "ihuriro",
   'robots.blue': "Ubururu",
   'robots.red': "Umutuku",

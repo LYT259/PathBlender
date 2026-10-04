@@ -146,6 +146,7 @@ export interface SessionFileV1 {
     teamName: string;
     /** Optional since v1.4; older session files simply lack it. */
     teamNumber?: string;
+    displayName?: string;
     source: Trajectory['source'];
     alliance: Trajectory['alliance'];
     startDelayS: number;
@@ -200,6 +201,7 @@ export function serializeSession(
       name: st.trajectory.name,
       teamName: st.trajectory.teamName,
       teamNumber: st.trajectory.teamNumber,
+      displayName: st.trajectory.displayName,
       source: st.trajectory.source,
       alliance: st.trajectory.alliance,
       startDelayS: st.startDelayS,
@@ -252,6 +254,7 @@ export function deserializeSession(text: string): {
       name: r.name,
       teamName: r.teamName,
       teamNumber: r.teamNumber ?? '',
+      displayName: typeof r.displayName === 'string' ? r.displayName : undefined,
       source: r.source,
       alliance: r.alliance,
       samples: r.samples,

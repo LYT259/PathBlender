@@ -120,7 +120,7 @@ export const id = {
   'robots.title': 'Robot ({n})',
   'robots.remove': 'Hapus',
   'robots.collision': 'tabrakan',
-  'robots.teamNumberEdit': 'Edit nomor tim',
+  'robots.teamNumberEdit': "Edit nama tampilan",
   'robots.alliance': 'aliansi',
   'robots.blue': 'Biru',
   'robots.red': 'Merah',

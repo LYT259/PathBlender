@@ -132,7 +132,7 @@ export const ko: Record<MessageKey, string> = {
   'robots.title': '로봇 ({n})',
   'robots.remove': '제거',
   'robots.collision': '충돌',
-  'robots.teamNumberEdit': '팀 번호 편집',
+  'robots.teamNumberEdit': "표시 이름 편집",
   'robots.alliance': '얼라이언스',
   'robots.blue': '블루',
   'robots.red': '레드',
