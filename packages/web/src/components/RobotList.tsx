@@ -3,6 +3,7 @@ import { activeEndT, activeStartT, type CollisionInterval, type RobotGeometry, t
 import { useI18n } from '../i18n';
 import { VIEWER_ONLY } from '../viewer';
 import { displayName, routeLabel, sameRouteTrajectory, type LibraryProfile } from '../route-library';
+import { formatLength, formatLengthNumber, useLengthUnit } from '../length-units';
 import './RobotList.css';
 import { robotIdentity, robotOriginalIdentity } from '../robot-identity';
 import { AutoSequenceEditor, type AutoSequenceEditorProps } from './AutoSequenceEditor';
@@ -173,6 +174,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
 
 export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfile, sequence }: RobotInspectorProps) {
   const { t } = useI18n();
+  const [unit] = useLengthUnit();
   if (!robot) return <div className="robot-inspector-empty">{t('robots.selectPrompt')}</div>;
   const { trajectory } = robot;
   const id = trajectory.id;
@@ -193,8 +195,8 @@ export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfil
         </div>
         <p className="robot-inspector-caption">{t('robots.bumper')}</p>
         <dl className="robot-dimensions">
-          <div><dt>{t('robots.length')}</dt><dd>{trajectory.geometry.lengthM.toFixed(2)} m</dd></div>
-          <div><dt>{t('robots.width')}</dt><dd>{trajectory.geometry.widthM.toFixed(2)} m</dd></div>
+          <div><dt>{t('robots.length')}</dt><dd>{formatLength(trajectory.geometry.lengthM, unit)}</dd></div>
+          <div><dt>{t('robots.width')}</dt><dd>{formatLength(trajectory.geometry.widthM, unit)}</dd></div>
           {trajectory.massKG !== undefined && <div><dt>{t('robots.mass')}</dt><dd>{trajectory.massKG.toFixed(0)} kg</dd></div>}
           {trajectory.holonomic !== undefined && <div><dt>{t('robots.drive')}</dt><dd>{t(trajectory.holonomic ? 'robots.driveHolonomic' : 'robots.driveDifferential')}</dd></div>}
         </dl>
@@ -214,7 +216,7 @@ export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfil
               <option value="">{t('robots.profilePick')}</option>
               {libraryProfiles.map((entry) => (
                 <option key={entry.id} value={entry.id} title={entry.relPath}>
-                  {entry.profile.name} · {entry.profile.geometry.lengthM.toFixed(2)}×{entry.profile.geometry.widthM.toFixed(2)} m
+                  {entry.profile.name} · {formatLengthNumber(entry.profile.geometry.lengthM, unit)}×{formatLengthNumber(entry.profile.geometry.widthM, unit)} {unit}
                 </option>
               ))}
             </select>

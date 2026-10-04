@@ -23,7 +23,13 @@ const SETTINGS = JSON.stringify({ robotConfig: { robotWidth: 0.82, robotLength: 
 } });
 
 describe('team folder workflow', () => {
-  beforeEach(() => { localStorage.clear(); vi.clearAllMocks(); });
+  beforeEach(() => {
+    localStorage.clear();
+    // Pin meters: these assertions use the dimension text as a proxy for
+    // "profile applied"; the unit preference has its own coverage.
+    localStorage.setItem('pb.lengthUnit', 'm');
+    vi.clearAllMocks();
+  });
 
   it('automatically places one team on the first naturally sorted route, without a library panel', async () => {
     render(<App />);
