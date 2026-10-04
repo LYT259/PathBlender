@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.22';
+export const APP_VERSION = '0.1.8-beta.23';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.23', date: '2026.10.04', note: {
+    en: 'The bottom arrangement timeline now edits the real multi-route auto, and uploading settings.json applies the actual robot profile',
+    zh: '底部编排时间线已真实写入多段自动组合，上传 settings.json 会实际应用机器人配置',
+    'zh-tw': '底部編排時間軸已實際寫入多段自動組合，上傳 settings.json 會實際套用機器人設定',
+    cs: 'Spodní časová osa nyní upravuje skutečné vícedílné auto a nahrání souboru settings.json použije skutečný profil robota',
+    nl: 'De onderste tijdlijn bewerkt nu de echte meerroute-auto en het uploaden van settings.json past het echte robotprofiel toe',
+    fr: 'La chronologie du bas organise désormais le vrai auto à plusieurs trajets, et l’import de settings.json applique le vrai profil du robot',
+    he: 'ציר הזמן התחתון עורך כעת את האוטו מרובה המסלולים האמיתי, והעלאת settings.json מחילה את פרופיל הרובוט האמיתי',
+    ja: '下部のタイムラインで実際に複数ルートのオートを編成できるようになり、settings.json のアップロードで実際のロボットプロファイルが適用されます',
+    ko: '하단 타임라인에서 실제 다중 경로 오토를 편집할 수 있게 되었고, settings.json 업로드가 실제 로봇 프로필을 적용합니다',
+    pl: 'Dolna oś czasu teraz naprawdę układa wielotrasowe auto, a przesłanie settings.json stosuje rzeczywisty profil robota',
+    'pt-br': 'A linha do tempo inferior agora organiza de verdade o auto com várias rotas, e o envio de settings.json aplica o perfil real do robô',
+    es: 'La línea de tiempo inferior ahora organiza de verdad el auto de varias rutas, y subir settings.json aplica el perfil real del robot',
+    tr: 'Alt zaman çizelgesi artık çok rotalı otonomu gerçekten düzenliyor ve settings.json yükleme gerçek robot profilini uyguluyor',
+  } },
   { version: '0.1.8-beta.22', date: '2026.10.04', note: {
     en: 'Shadows now follow the robots while you zoom during playback, and the shadow map only re-renders when the robots move',
     zh: '回放中缩放时影子现在会跟随机器人；阴影贴图仅在机器人移动时重绘（纯缩放/旋转不再重绘）',

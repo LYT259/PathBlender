@@ -269,10 +269,12 @@ describe('App import → fusion → collision flow', () => {
       },
     );
     const inspector = selectRobot('#0001', 'Straight Run');
-    // The composition editor replaces the old read-only delay row; it does
-    // not auto-resolve collisions (viewer-only positioning stays intact).
-    expect(within(inspector).getByRole('spinbutton', { name: 'Start 1' })).toHaveValue(0);
-    expect(within(inspector).getByRole('heading', { name: 'Auto sequence' })).toBeInTheDocument();
+    // The composition editor lives on the bottom arrangement surface; the
+    // inspector itself is read-only robot data. Conflicts are reported, not
+    // auto-resolved (viewer-only positioning stays intact).
+    expect(within(inspector).queryByRole('spinbutton')).not.toBeInTheDocument();
+    expect(within(inspector).queryByRole('heading', { name: 'Auto sequence' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Arrange timeline' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /resolve|adjust/i })).not.toBeInTheDocument();
   });
 
