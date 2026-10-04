@@ -98,3 +98,35 @@ bolted to the rail.
 - **Fastener cross-check** — the chassis GLB carries all 64 fasteners
   (20× 2-1/2 in long bolts — 5 per corner in an L pattern — plus 24
   short bolts and 20 nuts); positions match the STEP within 0.33 mm.
+
+## Top-view sprite for the 2D canvas (2026-10-03)
+
+`assets/robots/mk5i-module-top.png` — the 2D canvas's module artwork
+(`FieldCanvas.tsx` draws it parked at each corner's installed yaw; the
+2D view shows no steering animation by user decision).
+
+- **Tool** — `scripts/cad/glb-topview.py`, headless Blender:
+
+  ```sh
+  blender --background --python scripts/cad/glb-topview.py -- \
+    packages/web/public/models/mk5i-module.glb assets/robots/mk5i-module-top.png
+  ```
+
+- Input is the shipped split GLB exactly as the 3D view instances it,
+  so 2D and 3D can never drift apart. The script bakes import
+  transforms, joins every mesh, smooths normals (the decimation's flat
+  facets glare under studio light), centers an orthographic camera on
+  the origin (the GLB contract pins the steering axis there) looking
+  straight down, and renders 2048x2048 RGBA on a transparent film:
+  Workbench studio light, MATERIAL colors, WORLD cavity, specular OFF
+  (studio speculars smeared bright wedges across the decimated
+  plates).
+- Image contract: pixel center = steering axis, image right = rolling
+  direction (+X), image up = glTF -Z = robot-frame -Y (FieldCanvas
+  flips the draw vertically, mirroring the 3D mount's
+  `rotation.y = -yaw`; verified against the 3D top view in the
+  2026-10-03 walkthrough). The square image spans the printed
+  `TOPVIEW world_size_m` (0.221077 m — module bbox ±0.1084 m plus a 2%
+  margin), mirrored as `MK5I_MODULE_TOP_WORLD_M` in
+  `packages/web/src/robot-sprites.ts`. If the GLB ever changes,
+  re-run the tool and update that constant.
