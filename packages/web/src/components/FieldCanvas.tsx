@@ -518,6 +518,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         v.scale,
         inCollisionNow.has(id),
         outOfBoundsNow.has(id),
+        w,
       );
     }
 
@@ -582,6 +583,7 @@ function drawRobot(
   scale: number,
   collided: boolean,
   outOfBounds: boolean,
+  canvasW: number,
 ) {
   const { outer, chassis } = vis;
   ctx.save();
@@ -594,12 +596,21 @@ function drawRobot(
   const W = outer.widthM * scale;
   const ox = outer.offsetX * scale;
   const oy = outer.offsetY * scale;
-  ctx.fillStyle = bumperColor(r.trajectory.alliance);
   ctx.strokeStyle = collided ? '#ff3b30' : outOfBounds ? '#ffa726' : bumperColor(r.trajectory.alliance);
   ctx.lineWidth = collided || outOfBounds ? 3 : 2;
+  // Only the four perimeter bands carry the alliance color — the base
+  // plate inside stays transparent so the field artwork shows through
+  // (user request 2026-10-04).
+  const bd = Math.min(vis.bumperDepthM * scale, L / 2, W / 2);
+  ctx.fillStyle = bumperColor(r.trajectory.alliance);
+  ctx.beginPath();
+  ctx.rect(ox - L / 2, -oy - W / 2, L, bd);                    // +y band
+  ctx.rect(ox - L / 2, -oy + W / 2 - bd, L, bd);               // −y band
+  ctx.rect(ox - L / 2, -oy - W / 2 + bd, bd, W - 2 * bd);      // −x band
+  ctx.rect(ox + L / 2 - bd, -oy - W / 2 + bd, bd, W - 2 * bd); // +x band
+  ctx.fill();
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
-  ctx.fill();
   ctx.stroke();
 
   // Chassis frame: four 1 in box-rail beams around the chassis
@@ -667,38 +678,44 @@ function drawRobot(
   ctx.fill();
   ctx.restore();
 
-  // Team number ON the bumper, like a real robot (user request
-  // 2026-10-02, replacing the old center annotation): one number per
-  // side rail, baseline along the rail so it rotates with the robot.
-  // Font sized to the rail band with a legibility floor; halo keeps it
-  // readable on any artwork, in both themes.
+  // Team number callout (user request 2026-10-04, replacing the
+  // on-bumper print — unreadable once the whole field fits on screen):
+  // a leader line + anchor dot like the Preferences mouse diagram, the
+  // number itself at the leader tip. Screen-space throughout: the
+  // number stays upright and constant-size at any heading and zoom.
   if (r.trajectory.teamNumber) {
     const num = r.trajectory.teamNumber;
-    const d = vis.bumperDepthM * scale;
-    const railPrintable = Math.max((L - 2.4 * d) * 0.95, 8);
-    let fs = Math.max(d * 1.15, 9);
+    const cx = sx(pose.x);
+    const cy = sy(pose.y);
+    const reach = Math.hypot(L, W) / 2;
     ctx.save();
-    ctx.translate(sx(pose.x), sy(pose.y));
-    ctx.rotate(-pose.heading);
-    ctx.font = `bold ${fs}px ui-sans-serif, system-ui, sans-serif`;
-    const wide = ctx.measureText(num).width;
-    if (wide > railPrintable) {
-      fs = Math.max((fs * railPrintable) / wide, 6);
-      ctx.font = `bold ${fs}px ui-sans-serif, system-ui, sans-serif`;
-    }
-    ctx.textAlign = 'center';
+    ctx.font = 'bold 13px ui-sans-serif, system-ui, sans-serif';
+    const tw = ctx.measureText(num).width;
+    // Leader runs up-right; mirror to up-left when the label would
+    // cross the right canvas edge.
+    const leader = 20;
+    const dir = cx + reach + leader + 8 + tw + 4 <= canvasW ? 1 : -1;
+    const ax = cx + dir * Math.SQRT1_2 * reach;
+    const ay = cy - Math.SQRT1_2 * reach;
+    const lx = cx + dir * Math.SQRT1_2 * (reach + leader);
+    const ly = cy - Math.SQRT1_2 * (reach + leader);
+    ctx.strokeStyle = cssVar('--fg-dim', '#8e8e93');
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(lx, ly);
+    ctx.stroke();
+    ctx.fillStyle = cssVar('--accent', '#0a84ff');
+    ctx.beginPath();
+    ctx.arc(ax, ay, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.textAlign = dir > 0 ? 'left' : 'right';
     ctx.textBaseline = 'middle';
     ctx.lineWidth = 3;
     ctx.strokeStyle = cssVar('--canvas-bg', '#1c1c1e');
     ctx.fillStyle = '#ffffff';
-    for (const side of [1, -1]) {
-      // Robot-frame rail center y = ±(W/2 − d/2); screen y is flipped.
-      ctx.save();
-      ctx.translate(ox, -oy - side * (W / 2 - d / 2));
-      ctx.strokeText(num, 0, 0);
-      ctx.fillText(num, 0, 0);
-      ctx.restore();
-    }
+    ctx.strokeText(num, lx + dir * 5, ly);
+    ctx.fillText(num, lx + dir * 5, ly);
     ctx.restore();
   }
 }
