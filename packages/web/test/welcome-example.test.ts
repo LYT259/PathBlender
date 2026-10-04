@@ -11,7 +11,7 @@ import {
 } from '@pathblender/core';
 import { createWelcomeExample } from '../src/welcome-example';
 import { isExampleRobot } from '../src/example-robot';
-import { routeName } from '../src/route-library';
+import { routeName, sameRouteTrajectory } from '../src/route-library';
 
 // The bundled Choreo exports, in natural filename order (see
 // assets/welcome-example/<team>/). L16 and Test1 exist only on the 8814 side.
@@ -107,6 +107,11 @@ describe('welcome example', () => {
     expect(restored.robots.map((r) => r.routeOptions?.length)).toEqual([22, 20]);
     expect(restored.robots.every(isExampleRobot)).toBe(true);
     expect(detectCollisions(restored.robots)).toHaveLength(1);
+    // Save/load breaks shared object references; the picker's current-route
+    // match still recognizes each robot's route among its options.
+    for (const robot of restored.robots) {
+      expect(robot.routeOptions!.some((option) => sameRouteTrajectory(option.trajectory, robot.trajectory))).toBe(true);
+    }
     expect(sessionDuration(restored.robots)).toBe(sessionDuration(example.robots));
     for (let i = 0; i < restored.robots.length; i++) {
       const original = example.robots[i]!;
