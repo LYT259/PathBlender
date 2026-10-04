@@ -3,17 +3,15 @@ import { deserializeSession, serializeSession } from '@pathblender/core';
 import { createWelcomeExample } from '../src/welcome-example';
 import { isExampleRobot } from '../src/example-robot';
 
-const NAMES = { a: 'AAAAAA', b: 'BBBBBB' };
-
 describe('isExampleRobot (End-example affordance)', () => {
   it('recognizes fresh demo robots', () => {
-    const { robots } = createWelcomeExample(NAMES);
+    const { robots } = createWelcomeExample();
     expect(robots).toHaveLength(2);
     expect(robots.every(isExampleRobot)).toBe(true);
   });
 
   it('keeps recognizing the demo after a session save/load round-trip', () => {
-    const { robots } = createWelcomeExample(NAMES);
+    const { robots } = createWelcomeExample();
     const restored = deserializeSession(serializeSession(robots, 'rebuilt-2026'));
     expect(restored.robots.map((r) => r.trajectory.id)).toEqual(
       robots.map((r) => r.trajectory.id),
@@ -22,7 +20,7 @@ describe('isExampleRobot (End-example affordance)', () => {
   });
 
   it('recognizes pre-rename demos that only carry legacy localized names', () => {
-    const { robots } = createWelcomeExample(NAMES);
+    const { robots } = createWelcomeExample();
     // A demo autosaved before the 2026-10-03 rename: localized legacy name,
     // no team number, and a fresh random id after the restore.
     const legacy = robots.map((r, i) => ({
@@ -38,7 +36,7 @@ describe('isExampleRobot (End-example affordance)', () => {
   });
 
   it('never treats the user\'s own robots as demo robots', () => {
-    const { robots } = createWelcomeExample(NAMES);
+    const { robots } = createWelcomeExample();
     const adopted = { ...robots[0]!, routeId: 'route-1' };
     expect(isExampleRobot(adopted)).toBe(false);
     const realSameName = {

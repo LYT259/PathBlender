@@ -21,7 +21,7 @@ export const bg = {
   'welcome.exampleNameA': 'Примерен маршрут A',
   'welcome.exampleNameB': 'Примерен маршрут B',
   'welcome.exampleBadge': 'Пример',
-  'welcome.exampleNotice': 'Измислени маршрути за разглеждане на приложението.',
+  'welcome.exampleNotice': 'Реални маршрути за сезон 2026 на отборите FRC 8814 и 11019.',
   'welcome.exitExample': 'Край на примера',
   'onboarding.play': 'Натиснете „Възпроизведи“, за да видите маршрутите, или плъзнете хронометра.',
   'onboarding.check': 'Изберете проблем по-долу, за да отидете до този момент.',

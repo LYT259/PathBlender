@@ -23,7 +23,7 @@ export const vi = {
   'welcome.exampleNameA': 'Đường đi ví dụ A',
   'welcome.exampleNameB': 'Đường đi ví dụ B',
   'welcome.exampleBadge': 'Ví dụ',
-  'welcome.exampleNotice': 'Đường đi hư cấu để khám phá ứng dụng.',
+  'welcome.exampleNotice': 'Lộ trình thật mùa 2026 từ các đội FRC 8814 và 11019.',
   'welcome.exitExample': 'Kết thúc ví dụ',
   'onboarding.play': 'Nhấn Play để xem đường đi, hoặc kéo dòng thời gian.',
   'onboarding.check': 'Chọn một vấn đề bên dưới để nhảy tới thời điểm đó.',

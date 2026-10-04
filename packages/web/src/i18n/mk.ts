@@ -21,7 +21,7 @@ export const mk = {
   'welcome.exampleNameA': 'Примерна рута A',
   'welcome.exampleNameB': 'Примерна рута B',
   'welcome.exampleBadge': 'Пример',
-  'welcome.exampleNotice': 'Измислени рути за истражување на апликацијата.',
+  'welcome.exampleNotice': 'Вистински рути од сезоната 2026 на екипите FRC 8814 и 11019.',
   'welcome.exitExample': 'Заврши пример',
   'onboarding.play': 'Притиснете Репродуцирај за да ги видите рутите или повлечете ја временската линија.',
   'onboarding.check': 'Изберете проблем подолу за да скокнете до тој момент.',

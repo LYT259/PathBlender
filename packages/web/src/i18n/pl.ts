@@ -34,7 +34,7 @@ export const pl: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'Przykładowa trasa A',
   'welcome.exampleNameB': 'Przykładowa trasa B',
   'welcome.exampleBadge': 'Przykład',
-  'welcome.exampleNotice': 'Fikcyjne trasy do poznawania aplikacji.',
+  'welcome.exampleNotice': 'Prawdziwe trasy z sezonu 2026 drużyn FRC 8814 i 11019.',
   'welcome.exitExample': 'Zakończ przykład',
   'onboarding.play': 'Naciśnij Odtwórz, aby zobaczyć trasy, albo przeciągnij po osi czasu.',
   'onboarding.check': 'Wybierz problem poniżej, aby przejść do tego momentu.',

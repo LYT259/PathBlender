@@ -21,7 +21,7 @@ export const nn = {
   'welcome.exampleNameA': 'Dømerute A',
   'welcome.exampleNameB': 'Dømerute B',
   'welcome.exampleBadge': 'Døme',
-  'welcome.exampleNotice': 'Påfunne ruter for å utforska appen.',
+  'welcome.exampleNotice': 'Verkelege ruter frå 2026-sesongen til FRC-laga 8814 og 11019.',
   'welcome.exitExample': 'Avslutt døme',
   'onboarding.play': 'Trykk Spel for å sjå rutene, eller dra i tidslinja.',
   'onboarding.check': 'Vel eit problem under for å hoppa til det augneblinken.',

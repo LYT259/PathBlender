@@ -34,7 +34,7 @@ export const cs: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'Ukázková trasa A',
   'welcome.exampleNameB': 'Ukázková trasa B',
   'welcome.exampleBadge': 'Ukázka',
-  'welcome.exampleNotice': 'Fiktivní trasy pro vyzkoušení aplikace.',
+  'welcome.exampleNotice': 'Skutečné trasy sezóny 2026 týmů FRC 8814 a 11019.',
   'welcome.exitExample': 'Ukončit ukázku',
   'onboarding.play': 'Stiskněte Přehrát pro zobrazení tras, nebo táhněte časovou osu.',
   'onboarding.check': 'Výběrem položky níže přejdete na daný okamžik.',

@@ -21,7 +21,7 @@ export const da = {
   'welcome.exampleNameA': 'Eksempelrute A',
   'welcome.exampleNameB': 'Eksempelrute B',
   'welcome.exampleBadge': 'Eksempel',
-  'welcome.exampleNotice': 'Fiktive ruter til at udforske appen.',
+  'welcome.exampleNotice': 'Rigtige ruter fra sæsonen 2026 fra FRC-holdene 8814 og 11019.',
   'welcome.exitExample': 'Afslut eksempel',
   'onboarding.play': 'Tryk Afspil for at se ruterne, eller træk i tidslinjen.',
   'onboarding.check': 'Vælg et problem nedenfor for at hoppe til det øjeblik.',
