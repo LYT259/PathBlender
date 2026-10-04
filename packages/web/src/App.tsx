@@ -39,8 +39,10 @@ import { FieldCanvas, type FieldCanvasHandle } from './components/FieldCanvas';
 import type { FieldCanvas3DHandle } from './components/FieldCanvas3D';
 const FieldCanvas3D = lazy(() => import('./components/FieldCanvas3D').then((module) => ({ default: module.FieldCanvas3D })));
 import { Timeline } from './components/Timeline';
+import { SequenceTimelineComposer } from './components/SequenceTimelineComposer';
 import { RobotList, RobotInspector } from './components/RobotList';
-import { applySequenceSegments, sequenceViewFor, type AutoSequenceSegment } from './auto-sequence-state';
+import { applySequenceSegments, type AutoSequenceSegment } from './auto-sequence-state';
+import { applyUploadedProfile } from './robot-profile-ui';
 import { checkSequenceJoins, checkSequenceTiming } from '@pathblender/core';
 import { ConflictPanel } from './components/ConflictPanel';
 import { ImportBanner } from './components/ImportBanner';
@@ -144,6 +146,7 @@ function AppBody() {
   const { robots: sourceRobots, alliance, setRobots, setScene, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, canUndo, canRedo } = useSessionHistory(initialFieldPref);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot'>('checks');
+  const [sequenceTimelineOpen, setSequenceTimelineOpen] = useState(false);
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
   const [view3D, setView3D] = useState(loadView3D);
   const [showTrail, setShowTrail] = useState(true);
@@ -435,6 +438,40 @@ function AppBody() {
     }));
   }, [setRobots]);
 
+  /**
+   * settings.json upload (red book §6.6 entrance ②, post-hoc card import):
+   * parse + validate through core, then apply coherently to the robot and
+   * its whole route library. Only a real successful application removes the
+   * upload action — cancel, corrupt or unrelated JSON leaves it in place.
+   */
+  const applySettingsFile = useCallback(async (robotId: string, file: File) => {
+    let text: string;
+    try {
+      text = await file.text();
+    } catch {
+      flash(tr('robots.settingsUnreadable'), 'error');
+      return;
+    }
+    let profile: RobotProfile | null;
+    try {
+      profile = parseRobotProfile(text, file.name);
+    } catch (e) {
+      const message = e instanceof ParseError && e.kind === 'invalid-json'
+        ? tr('import.invalidJson')
+        : tr('robots.settingsNotProfile');
+      flash(message, 'error');
+      return;
+    }
+    if (!profile) {
+      flash(tr('robots.settingsNotProfile'), 'error');
+      return;
+    }
+    setRobots((prev) => prev.map((robot) => (
+      robot.trajectory.id === robotId ? applyUploadedProfile(robot, profile, file.name) : robot
+    )));
+    flash(tr('robots.settingsApplied', { name: profile.name }));
+  }, [flash, tr, setRobots]);
+
   // Whole-window drag & drop; folders are walked recursively.
   useEffect(() => {
     const over = (e: DragEvent) => {
@@ -479,7 +516,6 @@ function AppBody() {
   // view is derived from the source robot; joins/timing are frame-invariant
   // (mirrors preserve distances, speeds and heading gaps).
   const sourceSelectedRobot = sourceRobots.find((robot) => robot.trajectory.id === selectedRobot?.trajectory.id);
-  const sequenceView = sequenceViewFor(sourceSelectedRobot);
   const sequenceJoins = useMemo(
     () => (sourceSelectedRobot ? checkSequenceJoins(sourceSelectedRobot) : []),
     [sourceSelectedRobot],
@@ -866,7 +902,7 @@ function AppBody() {
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
         <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
-          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onPickRoute={pickRoute} />}
+          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onPickRoute={pickRoute} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
             {hasExample && <div className="example-notice"><strong>{tr('welcome.exampleBadge')}</strong><span>{tr('welcome.exampleNotice')}</span><button className="btn small" onClick={exitExample}>{tr('welcome.exitExample')}</button></div>}
             <div className="canvas-slot">
@@ -927,7 +963,7 @@ function AppBody() {
                 <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => setInspectorMode('checks')} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
-            {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
+            {hasRobots && !sequenceTimelineOpen && <footer className="app-footer"><Timeline composeAction={<button className="btn small" onClick={() => { playback.setPlaying(false); setSequenceTimelineOpen(true); }}>{tr('sequence.arrange')}</button>} robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
           </section>
           <aside className="workspace-inspector" hidden={!rightOpen}>
             <div className="inspector-header"><div className="seg inspector-tabs" role="group" aria-label={tr('workspace.panels')}>
@@ -935,9 +971,10 @@ function AppBody() {
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
             </div></div>
             {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} toleranceS={toleranceS} onToleranceChange={setToleranceS} fieldName={field.name} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
-            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot ? withSeasonGeometry(selectedRobot, field.year) : undefined} onRemove={removeRobot} libraryProfiles={selectedRobot?.profileOptions ?? []} onApplyProfile={applyProfile} sequence={{ routes: sequenceView.routes, segments: sequenceView.segments, onChange: changeSequence, joins: sequenceJoins, timing: sequenceTiming, onJump: jumpToSeam }} /></div>}
+            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot ? withSeasonGeometry(selectedRobot, field.year) : undefined} onRemove={removeRobot} libraryProfiles={selectedRobot?.profileOptions ?? []} onApplyProfile={applyProfile} /></div>}
           </aside>
         </main>
+        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={sequenceTimelineOpen} onClose={() => setSequenceTimelineOpen(false)} onChange={changeSequence} joins={sequenceJoins} timing={sequenceTiming} onJump={jumpToSeam} />}
 
       {cfOpen && <CustomFieldPanel
         open

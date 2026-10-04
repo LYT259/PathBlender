@@ -140,7 +140,7 @@ describe('i18n dictionaries', () => {
     // 'Start'/'Route' are loanwords a wide group of languages (de/nl/sv/da/
     // nb/nn/cs/pl/ro) spells exactly like English. French 'segments' also
     // coincides with the English plural.
-    'sequence.seconds', 'sequence.start', 'sequence.route', 'sequence.count',
+    'sequence.seconds', 'sequence.start', 'sequence.count',
   ]);
 
   it('nothing is left sitting on the English text', () => {

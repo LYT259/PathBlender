@@ -87,7 +87,10 @@ describe('welcome flow', () => {
     await screen.findByText('#0001', { selector: '.robot-name' });
     expect(screen.getByRole('combobox', { name: 'Game season' })).toHaveValue('chargedup-2023');
     fireEvent.click(screen.getByText('#0001', { selector: '.robot-name' }));
-    expect(within(screen.getByRole('region', { name: 'Straight Run', exact: true })).getByRole('spinbutton', { name: 'Start 1' })).toHaveValue(1.25);
+    expect(screen.getByRole('region', { name: 'Straight Run', exact: true })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Arrange timeline' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Straight Run, 1\.25–/ }));
+    expect(screen.getByRole('spinbutton', { name: 'Start' })).toHaveValue(1.25);
     expect(screen.queryByRole('region', { name: 'Import paths to get started' })).not.toBeInTheDocument();
   });
 
