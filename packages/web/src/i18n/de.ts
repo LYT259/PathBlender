@@ -123,6 +123,8 @@ export const de = {
   'field.style.rendered': 'Gerendert',
   'conflicts.title': 'Konflikte',
   'conflicts.minSep': 'nächste Annäherung {d} bei t={t} s ({a} × {b})',
+  'conflicts.toleranceBadge': 'Versatz ±{delta} s',
+  'checks.tolerance': 'Toleranzprüfung: Worst Case ±{delta} s Start',
   'conflicts.item': '{start}–{end} s · nächste {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
   

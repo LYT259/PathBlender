@@ -126,8 +126,9 @@ export const en = {
 
   'field.style.rendered': 'Rendered',
   'conflicts.title': 'Conflicts',
-  'conflicts.minSep':
-    'closest approach {d} at t={t} s ({a} × {b})',
+  'conflicts.minSep': 'closest approach {d} at t={t} s ({a} × {b})',
+'conflicts.toleranceBadge': '±{delta} s slip',
+  'checks.tolerance': 'Tolerance check: worst-case ±{delta} s start execution',
   'conflicts.item': '{start}–{end} s · closest {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 

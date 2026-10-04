@@ -123,6 +123,8 @@ export const vi = {
   'field.style.rendered': 'Kết xuất',
   'conflicts.title': 'Xung đột',
   'conflicts.minSep': 'khoảng cách gần nhất {d} tại t={t} s ({a} × {b})',
+  'conflicts.toleranceBadge': 'lệch ±{delta} s',
+  'checks.tolerance': 'Kiểm tra dung sai: trường hợp xấu nhất ±{delta} giây',
   'conflicts.item': '{start}–{end} s · gần nhất {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
   

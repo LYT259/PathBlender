@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.20';
+export const APP_VERSION = '0.1.7-beta.21';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.21', date: '2026.10.04', note: {
+    en: 'Timing tolerance: rescans conflicts for worst-case start execution, tolerance-only findings are flagged separately',
+    zh: '时序公差：按最坏起步执行重扫冲突，仅公差内出现的冲突单独标注',
+    'zh-tw': '時序公差：按最壞起步執行重掃衝突，僅公差內出現的衝突單獨標註',
+    cs: 'Časová tolerance: konflikty se znovu kontrolují pro nejhorší start a nálezy pouze v toleranci jsou označeny zvlášť',
+    nl: 'Timingtolerantie: conflicten worden opnieuw gescand voor worst-case start en vondsten alleen binnen tolerantie worden apart gemarkeerd',
+    fr: 'Tolérance de timing : les conflits sont rescanés pour le pire cas d’exécution, les alertes propres à la tolérance sont signalées à part',
+    he: 'טולרנס תזמון: סריקה חוזרת של התנגשויות למקרה הגרוע ביותר — ממצאים רק בטולרנס מסומנים בנפרד',
+    ja: 'タイミング公差：最悪のスタート実行で衝突を再走査し、公差内のみの検出は別途表示します',
+    ko: '타이밍 허용 오차: 최악의 시작 실행으로 충돌을 재검사하고 허용 오차 내 발견만 별도로 표시합니다',
+    pl: 'Tolerancja czasu: konflikty są ponownie sprawdzane dla najgorszego startu, a wyniki wyłącznie w tolerancji są oznaczane osobno',
+    'pt-br': 'Tolerância de tempo: os conflitos são revistos para o pior início e achados só dentro da tolerância são marcados à parte',
+    es: 'Tolerancia de tiempos: se reescanean los conflictos para el peor inicio y los hallazgos solo en tolerancia se marcan aparte',
+    tr: 'Zamanlama toleransı: çakışmalar en kötü başlangıç için yeniden taranır, yalnızca tolerans içi bulgular ayrıca işaretlenir',
+  } },
   { version: '0.1.7-beta.20', date: '2026.10.04', note: {
     en: 'Real robot data now drives PathPlanner timelines: mass, inertia, drive limits and project constraint defaults are consumed from profile files',
     zh: '机器人参数文件现在驱动 PathPlanner 时间轴：质量、惯量、驱动极限与项目默认约束均已消费',

@@ -137,8 +137,9 @@ export const ptBR: Record<MessageKey, string> = {
 
   'field.style.rendered': 'Renderizado',
   'conflicts.title': 'Conflitos',
-  'conflicts.minSep':
-    'aproximação mínima {d} em t={t} s ({a} × {b})',
+  'conflicts.minSep': 'aproximação mínima {d} em t={t} s ({a} × {b})',
+'conflicts.toleranceBadge': 'desvio ±{delta} s',
+  'checks.tolerance': 'Verificação de tolerância: pior caso ±{delta} s no início',
   'conflicts.item': '{start}–{end} s · mais próximo {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 

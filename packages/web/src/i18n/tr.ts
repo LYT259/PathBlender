@@ -135,8 +135,9 @@ export const tr: Record<MessageKey, string> = {
 
   'field.style.rendered': 'Gerçekçi',
   'conflicts.title': 'Çakışmalar',
-  "conflicts.minSep":
-    "en yakın mesafe {d} m, t={t} s ({a} × {b})",
+  'conflicts.minSep': 'en yakın mesafe {d} m, t={t} s ({a} × {b})',
+  'conflicts.toleranceBadge': '±{delta} sn kayma',
+  'checks.tolerance': 'Tolerans kontrolü: en kötü durum ±{delta} sn başlangıç',
   'conflicts.item': '{start}–{end} s · en yakın {d} m @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 

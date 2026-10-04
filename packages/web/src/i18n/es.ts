@@ -136,8 +136,9 @@ export const es: Record<MessageKey, string> = {
 
   'field.style.rendered': 'Renderizado',
   'conflicts.title': 'Conflictos',
-  'conflicts.minSep':
-    'acercamiento mínimo {d} m en t={t} s ({a} × {b})',
+  'conflicts.minSep': 'acercamiento mínimo {d} m en t={t} s ({a} × {b})',
+'conflicts.toleranceBadge': 'desvío ±{delta} s',
+  'checks.tolerance': 'Comprobación de tolerancia: peor caso ±{delta} s al inicio',
   'conflicts.item': '{start}–{end} s · mínimo {d} m @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 

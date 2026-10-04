@@ -123,6 +123,8 @@ export const ta = {
   'field.style.rendered': 'ரெண்டர்',
   'conflicts.title': 'முரண்பாடுகள்',
   'conflicts.minSep': 't={t} வி இல் மிக நெருக்கமான அணுகுமுறை {d} ({a} × {b})',
+  'conflicts.toleranceBadge': '±{delta} வி நழுவல்',
+  'checks.tolerance': 'சகிப்புத்தன்மை சோதனை: மோசமான ±{delta} வினாடி தொடக்கம்',
   'conflicts.item': '{start}–{end} வி · நெருக்கமான {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
   

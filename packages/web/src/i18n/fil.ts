@@ -123,6 +123,8 @@ export const fil = {
   'field.style.rendered': 'Naka-render',
   'conflicts.title': 'Mga conflict',
   'conflicts.minSep': 'pinakamalapit na approach {d} sa t={t} s ({a} × {b})',
+  'conflicts.toleranceBadge': 'pagkakadulas ±{delta} s',
+  'checks.tolerance': 'Pagsusuri ng toleransya: pinakamasamang ±{delta} s simula',
   'conflicts.item': '{start}–{end} s · pinakamalapit {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
   

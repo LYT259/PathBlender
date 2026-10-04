@@ -123,6 +123,8 @@ export const ms = {
   'field.style.rendered': 'Dirender',
   'conflicts.title': 'Konflik',
   'conflicts.minSep': 'pendekatan paling dekat {d} pada t={t} s ({a} × {b})',
+  'conflicts.toleranceBadge': 'songsangan ±{delta} s',
+  'checks.tolerance': 'Semakan toleransi: kes terburuk ±{delta} saat',
   'conflicts.item': '{start}–{end} s · terdekat {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
   
