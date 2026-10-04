@@ -12,8 +12,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import {
   chassisModules,
-  moduleBaseYaw,
-  moduleSteeringAngles,
   robotVisualGeometry,
   samplePoseAt,
   sampleStateAt,
@@ -92,8 +90,6 @@ interface Scene3D {
      *  split GLB (the box stays frozen at the installed yaw), the pod
      *  itself for the old GLB / procedural fallback. */
     turrets: THREE.Group[];
-    /** Last applied steering angle per module (radians, robot frame). */
-    steer: number[];
     modules: { x: number; y: number }[];
   }[];
   /** Render-on-demand: a frame is drawn only when something changed. */
@@ -1381,9 +1377,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         robot: r,
         pods: chassis.pods,
         turrets: chassis.turrets,
-        // Parked at the installed angle from the chassis CAD; steering
-        // replaces it with the absolute motion angle once moving.
-        steer: modules.map((m) => moduleBaseYaw(m)),
         modules,
       });
       st.dirty();
@@ -1402,9 +1395,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   }, [currentT, showTrail, robots, field, moduleTemplate, frameTemplates]);
 
   // Drive the chassis rigs along the shared clock: pose from the shared
-  // sampler, plus per-module turret steering from each wheel's ground
-  // velocity (turrets hold their last pointing while the robot stands
-  // still; the module boxes stay frozen at the installed angle).
+  // sampler. Modules stay bolted at the installed angle the whole time --
+  // the turret steering animation was removed (user 2026-10-04: with the
+  // turret turning, the whole pod looked like it rotated off the frame;
+  // re-add later as its own feature).
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
@@ -1417,20 +1411,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // The render frame reflects X, so the heading reflects with it —
       // leaving it raw would have every robot drive sideways.
       rig.root.rotation.y = headingToRender(pose.heading);
-      if (state) {
-        const angles = moduleSteeringAngles(state, rig.modules);
-        if (rig.steer.length !== angles.length) rig.steer = rig.modules.map((m) => moduleBaseYaw(m));
-        for (let i = 0; i < rig.turrets.length; i++) {
-          const a = angles[i]!;
-          if (a !== null) rig.steer[i] = a;
-          // steer[] IS the absolute wheel angle in robot frame (the
-          // installed base yaw only seeds it while parked); robot-frame
-          // yaw maps to render yaw with the opposite sign. Only the
-          // turret turns — the module box is frozen at the installed
-          // yaw in buildChassis3D.
-          rig.turrets[i]!.rotation.y = -rig.steer[i]!;
-        }
-      }
       st.dirty();
     }
     // `moduleTemplate` matters here too: when the CAD template resolves it
