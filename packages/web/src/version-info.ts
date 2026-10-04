@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.15';
+export const APP_VERSION = '0.1.7-beta.16';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.16', date: '2026.10.04', note: {
+    en: 'Settings: SOLIDWORKS Alt+middle now rolls the view, wheel direction follows each scheme, feet and yards are real units',
+    zh: '设置：SOLIDWORKS 的 Alt+中键现在为滚转视图，滚轮方向跟随所选方案，英尺和码成为正式单位',
+    'zh-tw': '設定：SOLIDWORKS 的 Alt+中鍵現在為滾轉視圖，滾輪方向跟隨所選方案，英尺和碼成為正式單位',
+    cs: 'Nastavení: Alt+prostřední tlačítko ve SOLIDWORKS nyní naklání pohled, směr kolečka se řídí zvoleným schématem, stopy a yardy jsou plnohodnotné jednotky',
+    nl: 'Instellingen: Alt+middelste knop in SOLIDWORKS rolt nu de weergave, de wielrichting volgt het gekozen schema, voeten en yards zijn echte eenheden',
+    fr: 'Réglages : Alt+bouton central de SOLIDWORKS fait désormais rouler la vue, le sens de la molette suit le schéma choisi, pieds et yards deviennent de vraies unités',
+    he: 'הגדרות: Alt+לחצן אמצעי ב-SOLIDWORKS מגלגל כעת את התצוגה, כיוון הגלגלת נקבע לפי הסכמה, רגל ויארד הופכים ליחידות מלאות',
+    ja: '設定：SOLIDWORKS の Alt+中ボタンがロールビューに変わり、ホイール方向は選択スキームに追従、フィートとヤードが正式単位に',
+    ko: '설정: SOLIDWORKS Alt+가운데 버튼이 이제 뷰를 롤하고, 휠 방향은 각 스킴을 따르며, 피트와 야드가 정식 단위가 됩니다',
+    pl: 'Ustawienia: Alt+środkowy przycisk w SOLIDWORKS przechyla teraz widok, kierunek kółka zależy od wybranego schematu, stopy i jardy są pełnymi jednostkami',
+    'pt-br': 'Ajustes: Alt+botão do meio no SOLIDWORKS agora rola a vista, a direção da roda segue o esquema escolhido, pés e jardas viram unidades reais',
+    es: 'Ajustes: Alt+botón central de SOLIDWORKS ahora balancea la vista, la dirección de la rueda sigue el esquema elegido, pies y yardas son unidades reales',
+    tr: 'Ayarlar: SOLIDWORKS’te Alt+orta tuş artık görünümü yatırıyor, tekerlek yönü seçili şemaya bağlı, fit ve yarda gerçek birimler oldu',
+  } },
   { version: '0.1.7-beta.15', date: '2026.10.04', note: {
     en: 'Choreo .chor project files now import as robot data: bumper size, mass and module layout feed collision checking',
     zh: 'Choreo .chor 项目文件现在可导入：读取保险杠尺寸、质量与模块布局用于碰撞检查',
