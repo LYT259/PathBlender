@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.12';
+export const APP_VERSION = '0.1.7-beta.13';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.13', date: '2026.10.04', note: {
+    en: '2D: team number on a leader-line callout, alliance color only on the bumper bands',
+    zh: '2D：队号改为引线标注显示，且只有 bumper 四边保留联盟色',
+    'zh-tw': '2D：隊號改為引線標註顯示，且只有保險桿四邊保留聯盟色',
+    cs: '2D: číslo týmu u vysvětlující čáry; barvu aliance nesou jen pásy nárazníku',
+    nl: '2D: teamnummer bij een lijn-callout; alleen de bumperbanden houden de alliantiekleur',
+    fr: '2D : numéro d’équipe au bout d’une ligne de rappel ; seules les bandes du bumper gardent la couleur d’alliance',
+    he: '2D: מספר הקבוצה בקו הובלה; רק פסי הבמפר שומרים את צבע הברית',
+    ja: '2D：チーム番号をリーダー線の注記で表示し、バンパーの帯のみにアライアンス色を残します',
+    ko: '2D: 팀 번호를 지시선 말풍선으로 표시하고 범퍼 띠에만 얼라이언스 색을 유지합니다',
+    pl: '2D: numer drużyny przy linii odniesienia; kolor sojuszu mają tylko pasy zderzaka',
+    'pt-br': '2D: número da equipe em chamada com linha-guia; apenas as faixas do bumper mantêm a cor da aliança',
+    es: '2D: número de equipo en una llamada con línea; solo las bandas del bumper conservan el color de la alianza',
+    tr: '2D: takım numarası çizgili bir belirtme etiketinde; yalnızca tampon bantları ittifak rengini taşır',
+  } },
   { version: '0.1.7-beta.12', date: '2026.10.04', note: {
     en: 'Mouse illustration is white in light mode and icon-black in dark mode',
     zh: '鼠标图解在浅色模式为白色，深色模式使用图标黑色',
