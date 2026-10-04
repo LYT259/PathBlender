@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.17';
+export const APP_VERSION = '0.1.8-beta.18';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.18', date: '2026.10.04', note: {
+    en: 'The settings window traffic lights now sit at the exact same spot as the main window',
+    zh: '设置窗口的红绿灯按钮现在与主窗口位于完全相同的位置',
+    'zh-tw': '設定視窗的紅綠燈按鈕現在與主視窗位於完全相同的位置',
+    cs: 'Tlačítka semaforu v okně nastavení jsou nyní přesně na stejném místě jako v hlavním okně',
+    nl: 'De stoplichtknoppen van het instellingenvenster staan nu exact op dezelfde plek als in het hoofdvenster',
+    fr: 'Les feux de signalisation de la fenêtre des réglages sont désormais exactement au même endroit que dans la fenêtre principale',
+    he: 'כפתורי רמזור בחלון ההגדרות יושבים כעת בדיוק באותו מקום כמו בחלון הראשי',
+    ja: '設定ウィンドウの信号ボタンがメインウィンドウとまったく同じ位置になりました',
+    ko: '이제 설정 창의 신호등 버튼이 메인 창과 정확히 같은 위치에 놓입니다',
+    pl: 'Przyciski sygnalizacji w oknie ustawień są teraz dokładnie w tym samym miejscu co w oknie głównym',
+    'pt-br': 'Os botões de semáforo da janela de ajustes agora ficam exatamente no mesmo lugar que os da janela principal',
+    es: 'Los semáforos de la ventana de ajustes ahora están exactamente en el mismo lugar que en la ventana principal',
+    tr: 'Ayarlar penceresinin trafik ışığı düğmeleri artık ana pencereyle tamamen aynı konumda',
+  } },
   { version: '0.1.8-beta.17', date: '2026.10.04', note: {
     en: 'Compose several of a team’s routes into one multi-segment auto with start delay, waits and seam checks — playback, collisions and saved sessions all follow the composition',
     zh: '多段自动组合：把本队多条路线按顺序拼成一台机器人的完整自动，支持起步等待与段间等待、接缝检查；回放、碰撞与保存全部跟随组合',
