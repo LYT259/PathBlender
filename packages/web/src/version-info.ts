@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.11';
+export const APP_VERSION = '0.1.7-beta.12';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.12', date: '2026.10.04', note: {
+    en: 'Mouse illustration is white in light mode and icon-black in dark mode',
+    zh: '鼠标图解在浅色模式为白色，深色模式使用图标黑色',
+    'zh-tw': '滑鼠圖解在淺色模式為白色，深色模式使用圖示黑色',
+    cs: 'Ilustrace myši je ve světlém režimu bílá a v tmavém režimu černá jako ikona',
+    nl: 'De muisillustratie is wit in de lichte modus en gebruikt het zwart van het pictogram in de donkere modus',
+    fr: 'La souris illustrée est blanche en mode clair et reprend le noir de l’icône en mode sombre',
+    he: 'איור העכבר לבן במצב בהיר ומשתמש בשחור של הסמל במצב כהה',
+    ja: 'マウス図はライトモードで白、ダークモードではアイコンと同じ黒に',
+    ko: '마우스 그림은 밝은 모드에서 흰색, 어두운 모드에서는 아이콘과 같은 검은색으로 표시됩니다',
+    pl: 'Ilustracja myszy jest biała w trybie jasnym i ma czerń ikony w trybie ciemnym',
+    'pt-br': 'A ilustração do mouse é branca no modo claro e usa o preto do ícone no modo escuro',
+    es: 'La ilustración del ratón es blanca en modo claro y usa el negro del icono en modo oscuro',
+    tr: 'Fare çizimi açık modda beyaz, koyu modda simgeyle aynı siyah renktedir',
+  } },
   { version: '0.1.7-beta.11', date: '2026.10.04', note: {
     en: 'Polish settings, hide inactive mouse labels and preview ordered length units',
     zh: '统一设置界面、隐藏无功能鼠标标注，并按指定顺序预览长度单位',
