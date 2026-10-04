@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.18';
+export const APP_VERSION = '0.1.7-beta.19';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'ar', 'az', 'bg', 'bs', 'cs', 'da', 'de', 'el', 'es', 'fil', 'fr', 'he', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'ja', 'ko', 'mk', 'mr', 'ms', 'nb', 'nl', 'nn', 'pl', 'pt-br', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'tr', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.19', date: '2026.10.04', note: { en: 'i18n batch-4: 17 languages — Romanian, Bulgarian, Croatian, Swedish, Greek, Azerbaijani, Armenian, Hungarian, Macedonian, Albanian, Serbian, Bosnian, Danish, Norwegian Bokmål/Nynorsk, Ukrainian, Kinyarwanda' } },
   { version: '0.1.7-beta.18', date: '2026.10.04', note: {
     en: 'i18n: 10 more languages — German, Italian, Arabic, Hindi, Marathi, Malay, Tamil, Filipino, Vietnamese, Indonesian',
     zh: '第四批 i18n：增加德语、意大利语、阿拉伯语（RTL）、印地语、马拉地语、马来语、泰米尔语、菲律宾语、越南语、印尼语，共 41 种界面语言',
