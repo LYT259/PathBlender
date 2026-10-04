@@ -29,6 +29,14 @@ describe('unified timeline', () => {
     expect(robot.trajectory.name).toBe('Robot A');
   });
 
+  it('shows the display name in the playback bar when one is set', () => {
+    const robot = { ...delayedRobot, trajectory: { ...delayedRobot.trajectory, teamNumber: '2910', displayName: '红队射手' } };
+    render(<I18nProvider><Timeline robots={[robot]} conflicts={[]} bounds={[]} autoPeriodS={20} duration={8} playback={playback()} /></I18nProvider>);
+    expect(screen.getByText('红队射手')).toBeInTheDocument();
+    expect(screen.queryByText('#2910')).not.toBeInTheDocument();
+    expect(robot.trajectory.teamNumber).toBe('2910');
+  });
+
   it('uses one time domain for the ruler, scrubber, delayed activity, events, and playhead', () => {
     const { container } = render(
       <I18nProvider>

@@ -98,7 +98,7 @@ export const bs = {
   'robots.title': 'Roboti ({n})',
   'robots.remove': "Ukloni",
   'robots.collision': "sudar",
-  'robots.teamNumberEdit': "Uredi broj tima",
+  'robots.teamNumberEdit': "Uredi prikazano ime",
   'robots.alliance': "savez",
   'robots.blue': "Plavi",
   'robots.red': "Crveni",

@@ -120,7 +120,7 @@ export const hi = {
   'robots.title': 'रोबोट ({n})',
   'robots.remove': 'हटाएं',
   'robots.collision': 'टकराव',
-  'robots.teamNumberEdit': 'टीम नंबर संपादित करें',
+  'robots.teamNumberEdit': "प्रदर्शित नाम संपादित करें",
   'robots.alliance': 'गठबंधन',
   'robots.blue': 'नीला',
   'robots.red': 'लाल',

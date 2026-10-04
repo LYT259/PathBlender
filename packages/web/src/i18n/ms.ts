@@ -120,7 +120,7 @@ export const ms = {
   'robots.title': 'Robot ({n})',
   'robots.remove': 'Keluarkan',
   'robots.collision': 'perlanggaran',
-  'robots.teamNumberEdit': 'Edit nombor pasukan',
+  'robots.teamNumberEdit': "Edit nama paparan",
   'robots.alliance': 'pakatan',
   'robots.blue': 'Biru',
   'robots.red': 'Merah',

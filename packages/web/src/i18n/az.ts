@@ -98,7 +98,7 @@ export const az = {
   'robots.title': 'Robotlar ({n})',
   'robots.remove': 'Sil',
   'robots.collision': 'toqquşma',
-  'robots.teamNumberEdit': 'Komanda nömrəsini redaktə et',
+  'robots.teamNumberEdit': "Görünən adı redaktə et",
   'robots.alliance': 'ittifaq',
   'robots.blue': 'Mavi',
   'robots.red': 'Qırmızı',

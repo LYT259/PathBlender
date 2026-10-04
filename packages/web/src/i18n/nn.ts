@@ -98,7 +98,7 @@ export const nn = {
   'robots.title': 'Robotar ({n})',
   'robots.remove': "Fjern",
   'robots.collision': "kollisjon",
-  'robots.teamNumberEdit': "Rediger lagnummer",
+  'robots.teamNumberEdit': "Rediger visingsnamn",
   'robots.alliance': "allianse",
   'robots.blue': "Blå",
   'robots.red': "Raud",

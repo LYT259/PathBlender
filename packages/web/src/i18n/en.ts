@@ -121,7 +121,7 @@ export const en = {
   'robots.title': 'Robots ({n})',
   'robots.remove': 'Remove',
   'robots.collision': 'collision',
-  'robots.teamNumberEdit': 'Edit team number',
+  'robots.teamNumberEdit': "Edit display name",
   'robots.alliance': 'alliance',
   'robots.blue': 'Blue',
   'robots.red': 'Red',

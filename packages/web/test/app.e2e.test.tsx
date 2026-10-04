@@ -26,11 +26,13 @@ function dropFiles(files: File[]): void {
 
 beforeEach(() => localStorage.clear());
 
-function selectRobot(name: string): HTMLElement {
-  const label = [...document.querySelectorAll('.robot-library-name')].find((element) => element.getAttribute('title') === name);
+function selectRobot(identity: string, regionName: string): HTMLElement {
+  // The row tooltip carries the full identity (display name, or #teamNumber,
+  // or route name); the inspector region keeps the imported route name.
+  const label = [...document.querySelectorAll('.robot-library-name')].find((element) => element.getAttribute('title') === identity);
   expect(label).toBeDefined();
   fireEvent.click(label!.closest('button')!);
-  return screen.getByRole('region', { name, exact: true });
+  return screen.getByRole('region', { name: regionName, exact: true });
 }
 
 describe('App import → fusion → collision flow', () => {
@@ -96,7 +98,7 @@ describe('App import → fusion → collision flow', () => {
     });
 
     // Choreo card + ghost cards
-    expect(screen.getByTitle('swerve')).toBeInTheDocument();
+    expect(screen.getByText('Choreo', { selector: '.robot-library-meta span' })).toBeInTheDocument();
     expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByText('#0002', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByText('#0001', { selector: '.robot-library-team' })).toBeInTheDocument();
@@ -143,7 +145,7 @@ describe('App import → fusion → collision flow', () => {
         expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument();
       },
     );
-    const inspector = selectRobot('Straight Run');
+    const inspector = selectRobot('#0001', 'Straight Run');
     // The identity rows under the heading (team # / alliance) were removed
     // 2026-10-04; the team number still shows in the inspector heading and
     // on the robot card.
@@ -261,7 +263,7 @@ describe('App import → fusion → collision flow', () => {
         expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
       },
     );
-    const inspector = selectRobot('Straight Run');
+    const inspector = selectRobot('#0001', 'Straight Run');
     expect(within(inspector).queryByRole('spinbutton')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /resolve|adjust/i })).not.toBeInTheDocument();
   });
@@ -293,7 +295,7 @@ describe('App import → fusion → collision flow', () => {
       },
       { timeout: 5000 },
     );
-    expect(screen.getByTitle('Pickup')).toBeInTheDocument();
+    expect(screen.getByText('PathPlanner', { selector: '.robot-library-meta span' })).toBeInTheDocument();
   });
 
   it('.auto imports when its referenced .path files arrive in the same batch', async () => {
@@ -312,7 +314,7 @@ describe('App import → fusion → collision flow', () => {
       },
       { timeout: 10000 },
     );
-    expect(screen.getByTitle('Example Auto')).toBeInTheDocument();
+    expect(screen.getByText('PP Auto', { selector: '.robot-library-meta span' })).toBeInTheDocument();
     expect(screen.getAllByText(/9\.22/, { selector: '.robot-library-meta span' }).length).toBeGreaterThan(0);
   }, 30000);
 
@@ -323,7 +325,7 @@ describe('App import → fusion → collision flow', () => {
       () => {
       expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument();
     });
-    const inspector = selectRobot('swerve');
+    const inspector = selectRobot('#AAAAAA', 'swerve');
     // Pure viewer (2026-09-30): alliance comes from the file; no toggle.
     expect(within(inspector).queryByRole('button', { name: 'Blue' })).not.toBeInTheDocument();
     expect(within(inspector).queryByRole('button', { name: 'Red' })).not.toBeInTheDocument();

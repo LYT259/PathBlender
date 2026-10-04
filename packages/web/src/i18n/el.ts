@@ -98,7 +98,7 @@ export const el = {
   'robots.title': 'Ρομπότ ({n})',
   'robots.remove': 'Αφαίρεση',
   'robots.collision': 'σύγκρουση',
-  'robots.teamNumberEdit': 'Επεξεργασία αριθμού ομάδας',
+  'robots.teamNumberEdit': "Επεξεργασία εμφανιζόμενου ονόματος",
   'robots.alliance': 'συμμαχία',
   'robots.blue': 'Μπλε',
   'robots.red': 'Κόκκινο',

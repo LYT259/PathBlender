@@ -120,7 +120,7 @@ export const ar = {
   'robots.title': 'الروبوتات ({n})',
   'robots.remove': 'إزالة',
   'robots.collision': 'تصادم',
-  'robots.teamNumberEdit': 'تعديل رقم الفريق',
+  'robots.teamNumberEdit': "تعديل اسم العرض",
   'robots.alliance': 'التحالف',
   'robots.blue': 'أزرق',
   'robots.red': 'أحمر',

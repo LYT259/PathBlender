@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.14';
+export const APP_VERSION = '0.1.8-beta.15';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.15', date: '2026.10.04', note: {
+    en: 'Free-text robot display names across the list, playback bar, 2D callouts and 3D bumpers; rounded 2D route-tape ends',
+    zh: '机器人可自由填写显示名称，同步用于列表、播放栏、2D 标注与 3D 保险杠；2D 完整路径改用圆形端点',
+    'zh-tw': '機器人可自由填寫顯示名稱，同步用於清單、播放列、2D 標註與 3D 保險桿；2D 完整路徑改用圓形端點',
+    cs: 'Volně upravitelné zobrazované názvy robotů v seznamu, na časové ose, v 2D popiscích i na 3D náraznících; 2D páska trasy má zaoblené konce',
+    nl: 'Vrij in te vullen robotnamen in de lijst, afspeelbalk, 2D-labels en 3D-bumpers; afgeronde uiteinden van de 2D-routeband',
+    fr: 'Noms d’affichage libres pour les robots dans la liste, la barre de lecture, les étiquettes 2D et les pare-chocs 3D ; extrémités arrondies de la bande de route 2D',
+    he: 'שמות תצוגה חופשיים לרובוטים ברשימה, בסרגל ההפעלה, בתוויות הדו-ממדיות ובפגושים התלת-ממדיים; קצוות מעוגלים לסרט המסלול הדו-ממדי',
+    ja: 'ロボットの表示名を自由入力に（一覧・再生バー・2D 注釈・3D バンパー）、2D 経路テープの端を丸く',
+    ko: '로봇 표시 이름을 자유롭게 입력해 목록·재생 바·2D 주석·3D 범퍼에 동기화; 2D 경로 테이프 끝을 둥글게',
+    pl: 'Dowolne nazwy wyświetlane robotów na liście, pasku odtwarzania, etykietach 2D i zderzakach 3D; zaokrąglone końce 2D taśmy trasy',
+    'pt-br': 'Nomes de exibição livres para os robôs na lista, na barra de reprodução, nos rótulos 2D e nos para-choques 3D; pontas arredondadas na fita de rota 2D',
+    es: 'Nombres de visualización libres para los robots en la lista, la barra de reproducción, las etiquetas 2D y los parachoques 3D; extremos redondeados en la cinta de ruta 2D',
+    tr: 'Liste, oynatma çubuğu, 2D etiketler ve 3D tamponlarda serbest robot görünen adları; 2D rota şeridinde yuvarlatılmış uçlar',
+  } },
   { version: '0.1.8-beta.14', date: '2026.10.04', note: {
     en: 'The settings window drags again from its top strip, and the sidebar color now runs continuously to the top of the window',
     zh: '设置窗口顶部区域恢复可拖动，左侧边栏颜色向上贯穿到窗口顶边、不再有横向色差',

@@ -120,7 +120,7 @@ export const fil = {
   'robots.title': 'Mga robot ({n})',
   'robots.remove': 'Alisin',
   'robots.collision': 'collision',
-  'robots.teamNumberEdit': 'I-edit ang numero ng team',
+  'robots.teamNumberEdit': "I-edit ang ipinapakitang pangalan",
   'robots.alliance': 'alyansa',
   'robots.blue': 'Asul',
   'robots.red': 'Pula',

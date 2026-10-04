@@ -17,7 +17,7 @@ import {
   sampleStateAt,
 } from '@pathblender/core';
 import { createGroundTrail } from '../ground-trail3d';
-import { bumperColor } from '../robot-identity';
+import { bumperColor, robotAnnotation } from '../robot-identity';
 import { buildChassis3D, validateModuleTemplate } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
@@ -1426,7 +1426,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // (2018 is gone). buildChassis3D scales the frame to the robot's
       // chassis rectangle, so file-sized robots still fit exactly.
       const frameSize: FrameSize = field.year === 2026 ? '27' : '30';
-      const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplates[frameSize] ?? null, st.renderer.capabilities.getMaxAnisotropy());
+      const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, robotAnnotation(r.trajectory) || undefined, frameTemplates[frameSize] ?? null, st.renderer.capabilities.getMaxAnisotropy());
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,

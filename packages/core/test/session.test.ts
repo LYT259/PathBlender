@@ -98,6 +98,19 @@ describe('session file round-trip', () => {
     expect(back.robots[0]!.trajectory.teamNumber).toBe('');
   });
 
+  it('display names survive the round-trip and files without them still deserialize', () => {
+    const a = makeSession(parseGhostAuto(read('ghostauto/straight_run.ghostauto'), 'a'), 0);
+    a.trajectory.displayName = '红队射手';
+    const text = serializeSession([a], 'rebuilt-2026');
+    const back = deserializeSession(text);
+    expect(back.robots[0]!.trajectory.displayName).toBe('红队射手');
+    expect(back.robots[0]!.trajectory.teamNumber).toBe('0001');
+    // Older session files simply lack the field.
+    const legacy = JSON.parse(text);
+    for (const r of legacy.robots) delete r.displayName;
+    expect(deserializeSession(JSON.stringify(legacy)).robots[0]!.trajectory.displayName).toBeUndefined();
+  });
+
   it('pre-rename marker (ghpathblender) still deserializes', () => {
     const a = makeSession(parseGhostAuto(read('ghostauto/straight_run.ghostauto'), 'a'), 0);
     const legacy = JSON.parse(serializeSession([a], 'rebuilt-2026'));
