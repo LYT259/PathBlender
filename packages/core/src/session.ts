@@ -140,6 +140,10 @@ export interface SessionFileV1 {
     moduleLocations: Trajectory['moduleLocations'];
     events: Trajectory['events'];
     samples: Trajectory['samples'];
+    /** Robot mass when known from a profile/file; optional since v1.7 files. */
+    massKG?: Trajectory['massKG'];
+    /** Drive mode when known from a profile; optional since v1.7 files. */
+    holonomic?: Trajectory['holonomic'];
     /** Editable source data (v1.4 §6.3); absent when not editable. */
     editable?: Trajectory['editable'];
     edited?: boolean;
@@ -189,6 +193,8 @@ export function serializeSession(
       moduleLocations: st.trajectory.moduleLocations,
       events: st.trajectory.events,
       samples: st.trajectory.samples,
+      massKG: st.trajectory.massKG,
+      holonomic: st.trajectory.holonomic,
       editable: st.trajectory.editable,
       edited: st.trajectory.edited,
       original: st.trajectory.original,
@@ -237,6 +243,8 @@ export function deserializeSession(text: string): {
       moduleLocations: r.moduleLocations,
       events: r.events,
       warnings: [],
+      massKG: typeof r.massKG === 'number' && Number.isFinite(r.massKG) ? r.massKG : undefined,
+      holonomic: typeof r.holonomic === 'boolean' ? r.holonomic : undefined,
       editable: r.editable,
       edited: r.edited,
       original: r.original,

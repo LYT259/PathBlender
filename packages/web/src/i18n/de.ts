@@ -105,6 +105,10 @@ export const de = {
   'robots.bumper': 'Stoßstange (m)',
   'robots.length': 'Länge',
   'robots.width': 'Breite',
+  'robots.mass': 'Masse',
+  'robots.drive': 'Antrieb',
+  'robots.driveHolonomic': 'Holonom',
+  'robots.driveDifferential': 'Differenziell',
   'robots.visible': 'Sichtbar in Wiedergabe & Kollisionsprüfung',
   
   'vc.top': 'T',

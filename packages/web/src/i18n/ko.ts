@@ -117,6 +117,10 @@ export const ko: Record<MessageKey, string> = {
   'robots.bumper': '범퍼 (m)',
   'robots.length': '길이',
   'robots.width': '너비',
+  'robots.mass': '질량',
+  'robots.drive': '구동',
+  'robots.driveHolonomic': '전방향',
+  'robots.driveDifferential': '차동',
   'robots.visible': '재생 및 충돌 검사에 표시',
 
   'vc.top': '상',

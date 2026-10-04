@@ -105,6 +105,10 @@ export const id = {
   'robots.bumper': 'bumper (m)',
   'robots.length': 'panjang',
   'robots.width': 'lebar',
+  'robots.mass': 'Massa',
+  'robots.drive': 'Penggerak',
+  'robots.driveHolonomic': 'Holonomik',
+  'robots.driveDifferential': 'Diferensial',
   'robots.visible': 'terlihat dalam pemutaran & pemeriksaan tabrakan',
   
   'vc.top': 'T',

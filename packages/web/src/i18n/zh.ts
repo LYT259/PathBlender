@@ -108,6 +108,10 @@ export const zh: Record<MessageKey, string> = {
   'robots.bumper': '保险杠 (米)',
   'robots.length': '长',
   'robots.width': '宽',
+  'robots.mass': '质量',
+  'robots.drive': '驱动',
+  'robots.driveHolonomic': '全向',
+  'robots.driveDifferential': '差速',
   'robots.visible': '参与回放与碰撞检查',
 
   'vc.top': '上',

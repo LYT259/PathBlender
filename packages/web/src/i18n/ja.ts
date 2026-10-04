@@ -118,6 +118,10 @@ export const ja: Record<MessageKey, string> = {
   'robots.bumper': 'バンパー (m)',
   'robots.length': '長さ',
   'robots.width': '幅',
+  'robots.mass': '質量',
+  'robots.drive': '駆動',
+  'robots.driveHolonomic': '全方向',
+  'robots.driveDifferential': '差動',
   'robots.visible': '再生と衝突チェックで表示',
 
   // View-cube initials: CJK dictionaries use one ideograph each (zh precedent);

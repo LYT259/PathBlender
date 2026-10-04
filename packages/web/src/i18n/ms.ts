@@ -105,6 +105,10 @@ export const ms = {
   'robots.bumper': 'bumper (m)',
   'robots.length': 'panjang',
   'robots.width': 'lebar',
+  'robots.mass': 'Jisim',
+  'robots.drive': 'Pemanduan',
+  'robots.driveHolonomic': 'Holonomik',
+  'robots.driveDifferential': 'Diferensial',
   'robots.visible': 'kelihatan dalam main semula & semakan perlanggaran',
   
   'vc.top': 'T',

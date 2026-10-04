@@ -114,6 +114,10 @@ export const fr: Record<MessageKey, string> = {
   'robots.bumper': 'pare-chocs (m)',
   'robots.length': 'longueur',
   'robots.width': 'largeur',
+  'robots.mass': 'Masse',
+  'robots.drive': 'Entraînement',
+  'robots.driveHolonomic': 'Holonomique',
+  'robots.driveDifferential': 'Différentiel',
   'robots.visible': 'visible à la lecture et dans la vérification des collisions',
 
   // View-cube initials: the Latin abbreviations collide (Bas/Droite, Dos/Droit),

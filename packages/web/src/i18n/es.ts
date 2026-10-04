@@ -113,6 +113,10 @@ export const es: Record<MessageKey, string> = {
   'robots.bumper': 'parachoques (m)',
   'robots.length': 'largo',
   'robots.width': 'ancho',
+  'robots.mass': 'Masa',
+  'robots.drive': 'Tracción',
+  'robots.driveHolonomic': 'Holonómico',
+  'robots.driveDifferential': 'Diferencial',
   'robots.visible': 'visible en la reproducción y en la comprobación de colisiones',
 
   // View-cube initials: the Latin abbreviations collide (Inferior/Izquierda,
