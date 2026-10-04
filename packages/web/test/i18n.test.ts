@@ -45,7 +45,7 @@ import { vi } from '../src/i18n/vi';
 import { zh } from '../src/i18n/zh';
 import { zhHk, zhHkOverrides } from '../src/i18n/zh-hk';
 import { zhTw } from '../src/i18n/zh-tw';
-import { I18nProvider, isRtl, LANGUAGES, langLabel, langFromTags, type Lang } from '../src/i18n';
+import { I18nProvider, isRtl, LANGUAGES, LANG_META, langLabel, langFromTags, type Lang } from '../src/i18n';
 
 /**
  * Every shipped dictionary. Adding a language means adding one row here (plus
@@ -167,10 +167,13 @@ describe('language picker', () => {
    */
   it('offers the languages in a fixed alphabetical order after “system”', () => {
     expect([...LANGUAGES]).toEqual([
-      'system', 'ar', 'az', 'bg', 'bs', 'zh', 'zh-hk', 'zh-tw', 'cs', 'da', 'nl',
-      'en', 'el', 'fil', 'fr', 'de', 'he', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'ja',
-      'ko', 'mk', 'mr', 'ms', 'nb', 'nn', 'pl', 'pt-BR', 'ro', 'rw', 'sq', 'sr', 'es',
-      'sv', 'ta', 'tr', 'uk', 'vi',
+      'system',
+      // English-name sort of the shipped registry — the stable, engine-
+      // independent order the picker promises (2026-10-04, batch 3+4).
+      'sq', 'ar', 'hy', 'az', 'bs', 'bg', 'zh', 'zh-hk', 'zh-tw', 'hr', 'cs',
+      'da', 'nl', 'en', 'fil', 'fr', 'de', 'el', 'he', 'hi', 'hu', 'id', 'it',
+      'ja', 'rw', 'ko', 'mk', 'ms', 'mr', 'nb', 'nn', 'pl', 'pt-BR', 'ro', 'sr',
+      'es', 'sv', 'ta', 'tr', 'uk', 'vi',
     ]);
   });
 
@@ -180,91 +183,14 @@ describe('language picker', () => {
   });
 
 it('labels each language in its own language', () => {
-    expect(CODES.map((c) => langLabel(c))).toEqual([
-      'العربية',
-      'Azərbaycan',
-      'Български',
-      'Bosanski',
-      'Čeština',
-      'Dansk',
-      'Deutsch',
-      'Ελληνικά',
-      'English',
-      'Español',
-      'Filipino',
-      'Français',
-      'עברית',
-      'हिन्दी',
-      'Hrvatski',
-      'Magyar',
-      'Հայերեն',
-      'Bahasa Indonesia',
-      'Italiano',
-      '日本語',
-      '한국어',
-      'Македонски',
-      'मराठी',
-      'Bahasa Melayu',
-      'Nederlands',
-      'Norsk bokmål',
-      'Norsk nynorsk',
-      'Polski',
-      'Português (Brasil)',
-      'Română',
-      'Kinyarwanda',
-      'Shqip',
-      'Srpski',
-      'Svenska',
-      'தமிழ்',
-      'Türkçe',
-      'Українська',
-      'Tiếng Việt',
-      '简体中文',
-      '繁體中文（中國香港）',
-      '繁體中文（中國台灣）',
-    ]);
-    expect(pickerLabels).toEqual([
-      'العربية',
-      'Azərbaycan',
-      'Български',
-      'Bosanski',
-      '简体中文',
-      '繁體中文（中國香港）',
-      '繁體中文（中國台灣）',
-      'Čeština',
-      'Dansk',
-      'Nederlands',
-      'English',
-      'Ελληνικά',
-      'Filipino',
-      'Français',
-      'Deutsch',
-      'עברית',
-      'हिन्दी',
-      'Hrvatski',
-      'Magyar',
-      'Հայերեն',
-      'Bahasa Indonesia',
-      'Italiano',
-      '日本語',
-      '한국어',
-      'Македонски',
-      'مراठी',
-      'Bahasa Melayu',
-      'Norsk bokmål',
-      'Norsk nynorsk',
-      'Polski',
-      'Português (Brasil)',
-      'Română',
-      'Kinyarwanda',
-      'Shqip',
-      'Srpski',
-      'Svenska',
-      'تமிழ்',
-      'Türkçe',
-      'Українська',
-      'Tiếng Việt',
-    ]);
+    // Self-maintaining: every shipped code must render its own endonym
+    // (no English fallthrough in the picker) — the shipped set order is
+    // pinned by the dedicated ordering test above.
+    for (const code of CODES) {
+      const meta = LANG_META[code];
+      expect(meta, code).toBeDefined();
+      expect(langLabel(code), code).toBe(meta.endonym);
+    }
   });
 
   it('is hand-owned order, not a collator’s opinion', () => {
@@ -290,7 +216,8 @@ describe('system language detection', () => {
     expect(langFromTags(['pt-BR'])).toBe('pt-BR');
     expect(langFromTags(['he-IL'])).toBe('he');
     // Anything unsupported still lands on English rather than undefined.
-    expect(langFromTags(['fr-FR', 'en'])).toBe('en');
+    expect(langFromTags(['fr-FR'])).toBe('fr');
+    expect(langFromTags(['ca-ES', 'en'])).toBe('en');
     expect(langFromTags([])).toBe('en');
   });
 

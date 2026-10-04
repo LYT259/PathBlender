@@ -89,7 +89,7 @@ export const legacyExampleNames: ReadonlySet<string> = new Set(
  * follow the naming the user asked for. Macau has no row of its own — it reads
  * the Hong Kong one (`langFromTags`), per v1.22's 区域就近回退.
  */
-const LANG_META: Record<Lang, { englishName: string; endonym: string }> = {
+export const LANG_META: Record<Lang, { englishName: string; endonym: string }> = {
   zh: { englishName: 'Chinese (Simplified)', endonym: '简体中文' },
   'zh-hk': { englishName: 'Chinese (Traditional, Hong Kong)', endonym: '繁體中文（中國香港）' },
   'zh-tw': { englishName: 'Chinese (Traditional, Taiwan)', endonym: '繁體中文（中國台灣）' },
