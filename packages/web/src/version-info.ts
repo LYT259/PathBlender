@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.8';
+export const APP_VERSION = '0.1.8-beta.9';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.9', date: '2026.10.04', note: {
+    en: 'The bumper is now one continuous closed square ring — no seams between rails, in 3D and the 2D top view alike',
+    zh: 'bumper 改为一个完全连续的封闭正方形环——四角再无接缝，3D 与 2D 俯视一致',
+    'zh-tw': 'bumper 改為一個完全連續的封閉正方形環——四角再無接縫，3D 與 2D 俯視一致',
+    cs: 'Nárazník je nyní jeden souvislý uzavřený čtvercový prstenec — žádné spoje mezi lištami, ve 3D i v půdorysném 2D',
+    nl: 'De bumper is nu één doorlopende gesloten vierkante ring — geen naden tussen de balken, in 3D én in het 2D-bovenaanzicht',
+    fr: 'Le pare-chocs forme désormais un anneau carré fermé continu — plus aucun joint entre les barres, en 3D comme en vue 2D de dessus',
+    he: 'הפגוש הוא כעת טבעת ריבועית סגורה ורציפה אחת — ללא תפרים בין המסילות, בתלת-ממד ובמבט-על הדו-ממדי כאחד',
+    ja: 'バンパーが継ぎ目のない一続きの四角いリングになりました——レール間の接続部がなくなり、3D と 2D 上面図の両方に適用されます',
+    ko: '범퍼가 이제 이음매 없는 하나의 닫힌 사각 링입니다 — 레일 사이 연결부가 없으며 3D와 2D 평면 모두에 적용됩니다',
+    pl: 'Zderzak to teraz jeden ciągły, zamknięty kwadratowy pierścień — bez łączeń między belkami, zarówno w 3D, jak i w widoku 2D z góry',
+    'pt-br': 'O para-choque agora é um anel quadrado fechado e contínuo — sem emendas entre as barras, tanto no 3D quanto na vista 2D superior',
+    es: 'El parachoques es ahora un anillo cuadrado cerrado y continuo — sin juntas entre las barras, tanto en 3D como en la vista 2D superior',
+    tr: 'Tampon artık tek parça, kapalı bir kare halka — raylar arasında birleşim yok, 3D ve 2D üst görünümde aynı',
+  } },
   { version: '0.1.8-beta.8', date: '2026.10.04', note: {
     en: 'The macOS About window now shows the version just once, without the repeated build number in parentheses',
     zh: 'macOS 关于窗口的版本号现在只显示一次，不再重复括号里的构建号',
