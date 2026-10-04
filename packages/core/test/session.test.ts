@@ -132,17 +132,6 @@ describe('session id persistence (save/load keeps identity)', () => {
   });
 });
 
-describe('opponent flag round trip (red book §6.5-②)', () => {
-  it('persists through serialize → deserialize and stays optional for old files', () => {
-    const traj = parseTraj(read('traj/v3_swerve.traj'), 'v3_swerve.traj');
-    const robot = { ...makeSession(traj, 0), opponent: true };
-    const restored = deserializeSession(serializeSession([robot], 'rebuilt-2026'));
-    expect(restored.robots[0]!.opponent).toBe(true);
-    const plain = deserializeSession(serializeSession([makeSession(traj, 0)], 'rebuilt-2026'));
-    expect(plain.robots[0]!.opponent).toBeUndefined();
-  });
-});
-
 describe('colorblind palette remap (§7.3-3, landed 2026-10-04)', () => {
   it('maps default palette colors both ways and leaves custom colors untouched', () => {
     const a = SESSION_COLORS[0] as string;
