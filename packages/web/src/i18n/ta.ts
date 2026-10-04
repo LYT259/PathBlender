@@ -14,8 +14,6 @@ export const ta = {
   'welcome.importFolderHint': 'பல வழித்தடங்களை ஏற்றி எதை மீண்டும் இயக்குவது எனத் தேர்ந்தெடுக்கவும்',
   'welcome.openSession': 'சேமித்த அமர்வைத் திற',
   'welcome.openSessionHint': 'முன்பு சேமித்த பகுப்பாய்வைத் திறக்கவும்',
-  'welcome.demo': 'டெமோ பயன்முறை',
-  'welcome.demoHint': 'எடுத்துக்காட்டு ஆட்டத்தை ஏற்றி தானாக இயக்கு',
   'welcome.tryExample': 'எடுத்துக்காட்டை முயற்சிக்கவும்',
   'welcome.exampleHint': 'மாதிரி பாதைகளுடன் மீண்டும் இயக்கம் மற்றும் மோதல் சரிபார்ப்பை ஆராயுங்கள்.',
   'welcome.loadingExample': 'எடுத்துக்காட்டு திறக்கப்படுகிறது…',

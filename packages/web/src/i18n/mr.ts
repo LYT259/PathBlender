@@ -14,8 +14,6 @@ export const mr = {
   'welcome.importFolderHint': 'अनेक मार्ग लोड करा आणि कोणता रीप्ले करायचा ते निवडा',
   'welcome.openSession': 'जतन केलेले सत्र उघडा',
   'welcome.openSessionHint': 'पूर्वी जतन केलेले विश्लेषण उघडा',
-  'welcome.demo': 'डेमो मोड',
-  'welcome.demoHint': 'उदाहरण सामना लोड करून आपोआप चालवा',
   'welcome.tryExample': 'उदाहरण वापरून पहा',
   'welcome.exampleHint': 'नमुना मार्गांसह प्लेबॅक आणि टक्कर तपासणी एक्सप्लोर करा.',
   'welcome.loadingExample': 'उदाहरण उघडत आहे…',

@@ -20,8 +20,6 @@ export const zhTw: Record<MessageKey, string> = {
   'welcome.importFolderHint': '一次載入多條路線，選擇要重播的路徑',
   'welcome.openSession': '開啟已儲存的工作階段',
   'welcome.openSessionHint': '開啟先前儲存的分析',
-  'welcome.demo': '演示模式',
-  'welcome.demoHint': '載入範例對局並自動回放',
   'welcome.tryExample': '體驗範例',
   'welcome.exampleHint': '無需準備檔案，用範例路徑了解回放和衝突檢查。',
   'welcome.loadingExample': '正在開啟範例…',

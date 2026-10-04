@@ -26,15 +26,15 @@ describe('welcome flow', () => {
   it('shows the brand and starting actions while retaining accessible descriptions', () => {
     render(<App />);
     const welcome = screen.getByRole('region', { name: 'Import paths to get started' });
-    expect(within(welcome).getAllByRole('button')).toHaveLength(5);
+    expect(within(welcome).getAllByRole('button')).toHaveLength(4);
     expect(within(welcome).getByRole('heading', { name: 'PathBlender' })).toBeInTheDocument();
-    expect(welcome.textContent).toBe('PathBlenderImport path filesImport folderOpen saved sessionTry an exampleDemo mode');
+    expect(welcome.textContent).toBe('PathBlenderImport path filesImport folderOpen saved sessionTry an example');
     expect(within(welcome).getByRole('button', { name: 'Import path files' })).toHaveAccessibleDescription(/Choreo or PathPlanner/);
     const folder = within(welcome).getByRole('button', { name: 'Import folder' });
     expect(folder).toHaveAccessibleDescription(/several routes.*choose which to replay/);
     expect(within(welcome).getByRole('button', { name: 'Open saved session' })).toHaveAccessibleDescription(/previously saved analysis/);
     expect(within(welcome).getByRole('button', { name: 'Try an example' })).toHaveAccessibleDescription(/playback and collision checks/);
-    expect(within(welcome).getByRole('button', { name: 'Demo mode' })).toHaveAccessibleDescription(/automatically/);
+    expect(within(welcome).queryByRole('button', { name: 'Demo mode' })).not.toBeInTheDocument();
     expect(within(welcome).queryByText('You can also drop files or a folder into this window')).not.toBeInTheDocument();
 
     const toolbar = within(document.querySelector<HTMLElement>('.toolbar')!);
@@ -91,22 +91,22 @@ describe('welcome flow', () => {
     expect(screen.queryByRole('region', { name: 'Import paths to get started' })).not.toBeInTheDocument();
   });
 
-  it('loads a paused 2D example and teaches playback and collision navigation using the working controls', async () => {
+  it('loads the 2D example already playing, and teaches collision navigation using the working controls', async () => {
     render(<App />);
     await openExample();
     expect(screen.getByText('Real 2026 routes from FRC teams 8814 and 11019.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '2D', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('slider', { name: 'Playback position' })).toHaveValue('0');
+    // The example starts playing on its own; the play tip is already moot.
+    await screen.findByRole('button', { name: 'Pause', exact: true });
+    await waitFor(() => expect(localStorage.getItem('pb.tip.play.v1')).toBe('done'));
     expect(screen.getByText('2.75 s', { selector: '.robot-library-meta span' })).toBeInTheDocument();
     expect(screen.getByText('3.41 s', { selector: '.robot-library-meta span' })).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
-    expect(screen.getByText(playHint)).toBeInTheDocument();
+    expect(screen.queryByText(playHint)).not.toBeInTheDocument();
     expect(screen.getByText(checkHint)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Play', exact: true }));
-    expect(screen.getByRole('button', { name: 'Pause', exact: true })).toBeInTheDocument();
-    expect(screen.queryByText(playHint)).not.toBeInTheDocument();
-    expect(localStorage.getItem('pb.tip.play.v1')).toBe('done');
+    fireEvent.click(screen.getByRole('button', { name: 'Pause', exact: true }));
+    expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('#8814 × #11019', { selector: '.conflict-pair' }).closest('button')!);
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
@@ -118,10 +118,11 @@ describe('welcome flow', () => {
   it('remembers dismissed guidance when the app is reopened', async () => {
     const first = render(<App />);
     await openExample();
-    for (const hint of [playHint, checkHint]) {
-      const note = screen.getByText(hint).closest('[role="note"]')! as HTMLElement;
-      fireEvent.click(within(note).getByRole('button', { name: 'Dismiss tip' }));
-    }
+    // Autoplay dismisses the play tip on its own; only the checks tip is left.
+    await waitFor(() => expect(localStorage.getItem('pb.tip.play.v1')).toBe('done'));
+    expect(screen.queryByText(playHint)).not.toBeInTheDocument();
+    const note = screen.getByText(checkHint).closest('[role="note"]')! as HTMLElement;
+    fireEvent.click(within(note).getByRole('button', { name: 'Dismiss tip' }));
     expect(screen.queryByRole('note')).not.toBeInTheDocument();
     first.unmount();
 
@@ -129,7 +130,7 @@ describe('welcome flow', () => {
     await openExample();
     expect(screen.queryByText(playHint)).not.toBeInTheDocument();
     expect(screen.queryByText(checkHint)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
+    expect(await screen.findByRole('button', { name: 'Pause', exact: true })).toBeEnabled();
   });
 
   it('ends only the example paths after a real file is imported', async () => {

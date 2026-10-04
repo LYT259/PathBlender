@@ -253,8 +253,6 @@ export const uk = {
   'checks.estimated': "Деякі розміри є оцінками. Перевірте дані робота, перш ніж покладатися на ці результати.",
   'robots.bumperDefault': "типовий",
   'robots.actions': "Дії робота",
-  'welcome.demo': 'Демо-режим',
-  'welcome.demoHint': 'Завантажте приклад матчу та відтворіть його автоматично',
   'workspace.togglePaths': 'Показати або приховати список шляхів',
   'workspace.toggleInspector': 'Показати або приховати інспектора',
   'workspace.closePanel': 'Закрити інспектора',

@@ -25,8 +25,6 @@ export const cs: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Načtěte více tras a vyberte, které přehrát',
   'welcome.openSession': 'Otevřít uloženou relaci',
   'welcome.openSessionHint': 'Otevřete dříve uloženou analýzu',
-  'welcome.demo': 'Režim ukázky',
-  'welcome.demoHint': 'Načíst ukázkový zápas a automaticky ho přehrát',
   'welcome.tryExample': 'Vyzkoušet ukázku',
   'welcome.exampleHint': 'Vyzkoušejte přehrávání a kontrolu kolizí na ukázkových trasách.',
   'welcome.loadingExample': 'Otevírání ukázky…',

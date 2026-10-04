@@ -25,8 +25,6 @@ export const nl: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Laad meerdere routes en kies welke u wilt afspelen',
   'welcome.openSession': 'Opgeslagen sessie openen',
   'welcome.openSessionHint': 'Open een eerder opgeslagen analyse',
-  'welcome.demo': 'Demomodus',
-  'welcome.demoHint': 'Laad de voorbeeldwedstrijd en speel deze automatisch af',
   'welcome.tryExample': 'Een voorbeeld proberen',
   'welcome.exampleHint': 'Verken het afspelen en de botsingscontroles met voorbeeldroutes.',
   'welcome.loadingExample': 'Voorbeeld openen…',

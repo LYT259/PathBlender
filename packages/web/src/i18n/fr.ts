@@ -22,8 +22,6 @@ export const fr: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Chargez plusieurs trajets et choisissez celui à rejouer',
   'welcome.openSession': 'Ouvrir une session enregistrée',
   'welcome.openSessionHint': 'Ouvrez une analyse précédemment enregistrée',
-  'welcome.demo': 'Mode démo',
-  'welcome.demoHint': 'Charger le match d’exemple et le lire automatiquement',
   'welcome.tryExample': 'Essayer un exemple',
   'welcome.exampleHint': 'Découvrez la lecture et la détection des collisions avec des parcours de démonstration.',
   'welcome.loadingExample': 'Ouverture de l’exemple…',

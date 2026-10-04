@@ -25,8 +25,6 @@ export const pl: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Wczytaj kilka tras i wybierz, którą odtworzyć',
   'welcome.openSession': 'Otwórz zapisaną sesję',
   'welcome.openSessionHint': 'Otwórz wcześniej zapisaną analizę',
-  'welcome.demo': 'Tryb demo',
-  'welcome.demoHint': 'Załaduj przykładowy mecz i odtwórz go automatycznie',
   'welcome.tryExample': 'Wypróbuj przykład',
   'welcome.exampleHint': 'Poznaj odtwarzanie i sprawdzanie kolizji na przykładowych trasach.',
   'welcome.loadingExample': 'Otwieranie przykładu…',

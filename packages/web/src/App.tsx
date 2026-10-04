@@ -678,11 +678,18 @@ function AppBody() {
 
   const hasRobots = robots.length > 0;
   const hasExample = robots.some(isExampleRobot);
+  // Autoplay the welcome example. This cannot live in tryExample: the clock
+  // clamps play off while duration is 0, which is still true in the render
+  // that loads the example — the start has to wait for its robots to land.
+  // Keying on hasExample (not playback) means pausing stays paused.
+  useEffect(() => {
+    if (hasExample) playback.setPlaying(true);
+  }, [hasExample]);
   const leftOpen = pathsOpen && hasRobots;
   const issueCount = conflicts.length + bounds.length;
   const rightOpen = inspectorOpen && hasRobots;
   const openImport = () => importInputRef.current?.click();
-  const tryExample = async (autoplay = false) => {
+  const tryExample = async () => {
     const request = ++exampleRequest.current;
     setExampleLoading(true);
     try {
@@ -706,7 +713,6 @@ function AppBody() {
       setView3D(false);
       setShowTrail(true);
       setErrors([]);
-      playback.setPlaying(autoplay);
       setT(0);
     } catch {
       if (request === exampleRequest.current) flash(tr('welcome.exampleFailed'), 'error');
@@ -863,7 +869,7 @@ function AppBody() {
                 <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
                 <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} onDemo={() => void tryExample(true)} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
                 <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); setInspectorOpen(true); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}

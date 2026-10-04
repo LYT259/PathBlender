@@ -14,8 +14,6 @@ export const fil = {
   'welcome.importFolderHint': 'Mag-load ng ilang ruta at piliin kung alin ang ire-replay',
   'welcome.openSession': 'Buksan ang naka-save na session',
   'welcome.openSessionHint': 'Buksan ang dating nai-save na pagsusuri',
-  'welcome.demo': 'Mode ng demo',
-  'welcome.demoHint': 'I-load ang halimbawang laban at awtomatikong i-play',
   'welcome.tryExample': 'Subukan ang isang halimbawa',
   'welcome.exampleHint': 'I-explore ang playback at collision checks gamit ang mga sample path.',
   'welcome.loadingExample': 'Binubuksan ang halimbawa…',

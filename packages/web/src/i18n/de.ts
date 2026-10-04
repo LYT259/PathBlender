@@ -14,8 +14,6 @@ export const de = {
   'welcome.importFolderHint': 'Mehrere Routen laden und auswählen, welche abgespielt werden soll',
   'welcome.openSession': 'Gespeicherte Sitzung öffnen',
   'welcome.openSessionHint': 'Eine zuvor gespeicherte Analyse öffnen',
-  'welcome.demo': 'Demo-Modus',
-  'welcome.demoHint': 'Beispielspiel laden und automatisch abspielen',
   'welcome.tryExample': 'Beispiel ausprobieren',
   'welcome.exampleHint': 'Wiedergabe und Kollisionsprüfung mit Beispielpfaden erkunden.',
   'welcome.loadingExample': 'Beispiel wird geöffnet…',

@@ -20,8 +20,6 @@ export const tr: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Birden fazla rota yükleyin ve oynatılacak rotayı seçin',
   'welcome.openSession': 'Kayıtlı oturumu aç',
   'welcome.openSessionHint': 'Daha önce kaydedilmiş bir analizi açın',
-  'welcome.demo': 'Demo modu',
-  'welcome.demoHint': 'Örnek maçı yükleyip otomatik oynatır',
   'welcome.tryExample': 'Bir örnek deneyin',
   'welcome.exampleHint': 'Örnek yollarla oynatma ve çarpışma denetimlerini keşfedin.',
   'welcome.loadingExample': 'Örnek açılıyor…',
