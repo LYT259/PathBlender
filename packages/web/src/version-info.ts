@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.12';
+export const APP_VERSION = '0.1.8-beta.13';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.13', date: '2026.10.04', note: {
+    en: 'The macOS About window now shows the build\'s git commit hash, so any installed copy can be traced to its exact code',
+    zh: 'macOS 关于窗口现在显示本次构建的 git 提交哈希，任何安装副本都能追溯到确切代码',
+    'zh-tw': 'macOS 關於視窗現在顯示本次建置的 git 提交雜湊，任何安裝副本都能追溯到確切程式碼',
+    cs: 'Okno O aplikaci v macOS nyní zobrazuje git hash sestavení, takže každou nainstalovanou kopii lze dohledat až k přesnému kódu',
+    nl: 'Het macOS-venster Over toont nu de git-commit-hash van de build, zodat elke geïnstalleerde kopie te herleiden is naar de exacte code',
+    fr: 'La fenêtre À propos de macOS affiche désormais le hash git de la compilation, pour retracer chaque copie installée jusqu’au code exact',
+    he: 'חלון אודות ב-macOS מציג כעת את ה-hash של קומיט ה-git של הבנייה, כך שניתן לאתר כל עותק מותקן לקוד המדויק',
+    ja: 'macOS の「この App について」ウィンドウにビルドの git コミットハッシュが表示され、インストールされたコピーを正確なコードまで追跡できます',
+    ko: 'macOS 정보 윈도우에 빌드의 git 커밋 해시가 표시되어 설치된 사본을 정확한 코드로 추적할 수 있습니다',
+    pl: 'Okno Informacje w systemie macOS pokazuje teraz hash commita git danej kompilacji, dzięki czemu każdą zainstalowaną kopię można powiązać z dokładnym kodem',
+    'pt-br': 'A janela Sobre do macOS agora mostra o hash do commit git de cada build, permitindo rastrear qualquer cópia instalada até o código exato',
+    es: 'La ventana Acerca de de macOS ahora muestra el hash del commit de git de cada compilación, para rastrear cualquier copia instalada hasta su código exacto',
+    tr: 'macOS Hakkında penceresi artık her derlemenin git commit karmasını gösterir, böylece kurulu her kopya tam koduna kadar izlenebilir',
+  } },
   { version: '0.1.8-beta.12', date: '2026.10.04', note: {
     en: 'Reverted the 41 mm inboard shift of the MK5i module body — the module plate covers all 20 chassis mounting bolts again (the corner bolt floated 26 mm off the plate) and the module sits back on its CAD-verified seat on the rails',
     zh: '撤销 MK5i 模组本体的 41mm 内移——模组安装板重新盖住全部 20 颗底盘安装螺栓（角上螺栓曾悬空偏离板面 26mm），模组回到经 CAD 验证的轨道安装位',
