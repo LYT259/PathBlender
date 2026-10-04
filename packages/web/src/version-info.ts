@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.18';
+export const APP_VERSION = '0.1.8-beta.19';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,7 +32,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.8-beta.18', date: '2026.10.04', note: {
+  { version: '0.1.8-beta.19', date: '2026.10.04', note: {
     en: 'Fixed the 3D metal frame sinking into the floor — the module mounting plate\'s bottom face had been measured on the wrong surface (42 mm fork-arm underside instead of the true 92 mm plate face), so the frame now rides 31 mm higher, clear of the carpet',
     zh: '修复 3D 金属框架沉到地面——模组安装板底面此前测错了面（误用 42mm 叉臂底面，正确板面为 92mm），框架整体上抬 31mm、悬空于地毯上方',
     'zh-tw': '修復 3D 金屬框架沉到地面——模組安裝板底面先前測錯了面（誤用 42mm 叉臂底面，正確板面為 92mm），框架整體上抬 31mm、懸空於地毯上方',
@@ -46,6 +46,21 @@ export const VERSION_NOTES: VersionNote[] = [
     'pt-br': 'Corrigido o chassi metálico 3D afundando no piso — a face inferior da placa de montagem do módulo havia sido medida na superfície errada (42 mm sob o braço da garfo em vez dos 92 mm reais da placa); o chassi agora anda 31 mm mais alto, acima do carpete',
     es: 'Corregido el chasis metálico 3D que se hundía en el suelo — la cara inferior de la placa de montaje del módulo se había medido en la superficie equivocada (42 mm bajo el brazo de horquilla en lugar de los 92 mm reales de la placa); el chasis ahora va 31 mm más alto, sobre la alfombra',
     tr: '3B metal şasi zemine gömülüyordu, düzeltildi — modül montaj plakasının alt yüzü yanlış yüzeyden ölçülmüştü (gerçek plaka yüzü 92 mm yerine çatal kol altı 42 mm); şasi artık 31 mm daha yüksekte, halının üzerinde duruyor',
+  } },
+  { version: '0.1.8-beta.18', date: '2026.10.04', note: {
+    en: 'The settings window traffic lights now sit at the exact same spot as the main window',
+    zh: '设置窗口的红绿灯按钮现在与主窗口位于完全相同的位置',
+    'zh-tw': '設定視窗的紅綠燈按鈕現在與主視窗位於完全相同的位置',
+    cs: 'Tlačítka semaforu v okně nastavení jsou nyní přesně na stejném místě jako v hlavním okně',
+    nl: 'De stoplichtknoppen van het instellingenvenster staan nu exact op dezelfde plek als in het hoofdvenster',
+    fr: 'Les feux de signalisation de la fenêtre des réglages sont désormais exactement au même endroit que dans la fenêtre principale',
+    he: 'כפתורי רמזור בחלון ההגדרות יושבים כעת בדיוק באותו מקום כמו בחלון הראשי',
+    ja: '設定ウィンドウの信号ボタンがメインウィンドウとまったく同じ位置になりました',
+    ko: '이제 설정 창의 신호등 버튼이 메인 창과 정확히 같은 위치에 놓입니다',
+    pl: 'Przyciski sygnalizacji w oknie ustawień są teraz dokładnie w tym samym miejscu co w oknie głównym',
+    'pt-br': 'Os botões de semáforo da janela de ajustes agora ficam exatamente no mesmo lugar que os da janela principal',
+    es: 'Los semáforos de la ventana de ajustes ahora están exactamente en el mismo lugar que en la ventana principal',
+    tr: 'Ayarlar penceresinin trafik ışığı düğmeleri artık ana pencereyle tamamen aynı konumda',
   } },
   { version: '0.1.8-beta.17', date: '2026.10.04', note: {
     en: 'Compose several of a team’s routes into one multi-segment auto with start delay, waits and seam checks — playback, collisions and saved sessions all follow the composition',
