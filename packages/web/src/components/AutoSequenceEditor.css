@@ -1,0 +1,44 @@
+/* Inherits the existing inspector's 292px width, theme and control sizing. */
+.auto-sequence { font-size: 12px; }
+.auto-sequence-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.auto-sequence-heading h3 { margin: 0; color: var(--fg); font-size: 12px; }
+.auto-sequence-summary { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; color: var(--fg-dim); font-size: 11px; }
+.auto-sequence-summary strong { margin-inline-start: 3px; color: var(--fg); font-weight: 550; font-variant-numeric: tabular-nums; }
+.auto-sequence-strip { display: flex; height: 18px; gap: 2px; overflow: hidden; border-radius: 3px; background: var(--bg-card); }
+.auto-sequence-strip-slot { display: flex; flex-basis: 0; min-width: 0; gap: 2px; }
+.auto-sequence-strip-route { display: flex; justify-content: center; align-items: center; flex-basis: 0; min-width: 0; overflow: hidden; background: var(--accent-dim); color: var(--fg); font-size: 10px; font-variant-numeric: tabular-nums; }
+.auto-sequence-strip-wait { flex-basis: 0; min-width: 0; background: var(--seg-bg); }
+.auto-sequence-clock { margin: 10px 0 14px; color: var(--fg-dim); font-size: 11px; line-height: 1.6; }
+.auto-sequence-list { list-style: none; margin: 0; padding: 0; }
+.auto-sequence-list > li { padding: 0 0 14px; }
+.auto-sequence-route-row { display: flex; align-items: center; gap: 6px; }
+.auto-sequence-number { flex: none; width: 20px; font-size: 11px; color: var(--fg-dim); text-align: center; font-variant-numeric: tabular-nums; }
+.auto-sequence-route-row select { flex: 1; width: 0; min-width: 0; height: 30px; padding: 0 6px; color: var(--fg); background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; font: inherit; cursor: pointer; text-overflow: ellipsis; }
+.auto-sequence-icon { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 30px; padding: 0; border: 0; border-radius: 5px; color: var(--fg-dim); background: transparent; cursor: pointer; }
+.auto-sequence-icon:hover:not(:disabled) { color: var(--fg); background: var(--hover); }
+.auto-sequence-icon:disabled { opacity: .3; cursor: default; }
+.auto-sequence-time-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 26px; align-items: start; gap: 10px; margin: 9px 0 0 26px; }
+.auto-sequence-time-cell { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
+.auto-sequence-time-cell > label, .auto-sequence-time-cell > span { color: var(--fg-dim); font-size: 10.5px; }
+.robot-inspector .auto-sequence-time-cell input { width: 100%; height: 30px; padding: 4px 6px; text-align: start; direction: ltr; }
+.auto-sequence-time-cell input[aria-invalid='true'] { border-color: var(--badge-err-fg); }
+.auto-sequence-end output { display: flex; align-items: center; height: 30px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.auto-sequence-order { display: flex; flex-direction: column; gap: 0; }
+.auto-sequence-order .auto-sequence-icon { height: 24px; }
+.auto-sequence-join { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; align-items: center; padding: 8px 0 10px; margin: 0 0 2px 26px; border-top: 1px solid var(--border); color: var(--fg-dim); font-size: 10.5px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.auto-sequence-join-status { display: inline-flex; align-items: center; gap: 3px; }
+.auto-sequence-join-status svg { flex: none; }
+.auto-sequence-join-ok { color: var(--ok); }
+.auto-sequence-join-bad { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 3px 6px; padding: 0; border: 0; background: transparent; color: var(--warn); font: inherit; cursor: pointer; text-align: start; }
+.auto-sequence-join-bad:hover { text-decoration: underline; }
+.auto-sequence-timing-warning { display: flex; align-items: flex-start; gap: 6px; margin: 0 0 10px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: var(--warn); font-size: 11px; line-height: 1.5; }
+.auto-sequence-timing-warning svg { flex: none; margin-top: 2px; }
+.auto-sequence-add { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 30px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; color: var(--accent); background: var(--btn-bg); font: inherit; cursor: pointer; }
+.auto-sequence-add:hover:not(:disabled) { background: var(--accent-dim); }
+.auto-sequence-add:disabled { opacity: .5; cursor: default; }
+.auto-sequence-help, .auto-sequence-empty { margin: 9px 0 0; font-size: 11px; line-height: 1.6; color: var(--fg-dim); }
+.auto-sequence-empty { margin: 0 0 12px; }
+.auto-sequence-join-note { display: flex; align-items: flex-start; gap: 6px; margin: 10px 0 0; color: var(--fg-dim); font-size: 11px; line-height: 1.6; }
+.auto-sequence-join-note svg { flex: none; margin-top: 2px; }
+.auto-sequence .auto-sequence-error { color: var(--badge-err-fg); font-size: 10.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.auto-sequence :is(select, button, input):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
