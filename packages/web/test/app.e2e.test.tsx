@@ -264,7 +264,10 @@ describe('App import → fusion → collision flow', () => {
       },
     );
     const inspector = selectRobot('#0001', 'Straight Run');
-    expect(within(inspector).queryByRole('spinbutton')).not.toBeInTheDocument();
+    // The composition editor replaces the old read-only delay row; it does
+    // not auto-resolve collisions (viewer-only positioning stays intact).
+    expect(within(inspector).getByRole('spinbutton', { name: 'Start 1' })).toHaveValue(0);
+    expect(within(inspector).getByRole('heading', { name: 'Auto sequence' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /resolve|adjust/i })).not.toBeInTheDocument();
   });
 
@@ -331,7 +334,7 @@ describe('App import → fusion → collision flow', () => {
     expect(within(inspector).queryByRole('button', { name: 'Red' })).not.toBeInTheDocument();
     // The inspector alliance row went with the identity block (2026-10-04);
     // the alliance now shows on the toolbar toggle alone.
-    expect(within(inspector).queryByText(/blue|red/i)).not.toBeInTheDocument();
+    expect(within(inspector).queryByText(/^(blue|red)$/i)).not.toBeInTheDocument();
     expect(within(screen.getByRole('group', { name: 'alliance' })).getByRole('button', { name: 'Blue' })).toBeInTheDocument();
     expect(within(inspector).queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
     expect(inspector.querySelector('.robot-dimensions')).toHaveTextContent('0.81 m');

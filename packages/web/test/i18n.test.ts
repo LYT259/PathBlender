@@ -136,6 +136,11 @@ describe('i18n dictionaries', () => {
     'prefs.unit.ft',
     // Tokens sent to the OS unchanged.
     'prefs.channel.stable', 'prefs.channel.beta',
+    // 's' is the universal SI second symbol every dictionary keeps, and
+    // 'Start'/'Route' are loanwords a wide group of languages (de/nl/sv/da/
+    // nb/nn/cs/pl/ro) spells exactly like English. French 'segments' also
+    // coincides with the English plural.
+    'sequence.seconds', 'sequence.start', 'sequence.route', 'sequence.count',
   ]);
 
   it('nothing is left sitting on the English text', () => {

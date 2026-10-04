@@ -1,10 +1,11 @@
 import { useRef, useState, type ReactNode } from 'react';
-import type { CollisionInterval, RobotGeometry, SessionTrajectory } from '@pathblender/core';
+import { activeEndT, activeStartT, type CollisionInterval, type RobotGeometry, type SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { VIEWER_ONLY } from '../viewer';
 import { displayName, routeLabel, sameRouteTrajectory, type LibraryProfile } from '../route-library';
 import './RobotList.css';
 import { robotIdentity, robotOriginalIdentity } from '../robot-identity';
+import { AutoSequenceEditor, type AutoSequenceEditorProps } from './AutoSequenceEditor';
 
 interface RobotListProps {
   robots: SessionTrajectory[];
@@ -22,6 +23,7 @@ interface RobotInspectorProps {
   onRemove: (id: string) => void;
   libraryProfiles: LibraryProfile[];
   onApplyProfile: (robotId: string, profileId: string) => void;
+  sequence: AutoSequenceEditorProps;
 }
 
 /** Editable display label; actual team-number/name fields remain independent. */
@@ -104,10 +106,14 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
             const { trajectory } = robot;
             const hit = conflicts.some((c) => c.aId === trajectory.id || c.bId === trajectory.id);
             const visibilityLabel = t(robot.visible ? 'robots.hide' : 'robots.show', { name: robotIdentity(trajectory) });
+            // A composed robot spans waits and segments; its duration is the
+            // active window, not the stale single-route trajectory length.
+            const composed = !!robot.sequence && robot.sequence.segments.length > 0;
+            const shownDuration = composed ? activeEndT(robot) - activeStartT(robot) : trajectory.durationS;
             const selectionLabel = [
               robotIdentity(trajectory),
               sourceLabel(trajectory.source),
-              `${trajectory.durationS.toFixed(2)} s`,
+              `${shownDuration.toFixed(2)} s`,
               hit ? t('robots.collision') : '',
             ].filter(Boolean).join(', ');
             const libraryRoutes = robot.routeOptions ?? [];
@@ -120,7 +126,8 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
               <li key={trajectory.id} className={`robot-library-row${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
                 <TeamNumberCell robot={robot} onUpdate={onUpdate} metadata={<span className="robot-library-meta">
                       <span>{sourceLabel(trajectory.source)}</span>
-                      <span>{trajectory.durationS.toFixed(2)} s</span>
+                      <span>{shownDuration.toFixed(2)} s</span>
+                      {composed && <span>{t('sequence.count', { n: robot.sequence!.segments.length })}</span>}
                       {hit && <span className="robot-library-conflict">{t('robots.collision')}</span>}
                     </span>}><button className="robot-library-select" aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
                   <span className="band-dot" style={{ background: robot.color }} aria-hidden="true" />
@@ -134,7 +141,12 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                   <select
                     className="route-picker"
                     value={robot.routeId ?? currentRoute?.id ?? ''}
-                    title={currentRoute ? currentRoute.relPath : t('library.routeOffLibrary')}
+                    // A composed robot plays its sequence, not the picked
+                    // route; switching here would silently fight the
+                    // composition, so the picker hands over to the details
+                    // panel until the arrangement is removed.
+                    disabled={composed}
+                    title={composed ? t('sequence.pickerDisabled') : currentRoute ? currentRoute.relPath : t('library.routeOffLibrary')}
                     aria-label={t('library.routePicker', { name: robotIdentity(trajectory) })}
                     onChange={(e) => onPickRoute(trajectory.id, e.target.value)}
                   >
@@ -159,7 +171,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
   );
 }
 
-export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfile }: RobotInspectorProps) {
+export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfile, sequence }: RobotInspectorProps) {
   const { t } = useI18n();
   if (!robot) return <div className="robot-inspector-empty">{t('robots.selectPrompt')}</div>;
   const { trajectory } = robot;
@@ -172,13 +184,7 @@ export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfil
         <span className="band-dot" style={{ background: robot.color }} aria-hidden="true" />
         <h2>{robotOriginalIdentity(trajectory)}</h2>
       </header>
-      <section className="robot-inspector-section">
-        <h3>{t('robots.timing')}</h3>
-        <div className="robot-inspector-row">
-          <span>{t('robots.delay')}</span>
-          <span>{robot.startDelayS.toFixed(2)} s</span>
-        </div>
-      </section>
+      <AutoSequenceEditor key={id} {...sequence} />
 
       <section className="robot-inspector-section">
         <div className="robot-inspector-section-heading">

@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.16';
+export const APP_VERSION = '0.1.8-beta.13';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,65 +32,20 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.8-beta.16', date: '2026.10.04', note: {
-    en: 'Reopen exactly where you left — route picks, selection, playhead and playback range all restored; boundary check forgives wall-kiss starts within 2 cm',
-    zh: '重开 App 回到你退出的地方——路线选择、选中机器人、播放头与回放范围全部保真恢复；边界检测对 2 厘米内的贴墙起步不再报越界',
-    'zh-tw': '重開 App 回到你離開的地方——路線選擇、選中機器人、播放頭與回放範圍全部保真恢復；邊界偵測對 2 公分內的貼牆起步不再報越界',
-    cs: 'Znovuotevření přesně tam, kde jste skončili — volby tras, výběr, pozice přehrávání i rozsah přehrávání se obnoví; kontrola hranic odpouští starty u zdi do 2 cm',
-    nl: 'Heropen precies waar je was gebleven — routekeuzes, selectie, afspeelpositie en afspeelbereik worden hersteld; de grenscontrole vergeeft muurstarten binnen 2 cm',
-    fr: 'Rouvrez exactement où vous étiez — choix de trajectoires, sélection, tête de lecture et plage de lecture restaurés ; le contrôle des limites pardonne les départs collés au mur à moins de 2 cm',
-    he: 'פתיחה מחדש בדיוק מאיפה שהפסקת — בחירות מסלול, בחירה, ראש נגינה וטווח נגינה משוחזרים; בדיקת הגבולות סולחת על התחלות צמודות לקיר עד 2 ס״מ',
-    ja: '終了した場所にそのまま戻ります——ルート選択、選択中のロボット、再生位置、再生範囲がすべて復元されます。境界チェックは壁際 2 cm 以内のスタートを越界とみなしません',
-    ko: '종료한 곳에서 그대로 다시 시작합니다 — 경로 선택, 선택된 로봇, 재생 위치, 재생 범위가 모두 복원됩니다. 경계 검사는 벽에 붙인 2 cm 이내의 시작을 용인합니다',
-    pl: 'Otwórz dokładnie tam, gdzie skończyłeś — wybory tras, zaznaczenie, głowica odtwarzania i zakres odtwarzania są przywracane; kontrola granic wybacza starty przy ścianie do 2 cm',
-    'pt-br': 'Reabra exatamente onde você parou — escolhas de rota, seleção, posição de reprodução e intervalo de reprodução restaurados; a verificação de limites perdoa largadas encostadas na parede em até 2 cm',
-    es: 'Reabre exactamente donde lo dejaste: selecciones de ruta, selección, cabezal de reproducción y rango de reproducción restaurados; la comprobación de límites perdona las salidas pegadas al muro dentro de 2 cm',
-    tr: 'Bıraktığınız yerden tam olarak devam edin — rota seçimleri, seçim, oynatma kafası ve oynatma aralığı geri yüklenir; sınır denetimi 2 cm içindeki duvara yapışık başlangıçları hoş görür',
-  } },
-  { version: '0.1.8-beta.15', date: '2026.10.04', note: {
-    en: 'Free-text robot display names across the list, playback bar, 2D callouts and 3D bumpers; rounded 2D route-tape ends',
-    zh: '机器人可自由填写显示名称，同步用于列表、播放栏、2D 标注与 3D 保险杠；2D 完整路径改用圆形端点',
-    'zh-tw': '機器人可自由填寫顯示名稱，同步用於清單、播放列、2D 標註與 3D 保險桿；2D 完整路徑改用圓形端點',
-    cs: 'Volně upravitelné zobrazované názvy robotů v seznamu, na časové ose, v 2D popiscích i na 3D náraznících; 2D páska trasy má zaoblené konce',
-    nl: 'Vrij in te vullen robotnamen in de lijst, afspeelbalk, 2D-labels en 3D-bumpers; afgeronde uiteinden van de 2D-routeband',
-    fr: 'Noms d’affichage libres pour les robots dans la liste, la barre de lecture, les étiquettes 2D et les pare-chocs 3D ; extrémités arrondies de la bande de route 2D',
-    he: 'שמות תצוגה חופשיים לרובוטים ברשימה, בסרגל ההפעלה, בתוויות הדו-ממדיות ובפגושים התלת-ממדיים; קצוות מעוגלים לסרט המסלול הדו-ממדי',
-    ja: 'ロボットの表示名を自由入力に（一覧・再生バー・2D 注釈・3D バンパー）、2D 経路テープの端を丸く',
-    ko: '로봇 표시 이름을 자유롭게 입력해 목록·재생 바·2D 주석·3D 범퍼에 동기화; 2D 경로 테이프 끝을 둥글게',
-    pl: 'Dowolne nazwy wyświetlane robotów na liście, pasku odtwarzania, etykietach 2D i zderzakach 3D; zaokrąglone końce 2D taśmy trasy',
-    'pt-br': 'Nomes de exibição livres para os robôs na lista, na barra de reprodução, nos rótulos 2D e nos para-choques 3D; pontas arredondadas na fita de rota 2D',
-    es: 'Nombres de visualización libres para los robots en la lista, la barra de reproducción, las etiquetas 2D y los parachoques 3D; extremos redondeados en la cinta de ruta 2D',
-    tr: 'Liste, oynatma çubuğu, 2D etiketler ve 3D tamponlarda serbest robot görünen adları; 2D rota şeridinde yuvarlatılmış uçlar',
-  } },
-  { version: '0.1.8-beta.14', date: '2026.10.04', note: {
-    en: 'The settings window drags again from its top strip, and the sidebar color now runs continuously to the top of the window',
-    zh: '设置窗口顶部区域恢复可拖动，左侧边栏颜色向上贯穿到窗口顶边、不再有横向色差',
-    'zh-tw': '設定視窗頂部區域恢復可拖動，左側邊欄顏色向上貫穿到視窗頂邊、不再有橫向色差',
-    cs: 'Okno nastavení lze opět táhnout za horní pruh a barva postranního panelu nyní probíhá souvisle až k hornímu okraji okna',
-    nl: 'Het instellingenvenster sleept weer vanaf de bovenrand en de kleur van de zijbalk loopt nu ononderbroken door tot bovenin het venster',
-    fr: 'La fenêtre des réglages se déplace à nouveau depuis sa bande supérieure, et la couleur de la barre latérale court désormais en continu jusqu’en haut de la fenêtre',
-    he: 'חלון ההגדרות נגרר שוב מאזור החלק העליון, וצבע סרגל הצד רץ כעת ברציפות עד קצה החלון העליון',
-    ja: '設定ウィンドウが再び上部の帯からドラッグできるようになり、サイドバーの色がウィンドウの上端まで切れ目なく続くようになりました',
-    ko: '이제 설정 창을 상단 영역으로 다시 드래그할 수 있으며, 사이드바 색상이 창 상단까지 끊김 없이 이어집니다',
-    pl: 'Okno ustawień znów przeciąga się za górny pasek, a kolor panelu bocznego biegnie teraz nieprzerwanie aż do górnej krawędzi okna',
-    'pt-br': 'A janela de ajustes volta a ser arrastada pela faixa superior, e a cor da barra lateral agora segue contínua até o topo da janela',
-    es: 'La ventana de ajustes vuelve a arrastrarse desde su franja superior y el color de la barra lateral ahora llega continuo hasta el borde superior de la ventana',
-    tr: 'Ayarlar penceresi yine üst şeridinden sürüklenebiliyor ve kenar çubuğu rengi artık pencerenin üst kenarına kadar kesintisiz uzanıyor',
-  } },
   { version: '0.1.8-beta.13', date: '2026.10.04', note: {
-    en: 'The macOS About window now shows the build\'s git commit hash, so any installed copy can be traced to its exact code',
-    zh: 'macOS 关于窗口现在显示本次构建的 git 提交哈希，任何安装副本都能追溯到确切代码',
-    'zh-tw': 'macOS 關於視窗現在顯示本次建置的 git 提交雜湊，任何安裝副本都能追溯到確切程式碼',
-    cs: 'Okno O aplikaci v macOS nyní zobrazuje git hash sestavení, takže každou nainstalovanou kopii lze dohledat až k přesnému kódu',
-    nl: 'Het macOS-venster Over toont nu de git-commit-hash van de build, zodat elke geïnstalleerde kopie te herleiden is naar de exacte code',
-    fr: 'La fenêtre À propos de macOS affiche désormais le hash git de la compilation, pour retracer chaque copie installée jusqu’au code exact',
-    he: 'חלון אודות ב-macOS מציג כעת את ה-hash של קומיט ה-git של הבנייה, כך שניתן לאתר כל עותק מותקן לקוד המדויק',
-    ja: 'macOS の「この App について」ウィンドウにビルドの git コミットハッシュが表示され、インストールされたコピーを正確なコードまで追跡できます',
-    ko: 'macOS 정보 윈도우에 빌드의 git 커밋 해시가 표시되어 설치된 사본을 정확한 코드로 추적할 수 있습니다',
-    pl: 'Okno Informacje w systemie macOS pokazuje teraz hash commita git danej kompilacji, dzięki czemu każdą zainstalowaną kopię można powiązać z dokładnym kodem',
-    'pt-br': 'A janela Sobre do macOS agora mostra o hash do commit git de cada build, permitindo rastrear qualquer cópia instalada até o código exato',
-    es: 'La ventana Acerca de de macOS ahora muestra el hash del commit de git de cada compilación, para rastrear cualquier copia instalada hasta su código exacto',
-    tr: 'macOS Hakkında penceresi artık her derlemenin git commit karmasını gösterir, böylece kurulu her kopya tam koduna kadar izlenebilir',
+    en: 'Compose several of a team’s routes into one multi-segment auto with start delay, waits and seam checks — playback, collisions and saved sessions all follow the composition',
+    zh: '多段自动组合：把本队多条路线按顺序拼成一台机器人的完整自动，支持起步等待与段间等待、接缝检查；回放、碰撞与保存全部跟随组合',
+    'zh-tw': '多段自動組合：把本隊多條路線按順序拼成一台機器人的完整自動，支援起步等待與段間等待、接縫檢查；回放、碰撞與儲存全部跟隨組合',
+    cs: 'Víceúsekové auto: složte několik tras týmu do jednoho auta s počátečním zpožděním a čekáním mezi úseky, kontrolou spojů — přehrávání, kolize i ukládání sledují složení',
+    nl: 'Multi-segment-auto: stel meerdere routes van een team samen tot één auto met startvertraging en wachttijden, plus naadcontroles — afspelen, botsingen en opslaan volgen de samenstelling',
+    fr: 'Auto multi-segments : composez plusieurs trajets d’une équipe en un seul auto avec délai de départ, attentes entre segments et contrôle des jonctions — lecture, collisions et enregistrement suivent la composition',
+    he: 'אוטו רב-מקטעים: חברו כמה מסלולים של קבוצה לאוטו אחד עם עיכוב התחלה, המתנות ובדיקת חיבורים — ניגון, התנגשויות ושמירה עוקבים אחר ההרכבה',
+    ja: 'マルチセグメント自動：チームの複数ルートを開始遅延・区間待機・接続チェック付きで 1 つの自動に組み立て。再生・衝突判定・保存がすべてこの組み立てに従います',
+    ko: '멀티 세그먼트 자동: 팀의 여러 경로를 시작 지연, 구간 대기, 이음새 검사와 함께 하나의 자동으로 구성합니다. 재생·충돌·저장이 모두 이 구성을 따릅니다',
+    pl: 'Auto wielosegmentowe: ułóż kilka tras zespołu w jedno auto z opóźnieniem startu, przerwami między segmentami i kontrolą łączeń — odtwarzanie, kolizje i zapis podążają za składem',
+    'pt-br': 'Auto de múltiplos segmentos: monte várias rotas da equipe em um único auto com atraso inicial, esperas entre segmentos e verificação de emendas — reprodução, colisões e salvamento seguem a composição',
+    es: 'Auto multisegmento: combina varias rutas del equipo en un solo auto con retraso inicial, esperas entre segmentos y comprobación de uniones — reproducción, colisiones y guardado siguen la composición',
+    tr: 'Çok segmentli oto: takımın birden çok rotasını başlangıç gecikmesi, segment arası beklemeler ve birleşim denetimiyle tek bir oto olarak düzenleyin — oynatma, çarpışmalar ve kaydetme bu düzenlemeyi izler',
   } },
   { version: '0.1.8-beta.12', date: '2026.10.04', note: {
     en: 'Reverted the 41 mm inboard shift of the MK5i module body — the module plate covers all 20 chassis mounting bolts again (the corner bolt floated 26 mm off the plate) and the module sits back on its CAD-verified seat on the rails',
