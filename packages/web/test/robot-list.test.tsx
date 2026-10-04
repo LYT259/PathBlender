@@ -39,6 +39,9 @@ function inspectorCallbacks() {
 
 beforeEach(() => {
   localStorage.setItem('pb.lang', 'en');
+  // Pin meters for this file: its subject is read-only inspector behavior,
+  // not the unit preference (the inches default is asserted separately).
+  localStorage.setItem('pb.lengthUnit', 'm');
   mode.viewerOnly = false;
 });
 
@@ -69,6 +72,14 @@ describe('robot workspace controls', () => {
     expect(screen.queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
     expect(screen.getAllByText(`${sample.trajectory.geometry.lengthM.toFixed(2)} m`).length).toBeGreaterThan(0);
     expect(screen.getAllByText(`${sample.trajectory.geometry.widthM.toFixed(2)} m`).length).toBeGreaterThan(0);
+  });
+
+  it('renders dimensions in the default length unit (inches) when none is stored', () => {
+    localStorage.removeItem('pb.lengthUnit');
+    const sample = robot();
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} sequence={inspectorSequence(sample)} /></I18nProvider>);
+    // File geometry 0.9 m → 35.4 in under the default inches preference.
+    expect(screen.getAllByText('35.4 in').length).toBeGreaterThan(0);
   });
 
   it('exposes no editing affordances anywhere on the card', () => {

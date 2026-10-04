@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   formatLength,
+  formatLengthNumber,
   LENGTH_UNITS,
   lengthUnitSuffix,
   readLengthUnit,
@@ -53,6 +54,13 @@ describe('formatLength', () => {
     expect(formatLength(-0.12, 'ft')).toBe('-0.39 ft');
   });
 
+  it('formatLengthNumber gives the bare value for compact pair readouts', () => {
+    expect(formatLengthNumber(0.927, 'in')).toBe('36.5');
+    expect(formatLengthNumber(0.927, 'm')).toBe('0.93');
+    expect(formatLengthNumber(0.927, 'cm')).toBe('92.7');
+    expect(formatLengthNumber(0.927, 'ftin')).toBe('3′0.5″');
+  });
+
   it('exposes a short suffix per unit', () => {
     expect(lengthUnitSuffix('ftin')).toBe('ft/in');
     expect(lengthUnitSuffix('cm')).toBe('cm');
@@ -66,15 +74,15 @@ describe('formatLength', () => {
 });
 
 describe('length unit preference', () => {
-  it('defaults to meters and persists writes', () => {
-    expect(readLengthUnit()).toBe('m');
-    writeLengthUnit('in');
+  it('defaults to inches and persists writes', () => {
     expect(readLengthUnit()).toBe('in');
+    writeLengthUnit('m');
+    expect(readLengthUnit()).toBe('m');
   });
 
-  it('falls back to meters for unknown stored values', () => {
+  it('falls back to inches for unknown stored values', () => {
     localStorage.setItem('pb.lengthUnit', 'furlongs');
-    expect(readLengthUnit()).toBe('m');
+    expect(readLengthUnit()).toBe('in');
   });
 
   it('honors the legacy ftin stored value as feet+inches, never decimal feet', () => {
