@@ -50,14 +50,25 @@
 .preferences-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
 .preferences-save-hint { font-size: 11px; color: var(--fg-dim); }
 .preferences-footer > div { display: flex; gap: 8px; margin-left: auto; }
-.prefs-only.preferences-window { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.prefs-only.preferences-window { position: relative; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 /* Desktop settings window: the overlay title bar floats the traffic lights
-   over this invisible drag strip — no divider line, no title text. */
-.preferences-window .prefs-titlebar { flex: none; height: 44px; }
+   over this transparent drag layer — no divider line, no title text. The
+   layer sits above the panel, whose sidebar and main backgrounds run
+   straight up to the window top: the left column keeps one continuous
+   color behind the traffic lights, split from the content only by the
+   sidebar's vertical border (user request 2026-10-04). */
+.preferences-window .prefs-drag-layer { position: absolute; top: 0; left: 0; right: 0; height: 44px; z-index: 5; }
 .preferences-window .preferences-panel { flex: 1; min-height: 0; }
+/* Column content starts below the 44px drag zone (traffic-light clearance)
+   while the column backgrounds extend to the window top. */
+.preferences-window .preferences-sidebar { padding-top: calc(26px + 44px); }
+.preferences-window .preferences-main { padding-top: 44px; }
 @media (max-width: 640px) {
   .preferences-panel { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
   .preferences-sidebar { padding: 14px; border-right: 0; border-bottom: 1px solid var(--border); }
+  /* Stacked layout: the sidebar itself is the top strip, so it alone keeps
+     the traffic-light clearance; the main area needs none. */
+  .preferences-window .preferences-main { padding-top: 0; }
   .preferences-sidebar h1 { margin: 0 0 12px; }
   .preferences-nav { flex-direction: row; gap: 4px; }
   .preferences-nav button { flex: 1; justify-content: center; padding: 8px; }
