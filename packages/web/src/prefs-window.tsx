@@ -7,6 +7,7 @@ export function PrefsWindow() {
   const { t } = useI18n();
   const [closeFailed, setCloseFailed] = useState(false);
   return <div className="prefs-only preferences-window">
+    <div className="prefs-titlebar" data-tauri-drag-region />
     <PreferencesPanel desktop onClose={() => {
       void import('@tauri-apps/api/window').then(({ getCurrentWindow }) => getCurrentWindow().close())
         .catch(() => setCloseFailed(true));
