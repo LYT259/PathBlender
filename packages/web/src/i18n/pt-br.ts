@@ -25,8 +25,6 @@ export const ptBR: Record<MessageKey, string> = {
   'welcome.importFolderHint': 'Carregue várias rotas e escolha quais reproduzir',
   'welcome.openSession': 'Abrir sessão salva',
   'welcome.openSessionHint': 'Abra uma análise salva anteriormente',
-  'welcome.demo': 'Modo demonstração',
-  'welcome.demoHint': 'Carregar a partida de exemplo e reproduzi-la automaticamente',
   'welcome.tryExample': 'Experimentar um exemplo',
   'welcome.exampleHint': 'Explore a reprodução e as verificações de colisão com trajetórias de exemplo.',
   'welcome.loadingExample': 'Abrindo exemplo…',

@@ -14,8 +14,6 @@ export const ar = {
   'welcome.importFolderHint': 'حمّل عدة مسارات واختر أيها تريد تشغيله',
   'welcome.openSession': 'فتح جلسة محفوظة',
   'welcome.openSessionHint': 'افتح تحليلًا محفوظًا سابقًا',
-  'welcome.demo': 'وضع العرض',
-  'welcome.demoHint': 'تحميل المباراة النموذجية وتشغيلها تلقائيًا',
   'welcome.tryExample': 'جرّب مثالًا',
   'welcome.exampleHint': 'استكشف التشغيل وفحوصات التصادم مع مسارات نموذجية.',
   'welcome.loadingExample': 'جاري فتح المثال…',

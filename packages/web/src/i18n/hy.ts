@@ -253,8 +253,6 @@ export const hy = {
   'checks.estimated': 'Որոշ չափեր գնահատականներ են։ Այս արդյունքներին ապավինելուց առաջ հաստատեք ռոբոտի տվյալները։',
   'robots.bumperDefault': 'լռելյայն',
   'robots.actions': 'Ռոբոտի գործողություններ',
-  'welcome.demo': 'Ցուցադրման ռեժիմ',
-  'welcome.demoHint': 'Բեռնել օրինակ հանդիպումը և ավտոմատ նվագարկել',
   'workspace.togglePaths': 'Ցույց տալ/թաքցնել ուղիների ցանկը',
   'workspace.toggleInspector': 'Ցույց տալ/թաքցնել տեսուչը',
   'workspace.closePanel': 'Փակել տեսուչը',

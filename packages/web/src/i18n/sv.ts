@@ -253,8 +253,6 @@ export const sv = {
   'checks.estimated': 'Vissa dimensioner är uppskattningar. Verifiera robotdata innan du förlitar dig på dessa resultat.',
   'robots.bumperDefault': 'standard',
   'robots.actions': 'Robotåtgärder',
-  'welcome.demo': 'Demoläge',
-  'welcome.demoHint': 'Ladda exempelmatchen och spela upp den automatiskt',
   'workspace.togglePaths': 'Visa eller dölj sökvägslistan',
   'workspace.toggleInspector': 'Visa eller dölj inspektören',
   'workspace.closePanel': 'Stäng inspektören',

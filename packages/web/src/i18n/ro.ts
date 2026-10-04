@@ -253,8 +253,6 @@ export const ro = {
   'checks.estimated': 'Unele dimensiuni sunt estimări. Verifică datele robotului înainte de a te baza pe aceste rezultate.',
   'robots.bumperDefault': 'implicit',
   'robots.actions': 'Acțiuni robot',
-  'welcome.demo': 'Mod demonstrație',
-  'welcome.demoHint': 'Încarcă meciul exemplu și redă-l automat',
   'workspace.togglePaths': 'Arată sau ascunde lista de trasee',
   'workspace.toggleInspector': 'Arată sau ascunde inspectorul',
   'workspace.closePanel': 'Închide inspectorul',

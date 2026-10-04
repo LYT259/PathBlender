@@ -253,8 +253,6 @@ export const hu = {
   'checks.estimated': 'Néhány méret becslés. Ellenőrizd a robotadatokat, mielőtt ezekre az eredményekre támaszkodsz.',
   'robots.bumperDefault': 'alapértelmezett',
   'robots.actions': 'Robotműveletek',
-  'welcome.demo': 'Demó mód',
-  'welcome.demoHint': 'Példamérkőzés betöltése és automatikus lejátszása',
   'workspace.togglePaths': 'Útvonallista megjelenítése/elrejtése',
   'workspace.toggleInspector': 'Vizsgáló megjelenítése/elrejtése',
   'workspace.closePanel': 'Vizsgáló bezárása',

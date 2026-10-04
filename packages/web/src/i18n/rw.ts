@@ -253,8 +253,6 @@ export const rw = {
   'checks.estimated': "Ibipimo bimwe ni ibigereranyo. Genzura amakuru ya roboti mbere yo kwishingikiriza kuri ibi bisubizo.",
   'robots.bumperDefault': "isanzwe",
   'robots.actions': "Ibikorwa bya roboti",
-  'welcome.demo': 'Uburyo bwa demo',
-  'welcome.demoHint': 'Huza umukino w’intangero hanyuma ukinishwe mu buryo bwikora',
   'workspace.togglePaths': 'Erekana cyangwa hishe urutonde rw’inzira',
   'workspace.toggleInspector': 'Erekana cyangwa hishe igenzura',
   'workspace.closePanel': 'Funga igenzura',

@@ -10,7 +10,6 @@ interface WelcomeScreenProps {
   onOpenSession: () => void;
   onTryExample: () => void;
   exampleLoading?: boolean;
-  onDemo?: () => void;
 }
 
 function WelcomeIcon({ name }: { name: 'file' | 'folder' | 'session' | 'example' }) {
@@ -21,7 +20,7 @@ function WelcomeIcon({ name }: { name: 'file' | 'folder' | 'session' | 'example'
   </svg>;
 }
 
-export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryExample, onDemo, exampleLoading = false }: WelcomeScreenProps) {
+export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryExample, exampleLoading = false }: WelcomeScreenProps) {
   const { t } = useI18n();
   const { resolved } = useTheme();
 
@@ -51,10 +50,6 @@ export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryEx
             <WelcomeIcon name="example" />
             <span className="start-action-title">{t(exampleLoading ? 'welcome.loadingExample' : 'welcome.tryExample')}</span>
           </button>
-          {onDemo && <button type="button" className="start-action welcome-try-example" onClick={onDemo} disabled={exampleLoading} aria-label={t('welcome.demo')} aria-description={t('welcome.demoHint')}>
-            <WelcomeIcon name="example" />
-            <span className="start-action-title">{t('welcome.demo')}</span>
-          </button>}
         </div>
       </div>
     </section>

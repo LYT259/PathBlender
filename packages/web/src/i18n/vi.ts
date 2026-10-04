@@ -14,8 +14,6 @@ export const vi = {
   'welcome.importFolderHint': 'Nạp nhiều tuyến và chọn tuyến muốn phát lại',
   'welcome.openSession': 'Mở phiên đã lưu',
   'welcome.openSessionHint': 'Mở phân tích đã lưu trước đó',
-  'welcome.demo': 'Chế độ demo',
-  'welcome.demoHint': 'Tải trận mẫu và phát lại tự động',
   'welcome.tryExample': 'Thử ví dụ',
   'welcome.exampleHint': 'Khám phá phát lại và kiểm tra va chạm với đường đi mẫu.',
   'welcome.loadingExample': 'Đang mở ví dụ…',

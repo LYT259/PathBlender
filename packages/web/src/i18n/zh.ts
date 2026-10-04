@@ -16,8 +16,6 @@ export const zh: Record<MessageKey, string> = {
   'welcome.importFolderHint': '一次载入多条路线，选择要回放的路径',
   'welcome.openSession': '打开已保存的会话',
   'welcome.openSessionHint': '打开之前保存的分析',
-  'welcome.demo': '演示模式',
-  'welcome.demoHint': '载入示例对局并自动回放',
   'welcome.tryExample': '体验示例',
   'welcome.exampleHint': '无需准备文件，用示例路径了解回放和冲突检查。',
   'welcome.loadingExample': '正在打开示例…',
