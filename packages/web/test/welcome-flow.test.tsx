@@ -26,14 +26,15 @@ describe('welcome flow', () => {
   it('shows the brand and starting actions while retaining accessible descriptions', () => {
     render(<App />);
     const welcome = screen.getByRole('region', { name: 'Import paths to get started' });
-    expect(within(welcome).getAllByRole('button')).toHaveLength(4);
+    expect(within(welcome).getAllByRole('button')).toHaveLength(5);
     expect(within(welcome).getByRole('heading', { name: 'PathBlender' })).toBeInTheDocument();
-    expect(welcome.textContent).toBe('PathBlenderImport path filesImport folderOpen saved sessionTry an example');
+    expect(welcome.textContent).toBe('PathBlenderImport path filesImport folderOpen saved sessionTry an exampleDemo mode');
     expect(within(welcome).getByRole('button', { name: 'Import path files' })).toHaveAccessibleDescription(/Choreo or PathPlanner/);
     const folder = within(welcome).getByRole('button', { name: 'Import folder' });
     expect(folder).toHaveAccessibleDescription(/several routes.*choose which to replay/);
     expect(within(welcome).getByRole('button', { name: 'Open saved session' })).toHaveAccessibleDescription(/previously saved analysis/);
     expect(within(welcome).getByRole('button', { name: 'Try an example' })).toHaveAccessibleDescription(/playback and collision checks/);
+    expect(within(welcome).getByRole('button', { name: 'Demo mode' })).toHaveAccessibleDescription(/automatically/);
     expect(within(welcome).queryByText('You can also drop files or a folder into this window')).not.toBeInTheDocument();
 
     const toolbar = within(document.querySelector<HTMLElement>('.toolbar')!);
