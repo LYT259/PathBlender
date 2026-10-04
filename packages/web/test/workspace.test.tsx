@@ -144,7 +144,7 @@ describe('workspace workflow', () => {
     await screen.findByText('#0002', { selector: '.robot-name' });
     expect(season).toHaveValue('chargedup-2023');
     expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(selectRobot('Stop And Score').getByText('1.25 s')).toBeInTheDocument();
+    expect(selectRobot('Stop And Score').getByRole('spinbutton', { name: 'Start 1' })).toHaveValue(1.25);
   });
 
   it('undoes and redoes scene changes with the toolbar buttons and ⌘Z', async () => {

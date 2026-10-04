@@ -104,6 +104,23 @@ export {
 export type { SessionFileV1, SessionTrajectory, SessionRouteOption, SessionProfileOption } from './session';
 
 export {
+  SEQUENCE_JOIN_TOLERANCES,
+  checkSequenceJoins,
+  checkSequenceTiming,
+  resolveSequence,
+  sampleSequenceState,
+  sequenceEventTimes,
+} from './auto-sequence';
+export type {
+  AutoSequence,
+  AutoSequenceSegment,
+  ResolvedSequenceSegment,
+  SequenceJoinIssue,
+  SequenceJoinOptions,
+  SequenceTimingIssue,
+} from './auto-sequence';
+
+export {
   STEERING_STATIC_MPS,
   chassisModules,
   moduleBaseYaw,
