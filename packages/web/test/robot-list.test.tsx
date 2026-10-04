@@ -70,7 +70,7 @@ describe('robot workspace controls', () => {
   it('renders dimensions in the default length unit (inches) when none is stored', () => {
     localStorage.removeItem('pb.lengthUnit');
     const sample = robot();
-    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} sequence={inspectorSequence(sample)} /></I18nProvider>);
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
     // File geometry 0.9 m → 35.4 in under the default inches preference.
     expect(screen.getAllByText('35.4 in').length).toBeGreaterThan(0);
   });
