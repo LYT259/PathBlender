@@ -2,10 +2,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  BOUNDS_TOLERANCE_M,
   detectFieldBounds,
   makeSession,
   parseGhostAuto,
   REBUILT_2026,
+  type SessionTrajectory,
 } from '../src';
 
 const SAMPLES = resolve(__dirname, '../../../samples');
@@ -35,6 +37,41 @@ describe('field boundary detection', () => {
       const hits = detectFieldBounds([load(name)], REBUILT_2026);
       expect(hits, name).toHaveLength(0);
     }
+  });
+
+  it('forgives wall-kiss starts within BOUNDS_TOLERANCE_M but flags real crossings', () => {
+    // A robot parked with its bumper ending `overM` beyond the far wall.
+    const parked = (overM: number): SessionTrajectory => {
+      const geometry = { lengthM: 0.9, widthM: 0.9, offsetX: 0, offsetY: 0 };
+      const x = REBUILT_2026.lengthM - geometry.lengthM / 2 + overM;
+      return makeSession({
+        id: `parked-${overM}`,
+        name: 'Parked',
+        teamName: '',
+        teamNumber: '8814',
+        source: 'choreo-traj',
+        alliance: 'blue',
+        durationS: 1,
+        samples: [0, 1].map((t) => ({ t, x, y: REBUILT_2026.widthM / 2, heading: 0, vx: 0, vy: 0, omega: 0 })),
+        geometry,
+        geometrySource: 'file',
+        moduleLocations: [],
+        events: [],
+        warnings: [],
+      });
+    };
+    // Exactly touching (0.00 m) and the confirmed 3.6 mm wall-kiss: no report.
+    expect(detectFieldBounds([parked(0)], REBUILT_2026)).toHaveLength(0);
+    expect(detectFieldBounds([parked(0.0036)], REBUILT_2026)).toHaveLength(0);
+    // The threshold itself: just under passes, just over reports.
+    expect(detectFieldBounds([parked(BOUNDS_TOLERANCE_M - 0.001)], REBUILT_2026)).toHaveLength(0);
+    const over = detectFieldBounds([parked(BOUNDS_TOLERANCE_M + 0.001)], REBUILT_2026);
+    expect(over).toHaveLength(1);
+    // A real crossing (10 cm) is still flagged with its penetration depth.
+    const real = detectFieldBounds([parked(0.1)], REBUILT_2026);
+    expect(real).toHaveLength(1);
+    expect(real[0]!.maxPenetrationM).toBeGreaterThan(0.05);
+    expect(real[0]!.edges).toContain('far');
   });
 
   it('a delay that parks the robot short of the wall resolves it', () => {
