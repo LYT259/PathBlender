@@ -1,4 +1,4 @@
-import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_GEOMETRY, serializeSession, makeSession } from '@pathblender/core';
 import { playbackEnd, timelineScale, usePlaybackRange } from '../src/playback-range';
@@ -39,6 +39,11 @@ describe('playback range', () => {
     const range = screen.getByRole('combobox', { name: 'Playback range' });
     const slider = screen.getByRole('slider', { name: 'Playback position' });
     expect(range).toHaveValue('full');
+    // 'Full timeline' carries no seconds suffix (user request 2026-10-04);
+    // the path-only option keeps its duration.
+    const labels = within(range).getAllByRole('option').map((o) => o.textContent);
+    expect(labels[0]).toBe('Full timeline');
+    expect(labels[1]).toMatch(/^Current paths · /);
     fireEvent.change(slider, { target: { value: 14 } });
     expect(slider).toHaveValue('14');
     expect(slider).toHaveAttribute('aria-valuetext', '14.00 / 20.00 s');
