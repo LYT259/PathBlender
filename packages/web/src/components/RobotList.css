@@ -35,7 +35,7 @@
 .robot-inspector-note { margin: 9px 0 0; font-size: 11px; line-height: 1.6; color: var(--fg-dim); }
 .robot-inspector-caption { margin: 0 0 9px; font-size: 12px; }
 .robot-data-source { font-size: 10px; color: var(--fg-dim); background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 2px 5px; white-space: nowrap; }
-.robot-data-source.is-estimated { color: var(--warn); }
+.robot-data-source.is-missing { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, var(--border)); font-weight: 600; }
 .robot-dimensions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
 .robot-dimensions > div, .robot-dimensions > label { display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 7px; }
 .robot-dimensions dt, .robot-dimensions label > span { font-size: 10.5px; color: var(--fg-dim); }
@@ -81,3 +81,11 @@
 .robot-identity-cell .robot-team-chip { grid-column: 2; }
 .robot-identity-cell > .robot-library-meta { grid-column: 1 / -1; margin: 5px 0 11px 26px; }
 .robot-identity-cell .robot-library-team { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Missing PathPlanner profile: the second row disappears after file selection. */
+.robot-library-row.needs-settings { display: grid; grid-template-columns: minmax(0, 1fr) 88px 24px; }
+.robot-library-row.needs-settings .robot-identity-cell { grid-column: 1; grid-row: 1; }
+.robot-library-row.needs-settings .route-picker { grid-column: 2; grid-row: 1; }
+.robot-library-row.needs-settings .robot-library-visibility { grid-column: 3; grid-row: 1; }
+.robot-settings-upload { grid-row: 2; grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0 7px 9px 10px; min-height: 30px; padding: 5px 9px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); border-radius: 5px; background: var(--accent-dim); color: var(--accent); font: inherit; font-size: 11px; font-weight: 550; cursor: pointer; }
+.robot-settings-upload:hover { border-color: var(--accent); }

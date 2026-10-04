@@ -5,8 +5,8 @@ import { VIEWER_ONLY } from '../viewer';
 import { displayName, routeLabel, sameRouteTrajectory, type LibraryProfile } from '../route-library';
 import { formatLength, formatLengthNumber, useLengthUnit } from '../length-units';
 import './RobotList.css';
+import { inspectorWarnings } from '../robot-profile-ui';
 import { robotIdentity, robotOriginalIdentity } from '../robot-identity';
-import { AutoSequenceEditor, type AutoSequenceEditorProps } from './AutoSequenceEditor';
 
 interface RobotListProps {
   robots: SessionTrajectory[];
@@ -14,6 +14,8 @@ interface RobotListProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onImport: () => void;
+  /** Target robot → picked settings.json (real parse + apply happens in App). */
+  onSelectSettings?: (robotId: string, file: File) => void;
   onUpdate: (id: string, patch: Partial<SessionTrajectory>) => void;
   /** Robot slot id → library route id. */
   onPickRoute: (robotId: string, routeId: string) => void;
@@ -24,7 +26,6 @@ interface RobotInspectorProps {
   onRemove: (id: string) => void;
   libraryProfiles: LibraryProfile[];
   onApplyProfile: (robotId: string, profileId: string) => void;
-  sequence: AutoSequenceEditorProps;
 }
 
 /** Editable display label; actual team-number/name fields remain independent. */
@@ -87,10 +88,17 @@ function TeamNumberCell({ robot, onUpdate, children, metadata }: {
 }
 
 /** Selection lives in the workspace so the list, field and inspector agree. */
-export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onPickRoute }: RobotListProps) {
+export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onPickRoute, onSelectSettings }: RobotListProps) {
   const { t } = useI18n();
+  const settingsInput = useRef<HTMLInputElement>(null);
+  const settingsRobot = useRef<string | null>(null);
   return (
     <aside className="robot-list robot-library" aria-label={t('robots.title', { n: robots.length })}>
+      <input ref={settingsInput} type="file" accept=".json,application/json" hidden aria-label={t('robots.uploadSettings')} onChange={(event) => {
+        const file = event.target.files?.[0];
+        if (file && settingsRobot.current) onSelectSettings?.(settingsRobot.current, file);
+        event.target.value = '';
+      }} />
       <div className="robot-library-heading">
         <h2>{t('robots.title', { n: robots.length })}</h2>
         {robots.length > 0 && <button className="robot-library-add" onClick={onImport} title={t('robots.import')} aria-label={t('robots.import')}>
@@ -105,6 +113,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
         <ul className="robot-library-items">
           {robots.map((robot) => {
             const { trajectory } = robot;
+            const needsSettings = (trajectory.source === 'pathplanner-path' || trajectory.source === 'pathplanner-auto') && trajectory.geometrySource !== 'file';
             const hit = conflicts.some((c) => c.aId === trajectory.id || c.bId === trajectory.id);
             const visibilityLabel = t(robot.visible ? 'robots.hide' : 'robots.show', { name: robotIdentity(trajectory) });
             // A composed robot spans waits and segments; its duration is the
@@ -124,7 +133,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
             const currentRoute = libraryRoutes.find((r) => r.id === robot.routeId)
               ?? libraryRoutes.find((r) => sameRouteTrajectory(r.trajectory, trajectory));
             return (
-              <li key={trajectory.id} className={`robot-library-row${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
+              <li key={trajectory.id} className={`robot-library-row${needsSettings && onSelectSettings ? ' needs-settings' : ''}${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
                 <TeamNumberCell robot={robot} onUpdate={onUpdate} metadata={<span className="robot-library-meta">
                       <span>{sourceLabel(trajectory.source)}</span>
                       <span>{shownDuration.toFixed(2)} s</span>
@@ -159,6 +168,9 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     ))}
                   </select>
                 )}
+                {needsSettings && onSelectSettings && <button type="button" className="robot-settings-upload" onClick={() => { settingsRobot.current = trajectory.id; settingsInput.current?.click(); }}>
+                  <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M10 13V3m-4 4 4-4 4 4M3 12v5h14v-5" /></svg>{t('robots.uploadSettings')}
+                </button>}
                 <button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
                   <EyeIcon visible={robot.visible} />
                 </button>
@@ -172,13 +184,14 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
   );
 }
 
-export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfile, sequence }: RobotInspectorProps) {
+export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfile }: RobotInspectorProps) {
   const { t } = useI18n();
   const [unit] = useLengthUnit();
   if (!robot) return <div className="robot-inspector-empty">{t('robots.selectPrompt')}</div>;
   const { trajectory } = robot;
   const id = trajectory.id;
   const fileGeometry = trajectory.geometrySource === 'file';
+  const warnings = inspectorWarnings(trajectory.warnings);
 
   return (
     <section className="robot-inspector" key={id} aria-label={trajectory.name}>
@@ -186,12 +199,11 @@ export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfil
         <span className="band-dot" style={{ background: robot.color }} aria-hidden="true" />
         <h2>{robotOriginalIdentity(trajectory)}</h2>
       </header>
-      <AutoSequenceEditor key={id} {...sequence} />
 
       <section className="robot-inspector-section">
         <div className="robot-inspector-section-heading">
           <h3>{t('robots.data')}</h3>
-          <span className={`robot-data-source${fileGeometry ? '' : ' is-estimated'}`}>{t(fileGeometry ? 'robots.fromFile' : 'robots.bumperDefault')}</span>
+          <span className={`robot-data-source${fileGeometry ? '' : ' is-missing'}`}>{fileGeometry ? t('robots.fromFile') : t('robots.notUploaded')}</span>
         </div>
         <p className="robot-inspector-caption">{t('robots.bumper')}</p>
         <dl className="robot-dimensions">
@@ -200,7 +212,7 @@ export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfil
           {trajectory.massKG !== undefined && <div><dt>{t('robots.mass')}</dt><dd>{trajectory.massKG.toFixed(0)} kg</dd></div>}
           {trajectory.holonomic !== undefined && <div><dt>{t('robots.drive')}</dt><dd>{t(trajectory.holonomic ? 'robots.driveHolonomic' : 'robots.driveDifferential')}</dd></div>}
         </dl>
-        <p className="robot-inspector-note">{t(fileGeometry ? 'robots.fileDataNote' : 'robots.defaultDataNote')}</p>
+        {fileGeometry && <p className="robot-inspector-note">{t('robots.fileDataNote')}</p>}
         {libraryProfiles.length > 0 && (
           <label className="robot-inspector-row robot-inspector-profile">
             <span>{t('robots.applyProfile')}</span>
@@ -222,8 +234,8 @@ export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfil
             </select>
           </label>
         )}
-        {trajectory.warnings.length > 0 && (
-          <ul className="robot-inspector-warnings">{trajectory.warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>
+        {warnings.length > 0 && (
+          <ul className="robot-inspector-warnings">{warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>
         )}
       </section>
 
