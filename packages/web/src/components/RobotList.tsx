@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from 'react';
 import type { CollisionInterval, RobotGeometry, SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { VIEWER_ONLY } from '../viewer';
-import { displayName, routeLabel, type LibraryProfile } from '../route-library';
+import { displayName, routeLabel, sameRouteTrajectory, type LibraryProfile } from '../route-library';
 import './RobotList.css';
 import { robotIdentity } from '../robot-identity';
 
@@ -115,7 +115,11 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
               hit ? t('robots.collision') : '',
             ].filter(Boolean).join(', ');
             const libraryRoutes = robot.routeOptions ?? [];
-            const currentRoute = libraryRoutes.find((r) => r.id === robot.routeId);
+            // No stored routeId? The current trajectory may still BE one of
+            // the library options (welcome example, pre-routeId sessions) —
+            // select that option instead of adding a duplicate pseudo-entry.
+            const currentRoute = libraryRoutes.find((r) => r.id === robot.routeId)
+              ?? libraryRoutes.find((r) => sameRouteTrajectory(r.trajectory, trajectory));
             return (
               <li key={trajectory.id} className={`robot-library-row${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
                 <TeamNumberCell robot={robot} onUpdate={onUpdate}><button className="robot-library-select" aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
@@ -134,7 +138,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                 {libraryRoutes.length > 0 && (
                   <select
                     className="route-picker"
-                    value={robot.routeId ?? ''}
+                    value={robot.routeId ?? currentRoute?.id ?? ''}
                     title={currentRoute ? currentRoute.relPath : t('library.routeOffLibrary')}
                     aria-label={t('library.routePicker', { name: robotIdentity(trajectory) })}
                     onChange={(e) => onPickRoute(trajectory.id, e.target.value)}

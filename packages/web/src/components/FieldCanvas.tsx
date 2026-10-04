@@ -17,7 +17,7 @@ import {
   samplePoseAt,
   sampleStateAt,
 } from '@pathblender/core';
-import { trailPoints, TRAIL_WIDTH_M } from '../ground-trail';
+import { TRAIL_WIDTH_M } from '../ground-trail';
 import { MK5I_MODULE_TOP_URL, MK5I_MODULE_TOP_WORLD_M } from '../robot-sprites';
 import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
@@ -489,17 +489,18 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       ctx.restore();
     }
 
-    // Ground tape grows only along the already-travelled part of each route.
+    // Ground tape: always the full route, so the tape runs continuously
+    // under the robot and into the heading wedge on the front bumper.
     if (showTrail) {
       ctx.save();
       ctx.lineJoin = 'round';
       ctx.lineCap = 'butt';
       ctx.lineWidth = TRAIL_WIDTH_M * v.scale;
       for (const r of robots) {
-        const points = trailPoints(r, currentT);
-        if (points.length < 2) continue;
+        const samples = r.trajectory.samples;
+        if (samples.length < 2) continue;
         ctx.beginPath();
-        points.forEach((p, i) => {
+        samples.forEach((p, i) => {
           if (i === 0) ctx.moveTo(sx(p.x), sy(p.y));
           else ctx.lineTo(sx(p.x), sy(p.y));
         });
@@ -789,12 +790,18 @@ function drawRobot(
     }
   }
 
-  // Heading wedge on the +x end.
+  // Heading wedge rides the front bumper band (user request 2026-10-04):
+  // base pinned to the band's inner edge — never on the chassis rails —
+  // tip one band depth past the outer face, onto the outgoing ground
+  // tape. The 10 px screen floor keeps it readable at small zoom; any
+  // extra length goes outward, never inward.
+  const tipOut = Math.max(bd, 10 - bd);
+  const halfW = Math.max(0.75 * bd, 2);
   ctx.fillStyle = r.color;
   ctx.beginPath();
-  ctx.moveTo(ox + L / 2, 0);
-  ctx.lineTo(ox + L / 2 - 6, -5);
-  ctx.lineTo(ox + L / 2 - 6, 5);
+  ctx.moveTo(ox + L / 2 + tipOut, 0);
+  ctx.lineTo(ox + L / 2 - bd, -halfW);
+  ctx.lineTo(ox + L / 2 - bd, halfW);
   ctx.closePath();
   ctx.fill();
   ctx.restore();

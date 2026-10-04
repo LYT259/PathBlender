@@ -1442,13 +1442,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
-    for (const { mesh, robot } of st.trails) {
-      const time = currentT - robot.startDelayS;
-      mesh.visible = showTrail && time > (robot.trajectory.samples[0]?.t ?? 0);
-      mesh.material.uniforms.cutoff!.value = time;
+    // Full-route tape: only the toggle gates visibility, never the clock.
+    for (const { mesh } of st.trails) {
+      mesh.visible = showTrail;
     }
     st.dirty();
-  }, [currentT, showTrail, robots, field, moduleTemplate, frameTemplates]);
+  }, [showTrail, robots, field, moduleTemplate, frameTemplates]);
 
   // Drive the chassis rigs along the shared clock: pose from the shared
   // sampler. Modules stay bolted at the installed angle the whole time --

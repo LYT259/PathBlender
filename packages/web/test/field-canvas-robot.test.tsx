@@ -98,10 +98,10 @@ function robot(x: number, teamNumber = '11019'): SessionTrajectory {
   };
 }
 
-function paint(robots: SessionTrajectory[]) {
+function paint(robots: SessionTrajectory[], opts: { currentT?: number; showTrail?: boolean } = {}) {
   render(
     <I18nProvider>
-      <FieldCanvas field={field} robots={robots} currentT={0} conflicts={[]} bounds={[]} showTrail={false} />
+      <FieldCanvas field={field} robots={robots} currentT={opts.currentT ?? 0} conflicts={[]} bounds={[]} showTrail={opts.showTrail ?? false} />
     </I18nProvider>,
   );
   expect(observed).toBeDefined();
@@ -211,6 +211,47 @@ describe('2D robot bumper and team-number callout', () => {
     paint([robot(2, '')]);
     expect(calls.some((c) => c.name === 'arc')).toBe(false);
     expect(calls.some((c) => (c.name === 'fillText' || c.name === 'strokeText') && c.args[0] === '')).toBe(false);
+  });
+
+  it('rides the heading wedge on the front bumper band, tip reaching the tape', () => {
+    paint([robot(2)]);
+    // Scene math: 40 px/m, L/2 = 17.78 px, bumper band bd = 4.064 px.
+    // Base pinned to the band inner edge (13.716 = 17.78 - 4.064 — never
+    // on the chassis rails), tip max(bd, 10 - bd) = 5.936 px past the face.
+    const wedge = paths('fill').find((p) =>
+      p.length === 4 && p[0]!.name === 'moveTo' && p[1]!.name === 'lineTo' &&
+      p[2]!.name === 'lineTo' && p[3]!.name === 'closePath' && p[0]!.style.fillStyle === '#00E5FF');
+    expect(wedge).toBeDefined();
+    expectArgs(wedge![0]!, [23.716, 0]);
+    expectArgs(wedge![1]!, [13.716, -3.048]);
+    expectArgs(wedge![2]!, [13.716, 3.048]);
+  });
+
+  it('strokes the full route tape at any playback position', () => {
+    const runner = robot(2);
+    runner.trajectory = {
+      ...runner.trajectory,
+      samples: [
+        { t: 0, x: 2, y: 2.5, heading: 0, vx: 4, vy: 0, omega: 0 },
+        { t: 0.5, x: 4, y: 2.5, heading: 0, vx: 4, vy: 0, omega: 0 },
+        { t: 1, x: 6, y: 3.5, heading: 0, vx: 0, vy: 4, omega: 0 },
+      ],
+    };
+    // strokeStyle is set between the path commands and stroke(), so the
+    // commands themselves carry the earlier lineWidth (4 px = 10 cm tape).
+    const tape = () => paths('stroke').find((p) =>
+      p.length === 3 && p[0]!.name === 'moveTo' && p[1]!.name === 'lineTo' &&
+      p[2]!.name === 'lineTo' && p[0]!.style.lineWidth === 4);
+    for (const currentT of [0, 0.5, 1]) {
+      cleanup();
+      calls = [];
+      paint([runner], { currentT, showTrail: true });
+      const stroke = tape();
+      expect(stroke).toBeDefined();
+      expectArgs(stroke![0]!, [100, 120]);
+      expectArgs(stroke![1]!, [180, 120]);
+      expectArgs(stroke![2]!, [260, 80]);
+    }
   });
 
   it('re-allocates the canvas backing store when devicePixelRatio changes without a resize', () => {

@@ -145,6 +145,48 @@ describe('welcome flow', () => {
     expect(screen.queryByText('Real 2026 routes from FRC teams 8814 and 11019.')).not.toBeInTheDocument();
   });
 
+  it('lists each route exactly once in the picker, with the library L1 as the current one', async () => {
+    render(<App />);
+    await openExample();
+    // Regression: the off-library pseudo option duplicated L1 next to the
+    // library's own L1 (the example robot carries no routeId by design).
+    const picker = screen.getByRole('combobox', { name: 'Active route for #8814' });
+    const options = within(picker).getAllByRole('option') as HTMLOptionElement[];
+    expect(options).toHaveLength(22);
+    expect(options.filter((o) => o.textContent === 'L1')).toHaveLength(1);
+    expect(options.every((o) => o.value !== '')).toBe(true);
+    expect(picker).toHaveValue(options.find((o) => o.textContent === 'L1')!.value);
+    const second = screen.getByRole('combobox', { name: 'Active route for #11019' });
+    const secondOptions = within(second).getAllByRole('option') as HTMLOptionElement[];
+    expect(secondOptions).toHaveLength(20);
+    expect(secondOptions.filter((o) => o.textContent === 'L1')).toHaveLength(1);
+    expect(second).toHaveValue(secondOptions.find((o) => o.textContent === 'L1')!.value);
+  });
+
+  it("hides a robot's conflicts and bounds with the robot, and brings them back", async () => {
+    render(<App />);
+    await openExample();
+    // Both L1s share a start pose: one conflict pair; both robots also
+    // start a hair over the line.
+    expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
+    expect(screen.getByText('2', { selector: '.bounds-count' })).toBeInTheDocument();
+    expect(screen.getByText('#8814 × #11019', { selector: '.conflict-pair' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide #8814 on field' }));
+    expect(screen.getByText('0', { selector: '.conflict-count' })).toBeInTheDocument();
+    expect(screen.queryByText('#8814 × #11019', { selector: '.conflict-pair' })).not.toBeInTheDocument();
+    expect(screen.getByText('1', { selector: '.bounds-count' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide #11019 on field' }));
+    expect(screen.queryByText('1', { selector: '.bounds-count' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show #8814 on field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show #11019 on field' }));
+    expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
+    expect(screen.getByText('2', { selector: '.bounds-count' })).toBeInTheDocument();
+    expect(screen.getByText('#8814 × #11019', { selector: '.conflict-pair' })).toBeInTheDocument();
+  });
+
   it('adds a folder as its own team while the example is open, and keeps it after ending the example', async () => {
     render(<App />);
     await openExample();

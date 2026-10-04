@@ -246,12 +246,16 @@ function AppBody() {
   const [showHeatmap, setShowHeatmap] = useState(false);
   // A-B compare: first click snapshots the scenario, second reports deltas.
   const abBaselineRef = useRef<SessionTrajectory[] | null>(null);
+  // Hidden robots are absent for checks too (user request 2026-10-04):
+  // their conflict rings, bounds notes and panel entries disappear with
+  // the robot and come back when it does — detection and display both
+  // follow the visible set.
   const conflicts = useMemo(
-    () => detectCollisions(seasonRobots, { toleranceS: toleranceS > 0 ? toleranceS : undefined }),
-    [seasonRobots, toleranceS],
+    () => detectCollisions(visible, { toleranceS: toleranceS > 0 ? toleranceS : undefined }),
+    [visible, toleranceS],
   );
-  const bounds = useMemo(() => detectFieldBounds(seasonRobots, field), [seasonRobots, field]);
-  const minSep = useMemo(() => minimumSeparation(seasonRobots), [seasonRobots]);
+  const bounds = useMemo(() => detectFieldBounds(visible, field), [visible, field]);
+  const minSep = useMemo(() => minimumSeparation(visible), [visible]);
 
   // .path texts stay available so later .auto imports can resolve their
   // pathName references (within the same batch or across this session).
@@ -735,9 +739,8 @@ function AppBody() {
     if (robotIds[0]) {
       setSelectedId(robotIds[0]);
     }
-    // A located problem must be visible even if its paths were hidden.
-    if (robotIds.some((id) => robots.some((r) => r.trajectory.id === id && !r.visible)))
-      setRobots((previous) => previous.map((r) => robotIds.includes(r.trajectory.id) ? { ...r, visible: true } : r));
+    // Checks run on the visible set only, so a located problem always
+    // belongs to a robot that is already on the field.
   };
   return (
     <div className={`app${hasRobots ? '' : ' is-welcome'}`}>

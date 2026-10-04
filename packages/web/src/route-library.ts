@@ -28,6 +28,26 @@ export function routeLabel(route: LibraryRoute, options: LibraryRoute[]): string
     : name;
 }
 
+/**
+ * The robot's current trajectory may BE a library option without carrying
+ * its routeId — the welcome example is built that way on purpose, and
+ * sessions saved before routeIds existed restore the same shape. Identity
+ * first (a freshly built robot shares the option's samples), then a full
+ * payload compare: a save/load round trip breaks shared references but
+ * keeps every value.
+ */
+export function sameRouteTrajectory(option: Trajectory, current: Trajectory): boolean {
+  if (option === current) return true;
+  if (option.name !== current.name || option.samples.length !== current.samples.length) return false;
+  if (option.samples === current.samples) return true;
+  return option.samples.every((sample, index) => {
+    const other = current.samples[index]!;
+    return sample.t === other.t && sample.x === other.x && sample.y === other.y &&
+      sample.heading === other.heading && sample.vx === other.vx &&
+      sample.vy === other.vy && sample.omega === other.omega;
+  });
+}
+
 /** File names distinguish candidates even when embedded project names repeat. */
 export function routeName(route: LibraryRoute): string {
   return route.relPath.split('/').at(-1)!.replace(/\.(traj|ghostauto|path|auto)$/i, '');

@@ -14,7 +14,9 @@ export function createGroundTrail(robot: SessionTrajectory, cx: number, cy: numb
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('trailTime', new THREE.Float32BufferAttribute(data.times, 1));
   const material = new THREE.ShaderMaterial({
-    uniforms: { cutoff: { value: -1 }, tapeColor: { value: new THREE.Color(robot.color) } },
+    // Full route from the start: nothing is ever past the cutoff (user
+      // request 2026-10-04 — the tape no longer grows with the clock).
+      uniforms: { cutoff: { value: Infinity }, tapeColor: { value: new THREE.Color(robot.color) } },
     vertexShader: `attribute float trailTime; varying float vTime;
       void main() { vTime = trailTime; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `uniform float cutoff; uniform vec3 tapeColor; varying float vTime;
