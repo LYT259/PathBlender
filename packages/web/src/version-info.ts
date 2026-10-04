@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.2';
+export const APP_VERSION = '0.1.8-beta.3';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.3', date: '2026.10.04', note: {
+    en: 'Opponent marker removed — folder import will later assign each team to red or blue',
+    zh: '对手标记已移除——文件夹导入后续将支持逐队选择红蓝方',
+    'zh-tw': '對手標記已移除——資料夾匯入後續將支援逐隊選擇紅藍方',
+    cs: 'Označení soupeře odebráno — import složky později každému týmu přiřadí červenou nebo modrou stranu',
+    nl: 'Tegenstandermarkering verwijderd — mapimport wijst later elk team de rode of blauwe zijde toe',
+    fr: 'Marque d’adversaire retirée — l’import de dossier permettra plus tard d’attribuer le rouge ou le bleu à chaque équipe',
+    he: 'סימון יריב הוסר — ייבוא תיקייה יאפשר בעתיד להקצות לכל קבוצה אדום או כחול',
+    ja: '相手マークを削除しました——フォルダー読み込みでチームごとに赤・青を割り当てる方式へ今後変更予定です',
+    ko: '상대 표시를 제거했습니다 — 폴더 가져오기에서 팀별로 빨강/파랑을 지정하는 방식으로 이후 변경될 예정입니다',
+    pl: 'Usunięto oznaczenie przeciwnika — import folderu będzie później przypisywać każdej drużynie stronę czerwoną lub niebieską',
+    'pt-br': 'Marcação de adversário removida — a importação de pasta atribuirá depois o lado vermelho ou azul a cada equipe',
+    es: 'Se eliminó la marca de rival — la importación de carpeta asignará más adelante el lado rojo o azul a cada equipo',
+    tr: 'Rakip işareti kaldırıldı — klasör içe aktarma daha sonra her takıma kırmızı veya mavi tarafı atayacak',
+  } },
   { version: '0.1.8-beta.2', date: '2026.10.04', note: {
     en: 'Welcome example now uses real 2026 route libraries from FRC teams 8814 and 11019',
     zh: '体验示例换成真实队伍 8814 与 11019 的 2026 路线库',
