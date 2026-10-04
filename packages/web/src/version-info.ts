@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.17';
+export const APP_VERSION = '0.1.7-beta.18';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.18', date: '2026.10.04', note: { en: 'i18n: 10 more languages — German, Italian, Arabic, Hindi, Marathi, Malay, Tamil, Filipino, Vietnamese, Indonesian' } },
   { version: '0.1.7-beta.17', date: '2026.10.04', note: {
     "en": "Folder imports create independent teams with saved route choices and distinct placeholder numbers",
     "zh": "每个文件夹独立为一个队伍，保留路径切换选项，并使用不同的字母占位队号",

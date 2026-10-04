@@ -6,28 +6,40 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { broadcastPref, listenPrefs } from '../pref-sync';
 import { en, type MessageKey } from './en';
+import { ar } from './ar';
 import { cs } from './cs';
+import { de } from './de';
 import { es } from './es';
+import { fil } from './fil';
 import { fr } from './fr';
 import { he } from './he';
+import { hi } from './hi';
+import { id } from './id';
+import { it } from './it';
 import { ja } from './ja';
 import { ko } from './ko';
+import { mr } from './mr';
+import { ms } from './ms';
 import { nl } from './nl';
 import { pl } from './pl';
 import { ptBR } from './pt-br';
+import { ta } from './ta';
 import { tr } from './tr';
+import { vi } from './vi';
 import { zh } from './zh';
 import { zhHk } from './zh-hk';
 import { zhTw } from './zh-tw';
 
 export type Lang =
-  | 'en' | 'cs' | 'es' | 'fr' | 'he' | 'ja' | 'ko' | 'nl' | 'pl' | 'pt-BR'
-  | 'tr' | 'zh' | 'zh-hk' | 'zh-tw';
+  | 'en' | 'ar' | 'cs' | 'de' | 'es' | 'fil' | 'fr' | 'he' | 'hi' | 'id' | 'it'
+  | 'ja' | 'ko' | 'mr' | 'ms' | 'nl' | 'pl' | 'pt-BR' | 'ta' | 'tr' | 'vi'
+  | 'zh' | 'zh-hk' | 'zh-tw';
 /** User choice: 'system' follows the OS language live (first visit uses it). */
 export type LangChoice = 'system' | Lang;
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = {
-  en, cs, es, fr, he, ja, ko, nl, pl, 'pt-BR': ptBR, tr, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  en, ar, cs, de, es, fil, fr, he, hi, id, it, ja, ko, mr, ms, nl, pl, 'pt-BR': ptBR,
+  ta, tr, vi, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
 };
 
 /**
@@ -61,17 +73,27 @@ const LANG_META: Record<Lang, { englishName: string; endonym: string }> = {
   zh: { englishName: 'Chinese (Simplified)', endonym: '简体中文' },
   'zh-hk': { englishName: 'Chinese (Traditional, Hong Kong)', endonym: '繁體中文（中國香港）' },
   'zh-tw': { englishName: 'Chinese (Traditional, Taiwan)', endonym: '繁體中文（中國台灣）' },
+  ar: { englishName: 'Arabic', endonym: 'العربية' },
   cs: { englishName: 'Czech', endonym: 'Čeština' },
   nl: { englishName: 'Dutch', endonym: 'Nederlands' },
   en: { englishName: 'English', endonym: 'English' },
+  fil: { englishName: 'Filipino', endonym: 'Filipino' },
   fr: { englishName: 'French', endonym: 'Français' },
+  de: { englishName: 'German', endonym: 'Deutsch' },
   he: { englishName: 'Hebrew', endonym: 'עברית' },
+  hi: { englishName: 'Hindi', endonym: 'हिन्दी' },
+  id: { englishName: 'Indonesian', endonym: 'Bahasa Indonesia' },
+  it: { englishName: 'Italian', endonym: 'Italiano' },
   ja: { englishName: 'Japanese', endonym: '日本語' },
   ko: { englishName: 'Korean', endonym: '한국어' },
+  ms: { englishName: 'Malay', endonym: 'Bahasa Melayu' },
+  mr: { englishName: 'Marathi', endonym: 'मराठी' },
   pl: { englishName: 'Polish', endonym: 'Polski' },
   'pt-BR': { englishName: 'Portuguese (Brazilian)', endonym: 'Português (Brasil)' },
   es: { englishName: 'Spanish', endonym: 'Español' },
+  ta: { englishName: 'Tamil', endonym: 'தமிழ்' },
   tr: { englishName: 'Turkish', endonym: 'Türkçe' },
+  vi: { englishName: 'Vietnamese', endonym: 'Tiếng Việt' },
 };
 const STORAGE_KEY = 'pb.lang';
 const LANG_CODES = Object.keys(LANG_META) as Lang[];
@@ -84,10 +106,11 @@ const LANG_CODES = Object.keys(LANG_META) as Lang[];
  * cannot be clicked from memory). One consequence is worth stating: Chinese
  * sorts first, so the three CJK rows head the list — the group our main
  * audience reaches for — with the Latin names in their own alphabetical order
- * behind them. Result in all fourteen UI languages:
- * 简体中文 · 繁體中文（中國香港） · 繁體中文（中國台灣） · Čeština · Nederlands ·
- * English · Français · עברית · 日本語 · 한국어 · Polski · Português (Brasil) ·
- * Español · Türkçe.
+ * behind them. Result in all twenty-four UI languages:
+ * 简体中文 · 繁體中文（中國香港） · 繁體中文（中國台灣） · العربية · Čeština ·
+ * Nederlands · English · Filipino · Français · Deutsch · עברית · हिन्दी ·
+ * Bahasa Indonesia · Italiano · 日本語 · 한국어 · Bahasa Melayu · मराठी ·
+ * Polski · Português (Brasil) · Español · தமிழ் · Türkçe · Tiếng Việt.
  */
 export const LANGUAGES: readonly LangChoice[] = [
   'system',
@@ -112,7 +135,8 @@ export const LANGUAGES: readonly LangChoice[] = [
  * bare `pt` or an unshipped region like `pt-PT` — lands on it (a Portuguese
  * speaker is far better served by Brazilian wording than by English).
  * Hebrew matches its historical `iw` alias too: some browsers and OS locales
- * still send the pre-2004 code.
+ * still send the pre-2004 code. Filipino likewise matches its historical
+ * `tl` (Tagalog) code — the OS locale tag that predates the `fil` rename.
  */
 export function langFromTags(tags: readonly string[]): Lang {
   for (const l of tags) {
@@ -120,6 +144,16 @@ export function langFromTags(tags: readonly string[]): Lang {
     if (/^zh-(hant(-tw)?|tw)/i.test(l)) return 'zh-tw';
     if (/^zh/i.test(l)) return 'zh';
     if (/^(he|iw)/i.test(l)) return 'he';
+    if (/^ar/i.test(l)) return 'ar'; // arq/ars (Arabic variants) start with `ar` too
+    if (/^(fil|tl)/i.test(l)) return 'fil'; // tl = pre-2013 Tagalog tag
+    if (/^de/i.test(l)) return 'de';
+    if (/^hi/i.test(l)) return 'hi';
+    if (/^id/i.test(l)) return 'id';
+    if (/^it/i.test(l)) return 'it';
+    if (/^mr/i.test(l)) return 'mr';
+    if (/^ms/i.test(l)) return 'ms';
+    if (/^ta/i.test(l)) return 'ta';
+    if (/^vi/i.test(l)) return 'vi';
     if (/^pt/i.test(l)) return 'pt-BR';
     if (/^es/i.test(l)) return 'es';
     if (/^fr/i.test(l)) return 'fr';
@@ -139,7 +173,7 @@ export function langFromTags(tags: readonly string[]): Lang {
  * at type level (`RTL_LANGS` is `Lang[]`), so a language cannot flip the UI
  * without an explicit entry here.
  */
-export const RTL_LANGS: readonly Lang[] = ['he'];
+export const RTL_LANGS: readonly Lang[] = ['ar', 'he'];
 export const isRtl = (l: Lang): boolean => RTL_LANGS.includes(l);
 
 function systemLang(): Lang {

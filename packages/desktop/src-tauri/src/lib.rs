@@ -318,6 +318,160 @@ const CS: MenuLang = MenuLang {
     updates: "Zkontrolovat aktualizace…",
 };
 
+/// Third-batch UI languages (de/it/ar/hi/mr/ms/ta/fil/vi/id, red book §语言扩展规划):
+/// hide/quit/about follow Apple's own macOS menu localization where it exists.
+const DE: MenuLang = MenuLang {
+    hide: "PathBlender ausblenden",
+    hide_others: "Andere ausblenden",
+    quit: "PathBlender beenden",
+    about: "Über PathBlender",
+    file: "Ablage",
+    edit: "Bearbeiten",
+    import: "Importieren…",
+    save: "Sitzung speichern…",
+    png: "PNG exportieren…",
+    clear: "Sitzung leeren",
+    prefs: "Einstellungen…",
+    updates: "Nach Updates suchen…",
+};
+
+const IT: MenuLang = MenuLang {
+    hide: "Nascondi PathBlender",
+    hide_others: "Nascondi altre",
+    quit: "Esci da PathBlender",
+    about: "Informazioni su PathBlender",
+    file: "File",
+    edit: "Modifica",
+    import: "Importa…",
+    save: "Salva sessione…",
+    png: "Esporta PNG…",
+    clear: "Svuota sessione",
+    prefs: "Preferenze…",
+    updates: "Controlla aggiornamenti…",
+};
+
+/// Arabic wording; like Hebrew, macOS renders the menu bar itself, so the
+/// strings stay plain text and need no RTL markup here.
+const AR: MenuLang = MenuLang {
+    hide: "إخفاء PathBlender",
+    hide_others: "إخفاء الآخرين",
+    quit: "إنهاء PathBlender",
+    about: "حول PathBlender",
+    file: "ملف",
+    edit: "تحرير",
+    import: "استيراد…",
+    save: "حفظ الجلسة…",
+    png: "تصدير PNG…",
+    clear: "مسح الجلسة",
+    prefs: "التفضيلات…",
+    updates: "التحقق من التحديثات…",
+};
+
+const HI: MenuLang = MenuLang {
+    hide: "PathBlender छिपाएँ",
+    hide_others: "अन्य छिपाएँ",
+    quit: "PathBlender से बाहर निकलें",
+    about: "PathBlender के बारे में",
+    file: "फ़ाइल",
+    edit: "संपादन",
+    import: "आयात करें…",
+    save: "सत्र सहेजें…",
+    png: "PNG निर्यात करें…",
+    clear: "सत्र साफ़ करें",
+    prefs: "प्राथमिकताएँ…",
+    updates: "अपडेट जाँचें…",
+};
+
+const MR: MenuLang = MenuLang {
+    hide: "PathBlender लपवा",
+    hide_others: "इतर लपवा",
+    quit: "PathBlender मधून बाहेर पडा",
+    about: "PathBlender विषयी",
+    file: "फाइल",
+    edit: "संपादन",
+    import: "आयात करा…",
+    save: "सत्र जतन करा…",
+    png: "PNG निर्यात करा…",
+    clear: "सत्र साफ करा",
+    prefs: "प्राधान्ये…",
+    updates: "अपडेट तपासा…",
+};
+
+const MS: MenuLang = MenuLang {
+    hide: "Sembunyikan PathBlender",
+    hide_others: "Sembunyikan Lain",
+    quit: "Keluar PathBlender",
+    about: "Perihal PathBlender",
+    file: "Fail",
+    edit: "Edit",
+    import: "Muat masuk…",
+    save: "Simpan Sesi…",
+    png: "Eksport PNG…",
+    clear: "Kosongkan Sesi",
+    prefs: "Keutamaan…",
+    updates: "Semak Kemas Kini…",
+};
+
+const TA: MenuLang = MenuLang {
+    hide: "PathBlender ஐ மறை",
+    hide_others: "மற்றவற்றை மறை",
+    quit: "PathBlender இல் இருந்து வெளியேறு",
+    about: "PathBlender பற்றி",
+    file: "கோப்பு",
+    edit: "திருத்து",
+    import: "இறக்குமதி…",
+    save: "அமர்வைச் சேமி…",
+    png: "PNG ஏற்றுமதி…",
+    clear: "அமர்வை அழி",
+    prefs: "விருப்பங்கள்…",
+    updates: "புதுப்பிப்புகளைச் சரிபார்…",
+};
+
+const FIL: MenuLang = MenuLang {
+    hide: "Itago ang PathBlender",
+    hide_others: "Itago ang Iba",
+    quit: "Lisanin ang PathBlender",
+    about: "Tungkol sa PathBlender",
+    file: "File",
+    edit: "I-edit",
+    import: "Mag-import…",
+    save: "I-save ang Session…",
+    png: "I-export ang PNG…",
+    clear: "I-clear ang Session",
+    prefs: "Mga Kagustuhan…",
+    updates: "Suriin ang mga Update…",
+};
+
+const VI: MenuLang = MenuLang {
+    hide: "Ẩn PathBlender",
+    hide_others: "Ẩn các ứng dụng khác",
+    quit: "Thoát PathBlender",
+    about: "Giới thiệu về PathBlender",
+    file: "Tệp",
+    edit: "Sửa",
+    import: "Nhập…",
+    save: "Lưu phiên…",
+    png: "Xuất PNG…",
+    clear: "Xóa phiên",
+    prefs: "Tùy chọn…",
+    updates: "Kiểm tra cập nhật…",
+};
+
+const ID: MenuLang = MenuLang {
+    hide: "Sembunyikan PathBlender",
+    hide_others: "Sembunyikan Lainnya",
+    quit: "Keluar dari PathBlender",
+    about: "Tentang PathBlender",
+    file: "Berkas",
+    edit: "Edit",
+    import: "Impor…",
+    save: "Simpan Sesi…",
+    png: "Ekspor PNG…",
+    clear: "Bersihkan Sesi",
+    prefs: "Preferensi…",
+    updates: "Periksa Pembaruan…",
+};
+
 /// Every web dictionary has a menu table: `set_menu_language` used to fall
 /// through to English for anything but zh/zh-tw, so a Spanish or Turkish user
 /// got an English native menu next to a translated window. Adding a language
@@ -339,6 +493,16 @@ fn lang_of(lang: &str) -> &'static MenuLang {
         "ja" => &JA,
         "ko" => &KO,
         "cs" => &CS,
+        "de" => &DE,
+        "it" => &IT,
+        "ar" => &AR,
+        "hi" => &HI,
+        "mr" => &MR,
+        "ms" => &MS,
+        "ta" => &TA,
+        "fil" => &FIL,
+        "vi" => &VI,
+        "id" => &ID,
         _ => &EN,
     }
 }
