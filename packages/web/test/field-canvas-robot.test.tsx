@@ -193,4 +193,37 @@ describe('2D robot bumper and team-number callout', () => {
     expect(calls.some((c) => c.name === 'arc')).toBe(false);
     expect(calls.some((c) => (c.name === 'fillText' || c.name === 'strokeText') && c.args[0] === '')).toBe(false);
   });
+
+  it('re-allocates the canvas backing store when devicePixelRatio changes without a resize', () => {
+    const scene = (t: number) => (
+      <I18nProvider>
+        <FieldCanvas field={field} robots={[robot(2)]} currentT={t} conflicts={[]} bounds={[]} showTrail={false} />
+      </I18nProvider>
+    );
+    const ui = render(scene(0));
+    expect(observed).toBeDefined();
+    Object.defineProperties(observed!, {
+      clientWidth: { configurable: true, value: 440 },
+      clientHeight: { configurable: true, value: 240 },
+    });
+    act(() => notifyResize());
+    const runFrames = () => {
+      const pending = [...frames.values()];
+      frames.clear();
+      act(() => pending.forEach((callback) => callback(16)));
+    };
+    runFrames();
+    const canvas = document.querySelector('canvas')!;
+    expect(canvas.width).toBe(440);
+    expect(canvas.height).toBe(240);
+    // Dragging the window between Retina and 1x displays changes the DPR
+    // without a resize — ResizeObserver never fires. The next draw must
+    // re-allocate the backing store, or the uncleared region ghosts the
+    // previous frame (the "two fields" artifact, user report 2026-10-04).
+    vi.stubGlobal('devicePixelRatio', 2);
+    ui.rerender(scene(1));
+    runFrames();
+    expect(canvas.width).toBe(880);
+    expect(canvas.height).toBe(480);
+  });
 });
