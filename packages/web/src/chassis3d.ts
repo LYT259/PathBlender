@@ -44,12 +44,19 @@ const MK5I_HEIGHT_M = 6.17 * 0.0254;
  * bottom, NOT the ground): rail top at the corner mounts (frame-y
  * 0.061516 m, measured on mk5i-frame.glb) minus the module
  * mounting-plate bottom face that rides the rail top (module-y
- * 0.042118 m) = 0.019398 m. Pods sit this far above the frame assembly;
- * the frame assembly drops by the same amount so the wheels still touch
- * the field floor -- sinking the belly pan 19.4 mm under the floor, a
- * physically unbuildable stack-up we accept (the field slab hides it).
+ * 0.092126 m — the module GLB's largest full-footprint downward face,
+ * 2026-10-04 re-measurement; the earlier 0.042118 reading was the
+ * fork/gearbox underside and would put the plate BELOW the fork top
+ * 0.0775, mechanically impossible) = −0.030610 m. NEGATIVE on purpose:
+ * the plate bottom sits ABOVE the rail top's frame-y, so the frame
+ * assembly RISES 30.6 mm and the belly pan clears the field floor by
+ * 30.6 mm — the 0.042118 reading sank it 19.4 mm UNDER the floor (the
+ * "frame touches the ground" bug, user 2026-10-04). Consistency checks
+ * on the shipped assets: fork top 0.0775 < plate 0.0921 ✓, wheel top
+ * 0.1016 pokes 9.5 mm past the plate ✓, bolt heads (frame-y 0.0695 +
+ * 0.0306 ≈ 0.1001) stand ~4 mm over the plate top ≈ 0.0961 ✓.
  */
-const MODULE_MOUNT_Y_M = 0.019398;
+const MODULE_MOUNT_Y_M = -0.03061;
 /** Split-GLB contract (2026-10-03): `mk5i-turret-*` nodes (turret +
  *  wheel) rotate about the steering axis at the origin; `mk5i-box-*`
  *  nodes are bolted to the mounting plate and never steer. */
@@ -112,9 +119,10 @@ export function buildChassis3D(
 
   // Everything bolted to the frame — the frame CAD itself, the bumper
   // ring, the team decals — assembles relative to the frame GLB's own y
-  // origin, so the whole assembly drops by MODULE_MOUNT_Y_M together:
-  // the modules' mounting plates then rest on the rail tops while the
-  // wheels stay on the field floor.
+  // origin, so the whole assembly shifts by −MODULE_MOUNT_Y_M together.
+  // With the corrected (negative) mount height that is a 30.6 mm RISE:
+  // the modules' mounting plates rest on the rail tops, the belly pan
+  // clears the floor, and the wheels stay on the field floor.
   const frameAsm = new THREE.Group();
   frameAsm.name = 'frame-assembly';
   frameAsm.position.y = -MODULE_MOUNT_Y_M;
@@ -189,10 +197,10 @@ export function buildChassis3D(
 
   // Swerve pods at module positions (robot frame, relative to the
   // pose). The modules bolt to the frame, so pod heights are
-  // frame-relative: they hang in a group dropped by the same
-  // MODULE_MOUNT_Y_M as the frame assembly, and each pod sits that
-  // amount above it — mounting-plate bottoms exactly on the rail tops,
-  // wheel bottoms still on the field floor (net world height as before).
+  // frame-relative: they sit in a group shifted by −MODULE_MOUNT_Y_M
+  // like the frame assembly, and each pod sits at +MODULE_MOUNT_Y_M —
+  // mounting-plate bottoms exactly on the rail tops, wheel bottoms
+  // still on the field floor (net world y = 0, unchanged).
   const podMount = new THREE.Group();
   podMount.name = 'pod-mount';
   podMount.position.y = -MODULE_MOUNT_Y_M;
