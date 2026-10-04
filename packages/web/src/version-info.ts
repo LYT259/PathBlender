@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.7';
+export const APP_VERSION = '0.1.8-beta.8';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.8', date: '2026.10.04', note: {
+    en: 'The macOS About window now shows the version just once, without the repeated build number in parentheses',
+    zh: 'macOS 关于窗口的版本号现在只显示一次，不再重复括号里的构建号',
+    'zh-tw': 'macOS 關於視窗的版本號現在只顯示一次，不再重複括號裡的建置號',
+    cs: 'Okno O aplikaci v macOS nyní zobrazuje verzi jen jednou, bez opakovaného čísla sestavení v závorkách',
+    nl: 'Het macOS-venster Over toont de versie nu nog maar één keer, zonder het herhaalde buildnummer tussen haakjes',
+    fr: 'La fenêtre À propos de macOS n’affiche plus la version qu’une seule fois, sans répéter le numéro de build entre parenthèses',
+    he: 'חלון אודות ב-macOS מציג כעת את הגרסה פעם אחת בלבד, ללא חזרה על מספר ה-build בסוגריים',
+    ja: 'macOS の「この App について」ウィンドウはバージョンを一度だけ表示し、括弧内のビルド番号が重複しなくなりました',
+    ko: 'macOS 정보 윈도우가 버전을 한 번만 표시하며, 괄호 안의 빌드 번호가 더 이상 중복되지 않습니다',
+    pl: 'Okno Informacje w systemie macOS wyświetla teraz wersję tylko raz, bez powtórzonego numeru kompilacji w nawiasach',
+    'pt-br': 'A janela Sobre do macOS agora exibe a versão apenas uma vez, sem repetir o número de build entre parênteses',
+    es: 'La ventana Acerca de de macOS ahora muestra la versión una sola vez, sin repetir el número de compilación entre paréntesis',
+    tr: 'macOS Hakkında penceresi artık sürümü yalnızca bir kez gösteriyor, parantez içinde yinelenen derleme numarası olmadan',
+  } },
   { version: '0.1.8-beta.7', date: '2026.10.04', note: {
     en: '2D team-number callouts: centered leader dot, alliance-colored solid badge; side panels no longer collapsible',
     zh: '2D 队号引线标注：圆点居中锚定、联盟色实色衬底；侧面板不再可折叠',
