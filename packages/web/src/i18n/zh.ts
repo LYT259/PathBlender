@@ -25,7 +25,7 @@ export const zh: Record<MessageKey, string> = {
   'welcome.exampleNameA': '示例路径 A',
   'welcome.exampleNameB': '示例路径 B',
   'welcome.exampleBadge': '示例',
-  'welcome.exampleNotice': '虚构路径，仅用于体验功能。',
+  'welcome.exampleNotice': '真实队伍 8814 与 11019 的 2026 赛季路线。',
   'welcome.exitExample': '结束示例',
   'onboarding.play': '点击播放查看路径，也可以拖动时间轴。',
   'onboarding.check': '点击下方问题，定位到对应时刻。',

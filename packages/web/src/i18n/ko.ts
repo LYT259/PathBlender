@@ -34,7 +34,7 @@ export const ko: Record<MessageKey, string> = {
   'welcome.exampleNameA': '예제 경로 A',
   'welcome.exampleNameB': '예제 경로 B',
   'welcome.exampleBadge': '예제',
-  'welcome.exampleNotice': '앱을 살펴보기 위한 가상의 경로입니다.',
+  'welcome.exampleNotice': 'FRC 팀 8814와 11019의 실제 2026 시즌 경로입니다.',
   'welcome.exitExample': '예제 종료',
   'onboarding.play': '재생을 눌러 경로를 보거나 타임라인을 드래그하세요.',
   'onboarding.check': '아래에서 항목을 선택하면 해당 시점으로 이동합니다.',

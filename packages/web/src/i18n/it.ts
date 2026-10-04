@@ -23,7 +23,7 @@ export const it = {
   'welcome.exampleNameA': 'Percorso esempio A',
   'welcome.exampleNameB': 'Percorso esempio B',
   'welcome.exampleBadge': 'Esempio',
-  'welcome.exampleNotice': 'Percorsi fittizi per esplorare l\'app.',
+  'welcome.exampleNotice': 'Percorsi reali della stagione 2026 dei team FRC 8814 e 11019.',
   'welcome.exitExample': 'Termina esempio',
   'onboarding.play': 'Premi Play per vedere i percorsi, o trascina la timeline.',
   'onboarding.check': 'Seleziona un problema qui sotto per saltare a quel momento.',

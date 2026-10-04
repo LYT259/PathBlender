@@ -23,7 +23,7 @@ export const en = {
   'welcome.exampleNameA': 'Example path A',
   'welcome.exampleNameB': 'Example path B',
   'welcome.exampleBadge': 'Example',
-  'welcome.exampleNotice': 'Fictional paths for exploring the app.',
+  'welcome.exampleNotice': 'Real 2026 routes from FRC teams 8814 and 11019.',
   'welcome.exitExample': 'End example',
   'onboarding.play': 'Press Play to see the paths, or scrub the timeline.',
   'onboarding.check': 'Select an issue below to jump to that moment.',

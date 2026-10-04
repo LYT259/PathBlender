@@ -21,7 +21,7 @@ export const uk = {
   'welcome.exampleNameA': 'Приклад маршруту A',
   'welcome.exampleNameB': 'Приклад маршруту B',
   'welcome.exampleBadge': 'Приклад',
-  'welcome.exampleNotice': 'Вигадані маршрути для дослідження додатка.',
+  'welcome.exampleNotice': 'Реальні маршрути сезону 2026 команд FRC 8814 і 11019.',
   'welcome.exitExample': 'Завершити приклад',
   'onboarding.play': 'Натисніть Відтворити, щоб побачити маршрути, або перетягніть шкалу часу.',
   'onboarding.check': 'Виберіть проблему нижче, щоб перейти до цього моменту.',

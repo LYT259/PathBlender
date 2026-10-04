@@ -686,7 +686,7 @@ function AppBody() {
     try {
       const { createWelcomeExample } = await import('./welcome-example');
       if (request !== exampleRequest.current) return;
-      const example = createWelcomeExample({ a: 'AAAAAA', b: 'BBBBBB' });
+      const example = createWelcomeExample();
       // Show it on the field the user actually uses — first visit defaults
       // to AndyMark, afterwards the remembered season + construction.
       setScene({

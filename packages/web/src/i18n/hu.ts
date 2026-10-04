@@ -21,7 +21,7 @@ export const hu = {
   'welcome.exampleNameA': 'Példa útvonal A',
   'welcome.exampleNameB': 'Példa útvonal B',
   'welcome.exampleBadge': 'Példa',
-  'welcome.exampleNotice': 'Az alkalmazás felfedezésére szolgáló kitalált útvonalak.',
+  'welcome.exampleNotice': 'Az FRC 8814 és 11019 csapatok valódi, 2026-os szezonjának útvonalai.',
   'welcome.exitExample': 'Példa befejezése',
   'onboarding.play': 'Nyomd meg a Lejátszás gombot az útvonalak megtekintéséhez, vagy húzd az idővonalat.',
   'onboarding.check': 'Válassz egy problémát alul, hogy arra a pillanatra ugorj.',
