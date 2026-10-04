@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.29';
+export const APP_VERSION = '0.1.7-beta.30';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.30', date: '2026.10.04', note: {
+    "en": "Even timeline ticks and a choice between full-timeline and path-length playback",
+    "zh": "时间刻度间距统一，支持完整时间轴或当前路径时长播放",
+    "zh-tw": "時間刻度間距統一，支援完整時間軸或目前路徑時長播放",
+    "cs": "Rovnoměrné dílky časové osy a volba přehrávání celé osy nebo jen délky tras",
+    "nl": "Gelijkmatige tijdmarkeringen en keuze tussen de volledige tijdlijn of de routelengte",
+    "fr": "Graduations régulières et choix entre la chronologie complète et la durée des trajectoires",
+    "he": "סימוני זמן במרווחים אחידים ובחירה בין ניגון ציר הזמן המלא למשך המסלולים",
+    "ja": "時間目盛りを等間隔にし、タイムライン全体または経路の長さで再生できます",
+    "ko": "시간 눈금 간격을 통일하고 전체 타임라인 또는 경로 길이로 재생할 수 있습니다",
+    "pl": "Równe odstępy podziałki i wybór odtwarzania całej osi czasu lub długości tras",
+    "pt-br": "Marcações de tempo uniformes e escolha entre toda a linha do tempo e a duração dos trajetos",
+    "es": "Marcas de tiempo uniformes y elección entre toda la línea de tiempo o la duración de las trayectorias",
+    "tr": "Eşit zaman işaretleri ve tüm zaman çizelgesi veya rota süresi boyunca oynatma seçimi",
+  } },
   { version: '0.1.7-beta.29', date: '2026.10.04', note: {
     en: 'Fix ghost duplicate 2D field after dragging the window between Retina and 1x displays',
     zh: '修复在 Retina 与 1x 外接屏之间拖动窗口后，2D 场地出现残影双画面',

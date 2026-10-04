@@ -43,6 +43,7 @@ import { RobotList, RobotInspector } from './components/RobotList';
 import { ConflictPanel } from './components/ConflictPanel';
 import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
+import { playbackEnd, usePlaybackRange } from './playback-range';
 import { I18nProvider, useI18n } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { useUpdateChannel, type UpdateChannel } from './update-channel';
@@ -208,7 +209,8 @@ function AppBody() {
   // session-file restores must not overwrite it.
 
   const duration = sessionDuration(robots);
-  const playback = usePlayback(duration);
+  const [playbackRange, setPlaybackRange] = usePlaybackRange();
+  const playback = usePlayback(playbackEnd(duration, field.autoPeriodS, playbackRange));
   const { t, setT } = playback;
   useEffect(() => {
     if ((playback.playing || t > 0) && showPlayTip) dismissPlayTip();
@@ -865,7 +867,7 @@ function AppBody() {
                 <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); setInspectorOpen(true); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
-            {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} playback={playback} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
+            {hasRobots && <footer className="app-footer"><Timeline robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
           </section>
           <aside className="workspace-inspector" hidden={!rightOpen}>
             <div className="inspector-header"><div className="seg inspector-tabs" role="group" aria-label={tr('workspace.panels')}>
