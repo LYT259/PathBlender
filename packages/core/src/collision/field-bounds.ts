@@ -29,6 +29,20 @@ export interface FieldBoundsOptions {
 }
 
 /**
+ * Boundary forgiveness, meters (user report 2026-10-04): a bumper that
+ * merely kisses the wall line is not "out of bounds". Two error sources
+ * live under this threshold: floating-point / sampling quantization
+ * (microns at most) and the millimetre-level rounding between Choreo
+ * start poses, the official field model and the 0.1016 m (4 in) bumper
+ * depth — the confirmed instance is the welcome example's #8814 starting
+ * 3.6 mm over the line, a real, match-legal wall-hug start. 0.02 m covers
+ * that instance 5.5× while staying under one fifth of the bumper depth,
+ * so a genuinely wall-crossing drive (half a bumper, >0.05 m, like the
+ * tuned out_of_bounds sample) is still reported.
+ */
+export const BOUNDS_TOLERANCE_M = 0.02;
+
+/**
  * SAT overlap between an OBB and the playfield AABB. Returns the overlap
  * depth (0 when disjoint) and the edge(s) with the deepest crossing.
  */
@@ -55,7 +69,7 @@ function obbVsField(
   let depth = 0;
   const edges: OutOfBoundsInterval['edges'] = [];
   const check = (d: number, edge: 'far' | 'left' | 'near' | 'right') => {
-    if (d > 1e-9) {
+    if (d > BOUNDS_TOLERANCE_M) {
       depth = Math.max(depth, d);
       edges.push(edge);
     }
