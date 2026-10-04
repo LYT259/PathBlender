@@ -700,39 +700,17 @@ function drawRobot(
   const oy = outer.offsetY * scale;
   ctx.strokeStyle = collided ? '#ff3b30' : outOfBounds ? '#ffa726' : bumperColor(r.trajectory.alliance);
   ctx.lineWidth = collided || outOfBounds ? 3 : 2;
-  // Only the four perimeter bands carry the alliance color — the base
-  // plate inside stays transparent so the field artwork shows through
-  // (user request 2026-10-04). Each band is an isosceles trapezoid,
-  // 45°-mitered at the corners like the 3D rails (same user request):
-  // on a square chassis all four bands are congruent, equal plan area.
+  // Only the perimeter band carries the alliance color — the base plate
+  // inside stays transparent so the field artwork shows through (user
+  // request 2026-10-04). The band is ONE continuous closed square ring —
+  // no seams anywhere (same user request, second pass): the outer square
+  // minus the inner square, punched with the even-odd rule.
   const bd = Math.min(vis.bumperDepthM * scale, L / 2, W / 2);
   ctx.fillStyle = bumperColor(r.trajectory.alliance);
   ctx.beginPath();
-  // +y band: outer edge spans the full side, inner edge shortens by bd both ends.
-  ctx.moveTo(ox - L / 2, -oy - W / 2);
-  ctx.lineTo(ox + L / 2, -oy - W / 2);
-  ctx.lineTo(ox + L / 2 - bd, -oy - W / 2 + bd);
-  ctx.lineTo(ox - L / 2 + bd, -oy - W / 2 + bd);
-  ctx.closePath();
-  // −y band.
-  ctx.moveTo(ox - L / 2, -oy + W / 2);
-  ctx.lineTo(ox + L / 2, -oy + W / 2);
-  ctx.lineTo(ox + L / 2 - bd, -oy + W / 2 - bd);
-  ctx.lineTo(ox - L / 2 + bd, -oy + W / 2 - bd);
-  ctx.closePath();
-  // −x band.
-  ctx.moveTo(ox - L / 2, -oy - W / 2);
-  ctx.lineTo(ox - L / 2, -oy + W / 2);
-  ctx.lineTo(ox - L / 2 + bd, -oy + W / 2 - bd);
-  ctx.lineTo(ox - L / 2 + bd, -oy - W / 2 + bd);
-  ctx.closePath();
-  // +x band.
-  ctx.moveTo(ox + L / 2, -oy - W / 2);
-  ctx.lineTo(ox + L / 2, -oy + W / 2);
-  ctx.lineTo(ox + L / 2 - bd, -oy + W / 2 - bd);
-  ctx.lineTo(ox + L / 2 - bd, -oy - W / 2 + bd);
-  ctx.closePath();
-  ctx.fill();
+  ctx.rect(ox - L / 2, -oy - W / 2, L, W);
+  ctx.rect(ox - L / 2 + bd, -oy - W / 2 + bd, L - 2 * bd, W - 2 * bd);
+  ctx.fill('evenodd');
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
   ctx.stroke();

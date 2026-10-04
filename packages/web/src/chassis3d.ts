@@ -120,43 +120,39 @@ export function buildChassis3D(
   frameAsm.position.y = -MODULE_MOUNT_Y_M;
   body.add(frameAsm);
 
-  // Bumper skirt: four isosceles-trapezoid rails, 45°-mitered at the
-  // corners (user 2026-10-04: the old two-long/two-short box layout read
-  // mismatched — every rail now spans its full side and all four carry
-  // the same plan area on a square chassis, the real FRC bumper look).
-  // No floor deck by design (user directive 2026-10-02: bumper + 4 CAD
-  // modules only) — the metal frame is its own CAD asset and slots in
-  // beside this ring.
+  // Bumper skirt: ONE continuous closed square ring around the footprint
+  // (user 2026-10-04, second pass: no seams between rails anywhere — a
+  // single band, outer square minus inner square). No floor deck by
+  // design (user directive 2026-10-02: bumper + 4 CAD modules only) —
+  // the metal frame is its own CAD asset and slots in beside this ring.
   const L = vis.outer.lengthM;
   const W = vis.outer.widthM;
   const d = vis.bumperDepthM;
-  /** One rail: plan trapezoid — outer edge `len` at z=0, inner edge
-   *  len−2d at z=−d — extruded BUMPER_H_M tall and re-axis'd so the
-   *  extrusion is +y (rail occupies y∈[0,H], z∈[−d,0] at x±len/2). */
-  const railGeometry = (len: number): THREE.BufferGeometry => {
+  const ringGeometry = (): THREE.BufferGeometry => {
     const shape = new THREE.Shape();
-    shape.moveTo(-len / 2, 0);
-    shape.lineTo(len / 2, 0);
-    shape.lineTo(len / 2 - d, -d);
-    shape.lineTo(-len / 2 + d, -d);
+    shape.moveTo(-L / 2, -W / 2);
+    shape.lineTo(L / 2, -W / 2);
+    shape.lineTo(L / 2, W / 2);
+    shape.lineTo(-L / 2, W / 2);
     shape.closePath();
+    const hole = new THREE.Path();
+    hole.moveTo(-(L / 2 - d), -(W / 2 - d));
+    hole.lineTo(L / 2 - d, -(W / 2 - d));
+    hole.lineTo(L / 2 - d, W / 2 - d);
+    hole.lineTo(-(L / 2 - d), W / 2 - d);
+    hole.closePath();
+    shape.holes.push(hole);
     const geo = new THREE.ExtrudeGeometry(shape, { depth: BUMPER_H_M, bevelEnabled: false });
-    geo.rotateX(Math.PI / 2); // (x,y,z)→(x,−z,y): extrusion +z→+y…
-    geo.translate(0, BUMPER_H_M, 0); // …lands at y∈[−H,0], lift to [0,H]
+    geo.rotateX(Math.PI / 2); // (x,y,z)→(x,−z,y): shape-y→+z, extrusion lands y∈[−H,0]
+    geo.translate(0, BUMPER_H_M, 0); // lift to y∈[0,H]
     return geo;
   };
-  for (const rail of [
-    { len: L, x: 0, z: W / 2, yaw: 0 },
-    { len: L, x: 0, z: -W / 2, yaw: Math.PI },
-    { len: W, x: L / 2, z: 0, yaw: Math.PI / 2 },
-    { len: W, x: -L / 2, z: 0, yaw: -Math.PI / 2 },
-  ]) {
-    const geometry = railGeometry(rail.len);
+  {
+    const geometry = ringGeometry();
     applyBumperWeaveUV(geometry);
     const mesh = new THREE.Mesh(geometry, bumperMat);
     mesh.name = 'bumper-rail';
-    mesh.position.set(rail.x, BUMPER_Y_M - BUMPER_H_M / 2, rail.z);
-    mesh.rotation.y = rail.yaw;
+    mesh.position.set(0, BUMPER_Y_M - BUMPER_H_M / 2, 0);
     mesh.castShadow = true;
     frameAsm.add(mesh);
   }
