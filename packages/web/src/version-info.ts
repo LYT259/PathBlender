@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.21';
+export const APP_VERSION = '0.1.8-beta.22';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.22', date: '2026.10.04', note: {
+    en: 'Shadows now follow the robots while you zoom during playback, and the shadow map only re-renders when the robots move',
+    zh: '回放中缩放时影子现在会跟随机器人；阴影贴图仅在机器人移动时重绘（纯缩放/旋转不再重绘）',
+    'zh-tw': '回放中縮放時影子現在會跟隨機器人；陰影貼圖僅在機器人移動時重繪（純縮放/旋轉不再重繪）',
+    cs: 'Stíny nyní sledují roboty i při zoomování během přehrávání; stínová mapa se přepočítává jen při pohybu robotů (nikoli při pouhém zoomu či rotaci kamery)',
+    nl: 'Schaduwen volgen de robots nu ook tijdens het zoomen bij het afspelen; de schaduwkaart wordt alleen opnieuw opgebouwd wanneer de robots bewegen (niet bij alleen camera-zoom of -rotatie)',
+    fr: 'Les ombres suivent désormais les robots pendant le zoom en lecture, et la carte d\'ombres ne se recalcule que lorsque les robots bougent (jamais lors d\'un simple zoom ou d\'une rotation de caméra)',
+    he: 'הצללים עוקבים כעת אחרי הרובוטים גם בזום במהלך ההפעלה; מפת הצללים מחושבת מחדש רק כשהרובוטים נעים (לא בזום או סיבוב מצלמה בלבד)',
+    ja: '再生中のズーム時にも影がロボットに追従するようになりました。シャドウマップはロボットが動いたときだけ再描画されます（カメラのズーム・回転だけでは再描画しません）',
+    ko: '재생 중 확대/축소 시에도 그림자가 로봇을 따라가며, 섀도 맵은 로봇이 움직일 때만 다시 그려집니다(카메라 확대/회전만으로는 다시 그리지 않음)',
+    pl: 'Cienie podążają teraz za robotami także podczas powiększania w trakcie odtwarzania; mapa cieni jest ponownie renderowana tylko, gdy roboty się poruszają (nie przy samym zoomie lub obrocie kamery)',
+    'pt-br': 'As sombras agora acompanham os robôs durante o zoom na reprodução, e o mapa de sombras só é renderizado novamente quando os robôs se movem (não em zoom ou rotação apenas da câmera)',
+    es: 'Las sombras ahora siguen a los robots al hacer zoom durante la reproducción, y el mapa de sombras solo se recalcula cuando los robots se mueven (nunca con un simple zoom o giro de cámara)',
+    tr: 'Gölgeler artık oynatma sırasında yakınlaştırmada robotları takip ediyor; gölge haritası yalnızca robotlar hareket ettiğinde yeniden çiziliyor (yalnızca kamera yakınlaştırma/döndürmede değil)',
+  } },
   { version: '0.1.8-beta.21', date: '2026.10.04', note: {
     en: 'Robot sizes default to each season\'s rule maximum (2026 back to the 27.5 in max square) and the length unit now defaults to inches',
     zh: '机器人默认尺寸按各赛季规则上限取值（2026 恢复 27.5 英寸满尺方架），长度单位默认改为英寸',
