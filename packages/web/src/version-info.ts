@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.19';
+export const APP_VERSION = '0.1.8-beta.20';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.20', date: '2026.10.04', note: {
+    en: '3D swerve modules park at their real installed pinwheel pose (they were facing straight past the frame), and ending the example always returns to the welcome page',
+    zh: '3D 转向模组恢复真实的风车安装姿态（此前直放伸出车架）；退出示例现在一定回到首页',
+    'zh-tw': '3D 轉向模組恢復真實的風車安裝姿態（先前直放伸出車架）；結束範例現在一定會回到首頁',
+    cs: '3D swerve moduly stojí ve skutečné montážní poloze „větrníku" (dříve mířily rovně a přesahovaly rám) a ukončení ukázky se vždy vrátí na uvítací stránku',
+    nl: '3D-zwenkmodules staan in hun echte gemonteerde molenstand (voorheen wezen ze recht en staken ze voorbij het frame); het voorbeeld beëindigen keert nu altijd terug naar de startpagina',
+    fr: 'Les modules swerve 3D se garent désormais dans leur vraie pose de montage en moulinet (ils pointaient droit et dépassaient du châssis), et quitter l\'exemple ramène toujours à la page d\'accueil',
+    he: 'מודולי הסוורב בתלת־ממד חונים כעת בתנוחת ההרכבה האמיתית שלהם (קודם הם פנו ישר ובלטו מהשלדה), וסיום הדוגמה תמיד מחזיר לדף הבית',
+    ja: '3D スワーブモジュールが実際の取り付け姿勢（風車状）で静止するようになり（従来は真っ直ぐ向いてフレームからはみ出していた）、サンプルを終了すると常にホーム画面に戻ります',
+    ko: '3D 스워브 모듈이 실제 장착 자세(풍차형)로 고정되며(기존에는 정면을 향해 프레임 밖으로 튀어나옴), 예제를 끝내면 항상 홈 화면으로 돌아갑니다',
+    pl: 'Moduły swerve w 3D stoją w rzeczywistej pozycji montażowej „wiatraka" (wcześniej były skierowane prosto i wystawały poza ramę), a zakończenie przykładu zawsze wraca do ekranu powitalnego',
+    'pt-br': 'Os módulos swerve 3D agora ficam na pose real de montagem em cata-vento (antes apontavam reto e passavam do chassi), e encerrar o exemplo sempre volta à tela inicial',
+    es: 'Los módulos swerve 3D quedan en su pose real de montaje en molinete (antes apuntaban recto y sobresalían del chasis), y terminar el ejemplo siempre vuelve a la pantalla de inicio',
+    tr: '3D swerve modülleri artık gerçek montaj (yel değirmeni) duruşunda bekliyor (önceden dümdüz ileriyi gösterip şasinin dışına taşıyordu) ve örneği sonlandırmak her zaman ana sayfaya dönüyor',
+  } },
   { version: '0.1.8-beta.19', date: '2026.10.04', note: {
     en: 'Fixed the 3D metal frame sinking into the floor — the module mounting plate\'s bottom face had been measured on the wrong surface (42 mm fork-arm underside instead of the true 92 mm plate face), so the frame now rides 31 mm higher, clear of the carpet',
     zh: '修复 3D 金属框架沉到地面——模组安装板底面此前测错了面（误用 42mm 叉臂底面，正确板面为 92mm），框架整体上抬 31mm、悬空于地毯上方',

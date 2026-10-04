@@ -74,7 +74,7 @@ describe('whole-session alliance control', () => {
     expect(fieldRobots().map((r) => r.trajectory.samples[0]!.x)).toEqual(positions);
   });
 
-  it('retains the group selection after ending an example and importing a folder', async () => {
+  it('applies the group side to a folder team imported while the example is open; ending the example goes home', async () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Try an example', exact: true }));
     await screen.findByTestId('field-2d', {}, { timeout: 10000 });
@@ -83,11 +83,16 @@ describe('whole-session alliance control', () => {
     Object.defineProperty(file, 'webkitRelativePath', { value: 'autos/straight_run.ghostauto' });
     drop([file]);
     await screen.findByRole('combobox', { name: 'Active route for #0001' });
-    fireEvent.click(screen.getByRole('button', { name: 'End example', exact: true }));
-    expect(fieldRobots()).toHaveLength(1);
-    expect(fieldRobots()[0]!.trajectory.alliance).toBe('red');
-    expect(fieldRobots()[0]!.trajectory.samples[0]!.x).toBeCloseTo(REBUILT_2026.lengthM - 2, 10);
+    expect(fieldRobots()).toHaveLength(3);
+    const mine = () => fieldRobots().find((r) => r.trajectory.teamNumber === '0001')!;
+    expect(mine().trajectory.alliance).toBe('red');
+    expect(mine().trajectory.samples[0]!.x).toBeCloseTo(REBUILT_2026.lengthM - 2, 10);
     fireEvent.click(side('Blue'));
-    expect(fieldRobots()[0]!.trajectory.samples[0]!.x).toBe(2);
+    expect(mine().trajectory.samples[0]!.x).toBe(2);
+    // Ending the example always lands on the welcome page (user 2026-10-04:
+    // the old behavior re-shown the folder team, reading as "exiting into
+    // another workspace").
+    fireEvent.click(screen.getByRole('button', { name: 'End example', exact: true }));
+    expect(screen.getByRole('region', { name: 'Import paths to get started' })).toBeInTheDocument();
   });
 });
