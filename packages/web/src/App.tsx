@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useSessionState } from './session-state';
 import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
 import { isExampleRobot } from './example-robot';
+import { remapColorblind } from '@pathblender/core';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
 import { PreferencesPanel } from './components/PreferencesPanel';
@@ -46,7 +47,7 @@ import { I18nProvider, useI18n } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
-import { listenPrefs } from './pref-sync';
+import { listenPrefs, readColorblind } from './pref-sync';
 import { effectiveReverseScroll, useMouseControls, useReverseScrollZoom } from './mouse-controls';
 import { setReverseScrollZoom } from './zoom';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from './viewer';
@@ -209,6 +210,25 @@ function AppBody() {
   }, [playback.playing, t, showPlayTip, dismissPlayTip]);
 
   const visible = useMemo(() => seasonRobots.filter((r) => r.visible), [seasonRobots]);
+  // Colorblind-safe robot palette (§7.3-3): the toggle remaps default
+  // palette colors in place; custom colors pass through (core remap).
+  const [colorblind, setColorblind] = useState(readColorblind);
+  useEffect(() => {
+    setRobots((prev) =>
+      prev.length === 0 ? prev : prev.map((r) => ({ ...r, color: remapColorblind(r.color, colorblind) })),
+    );
+    // The preference itself persists via the settings panel; the remap
+    // effect above only needs to run when the toggle flips.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colorblind]);
+  useEffect(
+    () =>
+      listenPrefs((key, v) => {
+        if (key === 'colorblindPalette') setColorblind(v === '1');
+      }),
+    [],
+  );
+
   // §6.5-①: the tolerance slider rescans pair windows at relative start
   // shifts ±2δ — worst-case execution timing, not just the paper plan.
   const [toleranceS, setToleranceS] = useState(0);
@@ -597,7 +617,7 @@ function AppBody() {
   const issueCount = conflicts.length + bounds.length;
   const rightOpen = hasRobots;
   const openImport = () => importInputRef.current?.click();
-  const tryExample = async () => {
+  const tryExample = async (autoplay = false) => {
     const request = ++exampleRequest.current;
     setExampleLoading(true);
     try {
@@ -619,7 +639,7 @@ function AppBody() {
       setView3D(false);
       setShowTrail(true);
       setErrors([]);
-      playback.setPlaying(false);
+      playback.setPlaying(autoplay);
       setT(0);
     } catch {
       if (request === exampleRequest.current) flash(tr('welcome.exampleFailed'), 'error');
@@ -766,7 +786,7 @@ function AppBody() {
                 <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
                 <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} onDemo={() => void tryExample(true)} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
                 <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => { setInspectorMode('checks'); }} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
