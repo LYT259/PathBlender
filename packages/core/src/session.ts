@@ -46,6 +46,27 @@ export const SESSION_COLORS = [
   '#00E676', '#FF5252', '#40C4FF', '#FFD740', '#7C4DFF',
 ];
 
+/**
+ * Colorblind-safe palette (Okabe-Ito, the canonical CVD-safe set) for the
+ * settings toggle (§7.3-3 trigger track, landed 2026-10-04). Eight colors;
+ * palette indices ≥8 wrap onto 0–1, so a 9–10 robot session shares two
+ * colors while enabled — toggling back restores the wrapped slots to the
+ * slot they wrapped onto (documented lossy round trip, harmless in the
+ * 6-robot match case the toggle targets). Remap only touches default-
+ * palette colors: custom/user colors pass through untouched.
+ */
+export const COLORBLIND_COLORS = [
+  '#0072B2', '#E69F00', '#009E73', '#CC79A7',
+  '#56B4E9', '#D55E00', '#F0E442', '#882255',
+];
+
+export function remapColorblind(color: string, enabled: boolean): string {
+  const from = enabled ? SESSION_COLORS : COLORBLIND_COLORS;
+  const to = enabled ? COLORBLIND_COLORS : SESSION_COLORS;
+  const i = from.indexOf(color);
+  return i >= 0 ? (to[i % to.length] as string) : color;
+}
+
 export function makeSession(traj: Trajectory, colorIndex = 0): SessionTrajectory {
   return {
     trajectory: traj,

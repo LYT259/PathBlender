@@ -87,6 +87,8 @@ export type {
 } from './collision/field-bounds';
 
 export {
+  COLORBLIND_COLORS,
+  remapColorblind,
   SESSION_COLORS,
   activeEndT,
   activeStartT,
