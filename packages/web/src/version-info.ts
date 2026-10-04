@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.27';
+export const APP_VERSION = '0.1.7-beta.28';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.28', date: '2026.10.04', note: {
+    en: 'i18n batch-4: 17 languages — Romanian, Bulgarian, Croatian, Swedish, Greek, Azerbaijani, Armenian, Hungarian, Macedonian, Albanian, Serbian, Bosnian, Danish, Norwegian Bokmål/Nynorsk, Ukrainian, Kinyarwanda',
+    zh: 'i18n 第四批：17 种语言——罗马尼亚语、保加利亚语、克罗地亚语、瑞典语、希腊语、阿塞拜疆语、亚美尼亚语、匈牙利语、马其顿语、阿尔巴尼亚语、塞尔维亚语、波斯尼亚语、丹麦语、挪威语（巴克摩/耐诺斯克）、乌克兰语、基尼亚卢旺达语',
+    'zh-tw': 'i18n 第四批：17 種語言——羅馬尼亞語、保加利亞語、克羅埃西亞語、瑞典語、希臘語、亞塞拜然語、亞美尼亞語、匈牙利語、馬其頓語、阿爾巴尼亞語、塞爾維亞語、波士尼亞語、丹麥語、挪威語（巴克摩/耐諾斯克）、烏克蘭語、基尼亞盧安達語',
+    cs: 'i18n 4. dávka: 17 jazyků — rumunština, bulharština, chorvatština, švédština, řečtina, ázerbájdžánština, arménština, maďarština, makedonština, albánština, srbština, bosenština, dánština, norština (bokmål/nynorsk), ukrajinština, rwandština',
+    nl: 'i18n batch 4: 17 talen — Roemeens, Bulgaars, Kroatisch, Zweeds, Grieks, Azerbeidzjaans, Armeens, Hongaars, Macedonisch, Albanees, Servisch, Bosnisch, Deens, Noors (Bokmål/Nynorsk), Oekraïens, Kinyarwanda',
+    fr: 'i18n lot 4 : 17 langues — roumain, bulgare, croate, suédois, grec, azéri, arménien, hongrois, macédonien, albanais, serbe, bosnien, danois, norvégien (bokmål/nynorsk), ukrainien, kinyarwanda',
+    he: 'i18n מקבץ 4: 17 שפות — רומנית, בולגרית, קרואטית, שוודית, יוונית, אזרית, ארמנית, הונגרית, מקדונית, אלבנית, סרבית, בוסנית, דנית, נורווגית (בוקמול/נינורסק), אוקראינית, קיניארוונדה',
+    ja: 'i18n 第4弾：17言語——ルーマニア語、ブルガリア語、クロアチア語、スウェーデン語、ギリシャ語、アゼルバイジャン語、アルメニア語、ハンガリー語、マケドニア語、アルバニア語、セルビア語、ボスニア語、デンマーク語、ノルウェー語（ブークモール/ニーノシュク）、ウクライナ語、キニアルワンダ語',
+    ko: 'i18n 4차: 17개 언어 — 루마니아어, 불가리아어, 크로아티아어, 스웨덴어, 그리스어, 아제르바이잔어, 아르메니아어, 헝가리어, 마케도니아어, 알바니아어, 세르비아어, 보스니아어, 덴마크어, 노르웨이어(보크몰/뉘노르스크), 우크라이나어, 키냐르완다어',
+    pl: 'i18n partia 4: 17 języków — rumuński, bułgarski, chorwacki, szwedzki, grecki, azerski, ormiański, węgierski, macedoński, albański, serbski, bośniacki, duński, norweski (bokmål/nynorsk), ukraiński, ruanda-rundi',
+    'pt-br': 'i18n lote 4: 17 idiomas — romeno, búlgaro, croata, sueco, grego, azerbaijano, armênio, húngaro, macedônio, albanês, sérvio, bósnio, dinamarquês, norueguês (bokmål/nynorsk), ucraniano, kinyarwanda',
+    es: 'i18n lote 4: 17 idiomas — rumano, búlgaro, croata, sueco, griego, azerí, armenio, húngaro, macedonio, albanés, serbio, bosnio, danés, noruego (bokmål/nynorsk), ucraniano, kinyarwanda',
+    tr: 'i18n 4. parti: 17 dil — Rumence, Bulgarca, Hırvatça, İsveççe, Yunanca, Azerice, Ermenice, Macarca, Makedonca, Arnavutça, Sırpça, Boşnakça, Danca, Norveççe (Bokmål/Nynorsk), Ukraynaca, Kinyarwanda',
+  } },
   { version: '0.1.7-beta.27', date: '2026.10.04', note: {
     en: 'Workspace home button — one click back to the welcome screen, undoable with Cmd+Z',
     zh: '工作区首页按钮——一键回到欢迎页，可用 ⌘Z 撤销',
