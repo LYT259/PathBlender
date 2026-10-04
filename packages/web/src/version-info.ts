@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.10';
+export const APP_VERSION = '0.1.8-beta.11';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.11', date: '2026.10.04', note: {
+    en: 'Restored example sessions refresh to the current demo and no longer auto-play; the Full timeline option drops its seconds; the robot identity rows leave the inspector',
+    zh: '恢复的示例会话会刷新为当前示例，且进入示例不再自动播放；回放范围「完整时间轴」去掉秒数；检查区不再显示机器人身份三行',
+    'zh-tw': '恢復的範例工作階段會刷新為目前範例，且進入範例不再自動播放；回放範圍「完整時間軸」去掉秒數；檢查區不再顯示機器人身分三行',
+    cs: 'Obnovené ukázkové relace se aktualizují na aktuální ukázku a už se nepřehrávají automaticky; možnost Celá časová osa ztrácí sekundy; řádky identity robota mizí z inspektoru',
+    nl: 'Herstelde voorbeeldsessies worden ververst naar het huidige voorbeeld en spelen niet meer automatisch af; de optie Volledige tijdlijn verliest de seconden; de robot-identiteitsregels verdwijnen uit de inspector',
+    fr: 'Les sessions d’exemple restaurées se rafraîchissent vers la démo actuelle et ne se lancent plus automatiquement ; l’option Chronologie complète perd ses secondes ; les lignes d’identité du robot quittent l’inspecteur',
+    he: 'הפעלות לדוגמה משוחזרות מתרעננות להדגמה הנוכחית וכבר לא מתנגנות אוטומטית; אפשרות ציר הזמן המלא מאבדת את השניות; שורות זהות הרובוט יוצאות מהמפקח',
+    ja: '復元されたサンプルセッションは現在のデモに刷新され、自動再生されなくなりました。「タイムライン全体」オプションから秒数が消え、ロボットの識別情報行がインスペクタから削除されました',
+    ko: '복원된 예제 세션이 현재 데모로 새로고침되며 더 이상 자동 재생되지 않습니다. 전체 타임라인 옵션에서 초 표시가 사라지고, 로봇 식별 정보 행이 인스펙터에서 제거됩니다',
+    pl: 'Przywrócone sesje przykładowe odświeżają się do bieżącego demo i nie odtwarzają się automatycznie; opcja Pełna oś czasu traci sekundy; wiersze tożsamości robota znikają z inspektora',
+    'pt-br': 'Sessões de exemplo restauradas são atualizadas para a demonstração atual e não reproduzem mais automaticamente; a opção Linha do tempo completa perde os segundos; as linhas de identidade do robô saem do inspetor',
+    es: 'Las sesiones de ejemplo restauradas se actualizan a la demostración actual y ya no se reproducen automáticamente; la opción Línea de tiempo completa pierde los segundos; las filas de identidad del robot desaparecen del inspector',
+    tr: 'Geri yüklenen örnek oturumlar güncel demoya yenilenir ve artık otomatik oynatılmaz; Tam zaman çizelgesi seçeneği saniyeleri bırakır; robot kimlik satırları denetçiden kalkar',
+  } },
   { version: '0.1.8-beta.10', date: '2026.10.04', note: {
     en: 'The colorblind-safe palette now applies only when you save preferences, and the settings window drops its English title bar and separator line',
     zh: '色盲安全配色改为点击「保存」后才真正应用；设置窗口去掉了英文标题栏和分隔线',
