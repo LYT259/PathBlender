@@ -40,6 +40,20 @@ describe('saveAutosave / loadAutosave', () => {
     expect(loadAutosave()).toBeNull();
   });
 
+  it('round-trips the ui slot (selection, playhead, playback range)', () => {
+    const rs = robots();
+    const ui = { selectedId: rs[0]!.trajectory.id, t: 2.5, playbackRange: 'paths' as const };
+    saveAutosave(rs, 'rebuilt-2026', undefined, ui);
+    expect(loadAutosave()!.ui).toEqual(ui);
+  });
+
+  it('older autosaves without a ui slot restore with ui undefined', () => {
+    localStorage.setItem('pb.autosave.v1', serializeSession(robots(), 'rebuilt-2026'));
+    const back = loadAutosave();
+    expect(back).not.toBeNull();
+    expect(back!.ui).toBeUndefined();
+  });
+
   it('missing slot and unusable blobs fall back to null', () => {
     expect(loadAutosave()).toBeNull();
     localStorage.setItem('pb.autosave.v1', 'not a session');
