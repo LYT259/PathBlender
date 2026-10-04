@@ -9,9 +9,15 @@ import { APP_VERSION, NOTE_LANGS, noteText, VERSION_NOTES } from '../src/version
 
 /**
  * Update-note i18n discipline (AGENTS.md 2026-10-03): the registry carries
- * every shipped UI language, dates use the YYYY.MM.DD form, and the newest
- * entry must ship ALL languages — bump-version.mjs writes English only, so
- * a bump whose translations were not filled in the same commit fails here.
+ * every shipped UI language, dates use the YYYY.MM.DD form, and EVERY entry
+ * must ship ALL languages — bump-version.mjs writes English only, so a bump
+ * whose translations were not filled in the same commit fails here.
+ *
+ * Scope hardening (2026-10-04): this check used to cover only the newest
+ * entry, so once any newer entry landed, an older incomplete entry passed
+ * forever. v0.1.7-beta.14 slipped through exactly that way — the tag's CI
+ * checks job caught it (release never published), but the broken entry sat
+ * on beta unnoticed. Now every entry is held to the full language set.
  */
 
 describe('version notes registry', () => {
@@ -28,10 +34,11 @@ describe('version notes registry', () => {
     }
   });
 
-  it('the newest entry ships every UI language', () => {
-    const newest = VERSION_NOTES[0];
-    for (const lang of NOTE_LANGS) {
-      expect(newest.note[lang]?.trim(), `${newest.version}:${lang}`).not.toBe('');
+  it('every entry ships every UI language, not just the newest', () => {
+    for (const note of VERSION_NOTES) {
+      for (const lang of NOTE_LANGS) {
+        expect(note.note[lang]?.trim(), `${note.version}:${lang}`).not.toBe('');
+      }
     }
   });
 
