@@ -99,6 +99,35 @@ bolted to the rail.
   (20× 2-1/2 in long bolts — 5 per corner in an L pattern — plus 24
   short bolts and 20 nuts); positions match the STEP within 0.33 mm.
 
+## Box radial offset — wheel biased to the corner (2026-10-04)
+
+The DesignApp replica centers the wheel column in the module
+footprint, but on the real MK5i the wheel is biased to the corner of
+the drivebase: the steering axis sits 2.58-2.62 in / 2.55 in from two
+edges of the 7.45 in square module envelope (official SDS MK5i layout
+drawing, measured at 140.3 px/in; grid overlay in
+/tmp/mk5i-grid.png). Rendered as-was, the box hung ~4 cm past the
+frame rails into the bumper zone.
+
+- **Tool** — `scripts/cad/mk5i-box-offset.py`, pure python3 stdlib
+  (same in-place GLB patching technique as mk5i-split-glb.py):
+
+  ```sh
+  python3 scripts/cad/mk5i-box-offset.py     packages/web/public/models/mk5i-module.glb     packages/web/public/models/mk5i-module.glb -0.041
+  ```
+
+  Translates every `mk5i-box` POSITION vertex by dz=-0.041 m (local
+  -Z = radially inward in the parked windmill pose; verified on the
+  3D top view: all four boxes moved toward the chassis center) and
+  updates the accessor min/max. The turret is NOT moved — trajectory
+  moduleLocations are steering-axis positions. Result: box z
+  -0.1336..+0.0507 m (drawing: 4.90 in / 2.55 in margins), x stays
+  +/-0.108, turret +/-0.0518 centered. Guarded by
+  `packages/web/test/mk5i-module-glb.test.ts`.
+- The 2D top-view sprite was re-rendered afterwards (glb-topview.py,
+  world_size_m 0.221077 -> 0.272524, mirrored as
+  `MK5I_MODULE_TOP_WORLD_M` in packages/web/src/robot-sprites.ts).
+
 ## Top-view sprite for the 2D canvas (2026-10-03)
 
 `assets/robots/mk5i-module-top.png` — the 2D canvas's module artwork

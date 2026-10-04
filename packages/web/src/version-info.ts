@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7';
+export const APP_VERSION = '0.1.8-beta.1';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.1', date: '2026.10.04', note: {
+    en: 'MK5i module body shifted 41 mm inboard per the official SDS drawing — the wheel now sits biased to the drivebase corner',
+    zh: 'MK5i 模组本体按 SDS 官方图纸内移 41mm——轮子改为偏置在底盘角上',
+    'zh-tw': 'MK5i 模組本體按 SDS 官方圖紙內移 41mm——輪子改為偏置在底盤角上',
+    cs: 'Tělo modulu MK5i posunuto o 41 mm dovnitř podle oficiálního výkresu SDS — kolo je nyní posunuté k rohu podvozku',
+    nl: 'MK5i-modulehuis 41 mm naar binnen verplaatst volgens de officiële SDS-tekening — het wiel zit nu verschoven naar de hoek van het chassis',
+    fr: 'Corps du module MK5i déplacé de 41 mm vers l’intérieur selon le plan officiel SDS — la roue est désormais décalée vers le coin du châssis',
+    he: 'גוף המודול MK5i הוזז 41 מ"מ פנימה לפי שרטוט SDS הרשמי — הגלגל כעת מוטה לפינת שלדת הנהיגה',
+    ja: 'MK5i モジュール本体を SDS 公式図面どおりに 41mm 内側へ移動——ホイールがシャーシ角寄りに配置されました',
+    ko: 'MK5i 모듈 본체를 SDS 공식 도면에 따라 41mm 안쪽으로 이동 — 휠이 섀시 모서리 쪽으로 치우쳐 배치됩니다',
+    pl: 'Korpus modułu MK5i przesunięty o 41 mm do środka zgodnie z oficjalnym rysunkiem SDS — koło jest teraz przesunięte w stronę narożnika podwozia',
+    'pt-br': 'Corpo do módulo MK5i deslocado 41 mm para dentro conforme o desenho oficial da SDS — a roda agora fica deslocada para o canto do chassi',
+    es: 'Cuerpo del módulo MK5i desplazado 41 mm hacia dentro según el plano oficial de SDS — la rueda ahora queda desplazada hacia la esquina del chasis',
+    tr: 'MK5i modül gövdesi resmi SDS çizimine göre 41 mm içeri kaydırıldı — tekerlek artık şasi köşesine doğru konumlu',
+  } },
   { version: '0.1.7', date: '2026.10.04', note: {
     en: 'Stable v0.1.7 — everything since v0.1.6',
     zh: '0.1.7 正式版——汇集 0.1.6 以来全部改进',
