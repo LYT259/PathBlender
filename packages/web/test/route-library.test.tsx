@@ -180,4 +180,20 @@ describe('team folder workflow', () => {
     expect(stored.robots[0].geometry.lengthM).toBe(1.05);
   });
 
+
+  it('keeps a loose Choreo project picked before its path, without assigning it to another folder', async () => {
+    render(<App />);
+    const project = readFileSync(resolve(samples, 'choreo/choreo.chor'), 'utf8');
+    importFolder([new File([project], 'choreo.chor')]);
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('1 robot profile'));
+    importFolder([folderFile('folder/L1.traj')]);
+    await screen.findByText('#AAAAAA', { selector: '.robot-name' });
+    fireEvent.click(screen.getByText('#AAAAAA', { selector: '.robot-name' }));
+    expect(screen.queryByRole('combobox', { name: 'Robot profile' })).not.toBeInTheDocument();
+    importFolder([new File([TRAJ], 'L2.traj')]);
+    await screen.findByText('#BBBBBB', { selector: '.robot-name' });
+    fireEvent.click(screen.getByText('#BBBBBB', { selector: '.robot-name' }));
+    expect(choices(screen.getByRole('combobox', { name: 'Robot profile' }))).toHaveLength(2);
+  });
+
 });

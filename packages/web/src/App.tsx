@@ -218,6 +218,8 @@ function AppBody() {
   // .path texts stay available so later .auto imports can resolve their
   // pathName references (within the same batch or across this session).
   const pathTextsRef = useRef(new Map<string, string>());
+  // A loose configuration picked before any path waits for the next loose import.
+  const pendingProfilesRef = useRef<LibraryProfile[]>([]);
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   const importFiles = useCallback(async (files: FileList | File[] | IncomingFile[], opts?: { fromFolder?: boolean }) => {
@@ -245,6 +247,7 @@ function AppBody() {
         try {
           const restored = deserializeSession(text);
           pathTextsRef.current.clear();
+          pendingProfilesRef.current = [];
           setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(restored.robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
           setSelectedId(restored.robots[0]?.trajectory.id ?? null);
           setInspectorMode('checks');
@@ -304,7 +307,9 @@ function AppBody() {
     }
     if (!fromFolder) pathTextsRef.current = batch;
     if (addedRoutes.length > 0) {
-      const additions = robotsFromImport(addedRoutes, addedProfiles, fromFolder, sourceRobots.length);
+      const profiles = fromFolder ? addedProfiles : [...pendingProfilesRef.current, ...addedProfiles];
+      const additions = robotsFromImport(addedRoutes, profiles, fromFolder, sourceRobots.length);
+      if (!fromFolder) pendingProfilesRef.current = [];
       setRobots((prev) => withTeamPlaceholders([...prev, ...additions]));
       setSelectedId(additions[0]!.trajectory.id);
       setInspectorMode('checks');
@@ -316,6 +321,9 @@ function AppBody() {
         : robot));
       setSelectedId(targetId);
       setInspectorMode('robot');
+      flash(tr('library.imported', { n: 0, m: addedProfiles.length }));
+    } else if (!fromFolder && addedProfiles.length > 0) {
+      pendingProfilesRef.current.push(...addedProfiles);
       flash(tr('library.imported', { n: 0, m: addedProfiles.length }));
     } else if (fromFolder && !addedRoutes.length && !nextErrors.length) {
       nextErrors.push({ fileName: incoming[0]?.relPath.split('/')[0] ?? '', message: tr('import.folderNoRoutes') });
@@ -511,6 +519,7 @@ function AppBody() {
     setExampleLoading(false);
     setRobots([]);
     pathTextsRef.current.clear();
+    pendingProfilesRef.current = [];
     setErrors([]);
     setT(0);
     playback.setPlaying(false);

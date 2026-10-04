@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.16';
+export const APP_VERSION = '0.1.7-beta.17';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.17', date: '2026.10.04', note: {
+    "en": "Folder imports create independent teams with saved route choices and distinct placeholder numbers",
+    "zh": "每个文件夹独立为一个队伍，保留路径切换选项，并使用不同的字母占位队号",
+    "zh-tw": "每個資料夾獨立為一支隊伍，保留路徑切換選項，並使用不同的字母占位隊號",
+    "cs": "Každá složka vytvoří samostatný tým s uloženými volbami tras a odlišným zástupným označením",
+    "nl": "Elke map wordt een apart team met opgeslagen routekeuzes en een unieke tijdelijke teamaanduiding",
+    "fr": "Chaque dossier crée une équipe distincte avec ses choix de parcours enregistrés et un identifiant provisoire unique",
+    "he": "כל תיקייה יוצרת קבוצה נפרדת עם אפשרויות מסלול שמורות ומזהה זמני ייחודי",
+    "ja": "フォルダーごとに独立したチームを作成し、経路の選択肢を保存して異なる仮チーム番号を割り当てます",
+    "ko": "폴더마다 독립된 팀을 만들고 경로 선택 항목을 저장하며 서로 다른 임시 팀 식별자를 부여합니다",
+    "pl": "Każdy folder tworzy osobną drużynę z zapisanymi opcjami tras i unikatowym identyfikatorem tymczasowym",
+    "pt-br": "Cada pasta cria uma equipe independente com opções de trajetos salvas e um identificador temporário exclusivo",
+    "es": "Cada carpeta crea un equipo independiente con sus opciones de ruta guardadas y un identificador provisional único",
+    "tr": "Her klasör, kaydedilen rota seçenekleri ve benzersiz geçici kimliği olan bağımsız bir takım oluşturur",
+  } },
   { version: '0.1.7-beta.16', date: '2026.10.04', note: {
     en: 'Settings: SOLIDWORKS Alt+middle now rolls the view, wheel direction follows each scheme, feet and yards are real units',
     zh: '设置：SOLIDWORKS 的 Alt+中键现在为滚转视图，滚轮方向跟随所选方案，英尺和码成为正式单位',
