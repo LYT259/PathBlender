@@ -10,9 +10,10 @@ import { I18nProvider } from '../src/i18n';
  * a leader callout anchored at the robot's visible footprint center.
  *
  * Scene math (all asserted below): 440×240 canvas fits the 10×5 field at
- * exactly 40 px/m (center 220,120). The 2026 default robot is 35 in square
- * (0.889 m → L=W=35.56 px, bounding radius reach=25.1433 px) with 4 in
- * bumpers (0.1016 m → 4.064 px). A robot at (2, 2.5) heading 0 lands at
+ * exactly 40 px/m (center 220,120). The fixture robot is an explicit 35 in
+ * square (0.889 m → L=W=35.56 px, bounding radius reach=25.1433 px) with
+ * 4 in bumpers (0.1016 m → 4.064 px) — a literal value, independent of the
+ * season rule-max default. A robot at (2, 2.5) heading 0 lands at
  * screen (100,120); the leader runs 45° up-right and the badge top-left
  * sits (reach+20)/√2 ≈ 31.9221 px from the center, snapped to device
  * pixels (132,76) at dpr 1, glyphs at (139,88). jsdom resolves no CSS

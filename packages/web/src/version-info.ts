@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.20';
+export const APP_VERSION = '0.1.8-beta.21';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.21', date: '2026.10.04', note: {
+    en: 'Robot sizes default to each season\'s rule maximum (2026 back to the 27.5 in max square) and the length unit now defaults to inches',
+    zh: '机器人默认尺寸按各赛季规则上限取值（2026 恢复 27.5 英寸满尺方架），长度单位默认改为英寸',
+    'zh-tw': '機器人預設尺寸按各賽季規則上限取值（2026 恢復 27.5 吋滿尺方架），長度單位預設改為吋',
+    cs: 'Výchozí rozměry robotů odpovídají sezónnímu maximu pravidel (2026 je zpět na čtverci 27,5 palce) a výchozí jednotkou délky jsou nyní palce',
+    nl: 'Standaard robotafmetingen volgen het reglementaire maximum van elk seizoen (2026 terug naar het maximale vierkant van 27,5 inch) en de lengte-eenheid staat nu standaard op inch',
+    fr: 'Les dimensions par défaut des robots suivent le maximum réglementaire de chaque saison (2026 revient au carré maximal de 27,5 pouces) et l\'unité de longueur est désormais le pouce',
+    he: 'מידות ברירת המחדל של הרובוט הן המקסימום המותר בכל עונה (2026 חוזר לריבוע המקסימלי 27.5 אינץ׳) ויחידת האורך כברירת מחדל היא אינץ׳',
+    ja: 'ロボットの既定サイズは各シーズンの規則上限（2026 は 27.5 インチ満尺正方形に復帰）になり、長さの単位はインチが既定になりました',
+    ko: '로봇 기본 크기는 시즌별 규칙 최대값(2026년은 27.5인치 최대 정사각형으로 복귀)을 따르며, 길이 단위 기본값은 인치입니다',
+    pl: 'Domyślne wymiary robota odpowiadają maksimum regulaminowemu każdego sezonu (2026 wraca do kwadratu 27,5 cala), a domyślną jednostką długości są cale',
+    'pt-br': 'As dimensões padrão do robô seguem o máximo das regras de cada temporada (2026 volta ao quadrado máximo de 27,5 pol) e a unidade de comprimento padrão agora é polegadas',
+    es: 'Las dimensiones por defecto del robot siguen el máximo reglamentario de cada temporada (2026 vuelve al cuadrado máximo de 27,5 pulgadas) y la unidad de longitud predeterminada son las pulgadas',
+    tr: 'Varsayılan robot boyutları her sezonun kural sınırını izler (2026, 27,5 inçlik azami kareye döner) ve uzunluk birimi artık varsayılan olarak inçtir',
+  } },
   { version: '0.1.8-beta.20', date: '2026.10.04', note: {
     en: '3D swerve modules park at their real installed pinwheel pose (they were facing straight past the frame), and ending the example always returns to the welcome page',
     zh: '3D 转向模组恢复真实的风车安装姿态（此前直放伸出车架）；退出示例现在一定回到首页',

@@ -40,7 +40,7 @@ describe('seasonRobotProfile (rule-verified per-season maxima)', () => {
     [2023, 30, 30, 3.25, 36.5],
     [2024, 30, 30, 3.25, 36.5],
     [2025, 30, 30, 4, 38],
-    [2026, 27, 27, 4, 35],
+    [2026, 27.5, 27.5, 4, 35.5],
   ];
   it.each(rows)('%i: frame %ix%i in + %s in bumper', (year, fl, fw, b, outerL) => {
     const p = seasonRobotProfile(year);
@@ -77,7 +77,7 @@ describe('withSeasonGeometry', () => {
     const a = withSeasonGeometry(st, 2023);
     expect(a.trajectory.geometry.lengthM).toBeCloseTo(0.9271, 6);
     const b = withSeasonGeometry(st, 2026);
-    expect(b.trajectory.geometry.lengthM).toBeCloseTo(0.889, 6);
+    expect(b.trajectory.geometry.lengthM).toBeCloseTo(0.9017, 6);
     // Already at the season value → same object back (no re-render churn).
     expect(withSeasonGeometry(a, 2023)).toBe(a);
   });

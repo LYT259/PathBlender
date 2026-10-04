@@ -24,7 +24,12 @@ function dropFiles(files: File[]): void {
   fireEvent.drop(window, { dataTransfer: { files } });
 }
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  // Pin meters: the dimension text here is a proxy for file-supplied
+  // geometry round-tripping, not a unit-preference assertion.
+  localStorage.setItem('pb.lengthUnit', 'm');
+});
 
 function selectRobot(identity: string, regionName: string): HTMLElement {
   // The row tooltip carries the full identity (display name, or #teamNumber,
