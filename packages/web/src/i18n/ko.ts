@@ -137,8 +137,9 @@ export const ko: Record<MessageKey, string> = {
 
   'field.style.rendered': '렌더링',
   'conflicts.title': '간섭',
-  'conflicts.minSep':
-    '최근접 {d}, t={t} s ({a} × {b})',
+  'conflicts.minSep': '최근접 {d}, t={t} s ({a} × {b})',
+'conflicts.toleranceBadge': '±{delta}초 편차',
+  'checks.tolerance': '허용 오차 검사: 최악 ±{delta}초 시작 실행',
   'conflicts.item': '{start}–{end} s · 최근접 {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 

@@ -137,8 +137,9 @@ export const cs: Record<MessageKey, string> = {
 
   'field.style.rendered': 'Vykreslený',
   'conflicts.title': 'Konflikty',
-  'conflicts.minSep':
-    'nejmenší vzdálenost {d} při t={t} s ({a} × {b})',
+  'conflicts.minSep': 'nejmenší vzdálenost {d} při t={t} s ({a} × {b})',
+'conflicts.toleranceBadge': 'skluz ±{delta} s',
+  'checks.tolerance': 'Kontrola tolerance: nejhorší případ startu ±{delta} s',
   'conflicts.item': '{start}–{end} s · nejblíž {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 

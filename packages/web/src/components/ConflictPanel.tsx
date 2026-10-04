@@ -13,9 +13,12 @@ interface Props {
   minSeparation?: { aId: string; bId: string; distanceM: number; t: number };
   onJump: (t: number, robotIds?: string[]) => void;
   guide?: ReactNode;
+  /** ±δ start-execution window for the worst-case rescan (§6.5-①). */
+  toleranceS?: number;
+  onToleranceChange?: (delta: number) => void;
 }
 
-export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump, guide }: Props) {
+export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump, guide, toleranceS = 0, onToleranceChange }: Props) {
   const { t } = useI18n();
   const [unit] = useLengthUnit();
   const nameOf = (id: string) => {
@@ -38,9 +41,24 @@ export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump
     {guide}
     {estimated && <p className="check-data-note"><Icon name="warning" size={15} />{t('checks.estimated')}</p>}
     {!!robots.length && <h3 className="check-section-heading">{t('conflicts.title')}<span className={`conflict-count ${conflicts.length ? 'bad' : ''}`}>{conflicts.length}</span></h3>}
-    {conflicts.length > 0 && <ul className="conflict-list">{conflicts.map((c) => <li key={`${c.aId}-${c.bId}-${c.startT}`} className="conflict-item">
+    {robots.length >= 2 && (
+      <label className="tolerance-row">
+        <span className="tolerance-label">{t('checks.tolerance')}</span>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.1}
+          value={toleranceS}
+          onChange={(e) => onToleranceChange?.(Number(e.target.value))}
+          aria-label={t('checks.tolerance')}
+        />
+        <span className="tolerance-value">±{toleranceS.toFixed(1)} s</span>
+      </label>
+    )}
+    {conflicts.length > 0 && <ul className="conflict-list">{conflicts.map((c) => <li key={`${c.aId}-${c.bId}-${c.startT}-${c.kind}`} className={`conflict-item${c.kind === 'tolerance' ? ' is-tolerance' : ''}`}>
       <button className="conflict-jump" onClick={() => onJump(c.closestT, [c.aId, c.bId])} title={t('checks.jump')}>
-        <span className="conflict-pair">{t('conflicts.pair', { a: nameOf(c.aId), b: nameOf(c.bId) })}</span>
+        <span className="conflict-pair">{t('conflicts.pair', { a: nameOf(c.aId), b: nameOf(c.bId) })}{c.kind === 'tolerance' && <em className="tolerance-badge">{t('conflicts.toleranceBadge', { delta: c.toleranceS ?? toleranceS })}</em>}</span>
         <span className="conflict-when">{t('conflicts.item', { start: c.startT.toFixed(2), end: c.endT.toFixed(2), d: formatLength(c.minCenterDistanceM, unit), x: ((c.closestA.x + c.closestB.x) / 2).toFixed(1), y: ((c.closestA.y + c.closestB.y) / 2).toFixed(1) })}</span>
         <span className="issue-action">{t('checks.jump')} →</span>
       </button>

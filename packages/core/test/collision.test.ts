@@ -56,3 +56,40 @@ describe('minimumSeparation', () => {
     expect(min!.distanceM).toBeLessThan(0.9); // well inside bumper contact
   });
 });
+
+describe('timing tolerance scan (red book §6.5-①)', () => {
+  it('tags a nominal collision as planned even under tolerance', () => {
+    const a = load('straight_run');
+    const b = load('stop_and_score');
+    const hits = detectCollisions([a, b], { toleranceS: 0.5 });
+    expect(hits.length).toBeGreaterThanOrEqual(1);
+    expect(hits[0]!.kind).toBe('planned');
+    expect(hits[0]!.offsetS).toBe(0);
+    expect(hits[0]!.toleranceS).toBe(0.5);
+  });
+
+  it('finds a tolerance-only collision: nominal safe, slipped start collides', () => {
+    // Delay 3.0 clears the parked robot on paper (nominal: 0 hits), but a
+    // ±0.5 s start slip on b re-closes the window — caught at the +2δ scan.
+    const a = { ...load('straight_run'), startDelayS: 3.0 };
+    const b = load('stop_and_score');
+    expect(detectCollisions([a, b])).toHaveLength(0);
+    const tol = detectCollisions([a, b], { toleranceS: 0.5 });
+    expect(tol.length).toBeGreaterThanOrEqual(1);
+    expect(tol.every((x) => x.kind === 'tolerance')).toBe(true);
+    expect(tol[0]!.offsetS).toBeGreaterThan(0);
+  });
+
+  it('stays clean when even the slipped windows miss', () => {
+    const a = { ...load('straight_run'), startDelayS: 4.0 };
+    const b = load('stop_and_score');
+    expect(detectCollisions([a, b], { toleranceS: 0.5 })).toHaveLength(0);
+  });
+
+  it('reports planned kind and zero offset without tolerance', () => {
+    const hits = detectCollisions([load('straight_run'), load('stop_and_score')]);
+    expect(hits[0]!.kind).toBe('planned');
+    expect(hits[0]!.offsetS).toBe(0);
+    expect(hits[0]!.toleranceS).toBeUndefined();
+  });
+});
