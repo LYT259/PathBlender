@@ -101,6 +101,20 @@ export interface Trajectory {
   /** Non-fatal parser warnings surfaced to the user. */
   warnings: string[];
   /**
+   * Robot mass in kg when a profile or the source file carried it;
+   * undefined → unknown, not displayed.
+   */
+  massKG?: number;
+  /** Drive mode when known from a profile (true = holonomic/swerve). */
+  holonomic?: boolean;
+  /**
+   * Regenerable source for formats whose timeline depends on robot config
+   * (PathPlanner `.path` carries no samples — generation runs against a
+   * robot config). An applied profile with dynamics re-runs generation
+   * through this (§6.6 real-robot timeline, landed 2026-10-04).
+   */
+  regenFrom?: { kind: 'pathplanner-path'; path: import('./pathplanner/path-model').ParsedPath };
+  /**
    * Editable source data for conflict-mediation edits (report v1.4 §6.3);
    * undefined for formats without geometric waypoints (.ghostauto).
    */

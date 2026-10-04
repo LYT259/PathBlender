@@ -13,12 +13,12 @@ import {
   chassisModules,
   fieldImageWorldRect,
   moduleBaseYaw,
-  moduleSteeringAngles,
   robotVisualGeometry,
   samplePoseAt,
   sampleStateAt,
 } from '@pathblender/core';
 import { trailPoints, TRAIL_WIDTH_M } from '../ground-trail';
+import { MK5I_MODULE_TOP_URL, MK5I_MODULE_TOP_WORLD_M } from '../robot-sprites';
 import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { useI18n } from '../i18n';
@@ -36,6 +36,7 @@ import {
 
 export interface FieldCanvasHandle {
   exportPng: (onDone?: (ok: boolean) => void) => void;
+  exportGif: (onDone?: (ok: boolean) => void) => void;
   fit: () => void;
 }
 
@@ -61,6 +62,8 @@ interface Props {
   onRemoveWaypoint?: (robotId: string, idx: number) => void;
   /** Whether trails render (owned by the app-level toolbar). */
   showTrail?: boolean;
+  /** Occupancy heatmap over every robot's full timeline (§7.3-3). */
+  showHeatmap?: boolean;
 }
 
 interface View {
@@ -83,6 +86,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     conflicts,
     bounds,
     showTrail = true,
+    showHeatmap = false,
   },
   ref,
 ) {
@@ -91,9 +95,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
-  // Last drawn wheel-steering angles per robot (radians, robot frame) —
-  // MK5i-style pods hold their pointing when the robot stands still.
-  const steerRef = useRef(new Map<string, number[]>());
+  // MK5i module top-view sprite (shared imageCache entry, see below).
+  const spriteRef = useRef<HTMLImageElement | null>(null);
+  const [spriteReady, setSpriteReady] = useState(false);
   const [imgReady, setImgReady] = useState(false);
   const viewRef = useRef<View>({ scale: 40, cx: field.lengthM / 2, cy: field.widthM / 2 });
   // Last fitted px/m — anchors the zoom-out floor (field stays ≥ half the
@@ -102,6 +106,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   const sizeRef = useRef({ w: 0, h: 0 });
   const autoFitRef = useRef(true);
   const drawRef = useRef<() => void>(() => {});
+  // GIF capture draws at arbitrary t values; the override short-circuits
+  // the prop while frames are being collected, then restores.
+  const overrideTRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
   const requestDraw = useCallback(() => {
     if (frameRef.current != null) return;
@@ -137,6 +144,26 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     img.src = fieldImageUrl;
     return () => { img.onload = null; };
   }, [fieldImageUrl, field.id]);
+
+  // Load the module sprite once (build-time constant URL). Mirrors the
+  // field image's cache-then-ready pattern so a warm switch paints instantly.
+  useEffect(() => {
+    const hit = imageCache.get(MK5I_MODULE_TOP_URL);
+    if (hit) {
+      spriteRef.current = hit;
+      setSpriteReady(true);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      if (imageCache.size >= 12) imageCache.delete(imageCache.keys().next().value as string);
+      imageCache.set(MK5I_MODULE_TOP_URL, img);
+      spriteRef.current = img;
+      setSpriteReady(true);
+    };
+    img.src = MK5I_MODULE_TOP_URL;
+    return () => { img.onload = null; };
+  }, []);
 
   const fit = useCallback(() => {
     autoFitRef.current = true;
@@ -371,7 +398,21 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
 
     const { w, h } = sizeRef.current;
     const dpr = window.devicePixelRatio || 1;
+    // DPR can change without a resize (window dragged between Retina and
+    // 1x displays) — ResizeObserver only watches CSS size and misses it,
+    // leaving a stale backing store whose uncleared region ghosts the
+    // previous frame. Re-allocate (which wipes the bitmap) on any drift.
+    const bw = Math.round(w * dpr);
+    const bh = Math.round(h * dpr);
+    if (canvas.width !== bw || canvas.height !== bh) {
+      canvas.width = bw;
+      canvas.height = bh;
+    }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Best-available resampling for the field artwork and module sprite —
+    // canvas defaults to low, which visibly softens both when zoomed.
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = cssVar('--canvas-bg', '#1c1c1e');
     ctx.fillRect(0, 0, w, h);
@@ -423,6 +464,29 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       ctx.fillStyle = '#c9a7f0';
       ctx.font = '10px ui-monospace, monospace';
       ctx.fillText(String(tag.id), px + 7, py + 4);
+    }
+
+    // Occupancy heatmap: every robot's footprint at every sample, low
+    // alpha — dense regions read as "spent time here" (§7.3-3).
+    if (showHeatmap) {
+      ctx.save();
+      ctx.fillStyle = cssVar('--accent', '#0a84ff');
+      ctx.globalAlpha = 0.06;
+      for (const r of robots) {
+        const samples = r.trajectory.samples;
+        const stride = Math.max(1, Math.ceil(samples.length / 120));
+        const L = r.trajectory.geometry.lengthM;
+        const W = r.trajectory.geometry.widthM;
+        for (let i = 0; i < samples.length; i += stride) {
+          const p = samples[i] as { x: number; y: number; heading: number };
+          ctx.save();
+          ctx.translate(sx(p.x), sy(p.y));
+          ctx.rotate(-p.heading);
+          ctx.fillRect(-(L * v.scale) / 2, -(W * v.scale) / 2, L * v.scale, W * v.scale);
+          ctx.restore();
+        }
+      }
+      ctx.restore();
     }
 
     // Ground tape grows only along the already-travelled part of each route.
@@ -482,21 +546,6 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       const vis = robotVisualGeometry(r.trajectory, field.year);
       const modules = chassisModules(r.trajectory, vis.chassis);
       const id = r.trajectory.id;
-      let last = steerRef.current.get(id);
-      if (!last || last.length !== modules.length) {
-        // Parked at the installed angle; steering replaces it once moving.
-        last = modules.map((m) => moduleBaseYaw(m));
-        steerRef.current.set(id, last);
-      }
-      const angles = moduleSteeringAngles(
-        state ?? { heading: pose.heading, vx: 0, vy: 0, omega: 0 },
-        modules,
-      );
-      const wheels = angles.map((a, i) => {
-        const angle = a ?? last![i]!;
-        last![i] = angle;
-        return angle;
-      });
       drawRobot(
         ctx,
         sx,
@@ -505,20 +554,22 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         r,
         vis,
         modules,
-        wheels,
+        spriteRef.current,
         v.scale,
         inCollisionNow.has(id),
         outOfBoundsNow.has(id),
+        w,
       );
     }
 
     // Clock overlay.
     ctx.fillStyle = cssVar('--fg', '#e6e6e8');
     ctx.font = '13px ui-monospace, monospace';
-    ctx.fillText(t('canvas.clock', { t: currentT.toFixed(2) }), 12, 20);
+    const effT = overrideTRef.current ?? currentT;
+    ctx.fillText(t('canvas.clock', { t: effT.toFixed(2) }), 12, 20);
     };
     requestDraw();
-  }, [field, robots, currentT, conflicts, bounds, showTrail, imgReady, theme, t, requestDraw]);
+  }, [field, robots, currentT, conflicts, bounds, showTrail, imgReady, spriteReady, theme, t, requestDraw]);
 
   useImperativeHandle(ref, () => ({
     exportPng: (onDone?: (ok: boolean) => void) => {
@@ -541,11 +592,69 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
           .catch(() => onDone?.(false));
       }, 'image/png');
     },
+    exportGif: (onDone?: (ok: boolean) => void) => {
+      const canvas = canvasRef.current;
+      if (!canvas) {
+        onDone?.(false);
+        return;
+      }
+      void import('gifenc').then(async ({ GIFEncoder, quantize, applyPalette }) => {
+        try {
+          const duration = robots.reduce((m, r) => Math.max(m, r.startDelayS + r.trajectory.durationS), 0);
+          const dt = 0.1;
+          const total = Math.max(1, Math.min(200, Math.round(duration / dt)));
+          const ctx2 = canvas.getContext('2d');
+          if (!ctx2) throw new Error('no 2d context');
+          const gif = GIFEncoder();
+          const maxW = 640;
+          const scale = Math.min(1, maxW / canvas.width);
+          const w = Math.max(1, Math.round(canvas.width * scale));
+          const h = Math.max(1, Math.round(canvas.height * scale));
+          for (let i = 0; i < total; i++) {
+            overrideTRef.current = i * dt;
+            drawRef.current();
+            const raw = ctx2.getImageData(0, 0, canvas.width, canvas.height).data;
+            // Downscale into a small RGBA buffer (simple box sampling at
+            // integer ratios keeps this dependency-free).
+            const rgba = new Uint8ClampedArray(w * h * 4);
+            for (let y = 0; y < h; y++) {
+              for (let x = 0; x < w; x++) {
+                const sx0 = Math.floor((x * canvas.width) / w);
+                const sy0 = Math.floor((y * canvas.height) / h);
+                const o0 = (sy0 * canvas.width + sx0) * 4;
+                rgba[(y * w + x) * 4] = raw[o0] as number;
+                rgba[(y * w + x) * 4 + 1] = raw[o0 + 1] as number;
+                rgba[(y * w + x) * 4 + 2] = raw[o0 + 2] as number;
+                rgba[(y * w + x) * 4 + 3] = 255;
+              }
+            }
+            const palette = quantize(rgba, 256);
+            const index = applyPalette(rgba, palette);
+            gif.writeFrame(index, w, h, { palette, delay: Math.round(dt * 1000) });
+          }
+          overrideTRef.current = null;
+          gif.finish();
+          const bytes = gif.bytes();
+          const ok = await saveBytes(
+            `pathblender-${new Date().toISOString().replace(/[:.]/g, '-')}.gif`,
+            'gif',
+            new Uint8Array(bytes),
+          );
+          onDone?.(ok);
+        } catch {
+          overrideTRef.current = null;
+          onDone?.(false);
+        }
+      }).catch(() => {
+        overrideTRef.current = null;
+        onDone?.(false);
+      });
+    },
     fit,
     // Deps: without this array the handle is recreated on every render and
     // re-invokes the parent's ref callback — a re-render loop with a
     // state-held ref (bit us in the round-9 editor page).
-  }), [fit]);
+  }), [fit, robots]);
 
   return (
     <div className="field-canvas-wrap" ref={wrapRef}>
@@ -569,63 +678,98 @@ function drawRobot(
   r: SessionTrajectory,
   vis: RobotVisualGeometry,
   modules: ModuleLocation[],
-  wheels: number[],
+  sprite: HTMLImageElement | null,
   scale: number,
   collided: boolean,
   outOfBounds: boolean,
+  canvasW: number,
 ) {
   const { outer, chassis } = vis;
   ctx.save();
   ctx.translate(sx(pose.x), sy(pose.y));
   // Screen y is flipped relative to world y, so rotate by -heading.
   ctx.rotate(-pose.heading);
+  // Opponent rendering (§6.5-②): faded + dashed — clearly not "one of us".
+  const isOpponent = r.opponent === true;
+  if (isOpponent) ctx.globalAlpha = 0.55;
 
   // Bumper ring (the collision footprint — highlight rides on it).
   const L = outer.lengthM * scale;
   const W = outer.widthM * scale;
   const ox = outer.offsetX * scale;
   const oy = outer.offsetY * scale;
-  ctx.fillStyle = bumperColor(r.trajectory.alliance);
   ctx.strokeStyle = collided ? '#ff3b30' : outOfBounds ? '#ffa726' : bumperColor(r.trajectory.alliance);
   ctx.lineWidth = collided || outOfBounds ? 3 : 2;
+  // Only the four perimeter bands carry the alliance color — the base
+  // plate inside stays transparent so the field artwork shows through
+  // (user request 2026-10-04).
+  const bd = Math.min(vis.bumperDepthM * scale, L / 2, W / 2);
+  ctx.fillStyle = bumperColor(r.trajectory.alliance);
+  ctx.beginPath();
+  ctx.rect(ox - L / 2, -oy - W / 2, L, bd);                    // +y band
+  ctx.rect(ox - L / 2, -oy + W / 2 - bd, L, bd);               // −y band
+  ctx.rect(ox - L / 2, -oy - W / 2 + bd, bd, W - 2 * bd);      // −x band
+  ctx.rect(ox + L / 2 - bd, -oy - W / 2 + bd, bd, W - 2 * bd); // +x band
+  ctx.fill();
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
-  ctx.fill();
+  if (isOpponent) ctx.setLineDash([5, 4]);
   ctx.stroke();
+  if (isOpponent) ctx.setLineDash([]);
 
-  // Chassis frame inside the bumper ring.
+  // Chassis frame: four 1 in box-rail beams around the chassis
+  // rectangle plus a corner block at each joint — the same "4 rails +
+  // 4 corners" read as the 3D frame model, in theme-aware metal gray.
+  // Rail width follows the 3D frame scaling (chassis.lengthM/0.6858),
+  // so file-sized robots get proportionally thinner rails.
   const cL = chassis.lengthM * scale;
   const cW = chassis.widthM * scale;
   const cox = chassis.offsetX * scale;
   const coy = chassis.offsetY * scale;
-  ctx.fillStyle = cssVar('--bg-panel', '#29292c');
-  ctx.strokeStyle = hexAlpha(r.color, 0.9);
+  const bw = Math.max(0.0254 * (chassis.lengthM / 0.6858) * scale, 1.5);
+  const left = cox - cL / 2;
+  const top = -coy - cW / 2;
+  ctx.fillStyle = cssVar('--fg-dim', '#8e8e93');
+  ctx.strokeStyle = hexAlpha(cssVar('--fg', '#e6e6e8'), 0.45);
   ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.rect(cox - cL / 2, -coy - cW / 2, cL, cW);
-  ctx.fill();
-  ctx.stroke();
+  for (const [bx, by, rw, rh] of [
+    [left, top, cL, bw],                       // +y rail (screen top)
+    [left, top + cW - bw, cL, bw],             // −y rail (screen bottom)
+    [left, top + bw, bw, cW - 2 * bw],         // −x rail
+    [left + cL - bw, top + bw, bw, cW - 2 * bw], // +x rail
+  ] as const) {
+    ctx.fillRect(bx, by, rw, rh);
+    ctx.strokeRect(bx, by, rw, rh);
+  }
+  // Corner blocks tying the rails together (the real frame's corner
+  // gussets), a step lighter so the joints read at any zoom.
+  const cb = Math.min(bw * 1.6, cL / 2, cW / 2);
+  ctx.fillStyle = cssVar('--fg', '#e6e6e8');
+  for (const cxx of [left, left + cL - cb]) {
+    for (const cyy of [top, top + cW - cb]) {
+      ctx.fillRect(cxx, cyy, cb, cb);
+      ctx.strokeRect(cxx, cyy, cb, cb);
+    }
+  }
 
-  // MK5i-style wheel pods: each roller points along its own steering
-  // angle (swerve kinematics; degenerates to heading-aligned wheels for
-  // differential drives). Drawn at chassis scale with a pixel floor so
-  // they stay visible when the whole field is on screen.
-  for (let i = 0; i < modules.length; i++) {
-    const m = modules[i]!;
-    const angle = wheels[i] ?? 0;
-    const wl = Math.max(0.17 * scale, 5);
-    const ww = Math.max(0.05 * scale, 2.5);
-    ctx.save();
-    ctx.translate(m.x * scale, -m.y * scale);
-    ctx.rotate(-angle);
-    ctx.fillStyle = cssVar('--fg', '#e6e6e8');
-    roundedRect(ctx, -wl / 2, -ww / 2, wl, ww, ww / 2);
-    ctx.fill();
-    ctx.fillStyle = r.color;
-    ctx.beginPath();
-    ctx.arc(0, 0, ww * 0.62, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+  // MK5i modules: the Blender-rendered top view of the real CAD module
+  // parked at each corner's installed yaw (2D shows no steering
+  // animation — user decision 2026-10-03: the wheels are not visible
+  // turning anyway). Real hardware size always: the sprite spans its
+  // render ortho scale regardless of chassis scaling, matching 3D
+  // where the module GLB is never scaled. The render's image-up is
+  // robot-frame −Y (camera up = glTF −Z), so the draw flips
+  // vertically — mirroring the 3D mount's rotation.y = −yaw.
+  if (sprite) {
+    const S = MK5I_MODULE_TOP_WORLD_M * scale;
+    for (const m of modules) {
+      ctx.save();
+      ctx.translate(m.x * scale, -m.y * scale);
+      ctx.rotate(-moduleBaseYaw(m));
+      ctx.scale(1, -1);
+      ctx.drawImage(sprite, -S / 2, -S / 2, S, S);
+      ctx.restore();
+    }
   }
 
   // Heading wedge on the +x end.
@@ -638,59 +782,46 @@ function drawRobot(
   ctx.fill();
   ctx.restore();
 
-  // Team number ON the bumper, like a real robot (user request
-  // 2026-10-02, replacing the old center annotation): one number per
-  // side rail, baseline along the rail so it rotates with the robot.
-  // Font sized to the rail band with a legibility floor; halo keeps it
-  // readable on any artwork, in both themes.
+  // Team number callout (user request 2026-10-04, replacing the
+  // on-bumper print — unreadable once the whole field fits on screen):
+  // a leader line + anchor dot like the Preferences mouse diagram, the
+  // number itself at the leader tip. Screen-space throughout: the
+  // number stays upright and constant-size at any heading and zoom.
   if (r.trajectory.teamNumber) {
     const num = r.trajectory.teamNumber;
-    const d = vis.bumperDepthM * scale;
-    const railPrintable = Math.max((L - 2.4 * d) * 0.95, 8);
-    let fs = Math.max(d * 1.15, 9);
+    const cx = sx(pose.x);
+    const cy = sy(pose.y);
+    const reach = Math.hypot(L, W) / 2;
     ctx.save();
-    ctx.translate(sx(pose.x), sy(pose.y));
-    ctx.rotate(-pose.heading);
-    ctx.font = `bold ${fs}px ui-sans-serif, system-ui, sans-serif`;
-    const wide = ctx.measureText(num).width;
-    if (wide > railPrintable) {
-      fs = Math.max((fs * railPrintable) / wide, 6);
-      ctx.font = `bold ${fs}px ui-sans-serif, system-ui, sans-serif`;
-    }
-    ctx.textAlign = 'center';
+    ctx.font = 'bold 13px ui-sans-serif, system-ui, sans-serif';
+    const tw = ctx.measureText(num).width;
+    // Leader runs up-right; mirror to up-left when the label would
+    // cross the right canvas edge.
+    const leader = 20;
+    const dir = cx + reach + leader + 8 + tw + 4 <= canvasW ? 1 : -1;
+    const ax = cx + dir * Math.SQRT1_2 * reach;
+    const ay = cy - Math.SQRT1_2 * reach;
+    const lx = cx + dir * Math.SQRT1_2 * (reach + leader);
+    const ly = cy - Math.SQRT1_2 * (reach + leader);
+    ctx.strokeStyle = cssVar('--fg-dim', '#8e8e93');
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(lx, ly);
+    ctx.stroke();
+    ctx.fillStyle = cssVar('--accent', '#0a84ff');
+    ctx.beginPath();
+    ctx.arc(ax, ay, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.textAlign = dir > 0 ? 'left' : 'right';
     ctx.textBaseline = 'middle';
     ctx.lineWidth = 3;
     ctx.strokeStyle = cssVar('--canvas-bg', '#1c1c1e');
     ctx.fillStyle = '#ffffff';
-    for (const side of [1, -1]) {
-      // Robot-frame rail center y = ±(W/2 − d/2); screen y is flipped.
-      ctx.save();
-      ctx.translate(ox, -oy - side * (W / 2 - d / 2));
-      ctx.strokeText(num, 0, 0);
-      ctx.fillText(num, 0, 0);
-      ctx.restore();
-    }
+    ctx.strokeText(num, lx + dir * 5, ly);
+    ctx.fillText(num, lx + dir * 5, ly);
     ctx.restore();
   }
-}
-
-/** Rounded-rect path without relying on CanvasRenderingContext2D.roundRect. */
-function roundedRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  radius: number,
-) {
-  const rr = Math.min(radius, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + rr, y);
-  ctx.arcTo(x + w, y, x + w, y + h, rr);
-  ctx.arcTo(x + w, y + h, x, y + h, rr);
-  ctx.arcTo(x, y + h, x, y, rr);
-  ctx.arcTo(x, y, x + w, y, rr);
-  ctx.closePath();
 }
 
 function hexAlpha(hex: string, alpha: number): string {

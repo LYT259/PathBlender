@@ -3,9 +3,9 @@ import * as THREE from 'three';
 // One small, deterministic weave tile shared by every bumper. No animation,
 // extra meshes or per-frame canvas work; mipmaps soften the thread at distance.
 let weave: THREE.DataTexture | undefined;
-export function bumperWeave(): THREE.DataTexture {
+export function bumperWeave(anisotropy = 1): THREE.DataTexture {
   if (weave) return weave;
-  const size = 32;
+  const size = 128;
   const data = new Uint8Array(size * size * 4);
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -25,14 +25,15 @@ export function bumperWeave(): THREE.DataTexture {
   weave.magFilter = THREE.LinearFilter;
   weave.minFilter = THREE.LinearMipmapLinearFilter;
   weave.generateMipmaps = true;
+  weave.anisotropy = anisotropy;
   weave.needsUpdate = true;
   return weave;
 }
 
-export function bumperMaterial(color: THREE.Color): THREE.MeshStandardMaterial {
+export function bumperMaterial(color: THREE.Color, anisotropy = 1): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({
     color, roughness: 0.96, metalness: 0,
-    map: bumperWeave(), bumpMap: bumperWeave(), bumpScale: 0.0006,
+    map: bumperWeave(anisotropy), bumpMap: bumperWeave(anisotropy), bumpScale: 0.0006,
   });
 }
 

@@ -11,11 +11,10 @@
  *
  * Every number below is verified against that season's official game
  * manual (primary sources, checked 2026-10-02): 2023–2026 from the
- * local reference/ archive PDFs; 2018/2019/2020/2022 from the official
+ * local reference/ archive PDFs; 2022 from the official
  * firstinspires season-manual PDFs. Excerpts and rule numbers in
  * PathBlender_底盘与队号方案.md §2. Perimeter-capped seasons take the
- * max-area square (perimeter/4 per side); 2018 capped a bounding
- * volume instead, so it keeps its 33×28 in rectangle.
+ * max-area square (perimeter/4 per side).
  */
 
 import type { ModuleLocation, RobotGeometry, Trajectory } from './types';
@@ -48,14 +47,6 @@ function profile(frameLIn: number, frameWIn: number, bumperIn: number): SeasonRo
 
 /** Frame sides + bumper depth per side, inches, each row rule-verified. */
 const SEASONS: Readonly<Record<number, { frame: [number, number]; bumper: number; src: string }>> = {
-  // R03 caps a STARTING CONFIG volume of 33×28×55 in; R30 bumper = ¾ in
-  // plywood + stacked 2½ in pool noodles → 3.25 in nominal depth.
-  2018: { frame: [33, 28], bumper: 3.25, src: '2018 R03 volume + R30 bumper' },
-  // R3 FRAME PERIMETER ≤ 120 in (→ 30×30 in max square); bumper ¾ in
-  // plywood + 2½ in noodles → 3.25 in nominal.
-  2019: { frame: [30, 30], bumper: 3.25, src: '2019 R3 ≤120 in + ¾+2½ bumper' },
-  // R3 FRAME PERIMETER ≤ 120 in; bumper ¾ in plywood + 2½ in noodles.
-  2020: { frame: [30, 30], bumper: 3.25, src: '2020 R3 ≤120 in + ¾+2½ bumper' },
   // R104 FRAME PERIMETER ≤ 120 in; bumper ¾ in plywood + 2½ in noodles.
   2022: { frame: [30, 30], bumper: 3.25, src: '2022 R104 ≤120 in + ¾+2½ bumper' },
   // R104 FRAME PERIMETER ≤ 120 in; R408 construction ¾ in + 2½ in.
@@ -140,11 +131,16 @@ export function robotVisualGeometry(t: Trajectory, year: number): RobotVisualGeo
 /** Corner inset for the default MK5i-style module layout, meters. */
 /**
  * Default module layout as a fraction of the chassis half-dimension,
- * matched to the shipped MK5i frame CAD (plates bolt at ±10.375 in on
- * the 27 in frame → 10.375/13.5 ≈ 0.7685) so the app's modules sit on
- * the frame's plate zones for every season the frame scales to.
+ * matched to the user's MK5i chassis CAD: the steering axes sit at
+ * ±10.876 in on the 27 in frame (turret bbox centers measured from the
+ * STEP assembly 2026-10-03 → 10.876/13.5 ≈ 0.8056), so the app's
+ * modules sit exactly on the frame CAD's module axes for every season
+ * the frame scales to. At this inset all 20 mounting bolts pass through
+ * the module plates (verified against mk5i-frame.glb + the module CAD:
+ * worst cover distance 1.2 mm); the earlier ±10.375 in guess left each
+ * corner's outer bolt off the plate entirely.
  */
-const MODULE_INSET_FRACTION = 0.7685;
+const MODULE_INSET_FRACTION = 0.8056;
 
 /**
  * Module positions for the MK5i-style rendering: the file's real

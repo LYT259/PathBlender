@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   chaseAlpha,
   chaseStep,
@@ -12,6 +12,8 @@ import {
   PINCH_EVENT_LN_CAP,
   PINCH_GAIN,
   pinchZoomFactor,
+  reverseScrollZoomEnabled,
+  setReverseScrollZoom,
   splitInstant,
   TRACKPAD_EVENT_CAP,
   TRACKPAD_K,
@@ -21,6 +23,8 @@ import {
 } from '../src/zoom';
 
 const PIXEL = 0; // WheelEvent.DOM_DELTA_PIXEL
+
+afterEach(() => setReverseScrollZoom(false)); // module-level flag: reset per test
 
 describe('classifyWheelInput', () => {
   it('treats integer notch-sized pixel deltas as mouse wheel', () => {
@@ -237,5 +241,33 @@ describe('splitInstant', () => {
   it('guards degenerate factors', () => {
     expect(splitInstant(0)).toEqual({ instant: 1, deferred: 1 });
     expect(splitInstant(Number.NaN)).toEqual({ instant: 1, deferred: 1 });
+  });
+});
+
+describe('reverse scroll wheel zoom direction', () => {
+  it('inverts mouse notches only while enabled', () => {
+    expect(wheelZoomFactor(-120)).toBe(WHEEL_STEP);
+    setReverseScrollZoom(true);
+    expect(wheelZoomFactor(-120)).toBeCloseTo(1 / WHEEL_STEP, 12);
+    expect(wheelZoomFactor(120)).toBe(WHEEL_STEP);
+    setReverseScrollZoom(false);
+    expect(wheelZoomFactor(-120)).toBe(WHEEL_STEP);
+  });
+
+  it('never flips the continuous trackpad curve or pinch-class input', () => {
+    setReverseScrollZoom(true);
+    expect(wheelZoomFactor(-4)).toBeCloseTo(Math.exp(4 * TRACKPAD_K));
+    expect(wheelZoomFactor(4)).toBeCloseTo(1 / Math.exp(4 * TRACKPAD_K));
+  });
+
+  it('exposes the flag so the 3D wheel handler can route reversed input', () => {
+    expect(reverseScrollZoomEnabled()).toBe(false);
+    setReverseScrollZoom(true);
+    expect(reverseScrollZoomEnabled()).toBe(true);
+    // Reversed wheel DOWN zooms IN with the flat step; the 3D handler
+    // detects this class and applies it through the pinch-dolly path
+    // (OrbitControls' wheel formula cannot invert direction).
+    expect(wheelZoomFactor(120)).toBe(WHEEL_STEP);
+    expect(wheelZoomFactor(-120)).toBeCloseTo(1 / WHEEL_STEP, 12);
   });
 });

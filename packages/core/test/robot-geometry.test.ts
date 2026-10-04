@@ -36,9 +36,6 @@ describe('seasonRobotProfile (rule-verified per-season maxima)', () => {
   type Row = [number, number, number, number, number];
   // year, frame length in, frame width in, bumper in/side, outer square/length in
   const rows: Row[] = [
-    [2018, 33, 28, 3.25, 39.5],
-    [2019, 30, 30, 3.25, 36.5],
-    [2020, 30, 30, 3.25, 36.5],
     [2022, 30, 30, 3.25, 36.5],
     [2023, 30, 30, 3.25, 36.5],
     [2024, 30, 30, 3.25, 36.5],
@@ -114,7 +111,7 @@ describe('chassisModules', () => {
   it('defaults to four corners on the frame-CAD plate zones (proportional)', () => {
     const mods = chassisModules(traj({}), { lengthM: 0.762, widthM: 0.762 });
     expect(mods).toHaveLength(4);
-    const ix = (0.762 / 2) * 0.7685;
+    const ix = (0.762 / 2) * 0.8056;
     for (const sx of [1, -1]) {
       for (const sy of [1, -1]) {
         expect(mods.some((m) => Math.abs(m.x - sx * ix) < 1e-9 && Math.abs(m.y - sy * ix) < 1e-9)).toBe(true);

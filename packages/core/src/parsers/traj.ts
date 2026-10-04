@@ -17,6 +17,7 @@ import type {
 } from '../types';
 import { DEFAULT_GEOMETRY, teamNumberFromName, trajectoryDuration } from '../types';
 import { asArray, asRecord, num, parseJson, str } from './json';
+import { geometryFromConfig } from './robot-profile';
 import { parseChoreoWaypoints } from './traj-editable';
 import { ParseError } from './parse-error';
 
@@ -60,56 +61,10 @@ function differentialState(s: Record<string, unknown>): RawSample {
 }
 
 /**
- * v3 config: bumper {front, side, back} are half-extents from chassis
- * center to bumper outer edge (e.g. 0.4064 → 0.81 m overall, plausible for
- * a ~32 in chassis). Module corner positions give the wheel layout.
+ * v3 config → geometry mapping lives in robot-profile.ts (geometryFromConfig):
+ * the embedded config and the `.chor` project config are the same fields, so
+ * one mapper serves both consumers (red book v1.15).
  */
-function geometryFromConfig(cfg: Record<string, unknown>): {
-  geometry: RobotGeometry;
-  modules: ModuleLocation[];
-  fromFile: boolean;
-} {
-  const bumper = asRecord(cfg.bumper);
-  const front = bumper ? num(bumper.front, Number.NaN) : Number.NaN;
-  const side = bumper ? num(bumper.side, Number.NaN) : Number.NaN;
-  const back = bumper ? num(bumper.back, Number.NaN) : Number.NaN;
-  const hasBumper =
-    Number.isFinite(front) && Number.isFinite(side) && Number.isFinite(back);
-
-  const fl = asRecord(cfg.frontLeft);
-  const bl = asRecord(cfg.backLeft);
-  const modules: ModuleLocation[] = [];
-  if (fl && bl) {
-    const flx = num(fl.x, Number.NaN);
-    const fly = num(fl.y, Number.NaN);
-    const blx = num(bl.x, Number.NaN);
-    const bly = num(bl.y, Number.NaN);
-    if ([flx, fly, blx, bly].every(Number.isFinite)) {
-      // Symmetric swerve layout: mirror the left modules to the right.
-      modules.push(
-        { x: flx, y: fly },
-        { x: flx, y: -fly },
-        { x: blx, y: bly },
-        { x: blx, y: -bly },
-      );
-    }
-  }
-
-  if (!hasBumper) {
-    return { geometry: DEFAULT_GEOMETRY, modules, fromFile: false };
-  }
-  const len = front + back;
-  const wid = side * 2;
-  // Guard against nonsense half-extent interpretations (e.g. depth reading).
-  const plausible = len > 0.3 && len < 1.6 && wid > 0.3 && wid < 1.6;
-  return {
-    geometry: plausible
-      ? { lengthM: len, widthM: wid, offsetX: (front - back) / 2, offsetY: 0 }
-      : DEFAULT_GEOMETRY,
-    modules,
-    fromFile: plausible,
-  };
-}
 
 export function parseTraj(text: string, fileName: string): Trajectory {
   const root = asRecord(parseJson(text, fileName));
@@ -160,7 +115,42 @@ export function parseTraj(text: string, fileName: string): Trajectory {
       : { geometry: DEFAULT_GEOMETRY, modules: [] as ModuleLocation[], fromFile: false };
   })();
   if (!fromFile) {
-    warnings.push('file has no usable robot geometry; using default (adjustable)');
+    warnings.push('no robot geometry carried — attach a Choreo .chor or PathPlanner settings.json profile for real dimensions');
+  }
+
+  // Traction headroom (red book §6.6 远期可选, landed 2026-10-04): fx/fy
+  // are per-module wheel forces; the per-module friction limit is
+  // COF·mass·g/n. A sustained stretch above 90% of that limit warns the
+  // real run may slip — the path was planned for ideal grip. Judges only
+  // when the config carries cof+mass; otherwise no honest verdict.
+  {
+    const cfgRec = asRecord(trajObj.config);
+    const cof = cfgRec ? num(cfgRec.cof, Number.NaN) : Number.NaN;
+    const mass = cfgRec ? num(cfgRec.mass, Number.NaN) : Number.NaN;
+    if (Number.isFinite(cof) && Number.isFinite(mass) && cof > 0 && mass > 0) {
+      let stretchStart: number | undefined;
+      let stretchEnd: number | undefined;
+      for (const raw of asArray(trajObj.samples) ?? []) {
+        const rec = asRecord(raw);
+        const t = rec ? num(rec.t, Number.NaN) : Number.NaN;
+        const fx = rec ? asArray(rec.fx) : undefined;
+        const fy = rec ? asArray(rec.fy) : undefined;
+        const limit = (cof * mass * 9.8) / Math.max(fx?.length ?? 1, 1);
+        let maxF = 0;
+        for (let m = 0; fx && m < fx.length; m++) {
+          const f = Math.hypot(num(fx[m], 0), num(fy?.[m], 0));
+          if (f > maxF) maxF = f;
+        }
+        const near = Number.isFinite(t) && fx && maxF > 0.9 * limit;
+        if (near) {
+          if (stretchStart === undefined) stretchStart = t;
+          stretchEnd = t;
+        }
+      }
+      if (stretchStart !== undefined && stretchEnd !== undefined) {
+        warnings.push(`wheel forces near the traction limit at t≈${stretchStart.toFixed(1)}–${stretchEnd.toFixed(1)} s — the real run may slip (path planned for ideal grip)`);
+      }
+    }
   }
 
   // Events: { name, from: { targetTimestamp, offset.val } }

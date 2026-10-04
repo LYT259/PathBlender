@@ -1,6 +1,6 @@
 /**
- * Season field registry: 2018–2026 packages, corner-point calibration math,
- * and the artwork-style (schematic/rendered) resolution. 2018–2020 carry the
+ * Season field registry: 2019–2026 packages, corner-point calibration math,
+ * and the artwork-style (schematic/rendered) resolution. 2019–2020 carry the
  * AdvantageScope render as their only art; 2022–2026 ship the PathPlanner
  * schematic as the primary artwork plus an AS render (see field.ts comments).
  */
@@ -8,9 +8,9 @@ import { describe, expect, it } from 'vitest';
 import { FIELDS, REBUILT_2026, fieldById, fieldImageWorldRect, makeCustomField, withFieldVariant } from '../src';
 
 describe('FIELDS registry', () => {
-  it('covers 2018 through 2026 (2021 has no public orthographic asset)', () => {
+  it('covers 2022 through 2026', () => {
     const years = FIELDS.map((f) => f.year);
-    expect(years).toEqual([2018, 2019, 2020, 2022, 2023, 2024, 2025, 2026]);
+    expect(years).toEqual([2022, 2023, 2024, 2025, 2026]);
   });
 
   it('Autonomous Period follows the season — 15 s through 2025, 20 s in 2026', () => {
@@ -24,11 +24,12 @@ describe('FIELDS registry', () => {
     expect(makeCustomField({ ...base, autoPeriodS: 20 }).autoPeriodS).toBe(20);
   });
 
-  it('2018–2020 carry corner calibrations that bracket the playfield', () => {
-    for (const id of ['powerup-2018', 'deepspace-2019', 'infinitercharge-2020']) {
-      const f = fieldById(id);
-      expect(f.image?.originPx).toBeDefined();
-      const rect = fieldImageWorldRect(f.image!, f.lengthM, f.widthM);
+  it('the 2022 rendered artwork carries a corner calibration that brackets the playfield', () => {
+    {
+      const f = fieldById('rapidreact-2022');
+      const img = f.imageRendered!;
+      expect(img.originPx).toBeDefined();
+      const rect = fieldImageWorldRect(img, f.lengthM, f.widthM);
       // The playfield (0..L, 0..W) must sit inside the image rect with the
       // corner at the origin and room to the right/top.
       expect(rect.left).toBeLessThanOrEqual(0.001);
@@ -65,16 +66,6 @@ describe('FIELDS registry', () => {
     const f = fieldById('rebuilt-2026');
     const rect = fieldImageWorldRect(f.image!, f.lengthM, f.widthM);
     expect(rect).toEqual({ left: -0.5, right: f.lengthM + 0.5, bottom: -0.5, top: f.widthM + 0.5 });
-  });
-
-  it('2018 POWER UP matches the AdvantageScope config math', () => {
-    const f = fieldById('powerup-2018');
-    expect(f.lengthM).toBeCloseTo(16.4592, 4);
-    expect(f.widthM).toBeCloseTo(8.2296, 4);
-    const img = f.image!;
-    // Field corner at (519, 78) px; 2801 px of field length.
-    expect(img.ppm * f.lengthM).toBeCloseTo(3320 - 519, 1);
-    expect((img.ppmY ?? img.ppm) * f.widthM).toBeCloseTo(1480 - 78, 1);
   });
 
   it('the 2025 schematic uses the artist calibration: uniform 200 px/m, walls at the canvas edges', () => {
@@ -133,10 +124,6 @@ describe('withFieldVariant', () => {
     expect(amRendered.image).toBe(base.imageRendered); // one render, both variants
   });
 
-  it('requesting a style a season lacks falls back to its only artwork', () => {
-    const f = fieldById('powerup-2018');
-    expect(withFieldVariant(f, 'welded', 'rendered')).toBe(f); // no render field → identity
-  });
 
   it('the 2025 rendered calibrations bracket the enclosure frame', () => {
     const f = fieldById('reefscape-2025');
@@ -148,7 +135,7 @@ describe('withFieldVariant', () => {
       expect(rect.right).toBeGreaterThanOrEqual(f.lengthM - 0.001);
       expect(rect.top).toBeGreaterThanOrEqual(f.widthM - 0.001);
       // Generous outer margins (the artwork carries run-off floor), same
-      // budget as the 2018–2020 AdvantageScope renders.
+      // budget as the 2019–2020 AdvantageScope renders.
       expect(rect.right - f.lengthM).toBeLessThan(3.5);
       expect(rect.top - f.widthM).toBeLessThan(3.5);
       // Carpet edges land where the calibration was measured: blue corner

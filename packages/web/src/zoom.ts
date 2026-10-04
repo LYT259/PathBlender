@@ -172,6 +172,24 @@ export function classifyWheelInput(deltaY: number, deltaMode: number): WheelInpu
 }
 
 /**
+ * Onshape's "Reverse scroll wheel zoom direction" checkbox. Applied only
+ * to the discrete 'wheel' class: pinch (gesture* events) and two-finger
+ * trackpad scroll are natural-direction gestures and must not flip. The
+ * app host keeps this in sync with the EFFECTIVE direction — the saved
+ * checkbox combined with the scheme's factory default (SOLIDWORKS ships
+ * scroll-up = zoom out; see mouse-controls.effectiveReverseScroll).
+ */
+let reverseScrollZoom = false;
+
+export function setReverseScrollZoom(on: boolean): void {
+  reverseScrollZoom = on;
+}
+
+export function reverseScrollZoomEnabled(): boolean {
+  return reverseScrollZoom;
+}
+
+/**
  * Multiplicative zoom factor for one wheel event: >1 zooms in (δ<0),
  * <1 zooms out (δ>0), 1 is neutral. Mouse notches take Onshape's flat
  * per-event step (δ magnitude ignored, measured 2026-10-03); trackpad
@@ -180,7 +198,10 @@ export function classifyWheelInput(deltaY: number, deltaMode: number): WheelInpu
 export function wheelZoomFactor(deltaY: number, deltaMode: number = WheelEvent.DOM_DELTA_PIXEL): number {
   if (deltaY === 0) return 1;
   const trackpad = classifyWheelInput(deltaY, deltaMode) === 'trackpad';
-  if (!trackpad) return deltaY < 0 ? WHEEL_STEP : 1 / WHEEL_STEP;
+  if (!trackpad) {
+    const dy = reverseScrollZoom ? -deltaY : deltaY;
+    return dy < 0 ? WHEEL_STEP : 1 / WHEEL_STEP;
+  }
   const factor = Math.exp(-deltaY * TRACKPAD_K);
   return Math.min(TRACKPAD_EVENT_CAP, Math.max(1 / TRACKPAD_EVENT_CAP, factor));
 }

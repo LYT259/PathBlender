@@ -44,6 +44,6 @@ describe('bumper presentation', () => {
     expect(red.bumpMap).toBe(bumperWeave());
     expect(red.color.getHexString()).toBe('c8323e');
     expect(blue.color.getHexString()).toBe('2264cf');
-    expect(bumperWeave().image.data.length).toBe(32 * 32 * 4);
+    expect(bumperWeave().image.data.length).toBe(128 * 128 * 4);
   });
 });

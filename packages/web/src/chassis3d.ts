@@ -10,7 +10,7 @@
  * absent or fails its sanity check, so the 3D view always has robots.
  *
  * The bumper skirt and frame deck stay procedural by design: they are
- * per-season rule rectangles tinted with the session's alliance color, not
+ * per-season rule rectangles tinted with the robot's identity color, not
  * MK5i geometry.
  *
  * Frame conventions (derived from field3d-frame.ts): the group sits at
@@ -27,6 +27,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { bumperMaterial, applyBumperWeaveUV } from './bumper-material';
+import { moduleBaseYaw } from '@pathblender/core';
 import type { ModuleLocation, RobotVisualGeometry } from '@pathblender/core';
 
 /** 4 in wheel (typical MK5i fit). */
@@ -38,11 +39,31 @@ const BUMPER_Y_M = 0.115;
 /** Official MK5i overall height (layout drawing: 6.17 in; the shipped
  *  decimated mesh measures 6.16 in). */
 const MK5I_HEIGHT_M = 6.17 * 0.0254;
+/**
+ * Module mount height above the frame CAD's y origin (the belly-pan
+ * bottom, NOT the ground): rail top at the corner mounts (frame-y
+ * 0.061516 m, measured on mk5i-frame.glb) minus the module
+ * mounting-plate bottom face that rides the rail top (module-y
+ * 0.042118 m) = 0.019398 m. Pods sit this far above the frame assembly;
+ * the frame assembly drops by the same amount so the wheels still touch
+ * the field floor -- sinking the belly pan 19.4 mm under the floor, a
+ * physically unbuildable stack-up we accept (the field slab hides it).
+ */
+const MODULE_MOUNT_Y_M = 0.019398;
+/** Split-GLB contract (2026-10-03): `mk5i-turret-*` nodes (turret +
+ *  wheel) rotate about the steering axis at the origin; `mk5i-box-*`
+ *  nodes are bolted to the mounting plate and never steer. */
+const MK5I_TURRET_PREFIX = 'mk5i-turret-';
 
 export interface Chassis3D {
   group: THREE.Group;
-  /** Steering pivots, one per module — drive code sets rotation.y. */
+  /** Module roots, one per module — position only, never rotated. */
   pods: THREE.Group[];
+  /** Steering pivots, one per module — drive code sets rotation.y. For
+   *  the split GLB this is the turret sub-group (the box stays frozen at
+   *  the installed yaw); for an old GLB or the procedural fallback it is
+   *  the pod itself (the whole module steers, the previous behavior). */
+  turrets: THREE.Group[];
 }
 
 export function buildChassis3D(
@@ -52,6 +73,8 @@ export function buildChassis3D(
   moduleTemplate?: THREE.Object3D | null,
   teamNumber?: string,
   frameTemplate?: THREE.Object3D | null,
+  /** Renderer max anisotropy for the cached decal/weave textures. */
+  anisotropy = 1,
 ): Chassis3D {
   const group = new THREE.Group();
 
@@ -62,7 +85,7 @@ export function buildChassis3D(
   group.add(body);
 
   const tint = new THREE.Color(color);
-  const bumperMat = bumperMaterial(tint);
+  const bumperMat = bumperMaterial(tint, anisotropy);
   const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.8 });
   const podMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3c, roughness: 0.55, metalness: 0.35 });
 
@@ -87,17 +110,27 @@ export function buildChassis3D(
     return mesh;
   };
 
+  // Everything bolted to the frame — the frame CAD itself, the bumper
+  // ring, the team decals — assembles relative to the frame GLB's own y
+  // origin, so the whole assembly drops by MODULE_MOUNT_Y_M together:
+  // the modules' mounting plates then rest on the rail tops while the
+  // wheels stay on the field floor.
+  const frameAsm = new THREE.Group();
+  frameAsm.name = 'frame-assembly';
+  frameAsm.position.y = -MODULE_MOUNT_Y_M;
+  body.add(frameAsm);
+
   // Bumper skirt: four boxes forming the ring at the outer footprint.
   // No floor deck by design (user directive 2026-10-02: bumper + 4 CAD
-  // modules only) — the real metal frame arrives later as its own CAD
-  // asset and slots in beside this ring.
+  // modules only) — the metal frame is its own CAD asset and slots in
+  // beside this ring.
   const L = vis.outer.lengthM;
   const W = vis.outer.widthM;
   const d = vis.bumperDepthM;
-  add(body, L, BUMPER_H_M, d, 0, BUMPER_Y_M, (W - d) / 2, bumperMat);
-  add(body, L, BUMPER_H_M, d, 0, BUMPER_Y_M, -(W - d) / 2, bumperMat);
-  add(body, d, BUMPER_H_M, W - 2 * d, (L - d) / 2, BUMPER_Y_M, 0, bumperMat);
-  add(body, d, BUMPER_H_M, W - 2 * d, -(L - d) / 2, BUMPER_Y_M, 0, bumperMat);
+  add(frameAsm, L, BUMPER_H_M, d, 0, BUMPER_Y_M, (W - d) / 2, bumperMat);
+  add(frameAsm, L, BUMPER_H_M, d, 0, BUMPER_Y_M, -(W - d) / 2, bumperMat);
+  add(frameAsm, d, BUMPER_H_M, W - 2 * d, (L - d) / 2, BUMPER_Y_M, 0, bumperMat);
+  add(frameAsm, d, BUMPER_H_M, W - 2 * d, -(L - d) / 2, BUMPER_Y_M, 0, bumperMat);
 
   // The user-built MK5i frame CAD (tubes + corner blocks + hardware,
   // 27x27 in unscaled; modules stripped — the app mounts its own). Scaled
@@ -106,13 +139,13 @@ export function buildChassis3D(
   if (frameTemplate) {
     const frame = frameTemplate.clone(true);
     frame.scale.set(vis.chassis.lengthM / 0.6858, 1, vis.chassis.widthM / 0.6858);
-    body.add(frame);
+    frameAsm.add(frame);
   }
 
   // Centered, upright stitched digits on all four outward-facing rails.
   // A fixed aspect ratio avoids stretching short numbers across the bumper.
   if (teamNumber) {
-    const tex = teamNumberTexture(teamNumber);
+    const tex = teamNumberTexture(teamNumber, anisotropy);
     const mat = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.98, depthWrite: false });
     for (const rail of [
       { width: L - 2 * d, x: 0, z: W / 2 + 0.001, yaw: 0 },
@@ -125,21 +158,68 @@ export function buildChassis3D(
       decal.name = 'bumper-team-number';
       decal.position.set(rail.x, BUMPER_Y_M, rail.z);
       decal.rotation.y = rail.yaw;
-      body.add(decal);
+      frameAsm.add(decal);
     }
   }
 
-  // Swerve pods at module positions (robot frame, relative to the pose).
+  // Swerve pods at module positions (robot frame, relative to the
+  // pose). The modules bolt to the frame, so pod heights are
+  // frame-relative: they hang in a group dropped by the same
+  // MODULE_MOUNT_Y_M as the frame assembly, and each pod sits that
+  // amount above it — mounting-plate bottoms exactly on the rail tops,
+  // wheel bottoms still on the field floor (net world height as before).
+  const podMount = new THREE.Group();
+  podMount.name = 'pod-mount';
+  podMount.position.y = -MODULE_MOUNT_Y_M;
+  group.add(podMount);
+
   const pods: THREE.Group[] = [];
+  const turrets: THREE.Group[] = [];
   for (const m of modules) {
     const pod = new THREE.Group();
-    pod.position.set(m.x, 0, m.y);
+    pod.position.set(m.x, MODULE_MOUNT_Y_M, m.y);
 
     if (moduleTemplate) {
       // Official CAD module: clone shares geometry/materials with every
       // other instance, so N robots × 4 pods reuse one GPU copy.
       const inst = moduleTemplate.clone(true);
-      pod.add(inst);
+      // Split-GLB contract: pull the `mk5i-turret-*` nodes (top-most
+      // matches) into a turret group driven by steering; whatever
+      // remains in the clone is the box (the `mk5i-box-*` nodes plus
+      // anything unprefixed), frozen at the installed yaw — identical
+      // to the previous parked pose. An old GLB has no mk5i-turret-*
+      // nodes (a stale service-worker cache can serve it): fall back
+      // to the previous behavior — the whole pod steers.
+      const turretNodes: THREE.Object3D[] = [];
+      const collectTurrets = (root: THREE.Object3D): void => {
+        for (const child of root.children) {
+          if (child.name.startsWith(MK5I_TURRET_PREFIX)) turretNodes.push(child);
+          else collectTurrets(child);
+        }
+      };
+      collectTurrets(inst);
+      if (turretNodes.length > 0) {
+        const turret = new THREE.Group();
+        turret.name = 'mk5i-turret';
+        // Park at the installed yaw — the drive loop's seeded steer
+        // applies this same angle on its first pass.
+        turret.rotation.y = -moduleBaseYaw(m);
+        // attach() re-parents while preserving each node's world
+        // transform, so the GLB's own node rotations (the Assembly
+        // ±90°X pair) survive the move; the clone keeps only the box
+        // nodes and becomes the box group.
+        inst.updateMatrixWorld(true);
+        for (const n of turretNodes) turret.attach(n);
+        // Robot-frame yaw maps to render yaw with the opposite sign —
+        // the same mapping the drive loop applies to the turret.
+        inst.rotation.y = -moduleBaseYaw(m);
+        pod.add(inst);
+        pod.add(turret);
+        turrets.push(turret);
+      } else {
+        pod.add(inst);
+        turrets.push(pod);
+      }
     } else {
       const wheel = new THREE.Mesh(
         new THREE.CylinderGeometry(WHEEL_RADIUS_M, WHEEL_RADIUS_M, WHEEL_WIDTH_M, 18),
@@ -154,13 +234,15 @@ export function buildChassis3D(
 
       // MK5i-style gearbox block above the wheel.
       add(pod, 0.075, 0.09, 0.075, 0, WHEEL_RADIUS_M * 2 + 0.045, 0, podMat);
+      // Procedural fallback: the whole pod steers, as before.
+      turrets.push(pod);
     }
 
-    group.add(pod);
+    podMount.add(pod);
     pods.push(pod);
   }
 
-  return { group, pods };
+  return { group, pods, turrets };
 }
 
 /** Acceptance window for the CAD template's height sanity check. */
@@ -204,7 +286,7 @@ export function validateModuleTemplate(t: THREE.Object3D): THREE.Group | null {
  *  shared by every robot carrying it (never disposed, like the module
  *  template). */
 const teamNumberTexCache = new Map<string, THREE.CanvasTexture>();
-function teamNumberTexture(num: string): THREE.CanvasTexture {
+function teamNumberTexture(num: string, anisotropy = 1): THREE.CanvasTexture {
   const hit = teamNumberTexCache.get(num);
   if (hit) return hit;
   const canvas = document.createElement('canvas');
@@ -228,7 +310,7 @@ function teamNumberTexture(num: string): THREE.CanvasTexture {
   ctx.stroke();
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
+  tex.anisotropy = anisotropy;
   teamNumberTexCache.set(num, tex);
   return tex;
 }

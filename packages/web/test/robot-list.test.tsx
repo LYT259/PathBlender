@@ -40,7 +40,7 @@ describe('robot workspace controls', () => {
     const sample = robot();
     const onSelect = vi.fn();
     const onUpdate = vi.fn();
-    render(<I18nProvider><RobotList robots={[sample]} conflicts={[]} selectedId={sample.trajectory.id} onSelect={onSelect} onImport={vi.fn()} onUpdate={onUpdate} libraryRoutes={[]} libraryProfiles={[]} onPickRoute={vi.fn()} onAddRoute={vi.fn()} /></I18nProvider>);
+    render(<I18nProvider><RobotList robots={[sample]} conflicts={[]} selectedId={sample.trajectory.id} onSelect={onSelect} onImport={vi.fn()} onUpdate={onUpdate} onPickRoute={vi.fn()} /></I18nProvider>);
 
     const select = screen.getByRole('button', { name: '#0001, Ghost, 8.30 s' });
     expect(select).toHaveAttribute('aria-pressed', 'true');
@@ -101,9 +101,7 @@ describe('team number chip (metadata edit, 2026-10-02)', () => {
           onImport={vi.fn()}
           onUpdate={onUpdate}
           onPickRoute={vi.fn()}
-          onAddRoute={vi.fn()}
-          libraryRoutes={[]}
-          libraryProfiles={[]}
+
         />
       </I18nProvider>,
     );
@@ -131,9 +129,7 @@ describe('team number chip (metadata edit, 2026-10-02)', () => {
           onImport={vi.fn()}
           onUpdate={onUpdate}
           onPickRoute={vi.fn()}
-          onAddRoute={vi.fn()}
-          libraryRoutes={[]}
-          libraryProfiles={[]}
+
         />
       </I18nProvider>,
     );

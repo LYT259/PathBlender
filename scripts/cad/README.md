@@ -62,3 +62,71 @@ vertices — no operator semantics, byte-reproducible runs.
   (steering 0 = straight ahead);
 - small enough to clone 4× per robot with shared GPU buffers
   (a few meshes / tens of thousands of triangles).
+
+## Box/turret split + chassis measurements (2026-10-03)
+
+The shipped GLB is now two nodes — `mk5i-box` (static: top plate, both
+Kraken motors, L plate) and `mk5i-turret` (steers: fork + wheel) — so
+the app yaws only the turret, matching the real robot where the box is
+bolted to the rail.
+
+- **Split tool** — `scripts/cad/mk5i-split-glb.py`, pure python3
+  stdlib (no Blender). Input is the DesignApp-exported module GLB
+  exactly as shipped at git `9250d4b` (backup:
+  `/tmp/mk5i-module-design.glb`). It re-groups per TRIANGLE: a
+  triangle is turret iff every vertex sits inside the fork/wheel
+  column around the steering axis (`|x| <= 0.0518`, `|z| <= 0.0518` —
+  fork bbox measured on the chassis STEP's named Turret Assembly) AND
+  it either touches the floor (`ymin <= 0.001`, the wheel) or is no
+  taller than the fork (`ymax <= 0.0775`); everything else is box.
+  Materials are preserved and all node transforms are flattened to
+  identity — a pure re-grouping: no decimate, no calibration. Result:
+  box 46,548 + turret 8,589 = 55,137 triangles, exactly the source
+  total; measured turret bbox x ±0.0518, y 0..0.0775,
+  z -0.0518..0.0512.
+- **Why not the chassis STEP** — "MK5i Chassis 27*27.step" (literal
+  `*` in the filename) is internally mis-mated: its Top Assembly +
+  Kraken motors hang 55–87 mm BELOW the wheel floor and the top cover
+  is missing, and the Blender decimate/loose-parts route shattered the
+  module into hundreds of pieces. Every STEP-based split attempt
+  failed, hence the triangle-level script on the shipped GLB itself.
+- **Steering-axis positions** — the four turret bbox centers in the
+  chassis STEP are the true steering axes: ±0.27625 m, symmetric in
+  render coordinates. This is the measured basis for
+  `MODULE_INSET_FRACTION = 0.8056` in
+  `packages/core/src/robot-geometry.ts`.
+- **Fastener cross-check** — the chassis GLB carries all 64 fasteners
+  (20× 2-1/2 in long bolts — 5 per corner in an L pattern — plus 24
+  short bolts and 20 nuts); positions match the STEP within 0.33 mm.
+
+## Top-view sprite for the 2D canvas (2026-10-03)
+
+`assets/robots/mk5i-module-top.png` — the 2D canvas's module artwork
+(`FieldCanvas.tsx` draws it parked at each corner's installed yaw; the
+2D view shows no steering animation by user decision).
+
+- **Tool** — `scripts/cad/glb-topview.py`, headless Blender:
+
+  ```sh
+  blender --background --python scripts/cad/glb-topview.py -- \
+    packages/web/public/models/mk5i-module.glb assets/robots/mk5i-module-top.png
+  ```
+
+- Input is the shipped split GLB exactly as the 3D view instances it,
+  so 2D and 3D can never drift apart. The script bakes import
+  transforms, joins every mesh, smooths normals (the decimation's flat
+  facets glare under studio light), centers an orthographic camera on
+  the origin (the GLB contract pins the steering axis there) looking
+  straight down, and renders 2048x2048 RGBA on a transparent film:
+  Workbench studio light, MATERIAL colors, WORLD cavity, specular OFF
+  (studio speculars smeared bright wedges across the decimated
+  plates).
+- Image contract: pixel center = steering axis, image right = rolling
+  direction (+X), image up = glTF -Z = robot-frame -Y (FieldCanvas
+  flips the draw vertically, mirroring the 3D mount's
+  `rotation.y = -yaw`; verified against the 3D top view in the
+  2026-10-03 walkthrough). The square image spans the printed
+  `TOPVIEW world_size_m` (0.221077 m — module bbox ±0.1084 m plus a 2%
+  margin), mirrored as `MK5I_MODULE_TOP_WORLD_M` in
+  `packages/web/src/robot-sprites.ts`. If the GLB ever changes,
+  re-run the tool and update that constant.
