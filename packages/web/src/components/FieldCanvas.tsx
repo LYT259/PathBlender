@@ -36,6 +36,7 @@ import {
 
 export interface FieldCanvasHandle {
   exportPng: (onDone?: (ok: boolean) => void) => void;
+  exportGif: (onDone?: (ok: boolean) => void) => void;
   fit: () => void;
 }
 
@@ -61,6 +62,8 @@ interface Props {
   onRemoveWaypoint?: (robotId: string, idx: number) => void;
   /** Whether trails render (owned by the app-level toolbar). */
   showTrail?: boolean;
+  /** Occupancy heatmap over every robot's full timeline (§7.3-3). */
+  showHeatmap?: boolean;
 }
 
 interface View {
@@ -83,6 +86,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     conflicts,
     bounds,
     showTrail = true,
+    showHeatmap = false,
   },
   ref,
 ) {
@@ -102,6 +106,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   const sizeRef = useRef({ w: 0, h: 0 });
   const autoFitRef = useRef(true);
   const drawRef = useRef<() => void>(() => {});
+  // GIF capture draws at arbitrary t values; the override short-circuits
+  // the prop while frames are being collected, then restores.
+  const overrideTRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
   const requestDraw = useCallback(() => {
     if (frameRef.current != null) return;
@@ -449,6 +456,29 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       ctx.fillText(String(tag.id), px + 7, py + 4);
     }
 
+    // Occupancy heatmap: every robot's footprint at every sample, low
+    // alpha — dense regions read as "spent time here" (§7.3-3).
+    if (showHeatmap) {
+      ctx.save();
+      ctx.fillStyle = cssVar('--accent', '#0a84ff');
+      ctx.globalAlpha = 0.06;
+      for (const r of robots) {
+        const samples = r.trajectory.samples;
+        const stride = Math.max(1, Math.ceil(samples.length / 120));
+        const L = r.trajectory.geometry.lengthM;
+        const W = r.trajectory.geometry.widthM;
+        for (let i = 0; i < samples.length; i += stride) {
+          const p = samples[i] as { x: number; y: number; heading: number };
+          ctx.save();
+          ctx.translate(sx(p.x), sy(p.y));
+          ctx.rotate(-p.heading);
+          ctx.fillRect(-(L * v.scale) / 2, -(W * v.scale) / 2, L * v.scale, W * v.scale);
+          ctx.restore();
+        }
+      }
+      ctx.restore();
+    }
+
     // Ground tape grows only along the already-travelled part of each route.
     if (showTrail) {
       ctx.save();
@@ -525,7 +555,8 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     // Clock overlay.
     ctx.fillStyle = cssVar('--fg', '#e6e6e8');
     ctx.font = '13px ui-monospace, monospace';
-    ctx.fillText(t('canvas.clock', { t: currentT.toFixed(2) }), 12, 20);
+    const effT = overrideTRef.current ?? currentT;
+    ctx.fillText(t('canvas.clock', { t: effT.toFixed(2) }), 12, 20);
     };
     requestDraw();
   }, [field, robots, currentT, conflicts, bounds, showTrail, imgReady, spriteReady, theme, t, requestDraw]);
@@ -551,11 +582,69 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
           .catch(() => onDone?.(false));
       }, 'image/png');
     },
+    exportGif: (onDone?: (ok: boolean) => void) => {
+      const canvas = canvasRef.current;
+      if (!canvas) {
+        onDone?.(false);
+        return;
+      }
+      void import('gifenc').then(async ({ GIFEncoder, quantize, applyPalette }) => {
+        try {
+          const duration = robots.reduce((m, r) => Math.max(m, r.startDelayS + r.trajectory.durationS), 0);
+          const dt = 0.1;
+          const total = Math.max(1, Math.min(200, Math.round(duration / dt)));
+          const ctx2 = canvas.getContext('2d');
+          if (!ctx2) throw new Error('no 2d context');
+          const gif = GIFEncoder();
+          const maxW = 640;
+          const scale = Math.min(1, maxW / canvas.width);
+          const w = Math.max(1, Math.round(canvas.width * scale));
+          const h = Math.max(1, Math.round(canvas.height * scale));
+          for (let i = 0; i < total; i++) {
+            overrideTRef.current = i * dt;
+            drawRef.current();
+            const raw = ctx2.getImageData(0, 0, canvas.width, canvas.height).data;
+            // Downscale into a small RGBA buffer (simple box sampling at
+            // integer ratios keeps this dependency-free).
+            const rgba = new Uint8ClampedArray(w * h * 4);
+            for (let y = 0; y < h; y++) {
+              for (let x = 0; x < w; x++) {
+                const sx0 = Math.floor((x * canvas.width) / w);
+                const sy0 = Math.floor((y * canvas.height) / h);
+                const o0 = (sy0 * canvas.width + sx0) * 4;
+                rgba[(y * w + x) * 4] = raw[o0] as number;
+                rgba[(y * w + x) * 4 + 1] = raw[o0 + 1] as number;
+                rgba[(y * w + x) * 4 + 2] = raw[o0 + 2] as number;
+                rgba[(y * w + x) * 4 + 3] = 255;
+              }
+            }
+            const palette = quantize(rgba, 256);
+            const index = applyPalette(rgba, palette);
+            gif.writeFrame(index, w, h, { palette, delay: Math.round(dt * 1000) });
+          }
+          overrideTRef.current = null;
+          gif.finish();
+          const bytes = gif.bytes();
+          const ok = await saveBytes(
+            `pathblender-${new Date().toISOString().replace(/[:.]/g, '-')}.gif`,
+            'gif',
+            new Uint8Array(bytes),
+          );
+          onDone?.(ok);
+        } catch {
+          overrideTRef.current = null;
+          onDone?.(false);
+        }
+      }).catch(() => {
+        overrideTRef.current = null;
+        onDone?.(false);
+      });
+    },
     fit,
     // Deps: without this array the handle is recreated on every render and
     // re-invokes the parent's ref callback — a re-render loop with a
     // state-held ref (bit us in the round-9 editor page).
-  }), [fit]);
+  }), [fit, robots]);
 
   return (
     <div className="field-canvas-wrap" ref={wrapRef}>
@@ -590,6 +679,9 @@ function drawRobot(
   ctx.translate(sx(pose.x), sy(pose.y));
   // Screen y is flipped relative to world y, so rotate by -heading.
   ctx.rotate(-pose.heading);
+  // Opponent rendering (§6.5-②): faded + dashed — clearly not "one of us".
+  const isOpponent = r.opponent === true;
+  if (isOpponent) ctx.globalAlpha = 0.55;
 
   // Bumper ring (the collision footprint — highlight rides on it).
   const L = outer.lengthM * scale;
@@ -611,7 +703,9 @@ function drawRobot(
   ctx.fill();
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
+  if (isOpponent) ctx.setLineDash([5, 4]);
   ctx.stroke();
+  if (isOpponent) ctx.setLineDash([]);
 
   // Chassis frame: four 1 in box-rail beams around the chassis
   // rectangle plus a corner block at each joint — the same "4 rails +

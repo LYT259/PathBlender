@@ -1,6 +1,6 @@
 {
   "name": "@pathblender/web",
-  "version": "0.1.7-beta.19",
+  "version": "0.1.7-beta.27",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,6 +13,7 @@
   "dependencies": {
     "@pathblender/core": "*",
     "@tauri-apps/plugin-process": "^2.3.1",
+    "gifenc": "^1.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "three": "0.185.1"

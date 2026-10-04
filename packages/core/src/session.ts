@@ -28,6 +28,9 @@ export interface SessionTrajectory {
   /** UI display color; persisted in session files. */
   color: string;
   visible: boolean;
+  /** Opponent marker (red book §6.5-②): faded/dashed rendering + defense
+   *  notes in the conflict report instead of resolve notes. */
+  opponent?: boolean;
   /** Selected route inside this team's alternatives; older sessions may lack them. */
   routeId?: string;
   /** Alternatives belong to this team slot, including after save/restore. */
@@ -42,6 +45,27 @@ export const SESSION_COLORS = [
   '#FF6EC7', '#00E5FF', '#AAFF00', '#FF9100', '#E040FB',
   '#00E676', '#FF5252', '#40C4FF', '#FFD740', '#7C4DFF',
 ];
+
+/**
+ * Colorblind-safe palette (Okabe-Ito, the canonical CVD-safe set) for the
+ * settings toggle (§7.3-3 trigger track, landed 2026-10-04). Eight colors;
+ * palette indices ≥8 wrap onto 0–1, so a 9–10 robot session shares two
+ * colors while enabled — toggling back restores the wrapped slots to the
+ * slot they wrapped onto (documented lossy round trip, harmless in the
+ * 6-robot match case the toggle targets). Remap only touches default-
+ * palette colors: custom/user colors pass through untouched.
+ */
+export const COLORBLIND_COLORS = [
+  '#0072B2', '#E69F00', '#009E73', '#CC79A7',
+  '#56B4E9', '#D55E00', '#F0E442', '#882255',
+];
+
+export function remapColorblind(color: string, enabled: boolean): string {
+  const from = enabled ? SESSION_COLORS : COLORBLIND_COLORS;
+  const to = enabled ? COLORBLIND_COLORS : SESSION_COLORS;
+  const i = from.indexOf(color);
+  return i >= 0 ? (to[i % to.length] as string) : color;
+}
 
 export function makeSession(traj: Trajectory, colorIndex = 0): SessionTrajectory {
   return {
@@ -130,6 +154,8 @@ export interface SessionFileV1 {
     startDelayS: number;
     color: string;
     visible: boolean;
+    /** Optional since v1.7 files. */
+    opponent?: boolean;
     /** Route-library id when the robot's current route came from the library. */
     routeId?: string;
     routeOptions?: SessionRouteOption[];
@@ -140,6 +166,10 @@ export interface SessionFileV1 {
     moduleLocations: Trajectory['moduleLocations'];
     events: Trajectory['events'];
     samples: Trajectory['samples'];
+    /** Robot mass when known from a profile/file; optional since v1.7 files. */
+    massKG?: Trajectory['massKG'];
+    /** Drive mode when known from a profile; optional since v1.7 files. */
+    holonomic?: Trajectory['holonomic'];
     /** Editable source data (v1.4 §6.3); absent when not editable. */
     editable?: Trajectory['editable'];
     edited?: boolean;
@@ -180,6 +210,7 @@ export function serializeSession(
       startDelayS: st.startDelayS,
       color: st.color,
       visible: st.visible,
+      opponent: st.opponent,
       routeId: st.routeId,
       routeOptions: st.routeOptions,
       profileOptions: st.profileOptions,
@@ -189,6 +220,8 @@ export function serializeSession(
       moduleLocations: st.trajectory.moduleLocations,
       events: st.trajectory.events,
       samples: st.trajectory.samples,
+      massKG: st.trajectory.massKG,
+      holonomic: st.trajectory.holonomic,
       editable: st.trajectory.editable,
       edited: st.trajectory.edited,
       original: st.trajectory.original,
@@ -237,6 +270,8 @@ export function deserializeSession(text: string): {
       moduleLocations: r.moduleLocations,
       events: r.events,
       warnings: [],
+      massKG: typeof r.massKG === 'number' && Number.isFinite(r.massKG) ? r.massKG : undefined,
+      holonomic: typeof r.holonomic === 'boolean' ? r.holonomic : undefined,
       editable: r.editable,
       edited: r.edited,
       original: r.original,
@@ -246,6 +281,7 @@ export function deserializeSession(text: string): {
       startDelayS: r.startDelayS,
       color: r.color,
       visible: r.visible,
+      opponent: r.opponent === true ? true : undefined,
       routeId: r.routeId,
       routeOptions: readRouteOptions(r.routeOptions),
       profileOptions: readProfileOptions(r.profileOptions),

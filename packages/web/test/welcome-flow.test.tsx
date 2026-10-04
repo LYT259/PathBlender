@@ -26,14 +26,15 @@ describe('welcome flow', () => {
   it('shows the brand and starting actions while retaining accessible descriptions', () => {
     render(<App />);
     const welcome = screen.getByRole('region', { name: 'Import paths to get started' });
-    expect(within(welcome).getAllByRole('button')).toHaveLength(4);
+    expect(within(welcome).getAllByRole('button')).toHaveLength(5);
     expect(within(welcome).getByRole('heading', { name: 'PathBlender' })).toBeInTheDocument();
-    expect(welcome.textContent).toBe('PathBlenderImport path filesImport folderOpen saved sessionTry an example');
+    expect(welcome.textContent).toBe('PathBlenderImport path filesImport folderOpen saved sessionTry an exampleDemo mode');
     expect(within(welcome).getByRole('button', { name: 'Import path files' })).toHaveAccessibleDescription(/Choreo or PathPlanner/);
     const folder = within(welcome).getByRole('button', { name: 'Import folder' });
     expect(folder).toHaveAccessibleDescription(/several routes.*choose which to replay/);
     expect(within(welcome).getByRole('button', { name: 'Open saved session' })).toHaveAccessibleDescription(/previously saved analysis/);
     expect(within(welcome).getByRole('button', { name: 'Try an example' })).toHaveAccessibleDescription(/playback and collision checks/);
+    expect(within(welcome).getByRole('button', { name: 'Demo mode' })).toHaveAccessibleDescription(/automatically/);
     expect(within(welcome).queryByText('You can also drop files or a folder into this window')).not.toBeInTheDocument();
 
     const toolbar = within(document.querySelector<HTMLElement>('.toolbar')!);
@@ -95,7 +96,7 @@ describe('welcome flow', () => {
     await openExample();
     expect(screen.getByText('Fictional paths for exploring the app.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '2D', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('slider')).toHaveValue('0');
+    expect(screen.getByRole('slider', { name: 'Playback position' })).toHaveValue('0');
     expect(screen.getAllByText('20.00 s', { selector: '.robot-library-meta span' })).toHaveLength(2);
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
     expect(screen.getByText(playHint)).toBeInTheDocument();
@@ -108,7 +109,7 @@ describe('welcome flow', () => {
 
     fireEvent.click(screen.getByText('#AAAAAA × #BBBBBB', { selector: '.conflict-pair' }).closest('button')!);
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
-    expect(Number((screen.getByRole('slider') as HTMLInputElement).value)).toBeCloseTo(10);
+    expect(Number((screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement).value)).toBeCloseTo(10);
     expect(screen.queryByText(checkHint)).not.toBeInTheDocument();
     expect(localStorage.getItem('pb.tip.checks.v1')).toBe('done');
   });
