@@ -135,7 +135,7 @@ describe('App import → fusion → collision flow', () => {
     expect(new Set(colors).size).toBe(3);
   });
 
-  it('team numbers: extracted from .ghostauto, shown read-only in the inspector', async () => {
+  it('team numbers: extracted from .ghostauto, shown on the heading and robot card', async () => {
     render(<App />);
     dropFiles([file('ghostauto/straight_run.ghostauto')]);
     await waitFor(
@@ -144,7 +144,11 @@ describe('App import → fusion → collision flow', () => {
       },
     );
     const inspector = selectRobot('Straight Run');
-    expect(within(inspector).getByText('0001')).toBeInTheDocument();
+    // The identity rows under the heading (team # / alliance) were removed
+    // 2026-10-04; the team number still shows in the inspector heading and
+    // on the robot card.
+    expect(within(inspector).getByRole('heading', { name: '#0001' })).toBeInTheDocument();
+    expect(within(inspector).queryByText('team #')).not.toBeInTheDocument();
     expect(within(inspector).queryByRole('textbox')).not.toBeInTheDocument();
     expect(screen.getByText('#0001', { selector: '.robot-library-team' })).toBeInTheDocument();
   });
@@ -323,7 +327,10 @@ describe('App import → fusion → collision flow', () => {
     // Pure viewer (2026-09-30): alliance comes from the file; no toggle.
     expect(within(inspector).queryByRole('button', { name: 'Blue' })).not.toBeInTheDocument();
     expect(within(inspector).queryByRole('button', { name: 'Red' })).not.toBeInTheDocument();
-    expect(within(inspector).getByText(/blue|red/i)).toBeInTheDocument();
+    // The inspector alliance row went with the identity block (2026-10-04);
+    // the alliance now shows on the toolbar toggle alone.
+    expect(within(inspector).queryByText(/blue|red/i)).not.toBeInTheDocument();
+    expect(within(screen.getByRole('group', { name: 'alliance' })).getByRole('button', { name: 'Blue' })).toBeInTheDocument();
     expect(within(inspector).queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
     expect(inspector.querySelector('.robot-dimensions')).toHaveTextContent('0.81 m');
     // The responsive overflow menu contains a second Save action; jsdom

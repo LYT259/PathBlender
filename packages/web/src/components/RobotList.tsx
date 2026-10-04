@@ -178,19 +178,6 @@ export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfil
         <h2>{robotIdentity(trajectory)}</h2>
       </header>
       <section className="robot-inspector-section">
-        <h3>{t('robots.identity')}</h3>
-        {trajectory.teamName && <p className="robot-inspector-team-name">{trajectory.teamName}</p>}
-        <div className="robot-inspector-row">
-          <span>{t('robots.teamNumber')}</span>
-          <span>{trajectory.teamNumber || '—'}</span>
-        </div>
-        <div className="robot-inspector-row">
-          <span>{t('robots.alliance')}</span>
-          <span>{t(trajectory.alliance === 'blue' ? 'robots.blue' : 'robots.red')}</span>
-        </div>
-      </section>
-
-      <section className="robot-inspector-section">
         <h3>{t('robots.timing')}</h3>
         <div className="robot-inspector-row">
           <span>{t('robots.delay')}</span>
