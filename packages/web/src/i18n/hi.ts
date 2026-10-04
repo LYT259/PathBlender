@@ -45,6 +45,14 @@ export const hi = {
   "checks.clearTitle": "कोई संघर्ष नहीं मिला",
   "checks.clearBody": "आयातित पथों और वर्तमान रोबोट आयामों के लिए।",
   "checks.issues": "समीक्षा के लिए {n} मदें",
+  "actions.heatmapOn": "हीटमैप",
+  "actions.heatmapOff": "हीटमैप छिपाएँ",
+  "actions.abCompare": "A-B तुलना",
+  "checks.abBaselineSet": "आधार सहेजा गया — परिदृश्य बदलें और फिर तुलना करें",
+  "checks.abNoPairs": "दोनों परिदृश्यों में तुलनीय जोड़े नहीं हैं",
+  "checks.abDelta": "सबसे तंग जोड़ा {d} मी {dir}",
+  "checks.abSafer": "अधिक सुरक्षित",
+  "checks.abTighter": "अधिक तंग",
   "checks.exportReport": "पाठ रिपोर्ट निर्यात करें",
   "checks.reportTitle": "टक्कर रिपोर्ट",
   "checks.reportGenerated": "बनाई गई",
@@ -100,6 +108,7 @@ export const hi = {
   'app.title': 'PathBlender',
   'actions.import': 'फ़ाइलें आयात करें',
   'actions.save': 'सत्र सहेजें',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG निर्यात करें',
   'actions.clear': 'साफ़ करें',
   
@@ -143,6 +152,14 @@ export const hi = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} से',
   'timeline.band': 'टकराव {start}–{end} से',
+  
+  'toast.gifOnly2d': 'GIF निर्यात केवल 2D में',
+  
+  'toast.gifRendering': 'GIF बन रहा है…',
+  
+  'toast.gifSaved': 'GIF सहेजा गया',
+  
+  'toast.gifFailed': 'GIF विफल',
   
   'toast.pngOnly2d': 'PNG निर्यात केवल 2D है',
   'toast.pngSaved': 'PNG सहेजा गया',

@@ -45,6 +45,14 @@ export const mr = {
   "checks.clearTitle": "कोणतेही संघर्ष आढळले नाहीत",
   "checks.clearBody": "आयात केलेल्या मार्गांसाठी आणि सध्याच्या रोबोट परिमाणांसाठी.",
   "checks.issues": "पुनरावलोकनासाठी {n} वस्तू",
+  "actions.heatmapOn": "हीटमॅप",
+  "actions.heatmapOff": "हीटमॅप लपवा",
+  "actions.abCompare": "A-B तुलना",
+  "checks.abBaselineSet": "बेसलाइन जतन — परिदृश्य बदला आणि पुन्हा तुलना करा",
+  "checks.abNoPairs": "दोन्ही परिदृश्यांमध्ये तुलनायोग्य जोड्या नाहीत",
+  "checks.abDelta": "सर्वात घट्ट जोडी {d} मी {dir}",
+  "checks.abSafer": "अधिक सुरक्षित",
+  "checks.abTighter": "अधिक घट्ट",
   "checks.exportReport": "मजकूर अहवाल निर्यात करा",
   "checks.reportTitle": "टक्कर अहवाल",
   "checks.reportGenerated": "तयार केला",
@@ -100,6 +108,7 @@ export const mr = {
   'app.title': 'PathBlender',
   'actions.import': 'फाइली आयात करा',
   'actions.save': 'सत्र जतन करा',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG निर्यात करा',
   'actions.clear': 'साफ करा',
   
@@ -143,6 +152,14 @@ export const mr = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} से',
   'timeline.band': 'टक्कर {start}–{end} से',
+  
+  'toast.gifOnly2d': 'GIF निर्यात फक्त 2D',
+  
+  'toast.gifRendering': 'GIF तयार होत आहे…',
+  
+  'toast.gifSaved': 'GIF जतन झाले',
+  
+  'toast.gifFailed': 'GIF अयशस्वी',
   
   'toast.pngOnly2d': 'PNG निर्यात केवळ 2D आहे',
   'toast.pngSaved': 'PNG जतन झाले',

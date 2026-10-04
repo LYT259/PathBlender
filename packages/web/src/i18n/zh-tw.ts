@@ -51,6 +51,14 @@ export const zhTw: Record<MessageKey, string> = {
   "checks.clearTitle": "未發現路徑衝突",
   "checks.clearBody": "根據目前匯入的路徑與機器人尺寸。",
   "checks.issues": "有 {n} 項需要檢查",
+  "actions.heatmapOn": "熱力圖",
+  "actions.heatmapOff": "隱藏熱力圖",
+  "actions.abCompare": "A-B 對比",
+  "checks.abBaselineSet": "基準已儲存——改動場景後再次對比",
+  "checks.abNoPairs": "兩場景無可比對的機對",
+  "checks.abDelta": "最緊的一對{dir}了 {d} 米",
+  "checks.abSafer": "更安全",
+  "checks.abTighter": "更緊張",
   "checks.exportReport": "匯出文字版衝突報告",
   "checks.reportTitle": "衝突報告",
   "checks.reportGenerated": "產生於",
@@ -106,6 +114,7 @@ export const zhTw: Record<MessageKey, string> = {
   'app.title': 'PathBlender',
   'actions.import': '匯入檔案',
   'actions.save': '儲存工作階段',
+  'actions.gif': '回放 GIF',
   'actions.png': '匯出 PNG',
   'actions.clear': '清空',
 
@@ -153,6 +162,14 @@ export const zhTw: Record<MessageKey, string> = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} 秒',
   'timeline.band': '碰撞 {start}–{end} 秒',
+
+  'toast.gifOnly2d': 'GIF 回放匯出僅支援 2D',
+
+  'toast.gifRendering': '正在渲染 GIF…',
+
+  'toast.gifSaved': 'GIF 已儲存',
+
+  'toast.gifFailed': 'GIF 失敗',
 
   'toast.pngOnly2d': '截圖僅支援 2D 視圖',
   'toast.pngSaved': '截圖已儲存',

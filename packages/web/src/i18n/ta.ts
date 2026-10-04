@@ -45,6 +45,14 @@ export const ta = {
   "checks.clearTitle": "முரண்பாடுகள் எதுவும் கண்டறியப்படவில்லை",
   "checks.clearBody": "இறக்குமதி செய்த பாதைகள் மற்றும் தற்போதைய ரோபோ பரிமாணங்களுக்கு.",
   "checks.issues": "மதிப்பாய்வு செய்ய {n} உருப்படிகள்",
+  "actions.heatmapOn": "வெப்ப வரைபடம்",
+  "actions.heatmapOff": "வெப்ப வரைபடத்தை மறை",
+  "actions.abCompare": "A-B ஒப்பீடு",
+  "checks.abBaselineSet": "அடிப்படை சேமிக்கப்பட்டது — காட்சியை மாற்றி மீண்டும் ஒப்பிடவும்",
+  "checks.abNoPairs": "இரு காட்சிகளுக்கும் இடையே ஒப்பிடக்கூடிய ஜோடிகள் இல்லை",
+  "checks.abDelta": "மிக இறுக்கமான ஜோடி {d} மீ {dir}",
+  "checks.abSafer": "பாதுகாப்பானது",
+  "checks.abTighter": "இறுக்கமானது",
   "checks.exportReport": "உரை அறிக்கையை ஏற்றுமதி செய்",
   "checks.reportTitle": "மோதல் அறிக்கை",
   "checks.reportGenerated": "உருவாக்கப்பட்டது",
@@ -100,6 +108,7 @@ export const ta = {
   'app.title': 'PathBlender',
   'actions.import': 'கோப்புகளை இறக்குமதி செய்க',
   'actions.save': 'அமர்வைச் சேமிக்கவும்',
+  'actions.gif': 'GIF',
   'actions.png': 'PNG ஏற்றுமதி',
   'actions.clear': 'அழி',
   
@@ -143,6 +152,14 @@ export const ta = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} வி',
   'timeline.band': 'மோதல் {start}–{end} வி',
+  
+  'toast.gifOnly2d': 'GIF ஏற்றுமதி 2D மட்டும்',
+  
+  'toast.gifRendering': 'GIF உருவாக்கப்படுகிறது…',
+  
+  'toast.gifSaved': 'GIF சேமிக்கப்பட்டது',
+  
+  'toast.gifFailed': 'GIF தோல்வி',
   
   'toast.pngOnly2d': 'PNG ஏற்றுமதி 2D மட்டுமே',
   'toast.pngSaved': 'PNG சேமிக்கப்பட்டது',

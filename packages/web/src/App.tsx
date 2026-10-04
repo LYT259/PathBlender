@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useSessionState } from './session-state';
 import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
 import { isExampleRobot } from './example-robot';
-import { remapColorblind } from '@pathblender/core';
+import { compareScenarios, remapColorblind } from '@pathblender/core';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
 import { PreferencesPanel } from './components/PreferencesPanel';
@@ -232,6 +232,9 @@ function AppBody() {
   // §6.5-①: the tolerance slider rescans pair windows at relative start
   // shifts ±2δ — worst-case execution timing, not just the paper plan.
   const [toleranceS, setToleranceS] = useState(0);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  // A-B compare: first click snapshots the scenario, second reports deltas.
+  const abBaselineRef = useRef<SessionTrajectory[] | null>(null);
   const conflicts = useMemo(
     () => detectCollisions(seasonRobots, { toleranceS: toleranceS > 0 ? toleranceS : undefined }),
     [seasonRobots, toleranceS],
@@ -504,6 +507,34 @@ function AppBody() {
     canvasRef.current?.exportPng((ok) => flash(tr(ok ? 'toast.pngSaved' : 'toast.pngFailed'), ok ? 'ok' : 'error'));
   }, [view3D, flash, tr]);
 
+  const exportGif = useCallback(() => {
+    if (view3D) {
+      flash(tr('toast.gifOnly2d'));
+      return;
+    }
+    flash(tr('toast.gifRendering'));
+    canvasRef.current?.exportGif((ok) => flash(tr(ok ? 'toast.gifSaved' : 'toast.gifFailed'), ok ? 'ok' : 'error'));
+  }, [view3D, flash, tr]);
+
+  const abToggle = useCallback(() => {
+    if (abBaselineRef.current === null) {
+      abBaselineRef.current = robots;
+      flash(tr('checks.abBaselineSet'));
+      return;
+    }
+    const result = compareScenarios(abBaselineRef.current, robots);
+    abBaselineRef.current = null;
+    if (result.pairs.length === 0) {
+      flash(tr('checks.abNoPairs'));
+      return;
+    }
+    const tightest = result.pairs[0]!;
+    flash(tr('checks.abDelta', {
+      d: Math.abs(tightest.deltaM).toFixed(2),
+      dir: tightest.deltaM >= 0 ? tr('checks.abSafer') : tr('checks.abTighter'),
+    }));
+  }, [robots, flash, tr]);
+
   // Native "Check for Updates…" and channel switches. The Rust shell owns
   // the channel→feed mapping (check_update); feed unreachable (offline, or
   // no release assets yet) reports 'failed' → the honest toast, not a fake
@@ -718,6 +749,9 @@ function AppBody() {
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
             {!VIEWER_ONLY && <button className="menu-save-action" disabled={!hasRobots} onClick={saveSession}>{tr('actions.save')}</button>}
             {!VIEWER_ONLY && <button disabled={!hasRobots || view3D} onClick={exportPng} title={view3D ? tr('toast.pngOnly2d') : undefined}>{tr('actions.png')}</button>}
+            {!VIEWER_ONLY && <button disabled={!hasRobots || view3D} onClick={exportGif} title={view3D ? tr('toast.gifOnly2d') : undefined}>{tr('actions.gif')}</button>}
+            {hasRobots && <button onClick={() => setShowHeatmap((v) => !v)} aria-pressed={showHeatmap}>{tr(showHeatmap ? 'actions.heatmapOff' : 'actions.heatmapOn')}</button>}
+            {hasRobots && <button onClick={abToggle}>{tr('actions.abCompare')}</button>}
             <button disabled={!hasRobots} onClick={clearAll}>{tr('actions.clear')}</button>
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub ↗</a>
             {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}

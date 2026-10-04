@@ -45,6 +45,14 @@ export const fil = {
   "checks.clearTitle": "Walang nakitang conflict",
   "checks.clearBody": "Para sa mga na-import na path at kasalukuyang dimensyon ng robot.",
   "checks.issues": "{n} item na susuriin",
+  "actions.heatmapOn": "Heatmap",
+  "actions.heatmapOff": "Itago ang heatmap",
+  "actions.abCompare": "Ihambing ang A-B",
+  "checks.abBaselineSet": "Naka-save ang baseline — baguhin ang senaryo at ihambing muli",
+  "checks.abNoPairs": "Walang maihahambing na pares sa dalawang senaryo",
+  "checks.abDelta": "Pinakasikip na pares {dir} nang {d} m",
+  "checks.abSafer": "mas ligtas",
+  "checks.abTighter": "mas sikip",
   "checks.exportReport": "I-export ang tekstong ulat",
   "checks.reportTitle": "Ulat ng banggaan",
   "checks.reportGenerated": "Ginawa noong",
@@ -100,6 +108,7 @@ export const fil = {
   'app.title': 'PathBlender',
   'actions.import': 'Mag-import ng mga file',
   'actions.save': 'I-save ang session',
+  'actions.gif': 'GIF',
   'actions.png': 'Mag-export ng PNG',
   'actions.clear': 'I-clear',
   
@@ -143,6 +152,14 @@ export const fil = {
   'timeline.speed': '{n}×',
   'timeline.clock': '{t} / {d} s',
   'timeline.band': 'collision {start}–{end} s',
+  
+  'toast.gifOnly2d': 'Ang GIF export ay 2D lamang',
+  
+  'toast.gifRendering': 'Ginagawa ang GIF…',
+  
+  'toast.gifSaved': 'Na-save ang GIF',
+  
+  'toast.gifFailed': 'Nabigo ang GIF',
   
   'toast.pngOnly2d': 'Ang PNG export ay 2D lang',
   'toast.pngSaved': 'Nai-save ang PNG',
