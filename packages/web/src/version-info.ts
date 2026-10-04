@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.16';
+export const APP_VERSION = '0.1.8-beta.17';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,11 +32,11 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.8-beta.16', date: '2026.10.04', note: {
+  { version: '0.1.8-beta.17', date: '2026.10.04', note: {
     en: 'Fixed the 3D metal frame sinking into the floor — the module mounting plate\'s bottom face had been measured on the wrong surface (42 mm fork-arm underside instead of the true 92 mm plate face), so the frame now rides 31 mm higher, clear of the carpet',
     zh: '修复 3D 金属框架沉到地面——模组安装板底面此前测错了面（误用 42mm 叉臂底面，正确板面为 92mm），框架整体上抬 31mm、悬空于地毯上方',
     'zh-tw': '修復 3D 金屬框架沉到地面——模組安裝板底面先前測錯了面（誤用 42mm 叉臂底面，正確板面為 92mm），框架整體上抬 31mm、懸空於地毯上方',
-    cs: 'Opraveno kovové 3D podvozkové rámové sestavení klesající na podlahu — spodní plocha montážní desky modulu byla změřena na nesprávném povrchu (42 mm spodek vidlicového ramene místo skutečných 92 mm plochy desky), rám je nyní o 31 mm výše, nad kobercem',
+    cs: 'Opraveno kovové 3D rámové sestavení podvozku klesající na podlahu — spodní plocha montážní desky modulu byla změřena na nesprávném povrchu (42 mm spodek vidlicového ramene místo skutečných 92 mm plochy desky), rám je nyní o 31 mm výše, nad kobercem',
     nl: '3D-metalen frame dat in de vloer wegzakte verholpen — de onderrand van de montageplaat was op het verkeerde vlak gemeten (42 mm vorkarm-onderkant i.p.v. de echte plaat op 92 mm), het frame rijdt nu 31 mm hoger, vrij van het tapijt',
     fr: 'Le châssis métallique 3D qui s’enfonçait dans le sol est corrigé — la face inférieure de la plaque de montage du module avait été mesurée sur la mauvaise surface (42 mm sous le bras de fourche au lieu des 92 mm réels de la plaque), le châssis roule désormais 31 mm plus haut, au-dessus du tapis',
     he: 'תוקנה מסגרת המתכת התלת-ממדית ששקעה לרצפה — הפאה התחתונה של לוחית ההרכבה נמדדה על משטח שגוי (42 מ"מ מתחת לזרוע המזלג במקום 92 מ"מ של הלוחית האמיתית), והמסגרת רוכבת כעת 31 מ"מ גבוה יותר, מעל השטיח',
@@ -46,6 +46,21 @@ export const VERSION_NOTES: VersionNote[] = [
     'pt-br': 'Corrigido o chassi metálico 3D afundando no piso — a face inferior da placa de montagem do módulo havia sido medida na superfície errada (42 mm sob o braço da garfo em vez dos 92 mm reais da placa); o chassi agora anda 31 mm mais alto, acima do carpete',
     es: 'Corregido el chasis metálico 3D que se hundía en el suelo — la cara inferior de la placa de montaje del módulo se había medido en la superficie equivocada (42 mm bajo el brazo de horquilla en lugar de los 92 mm reales de la placa); el chasis ahora va 31 mm más alto, sobre la alfombra',
     tr: '3B metal şasi zemine gömülüyordu, düzeltildi — modül montaj plakasının alt yüzü yanlış yüzeyden ölçülmüştü (gerçek plaka yüzü 92 mm yerine çatal kol altı 42 mm); şasi artık 31 mm daha yüksekte, halının üzerinde duruyor',
+  } },
+  { version: '0.1.8-beta.16', date: '2026.10.04', note: {
+    en: 'Reopen exactly where you left — route picks, selection, playhead and playback range all restored; boundary check forgives wall-kiss starts within 2 cm',
+    zh: '重开 App 回到你退出的地方——路线选择、选中机器人、播放头与回放范围全部保真恢复；边界检测对 2 厘米内的贴墙起步不再报越界',
+    'zh-tw': '重開 App 回到你離開的地方——路線選擇、選中機器人、播放頭與回放範圍全部保真恢復；邊界偵測對 2 公分內的貼牆起步不再報越界',
+    cs: 'Znovuotevření přesně tam, kde jste skončili — volby tras, výběr, pozice přehrávání i rozsah přehrávání se obnoví; kontrola hranic odpouští starty u zdi do 2 cm',
+    nl: 'Heropen precies waar je was gebleven — routekeuzes, selectie, afspeelpositie en afspeelbereik worden hersteld; de grenscontrole vergeeft muurstarten binnen 2 cm',
+    fr: 'Rouvrez exactement où vous étiez — choix de trajectoires, sélection, tête de lecture et plage de lecture restaurés ; le contrôle des limites pardonne les départs collés au mur à moins de 2 cm',
+    he: 'פתיחה מחדש בדיוק מאיפה שהפסקת — בחירות מסלול, בחירה, ראש נגינה וטווח נגינה משוחזרים; בדיקת הגבולות סולחת על התחלות צמודות לקיר עד 2 ס״מ',
+    ja: '終了した場所にそのまま戻ります——ルート選択、選択中のロボット、再生位置、再生範囲がすべて復元されます。境界チェックは壁際 2 cm 以内のスタートを越界とみなしません',
+    ko: '종료한 곳에서 그대로 다시 시작합니다 — 경로 선택, 선택된 로봇, 재생 위치, 재생 범위가 모두 복원됩니다. 경계 검사는 벽에 붙인 2 cm 이내의 시작을 용인합니다',
+    pl: 'Otwórz dokładnie tam, gdzie skończyłeś — wybory tras, zaznaczenie, głowica odtwarzania i zakres odtwarzania są przywracane; kontrola granic wybacza starty przy ścianie do 2 cm',
+    'pt-br': 'Reabra exatamente onde você parou — escolhas de rota, seleção, posição de reprodução e intervalo de reprodução restaurados; a verificação de limites perdoa largadas encostadas na parede em até 2 cm',
+    es: 'Reabre exactamente donde lo dejaste: selecciones de ruta, selección, cabezal de reproducción y rango de reproducción restaurados; la comprobación de límites perdona las salidas pegadas al muro dentro de 2 cm',
+    tr: 'Bıraktığınız yerden tam olarak devam edin — rota seçimleri, seçim, oynatma kafası ve oynatma aralığı geri yüklenir; sınır denetimi 2 cm içindeki duvara yapışık başlangıçları hoş görür',
   } },
   { version: '0.1.8-beta.15', date: '2026.10.04', note: {
     en: 'Free-text robot display names across the list, playback bar, 2D callouts and 3D bumpers; rounded 2D route-tape ends',
