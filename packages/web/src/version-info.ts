@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.16';
+export const APP_VERSION = '0.1.8-beta.17';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.17', date: '2026.10.04', note: {
+    en: 'Compose several of a team’s routes into one multi-segment auto with start delay, waits and seam checks — playback, collisions and saved sessions all follow the composition',
+    zh: '多段自动组合：把本队多条路线按顺序拼成一台机器人的完整自动，支持起步等待与段间等待、接缝检查；回放、碰撞与保存全部跟随组合',
+    'zh-tw': '多段自動組合：把本隊多條路線按順序拼成一台機器人的完整自動，支援起步等待與段間等待、接縫檢查；回放、碰撞與儲存全部跟隨組合',
+    cs: 'Víceúsekové auto: složte několik tras týmu do jednoho auta s počátečním zpožděním a čekáním mezi úseky, kontrolou spojů — přehrávání, kolize i ukládání sledují složení',
+    nl: 'Multi-segment-auto: stel meerdere routes van een team samen tot één auto met startvertraging en wachttijden, plus naadcontroles — afspelen, botsingen en opslaan volgen de samenstelling',
+    fr: 'Auto multi-segments : composez plusieurs trajets d’une équipe en un seul auto avec délai de départ, attentes entre segments et contrôle des jonctions — lecture, collisions et enregistrement suivent la composition',
+    he: 'אוטו רב-מקטעים: חברו כמה מסלולים של קבוצה לאוטו אחד עם עיכוב התחלה, המתנות ובדיקת חיבורים — ניגון, התנגשויות ושמירה עוקבים אחר ההרכבה',
+    ja: 'マルチセグメント自動：チームの複数ルートを開始遅延・区間待機・接続チェック付きで 1 つの自動に組み立て。再生・衝突判定・保存がすべてこの組み立てに従います',
+    ko: '멀티 세그먼트 자동: 팀의 여러 경로를 시작 지연, 구간 대기, 이음새 검사와 함께 하나의 자동으로 구성합니다. 재생·충돌·저장이 모두 이 구성을 따릅니다',
+    pl: 'Auto wielosegmentowe: ułóż kilka tras zespołu w jedno auto z opóźnieniem startu, przerwami między segmentami i kontrolą łączeń — odtwarzanie, kolizje i zapis podążają za składem',
+    'pt-br': 'Auto de múltiplos segmentos: monte várias rotas da equipe em um único auto com atraso inicial, esperas entre segmentos e verificação de emendas — reprodução, colisões e salvamento seguem a composição',
+    es: 'Auto multisegmento: combina varias rutas del equipo en un solo auto con retraso inicial, esperas entre segmentos y comprobación de uniones — reproducción, colisiones y guardado siguen la composición',
+    tr: 'Çok segmentli oto: takımın birden çok rotasını başlangıç gecikmesi, segment arası beklemeler ve birleşim denetimiyle tek bir oto olarak düzenleyin — oynatma, çarpışmalar ve kaydetme bu düzenlemeyi izler',
+  } },
   { version: '0.1.8-beta.16', date: '2026.10.04', note: {
     en: 'Reopen exactly where you left — route picks, selection, playhead and playback range all restored; boundary check forgives wall-kiss starts within 2 cm',
     zh: '重开 App 回到你退出的地方——路线选择、选中机器人、播放头与回放范围全部保真恢复；边界检测对 2 厘米内的贴墙起步不再报越界',

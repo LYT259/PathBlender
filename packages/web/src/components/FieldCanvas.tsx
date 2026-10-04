@@ -13,11 +13,24 @@ import {
   chassisModules,
   fieldImageWorldRect,
   moduleBaseYaw,
+  resolveSequence,
   robotVisualGeometry,
   samplePoseAt,
   sampleStateAt,
 } from '@pathblender/core';
 import { TRAIL_WIDTH_M } from '../ground-trail';
+
+type PathPoint = { x: number; y: number; heading: number };
+/** Per-segment path geometry: composed robots contribute one array per
+ * segment (no inter-segment bridge), legacy robots their single route. */
+function pathSegmentsOf(r: SessionTrajectory): PathPoint[][] {
+  const resolved = resolveSequence(r);
+  if (resolved) return resolved.map((segment) => segment.trajectory.samples);
+  return [r.trajectory.samples];
+}
+function pathSegments(r: SessionTrajectory): PathPoint[] {
+  return pathSegmentsOf(r).flat();
+}
 import { MK5I_MODULE_TOP_URL, MK5I_MODULE_TOP_WORLD_M } from '../robot-sprites';
 import { saveBytes } from '../download';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
@@ -473,12 +486,13 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       ctx.fillStyle = cssVar('--accent', '#0a84ff');
       ctx.globalAlpha = 0.06;
       for (const r of robots) {
-        const samples = r.trajectory.samples;
-        const stride = Math.max(1, Math.ceil(samples.length / 120));
+        // Composed robots contribute every segment; legacy robots their one route.
+        const segmentSamples = pathSegments(r);
+        const stride = Math.max(1, Math.ceil(segmentSamples.length / 120));
         const L = r.trajectory.geometry.lengthM;
         const W = r.trajectory.geometry.widthM;
-        for (let i = 0; i < samples.length; i += stride) {
-          const p = samples[i] as { x: number; y: number; heading: number };
+        for (let i = 0; i < segmentSamples.length; i += stride) {
+          const p = segmentSamples[i] as { x: number; y: number; heading: number };
           ctx.save();
           ctx.translate(sx(p.x), sy(p.y));
           ctx.rotate(-p.heading);
@@ -491,21 +505,25 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
 
     // Ground tape: always the full route, so the tape runs continuously
     // under the robot and into the heading wedge on the front bumper.
+    // A composed robot draws one tape per segment — never a line bridging
+    // a wait (that would fake a connecting route the robot does not drive).
     if (showTrail) {
       ctx.save();
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
       ctx.lineWidth = TRAIL_WIDTH_M * v.scale;
       for (const r of robots) {
-        const samples = r.trajectory.samples;
-        if (samples.length < 2) continue;
-        ctx.beginPath();
-        samples.forEach((p, i) => {
-          if (i === 0) ctx.moveTo(sx(p.x), sy(p.y));
-          else ctx.lineTo(sx(p.x), sy(p.y));
-        });
+        const segments = pathSegmentsOf(r);
         ctx.strokeStyle = r.color;
-        ctx.stroke();
+        for (const samples of segments) {
+          if (samples.length < 2) continue;
+          ctx.beginPath();
+          samples.forEach((p, i) => {
+            if (i === 0) ctx.moveTo(sx(p.x), sy(p.y));
+            else ctx.lineTo(sx(p.x), sy(p.y));
+          });
+          ctx.stroke();
+        }
       }
       ctx.restore();
     }

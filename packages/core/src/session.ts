@@ -8,6 +8,7 @@ import type { Pose2d, RobotGeometry, Trajectory, TrajectorySample } from './type
 import { sampleTrajectory } from './math';
 import { makeCustomField } from './field';
 import type { RobotProfile } from './parsers/robot-profile';
+import { resolveSequence, sampleSequenceState, type AutoSequence } from './auto-sequence';
 
 export interface SessionRouteOption {
   id: string;
@@ -35,6 +36,14 @@ export interface SessionTrajectory {
   profileOptions?: SessionProfileOption[];
   /** Explicitly applied configuration, retained when switching routes. */
   profileId?: string;
+  /**
+   * Multi-segment composition (red book v1.38): the robot plays these routes
+   * in order, with the first segment's wait acting as the start delay.
+   * Absent = legacy single-route behavior with `startDelayS`. When present,
+   * `startDelayS` mirrors the first segment's wait (kept in sync on write,
+   * re-synced on session load) so consumers can keep reading either field.
+   */
+  sequence?: AutoSequence;
 }
 
 /** Palette mirroring the 103 fork's ghost colors (community-familiar). */
@@ -75,9 +84,16 @@ export function makeSession(traj: Trajectory, colorIndex = 0): SessionTrajectory
 
 /**
  * Robot pose on the global clock: parked at the first state before its
- * start delay, clamped to the last state after the trajectory ends.
+ * start delay, clamped to the last state after the trajectory ends. A
+ * composed robot samples through its sequence — parked (zero velocity) at
+ * the previous segment's end during waits, never interpolated across a
+ * gap between segments.
  */
 export function samplePoseAt(st: SessionTrajectory, globalT: number): Pose2d {
+  if (st.sequence) {
+    const s = sampleSequenceState(st, globalT);
+    if (s) return { x: s.x, y: s.y, heading: s.heading };
+  }
   const localT = globalT - st.startDelayS;
   const s = sampleTrajectory(st.trajectory.samples, localT);
   if (!s) return { x: 0, y: 0, heading: 0 };
@@ -88,17 +104,27 @@ export function samplePoseAt(st: SessionTrajectory, globalT: number): Pose2d {
  * Full interpolated state (pose + velocities) on the global clock —
  * same clamping semantics as samplePoseAt. The MK5i wheel-steering
  * rendering needs each robot's vx/vy/ω, not just the pose. Returns
- * undefined for trajectories with no samples.
+ * undefined for trajectories with no samples (and for empty sequences,
+ * which fall back to the legacy path). Waiting/parked states of a composed
+ * robot report zero velocity.
  */
 export function sampleStateAt(st: SessionTrajectory, globalT: number): TrajectorySample | undefined {
+  if (st.sequence) {
+    return sampleSequenceState(st, globalT)
+      ?? sampleTrajectory(st.trajectory.samples, globalT - st.startDelayS);
+  }
   return sampleTrajectory(st.trajectory.samples, globalT - st.startDelayS);
 }
 
 export function activeStartT(st: SessionTrajectory): number {
+  const resolved = resolveSequence(st);
+  if (resolved) return resolved[0]!.startS;
   return st.startDelayS;
 }
 
 export function activeEndT(st: SessionTrajectory): number {
+  const resolved = resolveSequence(st);
+  if (resolved) return resolved[resolved.length - 1]!.endS;
   return st.startDelayS + st.trajectory.durationS;
 }
 
@@ -170,6 +196,11 @@ export interface SessionFileV1 {
     editable?: Trajectory['editable'];
     edited?: boolean;
     original?: Trajectory['original'];
+    /**
+     * Multi-segment composition (added 2026-10-04, still v1: optional so
+     * every session file saved before it keeps opening unchanged).
+     */
+    sequence?: AutoSequence;
   }>;
 }
 
@@ -204,13 +235,18 @@ export function serializeSession(
       displayName: st.trajectory.displayName,
       source: st.trajectory.source,
       alliance: st.trajectory.alliance,
-      startDelayS: st.startDelayS,
+      // The sequence's first wait is the start delay; write both so files
+      // stay self-consistent even if a consumer only ever reads one field.
+      startDelayS: st.sequence && st.sequence.segments.length > 0
+        ? Math.max(0, st.sequence.segments[0]!.waitBeforeS)
+        : st.startDelayS,
       color: st.color,
       visible: st.visible,
       routeId: st.routeId,
       routeOptions: st.routeOptions,
       profileOptions: st.profileOptions,
       profileId: st.profileId,
+      sequence: st.sequence,
       geometry: st.trajectory.geometry,
       geometrySource: st.trajectory.geometrySource,
       moduleLocations: st.trajectory.moduleLocations,
@@ -249,6 +285,7 @@ export function deserializeSession(text: string): {
       })
     : undefined;
   const robots = v.robots.map((r) => {
+    const sequence = readSequence(r.sequence);
     const traj: Trajectory = {
       id: r.id ?? crypto.randomUUID(),
       name: r.name,
@@ -275,13 +312,14 @@ export function deserializeSession(text: string): {
     };
     return {
       trajectory: traj,
-      startDelayS: r.startDelayS,
+      startDelayS: sequence ? Math.max(0, sequence.segments[0]!.waitBeforeS) : r.startDelayS,
       color: r.color,
       visible: r.visible,
       routeId: r.routeId,
       routeOptions: readRouteOptions(r.routeOptions),
       profileOptions: readProfileOptions(r.profileOptions),
       profileId: typeof r.profileId === 'string' ? r.profileId : undefined,
+      sequence,
     } satisfies SessionTrajectory;
   });
   return { fieldId: v.fieldId, field: customField, robots };
@@ -291,6 +329,23 @@ function validGeometry(value: RobotGeometry | undefined): boolean {
   return !!value && Number.isFinite(value.lengthM) && value.lengthM > 0 &&
     Number.isFinite(value.widthM) && value.widthM > 0 &&
     Number.isFinite(value.offsetX) && Number.isFinite(value.offsetY);
+}
+
+function readSequence(value: AutoSequence | undefined): AutoSequence | undefined {
+  if (value === undefined) return undefined;
+  const segments = value?.segments;
+  if (!Array.isArray(segments) || segments.length === 0) return undefined;
+  if (segments.some((segment) => !segment || typeof segment.id !== 'string' || typeof segment.routeId !== 'string')) {
+    throw new Error('invalid auto sequence');
+  }
+  // Numeric damage self-heals: non-finite or negative waits clamp to zero
+  // instead of bricking the whole session file.
+  return {
+    segments: segments.map((segment) => ({
+      ...segment,
+      waitBeforeS: Number.isFinite(segment.waitBeforeS) ? Math.max(0, segment.waitBeforeS) : 0,
+    })),
+  };
 }
 
 function readRouteOptions(value: SessionRouteOption[] | undefined): SessionRouteOption[] | undefined {

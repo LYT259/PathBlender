@@ -40,6 +40,8 @@ import type { FieldCanvas3DHandle } from './components/FieldCanvas3D';
 const FieldCanvas3D = lazy(() => import('./components/FieldCanvas3D').then((module) => ({ default: module.FieldCanvas3D })));
 import { Timeline } from './components/Timeline';
 import { RobotList, RobotInspector } from './components/RobotList';
+import { applySequenceSegments, sequenceViewFor, type AutoSequenceSegment } from './auto-sequence-state';
+import { checkSequenceJoins, checkSequenceTiming } from '@pathblender/core';
 import { ConflictPanel } from './components/ConflictPanel';
 import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
@@ -472,6 +474,26 @@ function AppBody() {
     setInspectorMode('robot');
   }, []);
   const selectedRobot = robots.find((r) => r.trajectory.id === selectedId) ?? robots[0];
+  // Auto composition: lives on the robot itself (source store), so undo/redo,
+  // autosave and session export all follow the ordinary robot history. The
+  // view is derived from the source robot; joins/timing are frame-invariant
+  // (mirrors preserve distances, speeds and heading gaps).
+  const sourceSelectedRobot = sourceRobots.find((robot) => robot.trajectory.id === selectedRobot?.trajectory.id);
+  const sequenceView = sequenceViewFor(sourceSelectedRobot);
+  const sequenceJoins = useMemo(
+    () => (sourceSelectedRobot ? checkSequenceJoins(sourceSelectedRobot) : []),
+    [sourceSelectedRobot],
+  );
+  const sequenceTiming = sourceSelectedRobot ? checkSequenceTiming(sourceSelectedRobot, field.autoPeriodS) : undefined;
+  const changeSequence = useCallback((segments: AutoSequenceSegment[]) => {
+    if (!sourceSelectedRobot) return;
+    const id = sourceSelectedRobot.trajectory.id;
+    setRobots((prev) => prev.map((robot) => robot.trajectory.id === id ? applySequenceSegments(robot, segments) : robot));
+  }, [sourceSelectedRobot, setRobots]);
+  const jumpToSeam = useCallback((time: number) => {
+    playback.setPlaying(false);
+    setT(time);
+  }, [playback.setPlaying, setT]);
 
 
 
@@ -909,7 +931,7 @@ function AppBody() {
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
             </div></div>
             {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} toleranceS={toleranceS} onToleranceChange={setToleranceS} fieldName={field.name} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
-            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} onRemove={removeRobot} libraryProfiles={selectedRobot?.profileOptions ?? []} onApplyProfile={applyProfile} /></div>}
+            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot} onRemove={removeRobot} libraryProfiles={selectedRobot?.profileOptions ?? []} onApplyProfile={applyProfile} sequence={{ routes: sequenceView.routes, segments: sequenceView.segments, onChange: changeSequence, joins: sequenceJoins, timing: sequenceTiming, onJump: jumpToSeam }} /></div>}
           </aside>
         </main>
 
