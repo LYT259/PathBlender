@@ -357,6 +357,28 @@ input[type="number"], input[type="text"] {
 .conflict-jump:hover { background: var(--hover); }
 .conflict-pair { font-weight: 600; }
 .conflict-when { color: var(--fg-dim); font-size: 12px; }
+.tolerance-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--fg-dim); margin: 2px 0 8px;
+}
+.tolerance-row input[type='range'] { flex: 1; min-width: 60px; accent-color: var(--accent); }
+.tolerance-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tolerance-badge {
+  font-style: normal; font-weight: 500; font-size: 11px;
+  background: var(--warn-bg, #f5d890); color: var(--warn-fg, #5c4400);
+  border-radius: 8px; padding: 0 7px; margin-left: 6px; vertical-align: 1px;
+}
+.conflict-item.is-tolerance .conflict-jump { border-left-color: var(--warn, #c98a00); }
+.conflict-note { font-size: 11px; color: var(--fg-dim); }
+.conflict-note.is-opponent { color: var(--warn, #c98a00); }
+.report-export {
+  margin-top: 8px; width: 100%; padding: 7px 10px; font-size: 12px;
+  background: var(--bg-card); color: var(--fg);
+  border: 1px solid var(--border); border-radius: 6px; cursor: pointer;
+}
+.report-export:hover { background: var(--hover); }
+.opponent-toggle.is-opponent { color: var(--warn, #c98a00); }
+
 
 /* ---------- timeline ---------- */
 .app-footer { border-top: 1px solid var(--border); background: var(--material); }

@@ -797,13 +797,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // is what batched the gesture events in the first place. While a pinch
     // or drag runs (plus this linger window), render at pixel ratio 1 with
     // the shadow map frozen; restore full quality once interaction settles.
-    const BASE_PIXEL_RATIO = (window.devicePixelRatio || 1);
     const INTERACTIVE_LINGER_MS = 100;
     let interactiveUntil = 0;
     let lowQuality = false;
     const setLowQuality = (on: boolean) => {
       lowQuality = on;
-      renderer.setPixelRatio(on ? 1 : BASE_PIXEL_RATIO);
+      renderer.setPixelRatio(on ? 1 : (window.devicePixelRatio || 1));
       renderer.shadowMap.autoUpdate = !on;
       if (!on) renderer.shadowMap.needsUpdate = true; // refresh frozen shadows once
     };
@@ -1001,6 +1000,20 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         if (!interacting) needsDraw = true;
       }
       const moved = controls.update();
+      // DPR can change without a resize (window dragged between Retina and
+      // 1x displays) — ResizeObserver misses it, leaving the buffer at the
+      // stale density. Re-sync the pixel ratio (preserving the interactive
+      // low-quality override); setPixelRatio re-allocates the buffer.
+      const dprWant = lowQuality ? 1 : (window.devicePixelRatio || 1);
+      if (renderer.getPixelRatio() !== dprWant) {
+        renderer.setPixelRatio(dprWant);
+        needsDraw = true;
+      }
+      const cubeDprWant = Math.min(window.devicePixelRatio || 1, 3);
+      if (cubeRenderer.getPixelRatio() !== cubeDprWant) {
+        cubeRenderer.setPixelRatio(cubeDprWant);
+        needsDraw = true;
+      }
       if (needsDraw || moved) {
         needsDraw = false;
         renderer.render(scene, camera);
@@ -1412,6 +1425,16 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // chassis rectangle, so file-sized robots still fit exactly.
       const frameSize: FrameSize = field.year === 2026 ? '27' : '30';
       const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplates[frameSize] ?? null, st.renderer.capabilities.getMaxAnisotropy());
+      // Opponent rendering (§6.5-②): faded ghost in 3D — dashed outlines
+      // are a 2D idiom; opacity carries the same "not one of us" read.
+      if (r.opponent) {
+        chassis.group.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
+          if (Array.isArray(mat)) mat.forEach((m) => { m.transparent = true; m.opacity = 0.45; });
+          else if (mat) { mat.transparent = true; mat.opacity = 0.45; }
+        });
+      }
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,

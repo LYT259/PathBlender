@@ -1,6 +1,7 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePlayback } from '../src/playback';
+import { playbackEnd, type PlaybackRange } from '../src/playback-range';
 
 describe('playback clock bounds and keyboard ownership', () => {
   it('clamps after the session shrinks and stops when the final path is removed', () => {
@@ -121,4 +122,18 @@ describe('playback speed scaling (regression: 0.25x must slow the clock)', () =>
     expect(advanced).toBeGreaterThan(0.6);
     expect(advanced).toBeLessThan(0.9);
   });
+
+  it('plays the remaining idle time in full mode and loops only the paths in path mode', () => {
+    const { result, rerender } = renderHook(({ range }: { range: PlaybackRange }) => usePlayback(playbackEnd(8, 20, range)), { initialProps: { range: 'full' as PlaybackRange } });
+    act(() => result.current.setPlaying(true));
+    pump(10000);
+    expect(result.current.t).toBeGreaterThan(9.9);
+    pump(10500);
+    expect(result.current.t).toBeLessThan(0.6);
+    rerender({ range: 'paths' });
+    act(() => result.current.setT(0));
+    pump(8500);
+    expect(result.current.t).toBeLessThan(0.6);
+  });
+
 });

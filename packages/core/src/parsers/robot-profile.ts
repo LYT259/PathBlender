@@ -21,6 +21,32 @@ import type { ModuleLocation, RobotGeometry } from '../types';
 import { DEFAULT_GEOMETRY } from '../types';
 import { asArray, asRecord, num, parseJson } from './json';
 
+/**
+ * Drive-train dynamics carried by a profile, consumed when regenerating
+ * PathPlanner `.path` imports so the timeline reflects the real robot
+ * instead of the app default (red book §6.6 consumption matrix, landed
+ * 2026-10-04). Every field is optional and plausibility-guarded at its
+ * mapping site; a profile carrying none of these regenerates nothing.
+ */
+export interface ProfileDynamics {
+  massKG?: number;
+  /** Moment of inertia about the center of rotation, kg·m². */
+  moiKGm2?: number;
+  wheelCOF?: number;
+  wheelRadiusM?: number;
+  driveGearing?: number;
+  /** Free speed at the wheel, m/s (derived from motor-shaft values). */
+  maxDriveVelocityMPS?: number;
+}
+
+/** PP settings.json generation defaults, used when a path is unlimited. */
+export interface ProfileDefaultConstraints {
+  maxVelMPS?: number;
+  maxAccelMPSS?: number;
+  maxAngVelRadPS?: number;
+  maxAngAccelRadPSSq?: number;
+}
+
 export interface RobotProfile {
   name: string;
   /** Bumper box for collision checking. */
@@ -29,6 +55,15 @@ export interface RobotProfile {
   /** Extras carried for display; optional in every source format. */
   massKG?: number;
   holonomic?: boolean;
+  /** Drive-train numbers for `.path` regeneration; absent → geometry-only. */
+  dynamics?: ProfileDynamics;
+  /** Project-wide generation defaults; only recognized in PP settings.json. */
+  defaultConstraints?: ProfileDefaultConstraints;
+}
+
+/** Plausible free speed at the wheel — guards a misread vmax unit. */
+function plausibleWheelSpeedMPS(v: number): boolean {
+  return v > 0.5 && v < 15;
 }
 
 function readModuleLocations(source: Record<string, unknown>): ModuleLocation[] {
@@ -126,6 +161,40 @@ function unwrapExprValues(v: unknown, depth: number): unknown {
 }
 
 /**
+ * Choreo config dynamics (mass/inertia/gearing/radius/vmax/cof — the same
+ * section the geometry comes from, physically verified 2026-09-12). vmax is
+ * a motor-shaft angular velocity: wheel free speed = vmax/gearing·radius.
+ * The sample project (5100 RPM motor, 7.15 gearing, 48.2 mm wheels) maps to
+ * ≈3.6 m/s under this reading; the guard rejects unit misreads instead of
+ * shipping an absurd drive limit. tmax is NOT mapped: building the
+ * generator's electrical motor model needs stall/free currents the config
+ * does not carry.
+ */
+function choreoDynamics(unwrapped: Record<string, unknown>): ProfileDynamics | undefined {
+  const massKG = num(unwrapped.mass, Number.NaN);
+  const moiKGm2 = num(unwrapped.inertia, Number.NaN);
+  const wheelCOF = num(unwrapped.cof, Number.NaN);
+  const wheelRadiusM = num(unwrapped.radius, Number.NaN);
+  const driveGearing = num(unwrapped.gearing, Number.NaN);
+  const vmax = num(unwrapped.vmax, Number.NaN);
+  const maxDriveVelocityMPS =
+    Number.isFinite(vmax) && Number.isFinite(driveGearing) && Number.isFinite(wheelRadiusM)
+      ? (vmax / driveGearing) * wheelRadiusM
+      : Number.NaN;
+  const dynamics: ProfileDynamics = {
+    massKG: Number.isFinite(massKG) ? massKG : undefined,
+    moiKGm2: Number.isFinite(moiKGm2) ? moiKGm2 : undefined,
+    wheelCOF: Number.isFinite(wheelCOF) && wheelCOF > 0 ? wheelCOF : undefined,
+    wheelRadiusM: Number.isFinite(wheelRadiusM) && wheelRadiusM > 0 ? wheelRadiusM : undefined,
+    driveGearing: Number.isFinite(driveGearing) && driveGearing > 0 ? driveGearing : undefined,
+    maxDriveVelocityMPS: plausibleWheelSpeedMPS(maxDriveVelocityMPS)
+      ? maxDriveVelocityMPS
+      : undefined,
+  };
+  return Object.values(dynamics).some((v) => v !== undefined) ? dynamics : undefined;
+}
+
+/**
  * The Choreo project shape: a top-level drive `type` plus a config
  * section carrying a usable bumper. `type` is the drive-mode authority
  * (red book v1.15): "Swerve" is holonomic, anything else is not.
@@ -148,7 +217,51 @@ function choreoProjectProfile(
     moduleLocations: modules,
     massKG: Number.isFinite(massKG) ? massKG : undefined,
     holonomic: root.type === 'Swerve',
+    dynamics: choreoDynamics(unwrapped),
   };
+}
+
+/**
+ * PP settings.json dynamics + generation defaults. Field names follow the
+ * red book §6.6 consumption matrix (verified against the MIT upstream
+ * prefs); the local real samples carry none of them, so every field is
+ * optional and a file without them yields no dynamics — behavior is then
+ * unchanged. 实测留待：遇到携带动力学字段的真机 settings.json 时回填样本.
+ */
+function ppDynamics(source: Record<string, unknown>): ProfileDynamics | undefined {
+  const massKG = num(source.robotMass ?? source.robotMassKg, Number.NaN);
+  const moiKGm2 = num(source.robotMOI, Number.NaN);
+  const wheelCOF = num(source.wheelCOF, Number.NaN);
+  const wheelRadiusM = num(source.driveWheelRadius, Number.NaN);
+  const driveGearing = num(source.driveGearing, Number.NaN);
+  const maxDriveVelocityMPS = num(source.maxDriveSpeed, Number.NaN);
+  const dynamics: ProfileDynamics = {
+    massKG: Number.isFinite(massKG) ? massKG : undefined,
+    moiKGm2: Number.isFinite(moiKGm2) ? moiKGm2 : undefined,
+    wheelCOF: Number.isFinite(wheelCOF) && wheelCOF > 0 ? wheelCOF : undefined,
+    wheelRadiusM: Number.isFinite(wheelRadiusM) && wheelRadiusM > 0 ? wheelRadiusM : undefined,
+    driveGearing: Number.isFinite(driveGearing) && driveGearing > 0 ? driveGearing : undefined,
+    maxDriveVelocityMPS: plausibleWheelSpeedMPS(maxDriveVelocityMPS)
+      ? maxDriveVelocityMPS
+      : undefined,
+  };
+  return Object.values(dynamics).some((v) => v !== undefined) ? dynamics : undefined;
+}
+
+function ppDefaultConstraints(root: Record<string, unknown>): ProfileDefaultConstraints | undefined {
+  const gen = asRecord(root.generationSettings);
+  if (!gen) return undefined;
+  const maxVelMPS = num(gen.defaultMaxVel, Number.NaN);
+  const maxAccelMPSS = num(gen.defaultMaxAccel, Number.NaN);
+  const maxAngVelRadPS = num(gen.defaultMaxAngVel, Number.NaN);
+  const maxAngAccelRadPSSq = num(gen.defaultMaxAngAccel, Number.NaN);
+  const dc: ProfileDefaultConstraints = {
+    maxVelMPS: Number.isFinite(maxVelMPS) && maxVelMPS > 0 ? maxVelMPS : undefined,
+    maxAccelMPSS: Number.isFinite(maxAccelMPSS) && maxAccelMPSS > 0 ? maxAccelMPSS : undefined,
+    maxAngVelRadPS: Number.isFinite(maxAngVelRadPS) && maxAngVelRadPS > 0 ? maxAngVelRadPS : undefined,
+    maxAngAccelRadPSSq: Number.isFinite(maxAngAccelRadPSSq) && maxAngAccelRadPSSq > 0 ? maxAngAccelRadPSSq : undefined,
+  };
+  return Object.values(dc).some((v) => v !== undefined) ? dc : undefined;
 }
 
 /**
@@ -172,9 +285,11 @@ export function parseRobotProfile(text: string, fileName: string): RobotProfile 
       widthM: num(width, DEFAULT_GEOMETRY.widthM),
       lengthM: num(length, DEFAULT_GEOMETRY.lengthM),
     };
-    const holonomic = source.holonomicMode !== undefined
-      ? source.holonomicMode === true
-      : root.isHolonomic === true;
+    // "File didn't say" must stay undefined, not false: the value feeds the
+    // generator's holonomic/differential switch downstream, and a file that
+    // simply omits the field must not silently become a diff-drive robot.
+    const holonomicRaw = source.holonomicMode ?? root.isHolonomic;
+    const holonomic = typeof holonomicRaw === 'boolean' ? holonomicRaw : undefined;
     const massRaw = source.robotMassKg ?? source.robotMass ?? root.robotMassKg;
     const massKG = typeof massRaw === 'number' && Number.isFinite(massRaw) ? massRaw : undefined;
 
@@ -184,6 +299,8 @@ export function parseRobotProfile(text: string, fileName: string): RobotProfile 
       moduleLocations: readModuleLocations(source),
       massKG,
       holonomic,
+      dynamics: ppDynamics(source),
+      defaultConstraints: ppDefaultConstraints(root),
     };
   }
 

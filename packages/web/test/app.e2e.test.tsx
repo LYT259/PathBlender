@@ -27,7 +27,9 @@ function dropFiles(files: File[]): void {
 beforeEach(() => localStorage.clear());
 
 function selectRobot(name: string): HTMLElement {
-  fireEvent.click(screen.getByText(({ 'Straight Run': '#0001', 'Stop And Score': '#0002', 'Side Lane': '#0003' } as Record<string, string>)[name] ?? name, { selector: '.robot-name' }));
+  const label = [...document.querySelectorAll('.robot-library-name')].find((element) => element.getAttribute('title') === name);
+  expect(label).toBeDefined();
+  fireEvent.click(label!.closest('button')!);
   return screen.getByRole('region', { name, exact: true });
 }
 
@@ -94,7 +96,7 @@ describe('App import → fusion → collision flow', () => {
     });
 
     // Choreo card + ghost cards
-    expect(screen.getByText('swerve', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByTitle('swerve')).toBeInTheDocument();
     expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByText('#0002', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByText('#0001', { selector: '.robot-library-team' })).toBeInTheDocument();
@@ -287,7 +289,7 @@ describe('App import → fusion → collision flow', () => {
       },
       { timeout: 5000 },
     );
-    expect(screen.getByText('Pickup', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByTitle('Pickup')).toBeInTheDocument();
   });
 
   it('.auto imports when its referenced .path files arrive in the same batch', async () => {
@@ -306,7 +308,7 @@ describe('App import → fusion → collision flow', () => {
       },
       { timeout: 10000 },
     );
-    expect(screen.getByText('Example Auto', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByTitle('Example Auto')).toBeInTheDocument();
     expect(screen.getAllByText(/9\.22/, { selector: '.robot-library-meta span' }).length).toBeGreaterThan(0);
   }, 30000);
 

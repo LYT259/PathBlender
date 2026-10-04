@@ -36,8 +36,8 @@ describe('welcome example', () => {
     for (const { trajectory, startDelayS, visible } of robots) {
       expect(trajectory.teamName).toBe('');
       // Demo robots carry plain team numbers on the bumper (user request
-      // 2026-10-03): 00001 / 00002 instead of "示例路径 A/B".
-      expect(['00001', '00002']).toContain(trajectory.teamNumber);
+      // 2026-10-03): AAAAAA / BBBBBB instead of "示例路径 A/B".
+      expect(['AAAAAA', 'BBBBBB']).toContain(trajectory.teamNumber);
       expect(trajectory.geometrySource).toBe('file');
       expect(trajectory.geometry.lengthM).toBe(0.8);
       expect(trajectory.geometry.widthM).toBe(0.8);
