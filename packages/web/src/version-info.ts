@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.9';
+export const APP_VERSION = '0.1.8-beta.10';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.10', date: '2026.10.04', note: {
+    en: 'Reverted the 41 mm inboard shift of the MK5i module body — the module plate covers all 20 chassis mounting bolts again (the corner bolt floated 26 mm off the plate) and the module sits back on its CAD-verified seat on the rails',
+    zh: '撤销 MK5i 模组本体的 41mm 内移——模组安装板重新盖住全部 20 颗底盘安装螺栓（角上螺栓曾悬空偏离板面 26mm），模组回到经 CAD 验证的轨道安装位',
+    'zh-tw': '撤銷 MK5i 模組本體的 41mm 內移——模組安裝板重新蓋住全部 20 顆底盤安裝螺栓（角上螺栓曾懸空偏離板面 26mm），模組回到經 CAD 驗證的軌道安裝位',
+    cs: 'Posun těla modulu MK5i o 41 mm dovnitř byl vrácen — montážní deska modulu opět zakrývá všech 20 šroubů podvozku (rohový šroub visel 26 mm mimo desku) a modul znovu sedí na svém CAD ověřeném místě na lištách',
+    nl: 'De 41 mm naar binnen geschoven MK5i-modulebehuizing is teruggedraaid — de moduleplaat dekt weer alle 20 chassisbevestigingsbouten (de hoekbout zweefde 26 mm naast de plaat) en de module zit weer op zijn CAD-geverifieerde plek op de balken',
+    fr: 'Le décalage de 41 mm vers l’intérieur du corps du module MK5i est annulé — la plaque du module recouvre de nouveau les 20 boulons de fixation du châssis (le boulon d’angle flottait à 26 mm de la plaque) et le module retrouve son assise vérifiée par CAO sur les rails',
+    he: 'הוזזה חזרה הזזת גוף המודול MK5i של 41 מ"מ פנימה — לוחית המודול שוב מכסה את כל 20 ברגי ההרכבה של השלדה (בורג הפינה ריחף 26 מ"מ מחוץ ללוחית) והמודול חוזר למושבו המאומת ב-CAD על המסילות',
+    ja: 'MK5i モジュール本体の 41mm 内側移動を取り消し——モジュールプレートが 20 本のシャーシ取り付けボルトを再びすべてカバーし（角のボルトはプレートから 26mm 外れていました）、モジュールは CAD で検証済みのレール上の位置に戻りました',
+    ko: 'MK5i 모듈 본체의 41mm 안쪽 이동을 되돌렸습니다 — 모듈 플레이트가 20개의 섀시 장착 볼트를 다시 모두 덮고(모서리 볼트가 플레이트에서 26mm 벗어나 있었습니다), 모듈이 CAD로 검증된 레일 위 원래 위치로 돌아갑니다',
+    pl: 'Cofnięto przesunięcie korpusu modułu MK5i o 41 mm do środka — płyta modułu znowu zakrywa wszystkie 20 śrub montażowych podwozia (narożna śruba wystawała 26 mm poza płytę), a moduł wraca na zweryfikowane w CAD miejsce na belkach',
+    'pt-br': 'Revertido o deslocamento de 41 mm para dentro do corpo do módulo MK5i — a placa do módulo volta a cobrir todos os 20 parafusos de fixação do chassi (o parafuso do canto ficava 26 mm fora da placa) e o módulo retorna ao seu assento verificado em CAD sobre as barras',
+    es: 'Revertido el desplazamiento de 41 mm hacia dentro del cuerpo del módulo MK5i — la placa del módulo vuelve a cubrir los 20 pernos de montaje del chasis (el perno de la esquina quedaba 26 mm fuera de la placa) y el módulo regresa a su asiento verificado por CAD sobre los rieles',
+    tr: 'MK5i modül gövdesinin 41 mm içeri kaydırılması geri alındı — modül plakası 20 şasi bağlantı civatasının hepsini yeniden örtüyor (köşe civatası plakanın 26 mm dışında kalıyordu) ve modül raylar üzerindeki CAD doğrulamalı yerine geri oturuyor',
+  } },
   { version: '0.1.8-beta.9', date: '2026.10.04', note: {
     en: 'The bumper is now one continuous closed square ring — no seams between rails, in 3D and the 2D top view alike',
     zh: 'bumper 改为一个完全连续的封闭正方形环——四角再无接缝，3D 与 2D 俯视一致',
