@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.7-beta.26';
+export const APP_VERSION = '0.1.7-beta.27';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.7-beta.27', date: '2026.10.04', note: {
+    en: 'Workspace home button — one click back to the welcome screen, undoable with Cmd+Z',
+    zh: '工作区首页按钮——一键回到欢迎页，可用 ⌘Z 撤销',
+    'zh-tw': '工作區首頁按鈕——一鍵回到歡迎頁，可用 ⌘Z 復原',
+    cs: 'Tlačítko Domů — jedním kliknutím zpět na uvítací obrazovku, lze vrátit pomocí ⌘Z',
+    nl: 'Home-knop in de werkbalk — één klik terug naar het welkomstscherm, ongedaan te maken met ⌘Z',
+    fr: 'Bouton Accueil — un clic pour revenir à l’écran d’accueil, annulable avec ⌘Z',
+    he: 'כפתור בית — חזרה למסך הבית בלחיצה אחת, ניתן לביטול עם ⌘Z',
+    ja: 'ホームボタン——ワンクリックでようこそ画面に戻り、⌘Z で元に戻せます',
+    ko: '홈 버튼 — 한 번의 클릭으로 시작 화면으로 돌아가며 ⌘Z로 되돌릴 수 있습니다',
+    pl: 'Przycisk Home — jeden klik powrót do ekranu powitalnego, cofany przez ⌘Z',
+    'pt-br': 'Botão Início — um clique de volta à tela inicial, desfazível com ⌘Z',
+    es: 'Botón Inicio — un clic de vuelta a la pantalla de bienvenida, reversible con ⌘Z',
+    tr: 'Ana sayfa düğmesi — tek tıkla karşılama ekranına dönüş, ⌘Z ile geri alınabilir',
+  } },
   { version: '0.1.7-beta.26', date: '2026.10.04', note: {
     en: 'Restored the workspace toolbar: undo/redo (Cmd+Z), sidebar toggles and the inspector close button',
     zh: '恢复工作区工具栏：撤销/重做（⌘Z）、侧栏折叠开关与检查器关闭按钮',
