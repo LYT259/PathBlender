@@ -774,10 +774,14 @@ function AppBody() {
     }
   };
   const exitExample = () => {
-    // Keep any real paths the user added while exploring the example.
-    const remaining = sourceRobots.filter((robot) => !isExampleRobot(robot));
-    setRobots(remaining);
-    setSelectedId(remaining[0]?.trajectory.id ?? null);
+    // Ending the example always lands on the welcome page (user 2026-10-04:
+    // keeping the session's other robots read as "exiting into another
+    // workspace" whenever any non-example robot — an adopted route pick or
+    // an import made while exploring — was present). Clearing the last
+    // robot also clears the autosave slot, so the next launch starts at
+    // the welcome page too; the whole exit stays undo-able via ⌘Z.
+    setRobots([]);
+    setSelectedId(null);
     playback.setPlaying(false);
     setT(0);
   };
