@@ -82,7 +82,7 @@ export type { Obb } from './collision/obb';
 export { detectCollisions, minimumSeparation } from './collision/detect';
 export { autoResolveConflicts } from './resolve';
 export type { CollisionInterval, DetectOptions } from './collision/detect';
-export { detectFieldBounds } from './collision/field-bounds';
+export { BOUNDS_TOLERANCE_M, detectFieldBounds } from './collision/field-bounds';
 export type {
   FieldBoundsOptions,
   OutOfBoundsInterval,

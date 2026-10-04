@@ -205,27 +205,28 @@ describe('welcome flow', () => {
     expect(second).toHaveValue(secondOptions.find((o) => o.textContent === 'L1')!.value);
   });
 
-  it("hides a robot's conflicts and bounds with the robot, and brings them back", async () => {
+  it("hides a robot's conflicts with the robot, and brings them back", async () => {
     render(<App />);
     await openExample();
-    // Both L1s share a start pose: one conflict pair; both robots also
-    // start a hair over the line.
+    // Both L1s share a start pose: one conflict pair. The wall-kiss starts
+    // (a few mm over the line) are inside BOUNDS_TOLERANCE_M (2026-10-04),
+    // so no out-of-bounds entries appear at all.
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
-    expect(screen.getByText('2', { selector: '.bounds-count' })).toBeInTheDocument();
+    expect(document.querySelector('.bounds-count')).not.toBeInTheDocument();
     expect(screen.getByText('#8814 × #11019', { selector: '.conflict-pair' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Hide #8814 on field' }));
     expect(screen.getByText('0', { selector: '.conflict-count' })).toBeInTheDocument();
     expect(screen.queryByText('#8814 × #11019', { selector: '.conflict-pair' })).not.toBeInTheDocument();
-    expect(screen.getByText('1', { selector: '.bounds-count' })).toBeInTheDocument();
+    expect(document.querySelector('.bounds-count')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Hide #11019 on field' }));
-    expect(screen.queryByText('1', { selector: '.bounds-count' })).not.toBeInTheDocument();
+    expect(document.querySelector('.bounds-count')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show #8814 on field' }));
     fireEvent.click(screen.getByRole('button', { name: 'Show #11019 on field' }));
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
-    expect(screen.getByText('2', { selector: '.bounds-count' })).toBeInTheDocument();
+    expect(document.querySelector('.bounds-count')).not.toBeInTheDocument();
     expect(screen.getByText('#8814 × #11019', { selector: '.conflict-pair' })).toBeInTheDocument();
   });
 
