@@ -28,6 +28,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { MK5I_TURRET_PREFIX } from '../src/chassis3d';
 
 const GLB = resolve(__dirname, '../public/models/mk5i-module.glb');
 
@@ -112,6 +113,14 @@ describe('shipped mk5i-module.glb', () => {
     expect(h).toBeGreaterThanOrEqual(0.1);
     expect(h).toBeLessThanOrEqual(0.35);
     expect(whole.max.x - whole.min.x).toBeGreaterThan(whole.max.z - whole.min.z);
+  });
+
+  it('carries a node matching the runtime turret prefix — no silent whole-pod fallback', () => {
+    // 2026-10-04 regression: the code matched 'mk5i-turret-' while the asset
+    // ships 'mk5i-turret', so buildChassis3D silently fell back to the
+    // unsplit path and every module rendered at yaw 0. Pin name↔code drift.
+    const js = gltfJson(GLB);
+    expect(js.nodes.some((n) => (n.name ?? '').startsWith(MK5I_TURRET_PREFIX))).toBe(true);
   });
 
   it('centers the turret on the steering axis (moduleLocations are axis positions)', () => {

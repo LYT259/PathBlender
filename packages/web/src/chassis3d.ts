@@ -57,10 +57,17 @@ const MK5I_HEIGHT_M = 6.17 * 0.0254;
  * 0.0306 ≈ 0.1001) stand ~4 mm over the plate top ≈ 0.0961 ✓.
  */
 const MODULE_MOUNT_Y_M = -0.03061;
-/** Split-GLB contract (2026-10-03): `mk5i-turret-*` nodes (turret +
- *  wheel) rotate about the steering axis at the origin; `mk5i-box-*`
- *  nodes are bolted to the mounting plate and never steer. */
-const MK5I_TURRET_PREFIX = 'mk5i-turret-';
+/**
+ * Split-GLB contract (2026-10-03): the shipped GLB's scene holds exactly
+ * two top-level nodes — `mk5i-turret` (turret + wheel, rotates about the
+ * steering axis at the origin) and `mk5i-box` (bolted to the mounting
+ * plate, never steers). The names carry NO dash suffix: the old
+ * `mk5i-turret-` prefix matched nothing and silently fell back to
+ * whole-pod steering, which left every module at yaw 0 instead of the
+ * installed pose (user 2026-10-04). Exported so the shipped-GLB test
+ * pins name↔code drift and this can never regress silently again.
+ */
+export const MK5I_TURRET_PREFIX = 'mk5i-turret';
 
 export interface Chassis3D {
   group: THREE.Group;
@@ -216,13 +223,13 @@ export function buildChassis3D(
       // Official CAD module: clone shares geometry/materials with every
       // other instance, so N robots × 4 pods reuse one GPU copy.
       const inst = moduleTemplate.clone(true);
-      // Split-GLB contract: pull the `mk5i-turret-*` nodes (top-most
-      // matches) into a turret group driven by steering; whatever
-      // remains in the clone is the box (the `mk5i-box-*` nodes plus
-      // anything unprefixed), frozen at the installed yaw — identical
-      // to the previous parked pose. An old GLB has no mk5i-turret-*
-      // nodes (a stale service-worker cache can serve it): fall back
-      // to the previous behavior — the whole pod steers.
+      // Split-GLB contract: pull the `mk5i-turret` node into a turret
+      // group driven by steering; whatever remains in the clone is the
+      // box (`mk5i-box` plus anything unprefixed), frozen at the
+      // installed yaw — identical to the previous parked pose. An old
+      // GLB has no `mk5i-turret` node (a stale service-worker cache can
+      // serve it): fall back to the previous behavior — the whole pod
+      // steers.
       const turretNodes: THREE.Object3D[] = [];
       const collectTurrets = (root: THREE.Object3D): void => {
         for (const child of root.children) {
