@@ -1412,6 +1412,16 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // chassis rectangle, so file-sized robots still fit exactly.
       const frameSize: FrameSize = field.year === 2026 ? '27' : '30';
       const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplates[frameSize] ?? null, st.renderer.capabilities.getMaxAnisotropy());
+      // Opponent rendering (§6.5-②): faded ghost in 3D — dashed outlines
+      // are a 2D idiom; opacity carries the same "not one of us" read.
+      if (r.opponent) {
+        chassis.group.traverse((child) => {
+          const mesh = child as THREE.Mesh;
+          const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
+          if (Array.isArray(mat)) mat.forEach((m) => { m.transparent = true; m.opacity = 0.45; });
+          else if (mat) { mat.transparent = true; mat.opacity = 0.45; }
+        });
+      }
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,
