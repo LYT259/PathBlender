@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { REBUILT_2026, type SessionTrajectory } from '@pathblender/core';
+import { REBUILT_2026, DEFAULT_GEOMETRY, makeSession, serializeSession, type SessionTrajectory } from '@pathblender/core';
 import { App } from '../src/App';
 import { saveText } from '../src/download';
 
@@ -118,5 +118,126 @@ describe('per-team left/right mirror', () => {
     // Undo brings the slot back.
     fireEvent.click(screen.getByRole('button', { name: 'Undo', exact: true }));
     await waitFor(() => expect(fieldRobots()).toHaveLength(2));
+  });
+});
+
+describe('always-visible mirror button (2026-10-05)', () => {
+  /** The per-card mirror button of one robot row. */
+  const mirrorButton = (row: HTMLElement) => within(row).getByRole('button', { name: 'Mirror left/right' });
+  const sessionRobot = (id: string, teamNumber: string, colorIndex: number, y = 2): SessionTrajectory =>
+    makeSession({
+      id,
+      name: `Route ${teamNumber}`,
+      teamName: '',
+      teamNumber,
+      source: 'choreo-traj',
+      alliance: 'blue',
+      durationS: 8,
+      samples: [0, 8].map((t) => ({ t, x: 2 + t, y, heading: 0, vx: 1, vy: 0, omega: 0 })),
+      geometry: DEFAULT_GEOMETRY,
+      geometrySource: 'default',
+      moduleLocations: [],
+      events: [],
+      warnings: [],
+    }, colorIndex);
+
+  it('toggling the button twice reflects the team and restores the exact poses', async () => {
+    render(<App />);
+    drop([new File([raw], 'A.ghostauto'), new File([raw], 'B.ghostauto')]);
+    await waitFor(() => expect(fieldRobots()).toHaveLength(2));
+    const before = fieldRobots();
+    expect(mirrorButton(rows()[0]!)).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(mirrorButton(rows()[0]!));
+    await waitFor(() => expect(fieldRobots()[0]!.trajectory.samples[0]!.y).toBeCloseTo(REBUILT_2026.widthM - before[0]!.trajectory.samples[0]!.y, 10));
+    expect(mirrorButton(rows()[0]!)).toHaveAttribute('aria-pressed', 'true');
+    // Toggling again is an involution — down to the last sample.
+    fireEvent.click(mirrorButton(rows()[0]!));
+    await waitFor(() => expect(fieldRobots()[0]!.trajectory.samples).toEqual(before[0]!.trajectory.samples));
+    expect(mirrorButton(rows()[0]!)).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('mirrors only the team whose button was clicked', async () => {
+    render(<App />);
+    drop([new File([raw], 'A.ghostauto'), new File([raw], 'B.ghostauto')]);
+    await waitFor(() => expect(fieldRobots()).toHaveLength(2));
+    const before = fieldRobots();
+    fireEvent.click(mirrorButton(rows()[0]!));
+    await waitFor(() => expect(fieldRobots()[0]!.trajectory.samples[0]!.y).toBeCloseTo(REBUILT_2026.widthM - before[0]!.trajectory.samples[0]!.y, 10));
+    // Alliance never changes, x survives, and the second team is untouched.
+    expect(fieldRobots().every((r) => r.trajectory.alliance === 'blue')).toBe(true);
+    expect(fieldRobots()[0]!.trajectory.samples[0]!.x).toBeCloseTo(before[0]!.trajectory.samples[0]!.x, 10);
+    expect(fieldRobots()[1]!.trajectory.samples).toEqual(before[1]!.trajectory.samples);
+    expect(mirrorButton(rows()[1]!)).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('keeps the context menu and the visible button on the same state', async () => {
+    render(<App />);
+    drop([new File([raw], 'A.ghostauto'), new File([raw], 'B.ghostauto')]);
+    await waitFor(() => expect(fieldRobots()).toHaveLength(2));
+    // Button → menu: mirroring through the button shows the menu checked.
+    fireEvent.click(mirrorButton(rows()[0]!));
+    fireEvent.contextMenu(rows()[0]!);
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Mirror left/right' })).toHaveAttribute('aria-checked', 'true');
+    fireEvent.keyDown(screen.getByRole('menuitemcheckbox', { name: 'Mirror left/right' }), { key: 'Escape' });
+    // Menu → button: mirroring the other team from its menu presses its button.
+    menuAction(rows()[1]!, 'Mirror left/right');
+    await waitFor(() => expect(mirrorButton(rows()[1]!)).toHaveAttribute('aria-pressed', 'true'));
+    expect(mirrorButton(rows()[0]!)).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('mirrors an unselected team without stealing the selection or opening the composer', async () => {
+    render(<App />);
+    drop([new File([raw], 'A.ghostauto'), new File([raw], 'B.ghostauto')]);
+    await waitFor(() => expect(fieldRobots()).toHaveLength(2));
+    fireEvent.click(within(rows()[0]!).getByRole('button', { name: /#0001, Ghost/ }));
+    // The button targets its own team: the selection stays on team 0001 and
+    // no composer opens for the mirrored team.
+    fireEvent.click(mirrorButton(rows()[1]!));
+    await waitFor(() => expect(mirrorButton(rows()[1]!)).toHaveAttribute('aria-pressed', 'true'));
+    expect(within(rows()[0]!).getByRole('button', { name: /#0001, Ghost/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(rows()[1]!).getByRole('button', { name: /#0001, Ghost/ })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('button', { name: 'Back to playback' })).not.toBeInTheDocument();
+  });
+
+  it('pauses playback and keeps the playhead where it was', async () => {
+    render(<App />);
+    drop([new File([raw], 'A.ghostauto'), new File([raw], 'B.ghostauto')]);
+    await waitFor(() => expect(fieldRobots()).toHaveLength(2));
+    const before = fieldRobots();
+    const clock = () => screen.getByRole('slider', { name: 'Playback position' }).getAttribute('aria-valuetext')!;
+    fireEvent.change(screen.getByRole('slider', { name: 'Playback position' }), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Play', exact: true }));
+    expect(screen.getByRole('button', { name: 'Pause', exact: true })).toBeInTheDocument();
+    const playhead = clock();
+    expect(playhead).toMatch(/^2\.00 \//);
+    // The click pauses; the playhead never moves and the pose still reflects.
+    fireEvent.click(mirrorButton(rows()[0]!));
+    await waitFor(() => expect(fieldRobots()[0]!.trajectory.samples[0]!.y).toBeCloseTo(REBUILT_2026.widthM - before[0]!.trajectory.samples[0]!.y, 10));
+    expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
+    expect(clock()).toBe(playhead);
+  });
+
+  it('undoes a mirror made through the visible button', async () => {
+    render(<App />);
+    drop([new File([raw], 'A.ghostauto'), new File([raw], 'B.ghostauto')]);
+    await waitFor(() => expect(fieldRobots()).toHaveLength(2));
+    const before = fieldRobots();
+    fireEvent.click(mirrorButton(rows()[0]!));
+    await waitFor(() => expect(fieldRobots()[0]!.trajectory.samples[0]!.y).toBeCloseTo(REBUILT_2026.widthM - before[0]!.trajectory.samples[0]!.y, 10));
+    fireEvent.click(screen.getByRole('button', { name: 'Undo', exact: true }));
+    await waitFor(() => expect(fieldRobots()[0]!.trajectory.samples).toEqual(before[0]!.trajectory.samples));
+    expect(mirrorButton(rows()[0]!)).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('restores a saved session with the mirrored team shown as pressed', async () => {
+    const a = { ...sessionRobot('robot-a', '0001', 0), mirrored: true };
+    const b = sessionRobot('robot-b', '0002', 1, 6);
+    localStorage.setItem('pb.autosave.v1', JSON.stringify(JSON.parse(serializeSession([a, b], 'rebuilt-2026'))));
+    render(<App />);
+    await screen.findByRole('button', { name: /#0002, Choreo/ });
+    expect(mirrorButton(rows()[0]!)).toHaveAttribute('aria-pressed', 'true');
+    expect(mirrorButton(rows()[1]!)).toHaveAttribute('aria-pressed', 'false');
+    // The restored flag drives the same derivation: the pose is reflected.
+    expect(fieldRobots()[0]!.trajectory.samples[0]!.y).toBeCloseTo(REBUILT_2026.widthM - 2, 10);
   });
 });
