@@ -15,10 +15,19 @@ SDS export does not — SDS never ships motors).
   It is a community re-creation, not SDS's own geometry; core
   dimensions match the official layout drawing (module height
   6.16–6.17 in both; 18 named parts incl. 2× Kraken X60, turret,
-  molded wheel, L plate, fasteners). **frcdesigns.com was unreachable
-  (HTTP 521) at decision time — its license terms are UNVERIFIED.
-  Any public release must verify them first** (release-checklist
-  item, AGENTS.md red line 2).
+  molded wheel, L plate, fasteners). **License UNVERIFIED — blocks any
+  public release** (release-checklist item, AGENTS.md red line 2):
+  the correct domain is **frcdesign.org** (the old note's
+  `frcdesigns.com` was wrong). Research 2026-10-05: the site is a
+  community open-source CAD course, but the active GitHub repos
+  (`frcdesign/FRCDesign.org`, `frcdesign/FRCDesignApp`) carry **no
+  LICENSE file** (default = all rights reserved); the archived repos
+  (`FRCDesign-MKDocs`, `design-challenges-bot`) are GPL-3.0; no public
+  statement grants redistribution/embedding rights for the CAD models.
+  Resolution paths before any release: (a) written permission from the
+  FRC Design team (Chief Delphi / GitHub), or (b) replace the module
+  geometry (official SDS export has no motors; procedural fallback
+  exists in `chassis3d.ts`).
 - **Reference geometry kept for audit** — the official SDS Parasolid
   `mk5i.x_t` (product page → "CAD Model" Google Drive link;
   `attachment; filename="MK5i.x_t"`), sha256
