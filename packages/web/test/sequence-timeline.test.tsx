@@ -18,11 +18,12 @@ function fixture(id = 'one', duration = 4): SessionTrajectory {
   ] };
 }
 
-function Harness({ robot, autoPeriodS = 20, onCommit, onJump = () => undefined }: {
+function Harness({ robot, autoPeriodS = 20, onCommit, onJump = () => undefined, onClose = vi.fn() }: {
   robot: SessionTrajectory;
   autoPeriodS?: number;
   onCommit?: (robot: SessionTrajectory) => void;
   onJump?: (t: number) => void;
+  onClose?: () => void;
 }) {
   const [state, setState] = useState(robot);
   const commit = (segments: AutoSequenceSegment[]) => {
@@ -30,7 +31,7 @@ function Harness({ robot, autoPeriodS = 20, onCommit, onJump = () => undefined }
     setState(next);
     onCommit?.(next);
   };
-  return <I18nProvider><SequenceTimelineComposer robots={[state]} selectedId={state.trajectory.id} onSelect={vi.fn()} autoPeriodS={autoPeriodS} open onClose={vi.fn()} onChange={commit} joins={checkSequenceJoins(state)} timing={checkSequenceTiming(state, autoPeriodS)} onJump={onJump} /></I18nProvider>;
+  return <I18nProvider><SequenceTimelineComposer robots={[state]} selectedId={state.trajectory.id} onSelect={vi.fn()} autoPeriodS={autoPeriodS} open onClose={onClose} onChange={commit} joins={checkSequenceJoins(state)} timing={checkSequenceTiming(state, autoPeriodS)} onJump={onJump} /></I18nProvider>;
 }
 
 beforeEach(() => { localStorage.clear(); localStorage.setItem('pb.lang', 'en'); vi.clearAllMocks(); });
@@ -247,5 +248,29 @@ describe('timeline composer (real state)', () => {
     render(<Harness robot={robot} />);
     expect(screen.getByRole('heading', { name: '编排时间线' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '可用路线: right/A.ghostauto' })).toBeInTheDocument();
+  });
+
+  it('saves a pending start-time edit and closes on a pointer down outside the surface', () => {
+    const commits: SessionTrajectory[] = [];
+    const onClose = vi.fn();
+    render(<Harness robot={fixture()} onCommit={(r) => commits.push(r)} onClose={onClose} />);
+    addB();
+    // Type a new start without blurring — the outside click must commit it
+    // before the unmount would swallow the typed value. The field owns focus
+    // while a user types into it.
+    startInput().focus();
+    fireEvent.change(startInput(), { target: { value: '8' } });
+    fireEvent.pointerDown(document.body);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(commits).toHaveLength(2);
+    expect(commits[1]!.sequence!.segments.map((s) => [s.routeId, s.waitBeforeS])).toEqual([['a', 0], ['b', 4]]);
+  });
+
+  it('stays open while the pointer stays inside the editing surface', () => {
+    const onClose = vi.fn();
+    render(<Harness robot={fixture()} onClose={onClose} />);
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Available routes: B' }));
+    fireEvent.pointerDown(activeLane());
+    expect(onClose).not.toHaveBeenCalled();
   });
 });
