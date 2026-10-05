@@ -6,11 +6,14 @@
 # ~/.tauri/pathblender-updater.key) + TAURI_SIGNING_PRIVATE_KEY_PASSWORD
 # (see docs/releasing.md — key backup discipline).
 #
-# Platform matrix: macOS is the only active job today. The Windows and Linux
-# jobs below are commented out entirely (not `if: false` stubs) until their
-# bundle configs land in tauri.conf.json (NSIS/WebView2 bootstrapper,
-# deb/AppImage — report v1.10 §7.1 runtime matrix); uncomment them when those
-# land, and note `publish` needs its `needs:` and artifact copies extended too.
+# Platform matrix: macOS and Windows are active today (Windows ships an NSIS
+# installer; the updater feed gains a windows-x86_64 entry via
+# PB_WINDOWS_ARTIFACT). The Linux job below is still commented out entirely
+# (not an `if: false` stub) until the deb/AppImage bundle configs land in
+# tauri.conf.json (report v1.10 §7.1 runtime matrix); uncomment it when that
+# lands, and note `publish` needs its `needs:` and artifact copies extended too.
+# Windows verification without a physical PC: .github/workflows/windows-smoke.yml
+# (manual dispatch — build, silent-install, launch check, screenshot).
 name: Release
 
 on:
@@ -91,24 +94,33 @@ jobs:
           name: macos
           path: release/
 
-  # build-windows:
-  #   if: false  # enable when NSIS/MSI + WebView2 bootstrapper config lands
-  #   runs-on: windows-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-node@v4
-  #       with: { node-version: 23 }
-  #     - uses: dtolnay/rust-toolchain@stable
-  #     - run: npm install
-  #     - env:
-  #         TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-  #         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-  #       run: cd packages/desktop && npx tauri build --bundles nsis
-  #     - run: |
-  #         mkdir release
-  #         cp packages/desktop/src-tauri/target/release/bundle/nsis/* release/
-  #     - uses: actions/upload-artifact@v4
-  #       with: { name: windows, path: release/ }
+  build-windows:
+    needs: [checks]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install workspace deps
+        run: npm install
+      - name: Build NSIS installer
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        shell: bash
+        run: cd packages/desktop && npx tauri build --bundles nsis
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          mkdir -p release
+          cp packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe release/
+          cp packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe.sig release/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: release/
 
   # build-linux:
   #   if: false  # enable when deb/AppImage targets land
@@ -132,7 +144,7 @@ jobs:
   #       with: { name: linux, path: release/ }
 
   publish:
-    needs: [build-macos]
+    needs: [build-macos, build-windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -144,6 +156,16 @@ jobs:
           cp artifacts/macos/*.tar.gz* bundle/macos/
           cp artifacts/macos/*.tar.gz* release/
           cp artifacts/macos/*.dmg release/ || true
+          # Windows: setup.exe + .sig become release assets AND the feed entry.
+          # Strict copies (no `|| true`): if the windows job succeeded but its
+          # artifacts are missing, the release must fail loudly — same policy
+          # as the dmg check above. bundle/nsis/ is where gen-latest-json.mjs
+          # reads the signature from (same pattern as bundle/macos/ above).
+          mkdir -p bundle/nsis
+          cp artifacts/windows/*-setup.exe release/
+          cp artifacts/windows/*-setup.exe.sig release/
+          cp artifacts/windows/*-setup.exe* bundle/nsis/
+          echo "PB_WINDOWS_ARTIFACT=$(basename artifacts/windows/*-setup.exe)" >> "$GITHUB_ENV"
       - name: Compose user-facing release notes
         # Single source of per-version user notes (task: one text drives the
         # About page, the GitHub Release body AND the updater feed): the

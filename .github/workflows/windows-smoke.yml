@@ -1,0 +1,127 @@
+# Windows verification without a physical PC (user has none; 2026-10-05):
+# manual-dispatch job that builds the NSIS installer exactly the way the
+# release pipeline does, silently installs it, launches the app, asserts the
+# process/window/version, smoke-tests the updater feed generator, and uploads
+# a full-screen screenshot for human inspection (title bar, traffic-light
+# padding, dark mode rendering).
+#
+# NOT on push/tag: it duplicates the release build and is only needed when
+# someone wants eyes on a real Windows install. Standard runners on a public
+# repo are free; before going public this costs private-repo minutes (~2x
+# Windows rate) — dispatch deliberately.
+name: Windows smoke test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install workspace deps
+        run: npm install
+      - name: Build NSIS installer
+        # Same config path as the release job (tauri.conf.json bundle targets).
+        # The updater key is a throwaway generated here: the smoke build must
+        # produce the same artifacts (setup.exe + .sig) as a release build,
+        # but the repo signing key stays release-only.
+        shell: bash
+        run: |
+          cd packages/desktop
+          npx tauri signer generate -w "$RUNNER_TEMP/smoke-updater.key" --password "" >/dev/null
+          export TAURI_SIGNING_PRIVATE_KEY="$(cat "$RUNNER_TEMP/smoke-updater.key")"
+          export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
+          npx tauri build --bundles nsis
+      - name: Smoke the updater feed generator
+        # The release pipeline's PB_WINDOWS_ARTIFACT branch, exercised for
+        # real: the feed must carry a windows-x86_64 entry pointing at the
+        # setup.exe with a non-empty signature.
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          # gen-latest-json exits nonzero when NO platform has artifacts, so
+          # the Windows entry must be pointed at explicitly — same env var the
+          # release publish job sets (a smoke runner has no macOS bundle).
+          ART=$(basename packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe)
+          PB_WINDOWS_ARTIFACT="$ART" node scripts/gen-latest-json.mjs "$VERSION" packages/desktop/src-tauri/target/release/bundle > feed.json
+          node -e "
+            const feed = require('./feed.json');
+            const win = feed['windows-x86_64'];
+            if (!win || !win.url.endsWith('-setup.exe') || !win.signature.length) {
+              console.error('feed.json missing a valid windows-x86_64 entry:', JSON.stringify(feed));
+              process.exit(1);
+            }
+            console.log('feed OK:', win.url);
+          "
+      - name: Silent install (per-user)
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem "packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
+          if (-not $setup) { Write-Host "::error::no setup.exe found"; exit 1 }
+          Write-Host "Installing $($setup.Name)"
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Host "::error::installer exit code $($p.ExitCode)"; exit 1 }
+      - name: Locate, launch and assert
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          # Install location from the per-user uninstall registry entry
+          # (currentUser NSIS installs under HKCU), with the known default as
+          # fallback.
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $exe = Join-Path $installDir "PathBlender.exe"
+          if (-not (Test-Path $exe)) {
+            Write-Host "::error::PathBlender.exe not found at $exe"
+            Get-ChildItem "$env:LOCALAPPDATA" -Directory | ForEach-Object { Write-Host $_.Name }
+            exit 1
+          }
+          $expected = (Get-Content package.json | ConvertFrom-Json).version
+          $actual = (Get-Item $exe).VersionInfo.ProductVersion
+          Write-Host "Installed version: $actual (tree: $expected)"
+          if ($actual -ne $expected) { Write-Host "::error::installed version $actual != tree version $expected"; exit 1 }
+
+          Start-Process -FilePath $exe
+          Start-Sleep -Seconds 15
+          $proc = Get-Process -Name "PathBlender" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $proc) { Write-Host "::error::PathBlender process not running 15s after launch"; exit 1 }
+          $proc.Refresh()
+          if (-not $proc.MainWindowTitle) { Write-Host "::error::PathBlender running but has no main window"; exit 1 }
+          Write-Host "Window title: '$($proc.MainWindowTitle)'"
+          if ($proc.MainWindowTitle -ne "PathBlender") { Write-Host "::warning::unexpected window title" }
+          "running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath smoke-result.txt
+      - name: Screenshot
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms
+          Add-Type -AssemblyName System.Drawing
+          $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+          $bmp.Save("$PWD/smoke-screenshot.png")
+          $g.Dispose(); $bmp.Dispose()
+          Write-Host "Screenshot saved: $PWD/smoke-screenshot.png"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-smoke
+          path: |
+            smoke-screenshot.png
+            smoke-result.txt
+          if-no-files-found: error
