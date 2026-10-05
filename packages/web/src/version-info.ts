@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.31';
+export const APP_VERSION = '0.1.8-beta.32';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.32', date: '2026.10.05', note: {
+    en: 'Autosaving route arrangements with live gap readouts and route hover previews; import wording and interface cleanups',
+    zh: '路线编排自动保存、实时前后间隔与悬停路线预览；「上传」统一为「导入」并清理界面',
+    'zh-tw': '路線編排自動儲存、即時先後間隔與懸停路線預覽；「上傳」統一為「匯入」並清理介面',
+    cs: 'Uspořádání tras se automaticky ukládá, živě zobrazuje mezery a nabízí náhled trasy při přejezdu; text „nahrát“ se mění na „importovat“ a rozhraní se pročistilo.',
+    nl: 'Route-indelingen worden automatisch opgeslagen, met live tussenruimtes en een routevoorbeeld bij aanwijzen; de term uploaden wordt importeren en de interface is opgeschoond.',
+    fr: 'Agencements de trajectoires enregistrés automatiquement, écarts affichés en direct et aperçu de la route au survol ; terme « téléverser » remplacé par « importer » et interface assainie.',
+    he: 'סידורי מסלולים נשמרים אוטומטית, עם מרווחים בזמן אמת ותצוגה מקדימה של מסלול בריחוף; הניסוח „העלאה“ הפך ל„ייבוא“ והממשק פונה.',
+    ja: 'ルート編成を自動保存し、リアルタイムな前後間隔とルートのホバー プレビューを表示；「アップロード」を「インポート」に統一して画面を整理',
+    ko: '경로 배치가 자동 저장되고 실시간 앞뒤 간격과 경로 호버 미리보기를 표시합니다; ‘업로드’를 ‘가져오기’로 통일하고 화면을 정리했습니다',
+    pl: 'Układy tras zapisują się automatycznie, na żywo widać odstępy i podgląd trasy po najechaniu; słowo „prześlij” zastąpiono „importuj” i uporządkowano interfejs.',
+    'pt-br': 'Organizações de trajetórias com salvamento automático, intervalos ao vivo e prévia da rota ao passar o mouse; termo de envio virou importação e interface limpa.',
+    es: 'Organizaciones de trayectorias con autoguardado, intervalos en vivo y vista previa de la ruta al pasar el cursor; el término «subir» pasó a «importar» e interfaz depurada.',
+    tr: 'Rota düzenlemeleri otomatik kaydediliyor; canlı boşluk göstergeleri ve üzerine gelince rota önizlemesi. Yükleme ifadesi içe aktarma oldu ve arayüz sadeleşti.',
+  } },
   { version: '0.1.8-beta.31', date: '2026.10.05', note: {
     en: 'Always-visible left/right mirror button on every robot card; fixed a mirror pose lost after restoring a saved session',
     zh: '每个机器人卡片常显左右镜像按钮；修复恢复已保存会话后镜像位姿丢失的问题',
