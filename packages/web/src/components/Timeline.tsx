@@ -34,6 +34,8 @@ interface Props {
   onPlaybackRangeChange?: (range: PlaybackRange) => void;
   selectedId?: string;
   onSelect?: (id: string) => void;
+  /** Double-clicking a team's row opens that team's arrange editor. */
+  onEditTeam?: (id: string) => void;
   onJump?: (time: number, robotIds: string[]) => void;
   guide?: ReactNode;
   composeAction?: ReactNode;
@@ -51,7 +53,7 @@ function TransportIcon({ kind }: { kind: 'rewind' | 'back' | 'play' | 'pause' | 
   );
 }
 
-export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onJump, guide, composeAction }: Props) {
+export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onEditTeam, onJump, guide, composeAction }: Props) {
   const { t: tr } = useI18n();
   const { t, setT, playing, setPlaying, speed, setSpeed } = playback;
   const end = playbackEnd(duration, autoPeriodS, playbackRange);
@@ -112,7 +114,16 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
                   end: activeEndT(robot).toFixed(2),
                 });
                 return (
-                  <div className={`timeline-row${selectedId === trajectory.id ? ' is-selected' : ''}`} key={trajectory.id}>
+                  <div
+                    className={`timeline-row${selectedId === trajectory.id ? ' is-selected' : ''}`}
+                    key={trajectory.id}
+                    onDoubleClick={onEditTeam ? (event) => {
+                      // Issue and event markers jump on click; a double-click
+                      // there stays a jump, not an editor.
+                      if ((event.target as Element).closest('.timeline-issue, .timeline-event')) return;
+                      onEditTeam(trajectory.id);
+                    } : undefined}
+                  >
                     <button
                       type="button"
                       className="timeline-robot"

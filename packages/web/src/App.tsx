@@ -517,6 +517,13 @@ function AppBody() {
     setSelectedId(id);
     setInspectorMode('robot');
   }, []);
+  // Double-clicking a team's timeline row enters that team's arrangement
+  // editing directly; leaving is a click anywhere outside the surface.
+  const openSequenceFor = useCallback((id: string) => {
+    playback.setPlaying(false);
+    selectRobot(id);
+    setSequenceTimelineOpen(true);
+  }, [playback.setPlaying, selectRobot]);
   const selectedRobot = robots.find((r) => r.trajectory.id === selectedId) ?? robots[0];
   // Auto composition: lives on the robot itself (source store), so undo/redo,
   // autosave and session export all follow the ordinary robot history. The
@@ -981,7 +988,7 @@ function AppBody() {
           </aside>
         </main>
         {/* Playback spans the full workspace, below both side panels. */}
-        {hasRobots && !sequenceTimelineOpen && <footer className="app-footer"><Timeline composeAction={<button className="btn small" onClick={() => { playback.setPlaying(false); setSequenceTimelineOpen(true); }}>{tr('sequence.arrange')}</button>} robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
+        {hasRobots && !sequenceTimelineOpen && <footer className="app-footer"><Timeline composeAction={<button className="btn small" onClick={() => { playback.setPlaying(false); setSequenceTimelineOpen(true); }}>{tr('sequence.arrange')}</button>} robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
         {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={sequenceTimelineOpen} onClose={() => setSequenceTimelineOpen(false)} onChange={changeSequence} joins={sequenceJoins} timing={sequenceTiming} onJump={jumpToSeam} />}
 
       {cfOpen && <CustomFieldPanel
