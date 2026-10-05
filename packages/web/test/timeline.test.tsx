@@ -148,7 +148,7 @@ describe('unified timeline', () => {
     expect(screen.getByRole('slider', { name: 'Playback position' })).toHaveAttribute('max', '18');
   });
 
-  it('opens the team editor on row double-click, but issue markers keep their jump', () => {
+  it('opens the team editor across the entire row, including overlaid issue markers', () => {
     const onEditTeam = vi.fn();
     render(
       <I18nProvider>
@@ -167,9 +167,9 @@ describe('unified timeline', () => {
     expect(onEditTeam).toHaveBeenLastCalledWith('robot-a');
     fireEvent.doubleClick(screen.getByRole('button', { name: 'Select Robot A' }));
     expect(onEditTeam).toHaveBeenCalledTimes(2);
-    // Double-clicking a problem marker stays a jump, not an editor.
+    // Overlay markers must not block the same double-click as the team label.
     fireEvent.doubleClick(screen.getByRole('button', { name: /Out of bounds: Robot A/ }));
-    expect(onEditTeam).toHaveBeenCalledTimes(2);
+    expect(onEditTeam).toHaveBeenCalledTimes(3);
   });
 
   it('disables playback for an empty session', () => {

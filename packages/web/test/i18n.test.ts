@@ -116,7 +116,7 @@ describe('i18n dictionaries', () => {
     'vc.top', 'vc.bottom', 'vc.front', 'vc.back', 'vc.left', 'vc.right',
     // Words that genuinely coincide with English in at least one shipped
     // language (fr 'Pause'/'Collision'/'alliance', es 'Robot'/'General',
-    // nl 'Timing'/'Updates'/'bumper (m)'/'Meters (m)' etc.).
+    // nl 'Timing'/'Updates'/'Meters (m)' etc.).
     'prefs.section.general', // Spanish 'General' is identical.
     'workspace.details', 'robots.title',
     'robots.collision', 'robots.alliance', 'timeline.pause', 'timeline.collision',
@@ -126,9 +126,9 @@ describe('i18n dictionaries', () => {
     // Danish loanword (da).
     'actions.gif', 'actions.heatmapOn', 'robots.driveDifferential',
     // Dutch coincidences: loanwords and shared unit plurals that spell exactly
-    // like the English source (nl 'Timing', 'Updates', 'bumper (m)',
-    // 'Bumpers {l} × {w} m', 'Meters/Centimeters/Inches (m/cm/in)').
-    'robots.timing', 'prefs.section.updates', 'robots.bumper', 'robots.profileEntry',
+    // like the English source (nl 'Timing', 'Updates', 'Bumpers {l} × {w} m',
+    // 'Meters/Centimeters/Inches (m/cm/in)').
+    'robots.timing', 'prefs.section.updates', 'robots.profileEntry',
     'prefs.unit.m', 'prefs.unit.cm', 'prefs.unit.in',
     'prefs.unit.yd', // French 'Yards (yd)' is the same unit name.
     // Vietnamese keeps 'Feet (ft)': the loanword is its standard written form
@@ -417,9 +417,11 @@ describe('Hong Kong dictionary (override table)', () => {
    * so 7 today with the floor at 5.
    */
   it('pins the named HK/TW divergences', () => {
-    expect(zhTw['robots.bumper' as MessageKey]).toContain('公尺');
-    expect(zhHk['robots.bumper']).toContain('米');
-    expect(zhHk['robots.bumper']).not.toContain('公尺');
+    // The bumper title dropped its unit (2026-10-05), so the 米/公尺 split
+    // now lives on the custom-field labels instead.
+    expect(zhTw['customField.length' as MessageKey]).toContain('公尺');
+    expect(zhHk['customField.length']).toContain('米');
+    expect(zhHk['customField.length']).not.toContain('公尺');
     expect(zhTw['updates.failed' as MessageKey]).toContain('網路');
     expect(zhHk['updates.failed']).toContain('網絡');
     expect(zhTw['robots.selectPrompt' as MessageKey]).toContain('詳細資訊');

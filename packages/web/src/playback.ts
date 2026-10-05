@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type SetStateAction } from 'r
  * Keyboard: Space toggles play, ←/→ scrub ±0.5 s (±2 s with Shift),
  * Home rewinds to 0. Interactive controls and dialogs own their keys.
  */
-export function usePlayback(durationS: number) {
+export function usePlayback(durationS: number, suspended = false) {
   const duration = Number.isFinite(durationS) ? Math.max(0, durationS) : 0;
   const [rawT, setRawT] = useState(0);
   const [wantsPlayback, setWantsPlayback] = useState(false);
@@ -28,7 +28,7 @@ export function usePlayback(durationS: number) {
   }, [duration]);
 
   useEffect(() => {
-    if (!playing) return;
+    if (!playing || suspended) return;
     let raf = 0;
     lastRef.current = null;
     const step = (now: number) => {
@@ -43,12 +43,12 @@ export function usePlayback(durationS: number) {
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [playing, speed, duration, setT]);
+  }, [playing, speed, duration, setT, suspended]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target instanceof Element ? e.target : null;
-      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey ||
+      if (suspended || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey ||
           el?.closest('input, select, textarea, button, a, summary, [role="button"], [role="slider"], [role="dialog"], dialog, [contenteditable]:not([contenteditable="false"])') ||
           document.querySelector('dialog[open], [role="dialog"][aria-modal="true"]')) {
         return;
@@ -70,7 +70,7 @@ export function usePlayback(durationS: number) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [duration, setPlaying, setT]);
+  }, [duration, setPlaying, setT, suspended]);
 
   return { t, setT, playing, setPlaying, speed, setSpeed };
 }

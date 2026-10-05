@@ -203,8 +203,8 @@ describe('welcome flow', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
     const lane = document.querySelector('.sequence-track.is-editing .sequence-track-lane') as HTMLElement;
     fireEvent.click(within(lane).getAllByRole('button', { name: /, \d+\.\d+–/ })[0]!);
+    fireEvent.keyDown(lane.querySelector('.sequence-clip')!, { key: 'Backspace' });
     fireEvent.click([...document.querySelectorAll('.sequence-route-source')][1]!);
-    fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Back to playback' }));
     expect(screen.getByRole('button', { name: 'End example' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));

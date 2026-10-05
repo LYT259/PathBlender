@@ -74,7 +74,7 @@ export interface SequenceJoinOptions {
  */
 export function resolveSequence(st: SessionTrajectory): ResolvedSequenceSegment[] | undefined {
   const sequence = st.sequence;
-  if (!sequence || sequence.segments.length === 0) return undefined;
+  if (!sequence) return undefined;
   const options = st.routeOptions ?? [];
   let endS = 0;
   const resolved: ResolvedSequenceSegment[] = [];
@@ -118,6 +118,7 @@ export function sampleSequenceState(
     vy: 0,
     omega: 0,
   });
+  if (resolved.length === 0) return parked(poseOrOrigin(st.trajectory, false));
   const first = resolved[0]!;
   if (globalT < first.startS) return parked(poseOrOrigin(first.trajectory, false));
   // Last segment starting at or before globalT (compositions are short;
@@ -220,7 +221,7 @@ export function checkSequenceTiming(
   autoPeriodS: number,
 ): SequenceTimingIssue | undefined {
   const resolved = resolveSequence(st);
-  if (!resolved) return undefined;
+  if (!resolved || resolved.length === 0) return undefined;
   const finishS = resolved[resolved.length - 1]!.endS;
   return finishS > autoPeriodS + 1e-6 ? { finishS, autoPeriodS } : undefined;
 }

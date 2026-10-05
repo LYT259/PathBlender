@@ -86,7 +86,7 @@ describe('settings.json upload in the workspace', () => {
     expect(screen.getByText(/Robot profile applied/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Robot', exact: true }));
     expect(screen.getByText('From file')).toBeInTheDocument();
-    expect(screen.queryByText('Not uploaded')).not.toBeInTheDocument();
+    expect(screen.queryByText('Not imported')).not.toBeInTheDocument();
     expect(screen.getByText('1.02 m')).toBeInTheDocument();
     expect(screen.getByText('0.85 m')).toBeInTheDocument();
     expect(screen.queryByText(defaultWarning)).not.toBeInTheDocument();
@@ -111,7 +111,7 @@ describe('settings.json upload in the workspace', () => {
     expect(screen.getByRole('button', { name: 'Import settings.json' })).toBeInTheDocument();
     // The red badge persists throughout.
     fireEvent.click(screen.getByRole('button', { name: 'Robot', exact: true }));
-    expect(screen.getByText('Not uploaded')).toHaveClass('is-missing');
+    expect(screen.getByText('Not imported')).toHaveClass('is-missing');
   });
 });
 

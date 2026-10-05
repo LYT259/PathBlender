@@ -32,9 +32,9 @@ const sourceLabels = () => sourceButtons().map((b) => b.getAttribute('aria-label
 /** Select the single clip and replace its route with the named library route, then Save. */
 function replaceOnlyClip(target: string) {
   fireEvent.click(composerClips()[0]!);
+  fireEvent.keyDown(composerClips()[0]!, { key: 'Backspace' });
   const source = sourceButtons().find((b) => b.getAttribute('aria-label')?.startsWith(`${target}: `))!;
   fireEvent.click(source);
-  fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
   expect(composerClips()[0]!.getAttribute('aria-label')).toMatch(new RegExp(`^${target},`));
 }
 const SETTINGS = JSON.stringify({ robotConfig: { robotWidth: 0.82, robotLength: 1.05,

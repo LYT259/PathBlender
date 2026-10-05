@@ -7,11 +7,10 @@
 }
 
 .timeline-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; min-height: 24px; }
-.timeline-toolbar h2 { margin: 0; font-size: 12px; font-weight: 600; }
 .timeline-playback-bar {
   display: grid; grid-template-areas: 'clock transport speeds';
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px 16px;
-  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+  margin-top: 10px; padding-top: 10px;
 }
 .timeline-transport { grid-area: transport; display: flex; align-items: center; justify-content: center; gap: 3px; }
 .timeline-transport button {

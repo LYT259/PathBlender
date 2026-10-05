@@ -104,9 +104,6 @@
 .robot-dimensions > .robot-dimension-card.is-verified { border-color: var(--badge-ok-fg); background: color-mix(in srgb, var(--badge-ok-bg) 50%, var(--bg-panel)); }
 .robot-dimensions > .robot-dimension-card.is-default { border-color: var(--badge-err-fg); background: color-mix(in srgb, var(--badge-err-bg) 50%, var(--bg-panel)); }
 .robot-dimension-card dt { display: flex; justify-content: space-between; align-items: center; gap: 5px; }
-.robot-dimension-card dt > span { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; }
-.robot-dimension-card.is-default dt > span { color: var(--badge-err-fg); }
-.robot-dimension-card.is-verified dt > span { color: var(--badge-ok-fg); }
 .robot-dimension-card dd { font-size: 16px; font-weight: 600; }
 
 .robot-context-menu { position: fixed; z-index: 1500; width: 224px; max-width: calc(100vw - 16px); padding: 5px; background: var(--bg-panel); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px var(--shadow); }
@@ -128,3 +125,12 @@
 .robot-mirror-button[aria-pressed="true"] > .ui-icon, .robot-mirror-check { color: var(--accent); }
 .robot-mirror-check { display: inline-flex; align-items: center; justify-content: center; width: 14px; margin-inline-start: auto; }
 .robot-mirror-button:disabled { cursor: not-allowed; opacity: .5; }
+/* Compact two-row card: identity + arrange, then visibility + route status. */
+.robot-library .robot-library-row { grid-template-columns: minmax(0, 1fr) auto; }
+.robot-library .robot-arrange-button { grid-column: 2; grid-row: 1; align-self: center; min-height: 26px; margin: 4px 0; padding: 3px 6px; gap: 4px; }
+.robot-library-status { grid-column: 1 / -1; grid-row: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; padding-inline-start: 6px; }
+.robot-library-status .robot-library-meta { flex: 1; min-width: 0; margin: 0; flex-wrap: wrap; }
+.robot-library .robot-library-row .robot-library-status .robot-library-visibility { margin: 0; align-self: center; flex: none; }
+/* Missing PathPlanner profile: a red status beside the route facts, wrapping
+   onto its own line rather than stretching the card. */
+.robot-library-settings-missing { flex: none; max-width: 100%; color: var(--danger); font-weight: 600; overflow-wrap: anywhere; }
