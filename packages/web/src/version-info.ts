@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.27';
+export const APP_VERSION = '0.1.8-beta.28';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.28', date: '2026.10.05', note: {
+    en: 'Double-click a team on the playback timeline to edit its auto arrangement; click outside to save and return.',
+    zh: '双击回放时间轴上的队伍即可进入它的自动编排；点击面板外任意处保存并返回。',
+    'zh-tw': '雙擊播放時間軸上的隊伍即可進入它的自動編排；點擊面板外任意處儲存並返回。',
+    cs: 'Dvojklikem na tým na časové ose přehrávání upravíte jeho autonomní sekvenci; kliknutím mimo panel se uloží a vrátíte se zpět.',
+    nl: 'Dubbelklik op een team in de afspeeltijdlijn om de automatische indeling te bewerken; klik buiten het paneel om op te slaan en terug te keren.',
+    fr: 'Double-cliquez sur une équipe de la chronologie de lecture pour modifier son enchaînement autonome ; cliquez à l’extérieur du panneau pour enregistrer et revenir.',
+    he: 'לחיצה כפולה על קבוצה בציר הזמן של ההשמעה פותחת את עריכת סידור האוטונומי שלה; לחיצה מחוץ ללוח שומרת וחוזרת לנגינה.',
+    ja: '再生タイムラインのチームをダブルクリックすると自動シーケンスの配置を編集できます。パネルの外側をクリックすると保存して戻ります。',
+    ko: '재생 타임라인에서 팀을 두 번 클릭하면 자동 배치 편집으로 들어갑니다. 패널 바깥을 클릭하면 저장하고 돌아갑니다.',
+    pl: 'Dwukrotne kliknięcie drużyny na osi czasu odtwarzania otwiera edycję jej autonomii; kliknięcie poza panelem zapisuje zmiany i wraca.',
+    'pt-br': 'Clique duas vezes em uma equipe na linha do tempo de reprodução para editar sua sequência autônoma; clique fora do painel para salvar e voltar.',
+    es: 'Haz doble clic en un equipo de la línea de tiempo de reproducción para editar su secuencia autónoma; haz clic fuera del panel para guardar y volver.',
+    tr: 'Oynatma zaman çizelgesinde bir takıma çift tıklayın; otonom düzenlemesi açılır, panelin dışına tıklayınca kaydedilip geri dönülür.',
+  } },
   { version: '0.1.8-beta.27', date: '2026.10.05', note: {
     en: 'Rounded Onshape-style ViewCube: beveled cube with continuous edge shading, per-theme face colors, lighter labels',
     zh: 'ViewCube 外观圆润化（Onshape 风格）：倒角立方体、边缘明暗连续过渡、各主题独立面色、文字更轻更小',
