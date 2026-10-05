@@ -47,7 +47,7 @@ button:disabled { cursor: default; }
 .ui-icon { flex-shrink: 0; vertical-align: middle; }
 .app { overflow: hidden; }
 .workspace-toolbar { min-height: 66px; padding: 9px 16px; gap: 6px; background: var(--bar-bg); }
-body.desktop .workspace-toolbar { padding-left: 100px; }
+body.desktop.desktop-macos .workspace-toolbar { padding-left: 100px; }
 .workspace-toolbar { user-select: none; -webkit-user-select: none; }
 .workspace-toolbar .toolbar-spacer { align-self: stretch; min-width: 24px; }
 .app.is-welcome > .workspace-toolbar { background: var(--bg); border-bottom: 0; }

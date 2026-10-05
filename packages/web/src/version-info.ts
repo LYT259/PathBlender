@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.23';
+export const APP_VERSION = '0.1.8-beta.24';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.24', date: '2026.10.05', note: {
+    en: 'Windows build groundwork: NSIS installer packaging config, the Windows job wired into the release pipeline, and a Windows smoke-test workflow; Windows uses the native title bar (macOS overlay title-bar styling is now macOS-only)',
+    zh: 'Windows 构建准备就绪：NSIS 安装包打包配置、发布流水线接入 Windows 任务、新增 Windows 冒烟测试工作流；Windows 使用原生标题栏（macOS 叠层标题栏样式仅作用于 macOS）',
+    'zh-tw': 'Windows 建置準備就緒：NSIS 安裝套件打包設定、發布管線接入 Windows 工作、新增 Windows 冒煙測試工作流程；Windows 使用原生標題列（macOS 疊層標題列樣式僅作用於 macOS）',
+    cs: 'Příprava sestavení pro Windows: konfigurace balení NSIS, úloha Windows zapojená do vydávacího kanálu a workflow smoke testu pro Windows; Windows používá nativní záhlaví (styl překrytého záhlaví macOS platí jen pro macOS)',
+    nl: 'Windows-bouwvoorbereiding: NSIS-installatiepackaging, de Windows-taak in de releasepipeline en een Windows-rooktestworkflow; Windows gebruikt de native titelbalk (macOS-overlaystijl geldt alleen voor macOS)',
+    fr: 'Préparation de la version Windows : configuration de l’empaquetage NSIS, tâche Windows raccordée au pipeline de publication et workflow de test de fumée Windows ; Windows utilise la barre de titre native (le style de barre de titre en superposition de macOS ne s’applique qu’à macOS)',
+    he: 'הכנות לבניית Windows: תצורת אריזת NSIS, משימת Windows בצינור ההפצה וזרימת עבודה לבדיקת עשן של Windows; Windows משתמש בסרגל הכותרת המקורי (סגנון סרגל הכותרת המרובה של macOS חל על macOS בלבד)',
+    ja: 'Windows ビルドの準備完了：NSIS インストーラーのパッケージ設定、リリースパイプラインへの Windows ジョブ接続、Windows スモークテストワークフローを追加。Windows はネイティブのタイトルバーを使用します（macOS のオーバーレイタイトルバー描画は macOS 専用になります）',
+    ko: 'Windows 빌드 준비 완료: NSIS 설치 관리자 패키징 구성, 릴리스 파이프라인에 Windows 작업 연결, Windows 스모크 테스트 워크플로 추가. Windows는 기본 제목 표시줄을 사용합니다(macOS 오버레이 제목 표시줄 스타일은 macOS 전용)',
+    pl: 'Przygotowanie kompilacji dla Windows: konfiguracja pakietu NSIS, zadanie Windows w potoku wydania oraz workflow testu dymnego Windows; Windows używa natywnego paska tytułu (styl nakładki paska tytułu macOS dotyczy tylko macOS)',
+    'pt-br': 'Preparação da compilação para Windows: configuração de empacotamento do instalador NSIS, tarefa Windows no pipeline de lançamento e fluxo de trabalho de teste de fumaça do Windows; o Windows usa a barra de título nativa (o estilo de barra de título sobreposta do macOS vale apenas para o macOS)',
+    es: 'Preparación de la compilación para Windows: configuración de empaquetado del instalador NSIS, tarea de Windows conectada al pipeline de lanzamiento y flujo de trabajo de prueba de humo de Windows; Windows usa la barra de título nativa (el estilo de barra de título superpuesta de macOS solo aplica a macOS)',
+    tr: 'Windows derleme hazırlığı: NSIS yükleyici paketleme yapılandırması, sürüm hattına bağlanan Windows işi ve Windows smoke test iş akışı; Windows yerel başlık çubuğunu kullanır (macOS üst katman başlık çubuğu stili artık yalnızca macOS’a özgü)',
+  } },
   { version: '0.1.8-beta.23', date: '2026.10.04', note: {
     en: 'The bottom arrangement timeline now edits the real multi-route auto, and uploading settings.json applies the actual robot profile',
     zh: '底部编排时间线已真实写入多段自动组合，上传 settings.json 会实际应用机器人配置',
