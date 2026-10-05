@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.28';
+export const APP_VERSION = '0.1.8-beta.29';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.29', date: '2026.10.05', note: {
+    en: 'Arrangement drafts with save/cancel/undo, per-team mirror and right-click remove; playback follows visible robots; report/PNG/trails exports removed',
+    zh: '编排草稿支持保存/取消/撤销，新增每队左右镜像与右键移除机器人；回放范围跟随可见机器人；移除冲突报告/PNG 导出/轨迹尾巴',
+    'zh-tw': '編排草稿支援儲存/取消/復原，新增每隊左右鏡像與右鍵移除機器人；播放範圍跟隨可見機器人；移除衝突報告/PNG 匯出/軌跡尾巴',
+    cs: 'Návrhy uspořádání s uložením/zrušením/zpět, zrcadlení pro každý tým a odebrání pravým tlačítkem; přehrávání sleduje viditelné roboty; export reportu/PNG/stopy byl odstraněn.',
+    nl: 'Ontwerpen van indelingen met opslaan/annuleren/ongedaan maken, spiegelen per team en verwijderen via rechtermuisklik; het afspelen volgt de zichtbare robots; export van rapport/PNG/sporen is verwijderd.',
+    fr: 'Brouillons d’agencement avec enregistrement/abandon/annulation, miroir par équipe et suppression au clic droit ; la lecture suit les robots visibles ; export rapport/PNG/traces retiré.',
+    he: 'טיוטות סידור עם שמירה/ביטול/ביטול פעולה, שיקוף לכל קבוצה והסרה בלחיצה ימנית; ההשמעה עוקבת אחר הרובוטים הגלויים; ייצוא דוח/PNG/שובל הוסר.',
+    ja: '編成の下書きに保存/キャンセル/取り消し、チームごとのミラー、右クリック削除を追加。再生範囲は表示中のロボットに追従します。レポート/PNG/軌跡のエクスポートは削除されました。',
+    ko: '편성 초안에 저장/취소/실행 취소, 팀별 미러, 우클릭 제거를 추가했습니다. 재생 범위는 보이는 로봇을 따릅니다. 보고서/PNG/궤적 내보내기는 제거되었습니다.',
+    pl: 'Szkice układu z zapisem/anulowaniem/cofaniem, odbicie lustrzane dla każdej drużyny i usuwanie prawym przyciskiem; odtwarzanie podąża za widocznymi robotami; usunięto eksport raportu/PNG/śladów.',
+    'pt-br': 'Rascunhos de arranjo com salvar/cancelar/desfazer, espelhamento por equipe e remoção pelo botão direito; a reprodução segue os robôs visíveis; a exportação de relatório/PNG/trilhas foi removida.',
+    es: 'Borradores de disposición con guardar/cancelar/deshacer, espejo por equipo y eliminación con clic derecho; la reproducción sigue a los robots visibles; se retiró la exportación de informe/PNG/estelas.',
+    tr: 'Düzenleme taslakları kaydetme/iptal/geri al ile geldi, takım bazlı aynalama ve sağ tıkla kaldırma eklendi; oynatma görünen robotları izler; rapor/PNG/iz dışa aktarımı kaldırıldı.',
+  } },
   { version: '0.1.8-beta.28', date: '2026.10.05', note: {
     en: 'Double-click a team on the playback timeline to edit its auto arrangement; click outside to save and return.',
     zh: '双击回放时间轴上的队伍即可进入它的自动编排；点击面板外任意处保存并返回。',
