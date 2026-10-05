@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties, type DragEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 'react';
 import type { SequenceJoinIssue, SequenceTimingIssue, SessionTrajectory } from '@pathblender/core';
 import { sequenceViewFor, type AutoSequenceSegment } from '../auto-sequence-state';
 import { canPlaceClip, clipsFor, placeClip, segmentsFromClips, snapClipStart, type TimelineClip } from '../sequence-timeline-clips';
@@ -46,6 +46,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const laneRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLElement>(null);
   const dragRef = useRef<{ robotId: string; clip: TimelineClip; x: number; width: number; axis: number; moved: boolean } | null>(null);
   const candidateRef = useRef<{ robotId: string; routeId: string } | null>(null);
   const tracks = robots.map((robot) => {
@@ -62,6 +63,23 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     : issue.kind === 'heading'
       ? t('sequence.joinHeading', { d: issue.delta.toFixed(1) })
       : t('sequence.joinVelocity', { d: issue.delta.toFixed(2) });
+
+  // Clicking anywhere outside the editing surface saves and returns to
+  // playback — every placement already commits on its own action, so there
+  // is nothing to write out except a pending start-time edit, which commits
+  // on blur; blur it before unmounting would swallow the typed value.
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target || rootRef.current?.contains(target)) return;
+      const active = document.activeElement;
+      if (active instanceof HTMLInputElement && rootRef.current?.contains(active)) active.blur();
+      onClose();
+    };
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
+  }, [open, onClose]);
 
   if (!open || !active) return null;
   const activeId = active.robot.trajectory.id;
@@ -107,7 +125,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     return { ...clip, startS: snapClipStart((event.clientX - rect.left) / rect.width * axis, active!.clips, clip, 8 / rect.width * axis) };
   }
   function switchRobot(id: string) { setGhost(null); setMessage(null); setError(null); onSelect(id); }
-  return <section className="sequence-composer" aria-label={t('sequence.arrange')}>
+  return <section ref={rootRef} className="sequence-composer" aria-label={t('sequence.arrange')}>
     <header className="sequence-composer-header">
       <div className="sequence-composer-heading"><h2>{t('sequence.arrange')}</h2><span className="sequence-active-name"><i style={{ background: active.robot.color }} />{robotIdentity(active.robot.trajectory)}</span></div>
       <div className="sequence-composer-actions"><button className="btn small" type="button" disabled={!composed} title={composed ? undefined : t('sequence.lastRoute')} onClick={resetArrangement}>{t('sequence.reset')}</button><button className="btn small" type="button" onClick={() => { setGhost(null); onClose(); }}>{t('sequence.back')} ↑</button></div>
