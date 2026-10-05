@@ -9,12 +9,14 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App';
 import { ThemeProvider } from '../src/theme';
 
 const native = vi.hoisted(() => ({ invoke: vi.fn((_c: string, ..._a: unknown[]) => Promise.resolve()) }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: native.invoke }));
+
+beforeEach(() => localStorage.clear());
 
 const SAMPLES = resolve(__dirname, '../../../samples');
 const ghostautoB64 = (rel: string): string => {

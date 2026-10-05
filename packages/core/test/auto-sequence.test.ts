@@ -95,11 +95,11 @@ describe('resolveSequence', () => {
     expect(resolved[1]!.trajectory).toBe(st.trajectory);
   });
 
-  it('returns undefined for legacy robots and empty sequences', () => {
+  it('distinguishes legacy robots from explicitly empty sequences', () => {
     expect(resolveSequence(makeSession(route()))).toBeUndefined();
     const st = makeSession(route());
     st.sequence = { segments: [] };
-    expect(resolveSequence(st)).toBeUndefined();
+    expect(resolveSequence(st)).toEqual([]);
   });
 });
 
@@ -309,10 +309,27 @@ describe('session persistence', () => {
     expect(() => deserializeSession(JSON.stringify(broken))).toThrow('invalid auto sequence');
   });
 
-  it('drops an empty sequence and keeps the robot usable', () => {
+  it('preserves an empty sequence and keeps the robot usable', () => {
     const st = makeSession(route());
     st.sequence = { segments: [] };
     const restored = deserializeSession(serializeSession([st], 'reefscape-2025')).robots[0]!;
-    expect(restored.sequence).toBeUndefined();
+    expect(restored.sequence).toEqual({ segments: [] });
+  });
+});
+
+
+describe('explicitly empty arrangements', () => {
+  it('parks instead of replaying the old route and survives session roundtrip', () => {
+    const robot = makeSession(route({ events: [{ name: 'score', t: 1 }] }));
+    robot.sequence = { segments: [] };
+    expect(resolveSequence(robot)).toEqual([]);
+    expect(activeStartT(robot)).toBe(0);
+    expect(activeEndT(robot)).toBe(0);
+    expect(sampleStateAt(robot, 1)).toMatchObject({ x: 0, y: 0, vx: 0, vy: 0, omega: 0 });
+    expect(sequenceEventTimes(robot)).toEqual([]);
+    expect(checkSequenceTiming(robot, 15)).toBeUndefined();
+    const restored = deserializeSession(serializeSession([robot], 'blue')).robots[0]!;
+    expect(restored.sequence).toEqual({ segments: [] });
+    expect(sampleStateAt(restored, 10)).toMatchObject({ x: 0, vx: 0 });
   });
 });

@@ -65,8 +65,8 @@ describe('whole-session alliance control', () => {
     await screen.findByRole('region', { name: 'Arrange timeline' });
     const lane = document.querySelector('.sequence-track.is-editing .sequence-track-lane') as HTMLElement;
     fireEvent.click(within(lane).getAllByRole('button', { name: /, \d+\.\d+–/ })[0]!);
+    fireEvent.keyDown(lane.querySelector('.sequence-clip')!, { key: 'Backspace' });
     fireEvent.click([...document.querySelectorAll('.sequence-route-source')][1]!);
-    fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Back to playback' }));
     expect(fieldRobots()).toHaveLength(3);
     expect(fieldRobots().every((r) => r.trajectory.alliance === 'red')).toBe(true);

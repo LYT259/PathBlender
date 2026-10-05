@@ -1,6 +1,6 @@
 .sequence-composer { flex: 0 0 auto; max-height: 58vh; overflow-y: auto; background: var(--bg-panel); border-top: 1px solid var(--border); color: var(--fg); --sequence-label-width: 164px; }
 .sequence-composer-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px 10px; }
-.sequence-composer-heading, .sequence-composer-actions { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sequence-composer-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .sequence-composer h2 { font-size: 14px; margin: 0; white-space: nowrap; }
 .sequence-active-name { display: flex; align-items: center; gap: 6px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sequence-active-name i, .sequence-track-name i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
@@ -47,11 +47,9 @@
 .sequence-empty-lane { position: absolute; inset: 0; display: grid; place-items: center; color: var(--fg-dim); font-size: 12px; pointer-events: none; }
 .sequence-ghost { position: absolute; top: 7px; height: 58px; padding: 8px; border: 2px solid var(--accent); border-radius: 5px; background: var(--bg-panel); box-shadow: 0 2px 8px var(--shadow); color: var(--accent); z-index: 3; pointer-events: none; display: flex; flex-direction: column; gap: 6px; overflow: hidden; font-size: 11px; white-space: nowrap; }
 .sequence-ghost.is-invalid { border-color: var(--danger); color: var(--danger); }
-.sequence-selection-bar { min-height: 42px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 6px 18px; border-block: 1px solid var(--border); font-size: 11px; color: var(--fg-dim); }
+.sequence-selection-bar { min-height: 42px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 6px 18px; border-top: 1px solid var(--border); font-size: 11px; color: var(--fg-dim); }
 .sequence-selection-bar input { width: 72px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); color: var(--fg); font: inherit; font-variant-numeric: tabular-nums; }
 .sequence-selected-route { color: var(--fg); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sequence-remove { padding: 4px 0; border: 0; background: transparent; color: var(--danger); font: inherit; cursor: pointer; }
-.sequence-remove:disabled { color: var(--fg-dim); cursor: not-allowed; }
 .sequence-timing-warning { display: flex; align-items: center; gap: 6px; margin: 8px 18px 0; font-size: 11px; color: var(--danger); }
 .sequence-composer-footnote { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; font-size: 10px; padding: 8px 18px 0; color: var(--fg-dim); }
 .sequence-error { color: var(--danger); }
@@ -65,19 +63,37 @@
   .sequence-selection-bar { gap: 8px; padding-inline: 12px; }
 }
 
-/* Stable left navigation and right editing actions; no translucent material. */
+/* Stable left navigation; no draft actions and no translucent material. */
 .sequence-composer-header { position: sticky; top: 0; z-index: 5; background: var(--bg-panel); min-height: 60px; border-bottom: 1px solid var(--border); margin-bottom: 12px; padding: 10px 16px; }
 .sequence-composer-navigation { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .sequence-composer-navigation .sequence-composer-heading { gap: 8px; min-width: 0; }
 .sequence-composer-navigation h2 { font-size: 12px; font-weight: 600; }
-.sequence-composer-actions { gap: 8px; flex-shrink: 0; margin-inline-start: auto; }
 .sequence-composer-header .btn { min-height: 30px; border-radius: 7px; gap: 5px; white-space: nowrap; }
 .sequence-back { flex-shrink: 0; }
-.sequence-save, .sequence-cancel { min-width: 62px; justify-content: center; }
-.sequence-composer-header .sequence-save { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
-.sequence-reset:disabled { opacity: .4; }
 @media (max-width: 760px) {
   .sequence-composer-header { gap: 8px 12px; }
   .sequence-composer-navigation { flex: 1; gap: 10px; }
   .sequence-composer-navigation .sequence-composer-heading { display: none; }
 }
+
+/* Match the route library's inline title/duration instead of a second time row. */
+.sequence-clip strong, .sequence-ghost strong { display: flex; align-items: baseline; gap: 7px; }
+.sequence-clip strong small, .sequence-ghost strong small { color: var(--fg-dim); font-size: 10px; font-weight: 400; }
+.sequence-route-source { touch-action: none; user-select: none; }
+.sequence-route-source:disabled { opacity: .4; cursor: not-allowed; }
+.sequence-track.is-editing .sequence-track-lane { height: 94px; }
+.sequence-track.is-editing .sequence-clip { height: 44px; }
+.sequence-ghost { top: 7px; height: 48px; }
+.sequence-gap-guide { position: absolute; top: 70px; border-top: 1px solid currentColor; color: var(--warn); z-index: 4; pointer-events: none; }
+.sequence-gap-guide.next { color: var(--accent); top: 84px; }
+.sequence-gap-guide.is-overlap { color: var(--danger); }
+.sequence-gap-guide::before, .sequence-gap-guide::after { content: ''; position: absolute; top: -3px; width: 5px; height: 5px; border-top: 1px solid; border-left: 1px solid; }
+.sequence-gap-guide::before { left: 0; transform: rotate(-45deg); }
+.sequence-gap-guide::after { right: 0; transform: rotate(135deg); }
+.sequence-gap-guide > span { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); padding: 0 3px; background: var(--bg-panel); font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sequence-playhead { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--accent); z-index: 5; pointer-events: none; }
+.sequence-playback-controls { padding: 4px 18px 12px; }
+.sequence-playback-controls > input { display: block; width: 100%; margin: 0; accent-color: var(--accent); }
+.sequence-clip-menu { position: fixed; z-index: 1500; width: 180px; padding: 5px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); box-shadow: 0 8px 24px var(--shadow); }
+.sequence-clip-menu button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--danger); font: inherit; font-size: 12px; cursor: pointer; }
+.sequence-clip-menu button:hover, .sequence-clip-menu button:focus-visible { background: var(--badge-err-bg); outline: 0; }

@@ -34,10 +34,11 @@ const STORAGE_KEY = 'pb.appIcon';
 
 interface AppIconCtx {
   mode: IconAppearanceMode;
+  systemDark: boolean;
   setMode: (m: IconAppearanceMode) => void;
 }
 
-const Ctx = createContext<AppIconCtx>({ mode: 'system', setMode: () => {} });
+const Ctx = createContext<AppIconCtx>({ mode: 'system', systemDark: true, setMode: () => {} });
 
 function readStored(): IconAppearanceMode {
   try {
@@ -100,7 +101,7 @@ export function AppIconProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const value = useMemo(() => ({ mode, setMode }), [mode, setMode]);
+  const value = useMemo(() => ({ mode, systemDark, setMode }), [mode, systemDark, setMode]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

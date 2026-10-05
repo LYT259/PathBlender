@@ -1,3 +1,4 @@
+import { previewRouteFor, useRoutePreviewClock } from './route-preview';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSessionHistory } from './session-history';
 import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
@@ -45,7 +46,7 @@ import { RobotList, RobotInspector } from './components/RobotList';
 import { applySequenceSegments, sequenceViewFor, type AutoSequenceSegment } from './auto-sequence-state';
 import { clipsFor, sameClipLayout } from './sequence-timeline-clips';
 import { applyUploadedProfile } from './robot-profile-ui';
-import { checkSequenceJoins, checkSequenceTiming } from '@pathblender/core';
+import { checkSequenceJoins } from '@pathblender/core';
 import { ConflictPanel } from './components/ConflictPanel';
 import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
@@ -145,7 +146,8 @@ function AppBody() {
   }, [mouseControlsScheme, reverseScroll]);
   const { channel: updateChannel } = useUpdateChannel();
   const [initialFieldPref] = useState(loadFieldPref);
-  const { robots: sourceRobots, alliance, setRobots, setScene, setDrafts, setComposerOpen, change, drafts, composerOpen, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, canUndo, canRedo } = useSessionHistory(initialFieldPref);
+  const { robots: sourceRobots, alliance, setRobots, setScene, setComposerOpen, change, composerOpen, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, canUndo, canRedo } = useSessionHistory(initialFieldPref);
+  const [previewRouteId, setPreviewRouteId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot'>('checks');
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
@@ -178,6 +180,21 @@ function AppBody() {
   }, []);
   const importInputRef = useRef<HTMLInputElement>(null);
   const sessionInputRef = useRef<HTMLInputElement>(null);
+  const workspaceMenuRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    const outside = (event: PointerEvent) => {
+      if (workspaceMenuRef.current && !workspaceMenuRef.current.contains(event.target as Node)) workspaceMenuRef.current.open = false;
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && workspaceMenuRef.current?.open) {
+        workspaceMenuRef.current.open = false;
+        workspaceMenuRef.current.querySelector('summary')?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', outside);
+    document.addEventListener('keydown', escape);
+    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape); };
+  }, []);
   const canvasRef = useRef<FieldCanvasHandle>(null);
   const canvas3DRef = useRef<FieldCanvas3DHandle>(null);
   const baseField = fieldId === CUSTOM_FIELD_ID && customField ? customField : fieldById(fieldId);
@@ -217,7 +234,15 @@ function AppBody() {
   // using their own scopes.
   const visibleDuration = sessionDuration(visible);
   const [playbackRange, setPlaybackRange] = usePlaybackRange();
-  const playback = usePlayback(playbackEnd(playbackRange === 'paths' ? visibleDuration : duration, field.autoPeriodS, playbackRange));
+  const previewSource = useMemo(() => composerOpen && previewRouteId
+    ? previewRouteFor(sourceRobots.find((robot) => robot.trajectory.id === selectedId) ?? sourceRobots[0], previewRouteId)
+    : undefined, [composerOpen, previewRouteId, sourceRobots, selectedId]);
+  const previewTime = useRoutePreviewClock(previewSource);
+  const previewRobots = useMemo(() => previewSource
+    ? robotsForAlliance([previewSource], alliance, field).map((robot) => withSeasonGeometry(robot, field.year))
+    : undefined, [previewSource, alliance, field]);
+  useEffect(() => { setPreviewRouteId(null); }, [composerOpen, selectedId]);
+  const playback = usePlayback(composerOpen ? field.autoPeriodS : playbackEnd(playbackRange === 'paths' ? visibleDuration : duration, field.autoPeriodS, playbackRange), !!previewSource);
   const { t, setT } = playback;
   useEffect(() => {
     if ((playback.playing || t > 0) && showPlayTip) dismissPlayTip();
@@ -508,84 +533,22 @@ function AppBody() {
     setComposerOpen(true);
   }, [playback.setPlaying, selectRobot, setComposerOpen]);
   const selectedRobot = robots.find((r) => r.trajectory.id === selectedId) ?? robots[0];
-  // Auto composition: lives on the robot itself (source store), so undo/redo,
-  // autosave and session export all follow the ordinary robot history. The
-  // view is derived from the source robot; joins/timing are frame-invariant
-  // (mirrors preserve distances, speeds and heading gaps).
+  // Arrangement edits share the source store with playback, checks and autosave.
   const sourceSelectedRobot = sourceRobots.find((robot) => robot.trajectory.id === selectedRobot?.trajectory.id);
-  // The composer previews its unsaved draft: clips, joins and timing all read
-  // the robot AS IF the draft were applied, while playback and collision
-  // checks keep reading the saved arrangement until Save commits it.
-  const draftSegments = sourceSelectedRobot ? drafts[sourceSelectedRobot.trajectory.id] : undefined;
-  const composingRobot = useMemo(
-    () => (sourceSelectedRobot && draftSegments ? applySequenceSegments(sourceSelectedRobot, draftSegments) : sourceSelectedRobot),
-    [sourceSelectedRobot, draftSegments],
-  );
-  const sequenceJoins = useMemo(
-    () => (composingRobot ? checkSequenceJoins(composingRobot) : []),
-    [composingRobot],
-  );
-  const sequenceTiming = composingRobot ? checkSequenceTiming(composingRobot, field.autoPeriodS) : undefined;
-  const savedView = useMemo(() => sequenceViewFor(sourceSelectedRobot), [sourceSelectedRobot]);
-  // Semantic dirty state: the same routes at the same absolute starts are
-  // clean, so moving a clip away and back to its saved time clears the flag —
-  // Reset disables and Save/Cancel hide again (user requirement 2026-10-05).
-  const hasDraftChanges = useMemo(() => {
-    if (!sourceSelectedRobot || !draftSegments) return false;
-    return !sameClipLayout(clipsFor(draftSegments, savedView.routes), clipsFor(savedView.segments, savedView.routes));
-  }, [sourceSelectedRobot, draftSegments, savedView]);
-  /** Every composer edit lands on the active team's draft, never the robots. */
-  const editDraft = useCallback((segments: AutoSequenceSegment[]) => {
+  const sequenceJoins = useMemo(() => sourceSelectedRobot ? checkSequenceJoins(sourceSelectedRobot) : [], [sourceSelectedRobot]);
+  const editSequence = useCallback((segments: AutoSequenceSegment[]) => {
     if (!sourceSelectedRobot) return;
     const id = sourceSelectedRobot.trajectory.id;
-    setDrafts((prev) => ({ ...prev, [id]: segments }));
-  }, [sourceSelectedRobot, setDrafts]);
-  const draftActions = useMemo(() => ({
-    hasChanges: hasDraftChanges,
-    // A saved arrangement (or legacy single route) always exists to revert to.
-    canReset: true,
-    onReset: () => {
-      if (!sourceSelectedRobot) return;
-      const id = sourceSelectedRobot.trajectory.id;
-      setDrafts((prev) => {
-        if (!(id in prev)) return prev;
-        const { [id]: _dropped, ...rest } = prev;
-        return rest;
-      });
-    },
-    onSave: () => {
-      if (!sourceSelectedRobot || !draftSegments) return;
-      const id = sourceSelectedRobot.trajectory.id;
-      // One history step: the arrangement lands on the robot and the draft
-      // dissolves — undo returns BOTH (the draft comes back, unapplied).
-      // Saving also marks the slot's chosen route from the first segment,
-      // which adopts a demo robot the same way the old route picker did.
-      change((prev) => ({
-        ...prev,
-        robots: prev.robots.map((robot) => {
-          if (robot.trajectory.id !== id) return robot;
-          const next = applySequenceSegments(robot, draftSegments);
-          const firstRouteId = next.sequence?.segments[0]?.routeId;
-          return firstRouteId && (robot.routeOptions ?? []).some((option) => option.id === firstRouteId)
-            ? { ...next, routeId: firstRouteId }
-            : next;
-        }),
-        drafts: Object.fromEntries(Object.entries(prev.drafts).filter(([key]) => key !== id)),
-      }));
-    },
-    onCancel: () => {
-      // Cancel discards the draft and leaves the composer — as ONE history
-      // step, so undo brings the unsaved draft back for editing (user
-      // decision 2026-10-05) without ever applying it to playback.
-      if (!sourceSelectedRobot) { setComposerOpen(false); return; }
-      const id = sourceSelectedRobot.trajectory.id;
-      change((prev) => ({
-        ...prev,
-        composerOpen: false,
-        drafts: Object.fromEntries(Object.entries(prev.drafts).filter(([key]) => key !== id)),
-      }));
-    },
-  }), [hasDraftChanges, sourceSelectedRobot, draftSegments, setDrafts, change, setComposerOpen]);
+    setRobots((previous) => previous.map((robot) => {
+      if (robot.trajectory.id !== id) return robot;
+      const view = sequenceViewFor(robot);
+      if (sameClipLayout(clipsFor(view.segments, view.routes), clipsFor(segments, view.routes))) return robot;
+      const next = applySequenceSegments(robot, segments);
+      const firstRouteId = segments[0]?.routeId;
+      return firstRouteId && robot.routeOptions?.some((option) => option.id === firstRouteId)
+        ? { ...next, routeId: firstRouteId } : next;
+    }));
+  }, [sourceSelectedRobot, setRobots]);
   const jumpToSeam = useCallback((time: number) => {
     playback.setPlaying(false);
     setT(time);
@@ -698,6 +661,18 @@ function AppBody() {
     setT(pendingRestoreT.current);
     pendingRestoreT.current = null;
   }, [duration, setT]);
+
+  // Persist completed scene operations even while the playback clock runs.
+  // Skip the initial empty render so the mount-time restore owns that pass.
+  const lastSavedScene = useRef({ robots, fieldId, field, selectedId, playbackRange });
+  const latestSessionUi = useRef({ selectedId, t, playbackRange });
+  latestSessionUi.current = { selectedId, t, playbackRange };
+  useEffect(() => {
+    const previous = lastSavedScene.current;
+    if (previous.robots === robots && previous.fieldId === fieldId && previous.field === field && previous.selectedId === selectedId && previous.playbackRange === playbackRange) return;
+    lastSavedScene.current = { robots, fieldId, field, selectedId, playbackRange };
+    saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, latestSessionUi.current);
+  }, [robots, fieldId, field, selectedId, playbackRange]);
 
   // Keep the autosave current (debounced; removing the last robot clears
   // the slot so the next launch opens on the welcome page again). The ui
@@ -974,20 +949,17 @@ function AppBody() {
         }} />
         {hasRobots && <button className="tool-btn square" title={tr('workspace.home')} aria-label={tr('workspace.home')} onClick={clearAll}><Icon name="home" /></button>}
         {hasRobots && <div className="history-controls">
-          <button className="tool-btn square" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
-          <button className="tool-btn square" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
+          <button className="tool-btn square" data-session-history="undo" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
+          <button className="tool-btn square" data-session-history="redo" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
         </div>}
         {hasRobots && <a className="tool-btn square toolbar-github" href={GITHUB_URL} target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub" onClick={openGithub}><Icon name="github" size={18} /></a>}
         <span className="toolbar-spacer" data-tauri-drag-region="" />
         {!VIEWER_ONLY && hasRobots && <button className="tool-btn save-action" onClick={saveSession} title={tr('actions.saveHint')}>{tr('actions.save')}</button>}
-        {hasRobots && <details className="workspace-menu">
+        {hasRobots && <details ref={workspaceMenuRef} className="workspace-menu">
           <summary className="tool-btn square" aria-label={tr('workspace.more')} title={tr('workspace.more')}><Icon name="more" /></summary>
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
-            {!VIEWER_ONLY && <button className="menu-save-action" disabled={!hasRobots} onClick={saveSession}>{tr('actions.save')}</button>}
-            {!VIEWER_ONLY && <button disabled={!hasRobots || view3D} onClick={exportGif} title={view3D ? tr('toast.gifOnly2d') : undefined}>{tr('actions.gif')}</button>}
             {hasRobots && <button onClick={() => setShowHeatmap((v) => !v)} aria-pressed={showHeatmap}>{tr(showHeatmap ? 'actions.heatmapOff' : 'actions.heatmapOn')}</button>}
             {hasRobots && <button onClick={abToggle}>{tr('actions.abCompare')}</button>}
-            <button disabled={!hasRobots} onClick={clearAll}>{tr('actions.clear')}</button>
             {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
           </div>
         </details>}
@@ -1051,10 +1023,10 @@ function AppBody() {
                 )}
                 {/* The rest of the bar needs a robot to act on, which the gate
                     above now guarantees. */}
-                <button className="tool-btn canvas-recenter" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="recenter" size={17} /><span>{tr('canvas.fit')}</span></button>
+                <button className="tool-btn canvas-recenter" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="recenter" size={17} /></button>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
-                <FieldCanvas ref={canvasRef} showTrail field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} /></Suspense> :
+                <FieldCanvas ref={canvasRef} showTrail field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} />}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => setInspectorMode('checks')} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
           </section>
@@ -1069,7 +1041,7 @@ function AppBody() {
         </main>
         {/* Playback spans the full workspace, below both side panels. */}
         {hasRobots && !composerOpen && <footer className="app-footer"><Timeline composeAction={<button className="btn small" onClick={() => { playback.setPlaying(false); setComposerOpen(true); }}>{tr('sequence.arrange')}</button>} robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
-        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={composerOpen} onClose={() => setComposerOpen(false)} draft={draftSegments} draftActions={draftActions} onChange={editDraft} joins={sequenceJoins} timing={sequenceTiming} onJump={jumpToSeam} />}
+        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={composerOpen} onClose={() => setComposerOpen(false)} onChange={editSequence} onPreviewRoute={setPreviewRouteId} joins={sequenceJoins} playback={playback} onJump={jumpToSeam} />}
 
       {cfOpen && <CustomFieldPanel
         open

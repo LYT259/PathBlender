@@ -10,16 +10,8 @@ import './Timeline.css';
 import { robotIdentity } from '../robot-identity';
 import { playbackEnd, timelineScale, type PlaybackRange } from '../playback-range';
 
-const SPEEDS = [0.25, 0.5, 1];
+import { PlaybackControls, type Playback } from './PlaybackControls';
 
-interface Playback {
-  t: number;
-  setT: (v: number) => void;
-  playing: boolean;
-  setPlaying: (v: boolean) => void;
-  speed: number;
-  setSpeed: (v: number) => void;
-}
 
 interface Props {
   robots: SessionTrajectory[];
@@ -50,21 +42,10 @@ interface Props {
   composeAction?: ReactNode;
 }
 
-function TransportIcon({ kind }: { kind: 'rewind' | 'back' | 'play' | 'pause' | 'forward' }) {
-  return (
-    <svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor" aria-hidden="true">
-      {kind === 'rewind' && <path d="M4 4h2v12H4zm12 .5v11L7 10z" />}
-      {kind === 'back' && <path d="M9.5 5v10l-7-5zm8 0v10l-7-5z" />}
-      {kind === 'forward' && <path d="M2.5 5v10l7-5zm8 0v10l7-5z" />}
-      {kind === 'play' && <path d="M6 3.5v13L16 10z" />}
-      {kind === 'pause' && <path d="M5 4h3.5v12H5zm6.5 0H15v12h-3.5z" />}
-    </svg>
-  );
-}
 
 export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, visibleDuration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onEditTeam, onJump, guide, composeAction }: Props) {
   const { t: tr } = useI18n();
-  const { t, setT, playing, setPlaying, speed, setSpeed } = playback;
+  const { t, setT, setPlaying } = playback;
   const rangeDuration = playbackRange === 'paths' && visibleDuration !== undefined ? visibleDuration : duration;
   const end = playbackEnd(rangeDuration, autoPeriodS, playbackRange);
   const currentT = Math.min(end, Math.max(0, t));
@@ -86,14 +67,10 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, vis
     if (onJump) onJump(Math.min(end, Math.max(0, time)), robotIds);
     else seek(time, selectedRobotId);
   };
-  // The option label always names the current 'paths' end — visible robots only.
-  const pathsEnd = playbackEnd(visibleDuration ?? duration, autoPeriodS, 'paths');
 
   return (
     <section className="timeline timeline-workspace" aria-label={tr('timeline.title')}>
       <div className="timeline-toolbar">
-        <h2>{tr('timeline.title')}</h2>
-        {composeAction}
         {onPlaybackRangeChange && <select
           className="timeline-range"
           aria-label={tr('timeline.range')}
@@ -101,8 +78,9 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, vis
           onChange={(event) => onPlaybackRangeChange(event.target.value as PlaybackRange)}
         >
           <option value="full">{tr('timeline.rangeFull')}</option>
-          <option value="paths">{tr('timeline.rangePaths', { seconds: Number(pathsEnd.toFixed(2)) })}</option>
+          <option value="paths">{tr('timeline.rangePaths')}</option>
         </select>}
+        {composeAction}
         {robots.length > 0 && (
           <div className="timeline-legend">
             <span><i className="timeline-legend-collision" />{tr('timeline.collision')}</span>
@@ -129,12 +107,7 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, vis
                   <div
                     className={`timeline-row${selectedId === trajectory.id ? ' is-selected' : ''}`}
                     key={trajectory.id}
-                    onDoubleClick={onEditTeam ? (event) => {
-                      // Issue and event markers jump on click; a double-click
-                      // there stays a jump, not an editor.
-                      if ((event.target as Element).closest('.timeline-issue, .timeline-event')) return;
-                      onEditTeam(trajectory.id);
-                    } : undefined}
+                    onDoubleClick={onEditTeam ? () => onEditTeam(trajectory.id) : undefined}
                   >
                     <button
                       type="button"
@@ -219,39 +192,7 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, vis
       )}
 
       {guide}
-      <div className="timeline-playback-bar">
-        <span className="clock timeline-clock">
-          {tr('timeline.clock', { t: currentT.toFixed(2), d: end.toFixed(2) })}
-        </span>
-        <div className="timeline-transport">
-          <button type="button" onClick={() => seek(0)} disabled={end === 0} aria-label={tr('timeline.rewind')} title={tr('timeline.rewind')}>
-            <TransportIcon kind="rewind" />
-          </button>
-          <button type="button" onClick={() => seek(currentT - 0.5)} disabled={end === 0 || currentT === 0} aria-label={tr('timeline.stepBack')} title={tr('timeline.stepBack')}>
-            <TransportIcon kind="back" />
-          </button>
-          <button
-            type="button"
-            className="timeline-play"
-            onClick={() => setPlaying(!playing)}
-            disabled={end === 0}
-            aria-label={tr(playing ? 'timeline.pause' : 'timeline.play')}
-            title={tr(playing ? 'timeline.pause' : 'timeline.play')}
-          >
-            <TransportIcon kind={playing ? 'pause' : 'play'} />
-          </button>
-          <button type="button" onClick={() => seek(currentT + 0.5)} disabled={end === 0 || currentT === end} aria-label={tr('timeline.stepForward')} title={tr('timeline.stepForward')}>
-            <TransportIcon kind="forward" />
-          </button>
-        </div>
-        <div className="timeline-speeds" role="group" aria-label={tr('timeline.playbackSpeed')}>
-          {SPEEDS.map((s) => (
-            <button type="button" key={s} aria-pressed={s === speed} onClick={() => setSpeed(s)}>
-              {tr('timeline.speed', { n: s })}
-            </button>
-          ))}
-        </div>
-      </div>
+      <PlaybackControls playback={playback} end={end} />
     </section>
   );
 }
