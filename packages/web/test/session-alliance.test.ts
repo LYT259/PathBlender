@@ -69,4 +69,17 @@ describe('shared alliance view', () => {
     expect(restoreSessionAlliance({ robots: sources, fieldId: REBUILT_2026.id }).alliance).toBe('blue');
     expect(restoreSessionAlliance({ robots: [], fieldId: REBUILT_2026.id })).toEqual({ alliance: 'blue', robots: [] });
   });
+
+  it('restores a mirrored session with the flag on the slot and the samples still in the original frame', () => {
+    // Baking the reflection into the blue source would reflect twice: the
+    // display derivation applies the flag again, canceling the pose while
+    // the button still shows pressed (found by the mirror-button test).
+    const mirrored = [{ ...sources[0]!, mirrored: true }, sources[1]!];
+    const scene = restoreSessionAlliance(deserializeSession(serializeSession(mirrored, REBUILT_2026.id)));
+    expect(scene.robots[0]!.mirrored).toBe(true);
+    expect(scene.robots[1]!.mirrored).toBeUndefined();
+    expect(scene.robots[0]!.trajectory.samples[0]!.y).toBeCloseTo(sources[0]!.trajectory.samples[0]!.y, 10);
+    const shown = robotsForAlliance(scene.robots, scene.alliance, REBUILT_2026);
+    expect(shown[0]!.trajectory.samples[0]!.y).toBeCloseTo(REBUILT_2026.widthM - sources[0]!.trajectory.samples[0]!.y, 10);
+  });
 });

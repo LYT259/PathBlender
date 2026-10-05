@@ -23,6 +23,8 @@ interface RobotListProps {
   /** Optional until removal/history and mirror state are connected by the implementation owner. */
   onRemoveFromMenu?: (robotId: string) => void;
   onMirror?: (robotId: string) => void;
+  /** Always-visible card button; App wires it to the same toggle as the context menu. */
+  onMirrorButtonClick?: (robotId: string) => void;
   mirroredIds?: ReadonlySet<string>;
 }
 
@@ -92,7 +94,7 @@ function TeamNumberCell({ robot, onUpdate, children, metadata }: {
 }
 
 /** Selection lives in the workspace so the list, field and inspector agree. */
-export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, mirroredIds }: RobotListProps) {  const { t } = useI18n();
+export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, onMirrorButtonClick, mirroredIds }: RobotListProps) {  const { t } = useI18n();
   const settingsInput = useRef<HTMLInputElement>(null);
   const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const contextRobot = robots.find((robot) => robot.trajectory.id === contextMenu?.id);
@@ -162,6 +164,13 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                 </button></TeamNumberCell>
                 <button type="button" className="robot-arrange-button" disabled={!onArrange} title={t('sequence.arrange')}
                   onClick={() => onArrange?.(trajectory.id)}><Icon name="timeline" size={15} /><span>{t('sequence.arrange')}</span></button>
+                <button type="button" className="robot-mirror-button" disabled={!onMirrorButtonClick}
+                  aria-pressed={mirroredIds?.has(trajectory.id) ?? false}
+                  title={t('robots.mirror')}
+                  onClick={() => onMirrorButtonClick?.(trajectory.id)}>
+                  <Icon name="mirror" size={15} /><span>{t('robots.mirror')}</span>
+                  <span className="robot-mirror-check" aria-hidden="true">{mirroredIds?.has(trajectory.id) && <Icon name="check" size={14} />}</span>
+                </button>
                 {needsSettings && onSelectSettings && <button type="button" className="robot-settings-upload" onClick={() => { settingsRobot.current = trajectory.id; settingsInput.current?.click(); }}>
                   <Icon name="import" size={15} />{t('robots.uploadSettings')}
                 </button>}
