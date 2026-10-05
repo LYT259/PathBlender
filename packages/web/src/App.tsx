@@ -31,6 +31,7 @@ import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } fro
 import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
 import { displayName, robotsFromImport, type LibraryProfile, type LibraryRoute } from './route-library';
 import { withTeamPlaceholders } from './team-placeholder';
+import { withColorblindPalette } from './session-colors';
 import { loadAutosave, readSessionUi, saveAutosave } from './autosave';
 import { saveText } from './download';
 import { fieldImageFor } from './field-images';
@@ -224,7 +225,13 @@ function AppBody() {
   // Colorblind-safe robot palette (§7.3-3): the toggle remaps default
   // palette colors in place; custom colors pass through (core remap).
   const [colorblind, setColorblind] = useState(readColorblind);
+  // Robots entering the state (restore, imports, example) read the CURRENT
+  // preference through this ref — the effect below only runs when the
+  // toggle flips, so it never sees arrivals made while the preference was
+  // already on.
+  const colorblindRef = useRef(colorblind);
   useEffect(() => {
+    colorblindRef.current = colorblind;
     setRobots((prev) =>
       prev.length === 0 ? prev : prev.map((r) => ({ ...r, color: remapColorblind(r.color, colorblind) })),
     );
@@ -291,7 +298,7 @@ function AppBody() {
           const ui = readSessionUi(text);
           pathTextsRef.current.clear();
           pendingProfilesRef.current = [];
-          setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(restored.robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
+          setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(withColorblindPalette(restored.robots, colorblindRef.current)) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
           const ids = new Set(restored.robots.map((r) => r.trajectory.id));
           setSelectedId(
             ui?.selectedId && ids.has(ui.selectedId)
@@ -359,7 +366,7 @@ function AppBody() {
       const profiles = fromFolder ? addedProfiles : [...pendingProfilesRef.current, ...addedProfiles];
       const additions = robotsFromImport(addedRoutes, profiles, fromFolder, sourceRobots.length);
       if (!fromFolder) pendingProfilesRef.current = [];
-      setRobots((prev) => withTeamPlaceholders([...prev, ...additions]));
+      setRobots((prev) => withTeamPlaceholders(withColorblindPalette([...prev, ...additions], colorblindRef.current)));
       setSelectedId(additions[0]!.trajectory.id);
       setInspectorMode('checks');
       flash(tr('library.imported', { n: addedRoutes.length, m: addedProfiles.length }));
@@ -572,7 +579,7 @@ function AppBody() {
     const restored = loadAutosave();
     if (!restored) return;
     const apply = (robots: typeof restored.robots) => {
-      setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(robots) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
+      setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(withColorblindPalette(robots, colorblindRef.current)) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
       // Reopen exactly where the user left (2026-10-04): saved selection
       // (validated — a refreshed example robot may have carried the old id
       // away), playback range, and the playhead. The playhead goes through
@@ -790,7 +797,7 @@ function AppBody() {
       // Show it on the field the user actually uses — first visit defaults
       // to AndyMark, afterwards the remembered season + construction.
       setScene({
-        robots: example.robots,
+        robots: withColorblindPalette(example.robots, colorblindRef.current),
         fieldId: initialFieldPref.id,
         fieldVariant: initialFieldPref.variant,
         fieldStyle: initialFieldPref.style,
@@ -988,7 +995,7 @@ function AppBody() {
       />}
       {toast && <div className={toast.kind === 'error' ? 'toast error' : 'toast'} role="status">{toast.msg}</div>}
       {showPrefs && <Dialog title={tr('prefs.title')} onClose={() => setShowPrefs(false)} className="preferences-dialog">
-        <PreferencesPanel desktop={IS_DESKTOP} onClose={() => setShowPrefs(false)} />
+        <PreferencesPanel desktop={IS_DESKTOP} onClose={() => setShowPrefs(false)} onColorblindSaved={setColorblind} />
       </Dialog>}
       </div>
     </div>
