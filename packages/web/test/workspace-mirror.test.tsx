@@ -74,7 +74,6 @@ describe('per-team left/right mirror', () => {
     // Compose two routes in the composer, save, then mirror the team.
     fireEvent.click(within(rows()[0]!).getByRole('button', { name: 'Arrange timeline' }));
     fireEvent.click(screen.getByRole('button', { name: /^B: / }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Back to playback' }));
     const before = fieldRobots()[0]!;
     menuAction(rows()[0]!, 'Mirror left/right');

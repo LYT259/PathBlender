@@ -14,7 +14,10 @@ import {
 import { LENGTH_UNITS, lengthUnitExample, useLengthUnit, type LengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
 import { checkForUpdate, installPendingUpdate } from '../update-check';
-import { APP_VERSION, noteText, VERSION_NOTES } from '../version-info';
+import { noteText, VERSION_NOTES } from '../version-info';
+import dayIcon from '../assets/app-icon-day.png';
+import nightIcon from '../assets/app-icon-night.png';
+import { BUILD_VERSION } from '../build-version';
 import { copyText } from '../download';
 import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from '../viewer';
 import { Icon } from './Icon';
@@ -48,7 +51,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
 }) {
   const { langChoice, setLang, t } = useI18n();
   const { mode, setMode } = useTheme();
-  const { mode: iconMode, setMode: setIconMode } = useAppIcon();
+  const { mode: iconMode, systemDark, setMode: setIconMode } = useAppIcon();
   const { channel, setChannel } = useUpdateChannel();
   const [mouseControls, setMouseControls] = useMouseControls();
   const [lengthUnit, setLengthUnit] = useLengthUnit();
@@ -275,9 +278,12 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
           </div></div>}
         </>}
         {section === 'about' && <>
-          <div className="preferences-product"><strong>PathBlender</strong><span className="preferences-version" dir="ltr">Version {APP_VERSION}</span>
+          <div className="preferences-product"><div className="preferences-product-title"><strong>PathBlender</strong><img
+            className="preferences-product-icon" alt="" width="48" height="48"
+            src={(icon === 'system' ? systemDark : icon === 'dark') ? nightIcon : dayIcon} />
+          </div><span className="preferences-version" dir="ltr">{BUILD_VERSION}</span>
             <button className="btn" type="button" onClick={() => {
-              void copyText(`PathBlender ${APP_VERSION} (${desktop ? 'desktop' : 'web'})\n` + VERSION_NOTES.slice(0, 5).map((note) => `${note.version} (${note.date}) — ${noteText(note.note, langChoice)}`).join('\n'))
+              void copyText(BUILD_VERSION)
                 .then((ok) => setCopyStatus(t(ok ? 'about.copyDone' : 'about.copyFailed')));
             }}>{t('about.copy')}</button>
             <p className="preferences-copy-status" role="status">{copyStatus}</p>

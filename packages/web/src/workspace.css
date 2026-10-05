@@ -203,4 +203,3 @@ body.desktop.desktop-macos .workspace-toolbar { padding-left: 100px; }
 .workspace-toolbar .history-controls { gap: var(--toolbar-control-gap); margin-inline-start: 0; }
 .toolbar-github { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 .canvas-recenter { display: inline-flex; align-items: center; gap: 5px; padding-inline: 8px; white-space: nowrap; }
-.canvas-recenter span { font-size: 11px; }

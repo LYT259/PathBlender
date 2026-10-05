@@ -33,9 +33,9 @@ describe('playback range', () => {
     expect(axisMax % tickStep).toBe(0);
     expect(timelineScale(8, 20)).toEqual({ axisMax: 20, tickStep: 1 });
   });
-  it("loops 'Current paths' at the longest visible duration as visibility changes", () => {
+  it("loops the 'All visible paths' range at the longest visible duration as visibility changes", () => {
     // Bug report 2026-10-05: paths of 4/3/3 s — hiding the 4 s robot must
-    // drop the 'Current paths' loop end to 3 s. Full timeline keeps the whole
+    // drop the path-only loop end to 3 s. Full timeline keeps the whole
     // session extent, and collision checks are unaffected (they always run
     // on the visible set independently).
     const long = scene(); // 8 s, #254
@@ -50,8 +50,9 @@ describe('playback range', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Hide #254 on field' }));
     expect(slider).toHaveAttribute('aria-valuetext', '0.00 / 3.00 s');
     expect(slider).toHaveValue('0'); // the playhead stays put, only the end moves
-    // The clock display follows; the option label names the visible end.
-    expect(screen.getByRole('option', { name: /^Current paths · 3 s$/ })).toBeInTheDocument();
+    // The clock display follows; the option label names the visible set
+    // without a duration (2026-10-05): "All visible paths".
+    expect(screen.getByRole('option', { name: 'All visible paths' })).toBeInTheDocument();
     // Show it again mid-session: the end comes back.
     fireEvent.click(screen.getByRole('button', { name: 'Show #254 on field' }));
     expect(slider).toHaveAttribute('aria-valuetext', '0.00 / 8.00 s');
@@ -70,10 +71,10 @@ describe('playback range', () => {
     const slider = screen.getByRole('slider', { name: 'Playback position' });
     expect(range).toHaveValue('full');
     // 'Full timeline' carries no seconds suffix (user request 2026-10-04);
-    // the path-only option keeps its duration.
+    // the path-only option names the visible set, also without one.
     const labels = within(range).getAllByRole('option').map((o) => o.textContent);
     expect(labels[0]).toBe('Full timeline');
-    expect(labels[1]).toMatch(/^Current paths · /);
+    expect(labels[1]).toBe('All visible paths');
     fireEvent.change(slider, { target: { value: 14 } });
     expect(slider).toHaveValue('14');
     expect(slider).toHaveAttribute('aria-valuetext', '14.00 / 20.00 s');
