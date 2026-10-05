@@ -9,6 +9,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import {
   chassisModules,
@@ -155,38 +156,31 @@ function tokenColorHex(token: string, fallback: string): number {
   );
 }
 
-/** Localized label texture for one ViewCube face (512px for retina-crisp
- *  rendering). faceIdx: 0 +x, 1 -x, 2 top, 3 bottom, 4 +z, 5 -z — the
- *  per-world-face brightness is baked, Onshape-style lit cube. */
-function faceTexture(label: string, faceIdx: number): THREE.CanvasTexture {
+/** Original artwork informed by Onshape's public ViewCube reference:
+ * https://cad.onshape.com/help/Content/View/view_navigation_and_the_view_cube.htm
+ * Rounded face panels sit inside a continuous, softly shaded rim. */
+function faceTexture(label: string): THREE.CanvasTexture {
   const c = document.createElement('canvas');
   c.width = 512;
   c.height = 512;
   const g = c.getContext('2d')!;
-  const card = cssToken('--bg-card', '#2c2c2f');
-  const m = /^#([0-9a-f]{6})$/i.exec(card.trim());
-  const hex = m?.[1] ?? '8c8c91';
-  const base = [
-    parseInt(hex.slice(0, 2), 16),
-    parseInt(hex.slice(2, 4), 16),
-    parseInt(hex.slice(4, 6), 16),
-  ];
-  const shade = (mul: number) =>
-    `rgb(${base.map((v) => Math.round(Math.max(0, Math.min(255, v * mul)))).join(',')})`;
-  const faceMul = faceIdx === 2 ? 1.1 : faceIdx === 3 ? 0.78 : 1;
-  const grad = g.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0, shade(faceMul * 1.05));
-  grad.addColorStop(1, shade(faceMul * 0.92));
-  g.fillStyle = grad;
+  g.fillStyle = cssToken('--viewcube-rim', '#687078');
   g.fillRect(0, 0, 512, 512);
-  g.strokeStyle = cssToken('--border', '#3d3d41');
-  g.lineWidth = 14;
-  g.strokeRect(10, 10, 492, 492);
-  g.fillStyle = cssToken('--fg', '#e6e6e8');
-  g.font = '700 168px -apple-system, "Segoe UI", sans-serif';
+  const grad = g.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0, cssToken('--viewcube-face-top', '#50565d'));
+  grad.addColorStop(1, cssToken('--viewcube-face-bottom', '#434950'));
+  g.beginPath();
+  g.roundRect(30, 30, 452, 452, 56);
+  g.fillStyle = grad;
+  g.fill();
+  g.strokeStyle = cssToken('--viewcube-outline', '#767f88');
+  g.lineWidth = 2;
+  g.stroke();
+  g.fillStyle = cssToken('--viewcube-label', '#f0f2f4');
+  g.font = '500 128px -apple-system, "Segoe UI", sans-serif';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.fillText(label, 256, 272);
+  g.fillText(label, 256, 263);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
@@ -853,23 +847,42 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const labels = [
       t('vc.right'), t('vc.left'), t('vc.top'), t('vc.bottom'), t('vc.front'), t('vc.back'),
     ];
-    // Face textures bake per-world-face shading (top lit, bottom dark) at
-    // 512px so the 110px cube stays crisp on retina displays.
-    const mats = labels.map((lab, i) => new THREE.MeshBasicMaterial({ map: faceTexture(lab, i) }));
+    const mats = labels.map((lab) => new THREE.MeshBasicMaterial({
+      map: faceTexture(lab), vertexColors: true,
+    }));
     // Face textures bake theme tokens at draw time; regenerate on theme flip.
     retintCube = () => {
       labels.forEach((lab, i) => {
         const m = mats[i];
         if (!m) return;
         m.map?.dispose();
-        m.map = faceTexture(lab, i);
+        m.map = faceTexture(lab);
         m.needsUpdate = true;
       });
       (cornerMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
       (edgeMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
     };
-    const cubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.55, 1.55), mats);
-    cubeGroup.add(cubeMesh);
+    // Keep the original full box exclusively for picking: appearance must
+    // not shrink the existing face/edge/corner targets or alter navigation.
+    const cubeMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1.55, 1.55, 1.55),
+      new THREE.MeshBasicMaterial({ visible: false }),
+    );
+    const roundedGeometry = new RoundedBoxGeometry(1.55, 1.55, 1.55, 5, 0.09);
+    const normals = roundedGeometry.getAttribute('normal');
+    const shading = new Float32Array(normals.count * 3);
+    const light = new THREE.Vector3(-0.45, 0.8, 0.55).normalize();
+    const normal = new THREE.Vector3();
+    for (let i = 0; i < normals.count; i++) {
+      normal.fromBufferAttribute(normals, i);
+      // Fixed local lighting keeps the six faces readable while the
+      // bevel normals produce a continuous highlight around the edges.
+      const value = 0.72 + 0.28 * Math.max(0, normal.dot(light));
+      shading.set([value, value, value], i * 3);
+    }
+    roundedGeometry.setAttribute('color', new THREE.BufferAttribute(shading, 3));
+    const roundedCube = new THREE.Mesh(roundedGeometry, mats);
+    cubeGroup.add(cubeMesh, roundedCube);
 
     // Onshape-style clean cube: no resident grips. Edge/corner intent is
     // signaled by two dynamic markers that appear only while hovered and
@@ -1022,6 +1035,17 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       controls.removeEventListener('start', onUserStart);
       cubeCanvas.removeEventListener('pointerdown', onCubeDown);
       cubeCanvas.removeEventListener('pointermove', onCubeMove);
+      cubeMesh.geometry.dispose();
+      cubeMesh.material.dispose();
+      roundedGeometry.dispose();
+      mats.forEach((material) => {
+        material.map?.dispose();
+        material.dispose();
+      });
+      cornerMarker.geometry.dispose();
+      cornerMarker.material.dispose();
+      edgeMarker.geometry.dispose();
+      edgeMarker.material.dispose();
       cubeRenderer.dispose();
       viewcubeEl.remove();
       renderer.domElement.removeEventListener('pointerdown', onDragDown);
