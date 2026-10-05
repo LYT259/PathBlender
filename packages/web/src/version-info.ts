@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.25';
+export const APP_VERSION = '0.1.8-beta.26';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.26', date: '2026.10.05', note: {
+    en: 'Muted path colors: gold, violet, and sage for the first three teams; old sessions migrate on open; the colorblind palette now stays consistent across imports, restores, and restarts',
+    zh: '柔和路径配色：前三队改用柔和金、灰紫与鼠尾草绿；旧会话打开时自动迁移；色盲配色在导入、恢复与重启间保持一致',
+    'zh-tw': '柔和路徑配色：前三隊改用柔和金、灰紫與鼠尾草綠；舊會話開啟時自動遷移；色盲配色在匯入、還原與重啟間保持一致',
+    cs: 'Tlumené barvy cest: pro první tři týmy zlatá, fialová a šalvějová; staré relace se při otevření migrují; paleta pro barvoslepé zůstává konzistentní při importu, obnovení i restartu',
+    nl: 'Gedempte padkleuren: goud, violet en saliegroen voor de eerste drie teams; oude sessies migreren bij het openen; het kleurenblind-palet blijft nu consistent bij importeren, herstellen en herstarten',
+    fr: 'Couleurs de trajets adoucies : or, violet et sauge pour les trois premières équipes ; les anciennes sessions sont migrées à l’ouverture ; la palette daltonienne reste cohérente entre imports, restaurations et redémarrages',
+    he: 'צבעי מסלול עדינים: זהב, סגול וירוק מרווה לשלוש הקבוצות הראשונות; סשנים ישנים עוברים הסבה בעת הפתיחה; לוח הצבעים לעיוורי צבעים עקבי כעת בייבוא, בשחזור ובהפעלה מחדש',
+    ja: 'マットなパスカラー：最初の3チームにゴールド・バイオレット・セージを採用。旧セッションは開く際に移行され、色覚サポートパレットはインポート・復元・再起動を通じて一貫します',
+    ko: '파스텔 경로 색상: 처음 세 팀에 골드·바이올렛·세이지를 적용하고, 기존 세션은 열 때 자동 마이그레이션되며, 색각 이상 팔레트가 가져오기·복원·재시작 전반에서 일관되게 유지됩니다',
+    pl: 'Ściemnione kolory ścieżek: złoty, fioletowy i szałwiowy dla pierwszych trzech drużyn; stare sesje migrują przy otwarciu; paleta dla ślepoty barw jest spójna przy importach, przywracaniach i restartach',
+    'pt-br': 'Cores de trajeto suaves: dourado, violeta e sálvia para as três primeiras equipes; sessões antigas migram ao abrir; a paleta para daltônicos permanece consistente entre importações, restaurações e reinícios',
+    es: 'Colores de recorrido suaves: dorado, violeta y salvia para los tres primeros equipos; las sesiones antiguas se migran al abrir; la paleta daltónica se mantiene consistente entre importaciones, restauraciones y reinicios',
+    tr: 'Yumuşatılmış yol renkleri: ilk üç takım için altın, mor ve adaçayı yeşili; eski oturumlar açılışta taşınır; renk körü paleti içe aktarma, geri yükleme ve yeniden başlatmada tutarlı kalıyor',
+  } },
   { version: '0.1.8-beta.25', date: '2026.10.05', note: {
     en: 'The bottom playback timeline now spans the full workspace width, with the robot list and inspector ending above it',
     zh: '底部回放时间线现横跨整个工作区宽度，机器人列表与检查面板止于其上沿',
