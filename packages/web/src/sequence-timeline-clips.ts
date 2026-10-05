@@ -37,13 +37,14 @@ export function segmentsFromClips(clips: readonly TimelineClip[]): AutoSequenceS
   });
 }
 
-export function canPlaceClip(clips: TimelineClip[], clip: TimelineClip): boolean {
+export function canPlaceClip(clips: TimelineClip[], clip: TimelineClip, limitS = Infinity): boolean {
   return Number.isFinite(clip.startS) && clip.startS >= 0 && Number.isFinite(clip.durationS) && clip.durationS > 0
+    && clip.startS + clip.durationS <= limitS + 1e-9
     && clips.every((other) => other.id === clip.id || clip.startS >= other.startS + other.durationS || clip.startS + clip.durationS <= other.startS);
 }
 
-export function placeClip(clips: TimelineClip[], clip: TimelineClip): TimelineClip[] | null {
-  return canPlaceClip(clips, clip) ? [...clips.filter((other) => other.id !== clip.id), clip].sort((a, b) => a.startS - b.startS) : null;
+export function placeClip(clips: TimelineClip[], clip: TimelineClip, limitS = Infinity): TimelineClip[] | null {
+  return canPlaceClip(clips, clip, limitS) ? [...clips.filter((other) => other.id !== clip.id), clip].sort((a, b) => a.startS - b.startS) : null;
 }
 
 /**
@@ -69,4 +70,23 @@ export function snapClipStart(raw: number, clips: TimelineClip[], clip: Timeline
   const boundaries = [0, ...clips.filter((other) => other.id !== clip.id).flatMap((other) => [other.startS + other.durationS, other.startS - clip.durationS])].filter((s) => s >= 0);
   const nearest = boundaries.sort((a, b) => Math.abs(a - raw) - Math.abs(b - raw))[0]!;
   return Math.abs(nearest - raw) <= toleranceS ? nearest : Math.max(0, Math.round(raw * 10) / 10);
+}
+
+/** Clamp the whole imported route inside the season, without shortening it. */
+export function boundedClipStart(raw: number, clips: TimelineClip[], clip: TimelineClip, toleranceS: number, limitS: number): number {
+  const end = Math.max(0, limitS - clip.durationS);
+  const snapped = snapClipStart(raw, clips, clip, toleranceS);
+  return Math.min(end, Math.max(0, snapped));
+}
+
+/** Adjacent gaps use the moving clip, not its stale saved position. */
+export function clipGaps(clips: TimelineClip[], moving: TimelineClip): { fromS: number; toS: number; side: 'previous' | 'next' }[] {
+  const sorted = [...clips.filter((clip) => clip.id !== moving.id), moving].sort((a, b) => a.startS - b.startS);
+  const index = sorted.indexOf(moving);
+  const previous = sorted[index - 1];
+  const next = sorted[index + 1];
+  return [
+    ...(previous ? [{ fromS: previous.startS + previous.durationS, toS: moving.startS, side: 'previous' as const }] : []),
+    ...(next ? [{ fromS: moving.startS + moving.durationS, toS: next.startS, side: 'next' as const }] : []),
+  ];
 }

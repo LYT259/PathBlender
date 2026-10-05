@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState, type CSSProperties, type DragEvent } from 'react';
-import type { SequenceJoinIssue, SequenceTimingIssue, SessionTrajectory } from '@pathblender/core';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import type { SequenceJoinIssue, SessionTrajectory } from '@pathblender/core';
 import { sequenceViewFor, type AutoSequenceSegment } from '../auto-sequence-state';
-import { canPlaceClip, clipsFor, placeClip, segmentsFromClips, snapClipStart, type TimelineClip } from '../sequence-timeline-clips';
+import { boundedClipStart, canPlaceClip, clipGaps, clipsFor, placeClip, segmentsFromClips, type TimelineClip } from '../sequence-timeline-clips';
 import { robotIdentity } from '../robot-identity';
 import { routeLabel } from '../route-library';
 import { formatLength, useLengthUnit } from '../length-units';
 import { useI18n } from '../i18n';
 import { Icon } from './Icon';
-import { SequenceComposerToolbar, type SequenceDraftActions } from './SequenceComposerToolbar';
+import { SequenceComposerToolbar } from './SequenceComposerToolbar';
+import { PlaybackControls, type Playback } from './PlaybackControls';
 import './SequenceTimelineComposer.css';
 
 interface Props {
@@ -17,208 +18,232 @@ interface Props {
   autoPeriodS: number;
   open: boolean;
   onClose: () => void;
-  /** The active team's unsaved draft; absent = the saved arrangement is shown. */
-  draft?: AutoSequenceSegment[];
-  /** Real draft transaction (hasChanges/canReset/onReset/onSave/onCancel) from App. */
-  draftActions?: SequenceDraftActions;
-  /** Edit the active team's draft. App owns the draft; nothing applies live. */
+  /** Each completed edit commits to the same store used by playback and autosave. */
   onChange: (segments: AutoSequenceSegment[]) => void;
-  /** Join measurements for the edited arrangement (grading display, not an executability verdict). */
+  onPreviewRoute?: (routeId: string | null) => void;
   joins?: SequenceJoinIssue[];
-  /** Finish-time warning when the composition outruns the auto period. */
-  timing?: SequenceTimingIssue;
-  /** Seek the playback head to a seam (pauses playback). */
+  playback?: Playback;
   onJump: (time: number) => void;
 }
+interface Drag {
+  robotId: string;
+  kind: 'add' | 'move';
+  clip: TimelineClip;
+  x: number;
+  y: number;
+  moved: boolean;
+  candidate?: TimelineClip;
+}
+const formatStart = (value: number) => Number.isInteger(value) ? value.toFixed(1) : String(value);
+const finish = (clips: TimelineClip[]) => Math.max(0, ...clips.map((clip) => clip.startS + clip.durationS));
 
-interface Ghost { robotId: string; clip: TimelineClip }
-const DRAG_TYPE = 'application/x-pathblender-timeline-route';
-const finish = (clips: TimelineClip[]) => Math.max(0, ...clips.map((c) => c.startS + c.durationS));
-
-/**
- * Bottom arrangement surface (red book v1.38–v1.41): one robot expanded, the
- * others as compact reference tracks. Every edit — drop, move, removal, start
- * input, keyboard move, route replace — lands on the team's UNSAVED draft in
- * App; playback, checks, autosave and session files only see it after Save.
- * A drag commits into the draft exactly once, on release. Clicking a library
- * route replaces the selected clip's route (keeping its slot start time), or
- * appends when nothing is selected — the one route-selection entry point
- * since the left picker was retired.
- */
-export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, open, onClose, draft, draftActions, onChange, joins = [], timing, onJump }: Props) {
+/** Pointer capture works across WebKit and mouse/touch/pen, without relying
+ * on custom HTML drag payloads. A gesture is one undoable operation. */
+export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, open, onClose, onChange, onPreviewRoute, joins = [], playback, onJump }: Props) {
   const { t } = useI18n();
   const [unit] = useLengthUnit();
   const [selected, setSelected] = useState<{ robotId: string; clipId: string } | null>(null);
-  const [ghost, setGhost] = useState<Ghost | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [ghost, setGhost] = useState<{ robotId: string; clip: TimelineClip } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [menu, setMenu] = useState<{ robotId: string; clipId: string; x: number; y: number } | null>(null);
   const laneRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLElement>(null);
-  const dragRef = useRef<{ robotId: string; clip: TimelineClip; x: number; width: number; axis: number; moved: boolean } | null>(null);
-  const candidateRef = useRef<{ robotId: string; routeId: string } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<Drag | null>(null);
+  const suppressClick = useRef(false);
   const tracks = robots.map((robot) => {
     const view = sequenceViewFor(robot);
     return { robot, routes: view.routes, clips: clipsFor(view.segments, view.routes) };
   });
   const active = tracks.find((track) => track.robot.trajectory.id === selectedId) ?? tracks[0];
-  const axis = Math.ceil(Math.max(autoPeriodS, ...tracks.map((track) => finish(track.clips) + 3)) / 5) * 5;
+  const activeId = active?.robot.trajectory.id;
+  const activeClips = active?.clips ?? [];
+  const activeGhost = ghost && ghost.robotId === activeId ? ghost.clip : undefined;
+  const chosen = selected && selected.robotId === activeId ? activeClips.find((clip) => clip.id === selected.clipId) : undefined;
+  const axis = autoPeriodS;
   const percent = (time: number) => `${time / axis * 100}%`;
   const styleFor = (clip: TimelineClip): CSSProperties => ({ left: percent(clip.startS), width: percent(clip.durationS) });
+  const validGhost = !activeGhost || canPlaceClip(activeClips, activeGhost, autoPeriodS);
+  const limitMessage = `${t('sequence.autoEnd')}: ${autoPeriodS.toFixed(2)}s`;
   const joinDetail = (issue: SequenceJoinIssue) => issue.kind === 'position'
     ? t('sequence.joinPosition', { d: formatLength(issue.delta, unit) })
-    : issue.kind === 'heading'
-      ? t('sequence.joinHeading', { d: issue.delta.toFixed(1) })
+    : issue.kind === 'heading' ? t('sequence.joinHeading', { d: issue.delta.toFixed(1) })
       : t('sequence.joinVelocity', { d: issue.delta.toFixed(2) });
 
-  // Clicking anywhere outside the editing surface returns to playback with
-  // the draft left in place — Save/Cancel in the toolbar decide its fate, so
-  // an accidental click away never silently applies or discards work. A
-  // pending start-time edit commits to the draft on blur; blurring it before
-  // unmounting would swallow the typed value.
   useEffect(() => {
     if (!open) return;
-    const close = (event: PointerEvent) => {
+    const close = (event: globalThis.PointerEvent) => {
       const target = event.target instanceof Element ? event.target : null;
-      if (!target || rootRef.current?.contains(target)) return;
-      const active = document.activeElement;
-      if (active instanceof HTMLInputElement && rootRef.current?.contains(active)) active.blur();
+      if (!target || rootRef.current?.contains(target) || target.closest('[data-session-history]')) return;
+      const focused = document.activeElement;
+      if (focused instanceof HTMLInputElement && rootRef.current?.contains(focused)) focused.blur();
       onClose();
     };
     document.addEventListener('pointerdown', close);
     return () => document.removeEventListener('pointerdown', close);
   }, [open, onClose]);
+  useEffect(() => {
+    dragRef.current = null;
+    setGhost(null); setMenu(null); setError(null);
+  }, [open, activeId]);
+  useEffect(() => {
+    if (!menu) return;
+    menuRef.current?.querySelector('button')?.focus();
+    const outside = (event: globalThis.PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setMenu(null);
+    };
+    const close = () => setMenu(null);
+    document.addEventListener('pointerdown', outside);
+    window.addEventListener('resize', close);
+    return () => { document.removeEventListener('pointerdown', outside); window.removeEventListener('resize', close); };
+  }, [menu]);
 
-  if (!open || !active) return null;
-  const activeId = active.robot.trajectory.id;
-  // The edited track shows the draft; the saved view is the fallback (and the
-  // Reset target).
-  const activeSegments = draft ?? sequenceViewFor(active.robot).segments;
-  const activeClips = clipsFor(activeSegments, active.routes);
-  // Selection resolves against the EDITED lane's clips — a just-appended
-  // block exists only in the draft until Save.
-  const chosen = selected?.robotId === activeId ? activeClips.find((c) => c.id === selected.clipId) : undefined;
-  const activeGhost = ghost?.robotId === activeId ? ghost.clip : undefined;
-  const validGhost = !activeGhost || canPlaceClip(activeClips, activeGhost);
-  const ticks = Array.from({ length: Math.floor(axis / 2) + 1 }, (_, i) => i * 2);
+  if (!open || !active || !activeId) return null;
+  const ticks = [...new Set([...Array.from({ length: Math.floor(axis / 2) + 1 }, (_, i) => i * 2), axis])];
   function commit(clip: TimelineClip): boolean {
-    const next = placeClip(activeClips, clip);
-    if (!next) { setError(t('sequence.overlap')); setMessage(null); return false; }
+    const next = placeClip(activeClips, clip, autoPeriodS);
+    if (!next) { setError(clip.startS + clip.durationS > autoPeriodS ? limitMessage : t('sequence.overlap')); return false; }
     onChange(segmentsFromClips(next));
-    setSelected({ robotId: activeId, clipId: clip.id });
-    setError(null);
-    setMessage(`${t('sequence.moved')}: ${clip.startS.toFixed(2)} s`);
+    setSelected({ robotId: activeId!, clipId: clip.id }); setError(null);
     return true;
   }
   function append(routeId: string, durationS: number) {
-    const ok = commit({ id: crypto.randomUUID(), routeId, startS: finish(activeClips), durationS });
-    if (ok) setMessage(t('sequence.added'));
+    commit({ id: crypto.randomUUID(), routeId, startS: finish(activeClips), durationS });
   }
-  /**
-   * Direct single-route replacement: the selected clip keeps its id and slot
-   * start time, and only its route (therefore duration) changes. An overlap
-   * caused by the longer route is rejected with the dynamic error, never
-   * silently truncated.
-   */
-  function replaceChosen(routeId: string, durationS: number) {
-    if (!chosen) return;
-    const ok = commit({ ...chosen, routeId, durationS });
-    if (ok) setMessage(t('sequence.replaced'));
-  }
-  function removeChosen() {
-    if (!chosen) return;
-    const next = activeClips.filter((clip) => clip.id !== chosen.id);
-    onChange(segmentsFromClips(next));
-    setSelected(null);
-    setError(null);
-    setMessage(null);
+  function remove(clipId: string) {
+    onChange(segmentsFromClips(activeClips.filter((clip) => clip.id !== clipId)));
+    setSelected(null); setMenu(null); setError(null);
     laneRef.current?.focus();
   }
-  function candidate(event: DragEvent): TimelineClip | undefined {
-    const source = candidateRef.current;
-    if (!source || source.robotId !== activeId || !event.dataTransfer.types.includes(DRAG_TYPE)) return;
-    const route = active!.routes.find((r) => r.id === source.routeId);
-    const rect = laneRef.current?.getBoundingClientRect();
-    if (!route || !rect?.width) return;
-    const clip = { id: 'drop-preview', routeId: route.id, startS: 0, durationS: route.trajectory.durationS };
-    return { ...clip, startS: snapClipStart((event.clientX - rect.left) / rect.width * axis, activeClips, clip, 8 / rect.width * axis) };
+  function begin(event: PointerEvent<HTMLButtonElement>, kind: Drag['kind'], clip: TimelineClip) {
+    if (event.button !== 0) return;
+    suppressClick.current = false;
+    dragRef.current = { robotId: activeId!, kind, clip, x: event.clientX, y: event.clientY, moved: false };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    if (kind === 'move') setSelected({ robotId: activeId!, clipId: clip.id });
+    setMenu(null); setError(null);
   }
-  function switchRobot(id: string) { setGhost(null); setMessage(null); setError(null); onSelect(id); }
-  return <section ref={rootRef} className="sequence-composer" aria-label={t('sequence.arrange')}>
-    <SequenceComposerToolbar name={robotIdentity(active.robot.trajectory)} color={active.robot.color}
-      onBack={() => { setGhost(null); onClose(); }} draft={draftActions} />
-    <div className="sequence-route-library">
-      <div className="sequence-route-options">
-        {active.routes.map((route) => <button type="button" key={route.id} className="sequence-route-source" draggable={route.trajectory.durationS > 0} disabled={route.trajectory.durationS <= 0}
-          title={chosen ? t('sequence.replaceRoute') : `${route.relPath} · ${route.trajectory.durationS.toFixed(2)} s`} aria-label={`${routeLabel(route, active.routes)}: ${route.trajectory.durationS.toFixed(2)} s`}
-          onDragStart={(event) => { candidateRef.current = { robotId: activeId, routeId: route.id }; event.dataTransfer.setData(DRAG_TYPE, route.id); event.dataTransfer.effectAllowed = 'copy'; }}
-          onDragEnd={() => { candidateRef.current = null; setGhost(null); }}
-          onClick={() => { if (chosen) replaceChosen(route.id, route.trajectory.durationS); else append(route.id, route.trajectory.durationS); }}>
-          <span aria-hidden="true" className="sequence-grip">⠿</span><span>{routeLabel(route, active.routes)}</span><small>{route.trajectory.durationS.toFixed(2)} s</small>
-        </button>)}
-      </div>
-    </div>
-    <div className="sequence-timeline-scroll" dir="ltr">
-      <div className="sequence-timeline-surface">
-        <div className="sequence-axis"><span>s</span><div>{ticks.map((tick) => <span key={tick} style={{ left: percent(tick) }}>{tick}</span>)}</div></div>
-        {tracks.map(({ robot, routes, clips }) => {
-          const id = robot.trajectory.id;
-          const editing = id === activeId;
-          const laneClips = editing ? activeClips : clips;
-          const laneGhost = editing ? activeGhost : undefined;
-          return <div className={`sequence-track${editing ? ' is-editing' : ''}`} key={id} style={{ '--robot-color': robot.color } as CSSProperties}>
-            <button type="button" className="sequence-track-name" aria-pressed={editing} onClick={() => switchRobot(id)}><span><i />{robotIdentity(robot.trajectory)}</span><small>{editing ? t('sequence.editing') : t('sequence.reference')}</small></button>
-            <div className="sequence-track-lane" ref={editing ? laneRef : undefined} tabIndex={editing ? -1 : undefined} aria-label={`${robotIdentity(robot.trajectory)} ${t('sequence.arrange')}`}
-              style={{ backgroundSize: `${2 / axis * 100}% 100%` }}
-              onDragOver={editing ? (event) => { const clip = candidate(event); if (!clip) return; event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = canPlaceClip(laneClips, clip) ? 'copy' : 'none'; setGhost({ robotId: id, clip }); } : undefined}
-              onDragLeave={editing ? (event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setGhost(null); } : undefined}
-              onDrop={editing ? (event) => { const clip = candidate(event); if (!clip) return; event.preventDefault(); event.stopPropagation(); commit({ ...clip, id: crypto.randomUUID() }); setGhost(null); candidateRef.current = null; } : undefined}>
-              <span className={`sequence-auto-end${timing ? ' is-over' : ''}`} style={{ left: percent(autoPeriodS) }} title={`${t('sequence.autoEnd')}: ${autoPeriodS} s`} />
-              {laneClips.map((clip, index) => {
-                const route = routes.find((r) => r.id === clip.routeId);
-                const label = route ? routeLabel(route, routes) : clip.routeId;
-                const previousEnd = index ? laneClips[index - 1]!.startS + laneClips[index - 1]!.durationS : 0;
-                const gap = clip.startS - previousEnd;
-                const chosenClip = editing && selected?.robotId === id && selected.clipId === clip.id;
-                const seamIssues = joins.filter((issue) => issue.fromIndex === index - 1);
-                return <div key={clip.id}>
-                  {editing && index > 0 && <button type="button" className={`sequence-seam${seamIssues.length ? ' is-bad' : ''}`} style={{ left: percent(previousEnd) }}
-                    title={seamIssues.length ? seamIssues.map(joinDetail).join(' · ') : t('sequence.joinOk')}
-                    aria-label={seamIssues.length ? `${t('sequence.joinOk')}: ${seamIssues.map(joinDetail).join(' · ')}` : t('sequence.joinOk')}
-                    onClick={() => onJump(previousEnd)}>
-                    <Icon name={seamIssues.length ? 'warning' : 'check'} size={11} />{seamIssues.length > 0 && <span>{seamIssues.map(joinDetail).join(' · ')}</span>}
-                  </button>}
-                  {editing && gap > 0 && <span className="sequence-wait" style={{ left: percent(previousEnd), width: percent(gap) }} title={`${index ? t('sequence.wait') : t('sequence.delay')}: ${gap.toFixed(2)} s`}><span>{gap.toFixed(2)} s</span></span>}
-                  <button type="button" className={`sequence-clip${chosenClip ? ' is-chosen' : ''}${laneGhost?.id === clip.id ? ' is-moving' : ''}`} style={styleFor(clip)}
-                    aria-label={`${label}, ${clip.startS.toFixed(2)}–${(clip.startS + clip.durationS).toFixed(2)} s`} aria-pressed={chosenClip}
-                    title={`${label}\n${clip.startS.toFixed(2)}–${(clip.startS + clip.durationS).toFixed(2)} s`}
-                    onClick={() => { if (!editing) switchRobot(id); setSelected({ robotId: id, clipId: clip.id }); setError(null); setMessage(null); }}
-                    onPointerDown={editing ? (event) => { if (event.button !== 0) return; const rect = laneRef.current!.getBoundingClientRect(); dragRef.current = { robotId: id, clip, x: event.clientX, width: rect.width, axis, moved: false }; event.currentTarget.setPointerCapture(event.pointerId); setSelected({ robotId: id, clipId: clip.id }); setError(null); setMessage(null); } : undefined}
-                    onPointerMove={editing ? (event) => { const drag = dragRef.current; if (!drag || drag.robotId !== id || drag.width <= 0) return; if (Math.abs(event.clientX - drag.x) < 3 && !drag.moved) return; drag.moved = true; const startS = snapClipStart(drag.clip.startS + (event.clientX - drag.x) / drag.width * drag.axis, laneClips, clip, 8 / drag.width * drag.axis); setGhost({ robotId: id, clip: { ...clip, startS } }); } : undefined}
-                    onPointerUp={editing ? () => { if (dragRef.current?.moved && laneGhost) commit(laneGhost); dragRef.current = null; setGhost(null); } : undefined}
-                    onPointerCancel={() => { dragRef.current = null; setGhost(null); }}
-                    onLostPointerCapture={() => { dragRef.current = null; setGhost(null); }}
-                    onKeyDown={editing ? (event) => { if (event.key === 'Escape') { dragRef.current = null; setGhost(null); return; } if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return; event.preventDefault(); const delta = (event.shiftKey ? 1 : .1) * (event.key === 'ArrowLeft' ? -1 : 1); commit({ ...clip, startS: Math.round((clip.startS + delta) * 1e9) / 1e9 }); } : undefined}>
-                    <strong>{editing && <span className="sequence-clip-number">{index + 1}</span>}{label}</strong>{editing && <small>{clip.startS.toFixed(2)}–{(clip.startS + clip.durationS).toFixed(2)} s</small>}
-                  </button>
-                </div>;
-              })}
-              {editing && laneClips.length === 0 && !laneGhost && <span className="sequence-empty-lane">{t('sequence.empty')}</span>}
-              {laneGhost && <div className={`sequence-ghost${validGhost ? '' : ' is-invalid'}`} style={styleFor(laneGhost)}><strong>{laneGhost.startS.toFixed(2)}–{(laneGhost.startS + laneGhost.durationS).toFixed(2)} s</strong><small>{validGhost ? t('sequence.editing') : t('sequence.overlap')}</small></div>}
-            </div>
-          </div>;
-        })}
-      </div>
-    </div>
-    {timing && <p className="sequence-timing-warning"><Icon name="warning" size={13} /><span>{t('sequence.overAuto', { t: timing.finishS.toFixed(2), auto: timing.autoPeriodS })}</span></p>}
+  function move(event: PointerEvent) {
+    const drag = dragRef.current;
+    const rect = laneRef.current?.getBoundingClientRect();
+    if (!drag || drag.robotId !== activeId || !rect?.width) return;
+    if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 3) return;
+    drag.moved = true; suppressClick.current = true; event.preventDefault();
+    if (drag.kind === 'add' && (event.clientY < rect.top || event.clientY > rect.bottom || event.clientX < rect.left || event.clientX > rect.right)) {
+      drag.candidate = undefined; setGhost(null); return;
+    }
+    const raw = drag.kind === 'add' ? (event.clientX - rect.left) / rect.width * axis
+      : drag.clip.startS + (event.clientX - drag.x) / rect.width * axis;
+    const startS = boundedClipStart(raw, activeClips, drag.clip, 8 / rect.width * axis, autoPeriodS);
+    drag.candidate = { ...drag.clip, startS };
+    setGhost({ robotId: activeId!, clip: drag.candidate });
+  }
+  function cancelDrag() { dragRef.current = null; setGhost(null); onPreviewRoute?.(null); }
+  function switchRobot(id: string) { cancelDrag(); setMenu(null); setError(null); onSelect(id); }
+  const ghostRoute = active.routes.find((route) => route.id === activeGhost?.routeId);
+  return <section ref={rootRef} className="sequence-composer" aria-label={t('sequence.arrange')}
+    onPointerMove={move} onPointerUp={() => {
+      const drag = dragRef.current;
+      if (drag?.moved && drag.robotId === activeId && drag.candidate) commit(drag.candidate);
+      cancelDrag();
+    }} onPointerCancel={cancelDrag} onLostPointerCapture={cancelDrag}
+    onKeyDown={(event) => {
+      if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (event.key === 'Escape') { cancelDrag(); setMenu(null); laneRef.current?.focus(); }
+      if (chosen && (event.key === 'Backspace' || event.key === 'Delete')) { event.preventDefault(); remove(chosen.id); }
+    }}>
+    <SequenceComposerToolbar name={robotIdentity(active.robot.trajectory)} color={active.robot.color} onBack={onClose} />
+    <div className="sequence-route-library"><div className="sequence-route-options">
+      {active.routes.map((route) => <button type="button" key={route.id} className="sequence-route-source" draggable={false}
+        disabled={route.trajectory.durationS <= 0 || route.trajectory.durationS > autoPeriodS}
+        title={route.trajectory.durationS > autoPeriodS ? limitMessage : `${route.relPath} · ${route.trajectory.durationS.toFixed(2)}s`}
+        aria-label={`${routeLabel(route, active.routes)}: ${route.trajectory.durationS.toFixed(2)} s`}
+        onPointerEnter={() => { if (!dragRef.current) onPreviewRoute?.(route.id); }}
+        onPointerLeave={() => { if (!dragRef.current) onPreviewRoute?.(null); }}
+        onPointerDown={(event) => begin(event, 'add', { id: crypto.randomUUID(), routeId: route.id, startS: 0, durationS: route.trajectory.durationS })}
+        onClick={(event) => { if (event.detail !== 0 && suppressClick.current) return; append(route.id, route.trajectory.durationS); }}>
+        <span aria-hidden="true" className="sequence-grip">⠿</span><span>{routeLabel(route, active.routes)}</span><small>{route.trajectory.durationS.toFixed(2)}s</small>
+      </button>)}
+    </div></div>
+    <div className="sequence-timeline-scroll" dir="ltr"><div className="sequence-timeline-surface">
+      <div className="sequence-axis"><span>s</span><div>{ticks.map((tick) => <span key={tick} style={{ left: percent(tick) }}>{tick}</span>)}</div></div>
+      {tracks.map(({ robot, routes, clips }) => {
+        const id = robot.trajectory.id;
+        const editing = id === activeId;
+        return <div className={`sequence-track${editing ? ' is-editing' : ''}`} key={id} style={{ '--robot-color': robot.color } as CSSProperties}>
+          <button type="button" className="sequence-track-name" aria-pressed={editing} onClick={() => switchRobot(id)}><span><i />{robotIdentity(robot.trajectory)}</span><small>{t(editing ? 'sequence.editing' : 'sequence.reference')}</small></button>
+          <div className="sequence-track-lane" ref={editing ? laneRef : undefined} tabIndex={editing ? -1 : undefined}
+            aria-label={`${robotIdentity(robot.trajectory)} ${t('sequence.arrange')}`} style={{ backgroundSize: `${2 / axis * 100}% 100%` }}>
+            <span className="sequence-auto-end" style={{ left: '100%' }} title={limitMessage} />
+            {clips.map((clip, index) => {
+              const route = routes.find((r) => r.id === clip.routeId);
+              const label = route ? routeLabel(route, routes) : clip.routeId;
+              const previousEnd = index ? clips[index - 1]!.startS + clips[index - 1]!.durationS : 0;
+              const gap = clip.startS - previousEnd;
+              const seamIssues = joins.filter((issue) => issue.fromIndex === index - 1);
+              const chosenClip = editing && selected?.robotId === id && selected.clipId === clip.id;
+              return <div key={clip.id}>
+                {editing && index > 0 && !activeGhost && <button type="button" className={`sequence-seam${seamIssues.length ? ' is-bad' : ''}`} style={{ left: percent(previousEnd) }}
+                  title={seamIssues.length ? seamIssues.map(joinDetail).join(' · ') : t('sequence.joinOk')}
+                  aria-label={seamIssues.length ? seamIssues.map(joinDetail).join(' · ') : t('sequence.joinOk')} onClick={() => onJump(previousEnd)}>
+                  <Icon name={seamIssues.length ? 'warning' : 'check'} size={11} />
+                </button>}
+                {editing && gap > 0 && !activeGhost && <span className="sequence-wait" style={{ left: percent(previousEnd), width: percent(gap) }}><span>{gap.toFixed(2)}s</span></span>}
+                <button type="button" className={`sequence-clip${chosenClip ? ' is-chosen' : ''}${editing && activeGhost?.id === clip.id ? ' is-moving' : ''}`}
+                  style={styleFor(clip)} aria-label={`${label}, ${clip.startS.toFixed(2)}–${(clip.startS + clip.durationS).toFixed(2)} s`} aria-pressed={chosenClip}
+                  title={`${label}\n${clip.startS.toFixed(2)}–${(clip.startS + clip.durationS).toFixed(2)} s`}
+                  onClick={() => { if (suppressClick.current) return; if (!editing) switchRobot(id); setSelected({ robotId: id, clipId: clip.id }); setError(null); }}
+                  onPointerDown={editing ? (event) => begin(event, 'move', clip) : () => { suppressClick.current = false; }}
+                  onContextMenu={editing ? (event) => { event.preventDefault(); setSelected({ robotId: id, clipId: clip.id }); setMenu({ robotId: id, clipId: clip.id, x: event.clientX, y: event.clientY }); } : undefined}
+                  onKeyDown={editing ? (event) => {
+                    if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+                      event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect();
+                      setSelected({ robotId: id, clipId: clip.id }); setMenu({ robotId: id, clipId: clip.id, x: rect.left, y: rect.bottom });
+                    }
+                    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+                    event.preventDefault();
+                    const raw = clip.startS + (event.shiftKey ? 1 : .1) * (event.key === 'ArrowLeft' ? -1 : 1);
+                    commit({ ...clip, startS: Math.min(Math.max(0, autoPeriodS - clip.durationS), Math.max(0, Math.round(raw * 1e9) / 1e9)) });
+                  } : undefined}>
+                  <strong>{label}<small>{clip.durationS.toFixed(2)}s</small></strong>
+                </button>
+              </div>;
+            })}
+            {editing && clips.length === 0 && !activeGhost && <span className="sequence-empty-lane">{t('sequence.empty')}</span>}
+            {editing && activeGhost && <>
+              <div className={`sequence-ghost${validGhost ? '' : ' is-invalid'}`} style={styleFor(activeGhost)}>
+                <strong>{ghostRoute ? routeLabel(ghostRoute, active.routes) : activeGhost.routeId}<small>{activeGhost.durationS.toFixed(2)}s</small></strong>
+              </div>
+              {clipGaps(clips, activeGhost).map((gap) => <div key={gap.side} className={`sequence-gap-guide ${gap.side}${gap.toS < gap.fromS ? ' is-overlap' : ''}`}
+                style={{ left: percent(Math.min(gap.fromS, gap.toS)), width: percent(Math.abs(gap.toS - gap.fromS)) }}>
+                <span>{(gap.toS - gap.fromS).toFixed(2)}s</span>
+              </div>)}
+            </>}
+            {playback && <span className="sequence-playhead" style={{ left: percent(Math.min(autoPeriodS, playback.t)) }} />}
+          </div>
+        </div>;
+      })}
+    </div></div>
     {chosen && <div className="sequence-selection-bar">
-      <span className="sequence-selected-route">{routeLabel(active.routes.find((r) => r.id === chosen.routeId)!, active.routes)}</span><label>{t('sequence.start')} <input key={`${activeId}:${chosen.id}:${chosen.startS}`} type="number" min="0" step="any" defaultValue={chosen.startS} aria-label={t('sequence.start')} aria-invalid={!!error} onBlur={(event) => {
-        const raw = event.currentTarget.value.trim();
-        const parsed = raw === '' ? NaN : Number(raw);
-        if (!Number.isFinite(parsed) || parsed < 0) { setError(t('sequence.invalid')); event.currentTarget.value = String(chosen.startS); return; }
-        if (parsed === chosen.startS) { setError(null); return; }
-        if (!commit({ ...chosen, startS: parsed })) event.currentTarget.value = String(chosen.startS);
-      }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); if (event.key === 'Escape') { event.currentTarget.value = String(chosen.startS); setError(null); event.currentTarget.blur(); } }} /> s</label><span>{t('sequence.end')} <b>{(chosen.startS + chosen.durationS).toFixed(2)} s</b></span><button type="button" className="sequence-remove" disabled={activeClips.length <= 1} title={activeClips.length <= 1 ? t('sequence.lastRoute') : undefined} onClick={removeChosen}>{t('sequence.removeRoute')}</button>
+      <span className="sequence-selected-route">{active.routes.find((route) => route.id === chosen.routeId)?.relPath}</span>
+      <label>{t('sequence.start')} <input key={`${activeId}:${chosen.id}:${chosen.startS}`} type="number" min="0" max={Math.max(0, autoPeriodS - chosen.durationS)} step="any" defaultValue={formatStart(chosen.startS)}
+        aria-label={t('sequence.start')} onBlur={(event) => {
+          const raw = event.currentTarget.value.trim(); const value = raw === '' ? NaN : Number(raw);
+          if (value === Number(formatStart(chosen.startS))) return;
+          if (!Number.isFinite(value) || !commit({ ...chosen, startS: value })) event.currentTarget.value = formatStart(chosen.startS);
+        }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }} /> s</label>
+      <span>{t('sequence.end')} <b>{(chosen.startS + chosen.durationS).toFixed(2)}s</b></span>
     </div>}
-    <div className="sequence-composer-footnote"><span role="status" className={error ? 'sequence-error' : ''}>{error ?? message ?? ''}</span></div>
+    {menu?.robotId === activeId && <div ref={menuRef} className="sequence-clip-menu" role="menu" aria-label={t('sequence.arrange')}
+      style={{ left: Math.max(8, Math.min(menu.x, window.innerWidth - 188)), top: Math.max(8, Math.min(menu.y, window.innerHeight - 54)) }}
+      onKeyDown={(event) => { if (event.key === 'Escape') { setMenu(null); laneRef.current?.focus(); } if (event.key === 'Tab') setMenu(null); }}>
+      <button type="button" role="menuitem" onClick={() => remove(menu.clipId)}><Icon name="trash" size={14} />{t('sequence.removeRoute')}</button>
+    </div>}
+    <div className="sequence-composer-footnote"><span role="status" className="sequence-error">{error ?? ''}</span></div>
+    {playback && <div className="timeline-workspace sequence-playback-controls">
+      <input type="range" min="0" max={autoPeriodS} step="0.01" value={Math.min(autoPeriodS, playback.t)} aria-label={t('timeline.position')}
+        onChange={(event) => { playback.setPlaying(false); playback.setT(Number(event.target.value)); }} />
+      <PlaybackControls playback={playback} end={autoPeriodS} />
+    </div>}
   </section>;
 }

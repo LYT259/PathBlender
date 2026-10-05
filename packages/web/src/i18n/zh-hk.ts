@@ -16,7 +16,6 @@ import { zhTw } from './zh-tw';
 export const zhHkOverrides: Partial<Record<MessageKey, string>> = {
   // Units: HK uses the international name 米 (as mainland does); 公尺 is the
   // Taiwan term — `scripts/gen-zh-hant.mjs` rewrites 米→公尺 on purpose.
-  'robots.bumper': '保險桿 (米)',
   'robots.profileEntry': '保險桿 {l} × {w} 米',
   'customField.margin': '邊距 (米)',
   'customField.length': '長 (米)',

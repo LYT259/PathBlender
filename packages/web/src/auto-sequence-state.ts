@@ -58,7 +58,7 @@ export function sequenceViewFor(robot: SessionTrajectory | undefined): AutoSeque
     ...options,
   ];
   const sequence = robot.sequence;
-  if (sequence && sequence.segments.length > 0) {
+  if (sequence) {
     const fallbackId = current?.id ?? routes[0]?.id;
     const segments = sequence.segments.map((segment) =>
       routes.some((route) => route.id === segment.routeId) || !fallbackId
@@ -77,9 +77,8 @@ export function sequenceViewFor(robot: SessionTrajectory | undefined): AutoSeque
 }
 
 /**
- * Commit an arrangement onto the robot: stores the sequence (dropping it
- * when every segment was removed, which returns the slot to legacy single-
- * route behavior) and keeps `startDelayS` mirroring the first segment's
+ * Commit an arrangement onto the robot: stores the sequence (including an explicitly empty
+ * arrangement, which parks the robot without replaying its old route) and keeps `startDelayS` mirroring the first segment's
  * wait so every legacy consumer stays in sync.
  */
 export function applySequenceSegments(
@@ -92,7 +91,7 @@ export function applySequenceSegments(
   }));
   return {
     ...robot,
-    sequence: sanitized.length > 0 ? { segments: sanitized } : undefined,
-    startDelayS: sanitized[0] ? Math.max(0, sanitized[0]!.waitBeforeS) : robot.startDelayS,
+    sequence: { segments: sanitized },
+    startDelayS: sanitized[0] ? Math.max(0, sanitized[0]!.waitBeforeS) : 0,
   };
 }

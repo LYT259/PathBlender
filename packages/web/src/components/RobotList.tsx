@@ -35,9 +35,8 @@ interface RobotInspectorProps {
 }
 
 /** Editable display label; actual team-number/name fields remain independent. */
-function TeamNumberCell({ robot, onUpdate, children, metadata }: {
+function TeamNumberCell({ robot, onUpdate, children }: {
   children: ReactNode;
-  metadata: ReactNode;
   robot: SessionTrajectory;
   onUpdate: (id: string, patch: Partial<SessionTrajectory>) => void;
 }) {
@@ -60,7 +59,6 @@ function TeamNumberCell({ robot, onUpdate, children, metadata }: {
       >
         <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8M16 3l5 5M10 14l-1 4 4-1 9-9-3-3Z" /></svg>
       </button>
-      {metadata}
     </div>);
   }
   const commit = () => {
@@ -125,7 +123,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
             const visibilityLabel = t(robot.visible ? 'robots.hide' : 'robots.show', { name: robotIdentity(trajectory) });
             // A composed robot spans waits and segments; its duration is the
             // active window, not the stale single-route trajectory length.
-            const composed = !!robot.sequence && robot.sequence.segments.length > 0;
+            const composed = !!robot.sequence;
             const shownDuration = composed ? activeEndT(robot) - activeStartT(robot) : trajectory.durationS;
             const selectionLabel = [
               robotIdentity(trajectory),
@@ -149,12 +147,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     setContextMenu({ id: trajectory.id, x: rect.left + 12, y: rect.bottom });
                   }
                 }} className={`robot-library-row${needsSettings && onSelectSettings ? ' needs-settings' : ''}${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
-                <TeamNumberCell robot={robot} onUpdate={onUpdate} metadata={<span className="robot-library-meta">
-                      <span>{sourceLabel(trajectory.source)}</span>
-                      <span>{shownDuration.toFixed(2)} s</span>
-                      {composed && <span>{t('sequence.count', { n: robot.sequence!.segments.length })}</span>}
-                      {hit && <span className="robot-library-conflict">{t('robots.collision')}</span>}
-                    </span>}><button className="robot-library-select" aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
+                <TeamNumberCell robot={robot} onUpdate={onUpdate}><button className="robot-library-select" aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
                   <span className="band-dot" style={{ background: robot.color }} aria-hidden="true" />
                   <span className="robot-library-content">
                     <span className="robot-library-name" title={robotIdentity(trajectory)}>
@@ -174,9 +167,13 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                 {needsSettings && onSelectSettings && <button type="button" className="robot-settings-upload" onClick={() => { settingsRobot.current = trajectory.id; settingsInput.current?.click(); }}>
                   <Icon name="import" size={15} />{t('robots.uploadSettings')}
                 </button>}
-                <button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
+                <div className="robot-library-status"><button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
                   <EyeIcon visible={robot.visible} />
-                </button>
+                </button><span className="robot-library-meta">
+                  <span>{sourceLabel(trajectory.source)}</span><span>{shownDuration.toFixed(2)} s</span>
+                  {composed && <span>{t('sequence.count', { n: robot.sequence!.segments.length })}</span>}
+                  {hit && <span className="robot-library-conflict">{t('robots.collision')}</span>}
+                </span>{needsSettings && <span className="robot-library-settings-missing">{t('robots.settingsNotImported')}</span>}</div>
               </li>
             );
           })}
@@ -211,12 +208,12 @@ export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: Robot
       <section className="robot-inspector-section">
         <div className="robot-inspector-section-heading">
           <h3>{t('robots.data')}</h3>
-          <span className={`robot-data-source${fileGeometry ? ' is-verified' : ' is-missing'}`}><Icon name={fileGeometry ? 'check' : 'warning'} size={13} />{fileGeometry ? t('robots.fromFile') : t('robots.notUploaded')}</span>
+          <span className={`robot-data-source${fileGeometry ? ' is-verified' : ' is-missing'}`}>{fileGeometry ? t('robots.fromFile') : <><Icon name="warning" size={13} />{t('robots.notUploaded')}</>}</span>
         </div>
         <p className="robot-inspector-caption">{t('robots.bumper')}</p>
         <dl className="robot-dimensions">
-          <div className={`robot-dimension-card ${fileGeometry ? 'is-verified' : 'is-default'}`}><dt>{t('robots.length')}<span>{fileGeometry ? <Icon name="check" size={12} /> : t('robots.bumperDefault')}</span></dt><dd>{formatLength(trajectory.geometry.lengthM, unit)}</dd></div>
-          <div className={`robot-dimension-card ${fileGeometry ? 'is-verified' : 'is-default'}`}><dt>{t('robots.width')}<span>{fileGeometry ? <Icon name="check" size={12} /> : t('robots.bumperDefault')}</span></dt><dd>{formatLength(trajectory.geometry.widthM, unit)}</dd></div>
+          <div className={`robot-dimension-card ${fileGeometry ? 'is-verified' : 'is-default'}`}><dt>{t('robots.length')}</dt><dd>{formatLength(trajectory.geometry.lengthM, unit)}</dd></div>
+          <div className={`robot-dimension-card ${fileGeometry ? 'is-verified' : 'is-default'}`}><dt>{t('robots.width')}</dt><dd>{formatLength(trajectory.geometry.widthM, unit)}</dd></div>
           {trajectory.massKG !== undefined && <div><dt>{t('robots.mass')}</dt><dd>{trajectory.massKG.toFixed(0)} kg</dd></div>}
           {trajectory.holonomic !== undefined && <div><dt>{t('robots.drive')}</dt><dd>{t(trajectory.holonomic ? 'robots.driveHolonomic' : 'robots.driveDifferential')}</dd></div>}
         </dl>

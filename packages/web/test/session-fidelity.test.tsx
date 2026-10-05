@@ -95,10 +95,10 @@ describe('session fidelity across relaunch', () => {
       .find((b) => b.textContent?.includes('#11019'))!);
     const lane = document.querySelector('.sequence-track.is-editing .sequence-track-lane') as HTMLElement;
     fireEvent.click(lane.querySelector('.sequence-clip')!);
+    fireEvent.keyDown(lane.querySelector('.sequence-clip')!, { key: 'Backspace' });
     const m5 = [...document.querySelectorAll('.sequence-route-source')]
       .find((b) => /(^M5: |\/M5\.ghostauto: )/.test(b.getAttribute('aria-label') ?? ''))!;
     fireEvent.click(m5);
-    fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Back to playback' }));
     fireEvent(window, new Event('beforeunload'));
     first.unmount();

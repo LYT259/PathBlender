@@ -46,15 +46,13 @@ describe('auto sequence state', () => {
     expect(activeEndT(composed)).toBe(10); // 2 + 4 + 1 + 3
   });
 
-  it('returns the slot to its single route when every segment is removed', () => {
+  it('keeps an empty arrangement when the final segment is removed', () => {
     const composed = applySequenceSegments(fixture(), [{ id: 's1', routeId: 'route-a', waitBeforeS: 2 }]);
-    const reset = applySequenceSegments(composed, []);
-    expect(reset.sequence).toBeUndefined();
-    // The legacy single-route view shows the current route with its delay.
-    const view = sequenceViewFor(reset);
-    expect(view.segments).toHaveLength(1);
-    expect(view.segments[0]!.routeId).toBe('route-a');
-    expect(view.segments[0]!.waitBeforeS).toBe(2);
+    const empty = applySequenceSegments(composed, []);
+    expect(empty.sequence).toEqual({ segments: [] });
+    expect(sequenceViewFor(empty).segments).toEqual([]);
+    expect(sequenceViewFor(empty).routes).toEqual(sequenceViewFor(composed).routes);
+    expect(activeEndT(empty)).toBe(0);
   });
 
   it('heals dangling route ids onto the current route instead of dropping the segment', () => {
@@ -146,7 +144,7 @@ describe('auto sequence in the workspace', () => {
     fireEvent.blur(input);
   }
 
-  it('composition saves with the session as one draft commit, and undo restores the unapplied draft', async () => {
+  it('saves each operation immediately and undoes edits before undoing entry into the composer', async () => {
     render(<App />);
     const files = ['A', 'B'].map((name) => {
       const file = new File([raw], `${name}.ghostauto`, { type: 'application/json' });
@@ -156,45 +154,31 @@ describe('auto sequence in the workspace', () => {
     dropFiles(files);
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
     openComposer();
-    // Library routes live in the composer; clicking one appends to the draft.
     fireEvent.click(screen.getByRole('button', { name: /^B: / }));
-    setStart('10.3'); // B: 10.30-13.30, leaving a 2 s wait after A
+    setStart('10.3');
     fireEvent.click(screen.getByRole('button', { name: 'A, 0.00–8.30 s' }));
-    setStart('2'); // A: 2.00-10.30, an exact seam before B
-    expect(clipsInComposer()).toHaveLength(2);
-    // Edits stay unsaved: the session file still carries no sequence.
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
-    const before = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]);
-    expect(before.robots[0].sequence).toBeUndefined();
-    // Composer Save applies the whole draft as ONE history step.
-    fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
+    setStart('2');
     fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
     const saved = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]);
-    expect(saved.robots).toHaveLength(1);
     expect(saved.robots[0].sequence.segments).toHaveLength(2);
     expect(saved.robots[0].startDelayS).toBe(2);
-    const optionIds = saved.robots[0].routeOptions.map((o: { id: string }) => o.id);
-    expect(saved.robots[0].sequence.segments.map((s: AutoSequenceSegment) => s.routeId)).toEqual(optionIds);
-    // Undo walks back past the Save: the unsaved draft comes back for
-    // editing — the composer shows its two clips and offers Save/Cancel
-    // again — while the robot itself returns to the single imported route
-    // (session file: no sequence). The draft is restored, never applied.
-    fireEvent.click(screen.getByRole('button', { name: 'Undo', exact: true }));
-    expect(clipsInComposer()).toHaveLength(2);
-    expect(screen.getByRole('button', { name: 'Save', exact: true })).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
-    const undone = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]);
-    expect(undone.robots[0].sequence).toBeUndefined();
-    // Keep undoing through the draft edits (append, B's start, A's start —
-    // each its own history step) until the clean single-route draft.
-    for (let i = 0; i < 3; i++) {
-      fireEvent.click(screen.getByRole('button', { name: 'Undo', exact: true }));
-    }
+    // Real pointer order matters: pointerdown used to close the composer
+    // before Undo, causing Undo to reopen it and swallow the user's action.
+    const clickHistory = (name: string) => {
+      const button = screen.getByRole('button', { name, exact: true });
+      fireEvent.pointerDown(button); fireEvent.click(button);
+    };
+    clickHistory('Undo');
+    expect(screen.getByRole('button', { name: 'A, 0.00–8.30 s' })).toBeInTheDocument();
+    clickHistory('Undo'); clickHistory('Undo');
     expect(clipsInComposer()).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: 'Save', exact: true })).not.toBeInTheDocument();
+    clickHistory('Undo');
+    expect(document.querySelector('.sequence-composer')).toBeNull();
+    clickHistory('Redo');
+    expect(clipsInComposer()).toHaveLength(1);
   });
 
-  it('undoing a Cancel restores the unsaved draft for editing, never applied', async () => {
+  it('outside exit keeps edits, and undo restores the previous mode without discarding them', async () => {
     render(<App />);
     const files = ['A', 'B'].map((name) => {
       const file = new File([raw], `${name}.ghostauto`, { type: 'application/json' });
@@ -203,28 +187,15 @@ describe('auto sequence in the workspace', () => {
     });
     dropFiles(files);
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
-    openComposer();
-    fireEvent.click(screen.getByRole('button', { name: /^B: / }));
-    setStart('9'); // B: 9.00-17.30 in the draft (8.3 would overlap A)
-    expect(clipsInComposer()).toHaveLength(2);
-    // Cancel discards the draft and leaves the composer: the robot keeps
-    // playing its single imported route.
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
+    openComposer(); fireEvent.click(screen.getByRole('button', { name: /^B: / }));
+    fireEvent.pointerDown(document.body);
     expect(document.querySelector('.sequence-composer')).toBeNull();
-    expect(document.querySelector('.timeline-workspace')).not.toBeNull();
-    // Undo brings the editing session back: composer open, draft restored
-    // (two clips, Save offered) — and still nothing applied to the robot.
     fireEvent.click(screen.getByRole('button', { name: 'Undo', exact: true }));
-    expect(document.querySelector('.sequence-composer')).not.toBeNull();
     expect(clipsInComposer()).toHaveLength(2);
-    // Redo re-cancels: draft gone, composer closed, robot untouched.
     fireEvent.click(screen.getByRole('button', { name: 'Redo', exact: true }));
     expect(document.querySelector('.sequence-composer')).toBeNull();
-    // The restored draft stays editable: undo once more and Save it.
-    fireEvent.click(screen.getByRole('button', { name: 'Undo', exact: true }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
-    expect(clipsInComposer()).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: 'Save', exact: true })).not.toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
+    expect(JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]).robots[0].sequence.segments).toHaveLength(2);
   });
 
   it('restores a saved composition from a session file', async () => {

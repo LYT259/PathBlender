@@ -129,8 +129,7 @@ export function samplePoseAt(st: SessionTrajectory, globalT: number): Pose2d {
  * Full interpolated state (pose + velocities) on the global clock —
  * same clamping semantics as samplePoseAt. The MK5i wheel-steering
  * rendering needs each robot's vx/vy/ω, not just the pose. Returns
- * undefined for trajectories with no samples (and for empty sequences,
- * which fall back to the legacy path). Waiting/parked states of a composed
+ * undefined for legacy trajectories with no samples. Waiting/parked states of a composed
  * robot report zero velocity.
  */
 export function sampleStateAt(st: SessionTrajectory, globalT: number): TrajectorySample | undefined {
@@ -143,13 +142,13 @@ export function sampleStateAt(st: SessionTrajectory, globalT: number): Trajector
 
 export function activeStartT(st: SessionTrajectory): number {
   const resolved = resolveSequence(st);
-  if (resolved) return resolved[0]!.startS;
+  if (resolved) return resolved[0]?.startS ?? 0;
   return st.startDelayS;
 }
 
 export function activeEndT(st: SessionTrajectory): number {
   const resolved = resolveSequence(st);
-  if (resolved) return resolved[resolved.length - 1]!.endS;
+  if (resolved) return resolved[resolved.length - 1]?.endS ?? 0;
   return st.startDelayS + st.trajectory.durationS;
 }
 
@@ -340,7 +339,7 @@ export function deserializeSession(text: string): {
     };
     return {
       trajectory: traj,
-      startDelayS: sequence ? Math.max(0, sequence.segments[0]!.waitBeforeS) : r.startDelayS,
+      startDelayS: sequence ? Math.max(0, sequence.segments[0]?.waitBeforeS ?? 0) : r.startDelayS,
       color: typeof r.color === 'string' ? (LEGACY_DEFAULT_COLORS[r.color.toUpperCase()] ?? r.color) : r.color,
       visible: r.visible,
       routeId: r.routeId,
@@ -363,7 +362,7 @@ function validGeometry(value: RobotGeometry | undefined): boolean {
 function readSequence(value: AutoSequence | undefined): AutoSequence | undefined {
   if (value === undefined) return undefined;
   const segments = value?.segments;
-  if (!Array.isArray(segments) || segments.length === 0) return undefined;
+  if (!Array.isArray(segments)) return undefined;
   if (segments.some((segment) => !segment || typeof segment.id !== 'string' || typeof segment.routeId !== 'string')) {
     throw new Error('invalid auto sequence');
   }

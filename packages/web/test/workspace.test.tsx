@@ -166,9 +166,9 @@ describe('workspace workflow', () => {
     expect(screen.queryByRole('button', { name: 'Show or hide inspector' })).not.toBeInTheDocument();
     expect(document.querySelector('.workspace-inspector')).not.toHaveAttribute('hidden');
 
-    // Clearing the session is one more undoable step.
-    fireEvent.click(document.querySelector<HTMLElement>('summary[aria-label="More actions"]')!);
-    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    // Clearing the session is one more undoable step. (The clear entry now
+    // lives on the toolbar home button; the more-menu no longer lists it.)
+    fireEvent.click(screen.getByRole('button', { name: 'Back to home' }));
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(0));
     expect(undoBtn).toBeEnabled();
     expect(screen.queryByRole('button', { name: 'Show or hide path list' })).not.toBeInTheDocument();

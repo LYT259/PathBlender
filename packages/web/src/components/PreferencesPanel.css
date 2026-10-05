@@ -35,7 +35,9 @@
 .preferences-theme-choice input:checked ~ span:last-child { color: var(--fg); font-weight: 500; }
 .preferences-theme-choice input:focus-visible + .preferences-theme-preview { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 .preferences-product { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-.preferences-product > strong { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+.preferences-product-title { display: flex; align-items: center; gap: 12px; }
+.preferences-product-icon { display: block; object-fit: contain; flex-shrink: 0; }
+.preferences-product-title > strong { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
 .preferences-product > span { font-size: 13px; color: var(--fg); }
 .preferences-product .btn { margin-top: 8px; }
 .preferences-copy-status { min-height: 18px; margin: 0; color: var(--fg-dim); font-size: 11px; }
@@ -135,7 +137,7 @@
 .preferences-checkbox input:checked { background: var(--accent); }
 .preferences-checkbox input:checked::after { left: 13px; }
 .preferences-checkbox input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.preferences-update-check { margin: 0 16px 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+.preferences-update-check { margin: 0 16px 16px; padding-top: 14px; }
 .preferences-update-check .btn { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; }
 .preferences-update-check p:empty { display: none; }
 .preferences-update-check p { margin: 10px 0 0; color: var(--fg-dim); font-size: 12px; line-height: 1.6; }
