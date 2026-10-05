@@ -46,6 +46,23 @@ export function placeClip(clips: TimelineClip[], clip: TimelineClip): TimelineCl
   return canPlaceClip(clips, clip) ? [...clips.filter((other) => other.id !== clip.id), clip].sort((a, b) => a.startS - b.startS) : null;
 }
 
+/**
+ * Semantic equality of two arrangements: the same routes at the same absolute
+ * start times, compared on the timeline (order-independent — segment arrays
+ * that sort to the same placement play identically). Durations ride the route
+ * reference, so (routeId, startS) within a microsecond is the whole story —
+ * far below the 0.1 s pointer grid, far above double representation noise;
+ * moving a clip away and back to its saved time is NOT a change. Draft ids
+ * never matter — the saved arrangement regenerates them.
+ */
+export function sameClipLayout(a: readonly TimelineClip[], b: readonly TimelineClip[]): boolean {
+  if (a.length !== b.length) return false;
+  const byStart = (clips: readonly TimelineClip[]) => [...clips].sort((x, y) => x.startS - y.startS || x.routeId.localeCompare(y.routeId));
+  const sa = byStart(a);
+  const sb = byStart(b);
+  return sa.every((clip, i) => clip.routeId === sb[i]!.routeId && Math.abs(clip.startS - sb[i]!.startS) <= 1e-6);
+}
+
 /** Snap to exact neighbouring boundaries before the 0.1 s pointer grid.
  * Imported durations are never rounded or stretched. */
 export function snapClipStart(raw: number, clips: TimelineClip[], clip: TimelineClip, toleranceS: number): number {

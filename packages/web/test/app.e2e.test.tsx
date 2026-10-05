@@ -274,7 +274,8 @@ describe('App import → fusion → collision flow', () => {
     // auto-resolved (viewer-only positioning stays intact).
     expect(within(inspector).queryByRole('spinbutton')).not.toBeInTheDocument();
     expect(within(inspector).queryByRole('heading', { name: 'Auto sequence' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Arrange timeline' })).toBeInTheDocument();
+    // One per robot card plus the footer compose action.
+    expect(screen.getAllByRole('button', { name: 'Arrange timeline' })).toHaveLength(3);
     expect(screen.queryByRole('button', { name: /resolve|adjust/i })).not.toBeInTheDocument();
   });
 
@@ -363,13 +364,10 @@ describe('artwork style switcher vs 3D', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '3D', exact: true }));
     expect(style()).toBeNull(); // 3D: official model replaces the artwork
-    const trails = screen.getByRole('checkbox', { name: 'trails' });
-    expect(trails).toBeChecked();
-    fireEvent.click(trails);
-    expect(trails).not.toBeChecked();
+    // Tails are always on — the toggle was removed for good (2026-10-05).
+    expect(screen.queryByRole('checkbox', { name: 'trails' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: '2D', exact: true }));
     expect(style()).not.toBeNull(); // back to 2D: the choice returns
-    expect(screen.getByRole('checkbox', { name: 'trails' })).not.toBeChecked();
   });
 });

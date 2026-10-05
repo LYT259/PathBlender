@@ -29,6 +29,15 @@ interface Props {
    *  ruler's floor so an empty/short session still spans the whole auto. */
   autoPeriodS: number;
   duration: number;
+  /**
+   * Duration of the VISIBLE robots only (bug report 2026-10-05): the
+   * 'Current paths' range follows what is on the field right now, so hiding
+   * the longest robot shortens the loop to the longest visible one. 'Full
+   * timeline' keeps the whole session's extent, and the ruler never shrinks
+   * mid-session; collision checks always run on the visible set
+   * independently of either range.
+   */
+  visibleDuration?: number;
   playback: Playback;
   playbackRange?: PlaybackRange;
   onPlaybackRangeChange?: (range: PlaybackRange) => void;
@@ -53,10 +62,11 @@ function TransportIcon({ kind }: { kind: 'rewind' | 'back' | 'play' | 'pause' | 
   );
 }
 
-export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onEditTeam, onJump, guide, composeAction }: Props) {
+export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, visibleDuration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onEditTeam, onJump, guide, composeAction }: Props) {
   const { t: tr } = useI18n();
   const { t, setT, playing, setPlaying, speed, setSpeed } = playback;
-  const end = playbackEnd(duration, autoPeriodS, playbackRange);
+  const rangeDuration = playbackRange === 'paths' && visibleDuration !== undefined ? visibleDuration : duration;
+  const end = playbackEnd(rangeDuration, autoPeriodS, playbackRange);
   const currentT = Math.min(end, Math.max(0, t));
   // Ruler, range, activity, markers, and playhead all share this domain.
   const { axisMax, tickStep } = timelineScale(duration, autoPeriodS);
@@ -76,6 +86,8 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
     if (onJump) onJump(Math.min(end, Math.max(0, time)), robotIds);
     else seek(time, selectedRobotId);
   };
+  // The option label always names the current 'paths' end — visible robots only.
+  const pathsEnd = playbackEnd(visibleDuration ?? duration, autoPeriodS, 'paths');
 
   return (
     <section className="timeline timeline-workspace" aria-label={tr('timeline.title')}>
@@ -89,7 +101,7 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, pla
           onChange={(event) => onPlaybackRangeChange(event.target.value as PlaybackRange)}
         >
           <option value="full">{tr('timeline.rangeFull')}</option>
-          <option value="paths">{tr('timeline.rangePaths', { seconds: Number(playbackEnd(duration, autoPeriodS, 'paths').toFixed(2)) })}</option>
+          <option value="paths">{tr('timeline.rangePaths', { seconds: Number(pathsEnd.toFixed(2)) })}</option>
         </select>}
         {robots.length > 0 && (
           <div className="timeline-legend">
