@@ -88,7 +88,7 @@ describe('welcome flow', () => {
     expect(screen.getByRole('combobox', { name: 'Game season' })).toHaveValue('chargedup-2023');
     fireEvent.click(screen.getByText('#0001', { selector: '.robot-name' }));
     expect(screen.getByRole('region', { name: 'Straight Run', exact: true })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Arrange timeline' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
     fireEvent.click(screen.getByRole('button', { name: /^Straight Run, 1\.25–/ }));
     expect(screen.getByRole('spinbutton', { name: 'Start' })).toHaveValue(1.25);
     expect(screen.queryByRole('region', { name: 'Import paths to get started' })).not.toBeInTheDocument();
@@ -197,12 +197,15 @@ describe('welcome flow', () => {
   it('ending the example lands on the welcome page after a route pick adopts a demo robot', async () => {
     render(<App />);
     await openExample();
-    // Picking a library route sets routeId, which adopts the robot — it is
-    // no longer an example robot (the reported "exits into another
-    // workspace" flow).
-    const picker = screen.getByRole('combobox', { name: 'Active route for #8814' });
-    const options = within(picker).getAllByRole('option') as HTMLOptionElement[];
-    fireEvent.change(picker, { target: { value: options[1]!.value } });
+    // Replacing a demo robot's route in the composer and saving sets its
+    // routeId, which adopts the robot — it is no longer an example robot
+    // (the reported "exits into another workspace" flow).
+    fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
+    const lane = document.querySelector('.sequence-track.is-editing .sequence-track-lane') as HTMLElement;
+    fireEvent.click(within(lane).getAllByRole('button', { name: /, \d+\.\d+–/ })[0]!);
+    fireEvent.click([...document.querySelectorAll('.sequence-route-source')][1]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to playback' }));
     expect(screen.getByRole('button', { name: 'End example' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
     expect(screen.getByRole('region', { name: 'Import paths to get started' })).toBeInTheDocument();
@@ -210,22 +213,22 @@ describe('welcome flow', () => {
     expect(screen.queryByRole('button', { name: 'End example' })).not.toBeInTheDocument();
   });
 
-  it('lists each route exactly once in the picker, with the library L1 as the current one', async () => {
+  it('lists each library route exactly once in the composer, with the current L1 placed', async () => {
     render(<App />);
     await openExample();
-    // Regression: the off-library pseudo option duplicated L1 next to the
-    // library's own L1 (the example robot carries no routeId by design).
-    const picker = screen.getByRole('combobox', { name: 'Active route for #8814' });
-    const options = within(picker).getAllByRole('option') as HTMLOptionElement[];
-    expect(options).toHaveLength(22);
-    expect(options.filter((o) => o.textContent === 'L1')).toHaveLength(1);
-    expect(options.every((o) => o.value !== '')).toBe(true);
-    expect(picker).toHaveValue(options.find((o) => o.textContent === 'L1')!.value);
-    const second = screen.getByRole('combobox', { name: 'Active route for #11019' });
-    const secondOptions = within(second).getAllByRole('option') as HTMLOptionElement[];
-    expect(secondOptions).toHaveLength(20);
-    expect(secondOptions.filter((o) => o.textContent === 'L1')).toHaveLength(1);
-    expect(second).toHaveValue(secondOptions.find((o) => o.textContent === 'L1')!.value);
+    // Regression: the off-library pseudo route used to duplicate L1 next to
+    // the library's own L1 (the example robot carries no routeId by design).
+    fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
+    const sources = () => [...document.querySelectorAll('.sequence-route-source')];
+    const placedLabel = () => document.querySelector('.sequence-track.is-editing .sequence-clip')!.getAttribute('aria-label');
+    expect(sources()).toHaveLength(22);
+    expect(sources().filter((b) => b.getAttribute('aria-label')?.startsWith('L1: '))).toHaveLength(1);
+    expect(placedLabel()).toMatch(/^L1,/);
+    // Switch to the second demo robot inside the composer.
+    fireEvent.click([...document.querySelectorAll('.sequence-track-name')].find((b) => b.textContent?.includes('#11019'))!);
+    expect(sources()).toHaveLength(20);
+    expect(sources().filter((b) => b.getAttribute('aria-label')?.startsWith('L1: '))).toHaveLength(1);
+    expect(placedLabel()).toMatch(/^L1,/);
   });
 
   it("hides a robot's conflicts with the robot, and brings them back", async () => {
@@ -259,10 +262,10 @@ describe('welcome flow', () => {
     const route = new File([sampleText], 'straight_run.ghostauto');
     Object.defineProperty(route, 'webkitRelativePath', { value: 'routes/straight_run.ghostauto' });
     fireEvent.drop(window, { dataTransfer: { files: [route] } });
-    await screen.findByRole('combobox', { name: 'Active route for #0001' });
+    await screen.findByText('#0001', { selector: '.robot-name' });
     expect(document.querySelectorAll('.robot-library-row')).toHaveLength(3);
-    expect(screen.getByRole('combobox', { name: 'Active route for #8814' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Active route for #11019' })).toBeInTheDocument();
+    expect(screen.getByText('#8814', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('#11019', { selector: '.robot-name' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
     expect(screen.getByRole('region', { name: 'Import paths to get started' })).toBeInTheDocument();
     expect(document.querySelectorAll('.robot-library-row')).toHaveLength(0);

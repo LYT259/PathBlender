@@ -48,7 +48,6 @@ import {
 } from '../zoom';
 
 export interface FieldCanvasHandle {
-  exportPng: (onDone?: (ok: boolean) => void) => void;
   exportGif: (onDone?: (ok: boolean) => void) => void;
   fit: () => void;
 }
@@ -592,26 +591,6 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   }, [field, robots, currentT, conflicts, bounds, showTrail, imgReady, spriteReady, theme, t, requestDraw]);
 
   useImperativeHandle(ref, () => ({
-    exportPng: (onDone?: (ok: boolean) => void) => {
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        onDone?.(false);
-        return;
-      }
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          onDone?.(false);
-          return;
-        }
-        void saveBytes(
-          `pathblender-${new Date().toISOString().replace(/[:.]/g, '-')}.png`,
-          'png',
-          blob,
-        )
-          .then((ok) => onDone?.(ok))
-          .catch(() => onDone?.(false));
-      }, 'image/png');
-    },
     exportGif: (onDone?: (ok: boolean) => void) => {
       const canvas = canvasRef.current;
       if (!canvas) {

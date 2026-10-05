@@ -42,7 +42,8 @@ const FieldCanvas3D = lazy(() => import('./components/FieldCanvas3D').then((modu
 import { Timeline } from './components/Timeline';
 import { SequenceTimelineComposer } from './components/SequenceTimelineComposer';
 import { RobotList, RobotInspector } from './components/RobotList';
-import { applySequenceSegments, type AutoSequenceSegment } from './auto-sequence-state';
+import { applySequenceSegments, sequenceViewFor, type AutoSequenceSegment } from './auto-sequence-state';
+import { clipsFor, sameClipLayout } from './sequence-timeline-clips';
 import { applyUploadedProfile } from './robot-profile-ui';
 import { checkSequenceJoins, checkSequenceTiming } from '@pathblender/core';
 import { ConflictPanel } from './components/ConflictPanel';
@@ -144,13 +145,11 @@ function AppBody() {
   }, [mouseControlsScheme, reverseScroll]);
   const { channel: updateChannel } = useUpdateChannel();
   const [initialFieldPref] = useState(loadFieldPref);
-  const { robots: sourceRobots, alliance, setRobots, setScene, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, canUndo, canRedo } = useSessionHistory(initialFieldPref);
+  const { robots: sourceRobots, alliance, setRobots, setScene, setDrafts, setComposerOpen, change, drafts, composerOpen, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, canUndo, canRedo } = useSessionHistory(initialFieldPref);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot'>('checks');
-  const [sequenceTimelineOpen, setSequenceTimelineOpen] = useState(false);
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
   const [view3D, setView3D] = useState(loadView3D);
-  const [showTrail, setShowTrail] = useState(true);
   const [showPrefs, setShowPrefs] = useState(false);
   function openPreferences() {
     if (!IS_DESKTOP) { setShowPrefs(true); return; }
@@ -209,9 +208,16 @@ function AppBody() {
   // Field/variant memory is written ONLY from the user's own selects —
   // session-file restores must not overwrite it.
 
+  const visible = useMemo(() => seasonRobots.filter((r) => r.visible), [seasonRobots]);
   const duration = sessionDuration(robots);
+  // Bug report 2026-10-05: with playback range 'Current paths', hiding the
+  // longest robot must shorten the loop to the longest VISIBLE one —
+  // including mid-playback hides and every-robot-hidden (playback simply
+  // stops, like an empty session). 'Full timeline' and collision checks keep
+  // using their own scopes.
+  const visibleDuration = sessionDuration(visible);
   const [playbackRange, setPlaybackRange] = usePlaybackRange();
-  const playback = usePlayback(playbackEnd(duration, field.autoPeriodS, playbackRange));
+  const playback = usePlayback(playbackEnd(playbackRange === 'paths' ? visibleDuration : duration, field.autoPeriodS, playbackRange));
   const { t, setT } = playback;
   useEffect(() => {
     if ((playback.playing || t > 0) && showPlayTip) dismissPlayTip();
@@ -221,7 +227,6 @@ function AppBody() {
   const undoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); undo(); }, [playback.setPlaying, undo]);
   const redoSession = useCallback(() => { exampleRequest.current += 1; setExampleLoading(false); playback.setPlaying(false); redo(); }, [playback.setPlaying, redo]);
 
-  const visible = useMemo(() => seasonRobots.filter((r) => r.visible), [seasonRobots]);
   // Colorblind-safe robot palette (§7.3-3): the toggle remaps default
   // palette colors in place; custom colors pass through (core remap).
   const [colorblind, setColorblind] = useState(readColorblind);
@@ -411,28 +416,6 @@ function AppBody() {
     await importFiles(list, { fromFolder: true });
   }, [importFiles, tr]);
 
-  /** Switch within this team's own routes; keep identity and slot settings. */
-  const pickRoute = useCallback((robotId: string, routeId: string) => {
-    setRobots((prev) => prev.map((robot) => {
-      if (robot.trajectory.id !== robotId) return robot;
-      const route = robot.routeOptions?.find((option) => option.id === routeId);
-      if (!route) return robot;
-      const traj = route.trajectory;
-      const profile = robot.profileOptions?.find((option) => option.id === robot.profileId)?.profile;
-      const geometry = profile ? {
-        geometry: profile.geometry,
-        moduleLocations: profile.moduleLocations,
-        geometrySource: 'file' as const,
-      } : {};
-      return { ...robot, routeId: route.id, trajectory: {
-        ...traj, ...geometry, id: robot.trajectory.id, name: displayName(traj),
-        teamNumber: robot.trajectory.teamNumber,
-        displayName: robot.trajectory.displayName,
-        teamName: robot.trajectory.teamName || traj.teamName,
-      } };
-    }));
-  }, [setRobots]);
-
   /** Imported profiles also belong to one team. */
   const applyProfile = useCallback((robotId: string, profileId: string) => {
     setRobots((prev) => prev.map((robot) => {
@@ -522,24 +505,87 @@ function AppBody() {
   const openSequenceFor = useCallback((id: string) => {
     playback.setPlaying(false);
     selectRobot(id);
-    setSequenceTimelineOpen(true);
-  }, [playback.setPlaying, selectRobot]);
+    setComposerOpen(true);
+  }, [playback.setPlaying, selectRobot, setComposerOpen]);
   const selectedRobot = robots.find((r) => r.trajectory.id === selectedId) ?? robots[0];
   // Auto composition: lives on the robot itself (source store), so undo/redo,
   // autosave and session export all follow the ordinary robot history. The
   // view is derived from the source robot; joins/timing are frame-invariant
   // (mirrors preserve distances, speeds and heading gaps).
   const sourceSelectedRobot = sourceRobots.find((robot) => robot.trajectory.id === selectedRobot?.trajectory.id);
-  const sequenceJoins = useMemo(
-    () => (sourceSelectedRobot ? checkSequenceJoins(sourceSelectedRobot) : []),
-    [sourceSelectedRobot],
+  // The composer previews its unsaved draft: clips, joins and timing all read
+  // the robot AS IF the draft were applied, while playback and collision
+  // checks keep reading the saved arrangement until Save commits it.
+  const draftSegments = sourceSelectedRobot ? drafts[sourceSelectedRobot.trajectory.id] : undefined;
+  const composingRobot = useMemo(
+    () => (sourceSelectedRobot && draftSegments ? applySequenceSegments(sourceSelectedRobot, draftSegments) : sourceSelectedRobot),
+    [sourceSelectedRobot, draftSegments],
   );
-  const sequenceTiming = sourceSelectedRobot ? checkSequenceTiming(sourceSelectedRobot, field.autoPeriodS) : undefined;
-  const changeSequence = useCallback((segments: AutoSequenceSegment[]) => {
+  const sequenceJoins = useMemo(
+    () => (composingRobot ? checkSequenceJoins(composingRobot) : []),
+    [composingRobot],
+  );
+  const sequenceTiming = composingRobot ? checkSequenceTiming(composingRobot, field.autoPeriodS) : undefined;
+  const savedView = useMemo(() => sequenceViewFor(sourceSelectedRobot), [sourceSelectedRobot]);
+  // Semantic dirty state: the same routes at the same absolute starts are
+  // clean, so moving a clip away and back to its saved time clears the flag —
+  // Reset disables and Save/Cancel hide again (user requirement 2026-10-05).
+  const hasDraftChanges = useMemo(() => {
+    if (!sourceSelectedRobot || !draftSegments) return false;
+    return !sameClipLayout(clipsFor(draftSegments, savedView.routes), clipsFor(savedView.segments, savedView.routes));
+  }, [sourceSelectedRobot, draftSegments, savedView]);
+  /** Every composer edit lands on the active team's draft, never the robots. */
+  const editDraft = useCallback((segments: AutoSequenceSegment[]) => {
     if (!sourceSelectedRobot) return;
     const id = sourceSelectedRobot.trajectory.id;
-    setRobots((prev) => prev.map((robot) => robot.trajectory.id === id ? applySequenceSegments(robot, segments) : robot));
-  }, [sourceSelectedRobot, setRobots]);
+    setDrafts((prev) => ({ ...prev, [id]: segments }));
+  }, [sourceSelectedRobot, setDrafts]);
+  const draftActions = useMemo(() => ({
+    hasChanges: hasDraftChanges,
+    // A saved arrangement (or legacy single route) always exists to revert to.
+    canReset: true,
+    onReset: () => {
+      if (!sourceSelectedRobot) return;
+      const id = sourceSelectedRobot.trajectory.id;
+      setDrafts((prev) => {
+        if (!(id in prev)) return prev;
+        const { [id]: _dropped, ...rest } = prev;
+        return rest;
+      });
+    },
+    onSave: () => {
+      if (!sourceSelectedRobot || !draftSegments) return;
+      const id = sourceSelectedRobot.trajectory.id;
+      // One history step: the arrangement lands on the robot and the draft
+      // dissolves — undo returns BOTH (the draft comes back, unapplied).
+      // Saving also marks the slot's chosen route from the first segment,
+      // which adopts a demo robot the same way the old route picker did.
+      change((prev) => ({
+        ...prev,
+        robots: prev.robots.map((robot) => {
+          if (robot.trajectory.id !== id) return robot;
+          const next = applySequenceSegments(robot, draftSegments);
+          const firstRouteId = next.sequence?.segments[0]?.routeId;
+          return firstRouteId && (robot.routeOptions ?? []).some((option) => option.id === firstRouteId)
+            ? { ...next, routeId: firstRouteId }
+            : next;
+        }),
+        drafts: Object.fromEntries(Object.entries(prev.drafts).filter(([key]) => key !== id)),
+      }));
+    },
+    onCancel: () => {
+      // Cancel discards the draft and leaves the composer — as ONE history
+      // step, so undo brings the unsaved draft back for editing (user
+      // decision 2026-10-05) without ever applying it to playback.
+      if (!sourceSelectedRobot) { setComposerOpen(false); return; }
+      const id = sourceSelectedRobot.trajectory.id;
+      change((prev) => ({
+        ...prev,
+        composerOpen: false,
+        drafts: Object.fromEntries(Object.entries(prev.drafts).filter(([key]) => key !== id)),
+      }));
+    },
+  }), [hasDraftChanges, sourceSelectedRobot, draftSegments, setDrafts, change, setComposerOpen]);
   const jumpToSeam = useCallback((time: number) => {
     playback.setPlaying(false);
     setT(time);
@@ -549,9 +595,39 @@ function AppBody() {
 
 
 
-  const removeRobot = useCallback((id: string) => {
-    setRobots((prev) => prev.filter((r) => r.trajectory.id !== id));
-  }, []);
+  /**
+   * Per-team left/right mirror (user-approved, 2026-10-05): the flag lives on
+   * the slot and the alliance view derives it, so imported samples stay
+   * untouched, the toggle is an involution, undo/redo follow the ordinary
+   * history, and routes added to the team inherit the state. Playback pauses
+   * so the whole-slot pose swap never reads as motion; the playhead stays.
+   */
+  const toggleMirror = useCallback((id: string) => {
+    playback.setPlaying(false);
+    setRobots((prev) => prev.map((r) => r.trajectory.id === id ? { ...r, mirrored: !(r.mirrored === true) } : r));
+  }, [playback.setPlaying, setRobots]);
+  const mirroredIds = useMemo(
+    () => new Set(robots.filter((r) => r.mirrored === true).map((r) => r.trajectory.id)),
+    [robots],
+  );
+
+  /**
+   * Context-menu removal (2026-10-05): one history step covering the robots,
+   * the slot's unsaved draft and the composer if it was editing that slot.
+   * Only the session slot goes — the source files on disk are never touched.
+   */
+  const removeSlot = useCallback((id: string) => {
+    change((prev) => {
+      const robots = prev.robots.filter((r) => r.trajectory.id !== id);
+      return {
+        ...prev,
+        robots,
+        drafts: Object.fromEntries(Object.entries(prev.drafts).filter(([key]) => key !== id)),
+        composerOpen: prev.composerOpen && robots.length > 0,
+      };
+    });
+    setSelectedId((current) => (current === id ? null : current));
+  }, [change]);
 
   const saveSession = useCallback(() => {
     const file = JSON.parse(
@@ -643,14 +719,8 @@ function AppBody() {
     return () => window.removeEventListener('beforeunload', flush);
   }, [robots, fieldId, field, selectedId, t, playbackRange]);
 
-  const exportPng = useCallback(() => {
-    if (view3D) {
-      flash(tr('toast.pngOnly2d'));
-      return;
-    }
-    canvasRef.current?.exportPng((ok) => flash(tr(ok ? 'toast.pngSaved' : 'toast.pngFailed'), ok ? 'ok' : 'error'));
-  }, [view3D, flash, tr]);
-
+  // PNG export was removed for good (user decision 2026-10-05, recorded in
+  // the deletion ledger) — do not re-add it. GIF stays.
   const exportGif = useCallback(() => {
     if (view3D) {
       flash(tr('toast.gifOnly2d'));
@@ -724,7 +794,8 @@ function AppBody() {
     setT(0);
     playback.setPlaying(false);
     setSelectedId(null);
-  }, [setT, setRobots, playback.setPlaying]);
+    setComposerOpen(false);
+  }, [setT, setRobots, playback.setPlaying, setComposerOpen]);
   // Desktop: native menu commands and visible buttons share the same handlers.
   // The menu is rebuilt in the app language whenever it changes. The shell
   // dispatches `pb-menu-*` DOM CustomEvents via eval (ADR-0003) — Tauri
@@ -740,12 +811,11 @@ function AppBody() {
     const unbinds = [
       on('import', () => importInputRef.current?.click()),
       on('save', () => saveSession()),
-      on('png', () => exportPng()),
       on('clear', () => clearAll()),
       on('check-update', () => void checkForUpdates()),
     ];
     return () => unbinds.forEach((u) => u());
-  }, [saveSession, exportPng, clearAll, flash, tr, checkForUpdates]);
+  }, [saveSession, clearAll, flash, tr, checkForUpdates]);
 
   // Desktop open-with: the shell evals a `pb-open-files` CustomEvent with
   // [name, base64] pairs (launch-argument files and native-picker imports
@@ -794,6 +864,17 @@ function AppBody() {
   const issueCount = conflicts.length + bounds.length;
   const rightOpen = hasRobots;
   const openImport = () => importInputRef.current?.click();
+  // The repo link must open the user's system browser from the desktop shell
+  // (handoff 2026-10-05): inside WKWebView/WebKitGTK a plain `target="_blank"`
+  // anchor is not routed outward, so the desktop path asks the Rust shell to
+  // open it (allowlisted there); the web keeps the ordinary anchor.
+  const openGithub = (e: { preventDefault: () => void }) => {
+    if (!IS_DESKTOP) return;
+    e.preventDefault();
+    void import('@tauri-apps/api/core')
+      .then(({ invoke }) => invoke('open_external', { url: GITHUB_URL }))
+      .catch(() => { window.open(GITHUB_URL, '_blank', 'noopener'); });
+  };
   const tryExample = async () => {
     const request = ++exampleRequest.current;
     setExampleLoading(true);
@@ -814,9 +895,9 @@ function AppBody() {
       setSelectedId(example.robots[0]?.trajectory.id ?? null);
       setInspectorMode('checks');
       setView3D(false);
-      setShowTrail(true);
       setErrors([]);
       setT(0);
+      setComposerOpen(false);
     } catch {
       if (request === exampleRequest.current) flash(tr('welcome.exampleFailed'), 'error');
     } finally {
@@ -834,6 +915,7 @@ function AppBody() {
     setSelectedId(null);
     playback.setPlaying(false);
     setT(0);
+    setComposerOpen(false);
   };
   const jumpToIssue = (time: number, robotIds: string[] = []) => {
     dismissCheckTip();
@@ -895,18 +977,17 @@ function AppBody() {
           <button className="tool-btn square" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
           <button className="tool-btn square" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
         </div>}
+        {hasRobots && <a className="tool-btn square toolbar-github" href={GITHUB_URL} target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub" onClick={openGithub}><Icon name="github" size={18} /></a>}
         <span className="toolbar-spacer" data-tauri-drag-region="" />
         {!VIEWER_ONLY && hasRobots && <button className="tool-btn save-action" onClick={saveSession} title={tr('actions.saveHint')}>{tr('actions.save')}</button>}
         {hasRobots && <details className="workspace-menu">
           <summary className="tool-btn square" aria-label={tr('workspace.more')} title={tr('workspace.more')}><Icon name="more" /></summary>
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
             {!VIEWER_ONLY && <button className="menu-save-action" disabled={!hasRobots} onClick={saveSession}>{tr('actions.save')}</button>}
-            {!VIEWER_ONLY && <button disabled={!hasRobots || view3D} onClick={exportPng} title={view3D ? tr('toast.pngOnly2d') : undefined}>{tr('actions.png')}</button>}
             {!VIEWER_ONLY && <button disabled={!hasRobots || view3D} onClick={exportGif} title={view3D ? tr('toast.gifOnly2d') : undefined}>{tr('actions.gif')}</button>}
             {hasRobots && <button onClick={() => setShowHeatmap((v) => !v)} aria-pressed={showHeatmap}>{tr(showHeatmap ? 'actions.heatmapOff' : 'actions.heatmapOn')}</button>}
             {hasRobots && <button onClick={abToggle}>{tr('actions.abCompare')}</button>}
             <button disabled={!hasRobots} onClick={clearAll}>{tr('actions.clear')}</button>
-            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub ↗</a>
             {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
           </div>
         </details>}
@@ -916,7 +997,7 @@ function AppBody() {
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
         <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
-          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onPickRoute={pickRoute} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} />}
+          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={(id) => { selectRobot(id); playback.setPlaying(false); setComposerOpen(true); }} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} mirroredIds={mirroredIds} />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
             {hasExample && <div className="example-notice"><strong>{tr('welcome.exampleBadge')}</strong><span>{tr('welcome.exampleNotice')}</span><button className="btn small" onClick={exitExample}>{tr('welcome.exitExample')}</button></div>}
             <div className="canvas-slot">
@@ -970,11 +1051,10 @@ function AppBody() {
                 )}
                 {/* The rest of the bar needs a robot to act on, which the gate
                     above now guarantees. */}
-                <button className="tool-btn square" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="fit" /></button>
-                <label className="switch trails-control"><input type="checkbox" checked={showTrail} onChange={(e) => setShowTrail(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.trails')}</span></label>
+                <button className="tool-btn canvas-recenter" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="recenter" size={17} /><span>{tr('canvas.fit')}</span></button>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail={showTrail} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
-                <FieldCanvas ref={canvasRef} showTrail={showTrail} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} /></Suspense> :
+                <FieldCanvas ref={canvasRef} showTrail field={field} fieldImageUrl={fieldImageUrl} robots={visible} currentT={t} conflicts={conflicts} bounds={bounds} />}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => setInspectorMode('checks')} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
           </section>
@@ -983,13 +1063,13 @@ function AppBody() {
               <button className={inspectorMode === 'checks' ? 'on' : ''} aria-pressed={inspectorMode === 'checks'} onClick={() => setInspectorMode('checks')}>{tr('workspace.checks')}{issueCount > 0 && <span className="tab-count">{issueCount}</span>}</button>
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
             </div></div>
-            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} toleranceS={toleranceS} onToleranceChange={setToleranceS} fieldName={field.name} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
-            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot ? withSeasonGeometry(selectedRobot, field.year) : undefined} onRemove={removeRobot} libraryProfiles={selectedRobot?.profileOptions ?? []} onApplyProfile={applyProfile} /></div>}
+            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} minSeparation={minSep} onJump={jumpToIssue} toleranceS={toleranceS} onToleranceChange={setToleranceS} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
+            {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot ? withSeasonGeometry(selectedRobot, field.year) : undefined} libraryProfiles={selectedRobot?.profileOptions ?? []} onApplyProfile={applyProfile} /></div>}
           </aside>
         </main>
         {/* Playback spans the full workspace, below both side panels. */}
-        {hasRobots && !sequenceTimelineOpen && <footer className="app-footer"><Timeline composeAction={<button className="btn small" onClick={() => { playback.setPlaying(false); setSequenceTimelineOpen(true); }}>{tr('sequence.arrange')}</button>} robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
-        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={sequenceTimelineOpen} onClose={() => setSequenceTimelineOpen(false)} onChange={changeSequence} joins={sequenceJoins} timing={sequenceTiming} onJump={jumpToSeam} />}
+        {hasRobots && !composerOpen && <footer className="app-footer"><Timeline composeAction={<button className="btn small" onClick={() => { playback.setPlaying(false); setComposerOpen(true); }}>{tr('sequence.arrange')}</button>} robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
+        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={composerOpen} onClose={() => setComposerOpen(false)} draft={draftSegments} draftActions={draftActions} onChange={editDraft} joins={sequenceJoins} timing={sequenceTiming} onJump={jumpToSeam} />}
 
       {cfOpen && <CustomFieldPanel
         open

@@ -1,4 +1,4 @@
-import { applyAllianceChange, fieldById, type Alliance, type FieldPackage, type SessionRouteOption, type SessionTrajectory } from '@pathblender/core';
+import { applyAllianceChange, fieldById, mirrorAcrossLongAxis, type Alliance, type FieldPackage, type SessionRouteOption, type SessionTrajectory, type Trajectory } from '@pathblender/core';
 
 /**
  * Derive one alliance view without modifying the imported route library.
@@ -6,12 +6,19 @@ import { applyAllianceChange, fieldById, type Alliance, type FieldPackage, type 
  * sample their segments through `routeOptions` (core resolves by route id),
  * so options left in the blue frame would render/simulate in the wrong
  * place under the red view. The flip is a derived copy; the source robots
- * (and what `pickRoute` reads) stay blue.
+ * (and what the composer replaces routes in) stay blue.
+ *
+ * The per-team mirror (2026-10-05) rides the same derivation, applied after
+ * the alliance flip so one left/right definition serves both alliances and
+ * the imported samples are never mutated. Mirroring the whole slot — its
+ * current trajectory AND every route option — keeps compositions, joins and
+ * the library consistent; new routes inherit the flag because it lives on
+ * the slot, not on any route.
  */
 export function robotsForAlliance(robots: SessionTrajectory[], alliance: Alliance, field: FieldPackage): SessionTrajectory[] {
   return robots.map((robot) => {
-    const trajectory = applyAllianceChange(robot.trajectory, alliance, field);
-    const routeOptions = flipRouteOptions(robot.routeOptions, alliance, field);
+    const trajectory = viewTrajectory(robot.trajectory, alliance, field, robot.mirrored === true);
+    const routeOptions = flipRouteOptions(robot.routeOptions, alliance, field, robot.mirrored === true);
     if (trajectory === robot.trajectory && routeOptions === robot.routeOptions) return robot;
     const patch: Partial<SessionTrajectory> = { trajectory };
     if (routeOptions !== robot.routeOptions) patch.routeOptions = routeOptions;
@@ -19,15 +26,21 @@ export function robotsForAlliance(robots: SessionTrajectory[], alliance: Allianc
   });
 }
 
+function viewTrajectory(trajectory: Trajectory, alliance: Alliance, field: FieldPackage, mirrored: boolean): Trajectory {
+  const flipped = applyAllianceChange(trajectory, alliance, field);
+  return mirrored ? mirrorAcrossLongAxis(flipped, field) : flipped;
+}
+
 function flipRouteOptions(
   options: SessionRouteOption[] | undefined,
   alliance: Alliance,
   field: FieldPackage,
+  mirrored: boolean,
 ): SessionRouteOption[] | undefined {
   if (!options) return options;
   let changed = false;
   const flipped = options.map((option) => {
-    const trajectory = applyAllianceChange(option.trajectory, alliance, field);
+    const trajectory = viewTrajectory(option.trajectory, alliance, field, mirrored);
     if (trajectory === option.trajectory) return option;
     changed = true;
     return { ...option, trajectory };

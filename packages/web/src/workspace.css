@@ -56,7 +56,7 @@ body.desktop.desktop-macos .workspace-toolbar { padding-left: 100px; }
 .tool-btn.square { width: 32px; padding: 0; flex: none; }
 .tool-btn[aria-pressed='true'] { background: var(--seg-bg); }
 .tool-btn:active:not(:disabled), .btn:active:not(:disabled) { background: var(--hover); filter: none; }
-.history-controls { display: flex; margin-left: 8px; gap: 1px; }
+.history-controls { display: flex; margin-left: 0; gap: var(--toolbar-control-gap, 8px); }
 .btn { min-height: 30px; padding: 5px 11px; font-size: 12px; border-radius: 7px; font-weight: 500; }
 .btn.small { min-height: 27px; }
 .btn.accent { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
@@ -94,8 +94,6 @@ body.desktop.desktop-macos .workspace-toolbar { padding-left: 100px; }
 .alliance-toggle button { min-width: 44px; font-size: 12px; }
 .alliance-toggle button.alliance-blue.on { background: #006cdb; color: #fff; }
 .alliance-toggle button.alliance-red.on { background: #ce3340; color: #fff; }
-.trails-control { padding-left: 3px; }
-.sw-text { font-size: 11px; }
 .workspace-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 32px; min-height: 0; overflow-y: auto; background: var(--bg-panel); }
 .workspace-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; padding: 5px 14px; background: var(--bar-bg); color: var(--fg-dim); border-top: 1px solid var(--border); font-size: 10px; }
 .workspace-status button { border: 0; padding: 0; background: none; color: var(--fg-dim); font-size: inherit; display: flex; gap: 5px; align-items: center; cursor: pointer; }
@@ -149,7 +147,6 @@ body.desktop.desktop-macos .workspace-toolbar { padding-left: 100px; }
   .app-body.workspace-body.with-inspector { grid-template-columns: minmax(0, 1fr) 280px; }
   .workspace-canvas-bar { padding: 8px; }
   .field-options { flex-wrap: wrap; }
-  .trails-control .sw-text { display: none; }
 }
 @media (max-width: 900px) {
   .workspace-toolbar { gap: 3px; padding-inline: 10px; }
@@ -200,3 +197,10 @@ body.desktop.desktop-macos .workspace-toolbar { padding-left: 100px; }
 }
 .workspace-canvas-bar .seg button { height: 26px; white-space: nowrap; }
 .field-options { flex-wrap: wrap; }
+
+/* Use one spacing unit across imports, home, history and repository navigation. */
+.workspace-toolbar { --toolbar-control-gap: 8px; gap: var(--toolbar-control-gap); }
+.workspace-toolbar .history-controls { gap: var(--toolbar-control-gap); margin-inline-start: 0; }
+.toolbar-github { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.canvas-recenter { display: inline-flex; align-items: center; gap: 5px; padding-inline: 8px; white-space: nowrap; }
+.canvas-recenter span { font-size: 11px; }

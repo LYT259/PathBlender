@@ -77,11 +77,11 @@ describe('settings.json upload in the workspace', () => {
     render(<App />);
     dropFiles([new File([read('pathplanner/Pickup.path')], 'Pickup.path', { type: 'application/json' })]);
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
-    const upload = screen.getByRole('button', { name: 'Upload settings.json' });
+    const upload = screen.getByRole('button', { name: 'Import settings.json' });
     expect(document.querySelector('.robot-library-row')).toHaveClass('needs-settings');
     fireEvent.click(upload);
     fireEvent.change(settingsInput(), { target: { files: [new File([SETTINGS], 'settings.json', { type: 'application/json' })] } });
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Upload settings.json' })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Import settings.json' })).not.toBeInTheDocument());
     expect(document.querySelector('.robot-library-row')).not.toHaveClass('needs-settings');
     expect(screen.getByText(/Robot profile applied/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Robot', exact: true }));
@@ -96,19 +96,19 @@ describe('settings.json upload in the workspace', () => {
     render(<App />);
     dropFiles([new File([read('pathplanner/Pickup.path')], 'Pickup.path', { type: 'application/json' })]);
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
-    const upload = screen.getByRole('button', { name: 'Upload settings.json' });
+    const upload = screen.getByRole('button', { name: 'Import settings.json' });
     fireEvent.click(upload);
     // Cancel: an empty selection never hides the entry.
     fireEvent.change(settingsInput(), { target: { files: [] } });
-    expect(screen.getByRole('button', { name: 'Upload settings.json' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Import settings.json' })).toBeInTheDocument();
     // Corrupt JSON: a concise error, the action stays.
     fireEvent.change(settingsInput(), { target: { files: [new File(['{"robotConfig":'], 'settings.json', { type: 'application/json' })] } });
     await waitFor(() => expect(screen.getByText(/not valid JSON/)).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Upload settings.json' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Import settings.json' })).toBeInTheDocument();
     // Unrelated JSON: not a profile, the action stays.
     fireEvent.change(settingsInput(), { target: { files: [new File(['{"name":"hi"}'], 'settings.json', { type: 'application/json' })] } });
     await waitFor(() => expect(screen.getByText(/Not a usable robot profile/)).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Upload settings.json' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Import settings.json' })).toBeInTheDocument();
     // The red badge persists throughout.
     fireEvent.click(screen.getByRole('button', { name: 'Robot', exact: true }));
     expect(screen.getByText('Not uploaded')).toHaveClass('is-missing');

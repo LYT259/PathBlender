@@ -16,8 +16,27 @@ function folderFile(relPath: string, text = TRAJ) {
   return file;
 }
 function importFolder(files: File[]) { fireEvent.drop(window, { dataTransfer: { files } }); }
-const rows = () => document.querySelectorAll('.robot-library-row');
+const rows = () => [...document.querySelectorAll('.robot-library-row')] as HTMLElement[];
+const rowFor = (label: string) => rows().find((r) => r.textContent?.includes(label))!;
 const choices = (picker: HTMLElement) => within(picker).getAllByRole('option') as HTMLOptionElement[];
+/** The composer is the one route-selection surface since the left picker left. */
+async function openComposer(label: string) {
+  await waitFor(() => expect(rows().some((r) => r.textContent?.includes(label))).toBe(true));
+  fireEvent.click(within(rowFor(label)).getByRole('button', { name: 'Arrange timeline' }));
+  await waitFor(() => expect(document.querySelector('.sequence-composer')).toBeTruthy());
+}
+const closeComposer = () => fireEvent.click(screen.getByRole('button', { name: 'Back to playback' }));
+const composerClips = () => [...document.querySelectorAll('.sequence-track.is-editing .sequence-clip')] as HTMLElement[];
+const sourceButtons = () => [...document.querySelectorAll('.sequence-route-source')] as HTMLElement[];
+const sourceLabels = () => sourceButtons().map((b) => b.getAttribute('aria-label')!.split(':')[0]!);
+/** Select the single clip and replace its route with the named library route, then Save. */
+function replaceOnlyClip(target: string) {
+  fireEvent.click(composerClips()[0]!);
+  const source = sourceButtons().find((b) => b.getAttribute('aria-label')?.startsWith(`${target}: `))!;
+  fireEvent.click(source);
+  fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
+  expect(composerClips()[0]!.getAttribute('aria-label')).toMatch(new RegExp(`^${target},`));
+}
 const SETTINGS = JSON.stringify({ robotConfig: { robotWidth: 0.82, robotLength: 1.05,
   modules: [{ x: 0.3, y: 0.3 }, { x: 0.3, y: -0.3 }, { x: -0.3, y: 0.3 }, { x: -0.3, y: -0.3 }],
 } });
@@ -35,10 +54,13 @@ describe('team folder workflow', () => {
     render(<App />);
     importFolder([folderFile('254/L10.traj'), folderFile('254/L2.traj'), folderFile('254/L1.traj'),
       folderFile('254/settings.json', SETTINGS), folderFile('254/image.png', 'not a route')]);
-    const picker = await screen.findByRole('combobox', { name: 'Active route for #254' });
-    expect(rows()).toHaveLength(1);
-    expect(choices(picker).map((option) => option.textContent)).toEqual(['L1', 'L2', 'L10']);
-    expect(picker).toHaveValue(choices(picker)[0]!.value);
+    await waitFor(() => expect(rows()).toHaveLength(1));
+    // The composer is the route surface: its library lists the whole folder in
+    // natural order and the placed clip is the first one (L1).
+    await openComposer('#254');
+    expect(sourceLabels()).toEqual(['L1', 'L2', 'L10']);
+    expect(composerClips()[0]!.getAttribute('aria-label')).toMatch(/^L1,/);
+    closeComposer();
     expect(document.querySelector('.route-library-panel')).toBeNull();
     expect(document.querySelector('.import-banner')).toBeNull();
     expect(document.querySelector('.import-action')).toHaveClass('accent');
@@ -48,28 +70,35 @@ describe('team folder workflow', () => {
   it('adds a second team even when both selected folders have the same name, without mixing their routes', async () => {
     render(<App />);
     importFolder([folderFile('choreo/L3.traj'), folderFile('choreo/L1.traj')]);
-    const first = await screen.findByRole('combobox', { name: 'Active route for #AAAAAA' });
+    await waitFor(() => expect(rows()).toHaveLength(1));
     importFolder([folderFile('choreo/L5.traj'), folderFile('choreo/L2.traj')]);
-    const second = await screen.findByRole('combobox', { name: 'Active route for #BBBBBB' });
-    expect(rows()).toHaveLength(2);
-    expect(choices(first).map((o) => o.textContent)).toEqual(['L1', 'L3']);
-    expect(choices(second).map((o) => o.textContent)).toEqual(['L2', 'L5']);
-    fireEvent.change(second, { target: { value: choices(second)[1]!.value } });
-    expect(first).toHaveValue(choices(first)[0]!.value);
-    expect(second).toHaveValue(choices(second)[1]!.value);
+    await waitFor(() => expect(rows()).toHaveLength(2));
+    await openComposer('#AAAAAA');
+    expect(sourceLabels()).toEqual(['L1', 'L3']);
+    closeComposer();
+    await openComposer('#BBBBBB');
+    expect(sourceLabels()).toEqual(['L2', 'L5']);
+    // Switching the second team's route leaves the first team untouched.
+    replaceOnlyClip('L5');
+    closeComposer();
+    await openComposer('#AAAAAA');
+    expect(composerClips()[0]!.getAttribute('aria-label')).toMatch(/^L1,/);
   });
 
   it('keeps the display name, alliance and route choices when switching and reopening a saved session', async () => {
     render(<App />);
     importFolder([folderFile('choreo/L3.traj'), folderFile('choreo/L1.traj')]);
-    const picker = await screen.findByRole('combobox', { name: 'Active route for #AAAAAA' });
+    await waitFor(() => expect(rows()).toHaveLength(1));
     fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
     const input = screen.getByRole('textbox', { name: 'Edit display name' });
     expect(input).toHaveAttribute('placeholder', 'AAAAAA');
     fireEvent.change(input, { target: { value: '254' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     fireEvent.click(screen.getByRole('button', { name: 'Red', exact: true }));
-    fireEvent.change(picker, { target: { value: choices(picker)[1]!.value } });
+    // Replace the placed L1 with L3 through the composer draft.
+    await openComposer('254');
+    replaceOnlyClip('L3');
+    closeComposer();
     expect(screen.getByText('254', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Select 254' })).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
@@ -79,11 +108,15 @@ describe('team folder workflow', () => {
     expect(stored.robots[0].teamNumber).toBe('AAAAAA'); // imported identity untouched
     expect(stored.robots[0].alliance).toBe('red');
     expect(stored.robots[0].routeOptions).toHaveLength(2);
+    expect(stored.robots[0].sequence.segments).toHaveLength(1);
+    expect(stored.robots[0].sequence.segments[0].routeId).toBe(stored.robots[0].routeOptions[1].id);
     importFolder([new File([text], 'restored.pb')]);
     await waitFor(() => expect(rows()).toHaveLength(1));
-    const restored = await screen.findByRole('combobox', { name: 'Active route for 254' });
-    expect(restored).toHaveValue(choices(restored)[1]!.value);
-    fireEvent.change(restored, { target: { value: choices(restored)[0]!.value } });
+    // The restored route choice survives the round trip, and switching back works.
+    await openComposer('254');
+    expect(composerClips()[0]!.getAttribute('aria-label')).toMatch(/^L3,/);
+    replaceOnlyClip('L1');
+    closeComposer();
     expect(screen.getByRole('button', { name: 'Red', exact: true })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('254', { selector: '.robot-name' })).toBeInTheDocument();
   });
@@ -106,12 +139,10 @@ describe('team folder workflow', () => {
     fireEvent.change(input, { target: { value: 'Choreo 主力' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(screen.getByText('Choreo 主力', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Active route for Choreo 主力' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Edit display name' }), { target: { value: '' } });
     fireEvent.keyDown(screen.getByRole('textbox', { name: 'Edit display name' }), { key: 'Enter' });
     expect(screen.getByText('#AAAAAA', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Active route for #AAAAAA' })).toBeInTheDocument();
   });
 
   it('keeps each team\'s configuration choices separate', async () => {
@@ -141,28 +172,33 @@ describe('team folder workflow', () => {
     importFolder([folderFile('choreo/broken.traj', '{}'), folderFile('choreo/L1.traj')]);
     await screen.findByText('#AAAAAA', { selector: '.robot-name' });
     expect(document.querySelector('.import-banner')).toHaveTextContent('broken.traj');
-    expect(choices(screen.getByRole('combobox', { name: 'Active route for #AAAAAA' }))).toHaveLength(1);
+    await openComposer('#AAAAAA');
+    expect(sourceButtons()).toHaveLength(1);
   });
 
   it('restores independent route choices after restarting the app', async () => {
     const app = render(<App />);
     importFolder([folderFile('choreo/L1.traj'), folderFile('choreo/L3.traj')]);
-    const picker = await screen.findByRole('combobox', { name: 'Active route for #AAAAAA' });
-    fireEvent.change(picker, { target: { value: choices(picker)[1]!.value } });
-    await waitFor(() => expect(JSON.parse(localStorage.getItem('pb.autosave.v1')!).robots[0].routeOptions).toHaveLength(2));
+    await waitFor(() => expect(rows()).toHaveLength(1));
+    await openComposer('#AAAAAA');
+    replaceOnlyClip('L3');
+    closeComposer();
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('pb.autosave.v1')!).robots[0].sequence).toBeDefined());
     app.unmount();
     render(<App />);
-    const restored = await screen.findByRole('combobox', { name: 'Active route for #AAAAAA' });
-    expect(restored).toHaveValue(choices(restored)[1]!.value);
-    fireEvent.change(restored, { target: { value: choices(restored)[0]!.value } });
-    expect(restored).toHaveValue(choices(restored)[0]!.value);
+    await waitFor(() => expect(rows()).toHaveLength(1));
+    await openComposer('#AAAAAA');
+    expect(composerClips()[0]!.getAttribute('aria-label')).toMatch(/^L3,/);
+    replaceOnlyClip('L1');
+    expect(composerClips()[0]!.getAttribute('aria-label')).toMatch(/^L1,/);
   });
 
   it('distinguishes duplicate filenames in subfolders', async () => {
     render(<App />);
     importFolder([folderFile('choreo/left/L1.traj'), folderFile('choreo/right/L1.traj')]);
-    const picker = await screen.findByRole('combobox', { name: 'Active route for #AAAAAA' });
-    expect(choices(picker).map((o) => o.textContent)).toEqual(['left/L1.traj', 'right/L1.traj']);
+    await waitFor(() => expect(rows()).toHaveLength(1));
+    await openComposer('#AAAAAA');
+    expect(sourceLabels()).toEqual(['left/L1.traj', 'right/L1.traj']);
   });
 
   it('resolves PathPlanner auto dependencies only inside each imported folder', async () => {
@@ -176,10 +212,12 @@ describe('team folder workflow', () => {
     importFolder([folderFile('alpha/paths/Pickup.path', original), folderFile('alpha/autos/Run.auto', auto),
       folderFile('beta/paths/Pickup.path', JSON.stringify(shifted)), folderFile('beta/autos/Run.auto', auto)]);
     await waitFor(() => expect(rows()).toHaveLength(2));
-    for (const picker of screen.getAllByRole('combobox').filter((e) => e.classList.contains('route-picker'))) {
-      const run = choices(picker).find((o) => o.textContent === 'Run')!;
-      fireEvent.change(picker, { target: { value: run.value } });
-    }
+    await openComposer('#AAAAAA');
+    replaceOnlyClip('Run');
+    closeComposer();
+    await openComposer('#BBBBBB');
+    replaceOnlyClip('Run');
+    closeComposer();
     fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
     const stored = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]);
     expect(stored.robots[1].samples[0].x - stored.robots[0].samples[0].x).toBeCloseTo(2, 6);
@@ -192,11 +230,14 @@ describe('team folder workflow', () => {
   it('retains an explicitly selected robot profile when changing the active route', async () => {
     render(<App />);
     importFolder([folderFile('254/L1.traj'), folderFile('254/L3.traj'), folderFile('254/settings.json', SETTINGS)]);
-    const picker = await screen.findByRole('combobox', { name: 'Active route for #254' });
+    await waitFor(() => expect(rows()).toHaveLength(1));
     fireEvent.click(screen.getByText('#254', { selector: '.robot-name' }));
     const profiles = screen.getByRole('combobox', { name: 'Robot profile' });
     fireEvent.change(profiles, { target: { value: choices(profiles)[1]!.value } });
-    fireEvent.change(picker, { target: { value: choices(picker)[1]!.value } });
+    expect(await screen.findByText('1.05 m')).toBeInTheDocument();
+    await openComposer('#254');
+    replaceOnlyClip('L3');
+    closeComposer();
     expect(screen.getByText('1.05 m')).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
     const stored = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]);
