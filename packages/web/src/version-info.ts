@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.24';
+export const APP_VERSION = '0.1.8-beta.25';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.25', date: '2026.10.05', note: {
+    en: 'The bottom playback timeline now spans the full workspace width, with the robot list and inspector ending above it',
+    zh: '底部回放时间线现横跨整个工作区宽度，机器人列表与检查面板止于其上沿',
+    'zh-tw': '底部回放時間線現橫跨整個工作區寬度，機器人清單與檢查面板止於其上緣',
+    cs: 'Spodní časová osa přehrávání nyní zabírá celou šířku pracovní plochy; seznam robotů i panel kontroly končí nad ní',
+    nl: 'De tijdlijn onderaan loopt nu over de volledige breedte van de werkruimte; de robotlijst en de inspecteur eindigen erboven',
+    fr: 'La frise de lecture du bas s’étend désormais sur toute la largeur de l’espace de travail ; la liste des robots et l’inspecteur se terminent au-dessus',
+    he: 'ציר הזמן של ההשמעה בתחתית משתרע על כל רוחב סביבת העבודה, ורשימת הרובוטים ולוח הבדיקה מסתיימים מעליו',
+    ja: '下部の再生タイムラインがワークスペース全体の幅に広がり、ロボットリストとインスペクターはその上で終わります',
+    ko: '하단 재생 타임라인이 작업 공간 전체 너비로 확장되고, 로봇 목록과 검사기는 그 위에서 끝납니다',
+    pl: 'Oś czasu odtwarzania u dołu rozciąga się teraz na całą szerokość obszaru roboczego; lista robotów i panel inspekcji kończą się nad nią',
+    'pt-br': 'A linha do tempo de reprodução na parte inferior agora ocupa toda a largura do espaço de trabalho; a lista de robôs e o inspetor terminam acima dela',
+    es: 'La línea de tiempo de reproducción inferior ahora ocupa todo el ancho del espacio de trabajo; la lista de robots y el inspector terminan por encima',
+    tr: 'Alt taraftaki oynatma zaman çizelgesi artık çalışma alanının tüm genişliğine yayılıyor; robot listesi ve denetçi paneli onun üstünde bitiyor',
+  } },
   { version: '0.1.8-beta.24', date: '2026.10.05', note: {
     en: 'Windows build groundwork: NSIS installer packaging config, the Windows job wired into the release pipeline, and a Windows smoke-test workflow; Windows uses the native title bar (macOS overlay title-bar styling is now macOS-only)',
     zh: 'Windows 构建准备就绪：NSIS 安装包打包配置、发布流水线接入 Windows 任务、新增 Windows 冒烟测试工作流；Windows 使用原生标题栏（macOS 叠层标题栏样式仅作用于 macOS）',
