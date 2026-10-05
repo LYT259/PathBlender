@@ -148,6 +148,30 @@ describe('unified timeline', () => {
     expect(screen.getByRole('slider', { name: 'Playback position' })).toHaveAttribute('max', '18');
   });
 
+  it('opens the team editor on row double-click, but issue markers keep their jump', () => {
+    const onEditTeam = vi.fn();
+    render(
+      <I18nProvider>
+        <Timeline
+          robots={[delayedRobot]}
+          conflicts={[]}
+          bounds={[{ robotId: 'robot-a', startT: 5, endT: 5.4, maxPenetrationM: 0.1, edges: ['near'], worstPose: { x: 0, y: 0, heading: 0 } }]}
+          autoPeriodS={20} duration={8}
+          playback={playback()}
+          onEditTeam={onEditTeam}
+        />
+      </I18nProvider>,
+    );
+    fireEvent.doubleClick(screen.getByRole('img', { name: 'Robot A: 4.00–8.00 s' }));
+    expect(onEditTeam).toHaveBeenCalledTimes(1);
+    expect(onEditTeam).toHaveBeenLastCalledWith('robot-a');
+    fireEvent.doubleClick(screen.getByRole('button', { name: 'Select Robot A' }));
+    expect(onEditTeam).toHaveBeenCalledTimes(2);
+    // Double-clicking a problem marker stays a jump, not an editor.
+    fireEvent.doubleClick(screen.getByRole('button', { name: /Out of bounds: Robot A/ }));
+    expect(onEditTeam).toHaveBeenCalledTimes(2);
+  });
+
   it('disables playback for an empty session', () => {
     render(
       <I18nProvider>
