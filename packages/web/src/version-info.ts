@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.29';
+export const APP_VERSION = '0.1.8-beta.30';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.30', date: '2026.10.05', note: {
+    en: 'Desktop build fix: a duplicated Tauri command attribute from the beta.29 merge broke the app compile',
+    zh: '桌面构建修复：beta.29 合并产生的重复 Tauri 命令属性导致应用无法编译',
+    'zh-tw': '桌面版建置修復：beta.29 合併產生的重複 Tauri 命令屬性導致應用無法編譯',
+    cs: 'Oprava sestavení pro desktop: duplicitní atribut příkazu Tauri z merge beta.29 rozbil kompilaci aplikace.',
+    nl: 'Desktop-buildfix: een dubbel Tauri-commando-attribuut uit de beta.29-merge brak de compilatie van de app.',
+    fr: 'Correction de build desktop : un attribut de commande Tauri dupliqué lors du merge beta.29 cassait la compilation.',
+    he: 'תיקון בנייה לשולחן העבודה: מאפיין פקודת Tauri כפול ממיזוג beta.29 שבר את הידור האפליקציה.',
+    ja: 'デスクトップビルド修正：beta.29 のマージで発生した Tauri コマンド属性の重複によりアプリがコンパイルできませんでした。',
+    ko: '데스크톱 빌드 수정: beta.29 병합에서 생긴 중복 Tauri 명령 속성이 앱 컴파일을 막았습니다.',
+    pl: 'Poprawka budowania desktop: zduplikowany atrybut polecenia Tauri z merge beta.29 psuł kompilację aplikacji.',
+    'pt-br': 'Correção de build desktop: um atributo de comando Tauri duplicado do merge beta.29 quebrava a compilação do app.',
+    es: 'Corrección de compilación de escritorio: un atributo de comando Tauri duplicado del merge beta.29 rompía la compilación de la app.',
+    tr: 'Masaüstü derleme düzeltmesi: beta.29 birleştirmesinden gelen yinelenen Tauri komut özniteliği uygulamanın derlenmesini bozuyordu.',
+  } },
   { version: '0.1.8-beta.29', date: '2026.10.05', note: {
     en: 'Arrangement drafts with save/cancel/undo, per-team mirror and right-click remove; playback follows visible robots; report/PNG/trails exports removed',
     zh: '编排草稿支持保存/取消/撤销，新增每队左右镜像与右键移除机器人；回放范围跟随可见机器人；移除冲突报告/PNG 导出/轨迹尾巴',
