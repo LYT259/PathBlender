@@ -3,9 +3,7 @@ import type { ReactNode } from 'react';
 import type { CollisionInterval, OutOfBoundsInterval, SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { formatLength, useLengthUnit } from '../length-units';
-import { VIEWER_ONLY } from '../viewer';
 import { Icon } from './Icon';
-import { saveText } from '../download';
 
 interface Props {
   robots: SessionTrajectory[];
@@ -17,11 +15,9 @@ interface Props {
   /** ±δ start-execution window for the worst-case rescan (§6.5-①). */
   toleranceS?: number;
   onToleranceChange?: (delta: number) => void;
-  /** Field identity for the exported text report title. */
-  fieldName?: string;
 }
 
-export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump, guide, toleranceS = 0, onToleranceChange, fieldName }: Props) {
+export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump, guide, toleranceS = 0, onToleranceChange }: Props) {
   const { t } = useI18n();
   const [unit] = useLengthUnit();
   const nameOf = (id: string) => {
@@ -29,22 +25,6 @@ export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump
     return robot ? robotIdentity(robot.trajectory) : '?';
   };
   const issues = conflicts.length + bounds.length;
-  const exportReport = () => {
-    const lines: string[] = [];
-    lines.push(`PathBlender — ${t('checks.reportTitle')}${fieldName ? ` · ${fieldName}` : ''}`);
-    const when = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    lines.push(`${t('checks.reportGenerated')} ${when}`);
-    lines.push('');
-    for (const c of conflicts) {
-      lines.push(`- ${nameOf(c.aId)} × ${nameOf(c.bId)}: ${c.startT.toFixed(2)}–${c.endT.toFixed(2)} s, ${t('checks.reportClosest')} ${formatLength(c.minCenterDistanceM, unit)} @ t=${c.closestT.toFixed(2)}`);
-    }
-    for (const b of bounds) {
-      lines.push(`- ${nameOf(b.robotId)}: ${t('checks.reportOutOfBounds')} ${t('bounds.item', { start: b.startT.toFixed(2), end: b.endT.toFixed(2), depth: formatLength(b.maxPenetrationM, unit), edge: b.edges.map((e) => t(`edges.${e}` as const)).join('/') })}`);
-    }
-    lines.push('');
-    lines.push(t('checks.reportAdvice'));
-    void saveText(`pathblender-conflicts-${new Date().toISOString().slice(0, 10)}.txt`, 'txt', lines.join('\n'));
-  };
   const hidden = robots.filter((r) => !r.visible).length;
   const estimated = robots.some((r) => r.trajectory.geometrySource === 'default');
   const title = !robots.length ? 'checks.emptyTitle' : issues ? 'checks.issues' : robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle';
@@ -85,7 +65,6 @@ export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump
     </li>;
     })}</ul>}
     {bounds.length > 0 && <><h3 className="check-section-heading">{t('bounds.title')}<span className="conflict-count bounds-count">{bounds.length}</span></h3><ul className="conflict-list">{bounds.map((b) => <li key={`${b.robotId}-${b.startT}`} className="conflict-item"><button className="conflict-jump bounds" onClick={() => onJump((b.startT + b.endT) / 2, [b.robotId])}><span className="conflict-pair">{nameOf(b.robotId)}</span><span className="conflict-when">{t('bounds.item', { start: b.startT.toFixed(2), end: b.endT.toFixed(2), depth: formatLength(b.maxPenetrationM, unit), edge: b.edges.map((e) => t(`edges.${e}` as const)).join('/') })}</span><span className="issue-action">{t('checks.jump')} →</span></button></li>)}</ul></>}
-    {issues > 0 && <button className="report-export" onClick={() => exportReport()}>{t('checks.exportReport')}</button>}
     {minSeparation && <p className="min-sep">{t('conflicts.minSep', { d: formatLength(minSeparation.distanceM, unit), t: minSeparation.t.toFixed(2), a: nameOf(minSeparation.aId), b: nameOf(minSeparation.bId) })}</p>}
   </section>;
 }

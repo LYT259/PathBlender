@@ -1,7 +1,7 @@
 /// PathBlender desktop shell — minimal static host (report v1.6 §7.1).
 /// No sidecars, no backend, no telemetry. The only native behavior:
 /// a macOS-standard menu (app menu with About/Preferences/Check-for-Updates,
-/// a File menu for import/save/PNG/clear, an Edit menu) that follows
+/// a File menu for import/save/clear, an Edit menu) that follows
 /// the app language, plus a preferences window on ?window=prefs.
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -91,7 +91,6 @@ struct MenuLang {
     edit: &'static str,
     import: &'static str,
     save: &'static str,
-    png: &'static str,
     clear: &'static str,
     prefs: &'static str,
     updates: &'static str,
@@ -109,7 +108,6 @@ const EN: MenuLang = MenuLang {
     edit: "Edit",
     import: "Import…",
     save: "Save Session…",
-    png: "Export PNG…",
     clear: "Clear Session",
     prefs: "Preferences…",
     updates: "Check for Updates…",
@@ -124,7 +122,6 @@ const ZH: MenuLang = MenuLang {
     edit: "编辑",
     import: "导入…",
     save: "保存会话…",
-    png: "导出 PNG…",
     clear: "清空会话",
     prefs: "偏好设置…",
     updates: "检查更新…",
@@ -139,7 +136,6 @@ const ZH_TW: MenuLang = MenuLang {
     edit: "編輯",
     import: "匯入…",
     save: "儲存工作階段…",
-    png: "匯出 PNG…",
     clear: "清空工作階段",
     prefs: "偏好設定…",
     updates: "檢查更新…",
@@ -156,7 +152,6 @@ const ZH_HK: MenuLang = MenuLang {
     edit: "編輯",
     import: "匯入…",
     save: "儲存工作階段…",
-    png: "匯出 PNG…",
     clear: "清除工作階段",
     prefs: "偏好設定…",
     updates: "檢查更新…",
@@ -171,7 +166,6 @@ const ES: MenuLang = MenuLang {
     edit: "Edición",
     import: "Importar…",
     save: "Guardar sesión…",
-    png: "Exportar PNG…",
     clear: "Vaciar sesión",
     prefs: "Preferencias…",
     updates: "Buscar actualizaciones…",
@@ -186,7 +180,6 @@ const FR: MenuLang = MenuLang {
     edit: "Édition",
     import: "Importer…",
     save: "Enregistrer la session…",
-    png: "Exporter PNG…",
     clear: "Effacer la session",
     prefs: "Réglages…",
     updates: "Rechercher les mises à jour…",
@@ -201,7 +194,6 @@ const TR: MenuLang = MenuLang {
     edit: "Düzen",
     import: "İçe Aktar…",
     save: "Oturumu Kaydet…",
-    png: "PNG Dışa Aktar…",
     clear: "Oturumu Temizle",
     prefs: "Tercihler…",
     updates: "Güncellemeleri Denetle…",
@@ -217,7 +209,6 @@ const PT_BR: MenuLang = MenuLang {
     edit: "Editar",
     import: "Importar…",
     save: "Salvar Sessão…",
-    png: "Exportar PNG…",
     clear: "Limpar Sessão",
     prefs: "Preferências…",
     updates: "Verificar Atualizações…",
@@ -235,7 +226,6 @@ const HE: MenuLang = MenuLang {
     edit: "עריכה",
     import: "ייבוא…",
     save: "שמירת הפעלה…",
-    png: "ייצוא PNG…",
     clear: "ניקוי הפעלה",
     prefs: "העדפות…",
     updates: "בדיקת עדכונים…",
@@ -252,7 +242,6 @@ const NL: MenuLang = MenuLang {
     edit: "Wijzig",
     import: "Importeer…",
     save: "Bewaar sessie…",
-    png: "Exporteer PNG…",
     clear: "Wis sessie",
     prefs: "Voorkeuren…",
     updates: "Zoek naar updates…",
@@ -267,7 +256,6 @@ const PL: MenuLang = MenuLang {
     edit: "Edycja",
     import: "Importuj…",
     save: "Zapisz sesję…",
-    png: "Eksportuj PNG…",
     clear: "Wyczyść sesję",
     prefs: "Preferencje…",
     updates: "Sprawdź uaktualnienia…",
@@ -282,7 +270,6 @@ const JA: MenuLang = MenuLang {
     edit: "編集",
     import: "読み込む…",
     save: "セッションを保存…",
-    png: "PNG を書き出す…",
     clear: "セッションをクリア",
     prefs: "環境設定…",
     updates: "アップデートを確認…",
@@ -297,7 +284,6 @@ const KO: MenuLang = MenuLang {
     edit: "편집",
     import: "가져오기…",
     save: "세션 저장…",
-    png: "PNG 내보내기…",
     clear: "세션 지우기",
     prefs: "환경설정…",
     updates: "업데이트 확인…",
@@ -312,7 +298,6 @@ const CS: MenuLang = MenuLang {
     edit: "Upravit",
     import: "Importovat…",
     save: "Uložit relaci…",
-    png: "Exportovat PNG…",
     clear: "Vymazat relaci",
     prefs: "Předvolby…",
     updates: "Zkontrolovat aktualizace…",
@@ -329,7 +314,6 @@ const DE: MenuLang = MenuLang {
     edit: "Bearbeiten",
     import: "Importieren…",
     save: "Sitzung speichern…",
-    png: "PNG exportieren…",
     clear: "Sitzung leeren",
     prefs: "Einstellungen…",
     updates: "Nach Updates suchen…",
@@ -344,7 +328,6 @@ const IT: MenuLang = MenuLang {
     edit: "Modifica",
     import: "Importa…",
     save: "Salva sessione…",
-    png: "Esporta PNG…",
     clear: "Svuota sessione",
     prefs: "Preferenze…",
     updates: "Controlla aggiornamenti…",
@@ -361,7 +344,6 @@ const AR: MenuLang = MenuLang {
     edit: "تحرير",
     import: "استيراد…",
     save: "حفظ الجلسة…",
-    png: "تصدير PNG…",
     clear: "مسح الجلسة",
     prefs: "التفضيلات…",
     updates: "التحقق من التحديثات…",
@@ -376,7 +358,6 @@ const HI: MenuLang = MenuLang {
     edit: "संपादन",
     import: "आयात करें…",
     save: "सत्र सहेजें…",
-    png: "PNG निर्यात करें…",
     clear: "सत्र साफ़ करें",
     prefs: "प्राथमिकताएँ…",
     updates: "अपडेट जाँचें…",
@@ -391,7 +372,6 @@ const MR: MenuLang = MenuLang {
     edit: "संपादन",
     import: "आयात करा…",
     save: "सत्र जतन करा…",
-    png: "PNG निर्यात करा…",
     clear: "सत्र साफ करा",
     prefs: "प्राधान्ये…",
     updates: "अपडेट तपासा…",
@@ -406,7 +386,6 @@ const MS: MenuLang = MenuLang {
     edit: "Edit",
     import: "Muat masuk…",
     save: "Simpan Sesi…",
-    png: "Eksport PNG…",
     clear: "Kosongkan Sesi",
     prefs: "Keutamaan…",
     updates: "Semak Kemas Kini…",
@@ -421,7 +400,6 @@ const TA: MenuLang = MenuLang {
     edit: "திருத்து",
     import: "இறக்குமதி…",
     save: "அமர்வைச் சேமி…",
-    png: "PNG ஏற்றுமதி…",
     clear: "அமர்வை அழி",
     prefs: "விருப்பங்கள்…",
     updates: "புதுப்பிப்புகளைச் சரிபார்…",
@@ -436,7 +414,6 @@ const FIL: MenuLang = MenuLang {
     edit: "I-edit",
     import: "Mag-import…",
     save: "I-save ang Session…",
-    png: "I-export ang PNG…",
     clear: "I-clear ang Session",
     prefs: "Mga Kagustuhan…",
     updates: "Suriin ang mga Update…",
@@ -451,7 +428,6 @@ const VI: MenuLang = MenuLang {
     edit: "Sửa",
     import: "Nhập…",
     save: "Lưu phiên…",
-    png: "Xuất PNG…",
     clear: "Xóa phiên",
     prefs: "Tùy chọn…",
     updates: "Kiểm tra cập nhật…",
@@ -466,7 +442,6 @@ const ID: MenuLang = MenuLang {
     edit: "Edit",
     import: "Impor…",
     save: "Simpan Sesi…",
-    png: "Ekspor PNG…",
     clear: "Bersihkan Sesi",
     prefs: "Preferensi…",
     updates: "Periksa Pembaruan…",
@@ -483,7 +458,6 @@ const RO: MenuLang = MenuLang {
     edit: "Editare",
     import: "Importă…",
     save: "Salvează sesiunea…",
-    png: "Exportă PNG…",
     clear: "Șterge sesiunea",
     prefs: "Setări…",
     updates: "Verifică actualizările…",
@@ -498,7 +472,6 @@ const BG: MenuLang = MenuLang {
     edit: "Редактиране",
     import: "Внос…",
     save: "Запази сесията…",
-    png: "Експорт на PNG…",
     clear: "Изчисти сесията",
     prefs: "Настройки…",
     updates: "Провери за обновления…",
@@ -513,7 +486,6 @@ const HR: MenuLang = MenuLang {
     edit: "Uredi",
     import: "Uvezi…",
     save: "Spremi sesiju…",
-    png: "Izvezi PNG…",
     clear: "Obriši sesiju",
     prefs: "Postavke…",
     updates: "Provjeri ažuriranja…",
@@ -528,7 +500,6 @@ const SV: MenuLang = MenuLang {
     edit: "Ändra",
     import: "Importera…",
     save: "Spara session…",
-    png: "Exportera PNG…",
     clear: "Rensa session",
     prefs: "Inställningar…",
     updates: "Sök efter uppdateringar…",
@@ -543,7 +514,6 @@ const EL: MenuLang = MenuLang {
     edit: "Επεξεργασία",
     import: "Εισαγωγή…",
     save: "Αποθήκευση συνεδρίας…",
-    png: "Εξαγωγή PNG…",
     clear: "Καθαρισμός συνεδρίας",
     prefs: "Ρυθμίσεις…",
     updates: "Έλεγχος για ενημερώσεις…",
@@ -558,7 +528,6 @@ const AZ: MenuLang = MenuLang {
     edit: "Redaktə",
     import: "İdxal…",
     save: "Sessiyanı saxla…",
-    png: "PNG ixracı…",
     clear: "Sessiyani təmizlə",
     prefs: "Parametrlər…",
     updates: "Yeniləmələri yoxla…",
@@ -573,7 +542,6 @@ const HY: MenuLang = MenuLang {
     edit: "Խմբագրել",
     import: "Ներմուծել…",
     save: "Պահել նիստը…",
-    png: "Արտահանել PNG…",
     clear: "Մաքրել նիստը",
     prefs: "Կարգավորումներ…",
     updates: "Ստուգել թարմացումները…",
@@ -588,7 +556,6 @@ const HU: MenuLang = MenuLang {
     edit: "Szerkesztés",
     import: "Importálás…",
     save: "Munkamenet mentése…",
-    png: "PNG exportálása…",
     clear: "Munkamenet törlése",
     prefs: "Beállítások…",
     updates: "Frissítések keresése…",
@@ -603,7 +570,6 @@ const MK: MenuLang = MenuLang {
     edit: "Уреди",
     import: "Увоз…",
     save: "Зачувај сесија…",
-    png: "Извези PNG…",
     clear: "Исчисти сесија",
     prefs: "Поставки…",
     updates: "Провери за ажурирања…",
@@ -618,7 +584,6 @@ const SQ: MenuLang = MenuLang {
     edit: "Modifiko",
     import: "Importo…",
     save: "Ruaj sesionin…",
-    png: "Eksporto PNG…",
     clear: "Pastro sesionin",
     prefs: "Preferencat…",
     updates: "Kontrollo për përditësime…",
@@ -633,7 +598,6 @@ const SR: MenuLang = MenuLang {
     edit: "Уреди",
     import: "Увези…",
     save: "Сачувај сесију…",
-    png: "Извези PNG…",
     clear: "Очисти сесију",
     prefs: "Подешавања…",
     updates: "Провери ажурирања…",
@@ -648,7 +612,6 @@ const BS: MenuLang = MenuLang {
     edit: "Uredi",
     import: "Uvoz…",
     save: "Sačuvaj sesiju…",
-    png: "Izvezi PNG…",
     clear: "Očisti sesiju",
     prefs: "Postavke…",
     updates: "Provjeri ažuriranja…",
@@ -663,7 +626,6 @@ const DA: MenuLang = MenuLang {
     edit: "Rediger",
     import: "Importer…",
     save: "Gem session…",
-    png: "Eksportér PNG…",
     clear: "Ryd session",
     prefs: "Indstillinger…",
     updates: "Søg efter opdateringer…",
@@ -678,7 +640,6 @@ const NB: MenuLang = MenuLang {
     edit: "Rediger",
     import: "Importer…",
     save: "Lagre sesjon…",
-    png: "Eksporter PNG…",
     clear: "Fjern sesjon",
     prefs: "Innstillinger…",
     updates: "Se etter oppdateringer…",
@@ -693,7 +654,6 @@ const NN: MenuLang = MenuLang {
     edit: "Rediger",
     import: "Importér…",
     save: "Lagra sesjonen…",
-    png: "Eksportér PNG…",
     clear: "Rensa sesjon",
     prefs: "Innstillingar…",
     updates: "Sjå etter oppdateringar…",
@@ -708,7 +668,6 @@ const UK: MenuLang = MenuLang {
     edit: "Редагувати",
     import: "Імпорт…",
     save: "Зберегти сесію…",
-    png: "Експорт PNG…",
     clear: "Очистити сесію",
     prefs: "Налаштування…",
     updates: "Перевірити оновлення…",
@@ -723,7 +682,6 @@ const RW: MenuLang = MenuLang {
     edit: "Hindura",
     import: "Twara…",
     save: "Bika isomo…",
-    png: "Ohereza PNG…",
     clear: "Siba isomo",
     prefs: "Ibyifuzo…",
     updates: "Genzura ivugururwa…",
@@ -841,8 +799,6 @@ fn build_menu(app: &AppHandle, lang: &str) -> tauri::Result<tauri::menu::Menu<ta
             Some("CmdOrCtrl+S"),
         )?)
         .separator()
-        .item(&MenuItem::with_id(app, "png", l.png, true, None::<&str>)?)
-        .separator()
         .item(&MenuItem::with_id(app, "clear", l.clear, true, None::<&str>)?)
         .build()?;
 
@@ -893,6 +849,32 @@ fn open_prefs(app: &AppHandle) {
 }
 
 #[tauri::command]
+/// Open the repo link in the user's system browser (handoff 2026-10-05).
+/// A plain `target="_blank"` anchor is not routed outward by WKWebView /
+/// WebKitGTK, so the web layer asks the shell. The allowlist keeps this from
+/// becoming a generic URL launcher — the workspace only ever passes the
+/// project's own GitHub URL.
+#[tauri::command]
+fn open_external(url: String) -> Result<(), String> {
+    const ALLOWED_PREFIX: &str = "https://github.com/LYT259/pathblender";
+    if !url.starts_with(ALLOWED_PREFIX) {
+        return Err(format!("url not allowed: {url}"));
+    }
+    #[cfg(target_os = "macos")]
+    let spawned = std::process::Command::new("open").arg(&url).status();
+    #[cfg(target_os = "linux")]
+    let spawned = std::process::Command::new("xdg-open").arg(&url).status();
+    #[cfg(target_os = "windows")]
+    let spawned = std::process::Command::new("cmd")
+        .args(["/c", "start", "", &url])
+        .status();
+    match spawned {
+        Ok(status) if status.success() => Ok(()),
+        Ok(status) => Err(format!("opener exited with {status}")),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
 fn open_preferences(app: AppHandle) {
     open_prefs(&app);
 }
@@ -933,7 +915,7 @@ fn push_open_files<R: tauri::Runtime>(app: &AppHandle<R>, pairs: &[(String, Stri
     }
 }
 
-/// Menu commands drive web-state actions (save/PNG/clear/update).
+/// Menu commands drive web-state actions (save/clear/update).
 /// Dispatch them as DOM CustomEvents via eval instead of Tauri events: the
 /// web-side `listen()` registration can silently lose the race against
 /// page load on WebKitGTK, leaving the menu dead (ADR-0003).
@@ -1011,6 +993,7 @@ pub fn run() {
             save_file,
             set_menu_language,
             open_preferences,
+            open_external,
             set_dock_icon,
             check_update,
             install_update
@@ -1072,7 +1055,6 @@ pub fn run() {
                     });
                 }
                 "save" => push_menu_event(app, "save"),
-                "png" => push_menu_event(app, "png"),
                 "clear" => push_menu_event(app, "clear"),
                 "check-update" => push_menu_event(app, "check-update"),
                 _ => {}

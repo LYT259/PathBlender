@@ -31,6 +31,14 @@ export interface SessionTrajectory {
   visible: boolean;
   /** Selected route inside this team's alternatives; older sessions may lack them. */
   routeId?: string;
+  /**
+   * This team's route/sequence is mirrored between the left/right trench
+   * sides (user-approved per-team mirror, 2026-10-05). Stored on the slot,
+   * applied in the alliance view derivation — the imported samples stay
+   * untouched and the flag is an involution. New routes added to the team
+   * inherit it because every view path reads the slot flag.
+   */
+  mirrored?: boolean;
   /** Alternatives belong to this team slot, including after save/restore. */
   routeOptions?: SessionRouteOption[];
   profileOptions?: SessionProfileOption[];
@@ -197,6 +205,8 @@ export interface SessionFileV1 {
     visible: boolean;
     /** Route-library id when the robot's current route came from the library. */
     routeId?: string;
+    /** Per-team left/right mirror (optional since 2026-10-05; absent = off). */
+    mirrored?: boolean;
     routeOptions?: SessionRouteOption[];
     profileOptions?: SessionProfileOption[];
     profileId?: string;
@@ -260,6 +270,7 @@ export function serializeSession(
       color: st.color,
       visible: st.visible,
       routeId: st.routeId,
+      mirrored: st.mirrored === true ? true : undefined,
       routeOptions: st.routeOptions,
       profileOptions: st.profileOptions,
       profileId: st.profileId,
@@ -333,6 +344,7 @@ export function deserializeSession(text: string): {
       color: typeof r.color === 'string' ? (LEGACY_DEFAULT_COLORS[r.color.toUpperCase()] ?? r.color) : r.color,
       visible: r.visible,
       routeId: r.routeId,
+      mirrored: r.mirrored === true ? true : undefined,
       routeOptions: readRouteOptions(r.routeOptions),
       profileOptions: readProfileOptions(r.profileOptions),
       profileId: typeof r.profileId === 'string' ? r.profileId : undefined,

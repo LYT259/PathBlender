@@ -1,8 +1,9 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { activeEndT, activeStartT, type CollisionInterval, type RobotGeometry, type SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
-import { VIEWER_ONLY } from '../viewer';
-import { displayName, routeLabel, sameRouteTrajectory, type LibraryProfile } from '../route-library';
+import { type LibraryProfile } from '../route-library';
+import { Icon } from './Icon';
+import { RobotContextMenu } from './RobotContextMenu';
 import { formatLength, formatLengthNumber, useLengthUnit } from '../length-units';
 import './RobotList.css';
 import { inspectorWarnings } from '../robot-profile-ui';
@@ -17,13 +18,16 @@ interface RobotListProps {
   /** Target robot → picked settings.json (real parse + apply happens in App). */
   onSelectSettings?: (robotId: string, file: File) => void;
   onUpdate: (id: string, patch: Partial<SessionTrajectory>) => void;
-  /** Robot slot id → library route id. */
-  onPickRoute: (robotId: string, routeId: string) => void;
+  /** UI navigation; draft lifecycle remains the composer owner's responsibility. */
+  onArrange?: (robotId: string) => void;
+  /** Optional until removal/history and mirror state are connected by the implementation owner. */
+  onRemoveFromMenu?: (robotId: string) => void;
+  onMirror?: (robotId: string) => void;
+  mirroredIds?: ReadonlySet<string>;
 }
 
 interface RobotInspectorProps {
   robot: SessionTrajectory | undefined;
-  onRemove: (id: string) => void;
   libraryProfiles: LibraryProfile[];
   onApplyProfile: (robotId: string, profileId: string) => void;
 }
@@ -88,9 +92,10 @@ function TeamNumberCell({ robot, onUpdate, children, metadata }: {
 }
 
 /** Selection lives in the workspace so the list, field and inspector agree. */
-export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onPickRoute, onSelectSettings }: RobotListProps) {
-  const { t } = useI18n();
+export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, mirroredIds }: RobotListProps) {  const { t } = useI18n();
   const settingsInput = useRef<HTMLInputElement>(null);
+  const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const contextRobot = robots.find((robot) => robot.trajectory.id === contextMenu?.id);
   const settingsRobot = useRef<string | null>(null);
   return (
     <aside className="robot-list robot-library" aria-label={t('robots.title', { n: robots.length })}>
@@ -126,14 +131,22 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
               `${shownDuration.toFixed(2)} s`,
               hit ? t('robots.collision') : '',
             ].filter(Boolean).join(', ');
-            const libraryRoutes = robot.routeOptions ?? [];
-            // No stored routeId? The current trajectory may still BE one of
-            // the library options (welcome example, pre-routeId sessions) —
-            // select that option instead of adding a duplicate pseudo-entry.
-            const currentRoute = libraryRoutes.find((r) => r.id === robot.routeId)
-              ?? libraryRoutes.find((r) => sameRouteTrajectory(r.trajectory, trajectory));
             return (
-              <li key={trajectory.id} className={`robot-library-row${needsSettings && onSelectSettings ? ' needs-settings' : ''}${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
+              <li key={trajectory.id} tabIndex={0} aria-label={selectionLabel}
+                onClick={(event) => { if (!(event.target as HTMLElement).closest('button, input, select, a, [role="menu"]')) onSelect(trajectory.id); }}
+                onContextMenu={(event) => {
+                  if ((event.target as HTMLElement).closest('input, select')) return;
+                  event.preventDefault(); event.currentTarget.focus();
+                  setContextMenu({ id: trajectory.id, x: event.clientX, y: event.clientY });
+                }}
+                onKeyDown={(event) => {
+                  if (event.target !== event.currentTarget) return;
+                  if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(trajectory.id); }
+                  if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+                    event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect();
+                    setContextMenu({ id: trajectory.id, x: rect.left + 12, y: rect.bottom });
+                  }
+                }} className={`robot-library-row${needsSettings && onSelectSettings ? ' needs-settings' : ''}${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
                 <TeamNumberCell robot={robot} onUpdate={onUpdate} metadata={<span className="robot-library-meta">
                       <span>{sourceLabel(trajectory.source)}</span>
                       <span>{shownDuration.toFixed(2)} s</span>
@@ -147,29 +160,10 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     </span>
                   </span>
                 </button></TeamNumberCell>
-                {libraryRoutes.length > 0 && (
-                  <select
-                    className="route-picker"
-                    value={robot.routeId ?? currentRoute?.id ?? ''}
-                    // A composed robot plays its sequence, not the picked
-                    // route; switching here would silently fight the
-                    // composition, so the picker hands over to the details
-                    // panel until the arrangement is removed.
-                    disabled={composed}
-                    title={composed ? t('sequence.pickerDisabled') : currentRoute ? currentRoute.relPath : t('library.routeOffLibrary')}
-                    aria-label={t('library.routePicker', { name: robotIdentity(trajectory) })}
-                    onChange={(e) => onPickRoute(trajectory.id, e.target.value)}
-                  >
-                    {!currentRoute && <option value="">{displayName(trajectory)}</option>}
-                    {libraryRoutes.map((route) => (
-                      <option key={route.id} value={route.id} title={route.relPath}>
-                        {routeLabel(route, libraryRoutes)}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <button type="button" className="robot-arrange-button" disabled={!onArrange} title={t('sequence.arrange')}
+                  onClick={() => onArrange?.(trajectory.id)}><Icon name="timeline" size={15} /><span>{t('sequence.arrange')}</span></button>
                 {needsSettings && onSelectSettings && <button type="button" className="robot-settings-upload" onClick={() => { settingsRobot.current = trajectory.id; settingsInput.current?.click(); }}>
-                  <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M10 13V3m-4 4 4-4 4 4M3 12v5h14v-5" /></svg>{t('robots.uploadSettings')}
+                  <Icon name="import" size={15} />{t('robots.uploadSettings')}
                 </button>}
                 <button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
                   <EyeIcon visible={robot.visible} />
@@ -179,12 +173,17 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
           })}
         </ul>
       )}
-
+      {contextMenu && contextRobot && <RobotContextMenu name={robotIdentity(contextRobot.trajectory)} x={contextMenu.x} y={contextMenu.y}
+        mirrored={mirroredIds?.has(contextRobot.trajectory.id)}
+        onArrange={onArrange ? () => onArrange(contextRobot.trajectory.id) : undefined}
+        onMirror={onMirror ? () => onMirror(contextRobot.trajectory.id) : undefined}
+        onRemove={onRemoveFromMenu ? () => onRemoveFromMenu(contextRobot.trajectory.id) : undefined}
+        onClose={() => setContextMenu(null)} />}
     </aside>
   );
 }
 
-export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfile }: RobotInspectorProps) {
+export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: RobotInspectorProps) {
   const { t } = useI18n();
   const [unit] = useLengthUnit();
   if (!robot) return <div className="robot-inspector-empty">{t('robots.selectPrompt')}</div>;
@@ -203,16 +202,15 @@ export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfil
       <section className="robot-inspector-section">
         <div className="robot-inspector-section-heading">
           <h3>{t('robots.data')}</h3>
-          <span className={`robot-data-source${fileGeometry ? '' : ' is-missing'}`}>{fileGeometry ? t('robots.fromFile') : t('robots.notUploaded')}</span>
+          <span className={`robot-data-source${fileGeometry ? ' is-verified' : ' is-missing'}`}><Icon name={fileGeometry ? 'check' : 'warning'} size={13} />{fileGeometry ? t('robots.fromFile') : t('robots.notUploaded')}</span>
         </div>
         <p className="robot-inspector-caption">{t('robots.bumper')}</p>
         <dl className="robot-dimensions">
-          <div><dt>{t('robots.length')}</dt><dd>{formatLength(trajectory.geometry.lengthM, unit)}</dd></div>
-          <div><dt>{t('robots.width')}</dt><dd>{formatLength(trajectory.geometry.widthM, unit)}</dd></div>
+          <div className={`robot-dimension-card ${fileGeometry ? 'is-verified' : 'is-default'}`}><dt>{t('robots.length')}<span>{fileGeometry ? <Icon name="check" size={12} /> : t('robots.bumperDefault')}</span></dt><dd>{formatLength(trajectory.geometry.lengthM, unit)}</dd></div>
+          <div className={`robot-dimension-card ${fileGeometry ? 'is-verified' : 'is-default'}`}><dt>{t('robots.width')}<span>{fileGeometry ? <Icon name="check" size={12} /> : t('robots.bumperDefault')}</span></dt><dd>{formatLength(trajectory.geometry.widthM, unit)}</dd></div>
           {trajectory.massKG !== undefined && <div><dt>{t('robots.mass')}</dt><dd>{trajectory.massKG.toFixed(0)} kg</dd></div>}
           {trajectory.holonomic !== undefined && <div><dt>{t('robots.drive')}</dt><dd>{t(trajectory.holonomic ? 'robots.driveHolonomic' : 'robots.driveDifferential')}</dd></div>}
         </dl>
-        {fileGeometry && <p className="robot-inspector-note">{t('robots.fileDataNote')}</p>}
         {libraryProfiles.length > 0 && (
           <label className="robot-inspector-row robot-inspector-profile">
             <span>{t('robots.applyProfile')}</span>
@@ -238,13 +236,6 @@ export function RobotInspector({ robot, onRemove, libraryProfiles, onApplyProfil
           <ul className="robot-inspector-warnings">{warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>
         )}
       </section>
-
-      {!VIEWER_ONLY && (
-        <section className="robot-inspector-section robot-inspector-actions">
-          <h3>{t('robots.actions')}</h3>
-          <button className="robot-inspector-remove" onClick={() => onRemove(id)}>{t('robots.removeFromSession')}</button>
-        </section>
-      )}
     </section>
   );
 }

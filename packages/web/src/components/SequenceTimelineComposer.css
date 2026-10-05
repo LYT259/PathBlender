@@ -52,8 +52,6 @@
 .sequence-selected-route { color: var(--fg); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sequence-remove { padding: 4px 0; border: 0; background: transparent; color: var(--danger); font: inherit; cursor: pointer; }
 .sequence-remove:disabled { color: var(--fg-dim); cursor: not-allowed; }
-.sequence-zoom { margin-left: auto; white-space: nowrap; }
-.sequence-zoom select { font: inherit; color: var(--fg); background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 3px; }
 .sequence-timing-warning { display: flex; align-items: center; gap: 6px; margin: 8px 18px 0; font-size: 11px; color: var(--danger); }
 .sequence-composer-footnote { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; font-size: 10px; padding: 8px 18px 0; color: var(--fg-dim); }
 .sequence-error { color: var(--danger); }
@@ -65,4 +63,21 @@
   .sequence-timeline-scroll { padding-inline: 12px; }
   .sequence-active-name { display: none; }
   .sequence-selection-bar { gap: 8px; padding-inline: 12px; }
+}
+
+/* Stable left navigation and right editing actions; no translucent material. */
+.sequence-composer-header { position: sticky; top: 0; z-index: 5; background: var(--bg-panel); min-height: 60px; border-bottom: 1px solid var(--border); margin-bottom: 12px; padding: 10px 16px; }
+.sequence-composer-navigation { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.sequence-composer-navigation .sequence-composer-heading { gap: 8px; min-width: 0; }
+.sequence-composer-navigation h2 { font-size: 12px; font-weight: 600; }
+.sequence-composer-actions { gap: 8px; flex-shrink: 0; margin-inline-start: auto; }
+.sequence-composer-header .btn { min-height: 30px; border-radius: 7px; gap: 5px; white-space: nowrap; }
+.sequence-back { flex-shrink: 0; }
+.sequence-save, .sequence-cancel { min-width: 62px; justify-content: center; }
+.sequence-composer-header .sequence-save { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
+.sequence-reset:disabled { opacity: .4; }
+@media (max-width: 760px) {
+  .sequence-composer-header { gap: 8px 12px; }
+  .sequence-composer-navigation { flex: 1; gap: 10px; }
+  .sequence-composer-navigation .sequence-composer-heading { display: none; }
 }
