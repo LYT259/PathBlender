@@ -39,7 +39,13 @@ type UpdateCheck =
   | { kind: 'failed' };
 
 /** Shared settings; changes only reach other windows after Save. */
-export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClose: () => void }) {
+export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
+  desktop: boolean;
+  onClose: () => void;
+  /** Fired on Save so the hosting window applies the new palette at once —
+   * the Tauri broadcast only reaches windows on desktop shells. */
+  onColorblindSaved?: (on: boolean) => void;
+}) {
   const { langChoice, setLang, t } = useI18n();
   const { mode, setMode } = useTheme();
   const { mode: iconMode, setMode: setIconMode } = useAppIcon();
@@ -142,6 +148,7 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
     if (colorblind !== savedColorblind) {
       writeColorblind(colorblind);
       setSavedColorblind(colorblind);
+      onColorblindSaved?.(colorblind);
     }
     // Save keeps the window open (user request 2026-10-02): drafts become
     // current, dirty clears, and the user closes via Cancel/Escape/⌘W when

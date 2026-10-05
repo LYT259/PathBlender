@@ -46,11 +46,28 @@ export interface SessionTrajectory {
   sequence?: AutoSequence;
 }
 
-/** Palette mirroring the 103 fork's ghost colors (community-familiar). */
+/** Muted gold, violet, and sage for the first three team slots; later slots retain the legacy ghost palette. */
 export const SESSION_COLORS = [
-  '#FF6EC7', '#00E5FF', '#AAFF00', '#FF9100', '#E040FB',
+  '#C5A16A', '#A28CBA', '#8FA482', '#FF9100', '#E040FB',
   '#00E676', '#FF5252', '#40C4FF', '#FFD740', '#7C4DFF',
 ];
+
+/**
+ * First three defaults before the muted palette (2026-10-05), remapped on
+ * session read: restored sessions then match freshly assigned colors, and
+ * the colorblind remap recognizes them again (the old values left the
+ * default palette, so it passed them through untouched). Matching is by
+ * value, not slot — a robot that joined as slot 3 keeps its slot-3 hue. A
+ * custom color that happened to equal a former default is remapped too:
+ * session files cannot distinguish the two (the same limitation the
+ * colorblind remap already documents). Matching tolerates case — the
+ * serializer always writes uppercase, hand-edited files may not.
+ */
+const LEGACY_DEFAULT_COLORS: Record<string, string> = {
+  '#FF6EC7': '#C5A16A',
+  '#00E5FF': '#A28CBA',
+  '#AAFF00': '#8FA482',
+};
 
 /**
  * Colorblind-safe palette (Okabe-Ito, the canonical CVD-safe set) for the
@@ -313,7 +330,7 @@ export function deserializeSession(text: string): {
     return {
       trajectory: traj,
       startDelayS: sequence ? Math.max(0, sequence.segments[0]!.waitBeforeS) : r.startDelayS,
-      color: r.color,
+      color: typeof r.color === 'string' ? (LEGACY_DEFAULT_COLORS[r.color.toUpperCase()] ?? r.color) : r.color,
       visible: r.visible,
       routeId: r.routeId,
       routeOptions: readRouteOptions(r.routeOptions),
