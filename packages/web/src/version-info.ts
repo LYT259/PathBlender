@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.30';
+export const APP_VERSION = '0.1.8-beta.31';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.31', date: '2026.10.05', note: {
+    en: 'Always-visible left/right mirror button on every robot card; fixed a mirror pose lost after restoring a saved session',
+    zh: '每个机器人卡片常显左右镜像按钮；修复恢复已保存会话后镜像位姿丢失的问题',
+    'zh-tw': '每個機器人卡片常顯左右鏡像按鈕；修復恢復已儲存會話後鏡像位姿遺失的問題',
+    cs: 'Vždy viditelné tlačítko zrcadlení vlevo/vpravo na každé kartě robota; opravena ztráta zrcadlené pozice po obnovení uložené relace.',
+    nl: 'Altijd zichtbare knop links/rechts spiegelen op elke robotkaart; een gespiegelde pose die na het herstellen van een opgeslagen sessie verloren ging, is hersteld.',
+    fr: 'Bouton miroir gauche/droite toujours visible sur chaque carte de robot ; correction d\u2019une pose miroir perdue après la restauration d\u2019une session enregistrée.',
+    he: 'כפתור שיקוף שמאל/ימין תמידי על כל כרטיס רובוט; תוקן אובדן מצב שיקוף לאחר שחזור הפעלה שמורה.',
+    ja: '各ロボットカードに左右ミラーボタンを常時表示；保存済みセッションの復元後にミラー姿勢が失われる問題を修正。',
+    ko: '모든 로봇 카드에 좌우 미러 버튼 상시 표시; 저장된 세션 복원 후 미러 포즈가 사라지던 문제 수정.',
+    pl: 'Zawsze widoczny przycisk lustrzanego odbicia lewo/prawo na każdej karcie robota; naprawiono utratę odbitej pozycji po przywróceniu zapisanej sesji.',
+    'pt-br': 'Botão de espelhamento esquerda/direita sempre visível em cada cartão de robô; corrigida uma pose espelhada perdida após restaurar uma sessão salva.',
+    es: 'Botón de espejo izquierda/derecha siempre visible en cada tarjeta de robot; corregida una pose de espejo perdida tras restaurar una sesión guardada.',
+    tr: 'Her robot kartında her zaman görünen sol/sağ aynalama düğmesi; kaydedilmiş bir oturum geri yüklendikten sonra kaybolan aynalanmış poz düzeltildi.',
+  } },
   { version: '0.1.8-beta.30', date: '2026.10.05', note: {
     en: 'Desktop build fix: a duplicated Tauri command attribute from the beta.29 merge broke the app compile',
     zh: '桌面构建修复：beta.29 合并产生的重复 Tauri 命令属性导致应用无法编译',
