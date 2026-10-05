@@ -848,7 +848,6 @@ fn open_prefs(app: &AppHandle) {
     let _ = builder.build();
 }
 
-#[tauri::command]
 /// Open the repo link in the user's system browser (handoff 2026-10-05).
 /// A plain `target="_blank"` anchor is not routed outward by WKWebView /
 /// WebKitGTK, so the web layer asks the shell. The allowlist keeps this from
@@ -875,6 +874,7 @@ fn open_external(url: String) -> Result<(), String> {
     }
 }
 
+#[tauri::command]
 fn open_preferences(app: AppHandle) {
     open_prefs(&app);
 }
