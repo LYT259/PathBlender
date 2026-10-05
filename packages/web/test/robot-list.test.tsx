@@ -242,3 +242,22 @@ describe('display name editor (free-text label, 2026-10-04)', () => {
     expect(committedTrajectory(onUpdate).displayName).toBe('红队');
   });
 });
+
+describe('always-visible mirror button (2026-10-05)', () => {
+  it('presses from mirroredIds and routes clicks to the shared mirror toggle', () => {
+    const sample = robot();
+    const onMirror = vi.fn();
+    const base = { robots: [sample], conflicts: [], selectedId: null as string | null, onSelect: vi.fn(), onImport: vi.fn(), onUpdate: vi.fn() };
+    const { rerender } = render(
+      <I18nProvider><RobotList {...base} onMirror={onMirror} onMirrorButtonClick={onMirror} mirroredIds={new Set([sample.trajectory.id])} /></I18nProvider>,
+    );
+    const button = screen.getByRole('button', { name: 'Mirror left/right' });
+    expect(button).toBeEnabled();
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(button);
+    expect(onMirror).toHaveBeenCalledWith(sample.trajectory.id);
+    // Without the App wiring the button renders disabled instead of dead.
+    rerender(<I18nProvider><RobotList {...base} /></I18nProvider>);
+    expect(screen.getByRole('button', { name: 'Mirror left/right' })).toBeDisabled();
+  });
+});

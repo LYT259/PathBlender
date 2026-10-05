@@ -92,7 +92,7 @@
 .robot-arrange-button { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; gap: 7px; min-height: 30px; margin: 0 2px 0 10px; padding: 4px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--btn-bg); color: var(--fg); font: inherit; font-size: 11px; cursor: pointer; }
 .robot-arrange-button .ui-icon { color: var(--accent); }
 .robot-arrange-button:hover:not(:disabled) { border-color: var(--accent); background: var(--bg-panel); }
-.robot-library .robot-settings-upload { grid-column: 1 / -1; grid-row: 3; min-height: 32px; margin: 7px 2px 0 10px; padding: 6px 9px; border: 1px solid transparent; border-radius: 7px; background: var(--accent); color: var(--accent-fg); font-size: 12px; font-weight: 500; }
+.robot-library .robot-settings-upload { grid-column: 1 / -1; grid-row: 4; min-height: 32px; margin: 7px 2px 0 10px; padding: 6px 9px; border: 1px solid transparent; border-radius: 7px; background: var(--accent); color: var(--accent-fg); font-size: 12px; font-weight: 500; }
 .robot-library .robot-settings-upload:hover { background: var(--accent); filter: brightness(1.05); }
 .robot-settings-upload:active { opacity: .85; }
 
@@ -118,3 +118,13 @@
 .robot-context-menu button:disabled { opacity: .4; cursor: default; }
 .robot-context-divider { height: 1px; background: var(--border); margin: 4px; }
 .robot-menu-check { margin-inline-start: auto; display: inline-flex; }
+
+/* Always visible for every team, including unselected and hidden teams. */
+.robot-mirror-button { grid-column: 1 / -1; grid-row: 3; display: flex; align-items: center; gap: 7px; min-width: 0; min-height: 30px; margin: 7px 2px 0 10px; padding: 4px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--btn-bg); color: var(--fg); font: inherit; font-size: 11px; text-align: start; cursor: pointer; }
+.robot-mirror-button > .ui-icon, .robot-mirror-check { flex: none; }
+.robot-mirror-button > span:not(.ui-icon):not(.robot-mirror-check) { min-width: 0; overflow-wrap: anywhere; }
+.robot-mirror-button:hover:not(:disabled) { border-color: var(--accent); background: var(--bg-panel); }
+.robot-mirror-button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-dim); }
+.robot-mirror-button[aria-pressed="true"] > .ui-icon, .robot-mirror-check { color: var(--accent); }
+.robot-mirror-check { display: inline-flex; align-items: center; justify-content: center; width: 14px; margin-inline-start: auto; }
+.robot-mirror-button:disabled { cursor: not-allowed; opacity: .5; }
