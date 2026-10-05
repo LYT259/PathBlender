@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.26';
+export const APP_VERSION = '0.1.8-beta.27';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.27', date: '2026.10.05', note: {
+    en: 'Rounded Onshape-style ViewCube: beveled cube with continuous edge shading, per-theme face colors, lighter labels',
+    zh: 'ViewCube 外观圆润化（Onshape 风格）：倒角立方体、边缘明暗连续过渡、各主题独立面色、文字更轻更小',
+    'zh-tw': 'ViewCube 外觀圓潤化（Onshape 風格）：倒角立方體、邊緣明暗連續過渡、各主題獨立面色、文字更輕更小',
+    cs: 'Zaoblený vzhled ViewCube ve stylu Onshape: zkosená krychle s plynulým stínováním hran, barvy ploch podle tématu a jemnější popisky',
+    nl: 'Afgeronde ViewCube in Onshape-stijl: afgeschuinde kubus met doorlopende randarcering, vlakkleuren per thema en lichtere labels',
+    fr: 'ViewCube au style arrondi d’Onshape : cube biseauté à ombrage continu des arêtes, couleurs de faces par thème et libellés plus légers',
+    he: 'ViewCube בעיצוב מעוגל בסגנון Onshape: קובייה משופעת עם הצללה רציפה בקווי המתאר, צבעי פאות לפי ערכת נושא ותוויות קלות יותר',
+    ja: 'Onshape 風の丸みを帯びた ViewCube：面取りされたキューブ、エッジの連続的な陰影、テーマごとの面の色、より軽いラベル',
+    ko: 'Onshape 스타일의 둥근 ViewCube: 모서리가 라운드된 큐브, 연속적인 가장자리 음영, 테마별 면 색상, 더 가벼운 라벨',
+    pl: 'Zaokrąglony ViewCube w stylu Onshape: ścięta kostka z ciągłym cieniowaniem krawędzi, kolorami ścian zależnymi od motywu i lżejszymi opisami',
+    'pt-br': 'ViewCube arredondado em estilo Onshape: cubo chanfrado com sombreamento contínuo nas arestas, cores de faces por tema e rótulos mais leves',
+    es: 'ViewCube redondeado al estilo Onshape: cubo biselado con sombreado continuo en las aristas, colores de caras por tema y etiquetas más ligeras',
+    tr: 'Onshape tarzında yuvarlatılmış ViewCube: pahlanmış küp, kenarlarda sürekli gölgeleme, temaya göre yüz renkleri ve daha hafif etiketler',
+  } },
   { version: '0.1.8-beta.26', date: '2026.10.05', note: {
     en: 'Muted path colors: gold, violet, and sage for the first three teams; old sessions migrate on open; the colorblind palette now stays consistent across imports, restores, and restarts',
     zh: '柔和路径配色：前三队改用柔和金、灰紫与鼠尾草绿；旧会话打开时自动迁移；色盲配色在导入、恢复与重启间保持一致',
