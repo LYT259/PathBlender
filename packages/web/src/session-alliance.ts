@@ -15,10 +15,11 @@ import { applyAllianceChange, fieldById, mirrorAcrossLongAxis, type Alliance, ty
  * the library consistent; new routes inherit the flag because it lives on
  * the slot, not on any route.
  */
-export function robotsForAlliance(robots: SessionTrajectory[], alliance: Alliance, field: FieldPackage): SessionTrajectory[] {
+export function robotsForAlliance(robots: SessionTrajectory[], alliance: Alliance, field: FieldPackage, options?: { ignoreMirror?: boolean }): SessionTrajectory[] {
   return robots.map((robot) => {
-    const trajectory = viewTrajectory(robot.trajectory, alliance, field, robot.mirrored === true);
-    const routeOptions = flipRouteOptions(robot.routeOptions, alliance, field, robot.mirrored === true);
+    const mirrored = !options?.ignoreMirror && robot.mirrored === true;
+    const trajectory = viewTrajectory(robot.trajectory, alliance, field, mirrored);
+    const routeOptions = flipRouteOptions(robot.routeOptions, alliance, field, mirrored);
     if (trajectory === robot.trajectory && routeOptions === robot.routeOptions) return robot;
     const patch: Partial<SessionTrajectory> = { trajectory };
     if (routeOptions !== robot.routeOptions) patch.routeOptions = routeOptions;
@@ -53,11 +54,14 @@ function flipRouteOptions(
  * Recover the common selection, then retain blue-side source samples so
  * future field changes and repeated toggles always derive from one source.
  * Legacy mixed sessions adopt their first robot's alliance as the group.
+ * The per-team mirror stays a slot flag: the blue source keeps the original
+ * samples because the display derivation applies the flag again — baking
+ * the reflection in here would reflect twice (2026-10-05).
  */
 export function restoreSessionAlliance(session: { robots: SessionTrajectory[]; fieldId: string; field?: FieldPackage }) {
   const alliance: Alliance = session.robots[0]?.trajectory.alliance === 'red' ? 'red' : 'blue';
   return {
     alliance,
-    robots: robotsForAlliance(session.robots, 'blue', session.field ?? fieldById(session.fieldId)),
+    robots: robotsForAlliance(session.robots, 'blue', session.field ?? fieldById(session.fieldId), { ignoreMirror: true }),
   };
 }
