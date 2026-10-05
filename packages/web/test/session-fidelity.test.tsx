@@ -88,23 +88,34 @@ describe('session fidelity across relaunch', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
     await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
 
-    // Adopt #11019 by picking M5 from its library, then quit at once.
-    const picker = screen.getByRole('combobox', { name: 'Active route for #11019' });
-    fireEvent.change(picker, { target: { value: 'welcome-example-route-11019-M5' } });
-    expect(picker).toHaveValue('welcome-example-route-11019-M5');
+    // Adopt #11019 by replacing its route with M5 in the composer draft and
+    // saving (routeId follows the first segment), then quit at once.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
+    fireEvent.click([...document.querySelectorAll('.sequence-track-name')]
+      .find((b) => b.textContent?.includes('#11019'))!);
+    const lane = document.querySelector('.sequence-track.is-editing .sequence-track-lane') as HTMLElement;
+    fireEvent.click(lane.querySelector('.sequence-clip')!);
+    const m5 = [...document.querySelectorAll('.sequence-route-source')]
+      .find((b) => /(^M5: |\/M5\.ghostauto: )/.test(b.getAttribute('aria-label') ?? ''))!;
+    fireEvent.click(m5);
+    fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to playback' }));
     fireEvent(window, new Event('beforeunload'));
     first.unmount();
 
     render(<App />);
     await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
     // Still adopted, still on M5 — the example refresh must not touch it.
-    expect(screen.getByRole('combobox', { name: 'Active route for #11019' })).toHaveValue(
-      'welcome-example-route-11019-M5',
-    );
+    fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
+    fireEvent.click([...document.querySelectorAll('.sequence-track-name')]
+      .find((b) => b.textContent?.includes('#11019'))!);
+    expect(document.querySelector('.sequence-track.is-editing .sequence-clip')!.getAttribute('aria-label'))
+      .toMatch(/^M5/);
     // The untouched example robot (#8814) still refreshes to the current demo.
-    expect(screen.getByRole('combobox', { name: 'Active route for #8814' })).toHaveValue(
-      'welcome-example-route-8814-L1',
-    );
+    fireEvent.click([...document.querySelectorAll('.sequence-track-name')]
+      .find((b) => b.textContent?.includes('#8814'))!);
+    expect(document.querySelector('.sequence-track.is-editing .sequence-clip')!.getAttribute('aria-label'))
+      .toMatch(/^L1,/);
   });
 
   it('falls back to the first robot when the saved selection no longer exists', async () => {

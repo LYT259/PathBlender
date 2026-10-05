@@ -43,13 +43,6 @@
 .robot-inspector .robot-dimensions-editable input { width: 100%; background: var(--bg-panel); }
 .robot-inspector-warnings { margin: 12px 0 0; padding-left: 15px; color: var(--warn); font-size: 11px; line-height: 1.6; }
 .robot-inspector-warnings li + li { margin-top: 5px; }
-.robot-inspector-actions .robot-inspector-edit { width: 100%; justify-content: center; min-height: 32px; }
-.robot-inspector-actions > .btn + .btn { margin-top: 8px; }
-.robot-inspector-export { margin-top: 16px; font-size: 11px; color: var(--fg-dim); }
-.robot-export-options { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
-.robot-inspector .robot-export-options .btn { flex: 1; justify-content: center; padding-inline: 6px; font-size: 11px; }
-.robot-inspector-remove { margin-top: 20px; padding: 0; border: 0; background: transparent; color: var(--danger); font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
-.robot-inspector-remove:hover { text-decoration: underline; }
 
 /* Per-robot route picker: flip between imported autos without re-importing. */
 .route-picker { flex: none; width: 88px; max-width: 88px; height: 30px; padding: 0 5px; color: var(--fg); background: var(--btn-bg); border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 11px; cursor: pointer; }
@@ -89,3 +82,39 @@
 .robot-library-row.needs-settings .robot-library-visibility { grid-column: 3; grid-row: 1; }
 .robot-settings-upload { grid-row: 2; grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0 7px 9px 10px; min-height: 30px; padding: 5px 9px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); border-radius: 5px; background: var(--accent-dim); color: var(--accent); font: inherit; font-size: 11px; font-weight: 550; cursor: pointer; }
 .robot-settings-upload:hover { border-color: var(--accent); }
+
+/* Team cards separate identity, route arrangement and missing-file action. */
+.robot-library .robot-library-row { display: grid; grid-template-columns: minmax(0, 1fr) 28px; gap: 0 2px; padding: 0 6px 8px 0; margin-bottom: 6px; border-color: var(--border); background: var(--bg-panel); cursor: pointer; }
+.robot-library .robot-library-row.is-selected { background: var(--accent-dim); border-color: var(--accent); }
+.robot-library-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.robot-library .robot-library-row .robot-identity-cell, .robot-library .robot-library-row .robot-team-editor { grid-column: 1; grid-row: 1; }
+.robot-library .robot-library-row .robot-library-visibility { grid-column: 2; grid-row: 1; align-self: start; margin-top: 6px; }
+.robot-arrange-button { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; gap: 7px; min-height: 30px; margin: 0 2px 0 10px; padding: 4px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--btn-bg); color: var(--fg); font: inherit; font-size: 11px; cursor: pointer; }
+.robot-arrange-button .ui-icon { color: var(--accent); }
+.robot-arrange-button:hover:not(:disabled) { border-color: var(--accent); background: var(--bg-panel); }
+.robot-library .robot-settings-upload { grid-column: 1 / -1; grid-row: 3; min-height: 32px; margin: 7px 2px 0 10px; padding: 6px 9px; border: 1px solid transparent; border-radius: 7px; background: var(--accent); color: var(--accent-fg); font-size: 12px; font-weight: 500; }
+.robot-library .robot-settings-upload:hover { background: var(--accent); filter: brightness(1.05); }
+.robot-settings-upload:active { opacity: .85; }
+
+/* A label and icon accompany color, so source status remains readable without color vision. */
+.robot-data-source { display: inline-flex; align-items: center; gap: 5px; min-height: 25px; padding: 3px 7px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.robot-data-source.is-verified { color: var(--badge-ok-fg); background: var(--badge-ok-bg); border-color: color-mix(in srgb, var(--badge-ok-fg) 55%, var(--border)); }
+.robot-data-source.is-missing { background: var(--badge-err-bg); color: var(--badge-err-fg); border-color: var(--badge-err-fg); }
+.robot-dimensions > .robot-dimension-card { padding: 11px 10px; border-width: 1.5px; }
+.robot-dimensions > .robot-dimension-card.is-verified { border-color: var(--badge-ok-fg); background: color-mix(in srgb, var(--badge-ok-bg) 50%, var(--bg-panel)); }
+.robot-dimensions > .robot-dimension-card.is-default { border-color: var(--badge-err-fg); background: color-mix(in srgb, var(--badge-err-bg) 50%, var(--bg-panel)); }
+.robot-dimension-card dt { display: flex; justify-content: space-between; align-items: center; gap: 5px; }
+.robot-dimension-card dt > span { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; }
+.robot-dimension-card.is-default dt > span { color: var(--badge-err-fg); }
+.robot-dimension-card.is-verified dt > span { color: var(--badge-ok-fg); }
+.robot-dimension-card dd { font-size: 16px; font-weight: 600; }
+
+.robot-context-menu { position: fixed; z-index: 1500; width: 224px; max-width: calc(100vw - 16px); padding: 5px; background: var(--bg-panel); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px var(--shadow); }
+.robot-context-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 7px 8px; color: var(--fg-dim); font-size: 11px; }
+.robot-context-menu button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--fg); font: inherit; font-size: 12px; text-align: start; cursor: pointer; }
+.robot-context-menu button:hover:not(:disabled), .robot-context-menu button:focus-visible { background: var(--accent); color: var(--accent-fg); outline: 0; }
+.robot-context-menu button.is-destructive { color: var(--danger); }
+.robot-context-menu button.is-destructive:hover:not(:disabled), .robot-context-menu button.is-destructive:focus-visible { background: var(--badge-err-bg); color: var(--badge-err-fg); }
+.robot-context-menu button:disabled { opacity: .4; cursor: default; }
+.robot-context-divider { height: 1px; background: var(--border); margin: 4px; }
+.robot-menu-check { margin-inline-start: auto; display: inline-flex; }

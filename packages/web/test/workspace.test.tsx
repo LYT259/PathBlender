@@ -145,7 +145,7 @@ describe('workspace workflow', () => {
     expect(season).toHaveValue('chargedup-2023');
     expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
     // The restored start delay surfaces in the bottom arrangement surface.
-    fireEvent.click(screen.getByRole('button', { name: 'Arrange timeline' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
     fireEvent.click(screen.getByRole('button', { name: /^Stop And Score, 1\.25–/ }));
     expect(screen.getByRole('spinbutton', { name: 'Start' })).toHaveValue(1.25);
   });

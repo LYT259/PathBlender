@@ -58,9 +58,16 @@ describe('whole-session alliance control', () => {
     Object.defineProperty(b, 'webkitRelativePath', { value: 'choreo/Side.ghostauto' });
     drop([a, b]);
     await waitFor(() => expect(fieldRobots()).toHaveLength(3));
-    const picker = screen.getAllByRole('combobox', { name: /Active route for/ })[2]!;
-    const options = within(picker).getAllByRole('option') as HTMLOptionElement[];
-    fireEvent.change(picker, { target: { value: options[1]!.value } });
+    // Route replacement now lives in the composer; the alliance must survive it.
+    const folderRow = [...document.querySelectorAll('.robot-library-row')]
+      .find((r) => r.textContent?.includes('#AAAAAA'))!;
+    fireEvent.click(within(folderRow).getByRole('button', { name: 'Arrange timeline' }));
+    await screen.findByRole('region', { name: 'Arrange timeline' });
+    const lane = document.querySelector('.sequence-track.is-editing .sequence-track-lane') as HTMLElement;
+    fireEvent.click(within(lane).getAllByRole('button', { name: /, \d+\.\d+–/ })[0]!);
+    fireEvent.click([...document.querySelectorAll('.sequence-route-source')][1]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to playback' }));
     expect(fieldRobots()).toHaveLength(3);
     expect(fieldRobots().every((r) => r.trajectory.alliance === 'red')).toBe(true);
     fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
@@ -82,7 +89,7 @@ describe('whole-session alliance control', () => {
     const file = pathFile('straight_run.ghostauto');
     Object.defineProperty(file, 'webkitRelativePath', { value: 'autos/straight_run.ghostauto' });
     drop([file]);
-    await screen.findByRole('combobox', { name: 'Active route for #0001' });
+    await screen.findByText('#0001', { selector: '.robot-name' });
     expect(fieldRobots()).toHaveLength(3);
     const mine = () => fieldRobots().find((r) => r.trajectory.teamNumber === '0001')!;
     expect(mine().trajectory.alliance).toBe('red');

@@ -513,3 +513,25 @@ export function applyAllianceChange(
   });
   return { ...traj, alliance, samples };
 }
+
+/**
+ * Mirror a trajectory between the two trench sides (left↔right): reflection
+ * across the field's long centerline, `y → widthM − y`, in whatever frame the
+ * samples are already stored in — the caller applies it AFTER the alliance
+ * view flip, so one definition serves both alliances. A reflection changes
+ * chirality, so heading, vy and ω negate while x, vx and every event time
+ * survive unchanged (route order, waits and duration are untouched by
+ * construction). An involution: mirroring twice restores the samples
+ * bit-for-bit apart from floating-point identity of the arithmetic
+ * `widthM − (widthM − y) === y` on IEEE doubles.
+ */
+export function mirrorAcrossLongAxis(traj: Trajectory, field: FieldPackage): Trajectory {
+  const samples = traj.samples.map((s) => ({
+    ...s,
+    y: field.widthM - s.y,
+    heading: wrapAngle(-s.heading),
+    vy: -s.vy,
+    omega: -s.omega,
+  }));
+  return { ...traj, samples };
+}

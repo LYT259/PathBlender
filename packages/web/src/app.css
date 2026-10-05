@@ -381,12 +381,6 @@ input[type="number"], input[type="text"] {
   border-radius: 8px; padding: 0 7px; margin-left: 6px; vertical-align: 1px;
 }
 .conflict-item.is-tolerance .conflict-jump { border-left-color: var(--warn, #c98a00); }
-.report-export {
-  margin-top: 8px; width: 100%; padding: 7px 10px; font-size: 12px;
-  background: var(--bg-card); color: var(--fg);
-  border: 1px solid var(--border); border-radius: 6px; cursor: pointer;
-}
-.report-export:hover { background: var(--hover); }
 
 
 /* ---------- timeline ---------- */

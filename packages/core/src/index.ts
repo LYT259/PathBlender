@@ -23,6 +23,7 @@ export {
   fieldById,
   flipPoseToBlue,
   makeCustomField,
+  mirrorAcrossLongAxis,
   withFieldVariant,
 } from './field';
 export type { FieldArtStyle, FieldImageCalibration, FieldPackage } from './field';
