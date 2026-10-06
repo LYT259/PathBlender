@@ -45,8 +45,9 @@ PathBlender fills that gap:
   parsed locally in your browser, and the web build makes **no network
   requests at all**;
 - **Also a desktop app** — the same UI in a lightweight Tauri shell for
-  macOS, adding session save/open, PNG export, folder import and in-app
-  updates (stable or beta channel). Its only network activity is the
+  macOS, adding session save/open, GIF replay and solution-package export,
+  folder import and in-app updates (stable or beta channel). Its only
+  network activity is the
   update check you trigger, which contacts GitHub Releases.
 
 ## Quick start
@@ -65,8 +66,9 @@ PathBlender fills that gap:
    alliance view, or step the clock. When you know what has to change,
    make the change in the owning team's tool, re-export, and drop the new
    file in — the session updates in place.
-5. **Share** the result: save a session file, or export a PNG for your
-   alliance chat (desktop app).
+5. **Share** the result: save a session file, or export a GIF replay of the
+   2D view — plus a solution package with everything the partner needs —
+   for the alliance chat (desktop app).
 
 ![Collision report](docs/screenshots/collision-report.png)
 
@@ -97,7 +99,7 @@ any other season or a practice field).
   are planned. The release page's other assets (`.tar.gz`, `.sig`,
   `.json`) are updater internals — you don't need them.
 - **Web app** (viewer build: import, playback and checking; no session
-  save / PNG export / folder import) —
+  save / GIF and solution-package export / folder import) —
   [pathblender.pages.dev](https://pathblender.pages.dev), with a preview
   channel at [pathblender-preview.pages.dev](https://pathblender-preview.pages.dev).
 
@@ -131,9 +133,28 @@ discussion lives in the project's Chief Delphi announcement thread.
 
 ## Status
 
-Viewer scope as described above, implemented and regression-tested
-(unit suites plus a scripted real-browser walkthrough). Desktop builds
-ship from [GitHub Releases](https://github.com/LYT259/pathblender/releases).
+Viewer scope as described above, implemented and regression-tested. Desktop
+builds ship from [GitHub Releases](https://github.com/LYT259/pathblender/releases).
+
+## Verification (for people changing the code)
+
+Three layers, all run locally — none of them ships with the app:
+
+| Layer | Command | What it proves |
+| --- | --- | --- |
+| Unit + jsdom suites | `npm test` (or `-w @pathblender/core` / `-w @pathblender/web`) | Parsers, geometry, fusion and collision maths, and component behaviour in a simulated DOM. |
+| Pointer walkthrough | `npm run build -w @pathblender/web && npm run preview -w @pathblender/web`, then `node scripts/browser-walkthrough.mjs` | The production build driven with a real mouse and real files: folder import, the composer's click-and-drag placement, save/restore through an actual download, all 41 languages including RTL, artwork repaints, service worker, and 3D (model, lit robots, ViewCube picks, season switches). |
+| Keyboard walkthrough | same preview server, then `node scripts/keyboard-walkthrough.mjs` | The same app driven with the keyboard only — every main workflow has to be completable without a mouse. |
+
+Both harnesses print `PASS`/`FAIL` per step, exit non-zero on any failure and
+save screenshots to `/tmp/pb-shots`. Run them after any user-visible change
+and before a release; when the UI changes, update the harness in the same pull
+request — a check that targets a retired control fails the next person rather
+than protecting them.
+
+中文：以上三层都只在本机跑、不随软件发布。单元测试验算法与组件行为；两个
+走查脚本则在真实浏览器里把成品点一遍——一个只用鼠标（含真实文件导入、会话
+存读、41 种语言、3D），一个只用键盘。改动界面时请在同一个 PR 里同步更新脚本。
 
 ## License & attribution
 
