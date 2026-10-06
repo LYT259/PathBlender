@@ -55,9 +55,12 @@ moment, switch that robot's route from the library if it has alternates, and
 take the timestamp back to the team that owns the path.
 
 Current limits, so you know what you're getting: PathPlanner's rarer path
-constraints are approximated (with a warning shown); robot geometry comes from
-the `.ghostauto` file or the team's PathPlanner `settings.json` when present
-and is otherwise an editable default; fields for 2022–2026 are bundled (all
+constraints are approximated (with a warning shown); robot geometry is
+read-only — it comes from the `.ghostauto` file or that team's PathPlanner
+`settings.json`, and when a file carries none you get that season's
+rule-maximum default, which the robot card marks as a default. So the way to
+sharpen a near-miss verdict is to drop that team's `settings.json` in next to
+their paths, not to type dimensions; fields for 2022–2026 are bundled (all
 five seasons have official 3D models) and you can import a custom field image
 with calibration + an AprilTag layout JSON for anything else.
 Windows/Linux desktop builds are staged for a follow-up release.
