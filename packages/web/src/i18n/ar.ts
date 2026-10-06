@@ -210,7 +210,7 @@ export const ar = {
   'customField.cancel': 'إلغاء',
   'bounds.title': 'حدود الملعب',
   'bounds.item': '{start}–{end} ث · {depth} بعد الجدار {edge}',
-  'edges.far': 'البعيد', 'edges.left': 'اليسار', 'edges.near': 'القريب', 'edges.right': 'اليمين',
+  'edges.far': 'البعيد', 'edges.left': 'الأيسر', 'edges.near': 'القريب', 'edges.right': 'الأيمن',
   'customField.tags': 'تحميل تخطيط AprilTag…',
   'updates.upToDate': "أنت على أحدث إصدار",
   'updates.downloading': 'تم العثور على v{v}، جاري التنزيل وإعادة التشغيل…',

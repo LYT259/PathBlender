@@ -180,7 +180,7 @@ export const sv = {
   'customField.cancel': 'Avbryt',
   'bounds.title': 'Fältgränser',
   'bounds.item': '{start}–{end} s · {depth} bortom {edge} väggen',
-  'edges.far': 'bortre', 'edges.left': 'vänster', 'edges.near': 'främre', 'edges.right': 'höger',
+  'edges.far': 'bortre', 'edges.left': 'vänstra', 'edges.near': 'främre', 'edges.right': 'högra',
   'customField.tags': 'Ladda AprilTag-layout…',
   'updates.upToDate': "Du har den senaste versionen",
   'updates.downloading': 'Hittade v{v}, laddar ner och startar om…',

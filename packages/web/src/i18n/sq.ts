@@ -180,7 +180,7 @@ export const sq = {
   'customField.cancel': 'Anulo',
   'bounds.title': 'Kufijtë e fushës',
   'bounds.item': '{start}–{end} s · {depth} përtej murit {edge}',
-  'edges.far': 'i largët', 'edges.left': 'i majtë', 'edges.near': 'i afërt', 'edges.right': 'i djathtë',
+  'edges.far': 'të largët', 'edges.left': 'të majtë', 'edges.near': 'të afërt', 'edges.right': 'të djathtë',
   'customField.tags': 'Ngarko planin e AprilTag…',
   'updates.upToDate': "Jeni të përditësuar",
   'updates.downloading': 'U gjet v{v}, po shkarkohet dhe po riniset…',

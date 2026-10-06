@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.56';
+export const APP_VERSION = '0.1.8-beta.57';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.57', date: '2026.10.06', note: {
+    en: 'Language audit round 3: fixed the field-side names interpolated into the out-of-bounds row, in 17 languages',
+    zh: '语言审核第三轮：修正 17 种语言里越界提示行插入的场地边侧名称',
+    'zh-tw': '語言審核第三輪：修正 17 種語言裡越界提示行插入的場地邊側名稱',
+    cs: '3. kolo jazykové revize: opraveny názvy stran hřiště vkládané do řádku o opuštění hranic, ve 17 jazycích',
+    nl: 'Ronde 3 van de taalcontrole: de veldzijden die in de regel „buiten de grenzen” worden ingevoegd, gecorrigeerd in 17 talen',
+    fr: 'Troisième passe d’audit linguistique : correction des noms de côtés de terrain insérés dans la ligne de hors-limites, dans 17 langues',
+    he: 'סיבוב שלישי של ביקורת השפות: תוקנו שמות צידי המגרש המוזרקים לשורת החריגה מגבולות — ב־17 שפות',
+    ja: '言語レビュー第3弾：フィールド外表示の行に挿入される辺側の名称を17の言語で修正しました',
+    ko: '언어 점검 3차: 필드 경계 초과 문장에 삽입되는 측면 이름을 17개 언어에서 고쳤습니다',
+    pl: 'Runda 3 przeglądu języków: poprawione nazwy stron boiska wstawiane do wiersza o wyjściu poza granice, w 17 językach',
+    'pt-br': 'Rodada 3 da revisão de idiomas: corrigidos os nomes dos lados do campo injetados na linha de fora dos limites, em 17 idiomas',
+    es: 'Ronda 3 de la revisión de idiomas: corregidos los nombres de lados del campo insertados en la línea de fuera de límites, en 17 idiomas',
+    tr: 'Dil denetimi 3. tur: sahadan çıkma satırına yerleştirilen saha kenarı adları 17 dilde düzeltildi',
+  } },
   { version: '0.1.8-beta.56', date: '2026.10.06', note: {
     en: 'Language audit round 2: repaired wording errors each dictionary proved against its own terms, in 30 languages',
     zh: '语言审核第二轮：依据各语言词表自身的用词一致性，修正 30 种语言的用词错误',
