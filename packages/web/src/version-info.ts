@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.37';
+export const APP_VERSION = '0.1.8-beta.38';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.38', date: '2026.10.06', note: {
+    en: '2D/3D switch is now instant — the 3D view stays loaded in the background; the 3D recenter button now matches the ViewCube top-front angle',
+    zh: '2D/3D 切换现已即时——3D 视图在后台保持加载；3D 复位按钮现在对齐 ViewCube「上-前」棱的角度',
+    'zh-tw': '2D/3D 切換現已即時——3D 視圖在背景保持載入；3D 復位按鈕現在對齊 ViewCube「上-前」稜的角度',
+    cs: 'Přepínání 2D/3D je nyní okamžité — 3D pohled zůstává načtený na pozadí; tlačítko vycentrování 3D odpovídá úhlu horní-přední hrany ViewCube.',
+    nl: 'De 2D/3D-wissel is nu direct — de 3D-weergave blijft op de achtergrond geladen; de 3D-recenterknop volgt nu de boven-voorhoek van de ViewCube.',
+    fr: 'Le basculement 2D/3D est désormais instantané — la vue 3D reste chargée en arrière-plan ; le bouton de recentrage 3D suit maintenant l\'angle haut-avant du ViewCube.',
+    he: 'מעבר 2D/3D הוא כעת מיידי — תצוגת ה־3D נשארת טעונה ברקע; כפתור המרכוז מחדש ב־3D תואם כעת לזווית העליון־קדמי של ה־ViewCube',
+    ja: '2D/3D の切り替えが即時になりました — 3D ビューはバックグラウンドで読み込み済み。3D の再センターボタンは ViewCube の上-前面の角度に一致します',
+    ko: '2D/3D 전환이 이제 즉시입니다 — 3D 뷰는 백그라운드에 로드된 채 유지되고, 3D 재중앙 버튼은 ViewCube의 위-앞 모서리 각도와 일치합니다',
+    pl: 'Przełączanie 2D/3D jest teraz natychmiastowe — widok 3D pozostaje załadowany w tle; przycisk wyśrodkowania 3D odpowiada teraz kątowi górnej-przedniej krawędzi ViewCube.',
+    'pt-br': 'A alternância 2D/3D agora é instantânea — a visualização 3D permanece carregada em segundo plano; o botão de recentralizar do 3D corresponde agora ao ângulo superior-frontal do ViewCube.',
+    es: 'El cambio entre 2D y 3D ahora es instantáneo — la vista 3D permanece cargada en segundo plano; el botón de centrado 3D coincide ahora con el ángulo superior-frontal del ViewCube.',
+    tr: '2D/3D geçişi artık anında — 3D görünüm arka planda yüklü kalır; 3D yeniden ortala düğmesi artık ViewCube\'un üst-ön köşe açısıyla eşleşiyor',
+  } },
   { version: '0.1.8-beta.37', date: '2026.10.06', note: {
     en: 'Wire the showHeatmap prop into the 2D canvas so the heatmap toggle actually renders (verified by pixel-diff)',
     zh: '把 showHeatmap 参数真正接入 2D 画布，热力图开关这次真的会渲染（已用像素差分验证）',
