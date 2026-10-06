@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.46';
+export const APP_VERSION = '0.1.8-beta.47';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.47', date: '2026.10.06', note: {
+    en: 'Timeline polish: hovering a path row now highlights the whole row — label and track together',
+    zh: '时间轴细节：悬停某条路径时整行一起高亮——队名标签与轨迹条不再分开',
+    'zh-tw': '時間軸細節：懸停某條路徑時整行一起高亮——隊名標籤與軌跡條不再分開',
+    cs: 'Doladění časové osy: přejetí myší nad řádkem trasy zvýrazní celý řádek — štítek i stopa společně.',
+    nl: 'Tijdlijn-polijsting: bij aanwijzen van een rij licht de hele rij op — label en spoor samen.',
+    fr: 'Finition de la frise : survoler une ligne de trajet la surligne entièrement, étiquette et piste ensemble.',
+    he: 'ליטוש ציר הזמן: ריחוף על שורת מסלול מדגיש את השורה כולה — התווית והמסלול יחד',
+    ja: 'タイムラインの仕上げ：パスの行にホバーすると行全体がハイライトされます——チーム名とトラックが一緒に',
+    ko: '타임라인 다듬기: 경로 행에 마우스를 올리면 이름표와 트랙이 함께 한 줄로 강조됩니다',
+    pl: 'Szlif osi czasu: najechanie na wiersz trasy podświetla cały wiersz — etykietę i ścieżkę razem.',
+    'pt-br': 'Ajuste da linha do tempo: ao passar o mouse sobre uma linha de trajeto, a linha inteira é destacada — rótulo e trilha juntos',
+    es: 'Pulido de la línea de tiempo: al pasar el cursor por una fila de ruta se resalta la fila entera, etiqueta y pista juntas.',
+    tr: 'Zaman çizelgesi rötuşu: bir rota satırının üzerine gelince satırın tamamı vurgulanıyor — etiket ve iz birlikte',
+  } },
   { version: '0.1.8-beta.46', date: '2026.10.06', note: {
     en: 'Edit menu Cut/Copy/Paste/Select All now follow the app language',
     zh: '编辑菜单的剪切/拷贝/粘贴/全选现在跟随界面语言',
