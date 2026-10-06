@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.55';
+export const APP_VERSION = '0.1.8-beta.56';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.56', date: '2026.10.06', note: {
+    en: 'Language audit round 2: repaired wording errors each dictionary proved against its own terms, in 30 languages',
+    zh: '语言审核第二轮：依据各语言词表自身的用词一致性，修正 30 种语言的用词错误',
+    'zh-tw': '語言審核第二輪：依據各語言詞表自身的用詞一致性，修正 30 種語言的用詞錯誤',
+    cs: '2. kolo jazykové revize: opraveny formulace, které si každý slovník dokázal vlastními termíny, ve 30 jazycích',
+    nl: 'Ronde 2 van de taalcontrole: formuleringen gecorrigeerd die elke taallijst met haar eigen bewoordingen aantoonde, in 30 talen',
+    fr: 'Deuxième passe d’audit linguistique : correction, dans 30 langues, des formulations que chaque dictionnaire démontrait avec ses propres termes',
+    he: 'סיבוב שני של ביקורת השפות: תיקוני ניסוח שכל מילון הצליח להוכיח בעזרת המונחים שלו עצמו — ב־30 שפות',
+    ja: '言語レビュー第2弾：各言語の辞書が自書の用語だけで裏付けられる表現の誤りを30言語で修正しました',
+    ko: '언어 점검 2차: 각 언어 사전이 자기 표기만으로도 입증할 수 있는 표현 오류를 30개 언어에서 고쳤습니다',
+    pl: 'Runda 2 przeglądu języków: poprawione sformułowania, które każdy słownik potwierdzał własnymi terminami, w 30 językach',
+    'pt-br': 'Rodada 2 da revisão de idiomas: corrigidas formulações que cada dicionário provava com seus próprios termos, em 30 idiomas',
+    es: 'Ronda 2 de la revisión de idiomas: corregidas formulaciones que cada diccionario demostraba con sus propios términos, en 30 idiomas',
+    tr: 'Dil denetimi 2. tur: her sözlüğün kendi terimleriyle kanıtlayabildiği ifade hataları 30 dilde düzeltildi',
+  } },
   { version: '0.1.8-beta.55', date: '2026.10.06', note: {
     en: 'Language audit round 1: fixed doubled length units, wrong decimal commas and tips that named the wrong button, across 28 languages',
     zh: '语言审核第一轮：修正 28 种语言里重复的长度单位、错误的小数点，以及叫错按钮名的提示',
