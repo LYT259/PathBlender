@@ -141,16 +141,16 @@ describe('welcome flow', () => {
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
   });
 
-  it('hands keyboard focus to the robot library when the welcome page gives way', async () => {
-    // The welcome button is unmounted by the very action it triggered, which
-    // used to drop focus onto <body> — the keyboard had no home to tab from
-    // (2026-10-06 keyboard pass).
+  it('leaves focus alone when the workspace appears', async () => {
+    // 2026-10-06: an earlier build auto-focused the first robot card here so
+    // the keyboard had a landing spot. WebKit then painted a focus ring on a
+    // freshly opened app, which read as a stray box; the user ordered the
+    // landing removed. Nothing may steal focus on load.
     render(<App />);
     expect(document.activeElement).toBe(document.body);
     await openExample();
-    const target = document.querySelector('.robot-library-select');
-    await waitFor(() => expect(document.activeElement).toBe(target));
-    expect(target).toHaveAccessibleName(/#8814/);
+    await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
+    expect(document.activeElement).toBe(document.body);
   });
 
   it('replaces a stale example from an older build with the current example on restore', async () => {

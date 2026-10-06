@@ -58,12 +58,16 @@ await page.keyboard.press('Enter');
 await page.waitForSelector('.robot-library-row', { timeout: 15000 });
 const robotCount = await page.locator('.robot-library-row').count();
 check('welcome: Enter loads the example (keyboard only)', robotCount === 2, `${robotCount} robots`);
-// The button that loaded the example is gone by then — the landing effect
-// must hand focus to a real control, or every later Tab starts from <body>.
-const landed = await page
-  .waitForFunction(() => document.activeElement?.classList?.contains('robot-library-select'), null, { timeout: 3000 })
-  .then(() => true).catch(() => false);
-check('landing: focus moves into the robot library', landed, await active());
+// Nothing may auto-focus when the workspace appears (2026-10-06: an earlier
+// build landed focus on the first robot card, which painted a focus ring on a
+// freshly opened app). The keyboard walks in from the top instead.
+check('welcome: no control is focused on load',
+  (await page.evaluate(() => document.activeElement?.tagName)) === 'BODY', await active());
+const reachedLibrary = await walk(
+  () => page.evaluate(() => document.activeElement?.classList?.contains('robot-library-select') ?? false),
+  { max: 30 },
+);
+check('Tab reaches the robot library', reachedLibrary, await active());
 
 // 2 — ? opens the shortcut help; Tab stays inside; Escape closes.
 await page.keyboard.press('?');
