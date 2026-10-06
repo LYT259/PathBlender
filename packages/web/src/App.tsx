@@ -229,6 +229,15 @@ function AppBody() {
   // analysis, inspectors and session exports consume the same alliance view.
   const robots = useMemo(() => robotsForAlliance(sourceRobots, alliance, field), [sourceRobots, alliance, field]);
   const hasRobots = robots.length > 0;
+  // Keyboard landing (2026-10-06 keyboard pass): the welcome button that
+  // loaded the example (or the first import) is unmounted by the very
+  // action it triggered, which dropped focus onto <body>. When the
+  // workspace first appears, give the keyboard a real home.
+  useEffect(() => {
+    if (!hasRobots) return;
+    if (document.activeElement !== document.body) return;
+    document.querySelector<HTMLElement>('.robot-library-select')?.focus();
+  }, [hasRobots]);
   const fieldImageUrl = fieldImageFor(fieldId, fieldVariant, fieldStyle, customImageUrl);
   // Per-season rule-max geometry (MK5i plan, 2026-10-02): default-geometry
   // robots are re-resolved against the selected field's season, so checks
