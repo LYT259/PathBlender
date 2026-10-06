@@ -162,6 +162,12 @@ body.desktop.desktop-macos .toolbar { padding-left: 84px; }
 }
 .field-canvas-3d { flex: 1; min-height: 0; }
 .field-canvas-3d canvas { display: block; }
+/* Parked 3D wrapper: fills the canvas slot like the canvas itself would,
+   and collapses (not just visually hides) while 2D owns the slot — the
+   explicit [hidden] rule is required because display:flex would otherwise
+   override the UA's display:none. */
+.canvas-3d-keep { flex: 1; min-height: 0; display: flex; }
+.canvas-3d-keep[hidden] { display: none; }
 
 /* ---------- preferences modal ---------- */
 .prefs-overlay {
