@@ -12,6 +12,7 @@
 - [ ] `npm test` 全绿（core + web e2e）
 - [ ] `npm run build` 成功；`packages/web/dist` 体积合理（gzip JS < 300 KB 量级）
 - [ ] 本地 `npm run build -w @pathblender/web && npm run preview -w @pathblender/web` 后跑两个真实浏览器走查脚本并全绿：`node scripts/browser-walkthrough.mjs`（鼠标 + 真实文件：四格式导入 → 回放 → 碰撞 → 路线库编排 → 41 语言与 RTL → 会话存/取 → GIF 与方案包导出 → 服务工作者 → 3D）、`node scripts/keyboard-walkthrough.mjs`（纯键盘走通同一成品）。界面一改，脚本同步改在同一个 PR 里，别留下指向已删控件的断言
+- [ ] 网站门控自查 `scripts/viewer-check.mjs` 全绿（25 项）：`VITE_VIEWER_ONLY=1 npm run build -w @pathblender/web` + `node scripts/serve-dist.mjs <端口>`，再 `VIEWER_BASE=http://localhost:<端口>/ node scripts/viewer-check.mjs`；查的是发布出去的查看器构建留住导入/回放/检查/编排、首屏零跨域请求、首访跟随系统语言，且任何入口（含没有按钮的 Ctrl/Cmd+S 快捷键）都写不出文件。改动保存/导出类入口时必须重跑
 - [ ] 桌面版：`npm run tauri build -w packages/desktop` 出 .app/.dmg；ad-hoc 签名保留（`codesign -dv` 核对）；启动冒烟（进程存活）
 - [ ] **深浅色应用图标**：`packages/desktop/src-tauri/icons/AppIcon.icon`（日间红底 / 夜间黑底，第 14 轮定稿）经 `scripts/apply-dark-icon.sh` 注入 Assets.car + `CFBundleIconName`——本地 install-desktop.sh 与 release.yml 均已内置该步；抽查安装包 `Contents/Resources/Assets.car` 存在且 `assetutil --info` 含 `NSAppearanceNameDarkAqua`
 

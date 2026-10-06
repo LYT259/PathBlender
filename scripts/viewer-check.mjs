@@ -61,16 +61,13 @@ const browser = await chromium
 
 /** @param {{ locale?: string }} options */
 async function openApp(options = {}) {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: options.locale ?? 'en-US', acceptDownloads: true });
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: options.locale ?? 'en-US' });
   const page = await ctx.newPage();
   const errors = [];
   const crossOrigin = [];
-  /** Any file the page writes out — the viewer build must never produce one. */
-  const downloads = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('response', (r) => { if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`); });
-  page.on('download', (d) => downloads.push(d.suggestedFilename()));
   page.on('request', (r) => {
     try {
       const url = new URL(r.url());
@@ -78,12 +75,12 @@ async function openApp(options = {}) {
     } catch { /* non-http scheme (data:, blob:) — local by definition */ }
   });
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-  return { ctx, page, errors, crossOrigin, downloads };
+  return { ctx, page, errors, crossOrigin };
 }
 
 // ---------------------------------------------------------------- welcome ---
 {
-  const { ctx, page, errors, crossOrigin, downloads } = await openApp();
+  const { ctx, page, errors, crossOrigin } = await openApp();
 
   const tops = page.locator('.menu-bar .menu-top');
   check('web menu bar renders its five sections', await tops.count() === 5, `${await tops.count()} sections`);
@@ -137,14 +134,6 @@ async function openApp(options = {}) {
     itemLabels.join(' / '));
   await page.keyboard.press('Escape');
 
-  // No visible control is not the same as no capability: the web layer binds
-  // ⌘S/Ctrl+S itself (App.tsx mirrors the desktop accelerators), and until
-  // 2026-10-06 that shortcut wrote a session file out of the viewer build.
-  await page.keyboard.press('Control+s');
-  await page.keyboard.press('Meta+s');
-  await page.waitForTimeout(1200);
-  check('the save accelerator writes no file', downloads.length === 0, downloads.join(' | '));
-
   const github = page.locator('.toolbar-github');
   check('GitHub link points where source says it should',
     await github.isVisible() && await github.getAttribute('href') === GITHUB_URL, await github.getAttribute('href') ?? 'missing');
@@ -180,6 +169,28 @@ async function openApp(options = {}) {
   }
 
   check('no page errors after the whole pass', errors.length === 0, errors.slice(0, 3).join(' | '));
+  await ctx.close();
+}
+
+// ------------------------------------------- write paths with no button ---
+// Hiding the affordance is not the gate. Until 2026-10-06 the File menu
+// dropped Save on this build while the window Ctrl/Cmd+S accelerator kept
+// calling saveSession, so pathblender.pages.dev downloaded .pb files that no
+// button could produce — the one leak the DOM scans above cannot see.
+// Each combination gets a FRESH profile: Chrome blocks a second automatic
+// download from the same page (later probes would false-pass), and the
+// debounced autosave would restore a session and hide the welcome screen.
+for (const combo of ['Control+s', 'Meta+s']) {
+  const { ctx, page } = await openApp();
+  await page.locator('.welcome-import').click();
+  await page.locator('input[type="file"][multiple]').first()
+    .setInputFiles(`${SAMPLES}/ghostauto/straight_run.ghostauto`);
+  await page.waitForSelector('.robot-library-row', { timeout: 15000 });
+  const settled = page.waitForEvent('download', { timeout: 5000 })
+    .then((d) => d.suggestedFilename()).catch(() => null);
+  await page.keyboard.press(combo);
+  const downloaded = await settled;
+  check(`${combo} writes no file on the viewer build`, downloaded === null, downloaded ?? 'no download');
   await ctx.close();
 }
 
