@@ -38,15 +38,16 @@
 ## GitHub（发布操作纪律）
 
 - [ ] 推送 / PR / Pages 配置一律手动单发，不写自动重试循环；失败间隔 ≥60 秒再评估
-- [ ] 网站上线（2026-09-09 起实际走 Cloudflare Pages 直传，报告 §7.1 的国内可达性方案即此渠道；**2026-10-04 已定弃用，转公开后退役**——见下条）：
-      `npx wrangler pages deploy packages/web/dist --project-name=pathblender --branch=stable`；
-      β 预览站另建 `pathblender-preview`（`--branch=beta` + `VITE_SITE_PREVIEW=1`）。
-      **部署后核对线上版本与本次发版一致**（2026-10-02 审计曾发现线上挂着转型前旧构建；2026-10-03 已从 beta.35 查看器构建重部署两站并线上实测，此条转为常规核对项）。
-- [ ] GitHub Pages 工作流已于 2026-10-02 移除：私有 Free 仓库无法启用 Pages，deploy.yml 在每次 stable 推送上稳定失败（5/5）。**2026-10-04 用户定稿：弃 Cloudflare，转公开后全用 GitHub Pages——重建 deploy.yml 自动部署（viewer 构建），上面 wrangler 直传与两站部署条款届时退役**。
+- [ ] 网站上线（2026-09-09 起实际走 Cloudflare Pages 直传，报告 §7.1 的国内可达性方案即此渠道；**2026-10-04 已定弃用、转公开后退役**；**2026-10-06 用户定稿：转公开前为试用演示恢复本渠道为常设——每次分支合并到 beta 后重部署 `pathblender.pages.dev`，直至转公开**）：
+      `VITE_VIEWER_ONLY=1 npm run build -w packages/web` 然后
+      `npx wrangler pages deploy packages/web/dist --project-name=pathblender --branch=stable`（本机直传，零 Actions 额度）；
+      β 预览站 `pathblender-preview` 仍弃用不动（`--branch=beta` + `VITE_SITE_PREVIEW=1` 的旧条款仅存档）。
+      **部署后核对线上版本与树内一致**（回读 `https://pathblender.pages.dev/sw.js` 的缓存名 `pb-<版本>-<时间戳>`；2026-10-02 审计曾发现线上挂着转型前旧构建，此条为常规核对项）。
+- [ ] GitHub Pages 工作流已于 2026-10-02 移除：私有 Free 仓库无法启用 Pages，deploy.yml 在每次 stable 推送上稳定失败（5/5）。**2026-10-04 用户定稿：弃 Cloudflare，转公开后全用 GitHub Pages——重建 deploy.yml 自动部署（viewer 构建），wrangler 直传条款届时退役**。**2026-10-06 用户定稿（取代「push stable 触发」）：转公开后每次分支合并到 beta 就重新部署 Pages——deploy.yml 届时按 push beta 触发重建**。
 - [ ] **转公开日清单（用户决定 2026-10-02：仓库暂不转公开；转公开之后才有 Demo 网站；2026-10-05 增补 Windows 项）**——按序执行，防止 README 的站点链接先于 Demo 上线：
       ① 给 stable 打分支保护（常设授权：禁强推+禁删除+含管理员，命令存档见记忆 stable-branch-protection-recommendation）；
       ② **Windows 验证（2026-10-05 PR #198 落地，此前无法真机验证）**：手动 dispatch `.github/workflows/windows-smoke.yml`（公开仓标准 runner 免费），下载 artifact 截图人工核对——原生标题栏无红绿灯让位空隙、暗色渲染正常；然后打当期 `v*` tag，release.yml 的 build-windows 自动产出 NSIS 安装包，Release 资产含 `*-setup.exe`(+`.sig`)、更新器 feed 含 `windows-x86_64` 条目；
-      ③ Demo 站（2026-10-04 起走 Pages）：重建 deploy.yml（push stable 自动部署）+ `VITE_VIEWER_ONLY=1` viewer 构建，部署后核对线上版本串与 release 一致（Cloudflare 两站已弃用退役）；
+      ③ Demo 站（2026-10-04 起走 Pages）：重建 deploy.yml（**push beta 即自动部署——2026-10-06 用户定稿：每次分支合并到 beta 就重新部署**）+ `VITE_VIEWER_ONLY=1` viewer 构建，部署后核对线上版本串与树内一致（Cloudflare 渠道届时退役）；
       ④ 核对 README 三语的「获取方式」链接与真实可达状态一致（补充 Windows 下载说明）；更新 feed / Release 资产对未认证用户转可达（无需改动——端点本就是 GitHub 公网 URL）；
       ⑤ 反馈渠道=GitHub Issues（转公开即活；README/指南/模板已指向 issues 链接）；Chief Delphi 发布帖由用户本人发（用户决定 2026-10-03）。
 
