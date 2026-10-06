@@ -210,7 +210,7 @@ export const it = {
   'customField.cancel': 'Annulla',
   'bounds.title': 'Limiti campo',
   'bounds.item': '{start}–{end} s · {depth} oltre il muro {edge}',
-  'edges.far': 'lontano', 'edges.left': 'sinistra', 'edges.near': 'vicino', 'edges.right': 'destra',
+  'edges.far': 'lontano', 'edges.left': 'sinistro', 'edges.near': 'vicino', 'edges.right': 'destro',
   'customField.tags': 'Carica layout AprilTag…',
   'updates.upToDate': "Sei aggiornato",
   'updates.downloading': 'Trovato v{v}, download e riavvio in corso…',

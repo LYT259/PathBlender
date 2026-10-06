@@ -179,7 +179,7 @@ export const mk = {
   'customField.apply': 'Примени',
   'customField.cancel': 'Откажи',
   'bounds.title': 'Граници на полето',
-  'bounds.item': '{start}–{end} с · {depth} преку {edge} ѕидот',
+  'bounds.item': '{start}–{end} с · {depth} преку {edge} ѕид',
   'edges.far': 'далечниот', 'edges.left': 'левиот', 'edges.near': 'блискиот', 'edges.right': 'десниот',
   'customField.tags': 'Вчитај го AprilTag распоредот…',
   'updates.upToDate': "Најнови сте",

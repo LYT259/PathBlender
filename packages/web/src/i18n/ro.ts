@@ -180,7 +180,7 @@ export const ro = {
   'customField.cancel': 'Anulează',
   'bounds.title': 'Limite teren',
   'bounds.item': '{start}–{end} s · {depth} dincolo de peretele {edge}',
-  'edges.far': 'departe', 'edges.left': 'stânga', 'edges.near': 'apropiat', 'edges.right': 'dreapta',
+  'edges.far': 'îndepărtat', 'edges.left': 'din stânga', 'edges.near': 'apropiat', 'edges.right': 'din dreapta',
   'customField.tags': 'Încarcă așezarea AprilTag…',
   'updates.upToDate': "Ești la zi",
   'updates.downloading': 'Am găsit v{v}, se descarcă și se repornește…',

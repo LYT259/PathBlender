@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { en, type MessageKey } from '../src/i18n/en';
 import { ar } from '../src/i18n/ar';
 import { az } from '../src/i18n/az';
@@ -169,6 +171,39 @@ describe('no camelCase leftovers in translated prose', () => {
         const hit = v.match(/\p{Ll}\p{Lu}/gu);
         expect(hit, `${code}:${key} has a mid-word capital: ${JSON.stringify(v)}`).toBe(null);
       }
+    }
+  });
+});
+
+/**
+ * `bounds.item` interpolates `edges.*` into a fixed frame, and that frame
+ * governs a case / article pattern English does not show ("uden for **den**
+ * fjerne væg", "jenseits der hinteren Wand", "za дальньою стіною",
+ * "preko udaljenog zida"). 17 languages shipped citation forms and printed
+ * "past left wall", which no placeholder or key check can see. So the fully
+ * composed row is pinned for every language: changing either half fails here
+ * with the whole sentence in the diff, and a reviewer — not a regex — decides
+ * whether the new wording still reads.
+ */
+const EDGES = ['far', 'left', 'near', 'right'] as const;
+
+describe('the out-of-bounds row reads correctly in every language', () => {
+  it('matches the pinned rendering in test/i18n-edge-render.json', () => {
+    const expected = JSON.parse(
+      readFileSync(resolve(__dirname, 'i18n-edge-render.json'), 'utf8'),
+    ) as Record<string, string[]>;
+    expect([...CODES].sort(), 'fixture covers every shipped language').toEqual(
+      Object.keys(expected).sort(),
+    );
+    for (const code of CODES) {
+      const rendered = EDGES.map((edge) =>
+        DICTS[code]!['bounds.item']
+          .replaceAll('{start}', '1.20')
+          .replaceAll('{end}', '3.40')
+          .replaceAll('{depth}', '0.12 m')
+          .replaceAll('{edge}', DICTS[code]![`edges.${edge}`]),
+      );
+      expect(rendered, code).toEqual(expected[code]);
     }
   });
 });

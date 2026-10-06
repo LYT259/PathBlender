@@ -179,7 +179,7 @@ export const da = {
   'customField.apply': "Anvend",
   'customField.cancel': "Annuller",
   'bounds.title': "Markgrænser",
-  'bounds.item': "{start}–{end} s · {depth} uden for {edge} væggen",
+  'bounds.item': "{start}–{end} s · {depth} uden for den {edge} væg",
   'edges.far': "fjerne", 'edges.left': "venstre", 'edges.near': "nære", 'edges.right': "højre",
   'customField.tags': "Indlæs AprilTag-layout…",
   'updates.upToDate': "Du er opdateret",
