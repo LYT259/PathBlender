@@ -74,10 +74,11 @@ rest of the alliance.
   onto the red half of the field — where those robots actually start in a
   match. The flip is a derived view: imported paths are never rewritten, and
   collision checking runs on exactly what you see;
-- **Session file & PNG** (desktop): save/open a `.pb` session (sessions saved
+- **Session file & exports** (desktop): save/open a `.pb` session (sessions saved
   before the rename as `.ghpb.json` still open) to hand the exact field to
-  the next strategy meeting; export a PNG of the
-  current 2D view for the alliance chat. Everything also lives in the
+  the next strategy meeting; export a GIF replay of the
+  current 2D view, or a solution package carrying the paths, the session and
+  the replay, for the alliance chat. Everything also lives in the
   PathBlender menu;
 - **Appearance & languages**: light/dark/follow-system in Preferences
   (⌘, on desktop); the UI ships in 41 languages — English, 简体中文,
@@ -95,7 +96,7 @@ rest of the alliance.
 |---|---|---|
 | Import / playback / collision checking | ✓ | ✓ |
 | Save & open session files | open only | ✓ |
-| PNG export | — | ✓ |
+| GIF replay / solution package export | — | ✓ |
 | Folder import / route library | — | ✓ |
 | In-app updates | — | ✓ |
 
