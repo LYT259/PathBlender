@@ -684,6 +684,12 @@ function AppBody() {
   }, [change]);
 
   const saveSession = useCallback(() => {
+    // The website build is a viewer: it must not write session files. Hiding
+    // the menu item was not enough — the window Ctrl/Cmd+S accelerator called
+    // this directly, so pathblender.pages.dev downloaded a .pb with no button
+    // anywhere (caught 2026-10-06 by scripts/viewer-check.mjs). Gated here so
+    // no caller can reintroduce the leak.
+    if (VIEWER_ONLY) return;
     const file = JSON.parse(
       serializeSession(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined),
     ) as Record<string, unknown>;
