@@ -158,7 +158,8 @@ describe('auto sequence in the workspace', () => {
     setStart('10.3');
     fireEvent.click(screen.getByRole('button', { name: 'A, 0.00–8.30 s' }));
     setStart('2');
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
+    // Save moved to the File menu (2026-10-06): trigger the same handler via ⌘S.
+    fireEvent.keyDown(window, { key: 's', metaKey: true });
     const saved = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]);
     expect(saved.robots[0].sequence.segments).toHaveLength(2);
     expect(saved.robots[0].startDelayS).toBe(2);
@@ -194,7 +195,8 @@ describe('auto sequence in the workspace', () => {
     expect(clipsInComposer()).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: 'Redo', exact: true }));
     expect(document.querySelector('.sequence-composer')).toBeNull();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
+    // Save moved to the File menu (2026-10-06): trigger the same handler via ⌘S.
+    fireEvent.keyDown(window, { key: 's', metaKey: true });
     expect(JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]).robots[0].sequence.segments).toHaveLength(2);
   });
 

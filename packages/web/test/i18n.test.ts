@@ -114,6 +114,13 @@ describe('i18n dictionaries', () => {
     // initials: zh/zh-tw and ja/ko use single ideographs, and the third-batch
     // ar/hi/mr/ta use script-native abbreviations instead.
     'vc.top', 'vc.bottom', 'vc.front', 'vc.back', 'vc.left', 'vc.right',
+    // Native-menu labels that macOS keeps as loanwords: 'Zoom' is the
+    // standard View-menu entry in the Germanic/Romance dictionaries, and
+    // Italian/Filipino keep the 'File' menu name itself.
+    'menu.zoom', 'menu.file',
+    // Dutch 'Help' is the genuine Dutch word — it coincides with English
+    // exactly like the whitelisted nl 'Timing'/'Updates' above.
+    'menu.help',
     // Words that genuinely coincide with English in at least one shipped
     // language (fr 'Pause'/'Collision'/'alliance', es 'Robot'/'General',
     // nl 'Timing'/'Updates'/'Meters (m)' etc.).
@@ -431,17 +438,18 @@ describe('Hong Kong dictionary (override table)', () => {
 });
 
 describe('desktop native menu', () => {
-  it('has a menu table for every web language', () => {
-    // set_menu_language used to fall through to English for anything but
-    // zh/zh-tw, so es/fr/tr users got an English native menu beside a
-    // translated window. The match arms in lib.rs are the guard below.
+  it('is rebuilt from the web spec (set_menu) — labels ship with the dictionaries', () => {
+    // The menu went spec-driven (2026-10-06): the page pushes the whole tree
+    // with its own localized labels, so every shipped dictionary covers the
+    // native menu by construction and the old per-language Rust tables are
+    // gone. This test pins both halves of that contract.
     const rust = readFileSync(
       resolve(__dirname, '../../../packages/desktop/src-tauri/src/lib.rs'),
       'utf8',
     );
-    for (const code of CODES) {
-      expect(rust, `desktop menu arm for ${code}`).toContain(`"${code}" =>`);
-    }
+    expect(rust).toContain('fn set_menu');
+    expect(rust).not.toContain('struct MenuLang');
+    expect(rust).not.toContain('fn build_menu(');
   });
 });
 

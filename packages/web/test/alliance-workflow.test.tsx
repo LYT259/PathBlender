@@ -70,7 +70,8 @@ describe('whole-session alliance control', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back to playback' }));
     expect(fieldRobots()).toHaveLength(3);
     expect(fieldRobots().every((r) => r.trajectory.alliance === 'red')).toBe(true);
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
+    // Save moved to the File menu (2026-10-06): trigger the same handler via ⌘S.
+    fireEvent.keyDown(window, { key: 's', metaKey: true });
     const saved = vi.mocked(saveText).mock.calls.at(-1)![2];
     const payload = JSON.parse(saved);
     expect(payload.robots.every((r: { alliance: string }) => r.alliance === 'red')).toBe(true);
