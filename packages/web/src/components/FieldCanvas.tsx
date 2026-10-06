@@ -588,7 +588,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     ctx.fillText(t('canvas.clock', { t: effT.toFixed(2) }), 12, 20);
     };
     requestDraw();
-  }, [field, robots, currentT, conflicts, bounds, showTrail, imgReady, spriteReady, theme, t, requestDraw]);
+  }, [field, robots, currentT, conflicts, bounds, showTrail, showHeatmap, imgReady, spriteReady, theme, t, requestDraw]);
 
   useImperativeHandle(ref, () => ({
     exportGif: (onDone?: (ok: boolean) => void) => {
