@@ -326,7 +326,7 @@ export const hu = {
   "menu.jumpFirstIssue": "Ugrás az első problémára",
   "menu.githubProject": "PathBlender a GitHubon",
   "menu.about": "PathBlender névjegye",
-  "toast.pkgNeedRobots": "Megoldáscsomag exportálása előtt előbb importálj pályákat",
+  "toast.pkgNeedRobots": "Megoldáscsomag exportálása előtt importálj útvonalakat",
   "toast.pkgRendering": "Csomagképek renderelése…",
   "toast.pkgRecording": "20 s lejátszás rögzítése — tartsd elöl ezt az ablakot…",
   "toast.pkgSaving": "Csomag összeállítása…",

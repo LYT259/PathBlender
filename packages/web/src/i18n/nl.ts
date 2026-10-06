@@ -347,7 +347,7 @@ export const nl: Record<MessageKey, string> = {
   "menu.jumpFirstIssue": "Ga naar eerste probleem",
   "menu.githubProject": "PathBlender op GitHub",
   "menu.about": "Over PathBlender",
-  "toast.pkgNeedRobots": "Importeer eerst paden voordat je een oplossingspakket exporteert",
+  "toast.pkgNeedRobots": "Importeer eerst routes voordat je een oplossingspakket exporteert",
   "toast.pkgRendering": "Pakketafbeeldingen worden gegenereerd…",
   "toast.pkgRecording": "20 s herhaling wordt opgenomen — houd dit venster op de voorgrond…",
   "toast.pkgSaving": "Pakket wordt samengesteld…",

@@ -326,7 +326,7 @@ export const bg = {
   "menu.jumpFirstIssue": "Към първия проблем",
   "menu.githubProject": "PathBlender в GitHub",
   "menu.about": "За PathBlender",
-  "toast.pkgNeedRobots": "Импортирайте пътища, преди да експортирате пакет с решение",
+  "toast.pkgNeedRobots": "Импортирайте маршрути, преди да експортирате пакет с решение",
   "toast.pkgRendering": "Изобразяване на изображенията на пакета…",
   "toast.pkgRecording": "Записва се 20-с възпроизвеждане — задръжте този прозорец на преден план…",
   "toast.pkgSaving": "Сглобяване на пакета…",
