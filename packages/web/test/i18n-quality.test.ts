@@ -273,9 +273,10 @@ const PENDING_PATH_STEMS: Partial<Record<Lang, string[]>> = {
   // ուղի (road) and հետագիծ (trajectory) in three sequence rows; unifying them
   // needs the Armenian accusative/plural of երթուղի.
   hy: ['sequence.replaceRoute', 'sequence.replaced', 'toast.pkgNeedRobots'],
-  // The whole Kinyarwanda dictionary needs a native re-pass (inzira / Inziga /
+  // Kinyarwanda still names the route 'umuhanda' in the two sequence rows; the dictionary
+  // needs a native re-pass for its other core nouns.
   // umuhanda all name the same object today).
-  rw: ['welcome.exampleHint', 'onboarding.play', 'workspace.imported', 'sequence.replaceRoute', 'sequence.replaced'],
+  rw: ['sequence.replaceRoute', 'sequence.replaced'],
 };
 
 const pathFamily = KEYS.filter(
