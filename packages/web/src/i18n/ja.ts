@@ -127,7 +127,7 @@ export const ja: Record<MessageKey, string> = {
   "timeline.position": "再生位置",
   "timeline.range": "再生範囲",
   "timeline.rangeFull": "タイムライン全体",
-  "timeline.rangePaths": "表示中のすべての経路",
+  "timeline.rangePaths": "表示中のすべてのパス",
   "timeline.playbackSpeed": "再生速度",
   "timeline.seconds": "秒",
   "timeline.selectRobot": "{name} を選択",
