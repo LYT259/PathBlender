@@ -35,6 +35,14 @@
 .sequence-track.is-editing .sequence-clip { top: 9px; height: 54px; padding: 6px 10px; font-size: 12px; cursor: grab; touch-action: none; user-select: none; }
 .sequence-clip-number { font-size: 10px; color: var(--fg-dim); }
 .sequence-clip.is-chosen { outline: 2px solid var(--accent); outline-offset: 1px; z-index: 2; }
+/* The seam check and the clip it annotates are ONE hover unit (user request
+   2026-10-06): hovering either turns both blue. Each clip's seam lives in
+   the same zero-size wrapper as the clip, so :has() pairs them without new
+   markup. A red (bad) seam stays red when the clip is hovered — only the
+   ok-check borrows the accent. */
+.sequence-track-lane > div:has(.sequence-seam:hover) .sequence-clip { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--bg-panel)); }
+.sequence-track-lane > div:has(.sequence-clip:hover) .sequence-clip { border-color: var(--accent); }
+.sequence-track-lane > div:has(.sequence-clip:hover) .sequence-seam:not(.is-bad) { border-color: var(--accent); color: var(--fg); }
 .sequence-clip:active { cursor: grabbing; }
 .sequence-clip.is-moving { opacity: .3; }
 .sequence-auto-end { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--fg-dim); pointer-events: none; }
