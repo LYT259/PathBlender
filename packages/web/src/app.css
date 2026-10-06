@@ -1,5 +1,11 @@
 /* PathBlender — Apple HIG theme (light + dark) */
 * { box-sizing: border-box; }
+/* A programmatic focus landing carries no ring: on a freshly opened app one
+   reads as a stray box over the first robot card. The class is dropped by the
+   user's first real key or pointer event, so keyboard focus stays visible.
+   !important because the rules that draw the rings (e.g.
+   `.robot-library button:focus-visible`) out-specify a lone class selector. */
+.focus-silent:focus, .focus-silent:focus-visible { outline: none !important; }
 
 :root,
 [data-theme='dark'] {
