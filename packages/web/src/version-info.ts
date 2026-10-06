@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.36';
+export const APP_VERSION = '0.1.8-beta.37';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.37', date: '2026.10.06', note: {
+    en: 'Wire the showHeatmap prop into the 2D canvas so the heatmap toggle actually renders (verified by pixel-diff)',
+    zh: '把 showHeatmap 参数真正接入 2D 画布，热力图开关这次真的会渲染（已用像素差分验证）',
+    'zh-tw': '把 showHeatmap 參數真正接入 2D 畫布，熱力圖開關這次真的會渲染（已用像素差分驗證）',
+    cs: 'Vlastnost showHeatmap je nyní skutečně předána do 2D plátna, takže přepínač teplotní mapy se opravdu vykresluje (ověřeno pixelovým rozdílem).',
+    nl: 'De showHeatmap-prop is nu echt doorgegeven aan het 2D-canvas, zodat de warmtekaart-schakelaar daadwerkelijk tekent (geverifieerd met pixeldiff).',
+    fr: 'La prop showHeatmap est désormais réellement transmise au canevas 2D : la carte thermique s\'affiche enfin (vérifié par différence de pixels).',
+    he: 'המאפיין showHeatmap מחובר כעת בפועל לקנבס הדו־ממדי, כך שמתג מפת החום אכן מצייר (אומת באמצעות הפרשי פיקסלים)',
+    ja: 'showHeatmap プロップを2Dキャンバスに実際に接続し、ヒートマップ切替が本当に描画されるようにしました（ピクセル差分で検証）',
+    ko: 'showHeatmap prop을 2D 캔버스에 실제로 연결해 히트맵 토글이 실제로 렌더링되도록 했습니다(픽셀 차이로 검증)',
+    pl: 'Prop showHeatmap jest teraz faktycznie przekazywany do płótna 2D, więc przełącznik mapy cieplnej naprawdę się rysuje (zweryfikowano różnicą pikseli).',
+    'pt-br': 'A prop showHeatmap agora é realmente passada à tela 2D, fazendo o botão do mapa de calor renderizar de verdade (verificado por diferença de pixels).',
+    es: 'La prop showHeatmap ya se pasa realmente al lienzo 2D, así que el interruptor del mapa de calor sí dibuja (verificado por diferencia de píxeles).',
+    tr: 'showHeatmap prop artık 2D tuvale gerçekten bağlanıyor; ısı haritası anahtarı böylece gerçekten çiziyor (piksel farkıyla doğrulandı)',
+  } },
   { version: '0.1.8-beta.36', date: '2026.10.06', note: {
     en: 'Fix heatmap toggle not redrawing the 2D canvas; hide the heatmap button in 3D view (2D-only feature)',
     zh: '修复热力图开关不重绘 2D 画布的问题；3D 视图隐藏热力图按钮（该功能仅 2D 可用）',
