@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.39';
+export const APP_VERSION = '0.1.8-beta.40';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.40', date: '2026.10.06', note: {
+    en: 'Complete menu bar (File/Edit/View/Playback/Help) and File > Export Solution Package (ZIP with replay video, overview PNG, per-team sessions and original files)',
+    zh: '完整菜单栏（文件/编辑/显示/回放/帮助）与 文件 > 导出方案包（ZIP 内含回放视频、全场总览图、各队会话与原始导入文件）',
+    'zh-tw': '完整選單列（檔案/編輯/顯示/回放/說明）與 檔案 > 匯出方案包（ZIP 內含回放影片、全場總覽圖、各隊會話與原始匯入檔案）',
+    cs: 'Kompletní lišta nabídek (Soubor/Upravit/Zobrazit/Přehrávání/Nápověda) a Soubor > Exportovat balíček řešení (ZIP s videem přehrávání, přehledem druh, sezeními týmů a původními soubory).',
+    nl: 'Volledige menubalk (Bestand/Bewerk/Weergave/Afspelen/Help) en Bestand > Oplossingspakket exporteren (ZIP met videobeelden, overzichtskaart, sessies per team en de originele bestanden).',
+    fr: 'Barre de menus complète (Fichier/Édition/Présentation/Lecture/Aide) et Fichier > Exporter le package de solution (ZIP avec vidéo de relecture, vue d’ensemble PNG, sessions par équipe et fichiers d’origine).',
+    he: 'שורת תפריטים מלאה (קובץ/עריכה/תצוגה/השמעה/עזרה) וקובץ > ייצוא חבילת פתרון (ZIP עם סרטון הפעלה, תמונת סקירה, הפעלות לכל קבוצה והקבצים המקוריים)',
+    ja: 'メニューバーを完全網羅（ファイル/編集/表示/再生/ヘルプ）。ファイル > ソリューションパッケージをエクスポート（リプレイ動画・全体俯瞰PNG・チーム別セッション・元ファイル入りのZIP）',
+    ko: '전체 메뉴 막대(파일/편집/보기/재생/도움말)와 파일 > 솔루션 패키지 내보내기(재생 영상, 전체 개요 PNG, 팀별 세션, 원본 파일이 담긴 ZIP)',
+    pl: 'Kompletny pasek menu (Plik/Edycja/Widok/Odtwarzanie/Pomoc) oraz Plik > Eksportuj pakiet rozwiązania (ZIP z wideem powtórki, przeglądem PNG, sesjami drużyn i plikami źródłowymi).',
+    'pt-br': 'Barra de menus completa (Arquivo/Editar/Visualizar/Reprodução/Ajuda) e Arquivo > Exportar pacote de solução (ZIP com vídeo da repetição, visão geral em PNG, sessões por equipe e os arquivos originais).',
+    es: 'Barra de menús completa (Archivo/Editar/Ver/Reproducción/Ayuda) y Archivo > Exportar paquete de solución (ZIP con video de repetición, vista general en PNG, sesiones por equipo y los archivos originales).',
+    tr: 'Eksiksiz menü çubuğu (Dosya/Düzen/Görünüm/Oynatma/Yardım) ve Dosya > Çözüm Paketini Dışa Aktar (oynatma videosu, genel bakış PNG, takım oturumları ve özgün dosyalarla ZIP)',
+  } },
   { version: '0.1.8-beta.39', date: '2026.10.06', note: {
     en: 'Composer polish: the seam check and the path clip it marks now highlight together on hover',
     zh: '编排细节：接缝对号与其标注的路径块悬停时一起高亮',

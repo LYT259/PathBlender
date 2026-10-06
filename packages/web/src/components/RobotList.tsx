@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { activeEndT, activeStartT, type CollisionInterval, type RobotGeometry, type SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { type LibraryProfile } from '../route-library';
@@ -26,6 +26,8 @@ interface RobotListProps {
   /** Always-visible card button; App wires it to the same toggle as the context menu. */
   onMirrorButtonClick?: (robotId: string) => void;
   mirroredIds?: ReadonlySet<string>;
+  /** Bumped by Edit ▸ Rename Selected Team (menu bar): opens the inline editor. */
+  renameSignal?: number;
 }
 
 interface RobotInspectorProps {
@@ -34,14 +36,18 @@ interface RobotInspectorProps {
   onApplyProfile: (robotId: string, profileId: string) => void;
 }
 
-/** Editable display label; actual team-number/name fields remain independent. */
-function TeamNumberCell({ robot, onUpdate, children }: {
+/** Editable display label; actual team-number/name fields remain independent.
+ *  Editing state is owned by the list (not per-cell) so the menu bar's
+ *  rename command can open the editor for the selected team. */
+function TeamNumberCell({ robot, onUpdate, editing, onStartEdit, onEndEdit, children }: {
   children: ReactNode;
   robot: SessionTrajectory;
   onUpdate: (id: string, patch: Partial<SessionTrajectory>) => void;
+  editing: boolean;
+  onStartEdit: () => void;
+  onEndEdit: () => void;
 }) {
   const { t } = useI18n();
-  const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(robot.trajectory.displayName ?? robot.trajectory.teamNumber);
   const committed = useRef(false);
   if (!editing) {
@@ -54,7 +60,7 @@ function TeamNumberCell({ robot, onUpdate, children }: {
         onClick={() => {
           committed.current = false;
           setDraft(robot.trajectory.displayName ?? robot.trajectory.teamNumber);
-          setEditing(true);
+          onStartEdit();
         }}
       >
         <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M13 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8M16 3l5 5M10 14l-1 4 4-1 9-9-3-3Z" /></svg>
@@ -64,7 +70,7 @@ function TeamNumberCell({ robot, onUpdate, children }: {
   const commit = () => {
     if (committed.current) return;
     committed.current = true;
-    setEditing(false);
+    onEndEdit();
     const v = draft.trim();
     // Empty input restores the original identity; it never creates a new placeholder.
     if (v !== (robot.trajectory.displayName ?? robot.trajectory.teamNumber)) {
@@ -85,18 +91,23 @@ function TeamNumberCell({ robot, onUpdate, children }: {
       onKeyDown={(e) => {
         if (e.nativeEvent.isComposing || e.keyCode === 229) return;
         if (e.key === 'Enter') commit();
-        if (e.key === 'Escape') { committed.current = true; setEditing(false); }
+        if (e.key === 'Escape') { committed.current = true; onEndEdit(); }
       }}
     /></div>
   );
 }
 
 /** Selection lives in the workspace so the list, field and inspector agree. */
-export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, onMirrorButtonClick, mirroredIds }: RobotListProps) {  const { t } = useI18n();
+export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, onMirrorButtonClick, mirroredIds, renameSignal }: RobotListProps) {  const { t } = useI18n();
   const settingsInput = useRef<HTMLInputElement>(null);
   const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const contextRobot = robots.find((robot) => robot.trajectory.id === contextMenu?.id);
   const settingsRobot = useRef<string | null>(null);
+  // Which team's display name is being edited (menu rename command included).
+  const [editingId, setEditingId] = useState<string | null>(null);
+  useEffect(() => {
+    if (renameSignal && selectedId) setEditingId(selectedId);
+  }, [renameSignal, selectedId]);
   return (
     <aside className="robot-list robot-library" aria-label={t('robots.title', { n: robots.length })}>
       <input ref={settingsInput} type="file" accept=".json,application/json" hidden aria-label={t('robots.uploadSettings')} onChange={(event) => {
@@ -147,7 +158,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     setContextMenu({ id: trajectory.id, x: rect.left + 12, y: rect.bottom });
                   }
                 }} className={`robot-library-row${needsSettings && onSelectSettings ? ' needs-settings' : ''}${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
-                <TeamNumberCell robot={robot} onUpdate={onUpdate}><button className="robot-library-select" aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
+                <TeamNumberCell robot={robot} onUpdate={onUpdate} editing={editingId === trajectory.id} onStartEdit={() => setEditingId(trajectory.id)} onEndEdit={() => setEditingId(null)}><button className="robot-library-select" aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
                   <span className="band-dot" style={{ background: robot.color }} aria-hidden="true" />
                   <span className="robot-library-content">
                     <span className="robot-library-name" title={robotIdentity(trajectory)}>

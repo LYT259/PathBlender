@@ -346,9 +346,10 @@ describe('App import → fusion → collision flow', () => {
     expect(within(screen.getByRole('group', { name: 'alliance' })).getByRole('button', { name: 'Blue' })).toBeInTheDocument();
     expect(within(inspector).queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
     expect(inspector.querySelector('.robot-dimensions')).toHaveTextContent('0.81 m');
-    // The responsive overflow menu contains a second Save action; jsdom
-    // does not apply the CSS breakpoint that chooses between the two.
-    expect(screen.getByText('Save session', { selector: '.toolbar > .save-action' })).toBeEnabled();
+    // Save moved to the File menu (2026-10-06): the toolbar carries no
+    // Save button anymore; the menubar/⌘S path is covered in
+    // menu-dispatch.test.tsx.
+    expect(document.querySelector('.toolbar > .save-action')).toBeNull();
   });
 });
 

@@ -101,7 +101,8 @@ describe('team folder workflow', () => {
     closeComposer();
     expect(screen.getByText('254', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Select 254' })).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
+    // Save moved to the File menu (2026-10-06): trigger the same handler via ⌘S.
+    fireEvent.keyDown(window, { key: 's', metaKey: true });
     const text = vi.mocked(saveText).mock.calls.at(-1)![2];
     const stored = JSON.parse(text);
     expect(stored.robots[0].displayName).toBe('254');
@@ -218,7 +219,8 @@ describe('team folder workflow', () => {
     await openComposer('#BBBBBB');
     replaceOnlyClip('Run');
     closeComposer();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
+    // Save moved to the File menu (2026-10-06): trigger the same handler via ⌘S.
+    fireEvent.keyDown(window, { key: 's', metaKey: true });
     const stored = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]);
     expect(stored.robots[1].samples[0].x - stored.robots[0].samples[0].x).toBeCloseTo(2, 6);
     importFolder([folderFile('gamma/Run.auto', auto)]);
@@ -239,7 +241,8 @@ describe('team folder workflow', () => {
     replaceOnlyClip('L3');
     closeComposer();
     expect(screen.getByText('1.05 m')).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
+    // Save moved to the File menu (2026-10-06): trigger the same handler via ⌘S.
+    fireEvent.keyDown(window, { key: 's', metaKey: true });
     const stored = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]);
     expect(stored.robots[0].profileId).toBe(stored.robots[0].profileOptions[0].id);
     expect(stored.robots[0].geometry.lengthM).toBe(1.05);
