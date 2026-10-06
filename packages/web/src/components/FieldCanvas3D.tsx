@@ -34,6 +34,7 @@ import {
   markGestureStart,
   classifyWheelInput,
   orbitZoomSpeedFor,
+  KEY_ZOOM_STEP,
   pinchZoomFactor,
   reverseScrollZoomEnabled,
   splitInstant,
@@ -983,6 +984,65 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     cubeCanvas.addEventListener('pointerdown', onCubeDown);
     cubeCanvas.addEventListener('pointermove', onCubeMove);
 
+    // Keyboard view control (2026-10-06 keyboard pass): the WebGL canvas
+    // takes focus (tabIndex + label below) and owns view-scope keys while
+    // focused. Arrows orbit with the same deltas a pointer drag produces,
+    // Shift+arrows pan, +/- zoom through the same pinch step path as the
+    // wheel, 0 resets home, 1–6 fly to the six cube faces — the keyboard
+    // equivalent of the pointer-only ViewCube. Consumed keys stop here so
+    // the global playback shortcuts never double-fire.
+    renderer.domElement.tabIndex = 0;
+    renderer.domElement.setAttribute('aria-label', t('canvas.view'));
+    const KEY_ORBIT = 0.12; // rad per press — the drag feel at ~23 px of travel
+    const KEY_PAN_PX = 40;  // screen px per press
+    const VIEW_DIRS: Record<string, [number, number, number]> = {
+      '1': [0, 0, 1], '2': [0, 0, -1], '3': [-1, 0, 0], '4': [1, 0, 0], '5': [0, 1, 0], '6': [0, -1, 0],
+    };
+    const resetCamLocal = () => {
+      pinchChase.factor = 1;
+      controls.target.set(0, 0, 0);
+      camera.position.set(...CAM_HOME);
+      controls.update();
+      markDirty();
+    };
+    const onKeyDown3d = (e: KeyboardEvent) => {
+      if (e.isComposing || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key === '+' || e.key === '=' || e.key === '-') {
+        e.preventDefault(); e.stopPropagation();
+        pinchChase.nx = 0; pinchChase.ny = 0;
+        applyPinchStep(e.key === '-' ? 1 / KEY_ZOOM_STEP : KEY_ZOOM_STEP);
+        markDirty();
+        return;
+      }
+      if (e.key === '0') {
+        if (e.repeat) return;
+        e.preventDefault(); e.stopPropagation();
+        resetCamLocal();
+        return;
+      }
+      const viewDir = VIEW_DIRS[e.key];
+      if (viewDir) {
+        if (e.repeat) return;
+        e.preventDefault(); e.stopPropagation();
+        const dist = camera.position.distanceTo(controls.target);
+        flyTo(controls.target.clone().add(new THREE.Vector3(...viewDir).multiplyScalar(dist)));
+        return;
+      }
+      // Same sign convention as the pointer drag: an arrow applies the
+      // delta a drag in that direction would produce.
+      const dir: [number, number] | null = e.key === 'ArrowLeft' ? [-1, 0] : e.key === 'ArrowRight' ? [1, 0]
+        : e.key === 'ArrowUp' ? [0, -1] : e.key === 'ArrowDown' ? [0, 1] : null;
+      if (!dir) return;
+      e.preventDefault(); e.stopPropagation();
+      if (e.shiftKey) {
+        controls.pan(dir[0] * KEY_PAN_PX, dir[1] * KEY_PAN_PX);
+        markDirty();
+      } else {
+        applyOrbit(dir[0] * KEY_ORBIT, dir[1] * KEY_ORBIT);
+      }
+    };
+    renderer.domElement.addEventListener('keydown', onKeyDown3d);
+
     let raf = 0;
     const loop = () => {
       const now = performance.now();
@@ -1059,6 +1119,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       controls.removeEventListener('start', onUserStart);
       cubeCanvas.removeEventListener('pointerdown', onCubeDown);
       cubeCanvas.removeEventListener('pointermove', onCubeMove);
+      renderer.domElement.removeEventListener('keydown', onKeyDown3d);
       cubeMesh.geometry.dispose();
       cubeMesh.material.dispose();
       roundedGeometry.dispose();

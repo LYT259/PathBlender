@@ -158,7 +158,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
     // done — matching System Settings' persist-in-place behavior.
   }
 
-  return <div className="preferences-panel" onKeyDown={(event) => {
+  return <div className="preferences-panel" tabIndex={-1} onKeyDown={(event) => {
     if (event.key === 'Escape') { event.stopPropagation(); onClose(); }
   }}>
     <aside className="preferences-sidebar">

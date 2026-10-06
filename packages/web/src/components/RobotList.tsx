@@ -169,15 +169,17 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                 <div className="robot-library-actions">
                 <button type="button" className="robot-mirror-button" disabled={!onMirrorButtonClick}
                   aria-pressed={mirroredIds?.has(trajectory.id) ?? false}
+                  aria-keyshortcuts="m"
                   title={t('robots.mirror')} aria-label={t('robots.mirror')}
                   onClick={() => onMirrorButtonClick?.(trajectory.id)}>
                   <Icon name="mirror" size={17} />
                 </button>
-                  <button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
+                  <button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} aria-keyshortcuts="h" onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
                   <EyeIcon visible={robot.visible} />
                 </button>
                 </div>
                 <button type="button" className="robot-arrange-button" disabled={!onArrange} title={t('sequence.arrange')}
+                  aria-keyshortcuts="e"
                   onClick={() => onArrange?.(trajectory.id)}><Icon name="timeline" size={15} /><span>{t('sequence.arrange')}</span></button>
                 {needsSettings && onSelectSettings && <button type="button" className="robot-settings-upload" onClick={() => { settingsRobot.current = trajectory.id; settingsInput.current?.click(); }}>
                   <Icon name="import" size={15} />{t('robots.uploadSettings')}

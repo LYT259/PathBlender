@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { renderFieldFrame, fitViewFor, type RenderView } from '../canvas2d-render';
@@ -9,6 +9,7 @@ import { MK5I_MODULE_TOP_URL } from '../robot-sprites';
 import {
   chaseAlpha,
   classifyWheelInput,
+  KEY_ZOOM_STEP,
   markGestureEnd,
   markGestureStart,
   pinchZoomFactor,
@@ -168,6 +169,34 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   }, [fit, requestDraw]);
 
   useLayoutEffect(() => { fit(); }, [fit]);
+
+  // Keyboard zoom (2026-10-06 keyboard pass): the canvas is a focus entry —
+  // +/-/= zoom about the center at the same per-press step as one wheel
+  // notch, 0 refits. No arrow pan here BY DESIGN (recorded 2026-10-02: the
+  // 2D field is never panned, so a keyboard pan would strand the view) —
+  // arrows fall through to the global playback scrub instead.
+  const keyZoom = useCallback((factor: number) => {
+    const { w, h } = sizeRef.current;
+    if (!w || !h) return;
+    autoFitRef.current = false;
+    const v = viewRef.current;
+    v.scale = Math.min(6000, Math.max(Math.max(8, fitScaleRef.current), v.scale * factor));
+    requestDraw();
+  }, [requestDraw]);
+  const onCanvasKeyDown = useCallback((event: ReactKeyboardEvent<HTMLCanvasElement>) => {
+    const native = event.nativeEvent;
+    if (native.isComposing || native.keyCode === 229 || native.metaKey || native.ctrlKey || native.altKey) return;
+    if (event.key === '+' || event.key === '=') {
+      event.preventDefault(); event.stopPropagation();
+      keyZoom(KEY_ZOOM_STEP);
+    } else if (event.key === '-') {
+      event.preventDefault(); event.stopPropagation();
+      keyZoom(1 / KEY_ZOOM_STEP);
+    } else if (event.key === '0' && !native.repeat) {
+      event.preventDefault(); event.stopPropagation();
+      fit();
+    }
+  }, [fit, keyZoom]);
 
   // Wheel + trackpad-pinch zoom (anchored at the cursor). The field itself
   // is never panned (a panned-away field is easy to lose) and there is no
@@ -462,7 +491,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
 
   return (
     <div className="field-canvas-wrap" ref={wrapRef}>
-      <canvas ref={canvasRef} className="field-canvas" />
+      <canvas ref={canvasRef} className="field-canvas" tabIndex={0} aria-label={t('canvas.view')} onKeyDown={onCanvasKeyDown} />
     </div>
   );
 });

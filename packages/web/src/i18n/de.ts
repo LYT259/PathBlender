@@ -336,6 +336,19 @@ export const de = {
   "toast.pkgSaved": "Lösungspaket gespeichert",
   "toast.pkgFailed": "Export des Lösungspakets fehlgeschlagen",
   "toast.pkgNoVideo": "Dieser Browser kann das Wiedergabevideo nicht aufzeichnen — das Paket wurde ohne es gespeichert",
+  'help.title': "Tastenkürzel",
+  'help.intro': "Kürzel folgen dem Tastaturfokus: Textfelder behalten alle Bearbeitungstasten, der fokussierte Canvas besitzt die Ansichtstasten und Esc hebt immer zuerst die oberste Ebene auf.",
+  'help.group.playback': "Wiedergabe",
+  'help.group.view': "Feldansicht",
+  'help.group.robot': "Roboter",
+  'help.playbackEnd': "Zum Ende springen",
+  'help.viewToggle': "2D / 3D umschalten",
+  'help.switchRobot': "Vorheriger / nächster Roboter",
+  'help.hideShow': "Ausgewählten Roboter zeigen / verbergen",
+  'help.cubeViews': "Standardansichten (ViewCube-Äquivalent)",
+  'help.composerMove': "Fokussiertes Segment verschieben",
+  'help.deleteClip': "Fokussiertes Segment löschen",
+  'help.hint.desktop': "In der Desktop-App bieten die Menüs zusätzlich Cmd/Ctrl+O (Import), Cmd/Ctrl+S (Sitzung sichern) und Cmd/Ctrl+, (Einstellungen).",
 } as const;
 
 export type MessageKey = keyof typeof de;

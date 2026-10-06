@@ -344,6 +344,19 @@ export const en = {
   'toast.pkgSaved': 'Solution package saved',
   'toast.pkgFailed': 'Solution package export failed',
   'toast.pkgNoVideo': 'This browser cannot record the replay video — the package was saved without it',
+  'help.title': "Keyboard shortcuts",
+  'help.intro': "Shortcuts follow the keyboard focus: text fields keep every editing key, the focused canvas owns the view keys, and Escape always cancels the topmost layer first.",
+  'help.group.playback': "Playback",
+  'help.group.view': "Field view",
+  'help.group.robot': "Robots",
+  'help.playbackEnd': "Jump to the end",
+  'help.viewToggle': "Toggle 2D / 3D",
+  'help.switchRobot': "Previous / next robot",
+  'help.hideShow': "Show / hide the selected robot",
+  'help.cubeViews': "Standard views (ViewCube equivalent)",
+  'help.composerMove': "Move the focused segment",
+  'help.deleteClip': "Delete the focused segment",
+  'help.hint.desktop': "In the desktop app the menus also carry Cmd/Ctrl+O (import), Cmd/Ctrl+S (save session) and Cmd/Ctrl+, (settings).",
 } as const;
 
 export type MessageKey = keyof typeof en;

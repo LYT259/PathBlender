@@ -332,6 +332,19 @@ export const nb = {
   "toast.pkgSaved": "Løsningspakke lagret",
   "toast.pkgFailed": "Kunne ikke eksportere løsningspakken",
   "toast.pkgNoVideo": "Denne nettleseren kan ikke ta opp avspillingsvideoen — pakken ble lagret uten den",
+  'help.title': "Tastatursnarveier",
+  'help.intro': "Snarveier følger tastaturfokus: tekstfelt beholder alle redigeringstaster, det fokuserte lerretet eier visningstastene og Esc avbryter alltid øverste lag først.",
+  'help.group.playback': "Avspilling",
+  'help.group.view': "Banevisning",
+  'help.group.robot': "Roboter",
+  'help.playbackEnd': "Hopp til slutten",
+  'help.viewToggle': "Bytt 2D / 3D",
+  'help.switchRobot': "Forrige / neste robot",
+  'help.hideShow': "Vis / skjul valgt robot",
+  'help.cubeViews': "Standardvisninger (ViewCube-ekvivalent)",
+  'help.composerMove': "Flytt fokusert segment",
+  'help.deleteClip': "Slett fokusert segment",
+  'help.hint.desktop': "I skrivebordsappen tilbyr menyene også Cmd/Ctrl+O (importer), Cmd/Ctrl+S (lagre økt) og Cmd/Ctrl+, (innstillinger).",
 } as const;
 
 export type MessageKey = keyof typeof nb;
