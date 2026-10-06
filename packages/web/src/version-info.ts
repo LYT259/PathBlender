@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.32';
+export const APP_VERSION = '0.1.8-beta.33';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.33', date: '2026.10.06', note: {
+    en: 'Compact robot cards: icon-only mirror beside visibility, arrange button under the identity',
+    zh: '机器人卡片更紧凑：镜像图标与眼睛同列队号行，编排按钮移到信息下方',
+    'zh-tw': '機器人卡片更緊湊：鏡像圖示與眼睛同列隊號行，編排按鈕移到資訊下方',
+    cs: 'Kompaktnější karty robotů: ikona zrcadlení vedle ikony viditelnosti a tlačítko uspořádání pod identitou.',
+    nl: 'Compactere robotkaarten: het spiegelicoon staat naast het zichtbaarheidsicoon en de knop voor indelen staat onder de identiteit.',
+    fr: 'Cartes de robot plus compactes : l’icône de miroir rejoint celle de visibilité et le bouton d’agencement passe sous l’identité.',
+    he: 'כרטיסי רובוט קומפקטיים: אייקון השיקוף לצד אייקון הנראות, וכפתור הסידור עובר אל מתחת לזיהוי',
+    ja: 'ロボットカードをコンパクト化：ミラーを表示切替アイコンの隣に置き、編成ボタンを情報の下へ移動',
+    ko: '로봇 카드가 더 간결해졌습니다: 미러 아이콘을 표시 아이콘 옆에 두고 편성 버튼을 정보 아래로 이동했습니다',
+    pl: 'Bardziej kompaktowe karty robotów: ikona lustrzanego odbicia obok ikony widoczności, a przycisk układania pod tożsamością.',
+    'pt-br': 'Cartões de robô mais compactos: ícone de espelhamento ao lado do de visibilidade e botão de organização abaixo da identidade.',
+    es: 'Tarjetas de robot más compactas: el icono de espejo junto al de visibilidad y el botón de organizar bajo la identidad.',
+    tr: 'Daha kompakt robot kartları: aynadurma simgesi görünürlüğün yanında, düzenleme düğmesi kimliğin altında.',
+  } },
   { version: '0.1.8-beta.32', date: '2026.10.05', note: {
     en: 'Autosaving route arrangements with live gap readouts and route hover previews; import wording and interface cleanups',
     zh: '路线编排自动保存、实时前后间隔与悬停路线预览；「上传」统一为「导入」并清理界面',
