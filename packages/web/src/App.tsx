@@ -848,11 +848,26 @@ function AppBody() {
 
   // The debounce never fires between the last edit and Cmd+Q — flush
   // synchronously on unload so a quit loses nothing (route pick included).
+  // Desktop needs its own hook: WKWebView never fires `beforeunload` when the
+  // app is quit (measured 2026-10-06 — the WebKit store showed no write at all
+  // across a clean Cmd+Q), so the same flush rides the window close event.
+  const autosaveFlush = useRef<() => void>(() => {});
+  autosaveFlush.current = () => saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, { selectedId, t, playbackRange });
   useEffect(() => {
-    const flush = () => saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, { selectedId, t, playbackRange });
+    const flush = () => autosaveFlush.current();
     window.addEventListener('beforeunload', flush);
-    return () => window.removeEventListener('beforeunload', flush);
-  }, [robots, fieldId, field, selectedId, t, playbackRange]);
+    let unlisten: (() => void) | undefined;
+    let detached = false;
+    void import('@tauri-apps/api/window')
+      .then(({ getCurrentWindow }) => getCurrentWindow().onCloseRequested(flush))
+      .then((off) => { if (detached) off(); else unlisten = off; })
+      .catch(() => { /* browser build — beforeunload is the whole story here */ });
+    return () => {
+      detached = true;
+      window.removeEventListener('beforeunload', flush);
+      unlisten?.();
+    };
+  }, []);
 
   // PNG export was removed for good (user decision 2026-10-05, recorded in
   // the deletion ledger) — do not re-add it. GIF stays.
