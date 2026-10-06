@@ -175,7 +175,7 @@ export const az = {
   'customField.margin': 'kənar (m)',
   'customField.length': 'uzunluq (m)',
   'customField.width': 'en (m)',
-  'customField.note': 'Şəkildən kalibr edin: oyun sahəsi = şəkilPikselli / ppm − 2×kənar. Saxlanmış sessiyalar kalibrasiyanı saxlayır, lakin şəkli yox.',
+  'customField.note': 'Şəkildən kalibr edin: oyun sahəsi = şəkil pikselləri / ppm − 2×kənar. Saxlanmış sessiyalar kalibrasiyanı saxlayır, lakin şəkli yox.',
   'customField.apply': 'Tətbiq et',
   'customField.cancel': 'Ləğv et',
   'bounds.title': 'Meydan sərhədləri',

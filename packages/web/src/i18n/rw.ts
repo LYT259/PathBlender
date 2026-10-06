@@ -175,7 +175,7 @@ export const rw = {
   'customField.margin': "umurongo (m)",
   'customField.length': "uburebure (m)",
   'customField.width': "ubugari (m)",
-  'customField.note': "Barura uhereye ku shusho: ikibuga cy'umukino = amaseluleY'ishusho / ppm − 2×umurongo. Ibisomo byabitswe bigumya barura ariko si ishusho.",
+  'customField.note': "Barura uhereye ku shusho: ikibuga cy'umukino = amaselule y'ishusho / ppm − 2×umurongo. Ibisomo byabitswe bigumya barura ariko si ishusho.",
   'customField.apply': "Shyiraho",
   'customField.cancel': "Hagarika",
   'bounds.title': "Imipaka y'ikibuga",

@@ -50,7 +50,7 @@ export const mr = {
   'welcome.exampleBadge': 'उदाहरण',
   'welcome.exampleNotice': 'FRC संघ 8814 आणि 11019 चे 2026 हंगामातील खरे मार्ग.',
   'welcome.exitExample': 'उदाहरण संपवा',
-  'onboarding.play': 'मार्ग पाहण्यासाठी Play दाबा किंवा टाइमलाइन स्क्रब करा.',
+  'onboarding.play': 'मार्ग पाहण्यासाठी प्ले दाबा किंवा टाइमलाइन स्क्रब करा.',
   'onboarding.check': 'त्या क्षणावर जाण्यासाठी खाली समस्या निवडा.',
   'onboarding.dismiss': 'टीप बंद करा',
   "workspace.loading3d": "3D दृश्य लोड होत आहे…",
