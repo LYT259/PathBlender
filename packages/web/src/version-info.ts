@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.58';
+export const APP_VERSION = '0.1.8-beta.59';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.59', date: '2026.10.06', note: {
+    en: 'Language audit round 5: each language now names a path or route with one word — 86 rows unified',
+    zh: '语言审核第五轮：每种语言现在都用同一个词指路径/路线——统一 86 条文案',
+    'zh-tw': '語言審核第五輪：每種語言現在都用同一個詞指路徑／路線——統一 86 條文案',
+    cs: '5. kolo jazykové revize: každý jazyk nyní pojímá trasu jedním slovem — sjednoceno 86 řádků',
+    nl: 'Ronde 5 van de taalcontrole: elke taal noemt een route nu met één woord — 86 regels genormaliseerd',
+    fr: 'Cinquième passe d’audit linguistique : chaque langue nomme désormais un parcours d’un seul mot — 86 lignes harmonisées',
+    he: 'סיבוב חמישי של ביקורת השפות: כל שפה מכנה כעת מסלול במילה אחת — 86 שורות אוחדו',
+    ja: '言語レビュー第5弾：各言語でパス／ルートをひとつの語で統一しました（86項目）',
+    ko: '언어 점검 5차: 각 언어에서 경로·루트를 한 단어로 통일했습니다(86개 항목)',
+    pl: 'Runda 5 przeglądu języków: każdy język nazywa teraz trasę jednym słowem — ujednolicone 86 wierszy',
+    'pt-br': 'Rodada 5 da revisão de idiomas: cada idioma agora nomeia rota/trajetória com uma só palavra — 86 linhas unificadas',
+    es: 'Ronda 5 de la revisión de idiomas: cada idioma ya nombra la ruta con una sola palabra; 86 líneas unificadas',
+    tr: 'Dil denetimi 5. tur: her dil artık bir yolu/rotayı tek sözcükle adlandırıyor — 86 satır birleştirildi',
+  } },
   { version: '0.1.8-beta.58', date: '2026.10.06', note: {
     en: 'Serbian interface text now uses one alphabet: 36 rows that shipped in Cyrillic were transliterated to Latin',
     zh: '塞尔维亚语界面现在统一使用一种字母：36 条西里尔拼写已转写为拉丁字母',
