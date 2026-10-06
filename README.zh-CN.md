@@ -21,7 +21,7 @@ PathBlender 补上这个空缺：
 - **路线库**（桌面版）——整包导入一个队伍的 deploy 目录：无关文件自动跳过，所有路线进入路线库，每台机器人旁的选择器实时切换当前自动；PathPlanner `settings.json` 可把真实保险杠尺寸应用到机器人；
 
 - **零安装、零上传（网页版）**——纯静态网页应用，文件解析完全在你的浏览器里完成，网页构建**不发出任何网络请求**；
-- **也有桌面版**——同一界面装入轻量 Tauri 壳（macOS），增加会话保存/打开、PNG 导出、文件夹导入与应用内更新（stable 或 beta 通道）。唯一的网络活动是你主动触发的检查更新，只连接 GitHub Releases。
+- **也有桌面版**——同一界面装入轻量 Tauri 壳（macOS），增加会话保存/打开、GIF 回放与方案包导出、文件夹导入与应用内更新（stable 或 beta 通道）。唯一的网络活动是你主动触发的检查更新，只连接 GitHub Releases。
 
 ## 快速上手
 
@@ -29,7 +29,7 @@ PathBlender 补上这个空缺：
 2. 把各队的路径文件导入——`.traj`、`.ghostauto`、`.path`、`.auto` 随意混拖（桌面版支持单个文件或整个文件夹；`.auto` 引用到的每个 `.path` 必须同批导入）。坏文件会逐个报错说明原因，不影响其他文件导入。
 3. 按**播放**。冲突处：场地红色圆环 + 时间轴红色区段 + 冲突面板列出「谁和谁、什么时刻、在哪里」——点一条跳到那个瞬间。
 4. 排查：从路线库给机器人换一条路线、切换联盟视角、拨动时间轴。确定问题所在后，回到所属队伍的工具修改、重新导出、把新文件拖进来——会话原地更新。
-5. **分享**：保存会话文件、或导出 PNG 发群（桌面版功能）。
+5. **分享**：保存会话文件，或导出 2D 视图的 GIF 回放／方案包发群（桌面版功能）。
 
 ![碰撞报告](docs/screenshots/collision-report.png)
 
@@ -49,7 +49,7 @@ PathBlender 补上这个空缺：
 ## 获取方式
 
 - **macOS 桌面版**（Apple Silicon，macOS 13+）——从 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 下载 `PathBlender_<版本号>_aarch64.dmg`，打开后把 PathBlender 拖入「应用程序」。更新：菜单 **PathBlender → 检查更新…**（Beta 版先在 **偏好设置 → 更新** 打开 Beta 通道）。Windows 与 Linux 安装包暂未提供——代码跨平台，已在计划中。发布页上的其它文件（`.tar.gz`、`.sig`、`.json`）是更新器内部文件，无需下载。
-- **网页版**（查看器构建：导入、回放与检查；无会话保存/PNG 导出/文件夹导入）——[pathblender.pages.dev](https://pathblender.pages.dev)，预览通道 [pathblender-preview.pages.dev](https://pathblender-preview.pages.dev)。
+- **网页版**（查看器构建：导入、回放与检查；无会话保存/回放与方案包导出/文件夹导入）——[pathblender.pages.dev](https://pathblender.pages.dev)，预览通道 [pathblender-preview.pages.dev](https://pathblender-preview.pages.dev)。
 
 ## 隐私
 

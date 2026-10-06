@@ -44,7 +44,7 @@ into a single field view with one shared timeline:
   app with in-app updates). Files are parsed in your browser and never leave
   it — no backend, no accounts, no telemetry. The desktop app saves the whole
   session into one `.pb` file you can hand to the next meeting, and exports a
-  PNG of the field for the alliance chat.
+  GIF replay of the 2D field view for the alliance chat.
 
 [SCREENSHOT: 3D field view]
 [SCREENSHOT: collision report]
