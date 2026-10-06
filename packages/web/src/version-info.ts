@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.57';
+export const APP_VERSION = '0.1.8-beta.58';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.58', date: '2026.10.06', note: {
+    en: 'Serbian interface text now uses one alphabet: 36 rows that shipped in Cyrillic were transliterated to Latin',
+    zh: '塞尔维亚语界面现在统一使用一种字母：36 条西里尔拼写已转写为拉丁字母',
+    'zh-tw': '塞爾維亞語介面現在統一使用一種字母：36 條西里爾拼寫已轉寫為拉丁字母',
+    cs: 'Srbské rozhraní nyní používá jedinou abecedu: 36 řádků psaných cyrilicí přepsáno do latinky',
+    nl: 'De Servische interface gebruikt nu één alfabet: 36 rijen in cyrillisch zijn omgezet naar Latijns',
+    fr: 'L’interface serbe n’utilise plus qu’un seul alphabet : 36 lignes en cyrillique ont été transposées en latin',
+    he: 'הממשק הסרבי משתמש כעת באלפבית אחד: 36 שורות שנשלחו בכתב קירילי תועתקו ללטינית',
+    ja: 'セルビア語のUIを1種類の文字に統一しました。キリル文字だった36項目をラテン文字に転記しました',
+    ko: '세르비아어 인터페이스를 한 가지 문자로 통일했습니다. 키릴 문자였던 36개 항목을 라틴 문자로 옮겼습니다',
+    pl: 'Interfejs serbski używa teraz jednego alfabetu: 36 wierszy zapisanych cyrylicą przeniesiono do łacinki',
+    'pt-br': 'A interface em sérvio agora usa um único alfabeto: 36 linhas em cirílico foram transcritas para latino',
+    es: 'La interfaz en serbio ya usa un solo alfabeto: 36 líneas que salieron en cirílico se transcribieron al latino',
+    tr: 'Sırpça arayüz artık tek alfabe kullanıyor: Kiril alfabesiyle çıkan 36 satır Latin alfabesine aktarıldı',
+  } },
   { version: '0.1.8-beta.57', date: '2026.10.06', note: {
     en: 'Language audit round 3: fixed the field-side names interpolated into the out-of-bounds row, in 17 languages',
     zh: '语言审核第三轮：修正 17 种语言里越界提示行插入的场地边侧名称',
