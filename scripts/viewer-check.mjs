@@ -140,10 +140,25 @@ async function openApp(options = {}) {
   // No visible control is not the same as no capability: the web layer binds
   // ⌘S/Ctrl+S itself (App.tsx mirrors the desktop accelerators), and until
   // 2026-10-06 that shortcut wrote a session file out of the viewer build.
-  await page.keyboard.press('Control+s');
-  await page.keyboard.press('Meta+s');
-  await page.waitForTimeout(1200);
-  check('the save accelerator writes no file', downloads.length === 0, downloads.join(' | '));
+  // One fresh profile per key, for two measured reasons. Attribution: both
+  // combinations write the same file name (`session-YYYY-MM-DD.pb`), so a
+  // shared download list can say "something leaked" but not which key — on a
+  // normal build each probe here reports its own `session-2026-10-06.pb`.
+  // Isolation: a session loaded in an earlier probe is autosaved, and the
+  // restore hides the welcome screen the next probe needs (it timed out
+  // waiting for `.welcome-try-example` exactly once during this harness's
+  // development).
+  for (const combo of ['Control+s', 'Meta+s']) {
+    const probe = await openApp();
+    await probe.page.locator('.welcome-import').click();
+    await probe.page.locator('input[type="file"][multiple]').first()
+      .setInputFiles(`${SAMPLES}/ghostauto/straight_run.ghostauto`);
+    await probe.page.waitForSelector('.robot-library-row', { timeout: 15000 });
+    await probe.page.keyboard.press(combo);
+    await probe.page.waitForTimeout(1500);
+    check(`${combo} writes no file on the viewer build`, probe.downloads.length === 0, probe.downloads.join(' | ') || 'no download');
+    await probe.ctx.close();
+  }
 
   const github = page.locator('.toolbar-github');
   check('GitHub link points where source says it should',
