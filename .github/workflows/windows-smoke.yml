@@ -5,6 +5,13 @@
 # a full-screen screenshot for human inspection (title bar, traffic-light
 # padding, dark mode rendering).
 #
+# The build artifacts (setup.exe + .sig) are uploaded alongside the
+# screenshot (2026-10-06): a dispatched smoke run doubles as the only way to
+# hand out a real Windows installer while the repo is still private — the
+# release pipeline's windows job only fires on a v* tag, and the updater key
+# here is throwaway, which is fine for trial builds (no in-app updates on a
+# private repo anyway).
+#
 # NOT on push/tag: it duplicates the release build and is only needed when
 # someone wants eyes on a real Windows install. Standard runners on a public
 # repo are free; before going public this costs private-repo minutes (~2x
@@ -124,4 +131,6 @@ jobs:
           path: |
             smoke-screenshot.png
             smoke-result.txt
+            packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
+            packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe.sig
           if-no-files-found: error
