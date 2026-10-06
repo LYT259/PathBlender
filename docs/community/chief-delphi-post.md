@@ -6,8 +6,7 @@
 ---
 
 **Title:** PathBlender — blend alliance partners' auto paths (Choreo AND
-PathPlanner) into one field, with collision checking, a 3D view, and a path
-editor
+PathPlanner) into one field, with collision checking and a 3D view
 
 Hi CD,
 
@@ -23,43 +22,44 @@ into a single field view with one shared timeline:
   in your browser, not on the robot), and the Collaborative PathPlanner fork
   `.ghostauto` files (Team 103's fork — credit where due, their ghost overlay
   inspired part of this).
-- **One clock for all robots**: play / pause / scrub / 0.25×–4× speed on the
-  15-second autonomous period.
+- **One clock for all robots**: play / pause / scrub / 0.25×–1× speed on the
+  autonomous period — 15 s for 2022–2025, 20 s on the 2026 REBUILT field.
 - **Collision & interference checking**: bumper-rectangle overlap checked
   across the whole timeline (not bounding circles), with a conflict report —
-  who, when, and where on the field — plus out-of-bounds detection and a
-  minimum-separation report. One-click **auto-resolve** proposes the smallest
-  set of start delays that clears every conflict.
+  who, when, and where on the field — plus out-of-bounds markers on the
+  timeline.
 - **3D field view**: the official field models (2022–2026, from the
   AdvantageScope asset set) with free orbit and a view cube for snapping
   back to standard angles; welded vs AndyMark constructions where they
   differ. 2D stays as the fast tactical overlay.
-- **A real path editor**: dedicated page, Choreo/PathPlanner style — drag
-  waypoints or type exact coordinates, watch collisions recompute live, and
-  export the adjusted path back to `.path` / `.traj` / `.ghostauto` for the
-  owning team.
-- **Optional AI assistant** (off by default, bring your own key): a
-  harness-style composer (slash commands, skills, attachments, permission
-  tiers) that drives the same whitelisted actions — collision verdicts
-  always come from the deterministic checker, never the model.
+- **Built for the pre-match huddle, not for drawing paths**: it's a viewer and
+  an analyzer. When a conflict is real, the owning team fixes it in Choreo or
+  PathPlanner, re-exports, and drops the new file into the still-open session
+  — the session updates in place.
+- **Route library** (desktop app): import a whole deploy folder per team —
+  bystander files are skipped, every route lands in the library, and a picker
+  beside each robot switches its active auto live. Multi-segment autos can be
+  arranged on the timeline, and one team's paths can be mirrored left/right.
 - **Zero install, zero upload**: it's a static web page (plus a native macOS
   app with in-app updates). Files are parsed in your browser and never leave
-  it — no backend, no accounts, no telemetry. Share a whole session via a
-  link (the data lives in the URL itself).
+  it — no backend, no accounts, no telemetry. The desktop app saves the whole
+  session into one `.pb` file you can hand to the next meeting, and exports a
+  PNG of the field for the alliance chat.
 
 [SCREENSHOT: 3D field view]
 [SCREENSHOT: collision report]
 
 Three-step usage: open the link → drag in everyone's path files → press play.
 If something collides, click the conflict entry to jump straight to that
-moment — or press Auto-resolve and take the proposed delays back to your
-partners.
+moment, switch that robot's route from the library if it has alternates, and
+take the timestamp back to the team that owns the path.
 
 Current limits, so you know what you're getting: PathPlanner's rarer path
 constraints are approximated (with a warning shown); robot geometry comes from
-the `.ghostauto` file when present and is otherwise an editable default;
-fields for 2018–2026 are bundled (official 3D models cover 2022–2026) and you
-can import a custom field image with calibration + an AprilTag layout JSON.
+the `.ghostauto` file or the team's PathPlanner `settings.json` when present
+and is otherwise an editable default; fields for 2022–2026 are bundled (all
+five seasons have official 3D models) and you can import a custom field image
+with calibration + an AprilTag layout JSON for anything else.
 Windows/Linux desktop builds are staged for a follow-up release.
 
 **Credits & licenses**: trajectory generation is a TypeScript port of
