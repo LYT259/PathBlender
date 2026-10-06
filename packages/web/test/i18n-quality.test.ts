@@ -282,12 +282,51 @@ const pathFamily = KEYS.filter(
   (k) => /\b(paths?|routes?)\b/i.test((en as Record<string, string>)[k]) && !/trajector|\.path/i.test((en as Record<string, string>)[k]),
 );
 
-describe('one concept, one term per language', () => {  it('paths and routes are named with the stems each language declares', () => {
+/**
+ * The same discipline for the second-worst family — what the app calls
+ * "timeline". Four keys name it (the scrub hint, the full-range option, the
+ * empty state and the arrange button), and before the round-7 pass thirteen
+ * dictionaries used a second word in one of those four rows, so one widget
+ * carried two names on two screens.
+ */
+const TIMELINE_KEYS = ['onboarding.play', 'timeline.rangeFull', 'timeline.empty', 'sequence.arrange'];
+const TIMELINE_STEMS: Record<Lang, string[]> = {
+  "ar": ["زمني"], "az": ["aman xətti"], "bg": ["времева"],
+  "bs": ["vremensk"], "cs": ["časov"], "da": ["tidslinje"],
+  "de": ["Zeitleiste"], "el": ["γραμμή"], "es": ["línea de tiempo"],
+  "fil": ["timeline"], "fr": ["frise"], "he": ["ציר"],
+  "hi": ["समयरेखा", "टाइमलाइन"], "hr": ["vremensk"], "hu": ["dővonal"],
+  "hy": ["ժամանակա"], "id": ["linimasa"], "it": ["a sequenza temporale"],
+  "ja": ["タイムライン"], "ko": ["타임라인"], "mk": ["а временска"],
+  "mr": ["टाइमलाइन"], "ms": ["garis masa"], "nb": ["tidslinje"],
+  "nl": ["ijdlijn"], "nn": ["tidslinj"], "pl": ["czasu"],
+  "ro": ["de timp"], "rw": ["murongo"], "sq": ["kohore"],
+  "sr": ["vremensk"], "sv": ["tidslinje"], "ta": ["காலவரிசை"],
+  "tr": ["aman çizelgesi"], "uk": ["шкал"], "vi": ["dòng thời gian"],
+  "zh": ["时间轴"], "zh-tw": ["時間軸"], "en": ["timeline"],
+  "pt-BR": ["linha do tempo"], "zh-hk": ["時間軸"]
+};
+
+describe('one concept, one term per language', () => {
+  it('paths and routes are named with the stems each language declares', () => {
     for (const code of CODES) {
       const stems = PATH_STEMS[code as Lang];
       const pending = PENDING_PATH_STEMS[code as Lang] ?? [];
       for (const key of pathFamily) {
         if (pending.includes(key)) continue;
+        const v = DICTS[code]![key].toLowerCase();
+        expect(
+          stems.some((s) => v.includes(s.toLowerCase())),
+          `${code}:${key} uses a term outside "${stems.join('|')}" — ${DICTS[code]![key]}`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('the timeline is named with the stems each language declares', () => {
+    for (const code of CODES) {
+      const stems = TIMELINE_STEMS[code as Lang];
+      for (const key of TIMELINE_KEYS) {
         const v = DICTS[code]![key].toLowerCase();
         expect(
           stems.some((s) => v.includes(s.toLowerCase())),

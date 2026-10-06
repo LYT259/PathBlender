@@ -14,7 +14,7 @@ export const id = {
   'sequence.overAuto': 'Selesai pada {t} dtk, melewati periode otonom {auto} dtk.',
   'sequence.invalid': 'Masukkan waktu mulai yang terhingga dan tidak negatif.',
   'sequence.empty': 'Tambahkan rute pertama untuk mulai menyusun otomatis ini.',
-  'sequence.arrange': "Susun garis waktu",
+  'sequence.arrange': "Susun linimasa",
   'sequence.back': "Kembali ke pemutaran",
   'sequence.editing': "Menyunting",
   'sequence.reference': "Klik untuk beralih",

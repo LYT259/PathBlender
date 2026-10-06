@@ -14,7 +14,7 @@ export const az = {
   'sequence.overAuto': '{auto} saniyəlik avto dövründən sonra, {t} saniyədə bitir.',
   'sequence.invalid': 'Sonlu, mənfi olmayan başlanğıc vaxtı daxil edin.',
   'sequence.empty': 'Bu avtoyu düzməyə başlamaq üçün ilk marşrutu əlavə edin.',
-  'sequence.arrange': "Vaxt qrafikini düzəlt",
+  'sequence.arrange': "Zaman xəttini düzəlt",
   'sequence.back': "Oynatmaya qayıt",
   'sequence.editing': "Redaktə edilir",
   'sequence.reference': "Dəyişmək üçün klikləyin",

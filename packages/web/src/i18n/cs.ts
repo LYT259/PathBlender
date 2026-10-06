@@ -366,5 +366,5 @@ export const cs: Record<MessageKey, string> = {
   'help.cubeViews': "Standardní pohledy (ekvivalent ViewCube)",
   'help.composerMove': "Přesunout zaměřený segment",
   'help.deleteClip': "Smazat zaměřený segment",
-  'help.hint.desktop': "V desktopové aplikaci nabízejí nabídky také Cmd/Ctrl+O (import), Cmd/Ctrl+S (uložit sezení) a Cmd/Ctrl+, (nastavení).",
+  'help.hint.desktop': "V desktopové aplikaci nabídky obsahují také Cmd/Ctrl+O (import), Cmd/Ctrl+S (uložit relaci) a Cmd/Ctrl+, (předvolby).",
 };

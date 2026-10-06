@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.60';
+export const APP_VERSION = '0.1.8-beta.61';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.61', date: '2026.10.06', note: {
+    en: 'Language audit round 7: each language now names the timeline, session, inspector and replay with one word — 34 rows',
+    zh: '语言审核第七轮：时间轴、会话、检查器、回放每种语言各用一个词——统一 34 条',
+    'zh-tw': '語言審核第七輪：時間軸、工作階段、檢視器、重播每種語言各用一個詞——統一 34 條',
+    cs: '7. kolo jazykové revize: každý jazyk nyní říká časové ose, relaci, inspektoru i přehrávání jedním slovem — 34 řádků',
+    nl: 'Ronde 7 van de taalcontrole: elke taal noemt tijdlijn, sessie, inspecteur en afspelen nu met één woord — 34 regels',
+    fr: 'Septième passe d’audit linguistique : chaque langue nomme la frise, la session, l’inspecteur et la lecture d’un seul mot — 34 lignes',
+    he: 'סיבוב שביעי של ביקורת השפות: מילה אחת לכל מונח — ציר הזמן, ההפעלה, המפקח וההשמעה (34 שורות)',
+    ja: '言語レビュー第7弾：タイムライン・セッション・インスペクタ・再生を各言語で語統一（34項目）',
+    ko: '언어 점검 7차: 타임라인·세션·인스펙터·재생을 언어마다 한 단어로 통일했습니다(34개 항목)',
+    pl: 'Runda 7 przeglądu języków: każdy język nazywa osią czasu, sesję, inspektora i odtworzenie jednym słowem — 34 wiersze',
+    'pt-br': 'Rodada 7 da revisão de idiomas: cada idioma nomeia linha do tempo, sessão, inspetor e repetição com uma só palavra — 34 linhas',
+    es: 'Ronda 7 de la revisión de idiomas: cada idioma nombra ya la línea de tiempo, la sesión, el inspector y la repetición con una sola palabra; 34 líneas',
+    tr: 'Dil denetimi 7. tur: her dil zaman çizelgesi, oturum, denetçi ve yeniden oynatma için tek sözcük kullanıyor — 34 satır',
+  } },
   { version: '0.1.8-beta.60', date: '2026.10.06', note: {
     en: 'Language audit round 6: typography — French punctuation spacing, one apostrophe glyph per language, Hebrew joiners',
     zh: '语言审核第六轮：排版——法语标点空格、每种语言统一撇号、希伯来语连接符',
