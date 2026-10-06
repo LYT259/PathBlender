@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.53';
+export const APP_VERSION = '0.1.8-beta.54';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.54', date: '2026.10.06', note: {
+    en: 'No visible change: removed a quit-time save hook the desktop app never fires, and recorded what really happens on quit',
+    zh: '无可见变化：移除桌面端从未触发的退出保存钩子，并记录退出时的真实行为',
+    'zh-tw': '無可見變化：移除桌面端從未觸發的退出儲存鉤子，並記錄退出時的真實行為',
+    cs: 'Bez viditelných změn: odstraněn háček při ukončení, který desktopová aplikace nikdy nespustí, a zaznamenáno, co při ukončení skutečně probíhá.',
+    nl: 'Geen zichtbare wijziging: een hook voor opslaan bij afsluiten verwijderd die de desktopapp nooit aanroept, plus wat er echt gebeurt bij afsluiten.',
+    fr: 'Aucun changement visible : suppression d’un crochet de sauvegarde à la fermeture que l’application de bureau ne déclenche jamais, et consigne du comportement réel.',
+    he: 'ללא שינוי נראה: הוסר מנגנון שמירה בעת יציאה שהאפליקציה לשולחן העבודה אף פעם לא מפעיל, וההתנהגות האמיתית תועדה',
+    ja: '表示上の変化なし：デスクトップ版で一度も発火しない終了時保存フックを削除し、終了時の実際の挙動を記録しました',
+    ko: '눈에 보이는 변화 없음: 데스크톱 앱에서 한 번도 실행되지 않는 종료 시 저장 훅을 제거하고 실제 종료 동작을 기록했습니다',
+    pl: 'Bez zmian widocznych: usunięto haczyk zapisu przy zamykaniu, którego aplikacja desktopowa nigdy nie wywołuje, i opisano, co dzieje się naprawdę.',
+    'pt-br': 'Sem mudança visível: removido um gancho de gravação ao sair que o app de mesa nunca dispara, e registrado o que realmente acontece ao sair',
+    es: 'Sin cambios visibles: se eliminó un gancho de guardado al salir que la app de escritorio nunca ejecuta, y se documentó qué ocurre realmente al salir.',
+    tr: 'Görünür değişiklik yok: masaüstü uygulamasının hiç çalıştırmadığı çıkış anı kayıt kancası kaldırıldı ve çıkışta gerçekte ne olduğu belgelendi',
+  } },
   { version: '0.1.8-beta.53', date: '2026.10.06', note: {
     en: 'Fixed: the website build no longer writes session files on Cmd/Ctrl+S — it stays view-only',
     zh: '修复：网页版按 Cmd/Ctrl+S 不再写出会话文件，保持纯查看',
