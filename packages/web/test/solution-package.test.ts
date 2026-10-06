@@ -6,7 +6,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import { deserializeSession, type SessionTrajectory, type Trajectory } from '@pathblender/core';
-import { buildSolutionPackage, pickVideoMime, teamArtifacts } from '../src/solution-package';
+import {
+  buildSolutionPackage,
+  listVideoMimes,
+  pickVideoMime,
+  recordVideoWithProbe,
+  teamArtifacts,
+} from '../src/solution-package';
 import { readZipDirectory, inflateEntry } from '../src/zip';
 
 const SAMPLE = 30; // samples per second of trajectory
@@ -132,6 +138,59 @@ describe('pickVideoMime', () => {
   });
 });
 
+describe('listVideoMimes', () => {
+  it('lists every claiming candidate in preference order', () => {
+    expect(listVideoMimes((m) => m.startsWith('video/mp4') || m === 'video/webm').map((c) => c.ext))
+      .toEqual(['mp4', 'mp4', 'mp4', 'webm']);
+    expect(listVideoMimes(() => false)).toEqual([]);
+  });
+});
+
+describe('recordVideoWithProbe', () => {
+  const MP4 = { mime: 'video/mp4;codecs=avc1.42E01E', ext: 'mp4' };
+  const WEBM = { mime: 'video/webm;codecs=vp9', ext: 'webm' };
+  const take = (n: number) => new Uint8Array(n);
+
+  it('probes with a short take before spending the full one', async () => {
+    const calls: Array<[string, number]> = [];
+    const video = await recordVideoWithProbe(
+      async (mime, seconds) => {
+        calls.push([mime, seconds]);
+        return take(7);
+      },
+      [MP4, WEBM],
+      20,
+      1,
+    );
+    expect(video).toMatchObject({ mime: MP4.mime, ext: 'mp4' });
+    expect(calls).toEqual([[MP4.mime, 1], [MP4.mime, 20]]);
+  });
+
+  it('skips a codec that claims support yet writes nothing', async () => {
+    const video = await recordVideoWithProbe(
+      async (mime) => (mime === MP4.mime ? take(0) : take(7)),
+      [MP4, WEBM],
+      20,
+      1,
+    );
+    expect(video).toMatchObject({ mime: WEBM.mime, ext: 'webm' });
+  });
+
+  it('drops a codec whose probe passed but whose full take came back empty', async () => {
+    const video = await recordVideoWithProbe(
+      async (mime, seconds) => (mime === MP4.mime && seconds > 1 ? take(0) : take(7)),
+      [MP4, WEBM],
+      20,
+      1,
+    );
+    expect(video).toMatchObject({ mime: WEBM.mime, ext: 'webm' });
+  });
+
+  it('records nothing rather than shipping an empty replay', async () => {
+    expect(await recordVideoWithProbe(async () => take(0), [MP4, WEBM], 20, 1)).toBeNull();
+  });
+});
+
 describe('buildSolutionPackage', () => {
   it('packs README, full session, video, overview, per-team sessions and byte-identical originals', async () => {
     const o = baseOptions();
@@ -179,6 +238,19 @@ describe('buildSolutionPackage', () => {
     expect(readme).toContain('视频');
     expect(readme).toContain('avc1');
     expect(result.suggestedName).toMatch(/^pathblender-solution-\d{4}-\d{2}-\d{2}\.zip$/);
+  });
+
+  it('never ships an empty video take (encoder claimed support but produced nothing)', async () => {
+    const o = baseOptions();
+    const result = await buildSolutionPackage({
+      ...o,
+      capture: {
+        renderPng: async () => PNG_BYTES,
+        recordVideo: async () => ({ bytes: new Uint8Array(), mime: 'video/mp4;codecs=avc1.42E01E', ext: 'mp4' }),
+      },
+    });
+    expect(result.entries.every((n) => !n.startsWith('回放.'))).toBe(true);
+    expect(result.videoMime).toBeNull();
   });
 
   it('omits the video honestly when the engine cannot record', async () => {
