@@ -16,7 +16,7 @@ export const zh: Record<MessageKey, string> = {
   'sequence.overAuto': '完成于 {t} 秒，超出 {auto} 秒的自动阶段。',
   'sequence.invalid': '请输入有效且不小于 0 的开始时间。',
   'sequence.empty': '添加第一条路线，开始安排自动。',
-  'sequence.arrange': "编排时间线",
+  'sequence.arrange': "编排时间轴",
   'sequence.back': "返回回放",
   'sequence.editing': "正在编排",
   'sequence.reference': "点击切换",

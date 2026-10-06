@@ -317,7 +317,7 @@ export const nb = {
   "menu.copy": "Kopier",
   "menu.paste": "Lim inn",
   "menu.selectAll": "Merk alt",
-  "menu.clearSession": "Tøm økt",
+  "menu.clearSession": "Tøm sesjonen",
   "menu.exportPackage": "Eksporter løsningspakke…",
   "menu.exportGif": "Eksporter GIF…",
   "menu.renameTeam": "Gi valgt lag nytt navn…",
@@ -345,7 +345,7 @@ export const nb = {
   'help.cubeViews': "Standardvisninger (ViewCube-ekvivalent)",
   'help.composerMove': "Flytt fokusert segment",
   'help.deleteClip': "Slett fokusert segment",
-  'help.hint.desktop': "I skrivebordsappen tilbyr menyene også Cmd/Ctrl+O (importer), Cmd/Ctrl+S (lagre økt) og Cmd/Ctrl+, (innstillinger).",
+  'help.hint.desktop': "I skrivebordsappen tilbyr menyene også Cmd/Ctrl+O (importer), Cmd/Ctrl+S (lagre sesjonen) og Cmd/Ctrl+, (innstillinger).",
 } as const;
 
 export type MessageKey = keyof typeof nb;

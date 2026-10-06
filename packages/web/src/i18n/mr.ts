@@ -114,7 +114,7 @@ export const mr = {
   'timeline.pause': "विराम",
   'timeline.position': "प्लेबॅक स्थिती",
   "timeline.range": "प्लेबॅक व्याप्ती",
-  "timeline.rangeFull": "संपूर्ण कालरेषा",
+  "timeline.rangeFull": "संपूर्ण टाइमलाइन",
   "timeline.rangePaths": "सर्व दृश्यमान मार्ग",
   'timeline.playbackSpeed': "प्लेबॅक गती",
   'timeline.seconds': "सेकंद",

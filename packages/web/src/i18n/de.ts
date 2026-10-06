@@ -14,7 +14,7 @@ export const de = {
   'sequence.overAuto': 'Endet bei {t} s, nach der {auto} s langen autonomen Phase.',
   'sequence.invalid': 'Geben Sie eine endliche, nicht negative Startzeit ein.',
   'sequence.empty': 'Fügen Sie die erste Route hinzu, um diesen autonomen Ablauf zusammenzustellen.',
-  'sequence.arrange': "Zeitachse anordnen",
+  'sequence.arrange': "Zeitleiste anordnen",
   'sequence.back': "Zurück zur Wiedergabe",
   'sequence.editing': "Wird bearbeitet",
   'sequence.reference': "Zum Wechseln klicken",

@@ -76,7 +76,7 @@ export const he: Record<MessageKey, string> = {
   'workspace.panels': 'חלקי המפקח',
   'workspace.togglePaths': "הצג או הסתר את רשימת המסלולים",
   'workspace.toggleInspector': "הצג או הסתר את המפקח",
-  'workspace.closePanel': "סגור מפקח",
+  'workspace.closePanel': "סגור המפקח",
   'workspace.closeRobotDetails': "סגור פרטי רובוט",
   'workspace.undo': "בטל",
   'workspace.redo': "בצע שוב",
@@ -371,5 +371,5 @@ export const he: Record<MessageKey, string> = {
   'help.cubeViews': "תצוגות סטנדרטיות (מקבילת ViewCube)",
   'help.composerMove': "הזזת המקטע הממוקד",
   'help.deleteClip': "מחיקת המקטע הממוקד",
-  'help.hint.desktop': "ביישום השולחני התפריטים מציעים גם Cmd/Ctrl+O (ייבוא), Cmd/Ctrl+S (שמירת מפגש) ו־Cmd/Ctrl+, (הגדרות).",
+  'help.hint.desktop': "ביישום השולחני התפריטים מציעים גם Cmd/Ctrl+O (ייבוא), Cmd/Ctrl+S (שמירת ההפעלה) ו־Cmd/Ctrl+, (הגדרות).",
 };
