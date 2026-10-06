@@ -33,6 +33,8 @@ const FIXED_VIDEO_SECONDS = 20;
 const VIDEO_WIDTH = 1920;
 const VIDEO_HEIGHT = 1080;
 const VIDEO_BITRATE = 8_000_000;
+/** Short take that decides whether a claiming codec really encodes. */
+const VIDEO_PROBE_SECONDS = 1;
 
 export interface SolutionCapture {
   renderPng?: (
@@ -151,26 +153,68 @@ export function teamArtifacts(
 /* Video codec pick                                                    */
 /* ------------------------------------------------------------------ */
 
+const VIDEO_CANDIDATES: Array<[string, string]> = [
+  ['video/mp4;codecs=avc1.42E01E', 'mp4'],
+  ['video/mp4;codecs=avc1', 'mp4'],
+  ['video/mp4', 'mp4'],
+  ['video/webm;codecs=vp9', 'webm'],
+  ['video/webm;codecs=vp8', 'webm'],
+  ['video/webm', 'webm'],
+];
+
 /**
  * H.264/AVC in an mp4 shell first (the spec's preference); VP9/VP8 webm as
  * the honest fallback where the engine cannot record mp4 (older WebKitGTK,
  * Firefox). null = this engine has no MediaRecorder canvas recording at all.
  */
 export function pickVideoMime(supported: (mime: string) => boolean): { mime: string; ext: string } | null {
-  const candidates: Array<[string, string]> = [
-    ['video/mp4;codecs=avc1.42E01E', 'mp4'],
-    ['video/mp4;codecs=avc1', 'mp4'],
-    ['video/mp4', 'mp4'],
-    ['video/webm;codecs=vp9', 'webm'],
-    ['video/webm;codecs=vp8', 'webm'],
-    ['video/webm', 'webm'],
-  ];
-  for (const [mime, ext] of candidates) {
+  for (const [mime, ext] of VIDEO_CANDIDATES) {
     try {
       if (supported(mime)) return { mime, ext };
     } catch {
       // isTypeSupported itself missing/throwing — keep probing.
     }
+  }
+  return null;
+}
+
+/**
+ * Ordered list of the candidates this engine claims to support. A claim is
+ * not evidence — `isTypeSupported` can answer yes and the encoder can then
+ * write nothing — so the caller verifies each candidate before trusting it.
+ */
+export function listVideoMimes(supported: (mime: string) => boolean): Array<{ mime: string; ext: string }> {
+  const out: Array<{ mime: string; ext: string }> = [];
+  for (const [mime, ext] of VIDEO_CANDIDATES) {
+    try {
+      if (supported(mime)) out.push({ mime, ext });
+    } catch {
+      // isTypeSupported itself missing/throwing — keep going.
+    }
+  }
+  return out;
+}
+
+/**
+ * Take the replay only on a codec that has proven it writes bytes.
+ *
+ * The verification is itself a short take with the same canvas, resolution
+ * and bitrate as the real one, because a codec can survive a tiny test
+ * canvas and still die at 1080p; a candidate that passes the short take but
+ * comes back empty from the full one falls through to the next. `take`
+ * returns an empty Uint8Array for "this engine recorded nothing".
+ */
+export async function recordVideoWithProbe(
+  take: (mime: string, seconds: number) => Promise<Uint8Array>,
+  candidates: Array<{ mime: string; ext: string }>,
+  videoSeconds: number,
+  probeSeconds: number = VIDEO_PROBE_SECONDS,
+): Promise<{ bytes: Uint8Array; mime: string; ext: string } | null> {
+  for (const candidate of candidates) {
+    if ((await take(candidate.mime, probeSeconds)).length === 0) continue;
+    const bytes = await take(candidate.mime, videoSeconds);
+    if (bytes.length === 0) continue;
+    return { bytes, mime: candidate.mime, ext: candidate.ext };
   }
   return null;
 }
@@ -226,37 +270,35 @@ async function defaultRenderPng(scene: ExportScene): Promise<Uint8Array | null> 
 }
 
 /**
- * Real-time MediaRecorder capture: the replay is exactly normal speed, so
- * the recording runs for `seconds` wall-clock seconds while a rAF loop
- * renders the off-screen canvas at the elapsed time. Returns null when the
- * engine cannot record (no captureStream / MediaRecorder / codec).
+ * Real-time MediaRecorder capture: the replay is exactly normal speed, so the
+ * recording runs for `seconds` wall-clock seconds while a rAF loop paints the
+ * off-screen canvas at the elapsed time. The stream must come from the very
+ * canvas being painted — capturing a second, never-drawn canvas yields an
+ * empty file. Empty Uint8Array = nothing was recorded.
  */
-async function defaultRecordVideo(
-  scene: ExportScene,
-  mime: string,
-  seconds: number,
-): Promise<{ bytes: Uint8Array; mime: string; ext: string } | null> {
-  const canvas = document.createElement('canvas');
-  if (typeof canvas.captureStream !== 'function' || typeof MediaRecorder === 'undefined') return null;
+async function defaultRecordTake(scene: ExportScene, mime: string, seconds: number): Promise<Uint8Array> {
+  const nothing = new Uint8Array();
   const made = makeSceneCanvas(scene.width, scene.height);
-  if (!made) return null;
+  if (!made || typeof made.canvas.captureStream !== 'function' || typeof MediaRecorder === 'undefined') return nothing;
+
+  drawScene(made.ctx, scene, 0, 't = 0.00 s'); // frame 0 before the stream opens
   let stream: MediaStream;
   try {
-    stream = canvas.captureStream(30);
+    stream = made.canvas.captureStream(30);
   } catch {
-    return null;
+    return nothing;
   }
-  const ext = mime.includes('mp4') ? 'mp4' : 'webm';
   let recorder: MediaRecorder;
   try {
     recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: VIDEO_BITRATE });
   } catch {
-    return null;
+    stream.getTracks().forEach((track) => track.stop());
+    return nothing;
   }
+
   const chunks: Blob[] = [];
   recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
   const stopped = new Promise<void>((resolve) => { recorder.onstop = () => resolve(); });
-  drawScene(made.ctx, scene, 0, 't = 0.00 s');
   recorder.start(500);
   const started = performance.now();
   await new Promise<void>((resolve) => {
@@ -276,7 +318,7 @@ async function defaultRecordVideo(
   await stopped;
   stream.getTracks().forEach((track) => track.stop());
   const blob = new Blob(chunks, { type: mime });
-  return { bytes: new Uint8Array(await blob.arrayBuffer()), mime, ext };
+  return new Uint8Array(await blob.arrayBuffer());
 }
 
 /* ------------------------------------------------------------------ */
@@ -399,9 +441,13 @@ export async function buildSolutionPackage(o: SolutionPackageOptions): Promise<S
   if (capture.recordVideo) {
     const picked = pickVideoMime(() => true);
     video = picked ? await capture.recordVideo(scene, picked.mime, videoSeconds) : null;
+    if (video && video.bytes.length === 0) video = null;
   } else if (typeof MediaRecorder !== 'undefined') {
-    const picked = pickVideoMime((mime) => MediaRecorder.isTypeSupported(mime));
-    video = picked ? await defaultRecordVideo(scene, picked.mime, videoSeconds) : null;
+    video = await recordVideoWithProbe(
+      (mime, seconds) => defaultRecordTake(scene, mime, seconds),
+      listVideoMimes((mime) => MediaRecorder.isTypeSupported(mime)),
+      videoSeconds,
+    );
   }
 
   const entries: ZipEntry[] = [];
