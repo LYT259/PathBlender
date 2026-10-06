@@ -332,6 +332,19 @@ export const da = {
   "toast.pkgSaved": "Løsningspakke gemt",
   "toast.pkgFailed": "Kunne ikke eksportere løsningspakken",
   "toast.pkgNoVideo": "Denne browser kan ikke optage afspilningsvideoen — pakken blev gemt uden den",
+  'help.title': "Tastaturgenveje",
+  'help.intro': "Genveje følger tastaturfokus: tekstfelter beholder alle redigeringstaster, det fokuserede lærred ejer visningstasterne og Esc annullerer altid det øverste lag først.",
+  'help.group.playback': "Afspilning",
+  'help.group.view': "Banevisning",
+  'help.group.robot': "Robotter",
+  'help.playbackEnd': "Hop til slutningen",
+  'help.viewToggle': "Skift 2D / 3D",
+  'help.switchRobot': "Forrige / næste robot",
+  'help.hideShow': "Vis / skjul valgt robot",
+  'help.cubeViews': "Standardvisninger (ViewCube-ækvivalent)",
+  'help.composerMove': "Flyt fokuseret segment",
+  'help.deleteClip': "Slet fokuseret segment",
+  'help.hint.desktop': "I desktopappen tilbyder menuerne også Cmd/Ctrl+O (importér), Cmd/Ctrl+S (gem session) og Cmd/Ctrl+, (indstillinger).",
 } as const;
 
 export type MessageKey = keyof typeof da;

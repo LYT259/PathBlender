@@ -336,6 +336,19 @@ export const vi = {
   "toast.pkgSaved": "Đã lưu gói giải pháp",
   "toast.pkgFailed": "Xuất gói giải pháp thất bại",
   "toast.pkgNoVideo": "Trình duyệt này không thể ghi video phát lại — gói đã được lưu mà không có video",
+  'help.title': "Phím tắt bàn phím",
+  'help.intro': "Phím tắt theo tiêu điểm bàn phím: trường văn bản giữ mọi phím soạn thảo, khung ảnh đang tiêu điểm sở hữu các phím góc nhìn và Esc luôn hủy lớp trên cùng trước tiên.",
+  'help.group.playback': "Phát lại",
+  'help.group.view': "Góc nhìn sân",
+  'help.group.robot': "Robot",
+  'help.playbackEnd': "Nhảy tới cuối",
+  'help.viewToggle': "Chuyển 2D / 3D",
+  'help.switchRobot': "Robot trước / sau",
+  'help.hideShow': "Hiện / ẩn robot đang chọn",
+  'help.cubeViews': "Các góc nhìn chuẩn (tương đương ViewCube)",
+  'help.composerMove': "Di chuyển phân đoạn đang tiêu điểm",
+  'help.deleteClip': "Xóa phân đoạn đang tiêu điểm",
+  'help.hint.desktop': "Trong ứng dụng desktop, menu còn có Cmd/Ctrl+O (nhập), Cmd/Ctrl+S (lưu phiên) và Cmd/Ctrl+, (cài đặt).",
 } as const;
 
 export type MessageKey = keyof typeof vi;

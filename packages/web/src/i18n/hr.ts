@@ -332,6 +332,19 @@ export const hr = {
   "toast.pkgSaved": "Paket rješenja spremljen",
   "toast.pkgFailed": "Izvoz paketa rješenja nije uspio",
   "toast.pkgNoVideo": "Ovaj preglednik ne može snimiti video reprodukcije — paket je spremljen bez njega",
+  'help.title': "Tipkovnički prečaci",
+  'help.intro': "Prečaci slijede fokus tipkovnice: tekstualna polja zadržavaju sve tipke za uređivanje, fokusirano platno posjeduje tipke za pogled, a Esc uvijek prvo otkazuje najviši sloj.",
+  'help.group.playback': "Reprodukcija",
+  'help.group.view': "Pogled na teren",
+  'help.group.robot': "Roboti",
+  'help.playbackEnd': "Skok na kraj",
+  'help.viewToggle': "Prebaci 2D / 3D",
+  'help.switchRobot': "Prethodni / sljedeći robot",
+  'help.hideShow': "Prikaži / sakrij odabranog robota",
+  'help.cubeViews': "Standardni pogledi (ekvivalent ViewCube)",
+  'help.composerMove': "Pomakni fokusirani segment",
+  'help.deleteClip': "Izbriši fokusirani segment",
+  'help.hint.desktop': "U desktop aplikaciji izbornici nude i Cmd/Ctrl+O (uvoz), Cmd/Ctrl+S (spremi sesiju) i Cmd/Ctrl+, (postavke).",
 } as const;
 
 export type MessageKey = keyof typeof hr;

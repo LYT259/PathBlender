@@ -332,6 +332,19 @@ export const hu = {
   "toast.pkgSaved": "Megoldáscsomag mentve",
   "toast.pkgFailed": "A megoldáscsomag exportálása sikertelen",
   "toast.pkgNoVideo": "Ez a böngésző nem tudja rögzíteni a lejátszóvideót — a csomag nélküle mentődött",
+  'help.title': "Billentyűparancsok",
+  'help.intro': "A parancsok a billentyűzetfókuszt követik: a szövegmezők megtartják minden szerkesztőbillentyűt, a fókuszált vászon birtokolja a nézetbillentyűket, az Esc mindig először a legfelső réteget vonja vissza.",
+  'help.group.playback': "Lejátszás",
+  'help.group.view': "Pályanézet",
+  'help.group.robot': "Robotok",
+  'help.playbackEnd': "Ugrás a végére",
+  'help.viewToggle': "2D / 3D váltás",
+  'help.switchRobot': "Előző / következő robot",
+  'help.hideShow': "Kijelölt robot megjelenítése / elrejtése",
+  'help.cubeViews': "Szabványos nézetek (ViewCube megfelelő)",
+  'help.composerMove': "Fókuszált szakasz áthelyezése",
+  'help.deleteClip': "Fókuszált szakasz törlése",
+  'help.hint.desktop': "Az asztali alkalmazás menüi Cmd/Ctrl+O (import), Cmd/Ctrl+S (munkamenet mentése) és Cmd/Ctrl+, (beállítások) is kínálnak.",
 } as const;
 
 export type MessageKey = keyof typeof hu;

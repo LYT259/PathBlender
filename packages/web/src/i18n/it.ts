@@ -336,6 +336,19 @@ export const it = {
   "toast.pkgSaved": "Pacchetto di soluzione salvato",
   "toast.pkgFailed": "Esportazione del pacchetto di soluzione non riuscita",
   "toast.pkgNoVideo": "Questo browser non può registrare il video del replay — il pacchetto è stato salvato senza",
+  'help.title': "Scorciatoie da tastiera",
+  'help.intro': "Le scorciatoie seguono il focus della tastiera: i campi di testo conservano tutti i tasti di modifica, la tela focalizzata possiede i tasti di vista ed Esc annulla sempre prima il livello più alto.",
+  'help.group.playback': "Riproduzione",
+  'help.group.view': "Vista del campo",
+  'help.group.robot': "Robot",
+  'help.playbackEnd': "Vai alla fine",
+  'help.viewToggle': "Alterna 2D / 3D",
+  'help.switchRobot': "Robot precedente / successivo",
+  'help.hideShow': "Mostra / nascondi il robot selezionato",
+  'help.cubeViews': "Viste standard (equivalente ViewCube)",
+  'help.composerMove': "Sposta il segmento focalizzato",
+  'help.deleteClip': "Elimina il segmento focalizzato",
+  'help.hint.desktop': "Nell’app desktop i menu offrono anche Cmd/Ctrl+O (importa), Cmd/Ctrl+S (salva sessione) e Cmd/Ctrl+, (impostazioni).",
 } as const;
 
 export type MessageKey = keyof typeof it;

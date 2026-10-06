@@ -332,6 +332,19 @@ export const ro = {
   "toast.pkgSaved": "Pachetul de soluții a fost salvat",
   "toast.pkgFailed": "Exportarea pachetului de soluții a eșuat",
   "toast.pkgNoVideo": "Acest browser nu poate înregistra videoul redării — pachetul a fost salvat fără el",
+  'help.title': "Scurtături de tastatură",
+  'help.intro': "Scurtăturile urmează focalizarea tastaturii: câmpurile de text păstrează toate tastele de editare, canvasul focalizat deține tastele de vizualizare, iar Esc anulează întotdeauna mai întâi stratul de sus.",
+  'help.group.playback': "Redare",
+  'help.group.view': "Vederea terenului",
+  'help.group.robot': "Roboți",
+  'help.playbackEnd': "Sari la final",
+  'help.viewToggle': "Comută 2D / 3D",
+  'help.switchRobot': "Robotul anterior / următor",
+  'help.hideShow': "Arată / ascunde robotul selectat",
+  'help.cubeViews': "Vizualizări standard (echivalent ViewCube)",
+  'help.composerMove': "Mută segmentul focalizat",
+  'help.deleteClip': "Șterge segmentul focalizat",
+  'help.hint.desktop': "În aplicația desktop meniurile oferă și Cmd/Ctrl+O (importare), Cmd/Ctrl+S (salvează sesiunea) și Cmd/Ctrl+, (setări).",
 } as const;
 
 export type MessageKey = keyof typeof ro;

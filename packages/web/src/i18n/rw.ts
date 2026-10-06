@@ -332,6 +332,19 @@ export const rw = {
   "toast.pkgSaved": "Umukusanyo w'umwanzuro wabitswe",
   "toast.pkgFailed": "Kusohora umukusanyo w'umwanzuro byanze",
   "toast.pkgNoVideo": "Mucukumbuzi ntushobora kwandika video y’ukwina — umukusanyo wabitswe utawo",
+  'help.title': "Amayobora ya keyboard",
+  'help.intro': "Amayobora akurikira aho iteraniro rya keyboard riri: imyanya yanditwemo igumye ibanza kwandika, canvas iteraniro ibanza igaragaza, na Esc ihita iramura icyo hejuru cya mbere.",
+  'help.group.playback': "Gucuranga",
+  'help.group.view': "Igaragaza ry’urupapuro",
+  'help.group.robot': "Roboti",
+  'help.playbackEnd': "Kugera ku mpera",
+  'help.viewToggle': "Hindura 2D / 3D",
+  'help.switchRobot': "Roboti ibanza / ikurikira",
+  'help.hideShow': "Erekana / hisha roboti watoranyije",
+  'help.cubeViews': "Igaragaza risanzwe (nk’irya ViewCube)",
+  'help.composerMove': "Simbuluka icice cyagaragajwe",
+  'help.deleteClip': "Siba icice cyagaragajwe",
+  'help.hint.desktop': "Muri app ya desktop, ibikubiyemo birahari: Cmd/Ctrl+O (kwinjiza), Cmd/Ctrl+S (kubika session), Cmd/Ctrl+, (ibigenzo).",
 } as const;
 
 export type MessageKey = keyof typeof rw;

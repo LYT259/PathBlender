@@ -332,6 +332,19 @@ export const bs = {
   "toast.pkgSaved": "Paket rješenja sačuvan",
   "toast.pkgFailed": "Izvoz paketa rješenja nije uspio",
   "toast.pkgNoVideo": "Ovaj preglednik ne može snimiti video reprodukcije — paket je sačuvan bez njega",
+  'help.title': "Tasterske prečice",
+  'help.intro': "Prečice slijede fokus tastature: tekstualna polja zadržavaju sve tipke za uređivanje, fokusirano platno posjeduje tipke za prikaz, a Esc uvijek prvo otkaže najviši sloj.",
+  'help.group.playback': "Reprodukcija",
+  'help.group.view': "Prikaz terena",
+  'help.group.robot': "Roboti",
+  'help.playbackEnd': "Skok na kraj",
+  'help.viewToggle': "Prebaci 2D / 3D",
+  'help.switchRobot': "Prethodni / sljedeći robot",
+  'help.hideShow': "Prikaži / sakrij izabranog robota",
+  'help.cubeViews': "Standardni prikazi (ekvivalent ViewCube)",
+  'help.composerMove': "Pomjeri fokusirani segment",
+  'help.deleteClip': "Izbriši fokusirani segment",
+  'help.hint.desktop': "U desktop aplikaciji meniji nude i Cmd/Ctrl+O (uvoz), Cmd/Ctrl+S (sačuvaj sesiju) i Cmd/Ctrl+, (postavke).",
 } as const;
 
 export type MessageKey = keyof typeof bs;

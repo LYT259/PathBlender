@@ -44,6 +44,14 @@ const WHEEL_MIN_NOTCH = 24;
 export const WHEEL_STEP = 1.06;
 
 /**
+ * Per-press zoom factor for the keyboard (+/- on the focused canvas).
+ * Pinned to the measured wheel step (above): one keypress prices exactly
+ * like one wheel notch, so the keyboard and the wheel agree on scale and
+ * limits. Tunable — pending user trial like the rest of the feel constants.
+ */
+export const KEY_ZOOM_STEP = WHEEL_STEP;
+
+/**
  * Log-zoom per pixel of trackpad delta. Onshape prices every delivered
  * event at ×1.06; on its busy CAD page Chrome coalesces real trackpad
  * streams to roughly half cadence, which works out to ≈0.009 per δ of
