@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.42';
+export const APP_VERSION = '0.1.8-beta.43';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.43', date: '2026.10.06', note: {
+    en: 'Solution-package replay now probes the video codec before recording — no zero-byte videos',
+    zh: '导出方案包时先实测视频编码器是否真的可用，再开始录制——不再产出 0 字节的回放视频',
+    'zh-tw': '匯出方案包時先實測影片編碼器是否真的可用，再開始錄製——不再產生 0 位元組的回放影片',
+    cs: 'Přehrávání v balíčku řešení nejdřív zkusí, jestli video kodek skutečně funguje, a teprve pak nahrává — žádná videa o velikosti 0 bajtů.',
+    nl: 'De replay in een oplossingspakket test eerst of de videocodec echt bytes oplevert — geen video’s van 0 bytes meer.',
+    fr: 'La relecture du package de solution vérifie d’abord que le codec vidéo produit réellement des données — plus de vidéos de 0 octet.',
+    he: 'ההפעלה החוזרת בחבילת הפתרון בודקת תחילה שהקודק אכן מייצר נתונים — אין יותר סרטונים של 0 בתים.',
+    ja: 'ソリューションパッケージのリプレイは、録画前に動画コーデックが実際にデータを出力するかを試査——0バイトの動画はなくなりました。',
+    ko: '솔루션 패키지의 리플레이는 녹화 전에 영상 코덱이 실제로 데이터를 내는지 점검합니다 — 0바이트 영상 없음.',
+    pl: 'Powtórka w pakiecie rozwiązania najpierw sprawdza, czy kodek wideo naprawdę generuje dane — żadnych nagrań o rozmiarze 0 bajtów.',
+    'pt-br': 'O replay do pacote de solução agora testa se o codec de vídeo gera dados de fato — nada mais de vídeos de 0 bytes.',
+    es: 'La repetición del paquete de solución ahora comprueba que el códec de vídeo genere datos de verdad — sin vídeos de 0 bytes.',
+    tr: 'Çözüm paketinin tekrarı, kayda geçmeden önce video codec’inin gerçekten veri ürettiğini yokluyor — artık 0 baytlık video yok.',
+  } },
   { version: '0.1.8-beta.42', date: '2026.10.06', note: {
     en: 'Prewarm the 3D view in the background — the first 2D-to-3D switch is now instant too',
     zh: '后台预热 3D 视图——第一次 2D 切 3D 现在也是瞬间完成',
