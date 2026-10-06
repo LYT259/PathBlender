@@ -14,13 +14,16 @@ import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const root = new URL('..', import.meta.url).pathname;
-const DEV_URL = 'http://localhost:5199';
+// Port overridable: parallel sessions keep their own dev servers on the
+// default 5199, and this script must never smoke-test THEIR tree.
+const PORT = process.env.PB_SMOKE_PORT ?? '5199';
+const DEV_URL = `http://localhost:${PORT}`;
 let server = null;
 // Reuse an already-running dev server on the port if one answers.
 let up = false;
 try { up = (await fetch(DEV_URL)).ok; } catch { /* not up */ }
 if (!up) {
-  server = spawn('npx', ['vite', '--port', '5199', '--strictPort'], { cwd: `${root}packages/web`, stdio: 'pipe' });
+  server = spawn('npx', ['vite', '--port', PORT, '--strictPort'], { cwd: `${root}packages/web`, stdio: 'pipe' });
   for (let i = 0; i < 120 && !up; i++) {
     await sleep(500);
     try { up = (await fetch(DEV_URL)).ok; } catch { /* keep waiting */ }
