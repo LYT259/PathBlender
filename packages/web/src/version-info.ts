@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.38';
+export const APP_VERSION = '0.1.8-beta.39';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.39', date: '2026.10.06', note: {
+    en: 'Composer polish: the seam check and the path clip it marks now highlight together on hover',
+    zh: '编排细节：接缝对号与其标注的路径块悬停时一起高亮',
+    'zh-tw': '編排細節：接縫對號與其標註的路徑塊懸停時一起高亮',
+    cs: 'Úprava uspořádání: kontrola švu a příslušný segment trasy se při přejezdu zvýrazní společně.',
+    nl: 'Compositie-polijsting: de naadcontrole en het padsegment dat hij markeert lichten bij aanwijzen samen op.',
+    fr: 'Finition de l\u2019agencement : la coche de jonction et le segment de trajet qu\u2019elle marque se surlignent ensemble au survol.',
+    he: 'ליטוש הסידור: סימון המפגש ומקטע המסלול שהוא מסמן מודגשים יחד בריחוף',
+    ja: '編成の仕上げ：接続マークとその対象セグメントがホバーで同時にハイライトされます',
+    ko: '편성 다듬기: 이음새 확인 표시와 해당 경로 구간이 함께 하이라이트됩니다',
+    pl: 'Szlif układania: znacznik szwu i oznaczany przez niego segment trasy podświetlają się razem po najechaniu.',
+    'pt-br': 'Ajuste de organização: a marca de junção e o segmento de trajeto que ela indica são destacados juntos ao passar o mouse',
+    es: 'Pulido del organizador: la marca de unión y el segmento de ruta que señala se resaltan juntos al pasar el cursor',
+    tr: 'Düzenleme rötuşu: ek işareti ve işaretlediği rota bölümü fare ile üzerine gelince birlikte vurgulanıyor',
+  } },
   { version: '0.1.8-beta.38', date: '2026.10.06', note: {
     en: '2D/3D switch is now instant — the 3D view stays loaded in the background; the 3D recenter button now matches the ViewCube top-front angle',
     zh: '2D/3D 切换现已即时——3D 视图在后台保持加载；3D 复位按钮现在对齐 ViewCube「上-前」棱的角度',
