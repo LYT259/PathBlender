@@ -91,7 +91,8 @@ describe('per-team left/right mirror', () => {
     const redView = fieldRobots();
     menuAction(rows()[0]!, 'Mirror left/right');
     await waitFor(() => expect(fieldRobots()[0]!.trajectory.samples[0]!.y).toBeCloseTo(REBUILT_2026.widthM - redView[0]!.trajectory.samples[0]!.y, 10));
-    fireEvent.click(screen.getAllByRole('button', { name: 'Save session', exact: true })[0]!);
+    // Save moved to the File menu (2026-10-06): trigger the same handler via ⌘S.
+    fireEvent.keyDown(window, { key: 's', metaKey: true });
     const stored = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]);
     expect(stored.robots[0].mirrored).toBe(true);
     expect(stored.robots[1].mirrored).toBeUndefined();

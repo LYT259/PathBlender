@@ -33,7 +33,11 @@ import { displayName, robotsFromImport, type LibraryProfile, type LibraryRoute }
 import { withTeamPlaceholders } from './team-placeholder';
 import { withColorblindPalette } from './session-colors';
 import { loadAutosave, readSessionUi, saveAutosave } from './autosave';
-import { saveText } from './download';
+import { saveText, saveBytes } from './download';
+import { buildSolutionPackage } from './solution-package';
+import { buildMenuSpec, menuCommandIds, menuSpecPayload } from './menu-spec';
+import { MenuBar } from './components/MenuBar';
+import { APP_VERSION } from './version-info';
 import { fieldImageFor } from './field-images';
 import { FIELD3D_MODELS } from './field3d-models';
 import { FieldCanvas, type FieldCanvasHandle } from './components/FieldCanvas';
@@ -148,6 +152,8 @@ function AppBody() {
   const { robots: sourceRobots, alliance, setRobots, setScene, setComposerOpen, change, composerOpen, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, canUndo, canRedo } = useSessionHistory(initialFieldPref);
   const [previewRouteId, setPreviewRouteId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Bumped by Edit ▸ Rename Selected Team — RobotList opens the inline editor.
+  const [renameSignal, setRenameSignal] = useState(0);
   const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot'>('checks');
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
   const [view3D, setView3D] = useState(loadView3D);
@@ -175,13 +181,13 @@ function AppBody() {
   useEffect(() => () => {
     if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
   }, []);
-  const flash = useCallback((msg: string, kind: 'ok' | 'error' = 'ok') => {
+  const flash = useCallback((msg: string, kind: 'ok' | 'error' = 'ok', ms = 2500) => {
     if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
     setToast({ msg, kind });
     toastTimer.current = window.setTimeout(() => {
       toastTimer.current = null;
       setToast(null);
-    }, 2500);
+    }, ms);
   }, []);
   const importInputRef = useRef<HTMLInputElement>(null);
   const sessionInputRef = useRef<HTMLInputElement>(null);
@@ -301,15 +307,23 @@ function AppBody() {
   // .path texts stay available so later .auto imports can resolve their
   // pathName references (within the same batch or across this session).
   const pathTextsRef = useRef(new Map<string, string>());
-  // A loose configuration picked before any path waits for the next loose import.
+  // A loose configuration picked before any loose import waits for the next loose import.
   const pendingProfilesRef = useRef<LibraryProfile[]>([]);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  // Every imported file, raw (relPath → File): the solution package's
+  // per-team 原始导入文件 sources. Bytes stay on disk until export reads them.
+  const importedFileStoreRef = useRef(new Map<string, File>());
+  // Applied settings.json per robot — also for the solution package.
+  const settingsFilesRef = useRef(new Map<string, File>());
 
   const importFiles = useCallback(async (files: FileList | File[] | IncomingFile[], opts?: { fromFolder?: boolean }) => {
     exampleRequest.current += 1;
     setExampleLoading(false);
     const nextErrors: { fileName: string; message: string }[] = [];
     const incoming = toIncoming(files);
+    // Keep every incoming file raw — the solution package's per-team
+    // 原始导入文件 come from here (byte-identical to what was imported).
+    for (const { file, relPath } of incoming) importedFileStoreRef.current.set(relPath, file);
     // A folder drop/pick is any import that carries paths below its root.
     const fromFolder = opts?.fromFolder ?? incoming.some((f) => f.relPath.includes('/'));
     const knownRouteExt = /\.(traj|ghostauto|path|auto|chor)$/i;
@@ -332,6 +346,8 @@ function AppBody() {
           const ui = readSessionUi(text);
           pathTextsRef.current.clear();
           pendingProfilesRef.current = [];
+          importedFileStoreRef.current.clear();
+          settingsFilesRef.current.clear();
           setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(withColorblindPalette(restored.robots, colorblindRef.current)) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
           const ids = new Set(restored.robots.map((r) => r.trajectory.id));
           setSelectedId(
@@ -488,6 +504,7 @@ function AppBody() {
     setRobots((prev) => prev.map((robot) => (
       robot.trajectory.id === robotId ? applyUploadedProfile(robot, profile, file.name) : robot
     )));
+    settingsFilesRef.current.set(robotId, file);
     flash(tr('robots.settingsApplied', { name: profile.name }));
   }, [flash, tr, setRobots]);
 
@@ -769,32 +786,17 @@ function AppBody() {
     setRobots([]);
     pathTextsRef.current.clear();
     pendingProfilesRef.current = [];
+    importedFileStoreRef.current.clear();
+    settingsFilesRef.current.clear();
     setErrors([]);
     setT(0);
     playback.setPlaying(false);
     setSelectedId(null);
     setComposerOpen(false);
   }, [setT, setRobots, playback.setPlaying, setComposerOpen]);
-  // Desktop: native menu commands and visible buttons share the same handlers.
-  // The menu is rebuilt in the app language whenever it changes. The shell
-  // dispatches `pb-menu-*` DOM CustomEvents via eval (ADR-0003) — Tauri
-  // event `listen()` can silently lose the race against page load on
-  // WebKitGTK, leaving every menu command dead.
-  useEffect(() => {
-    if (!IS_DESKTOP) return;
-    const on = (name: string, fn: () => void) => {
-      const h = () => fn();
-      window.addEventListener(`pb-menu-${name}`, h);
-      return () => window.removeEventListener(`pb-menu-${name}`, h);
-    };
-    const unbinds = [
-      on('import', () => importInputRef.current?.click()),
-      on('save', () => saveSession()),
-      on('clear', () => clearAll()),
-      on('check-update', () => void checkForUpdates()),
-    ];
-    return () => unbinds.forEach((u) => u());
-  }, [saveSession, clearAll, flash, tr, checkForUpdates]);
+  // Desktop: native menu commands and visible buttons share the same
+  // handlers — the binding lives with the menu block near the end of this
+  // component, driven by the shared menu spec (menu-spec.ts).
 
   // Desktop open-with: the shell evals a `pb-open-files` CustomEvent with
   // [name, base64] pairs (launch-argument files and native-picker imports
@@ -827,13 +829,9 @@ function AppBody() {
     return () => window.removeEventListener('pb-open-files', onOpen);
   }, [importFiles]);
 
-  // Keep the native menu's language in sync with the in-app preference.
-  useEffect(() => {
-    if (!IS_DESKTOP) return;
-    void import('@tauri-apps/api/core')
-      .then(({ invoke }) => invoke('set_menu_language', { lang }))
-      .catch(() => undefined);
-  }, [lang]);
+  // Keep the native menu's language in sync with the in-app preference —
+  // handled by the full `set_menu` push in the menu block (the spec carries
+  // the labels, so the shell needs no language tables of its own).
 
   const hasRobots = robots.length > 0;
   const hasExample = robots.some(isExampleRobot);
@@ -871,6 +869,8 @@ function AppBody() {
         customField: undefined,
         customImageUrl: undefined,
       });
+      importedFileStoreRef.current.clear();
+      settingsFilesRef.current.clear();
       setSelectedId(example.robots[0]?.trajectory.id ?? null);
       setInspectorMode('checks');
       setView3D(false);
@@ -895,6 +895,8 @@ function AppBody() {
     playback.setPlaying(false);
     setT(0);
     setComposerOpen(false);
+    importedFileStoreRef.current.clear();
+    settingsFilesRef.current.clear();
   };
   const jumpToIssue = (time: number, robotIds: string[] = []) => {
     dismissCheckTip();
@@ -906,8 +908,231 @@ function AppBody() {
     // Checks run on the visible set only, so a located problem always
     // belongs to a robot that is already on the field.
   };
+
+  /* ---------------------------------------------------------------- */
+  /* Menu bar (2026-10-06) — one spec for the web menubar and the      */
+  /* native desktop menu; ids below are the dispatch contract.         */
+  /* ---------------------------------------------------------------- */
+
+  const [exportingPackage, setExportingPackage] = useState(false);
+  const exportSolutionPackage = useCallback(() => {
+    if (exportingPackage) return;
+    if (robots.length === 0) { flash(tr('toast.pkgNeedRobots'), 'error'); return; }
+    setExportingPackage(true);
+    void (async () => {
+      try {
+        const result = await buildSolutionPackage({
+          robots,
+          visibleRobots: visible,
+          field,
+          fieldId,
+          customFieldForSession: fieldId === CUSTOM_FIELD_ID ? field : undefined,
+          fieldImageUrl,
+          rawFiles: importedFileStoreRef.current,
+          settingsFiles: settingsFilesRef.current,
+          conflicts,
+          bounds,
+          appVersion: APP_VERSION,
+          onProgress: (stage) => flash(
+            tr(stage === 'recording' ? 'toast.pkgRecording' : stage === 'rendering' ? 'toast.pkgRendering' : 'toast.pkgSaving'),
+            'ok',
+            stage === 'recording' ? 21_000 : 2_500,
+          ),
+        });
+        if (!result.entries.some((name) => name.startsWith('回放.'))) flash(tr('toast.pkgNoVideo'), 'error');
+        const ok = await saveBytes(result.suggestedName, 'zip', result.zip);
+        flash(tr(ok ? 'toast.pkgSaved' : 'toast.pkgFailed'), ok ? 'ok' : 'error');
+      } catch {
+        flash(tr('toast.pkgFailed'), 'error');
+      } finally {
+        setExportingPackage(false);
+      }
+    })();
+  }, [exportingPackage, robots, visible, field, fieldId, fieldImageUrl, conflicts, bounds, flash, tr]);
+
+  // Native menu undo/redo: the ⌘Z accelerator is claimed by the menu, so the
+  // old keydown path never fires on desktop. Inside a text field the session
+  // undo must not fire — fall through to the engine's text undo instead.
+  const menuUndo = useCallback(() => {
+    const el = document.activeElement instanceof Element ? document.activeElement : null;
+    if (el?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]') || document.querySelector('[aria-modal="true"]')) {
+      document.execCommand('undo');
+      return;
+    }
+    undoSession();
+  }, [undoSession]);
+  const menuRedo = useCallback(() => {
+    const el = document.activeElement instanceof Element ? document.activeElement : null;
+    if (el?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]') || document.querySelector('[aria-modal="true"]')) {
+      document.execCommand('redo');
+      return;
+    }
+    redoSession();
+  }, [redoSession]);
+
+  const switchAlliance = useCallback((side: 'blue' | 'red') => {
+    if (alliance === side) return;
+    playback.setPlaying(false);
+    setScene({ alliance: side });
+  }, [alliance, playback.setPlaying, setScene]);
+  const selectSeason = useCallback((id: string) => {
+    if (id === CUSTOM_FIELD_ID) { setCfOpen(true); return; }
+    setScene({ fieldId: id });
+    rememberFieldPrefs(id, fieldVariant, fieldStyle);
+  }, [fieldVariant, fieldStyle, setScene]);
+  const selectVariant = useCallback((variant: 'welded' | 'andymark') => {
+    if (fieldVariant === variant) return;
+    setScene({ fieldVariant: variant });
+    if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, variant, fieldStyle);
+  }, [fieldVariant, fieldId, fieldStyle, setScene]);
+  const selectStyle = useCallback((style: 'schematic' | 'rendered') => {
+    if (fieldStyle === style) return;
+    setScene({ fieldStyle: style });
+    if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, fieldVariant, style);
+  }, [fieldStyle, fieldId, fieldVariant, setScene]);
+  const jumpFirstIssue = () => {
+    const conflict = conflicts[0];
+    if (conflict) { jumpToIssue(conflict.closestT, [conflict.aId, conflict.bId]); return; }
+    const bound = bounds[0];
+    if (bound) jumpToIssue((bound.startT + bound.endT) / 2, [bound.robotId]);
+  };
+
+  const menuSpec = useMemo(() => buildMenuSpec({
+    t: tr,
+    robotsCount: robots.length,
+    hasSelection: !!selectedId && sourceRobots.some((r) => r.trajectory.id === selectedId),
+    selectedVisible: selectedRobot?.visible ?? true,
+    composerOpen,
+    canUndo,
+    canRedo,
+    view3D,
+    field3dAvailable,
+    alliance,
+    fieldId,
+    fieldVariant,
+    andymarkAvailable: !!field.aprilTagsAndyMark,
+    hasRenderedArt: !!field.imageRendered,
+    fieldStyle,
+    showHeatmap,
+    playing: playback.playing,
+    speed: playback.speed,
+    playbackRange,
+    hasIssues: issueCount > 0,
+    viewerOnly: VIEWER_ONLY,
+    isDesktop: IS_DESKTOP,
+  }), [tr, robots.length, selectedId, sourceRobots, selectedRobot, composerOpen, canUndo, canRedo, view3D, field3dAvailable, alliance, fieldId, fieldVariant, field, fieldStyle, showHeatmap, playback.playing, playback.speed, playbackRange, issueCount]);
+
+  // The full menu action table — one entry per menu-spec id. The web MenuBar
+  // calls runMenuCommand directly; the desktop shell dispatches pb-menu-<id>
+  // CustomEvents routed here by the effect below. The ref keeps the
+  // (spec-driven) listener binding mount-stable while closures stay fresh.
+  const menuHandlersRef = useRef<Record<string, () => void>>({});
+  menuHandlersRef.current = {
+    import: openImport,
+    'import-folder': () => folderInputRef.current?.click(),
+    'open-session': () => sessionInputRef.current?.click(),
+    save: saveSession,
+    'export-package': exportSolutionPackage,
+    'export-gif': exportGif,
+    clear: clearAll,
+    undo: menuUndo,
+    redo: menuRedo,
+    'rename-selected': () => setRenameSignal((n) => n + 1),
+    'mirror-selected': () => { if (selectedId) toggleMirror(selectedId); },
+    'visibility-selected': () => {
+      if (!selectedId) return;
+      const target = sourceRobots.find((r) => r.trajectory.id === selectedId);
+      updateRobot(selectedId, { visible: !(target?.visible ?? true) });
+    },
+    'remove-selected': () => { if (selectedId) removeSlot(selectedId); },
+    'apply-profile': () => setInspectorMode('robot'),
+    'arrange-selected': () => { if (selectedId) openSequenceFor(selectedId); },
+    'composer-back': () => setComposerOpen(false),
+    fit: () => {
+      if (view3D) canvas3DRef.current?.resetCam();
+      else canvasRef.current?.fit();
+    },
+    'view-2d': () => { setView3D(false); rememberView3D(false); },
+    'view-3d': () => { setView3D(true); rememberView3D(true); },
+    'alliance-blue': () => switchAlliance('blue'),
+    'alliance-red': () => switchAlliance('red'),
+    'construction-welded': () => selectVariant('welded'),
+    'construction-andymark': () => selectVariant('andymark'),
+    'style-schematic': () => selectStyle('schematic'),
+    'style-rendered': () => selectStyle('rendered'),
+    heatmap: () => setShowHeatmap((v) => !v),
+    'ab-compare': abToggle,
+    'play-pause': () => playback.setPlaying(!playback.playing),
+    rewind: () => { playback.setPlaying(false); setT(0); },
+    'step-back': () => { playback.setPlaying(false); setT((v) => v - 0.5); },
+    'step-forward': () => { playback.setPlaying(false); setT((v) => v + 0.5); },
+    'speed-0_25': () => playback.setSpeed(0.25),
+    'speed-0_5': () => playback.setSpeed(0.5),
+    'speed-1': () => playback.setSpeed(1),
+    'range-full': () => setPlaybackRange('full'),
+    'range-paths': () => setPlaybackRange('paths'),
+    'jump-first-issue': jumpFirstIssue,
+    preferences: openPreferences,
+    'check-update': () => void checkForUpdates(),
+    github: () => {
+      if (!IS_DESKTOP) { window.open(GITHUB_URL, '_blank', 'noopener'); return; }
+      void import('@tauri-apps/api/core')
+        .then(({ invoke }) => invoke('open_external', { url: GITHUB_URL }))
+        .catch(() => { window.open(GITHUB_URL, '_blank', 'noopener'); });
+    },
+    about: () => { if (IS_DESKTOP) openPreferences(); else setShowPrefs(true); },
+  };
+  for (const f of FIELDS) {
+    menuHandlersRef.current[`season-${f.id}`] = () => selectSeason(f.id);
+  }
+  const runMenuCommand = (id: string) => { menuHandlersRef.current[id]?.(); };
+
+  // Desktop: bind every spec id to its pb-menu-* event (the shell evals
+  // them — ADR-0003), and push the whole menu (labels included) to the
+  // shell so the native menu mirrors the web one in every UI language.
+  useEffect(() => {
+    if (!IS_DESKTOP) return;
+    const ids = menuCommandIds(menuSpec);
+    const unbinds = ids.map((id) => {
+      const h = () => menuHandlersRef.current[id]?.();
+      window.addEventListener(`pb-menu-${id}`, h);
+      return () => window.removeEventListener(`pb-menu-${id}`, h);
+    });
+    return () => unbinds.forEach((u) => u());
+  }, [menuSpec]);
+  useEffect(() => {
+    if (!IS_DESKTOP) return;
+    const id = setTimeout(() => {
+      void import('@tauri-apps/api/core')
+        .then(({ invoke }) => invoke('set_menu', { payload: menuSpecPayload(menuSpec) }))
+        .catch(() => undefined);
+    }, 120);
+    return () => clearTimeout(id);
+  }, [menuSpec]);
+
+  // Web keyboard shortcuts mirroring the desktop accelerators (on desktop
+  // the native menu claims these keys, so the keydown never fires there).
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (!e.metaKey && !e.ctrlKey) return;
+      const k = e.key.toLowerCase();
+      if (k === 's') { e.preventDefault(); saveSession(); }
+      else if (k === 'o') { e.preventDefault(); openImport(); }
+      else if (k === '0') {
+        e.preventDefault();
+        if (view3D) canvas3DRef.current?.resetCam();
+        else canvasRef.current?.fit();
+      }
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [saveSession, view3D]);
+
   return (
     <div className={`app${hasRobots ? '' : ' is-welcome'}`}>
+      {/* The web has no native menu — the shared spec renders as a DOM
+          menubar. Desktop keeps its native menu and never mounts this. */}
+      {!IS_DESKTOP && <MenuBar menus={menuSpec} onCommand={runMenuCommand} />}
       <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label="primary">
         {hasRobots && <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>}
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
@@ -958,7 +1183,9 @@ function AppBody() {
         </div>}
         {hasRobots && <a className="tool-btn square toolbar-github" href={GITHUB_URL} target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub" onClick={openGithub}><Icon name="github" size={18} /></a>}
         <span className="toolbar-spacer" data-tauri-drag-region="" />
-        {!VIEWER_ONLY && hasRobots && <button className="tool-btn save-action" onClick={saveSession} title={tr('actions.saveHint')}>{tr('actions.save')}</button>}
+        {/* Save moved to the File menu (2026-10-06): the menu bar is the
+            complete entry point, so the workspace keeps only controls that
+            benefit from sitting next to the field. */}
         {hasRobots && <details ref={workspaceMenuRef} className="workspace-menu">
           <summary className="tool-btn square" aria-label={tr('workspace.more')} title={tr('workspace.more')}><Icon name="more" /></summary>
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
@@ -973,7 +1200,7 @@ function AppBody() {
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
         <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
-          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={(id) => { selectRobot(id); playback.setPlaying(false); setComposerOpen(true); }} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} />}
+          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={(id) => { selectRobot(id); playback.setPlaying(false); setComposerOpen(true); }} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
             {hasExample && <div className="example-notice"><strong>{tr('welcome.exampleBadge')}</strong><span>{tr('welcome.exampleNotice')}</span><button className="btn small" onClick={exitExample}>{tr('welcome.exitExample')}</button></div>}
             <div className="canvas-slot">
@@ -982,40 +1209,24 @@ function AppBody() {
                   something on the field, so the bar appears with the robots. */}
               {hasRobots && <div className="canvas-bar workspace-canvas-bar">
                 <div className="field-options">
-                  <select className="field-select" aria-label={tr('workspace.season')} value={fieldId} onChange={(e) => {
-                    if (e.target.value === CUSTOM_FIELD_ID) { setCfOpen(true); return; }
-                    setScene({ fieldId: e.target.value });
-                    rememberFieldPrefs(e.target.value, fieldVariant, fieldStyle);
-                  }}>
+                  <select className="field-select" aria-label={tr('workspace.season')} value={fieldId} onChange={(e) => selectSeason(e.target.value)}>
                     {FIELDS.map((f) => <option key={f.id} value={f.id}>{f.name} {f.year}</option>)}
                     <option value={CUSTOM_FIELD_ID}>{tr('customField.title')}</option>
                   </select>
                   {field.aprilTagsAndyMark && <div className="seg field-variant-toggle" role="group" aria-label={tr('field.variant')}>
-                    {(['welded', 'andymark'] as const).map((variant) => <button key={variant} type="button" aria-pressed={fieldVariant === variant} className={fieldVariant === variant ? 'on' : ''} onClick={() => {
-                      if (fieldVariant === variant) return;
-                      setScene({ fieldVariant: variant });
-                      if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, variant, fieldStyle);
-                    }}>{variant === 'andymark' ? 'AndyMark' : 'Welded'}</button>)}
+                    {(['welded', 'andymark'] as const).map((variant) => <button key={variant} type="button" aria-pressed={fieldVariant === variant} className={fieldVariant === variant ? 'on' : ''} onClick={() => selectVariant(variant)}>{variant === 'andymark' ? 'AndyMark' : 'Welded'}</button>)}
                   </div>}
                   {/* 2D-artwork switcher, hidden in 3D: the official field
                       model replaces the artwork plane entirely (the image
                       only feeds the no-model fallback), so both styles
                       render the same scene there (user request 2026-10-02). */}
                   {!view3D && field.imageRendered && <div className="seg field-style-toggle" role="group" aria-label={tr('field.style')}>
-                    {(['schematic', 'rendered'] as const).map((style) => <button key={style} type="button" aria-pressed={fieldStyle === style} className={fieldStyle === style ? 'on' : ''} onClick={() => {
-                      if (fieldStyle === style) return;
-                      setScene({ fieldStyle: style });
-                      if (fieldId !== CUSTOM_FIELD_ID) rememberFieldPrefs(fieldId, fieldVariant, style);
-                    }}>{tr(`field.style.${style}`)}</button>)}
+                    {(['schematic', 'rendered'] as const).map((style) => <button key={style} type="button" aria-pressed={fieldStyle === style} className={fieldStyle === style ? 'on' : ''} onClick={() => selectStyle(style)}>{tr(`field.style.${style}`)}</button>)}
                   </div>}
                 </div>
                 <div className="session-alliance" role="group" aria-label={tr('robots.alliance')}>
                   <div className="seg alliance-toggle">
-                    {(['blue', 'red'] as const).map((side) => <button key={side} type="button" className={`alliance-${side}${alliance === side ? ' on' : ''}`} aria-pressed={alliance === side} onClick={() => {
-                      if (alliance === side) return;
-                      playback.setPlaying(false);
-                      setScene({ alliance: side });
-                    }}>{tr(side === 'blue' ? 'robots.blue' : 'robots.red')}</button>)}
+                    {(['blue', 'red'] as const).map((side) => <button key={side} type="button" className={`alliance-${side}${alliance === side ? ' on' : ''}`} aria-pressed={alliance === side} onClick={() => switchAlliance(side)}>{tr(side === 'blue' ? 'robots.blue' : 'robots.red')}</button>)}
                   </div>
                 </div>
                 <span className="canvas-spacer" />
