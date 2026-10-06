@@ -9,7 +9,6 @@ interface Props {
   robots: SessionTrajectory[];
   conflicts: CollisionInterval[];
   bounds: OutOfBoundsInterval[];
-  minSeparation?: { aId: string; bId: string; distanceM: number; t: number };
   onJump: (t: number, robotIds?: string[]) => void;
   guide?: ReactNode;
   /** ±δ start-execution window for the worst-case rescan (§6.5-①). */
@@ -17,7 +16,7 @@ interface Props {
   onToleranceChange?: (delta: number) => void;
 }
 
-export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump, guide, toleranceS = 0, onToleranceChange }: Props) {
+export function ConflictPanel({ robots, conflicts, bounds, onJump, guide, toleranceS = 0, onToleranceChange }: Props) {
   const { t } = useI18n();
   const [unit] = useLengthUnit();
   const nameOf = (id: string) => {
@@ -28,13 +27,11 @@ export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump
   const hidden = robots.filter((r) => !r.visible).length;
   const estimated = robots.some((r) => r.trajectory.geometrySource === 'default');
   const title = !robots.length ? 'checks.emptyTitle' : issues ? 'checks.issues' : robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle';
-  const body = !robots.length ? 'checks.emptyBody' : robots.length < 2 ? 'checks.singleBody' : 'checks.clearBody';
   return <section className="conflict-panel" aria-label={t('conflicts.title')}>
     <div className={`check-summary ${issues ? 'has-issues' : robots.length > 1 ? 'is-clear' : ''}`}>
       <div className="check-summary-icon"><Icon name={issues ? 'warning' : robots.length > 1 ? 'check' : 'path'} size={24} /></div>
       <h2>{t(title, { n: issues })}</h2>
-      {!issues && <p>{t(body)}</p>}
-      {!!robots.length && <small>{t('workspace.analysisScope', { n: robots.length })}</small>}
+      {!issues && robots.length === 1 && <p>{t('checks.singleBody')}</p>}
       {hidden > 0 && <small>{t('checks.hidden', { n: hidden })}</small>}
     </div>
     {guide}
@@ -65,6 +62,5 @@ export function ConflictPanel({ robots, conflicts, bounds, minSeparation, onJump
     </li>;
     })}</ul>}
     {bounds.length > 0 && <><h3 className="check-section-heading">{t('bounds.title')}<span className="conflict-count bounds-count">{bounds.length}</span></h3><ul className="conflict-list">{bounds.map((b) => <li key={`${b.robotId}-${b.startT}`} className="conflict-item"><button className="conflict-jump bounds" onClick={() => onJump((b.startT + b.endT) / 2, [b.robotId])}><span className="conflict-pair">{nameOf(b.robotId)}</span><span className="conflict-when">{t('bounds.item', { start: b.startT.toFixed(2), end: b.endT.toFixed(2), depth: formatLength(b.maxPenetrationM, unit), edge: b.edges.map((e) => t(`edges.${e}` as const)).join('/') })}</span><span className="issue-action">{t('checks.jump')} →</span></button></li>)}</ul></>}
-    {minSeparation && <p className="min-sep">{t('conflicts.minSep', { d: formatLength(minSeparation.distanceM, unit), t: minSeparation.t.toFixed(2), a: nameOf(minSeparation.aId), b: nameOf(minSeparation.bId) })}</p>}
   </section>;
 }
