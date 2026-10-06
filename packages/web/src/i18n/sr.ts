@@ -38,7 +38,7 @@ export const sr = {
   'welcome.folderAdvice': 'Uvezite ceo folder da biste mogli da menjate rute kada dođe do konflikta.',
   'welcome.importFile': 'Uvoz fajlova ruta',
   'welcome.importFileHint': 'Izaberite rute izvezene iz Chorea ili PathPlannera',
-  'welcome.importFolderHint': 'Učitajte više ruta i izaberite koju da reprodukcujete',
+  'welcome.importFolderHint': 'Učitajte više ruta i izaberite koju да reprodukuje',
   'welcome.openSession': 'Otvori sačuvanu sesiju',
   'welcome.openSessionHint': 'Otvorite prethodno sačuvanu analizu',
   'welcome.tryExample': 'Probajte primer',
