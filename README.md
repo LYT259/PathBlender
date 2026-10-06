@@ -29,13 +29,13 @@ PathBlender fills that gap:
   clock (15 s; 20 s for the 2026 season), play / pause / scrub / speed
   control (0.25×–1×);
 - **Collision & interference checking** — bumper-rectangle OBB overlap
-  along the whole timeline, with a conflict report (who, when, where),
-  out-of-bounds markers, and a minimum-separation report;
+  along the whole timeline, with a conflict report (who, when, where) and
+  out-of-bounds markers;
 - **3D field view** — official field models for FRC 2022–2026 (welded and
   AndyMark variants where the two constructions differ), free orbit with
-  one-click fit; seasons without a public official model (2018–2020) stay
-  2D. The 2D view offers a schematic and a rendered artwork style per
-  season, with the official AprilTag layout overlaid;
+  one-click fit; imported custom fields stay 2D. The 2D view offers a
+  schematic and a rendered artwork style per season, with the official
+  AprilTag layout overlaid;
 - **Route library** (desktop app) — import a whole folder from any team's
   deploy directory: bystander files are skipped, every route lands in a
   library, and a picker beside each robot switches its active auto live.
@@ -81,9 +81,9 @@ PathBlender fills that gap:
 | `settings.json` | PathPlanner (MIT) | Bumper dimensions for the robots in that project |
 | `.pb` | This project | Session file: all robots + settings + field (pre-rename `.ghpb.json` still opens) |
 
-Fields: FRC 2018–2020 and 2022–2026 are built in (2021 reused the 2020
-field and has no public asset of its own), plus custom field import with
-calibration and a WPILib/PhotonVision AprilTag layout JSON.
+Fields: FRC 2022–2026 are built in, plus custom field import with
+calibration and a WPILib/PhotonVision AprilTag layout JSON (use it for
+any other season or a practice field).
 
 ## Where to get it
 
@@ -110,10 +110,11 @@ check you trigger (GitHub Releases) — path files never leave the app.
 
 Also included: a session-level red/blue alliance view, per-robot team
 number annotations, the season fields above with official AprilTag
-overlays, and a fourteen-language UI — English / 简体中文 / 繁體中文（台灣）/
-繁體中文（中國香港）/ Français / Español / Türkçe / Português (Brasil) /
-עברית / Nederlands / Polski / 日本語 / 한국어 / Čeština — in light and dark
-themes (follows the system).
+overlays, and a **41-language** UI — English / 简体中文 / 繁體中文（中國香港）/
+繁體中文（中國台灣）/ Français / Español / Deutsch / Italiano / Português
+(Brasil) / Nederlands / Polski / Čeština / Türkçe / Ελληνικά / עברית /
+العربية / हिन्दी / 日本語 / 한국어, with the full list in the language menu —
+in light and dark themes (follows the system).
 
 Full walkthrough per tool and an FAQ:
 [English](docs/user-guide.en.md) ·
