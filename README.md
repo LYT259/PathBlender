@@ -145,7 +145,7 @@ Four checks, all run locally — none of them ships with the app:
 | Unit + jsdom suites | `npm test` (or `-w @pathblender/core` / `-w @pathblender/web`) | Parsers, geometry, fusion and collision maths, and component behaviour in a simulated DOM. |
 | Pointer walkthrough | `npm run build -w @pathblender/web && npm run preview -w @pathblender/web`, then `node scripts/browser-walkthrough.mjs` | The production build driven with a real mouse and real files: folder import, the composer's click-and-drag placement, save/restore through an actual download, all 41 languages including RTL, artwork repaints, service worker, and 3D (model, lit robots, ViewCube picks, season switches). |
 | Keyboard walkthrough | same preview server, then `node scripts/keyboard-walkthrough.mjs` | The same app driven with the keyboard only — every main workflow has to be completable without a mouse. |
-| Website gate check | `VITE_VIEWER_ONLY=1 npm run build -w @pathblender/web`, preview it, then `VIEWER_BASE=http://localhost:4179/ node scripts/viewer-check.mjs` | The hosted viewer build keeps import, playback, checking, arranging and 3D, and cannot write a file out — including through routes with no visible button (menu entries and Cmd/Ctrl accelerators). Run it whenever a save or export affordance moves. |
+| Website gate check | `VITE_VIEWER_ONLY=1 npm run build -w @pathblender/web`, then `node scripts/serve-dist.mjs 4179` and `VIEWER_BASE=http://localhost:4179/ node scripts/viewer-check.mjs` | The hosted viewer build keeps import, playback, collision checking and timeline arranging, asks nothing outside its own origin on load, follows the OS language on first visit — and cannot write a file out through any route, including the Ctrl/Cmd+S accelerators that have no button at all. Re-run it whenever a save or export affordance moves. |
 
 All three browser harnesses print `PASS`/`FAIL` per step, exit non-zero on any
 failure and save screenshots to `/tmp/pb-shots`. Run them after any
@@ -154,10 +154,10 @@ harness in the same pull request — a check that targets a retired control
 fails the next person rather than protecting them.
 
 中文：以上四项都只在本机跑、不随软件发布。单元测试验算法与组件行为；两个
-走查脚本在真实浏览器里把成品点一遍（一个只用鼠标，一个只用键盘）；最后一条
-是网站门控自查——发出去的查看器构建要留住导入/回放/检查/编排/3D，同时任何
-入口（包括没有按钮的菜单项和快捷键）都不能写文件。改动界面或导出入口时，请在
-同一个 PR 里同步这些脚本。
+走查脚本在真实浏览器里把成品点一遍（一个只用鼠标，一个只用键盘）；最后一条是网站
+门控自查——发布出去的查看器构建要留住导入/回放/检查/编排，首屏不发本站以外的
+请求、首访跟随系统语言，同时任何入口都不能写文件（包括根本没有按钮的
+Ctrl/Cmd+S 快捷键）。改动界面或导出入口时，请在同一个 PR 里同步这些脚本。
 
 ## License & attribution
 

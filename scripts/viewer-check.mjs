@@ -172,6 +172,28 @@ async function openApp(options = {}) {
   await ctx.close();
 }
 
+// ------------------------------------------- write paths with no button ---
+// Hiding the affordance is not the gate. Until 2026-10-06 the File menu
+// dropped Save on this build while the window Ctrl/Cmd+S accelerator kept
+// calling saveSession, so pathblender.pages.dev downloaded .pb files that no
+// button could produce — the one leak the DOM scans above cannot see.
+// Each combination gets a FRESH profile: Chrome blocks a second automatic
+// download from the same page (later probes would false-pass), and the
+// debounced autosave would restore a session and hide the welcome screen.
+for (const combo of ['Control+s', 'Meta+s']) {
+  const { ctx, page } = await openApp();
+  await page.locator('.welcome-import').click();
+  await page.locator('input[type="file"][multiple]').first()
+    .setInputFiles(`${SAMPLES}/ghostauto/straight_run.ghostauto`);
+  await page.waitForSelector('.robot-library-row', { timeout: 15000 });
+  const settled = page.waitForEvent('download', { timeout: 5000 })
+    .then((d) => d.suggestedFilename()).catch(() => null);
+  await page.keyboard.press(combo);
+  const downloaded = await settled;
+  check(`${combo} writes no file on the viewer build`, downloaded === null, downloaded ?? 'no download');
+  await ctx.close();
+}
+
 // ------------------------------------------------- first visit follows OS ---
 {
   const { ctx, page } = await openApp({ locale: 'zh-CN' });
