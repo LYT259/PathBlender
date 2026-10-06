@@ -159,6 +159,10 @@ describe('shared desktop preferences', () => {
   it('theme changes no longer drive the Dock icon (decoupled)', async () => {
     await renderPreferences();
     const icons = () => screen.getByRole('group', { name: 'App icon' });
+    // Let the mount-time Dock apply land before drafting: under vitest 4 its
+    // promise settles after these back-to-back clicks, so Save is still
+    // disabled when the click fires and the draft never gets applied.
+    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false }));
     // Pin the icon first…
     fireEvent.click(within(icons()).getByRole('radio', { name: 'Dark', exact: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));

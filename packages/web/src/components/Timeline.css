@@ -59,8 +59,13 @@
 .timeline-rows { display: flex; flex-direction: column; gap: 2px; }
 .timeline-row { min-height: 29px; align-items: center; border-radius: 5px; }
 .timeline-row.is-selected { background: var(--accent-dim); }
+/* The label and its lane are ONE hover unit (user request 2026-10-06): hovering
+   either tints the whole row, so hover spans exactly like the selection tint.
+   A selected row keeps its accent on hover — the blend just reads one step in. */
+.timeline-row:hover { background: var(--hover); }
+.timeline-row.is-selected:hover { background: color-mix(in srgb, var(--hover) 60%, var(--accent-dim)); }
 .timeline-robot { min-width: 0; display: flex; align-items: center; gap: 8px; height: 29px; padding: 0 6px; border: 0; border-radius: 5px; background: transparent; color: var(--fg-dim); font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
-.timeline-robot:hover { background: var(--hover); color: var(--fg); }
+.timeline-row:hover .timeline-robot { color: var(--fg); }
 .timeline-robot[aria-pressed='true'] { color: var(--fg); font-weight: 600; }
 .timeline-robot span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .timeline-robot-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }

@@ -199,7 +199,7 @@ describe('always-visible mirror button (2026-10-05)', () => {
     expect(screen.queryByRole('button', { name: 'Back to playback' })).not.toBeInTheDocument();
   });
 
-  it('pauses playback and keeps the playhead where it was', async () => {
+  it('keeps playback running and never scrubs the playhead', async () => {
     render(<App />);
     drop([new File([raw], 'A.ghostauto'), new File([raw], 'B.ghostauto')]);
     await waitFor(() => expect(fieldRobots()).toHaveLength(2));
@@ -208,13 +208,12 @@ describe('always-visible mirror button (2026-10-05)', () => {
     fireEvent.change(screen.getByRole('slider', { name: 'Playback position' }), { target: { value: '2' } });
     fireEvent.click(screen.getByRole('button', { name: 'Play', exact: true }));
     expect(screen.getByRole('button', { name: 'Pause', exact: true })).toBeInTheDocument();
-    const playhead = clock();
-    expect(playhead).toMatch(/^2\.00 \//);
-    // The click pauses; the playhead never moves and the pose still reflects.
+    // User request 2026-10-06: a mirror is a view switch, not a transport
+    // control — the clock keeps running and the playhead is not yanked back.
     fireEvent.click(mirrorButton(rows()[0]!));
     await waitFor(() => expect(fieldRobots()[0]!.trajectory.samples[0]!.y).toBeCloseTo(REBUILT_2026.widthM - before[0]!.trajectory.samples[0]!.y, 10));
-    expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
-    expect(clock()).toBe(playhead);
+    expect(screen.getByRole('button', { name: 'Pause', exact: true })).toBeInTheDocument();
+    expect(Number.parseFloat(clock())).toBeGreaterThanOrEqual(2);
   });
 
   it('undoes a mirror made through the visible button', async () => {
