@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.61';
+export const APP_VERSION = '0.1.8-beta.62';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.62', date: '2026.10.06', note: {
+    en: 'Language audit round 8: one address style and one unit spelling per language — 85 rows, 14 languages',
+    zh: '语言审核第八轮：每种语言统一称呼风格与单位写法——14 种语言共 85 条',
+    'zh-tw': '語言審核第八輪：每種語言統一稱呼風格與單位寫法——14 種語言共 85 條',
+    cs: '8. kolo jazykové revize: každý jazyk používá jeden styl oslovení a jeden zápis jednotek — 85 řádků ve 14 jazycích',
+    nl: 'Ronde 8 van de taalcontrole: één aanspreekvorm en één eenheidsschrijfwijze per taal — 85 regels in 14 talen',
+    fr: 'Huitième passe d’audit linguistique : une seule forme d’adresse et une seule orthographe des unités par langue — 85 lignes, 14 langues',
+    he: 'סיבוב שמיני של ביקורת השפות: סגנון פנייה אחד וכתיבת יחידות אחת לכל שפה — 85 שורות ב־14 שפות',
+    ja: '言語レビュー第8弾：言語ごとに呼びかけ方と単位表記を統一しました（14言語・85項目）',
+    ko: '언어 점검 8차: 언어마다 존칭 방식과 단위 표기를 통일했습니다(14개 언어, 85개 항목)',
+    pl: 'Runda 8 przeglądu języków: jedna forma zwrotu i jedna pisownia jednostek w każdym języku — 85 wierszy w 14 językach',
+    'pt-br': 'Rodada 8 da revisão de idiomas: um só tratamento e uma só grafia de unidades por idioma — 85 linhas em 14 idiomas',
+    es: 'Ronda 8 de la revisión de idiomas: un solo tratamiento y una sola grafía de unidades por idioma; 85 líneas en 14 idiomas',
+    tr: 'Dil denetimi 8. tur: her dilde tek hitap biçimi ve tek birim yazımı — 14 dilde 85 satır',
+  } },
   { version: '0.1.8-beta.61', date: '2026.10.06', note: {
     en: 'Language audit round 7: each language now names the timeline, session, inspector and replay with one word — 34 rows',
     zh: '语言审核第七轮：时间轴、会话、检查器、回放每种语言各用一个词——统一 34 条',
