@@ -34,7 +34,7 @@ the fix happens in the tool that owns the path.
 
 1. **Read the report**: the conflict panel says which two robots, at what
    time, and where on the field; out-of-bounds moments are marked on the
-   timeline, and a minimum-separation report flags near misses.
+   timeline.
 2. **Inspect**: click a conflict to jump the clock to it; scrub the
    timeline; flip the red/blue alliance view if a partner exported from
    the other perspective; switch a robot's route from the library to
@@ -54,16 +54,17 @@ rest of the alliance.
 
 ## 3D view & fields
 
-- The **2D / 3D** toggle in the header appears for seasons with an
-  official 3D model — **FRC 2022–2026** (welded and AndyMark
-  constructions where they differ; 2025 has both). 2018–2020 are 2D-only.
+- The **2D / 3D** toggle in the header appears for every built-in season —
+  **FRC 2022–2026** all ship an official 3D model (welded and AndyMark
+  constructions where they differ; 2025 has both). Imported custom
+  fields are 2D-only.
 - The 3D view has free orbit, one-click **Fit** to frame the content,
   and a default-view button to snap the camera home.
 - The 2D view offers a **schematic** and a **rendered** artwork style
   per season, with the official AprilTag layout overlaid.
-- Seasons: 2018–2020 and 2022–2026 built in; 2021 reused the 2020 field
-  and has no public asset of its own. Custom field images can be
-  imported (calibration + an AprilTag layout JSON).
+- Seasons: 2022–2026 built in. Any other season or a practice field goes
+  through custom field import (image + calibration + an AprilTag layout
+  JSON).
 
 ## Other things you'll use
 
@@ -75,9 +76,12 @@ rest of the alliance.
   current 2D view for the alliance chat. Everything also lives in the
   PathBlender menu;
 - **Appearance & languages**: light/dark/follow-system in Preferences
-  (⌘, on desktop); the UI ships in English, 简体中文, 繁體中文（台灣）,
-  繁體中文（中國香港）, Français, Español, Türkçe, Português (Brasil),
-  עברית, Nederlands, Polski, 日本語, 한국어, Čeština;
+  (⌘, on desktop); the UI ships in 41 languages — English, 简体中文,
+  繁體中文（中國台灣）, 繁體中文（中國香港）, Français, Español, Deutsch,
+  Italiano, Português (Brasil), Nederlands, Polski, Čeština, Türkçe,
+  Ελληνικά, עברית, العربية, हिन्दी, 日本語, 한국어 among them — the full
+  list is in the language menu, and the app follows your system language
+  until you pick one;
 - **Updates** (desktop): menu **PathBlender → Check for Updates…**;
   Preferences → Updates switches between the stable and beta channels.
 

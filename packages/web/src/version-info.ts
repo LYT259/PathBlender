@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.46';
+export const APP_VERSION = '0.1.8-beta.49';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,51 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.49', date: '2026.10.06', note: {
+    en: 'Security patch: auto-update downloads now reject malformed TLS 1.3 handshakes',
+    zh: '安全补丁：自动更新下载现在会拒掉畸形的 TLS 1.3 握手',
+    'zh-tw': '安全修補：自動更新下載現在會拒掉畸形的 TLS 1.3 握手',
+    cs: 'Bezpečnostní oprava: stahování automatických aktualizací nyní odmítá chybné handshake TLS 1.3',
+    nl: 'Beiligingspatch: downloads van automatische updates wijzen nu onjuiste TLS 1.3-handshakes af',
+    fr: 'Correctif de sécurité : les téléchargements de mises à jour rejettent désormais les échanges TLS 1.3 mal formés',
+    he: 'תיקון אבטחה: הורדות העדכון האוטומטי דוחות כעת לחיצות יד פגומות של TLS 1.3',
+    ja: 'セキュリティパッチ：自動更新のダウンロードで不正な TLS 1.3 ハンドシェイクを拒否するようになりました',
+    ko: '보안 패치: 자동 업데이트 다운로드에서 잘못된 TLS 1.3 핸드셰이크를 거부합니다',
+    pl: 'Łata bezpieczeństwa: pobieranie automatycznych aktualizacji odrzuca teraz nieprawidłowe handshake TLS 1.3',
+    'pt-br': 'Patch de segurança: os downloads de atualização automática agora rejeitam handshakes TLS 1.3 malformados',
+    es: 'Parche de seguridad: las descargas de actualizaciones automáticas ahora rechazan handshakes TLS 1.3 malformados',
+    tr: 'Güvenlik yaması: otomatik güncelleme indirmeleri artık hatalı TLS 1.3 tokalaşmalarını reddediyor',
+  } },
+  { version: '0.1.8-beta.48', date: '2026.10.06', note: {
+    en: 'Switching alliance, 2D/3D, season or artwork style — and mirroring a team — no longer pauses a running playback',
+    zh: '播放中切换蓝红方、2D/3D、赛季或场地画风，以及镜像某支队伍，都不再打断播放',
+    'zh-tw': '播放中切換藍紅方、2D/3D、賽季或場地畫風，以及鏡像某支隊伍，都不再打斷播放',
+    cs: 'Přepínání spojence, 2D/3D, sezóny nebo stylu mapy — a zrcadlení týmu — už přehrávání nepřeruší',
+    nl: 'Schakelen tussen alliantie, 2D/3D, seizoen of tekenstijl — en een team spiegelen — onderbreekt het afspelen niet meer',
+    fr: 'Changer d’alliance, de vue 2D/3D, de saison ou de style de terrain — et miroiter une équipe — n’interrompt plus la lecture',
+    he: 'מעבר בין כחול/אדום, תצוגת 2D/3D, עונה או סגנון המגרש — והיפוך צוות — כבר לא עוצר את הנגינה',
+    ja: 'ブルー/レッドの切替、2D/3D、シーズンや描写スタイルの変更、チームの左右反転でも再生は止まらなくなりました',
+    ko: '연합 진영, 2D/3D, 시즌 또는 필드 스타일 전환과 팀 좌우 반전이 이제 재생 중에도 멈추지 않습니다',
+    pl: 'Przełączanie sojuszu, widoku 2D/3D, sezonu lub stylu boiska — oraz lustrzenie drużyny — nie zatrzymuje już odtwarzania',
+    'pt-br': 'Trocar de aliança, de 2D/3D, de temporada ou estilo do campo — e espelhar uma equipe — não pausa mais a reprodução',
+    es: 'Cambiar de alianza, de 2D/3D, de temporada o estilo del campo — y reflejar un equipo — ya no detiene la reproducción',
+    tr: 'İttifak, 2D/3D, sezon veya saha çizim stili değişikliği ve bir takımı aynalama artık oynatmayı durdurmuyor',
+  } },
+  { version: '0.1.8-beta.47', date: '2026.10.06', note: {
+    en: 'Timeline polish: hovering a path row now highlights the whole row — label and track together',
+    zh: '时间轴细节：悬停某条路径时整行一起高亮——队名标签与轨迹条不再分开',
+    'zh-tw': '時間軸細節：懸停某條路徑時整行一起高亮——隊名標籤與軌跡條不再分開',
+    cs: 'Doladění časové osy: přejetí myší nad řádkem trasy zvýrazní celý řádek — štítek i stopa společně.',
+    nl: 'Tijdlijn-polijsting: bij aanwijzen van een rij licht de hele rij op — label en spoor samen.',
+    fr: 'Finition de la frise : survoler une ligne de trajet la surligne entièrement, étiquette et piste ensemble.',
+    he: 'ליטוש ציר הזמן: ריחוף על שורת מסלול מדגיש את השורה כולה — התווית והמסלול יחד',
+    ja: 'タイムラインの仕上げ：パスの行にホバーすると行全体がハイライトされます——チーム名とトラックが一緒に',
+    ko: '타임라인 다듬기: 경로 행에 마우스를 올리면 이름표와 트랙이 함께 한 줄로 강조됩니다',
+    pl: 'Szlif osi czasu: najechanie na wiersz trasy podświetla cały wiersz — etykietę i ścieżkę razem.',
+    'pt-br': 'Ajuste da linha do tempo: ao passar o mouse sobre uma linha de trajeto, a linha inteira é destacada — rótulo e trilha juntos',
+    es: 'Pulido de la línea de tiempo: al pasar el cursor por una fila de ruta se resalta la fila entera, etiqueta y pista juntas.',
+    tr: 'Zaman çizelgesi rötuşu: bir rota satırının üzerine gelince satırın tamamı vurgulanıyor — etiket ve iz birlikte',
+  } },
   { version: '0.1.8-beta.46', date: '2026.10.06', note: {
     en: 'Edit menu Cut/Copy/Paste/Select All now follow the app language',
     zh: '编辑菜单的剪切/拷贝/粘贴/全选现在跟随界面语言',
