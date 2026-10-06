@@ -36,7 +36,7 @@ PathBlender fills that gap:
   one-click fit; imported custom fields stay 2D. The 2D view offers a
   schematic and a rendered artwork style per season, with the official
   AprilTag layout overlaid;
-- **Route library** (desktop app) — import a whole folder from any team's
+- **Route library** — import a whole folder from any team's
   deploy directory: bystander files are skipped, every route lands in a
   library, and a picker beside each robot switches its active auto live.
   PathPlanner `settings.json` files apply real bumper dimensions;
@@ -46,7 +46,7 @@ PathBlender fills that gap:
   requests at all**;
 - **Also a desktop app** — the same UI in a lightweight Tauri shell for
   macOS, adding session save/open, GIF replay and solution-package export,
-  folder import and in-app updates (stable or beta channel). Its only
+  and in-app updates (stable or beta channel). Its only
   network activity is the
   update check you trigger, which contacts GitHub Releases.
 
@@ -56,7 +56,8 @@ PathBlender fills that gap:
    example** on the welcome screen to load a built-in multi-robot session
    and see playback and collision checking immediately.
 2. Import path files from every alliance partner — `.traj`, `.ghostauto`,
-   `.path`, `.auto`, mixed freely (desktop: one file or a whole folder;
+   `.path`, `.auto`, mixed freely (one file or a whole folder, on the web
+   app as well as the desktop;
    every `.path` referenced by an `.auto` must arrive in the same batch).
    Broken files are reported individually without stopping the good ones.
 3. Press **play**. Conflicts show up as red rings on the field, red
@@ -98,8 +99,9 @@ any other season or a practice field).
   installers are not provided yet — the code is cross-platform and they
   are planned. The release page's other assets (`.tar.gz`, `.sig`,
   `.json`) are updater internals — you don't need them.
-- **Web app** (viewer build: import, playback and checking; no session
-  save / GIF and solution-package export / folder import) —
+- **Web app** (viewer build: the same imports as the app — files and whole
+  folders — plus playback and checking; no session
+  save / GIF and solution-package export) —
   [pathblender.pages.dev](https://pathblender.pages.dev), with a preview
   channel at [pathblender-preview.pages.dev](https://pathblender-preview.pages.dev).
 

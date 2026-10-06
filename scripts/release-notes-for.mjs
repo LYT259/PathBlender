@@ -125,7 +125,8 @@ ${changesBlock}
 - **Windows / Linux** — installers are not provided yet; they are planned for a follow-up release. (The code is cross-platform; this release ships macOS only.)
 - **Web app / 网页版** — also runs directly in the browser at
   [pathblender.pages.dev](https://pathblender.pages.dev) (viewer build:
-  import, playback and checking; no session save / PNG / folder import),
+  the same imports as the app, single files or a whole folder, plus playback
+  and checking; no session save / PNG / GIF / solution package),
   preview channel at [pathblender-preview.pages.dev](https://pathblender-preview.pages.dev).
 
 ## Known issues & limitations / 已知问题与限制
