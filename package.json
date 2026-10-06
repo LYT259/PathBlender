@@ -14,9 +14,9 @@
   "scripts": {
     "dev": "npm run dev -w @pathblender/web",
     "build": "npm run build -w @pathblender/core && npm run build -w @pathblender/web",
-    "typecheck": "npm run typecheck -ws --if-present",
+    "typecheck": "npm run typecheck --ws --if-present",
     "version:check": "node scripts/check-version.mjs",
-    "test": "npm run test -ws --if-present",
+    "test": "npm run test --ws --if-present",
     "preview": "npm run preview -w @pathblender/web"
   },
   "devDependencies": {
