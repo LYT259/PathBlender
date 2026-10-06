@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.52';
+export const APP_VERSION = '0.1.8-beta.53';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.53', date: '2026.10.06', note: {
+    en: 'Fixed: the website build no longer writes session files on Cmd/Ctrl+S — it stays view-only',
+    zh: '修复：网页版按 Cmd/Ctrl+S 不再写出会话文件，保持纯查看',
+    'zh-tw': '修復：網頁版按 Cmd/Ctrl+S 不再寫出工作階段檔案，維持純檢視',
+    cs: 'Oprava: webová sestavení již při Cmd/Ctrl+S nezapisuje soubory relace — zůstává jen pro zobrazení',
+    nl: 'Fix: de webbuild schrijft bij Cmd/Ctrl+S geen sessiebestanden meer — blijft alleen bekijken',
+    fr: 'Correctif : la version web n’écrit plus de fichiers de session avec Cmd/Ctrl+S — elle reste en lecture seule',
+    he: 'תיקון: גרסת האתר כבר לא כותבת קבצי סשן ב-Cmd/Ctrl+S — היא נשארת לצפייה בלבד',
+    ja: '修正：Webビルドは Cmd/Ctrl+S でセッションファイルを書き込まず、閲覧専用を維持',
+    ko: '수정: 웹 빌드는 Cmd/Ctrl+S에서 세션 파일을 더 이상 저장하지 않고 보기 전용 유지',
+    pl: 'Naprawa: wersja internetowa nie zapisuje już plików sesji po Cmd/Ctrl+S — pozostaje tylko do podglądu',
+    'pt-br': 'Correção: a build web não grava mais arquivos de sessão com Cmd/Ctrl+S — continua só visualização',
+    es: 'Corrección: la versión web ya no escribe archivos de sesión con Cmd/Ctrl+S — sigue siendo solo visualización',
+    tr: 'Düzeltme: web derlemesi artık Cmd/Ctrl+S ile oturum dosyası yazmıyor — yalnızca görüntülemede kalıyor',
+  } },
   { version: '0.1.8-beta.52', date: '2026.10.06', note: {
     en: 'Desktop: quitting right after an edit no longer loses it — the autosave now flushes when the window closes',
     zh: '桌面版：改完立刻退出不再丢——窗口关闭时自动保存会先落盘',
