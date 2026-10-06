@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.48';
+export const APP_VERSION = '0.1.8-beta.49';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.49', date: '2026.10.06', note: {
+    en: 'Security patch: auto-update downloads now reject malformed TLS 1.3 handshakes',
+    zh: '安全补丁：自动更新下载现在会拒掉畸形的 TLS 1.3 握手',
+    'zh-tw': '安全修補：自動更新下載現在會拒掉畸形的 TLS 1.3 握手',
+    cs: 'Bezpečnostní oprava: stahování automatických aktualizací nyní odmítá chybné handshake TLS 1.3',
+    nl: 'Beiligingspatch: downloads van automatische updates wijzen nu onjuiste TLS 1.3-handshakes af',
+    fr: 'Correctif de sécurité : les téléchargements de mises à jour rejettent désormais les échanges TLS 1.3 mal formés',
+    he: 'תיקון אבטחה: הורדות העדכון האוטומטי דוחות כעת לחיצות יד פגומות של TLS 1.3',
+    ja: 'セキュリティパッチ：自動更新のダウンロードで不正な TLS 1.3 ハンドシェイクを拒否するようになりました',
+    ko: '보안 패치: 자동 업데이트 다운로드에서 잘못된 TLS 1.3 핸드셰이크를 거부합니다',
+    pl: 'Łata bezpieczeństwa: pobieranie automatycznych aktualizacji odrzuca teraz nieprawidłowe handshake TLS 1.3',
+    'pt-br': 'Patch de segurança: os downloads de atualização automática agora rejeitam handshakes TLS 1.3 malformados',
+    es: 'Parche de seguridad: las descargas de actualizaciones automáticas ahora rechazan handshakes TLS 1.3 malformados',
+    tr: 'Güvenlik yaması: otomatik güncelleme indirmeleri artık hatalı TLS 1.3 tokalaşmalarını reddediyor',
+  } },
   { version: '0.1.8-beta.48', date: '2026.10.06', note: {
     en: 'Switching alliance, 2D/3D, season or artwork style — and mirroring a team — no longer pauses a running playback',
     zh: '播放中切换蓝红方、2D/3D、赛季或场地画风，以及镜像某支队伍，都不再打断播放',
