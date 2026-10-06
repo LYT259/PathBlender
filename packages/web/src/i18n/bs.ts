@@ -180,7 +180,7 @@ export const bs = {
   'customField.cancel': "Otkaži",
   'bounds.title': "Granice terena",
   'bounds.item': "{start}–{end} s · {depth} preko {edge} zida",
-  'edges.far': "udaljeni", 'edges.left': "lijevi", 'edges.near': "bliski", 'edges.right': "desni",
+  'edges.far': "udaljenog", 'edges.left': "lijevnog", 'edges.near': "bliskog", 'edges.right': "desnog",
   'customField.tags': "Učitaj AprilTag raspored…",
   'updates.upToDate': "Vi ste ažurni",
   'updates.downloading': "Pronađeno v{v}, preuzimanje i ponovno pokretanje…",

@@ -188,6 +188,12 @@ export const en = {
   'customField.apply': 'Apply',
   'customField.cancel': 'Cancel',
   'bounds.title': 'Field bounds',
+  // `edges.*` exists only to fill the {edge} slot below (ConflictPanel.tsx:64),
+  // so each dictionary must inflect those four words for THIS frame, not for a
+  // citation form: "uden for den fjerne væg", "jenseits der hinteren Wand",
+  // "za дальньою стіною", "preko udaljenog zida". English adjectives happen not
+  // to change, which is why the trap went unnoticed until the 2026-10-06 audit
+  // found 17 languages rendering "past left wall".
   'bounds.item': '{start}–{end} s · {depth} past the {edge} wall',
   'edges.far': 'far', 'edges.left': 'left', 'edges.near': 'near', 'edges.right': 'right',
   'customField.tags': 'Load AprilTag layout…',
