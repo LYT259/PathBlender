@@ -194,6 +194,54 @@ describe('Serbian ships one script', () => {
 });
 
 /**
+ * Typography. The audit found the same language writing one apostrophe two or
+ * three ways (fr 27 ASCII against 15 typographic, rw 51 against 13, uk mixing
+ * in the modifier letter), French punctuation without its mandatory
+ * non-breaking space, and Hebrew joining prefixes with three different
+ * hyphens. These are the cheapest things a native reader notices, so they are
+ * now held, not fixed by hand each time.
+ */
+describe('one apostrophe glyph per language', () => {
+  it('no dictionary mixes U+2019, ASCII and the modifier letter', () => {
+    for (const code of CODES) {
+      const body = KEYS.map((k) => DICTS[code]![k]).join(' ');
+      const used = [
+        ['U+2019', (body.match(/\u2019/g) ?? []).length],
+        ['ASCII', (body.match(/'/g) ?? []).length],
+        ['U+02BC', (body.match(/\u02BC/g) ?? []).length],
+      ].filter(([, n]) => n > 0);
+      expect(
+        used.length,
+        `${code} mixes apostrophe glyphs: ${used.map(([name, n]) => `${name}:${n}`).join(' ')}`,
+      ).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
+describe('French punctuation spacing', () => {
+  it('every ; : ! ? is preceded by a non-breaking space', () => {
+    for (const key of KEYS) {
+      const v = DICTS.fr![key];
+      for (const m of v.matchAll(/[;:!?]/g)) {
+        const before = v[(m.index ?? 1) - 1];
+        expect(
+          before === '\u00A0' || before === '\u202F',
+          `fr:${key} — "${v.slice(Math.max(0, (m.index ?? 0) - 10), (m.index ?? 0) + 1)}"`,
+        ).toBe(true);
+      }
+    }
+  });
+});
+
+describe('Hebrew joins with the maqaf', () => {
+  it('no Hebrew letter is followed by an ASCII or non-breaking hyphen', () => {
+    for (const key of KEYS) {
+      expect(DICTS.he![key], `he:${key}`).not.toMatch(/[\u05D0-\u05EA][\-\u2011]/);
+    }
+  });
+});
+
+/**
  * One concept, one word per language. The audit's single largest finding was
  * the same object named two, three or four different ways inside one dictionary
  * — fr used five words for "path", tr ran yol/rota across the path/route split
@@ -234,8 +282,7 @@ const pathFamily = KEYS.filter(
   (k) => /\b(paths?|routes?)\b/i.test((en as Record<string, string>)[k]) && !/trajector|\.path/i.test((en as Record<string, string>)[k]),
 );
 
-describe('one concept, one term per language', () => {
-  it('paths and routes are named with the stems each language declares', () => {
+describe('one concept, one term per language', () => {  it('paths and routes are named with the stems each language declares', () => {
     for (const code of CODES) {
       const stems = PATH_STEMS[code as Lang];
       const pending = PENDING_PATH_STEMS[code as Lang] ?? [];

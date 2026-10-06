@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.59';
+export const APP_VERSION = '0.1.8-beta.60';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.60', date: '2026.10.06', note: {
+    en: 'Language audit round 6: typography — French punctuation spacing, one apostrophe glyph per language, Hebrew joiners',
+    zh: '语言审核第六轮：排版——法语标点空格、每种语言统一撇号、希伯来语连接符',
+    'zh-tw': '語言審核第六輪：排版——法語標點空格、每種語言統一撇號、希伯來語連接符',
+    cs: '6. kolo jazykové revize: typografie — mezery před francouzskými interpunkčními znaménky, jedna apostrofa na jazyk, hebrejské spojninky',
+    nl: 'Ronde 6 van de taalcontrole: typografie — spaties voor Franse leestekens, één apostrof per taal, Hebreeuwse verbindingsletters',
+    fr: 'Sixième passe d’audit linguistique : typographie — espaces insécables avant la ponctuation française, un seul apostrophe par langue, jointures hébraïques',
+    he: 'סיבוב שישי של ביקורת השפות: טיפוגרפיה — רווח לפני סימני פיסוק בצרפתית, גרש אחד לכל שפה, מקווקים עבריים',
+    ja: '言語レビュー第6弾：タイポグラフィ（フランス語の句読点のスペース、言語ごとにアポストロフィを統一、ヘブライ語の連結記号）',
+    ko: '언어 점검 6차: 타이포그래피 — 프랑스어 구두점 띄어쓰기, 언어당 아포스트로피 통일, 히브리어 연결 부호',
+    pl: 'Runda 6 przeglądu języków: typografia — spacje przed francuskimi znakami przestankowymi, jeden apostrof na język, hebrajskie łączniki',
+    'pt-br': 'Rodada 6 da revisão de idiomas: tipografia — espaços inseparáveis da pontuação francesa, um apóstrofo por idioma, conectores do hebraico',
+    es: 'Ronda 6 de la revisión de idiomas: tipografía — espacios no separables de la puntuación francesa, un solo apóstrofo por idioma, conectores hebreos',
+    tr: 'Dil denetimi 6. tur: tipografi — Fransızca noktalama boşlukları, dil başına tek bir kesme işareti, İbranice bağlayıcılar',
+  } },
   { version: '0.1.8-beta.59', date: '2026.10.06', note: {
     en: 'Language audit round 5: each language now names a path or route with one word — 86 rows unified',
     zh: '语言审核第五轮：每种语言现在都用同一个词指路径/路线——统一 86 条文案',
