@@ -177,9 +177,17 @@ async function openApp(options = {}) {
 // dropped Save on this build while the window Ctrl/Cmd+S accelerator kept
 // calling saveSession, so pathblender.pages.dev downloaded .pb files that no
 // button could produce — the one leak the DOM scans above cannot see.
-// Each combination gets a FRESH profile: Chrome blocks a second automatic
-// download from the same page (later probes would false-pass), and the
-// debounced autosave would restore a session and hide the welcome screen.
+// Each combination gets its own browser profile, for the two reasons that
+// survived measurement. Attribution: both keys write the same file name
+// (`session-YYYY-MM-DD.pb`), so a shared page can prove a leak happened but
+// not which key caused it — on a build without the gate the SAME page
+// delivered BOTH downloads (measured 2/2, reproduced twice), so nothing is
+// lost by the split except that ambiguity. Isolation: a session loaded by an
+// earlier probe is autosaved, and its restore hides the welcome screen the
+// next probe waits for (seen as a timeout while this harness was written).
+// The intuitive third reason — Chrome blocking a second automatic download per
+// page — was tested and does NOT hold under Playwright, so it is deliberately
+// not cited as the justification.
 for (const combo of ['Control+s', 'Meta+s']) {
   const { ctx, page } = await openApp();
   await page.locator('.welcome-import').click();
