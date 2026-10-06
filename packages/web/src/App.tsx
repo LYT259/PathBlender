@@ -684,6 +684,11 @@ function AppBody() {
   }, [change]);
 
   const saveSession = useCallback(() => {
+    // The hosted website is a viewer: it must not write session files. Dropping
+    // the menu item was not enough — the web accelerator below calls this
+    // directly, so pathblender.pages.dev downloaded a .pb on ⌘S/Ctrl+S with no
+    // button anywhere. Gated at the function so no caller can reintroduce it.
+    if (VIEWER_ONLY) return;
     const file = JSON.parse(
       serializeSession(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined),
     ) as Record<string, unknown>;

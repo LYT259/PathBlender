@@ -61,13 +61,16 @@ const browser = await chromium
 
 /** @param {{ locale?: string }} options */
 async function openApp(options = {}) {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: options.locale ?? 'en-US' });
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: options.locale ?? 'en-US', acceptDownloads: true });
   const page = await ctx.newPage();
   const errors = [];
   const crossOrigin = [];
+  /** Any file the page writes out — the viewer build must never produce one. */
+  const downloads = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('response', (r) => { if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`); });
+  page.on('download', (d) => downloads.push(d.suggestedFilename()));
   page.on('request', (r) => {
     try {
       const url = new URL(r.url());
@@ -75,12 +78,12 @@ async function openApp(options = {}) {
     } catch { /* non-http scheme (data:, blob:) — local by definition */ }
   });
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-  return { ctx, page, errors, crossOrigin };
+  return { ctx, page, errors, crossOrigin, downloads };
 }
 
 // ---------------------------------------------------------------- welcome ---
 {
-  const { ctx, page, errors, crossOrigin } = await openApp();
+  const { ctx, page, errors, crossOrigin, downloads } = await openApp();
 
   const tops = page.locator('.menu-bar .menu-top');
   check('web menu bar renders its five sections', await tops.count() === 5, `${await tops.count()} sections`);
@@ -133,6 +136,14 @@ async function openApp(options = {}) {
     !itemLabels.some((l) => /save session|export|open saved session|import folder|文件夹/i.test(l)),
     itemLabels.join(' / '));
   await page.keyboard.press('Escape');
+
+  // No visible control is not the same as no capability: the web layer binds
+  // ⌘S/Ctrl+S itself (App.tsx mirrors the desktop accelerators), and until
+  // 2026-10-06 that shortcut wrote a session file out of the viewer build.
+  await page.keyboard.press('Control+s');
+  await page.keyboard.press('Meta+s');
+  await page.waitForTimeout(1200);
+  check('the save accelerator writes no file', downloads.length === 0, downloads.join(' | '));
 
   const github = page.locator('.toolbar-github');
   check('GitHub link points where source says it should',
