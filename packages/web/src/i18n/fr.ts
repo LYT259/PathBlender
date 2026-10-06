@@ -200,6 +200,7 @@ export const fr: Record<MessageKey, string> = {
   'canvas.view': 'Vue',
   'canvas.fit': 'Ajuster',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Carte thermique',
 
   "import.failed": "{n} fichier(s) n'ont pas pu être importés :",
   'import.dismiss': 'Ignorer',

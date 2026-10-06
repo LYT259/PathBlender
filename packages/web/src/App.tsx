@@ -1316,7 +1316,6 @@ function AppBody() {
         {hasRobots && <details ref={workspaceMenuRef} className="workspace-menu">
           <summary className="tool-btn square" aria-label={tr('workspace.more')} title={tr('workspace.more')}><Icon name="more" /></summary>
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
-            {hasRobots && !view3D && <button onClick={() => setShowHeatmap((v) => !v)} aria-pressed={showHeatmap}>{tr(showHeatmap ? 'actions.heatmapOff' : 'actions.heatmapOn')}</button>}
             {hasRobots && <button onClick={abToggle}>{tr('actions.abCompare')}</button>}
             <button onClick={() => setShowHelp(true)} aria-keyshortcuts="?">{tr('help.title')}</button>
             {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
@@ -1367,6 +1366,8 @@ function AppBody() {
                 {/* The rest of the bar needs a robot to act on, which the gate
                     above now guarantees. */}
                 <button className="tool-btn canvas-recenter" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} aria-keyshortcuts="0" onClick={resetView}><Icon name="recenter" size={17} /></button>
+                {/* The old trails switch, restored 2026-10-06 to gate the occupancy heatmap (2D and 3D). */}
+                <label className="switch trails-control"><input type="checkbox" checked={showHeatmap} onChange={(e) => setShowHeatmap(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.heatmap')}</span></label>
               </div>}
               {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : <>
                 {/* Parked 3D: mounted at the first 3D entry — or earlier,
@@ -1381,7 +1382,7 @@ function AppBody() {
                     loading fallback. */}
                 {(ever3D || prewarm3D) && field3dAvailable && <div className="canvas-3d-keep" hidden={!view3D}>
                   <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}>
-                    <FieldCanvas3D active={view3D} showTrail ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} />
+                    <FieldCanvas3D active={view3D} showTrail showHeatmap={showHeatmap} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} />
                   </Suspense>
                 </div>}
                 {!view3D && <FieldCanvas ref={canvasRef} showTrail showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} />}

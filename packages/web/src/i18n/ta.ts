@@ -185,6 +185,7 @@ export const ta = {
   'canvas.view': 'காட்சி',
   'canvas.fit': 'பொருத்து',
   'canvas.clock': 't = {t} வி',
+  'canvas.heatmap': 'வெப்ப வரைபடம்',
   
   'import.failed': '{n} கோப்பு(கள்) இறக்குமதி தோல்வி:',
   'import.dismiss': 'மூடு',

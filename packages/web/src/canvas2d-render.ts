@@ -28,7 +28,7 @@ import {
   sampleStateAt,
 } from '@pathblender/core';
 import { TRAIL_WIDTH_M } from './ground-trail';
-import { bumperColor, robotAnnotation } from './robot-identity';
+import { bumperColor, heatmapColor, robotAnnotation } from './robot-identity';
 import { MK5I_MODULE_TOP_WORLD_M } from './robot-sprites';
 
 export interface RenderView {
@@ -143,9 +143,10 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
   // alpha — dense regions read as "spent time here" (§7.3-3).
   if (p.showHeatmap) {
     ctx.save();
-    ctx.fillStyle = cssVar('--accent', '#0a84ff');
     ctx.globalAlpha = 0.06;
     for (const r of robots) {
+      // Alliance tint: blue keeps the accent, red pairs with the theme red.
+      ctx.fillStyle = heatmapColor(r.trajectory.alliance, cssVar('--accent', '#0a84ff'), cssVar('--danger', '#ff453a'));
       // Composed robots contribute every segment; legacy robots their one route.
       const segmentSamples = pathSegments(r);
       const stride = Math.max(1, Math.ceil(segmentSamples.length / 120));

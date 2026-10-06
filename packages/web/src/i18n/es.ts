@@ -199,6 +199,7 @@ export const es: Record<MessageKey, string> = {
   'canvas.view': 'Vista',
   'canvas.fit': 'Ajustar',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Mapa de calor',
 
   'import.failed': '{n} archivo(s) no se pudieron importar:',
   'import.dismiss': 'Descartar',

@@ -189,7 +189,8 @@ export function buildMenuSpec(ctx: MenuContext): MenuSection[] {
   }
   viewItems.push(
     sep(),
-    check('heatmap', t(ctx.showHeatmap ? 'actions.heatmapOff' : 'actions.heatmapOn'), ctx.showHeatmap, { enabled: hasRobots && !ctx.view3D }),
+    // The heatmap renders in both 2D and 3D (2026-10-06) — no 3D gate.
+    check('heatmap', t(ctx.showHeatmap ? 'actions.heatmapOff' : 'actions.heatmapOn'), ctx.showHeatmap, { enabled: hasRobots }),
     item('ab-compare', t('actions.abCompare'), { enabled: hasRobots }),
   );
 
