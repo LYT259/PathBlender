@@ -175,7 +175,7 @@ export const sq = {
   'customField.margin': 'marzhë (m)',
   'customField.length': 'gjatësi (m)',
   'customField.width': 'gjerësi (m)',
-  'customField.note': 'Kalibroni nga imazhi: fusha e lojës = pikselëtEImazhit / ppm − 2×marzhë. Sesionet e ruajtura mbajnë kalibrimin por jo imazhin.',
+  'customField.note': 'Kalibroni nga imazhi: fusha e lojës = pikselët e imazhit / ppm − 2×marzhë. Sesionet e ruajtura mbajnë kalibrimin por jo imazhin.',
   'customField.apply': 'Apliko',
   'customField.cancel': 'Anulo',
   'bounds.title': 'Kufijtë e fushës',

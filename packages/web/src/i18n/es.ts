@@ -177,7 +177,7 @@ export const es: Record<MessageKey, string> = {
   'conflicts.title': 'Conflictos',
 'conflicts.toleranceBadge': 'desvío ±{delta} s',
   'checks.tolerance': 'Comprobación de tolerancia: peor caso ±{delta} s al inicio',
-  'conflicts.item': '{start}–{end} s · mínimo {d} m @ ({x}, {y})',
+  'conflicts.item': '{start}–{end} s · mínimo {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 
   'timeline.speed': '{n}×',
@@ -225,7 +225,7 @@ export const es: Record<MessageKey, string> = {
   'customField.apply': 'Aplicar',
   'customField.cancel': 'Cancelar',
   'bounds.title': 'Límites del campo',
-  'bounds.item': '{start}–{end} s · {depth} m más allá del muro {edge}',
+  'bounds.item': '{start}–{end} s · {depth} más allá del muro {edge}',
   'edges.far': 'lejano', 'edges.left': 'izquierdo', 'edges.near': 'cercano', 'edges.right': 'derecho',
   'customField.tags': 'Cargar disposición de AprilTag…',
   'updates.upToDate': 'Ya tienes la última versión',

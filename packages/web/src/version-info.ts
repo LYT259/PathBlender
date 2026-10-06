@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.54';
+export const APP_VERSION = '0.1.8-beta.55';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.55', date: '2026.10.06', note: {
+    en: 'Language audit round 1: fixed doubled length units, wrong decimal commas and tips that named the wrong button, across 28 languages',
+    zh: '语言审核第一轮：修正 28 种语言里重复的长度单位、错误的小数点，以及叫错按钮名的提示',
+    'zh-tw': '語言審核第一輪：修正 28 種語言裡重複的長度單位、錯誤的小數點，以及叫錯按鈕名的提示',
+    cs: '1. kolo jazykové revize: opraveny zdvojené jednotky délky, chybné desetinné čárky a nápovědy s špatným názvem tlačítka ve 28 jazycích',
+    nl: 'Ronde 1 van de taalcontrole: dubbele lengtematen, verkeerde decimalen en tips die de verkeerde knop noemden, gecorrigeerd in 28 talen',
+    fr: 'Première passe d’audit linguistique : unités de longueur doublées, virgules décimales erronées et astuces nommant le mauvais bouton, corrigées dans 28 langues',
+    he: 'סיבוב ראשון של ביקורת השפות: תוקנו יחידות אורך כפולות, פסיקים עשרוניים שגויים והוראות שקראו לכפתור הלא נכון — ב־28 שפות',
+    ja: '言語レビュー第1弾：28の言語で長さユニットの重複・小数点の表記・誤ったボタン名を表示する文言を修正しました',
+    ko: '언어 점검 1차: 28개 언어에서 중복된 길이 단위, 잘못된 소수점 표기, 잘못된 버튼 이름을 알려는 문구를 수정했습니다',
+    pl: 'Runda 1 przeglądu języków: poprawione podwajane jednostki długości, błędne przecinki dziesiętne i podpowiedzi z nazwą niewłaściwego przycisku w 28 językach',
+    'pt-br': 'Rodada 1 da revisão de idiomas: corrigidas unidades de comprimento duplicadas, vírgulas decimais erradas e dicas que citavam o botão errado, em 28 idiomas',
+    es: 'Ronda 1 de la revisión de idiomas: se corrigieron unidades de longitud duplicadas, comas decimales incorrectas y avisos que nombraban el botón equivocado, en 28 idiomas',
+    tr: 'Dil denetimi 1. tur: 28 dilde yinelenen uzunluk birimleri, yanlış ondalık virgüller ve yanlış düğme adını anan ipuçları düzeltildi',
+  } },
   { version: '0.1.8-beta.54', date: '2026.10.06', note: {
     en: 'No visible change: removed a quit-time save hook the desktop app never fires, and recorded what really happens on quit',
     zh: '无可见变化：移除桌面端从未触发的退出保存钩子，并记录退出时的真实行为',

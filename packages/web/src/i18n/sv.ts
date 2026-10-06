@@ -175,7 +175,7 @@ export const sv = {
   'customField.margin': 'marginal (m)',
   'customField.length': 'längd (m)',
   'customField.width': 'bredd (m)',
-  'customField.note': 'Kalibrera från bilden: spelplan = bildPixlar / ppm − 2×marginal. Sparade sessioner behåller kalibreringen men inte bilden.',
+  'customField.note': 'Kalibrera från bilden: spelplan = bildpixlar / ppm − 2×marginal. Sparade sessioner behåller kalibreringen men inte bilden.',
   'customField.apply': 'Tillämpa',
   'customField.cancel': 'Avbryt',
   'bounds.title': 'Fältgränser',
