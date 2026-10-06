@@ -230,13 +230,27 @@ function AppBody() {
   const robots = useMemo(() => robotsForAlliance(sourceRobots, alliance, field), [sourceRobots, alliance, field]);
   const hasRobots = robots.length > 0;
   // Keyboard landing (2026-10-06 keyboard pass): the welcome button that
-  // loaded the example (or the first import) is unmounted by the very
-  // action it triggered, which dropped focus onto <body>. When the
-  // workspace first appears, give the keyboard a real home.
+  // loaded the example is unmounted by the very action it triggered, which
+  // dropped focus onto <body> — and the library sits ~48 tab stops deep, so
+  // the keyboard needs to be handed a home. It lands silently: a focus ring
+  // painted on a freshly opened app reads as a stray box over the first team
+  // (user directive, 2026-10-06), and the first real key or click restores
+  // ordinary focus styling.
   useEffect(() => {
     if (!hasRobots) return;
     if (document.activeElement !== document.body) return;
-    document.querySelector<HTMLElement>('.robot-library-select')?.focus();
+    const target = document.querySelector<HTMLElement>('.robot-library-select');
+    if (!target) return;
+    target.classList.add('focus-silent');
+    target.focus();
+    const clear = () => {
+      target.classList.remove('focus-silent');
+      document.removeEventListener('keydown', clear);
+      document.removeEventListener('pointerdown', clear);
+    };
+    document.addEventListener('keydown', clear);
+    document.addEventListener('pointerdown', clear);
+    return clear;
   }, [hasRobots]);
   const fieldImageUrl = fieldImageFor(fieldId, fieldVariant, fieldStyle, customImageUrl);
   // Per-season rule-max geometry (MK5i plan, 2026-10-02): default-geometry

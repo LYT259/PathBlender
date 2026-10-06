@@ -141,16 +141,20 @@ describe('welcome flow', () => {
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
   });
 
-  it('hands keyboard focus to the robot library when the welcome page gives way', async () => {
-    // The welcome button is unmounted by the very action it triggered, which
-    // used to drop focus onto <body> — the keyboard had no home to tab from
-    // (2026-10-06 keyboard pass).
+  it('hands keyboard focus to the robot library without a visible ring', async () => {
+    // The welcome button is unmounted by the action it triggered, so the
+    // keyboard is handed a landing spot (2026-10-06 pass). It must be silent:
+    // a focus ring painted on a freshly opened app read as a stray box over
+    // the first team, and the first real key restores ordinary focus styling.
     render(<App />);
     expect(document.activeElement).toBe(document.body);
     await openExample();
     const target = document.querySelector('.robot-library-select');
     await waitFor(() => expect(document.activeElement).toBe(target));
     expect(target).toHaveAccessibleName(/#8814/);
+    expect(target?.className).toContain('focus-silent');
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(target?.className).not.toContain('focus-silent');
   });
 
   it('replaces a stale example from an older build with the current example on restore', async () => {
