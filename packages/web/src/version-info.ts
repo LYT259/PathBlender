@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.41';
+export const APP_VERSION = '0.1.8-beta.42';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.42', date: '2026.10.06', note: {
+    en: 'Prewarm the 3D view in the background — the first 2D-to-3D switch is now instant too',
+    zh: '后台预热 3D 视图——第一次 2D 切 3D 现在也是瞬间完成',
+    'zh-tw': '背景預熱 3D 視圖——第一次 2D 切 3D 現在也是瞬間完成',
+    cs: '3D pohled se předehřívá na pozadí — i první přepnutí z 2D do 3D je teď okamžité',
+    nl: 'De 3D-weergave wordt op de achtergrond voorverwarmd — ook de eerste 2D-naar-3D-wissel is nu direct',
+    fr: 'La vue 3D est préchauffée en arrière-plan — le premier passage de la 2D à la 3D est lui aussi instantané',
+    he: 'תצוגת ה־3D מתחממת ברקע — גם המעבר הראשון מ־2D ל־3D מיידי כעת',
+    ja: '3D ビューをバックグラウンドでプレウォーム——初回の 2D→3D 切り替えも瞬時に',
+    ko: '3D 보기를 백그라운드에서 미리 준비합니다 — 첫 2D→3D 전환도 이제 즉시',
+    pl: 'Widok 3D jest rozgrzewany w tle — również pierwsze przełączenie z 2D na 3D jest natychmiastowe',
+    'pt-br': 'A visão 3D é pré-aquecida em segundo plano — a primeira troca de 2D para 3D também é instantânea',
+    es: 'La vista 3D se precalienta en segundo plano — el primer cambio de 2D a 3D también es instantáneo',
+    tr: '3D görünüm arka planda önden ısıtılıyor — ilk 2D’den 3D’ye geçiş de artık anında',
+  } },
   { version: '0.1.8-beta.41', date: '2026.10.06', note: {
     en: 'Full keyboard pass: layered Escape, composer focus round-trip, canvas view keys, workspace shortcuts (E/H/M/V/0/,/./End/?) and a shortcut-help dialog',
     zh: '键盘操作全量补齐：Esc 分层退出、编排焦点往返、画布视角键、工作区快捷键（E/H/M/V/0/逗号/句号/End/?）与快捷键帮助',

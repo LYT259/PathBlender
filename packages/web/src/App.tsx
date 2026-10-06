@@ -256,6 +256,27 @@ function AppBody() {
     if (view3D) canvas3DRef.current?.resetCam();
     else canvasRef.current?.fit();
   }, [view3D]);
+  // Prewarm (2026-10-06 follow-up report): parking alone only made repeat
+  // switches instant — the FIRST 3D click of a session still paid the whole
+  // build synchronously (two WebGL contexts, the field GLB parse, shader
+  // compile, the 4096² shadow bake), which read as "the click takes quite a
+  // while to react". So once robots exist and the season has an official
+  // model, mount the parked canvas hidden before any 3D click. Idle-deferred
+  // with a timeout so it cannot starve behind continuous playback, and the
+  // canvas renders one warm frame while hidden (FieldCanvas3D.warmup), so
+  // shaders and GPU buffers are ready before the user ever switches.
+  const [prewarm3D, setPrewarm3D] = useState(false);
+  useEffect(() => {
+    if (ever3D || !field3dAvailable || robots.length === 0) return;
+    const idle = typeof requestIdleCallback === 'function'
+      ? (cb: () => void) => requestIdleCallback(cb, { timeout: 3000 })
+      : (cb: () => void) => window.setTimeout(cb, 600);
+    const cancel = typeof cancelIdleCallback === 'function'
+      ? (id: number) => cancelIdleCallback(id)
+      : (id: number) => window.clearTimeout(id);
+    const id = idle(() => setPrewarm3D(true));
+    return () => cancel(id);
+  }, [ever3D, field3dAvailable, robots.length]);
   // Field/variant memory is written ONLY from the user's own selects —
   // session-file restores must not overwrite it.
 
@@ -1348,13 +1369,17 @@ function AppBody() {
                 <button className="tool-btn canvas-recenter" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} aria-keyshortcuts="0" onClick={resetView}><Icon name="recenter" size={17} /></button>
               </div>}
               {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : <>
-                {/* Parked 3D: mounted from the first 3D entry onward, hidden
-                    (not unmounted) while 2D shows — scene, models and camera
-                    survive, so switching back is instant. `active` pauses the
-                    render loop while hidden. Seasons without an official
-                    model unmount it (field3dAvailable), remounting on return
-                    to a modeled season behind the usual loading fallback. */}
-                {ever3D && field3dAvailable && <div className="canvas-3d-keep" hidden={!view3D}>
+                {/* Parked 3D: mounted at the first 3D entry — or earlier,
+                    prewarmed hidden once robots exist (see prewarm3D above) —
+                    then hidden (not unmounted) while 2D shows: scene, models
+                    and camera survive, so every switch is instant, first
+                    click included. `active` pauses the render loop while
+                    hidden; warmup() bakes one hidden frame so shaders and
+                    GPU buffers are ready before the first click. Seasons
+                    without an official model unmount it (field3dAvailable),
+                    remounting on return to a modeled season behind the usual
+                    loading fallback. */}
+                {(ever3D || prewarm3D) && field3dAvailable && <div className="canvas-3d-keep" hidden={!view3D}>
                   <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}>
                     <FieldCanvas3D active={view3D} showTrail ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} />
                   </Suspense>

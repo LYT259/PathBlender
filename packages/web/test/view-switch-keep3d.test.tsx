@@ -1,9 +1,11 @@
 /**
- * Instant 2D→3D switch (user request 2026-10-06): once 3D has been entered,
- * the 3D canvas stays mounted but hidden while 2D shows — so switching back
- * never rebuilds the WebGL scene and never shows "loading 3D view…" again.
- * The first entry keeps the lazy chunk + loading fallback; a fresh 2D-only
- * session never mounts the 3D canvas at all (no chunk cost up front).
+ * Instant 2D→3D switch (user request 2026-10-06, both rounds): the 3D
+ * canvas stays mounted but hidden while 2D shows — so switching never
+ * rebuilds the WebGL scene and never shows "loading 3D view…" again. The
+ * parked canvas is even PREWARMED: once robots exist (and the season has a
+ * model) it mounts hidden on idle and renders one warm frame, so the FIRST
+ * 3D click of a session is instant too — the follow-up report was that
+ * parking alone still left that first click paying the whole build.
  *
  * Same request: the 3D home camera now points along the ViewCube's
  * top–front edge — 45° elevation over the front face at the unchanged home
@@ -41,36 +43,34 @@ const keep3D = () => document.querySelector('.canvas-3d-keep') as HTMLElement | 
 beforeEach(() => { localStorage.clear(); mount3D = 0; vi.clearAllMocks(); });
 afterAll(() => new Promise((resolve) => setTimeout(resolve, 2600)));
 
-describe('parked 3D canvas across 2D/3D switches', () => {
-  it('mounts the 3D canvas once and keeps it (hidden) through 2D switches', async () => {
+describe('parked + prewarmed 3D canvas across 2D/3D switches', () => {
+  it('prewarms hidden before the first 3D click, which then never remounts', async () => {
     render(<App />);
     drop([new File([raw], 'A.ghostauto')]);
     await waitFor(() => expect(screen.getByTestId('field-2d')).toBeInTheDocument());
-    // A 2D-only session never mounts (nor downloads) the 3D canvas.
+    // Robots just landed: nothing mounted YET — the prewarm is idle-deferred.
     expect(screen.queryByTestId('field-3d')).toBeNull();
     expect(keep3D()).toBeNull();
 
-    // First 3D entry: the chunk resolves and the canvas mounts once.
-    fireEvent.click(screen.getByRole('button', { name: '3D', exact: true }));
-    await screen.findByTestId('field-3d');
+    // After the idle deferral the canvas mounts hidden (prewarm), so the
+    // user's first 3D click has a fully built scene waiting for it.
+    await waitFor(() => expect(screen.getByTestId('field-3d')).toBeInTheDocument(), { timeout: 4000 });
+    expect(keep3D()).toHaveAttribute('hidden');
     expect(mount3D).toBe(1);
-    expect(keep3D()).not.toHaveAttribute('hidden');
 
-    // Back to 2D: the 3D canvas is hidden, not unmounted.
+    // The first click reveals the SAME instance — no remount, no fallback.
+    fireEvent.click(screen.getByRole('button', { name: '3D', exact: true }));
+    expect(keep3D()).not.toHaveAttribute('hidden');
+    expect(mount3D).toBe(1);
+
+    // Back to 2D: hidden, not unmounted; the return trip is instant.
     fireEvent.click(screen.getByRole('button', { name: '2D', exact: true }));
     expect(screen.getByTestId('field-2d')).toBeInTheDocument();
     expect(keep3D()).toHaveAttribute('hidden');
     expect(screen.getByTestId('field-3d')).toBeInTheDocument();
     expect(mount3D).toBe(1);
-
-    // The return trip is instant: same mounted instance, zero remounts.
     fireEvent.click(screen.getByRole('button', { name: '3D', exact: true }));
     expect(keep3D()).not.toHaveAttribute('hidden');
-    expect(mount3D).toBe(1);
-
-    // Back and forth again — still the one instance.
-    fireEvent.click(screen.getByRole('button', { name: '2D', exact: true }));
-    fireEvent.click(screen.getByRole('button', { name: '3D', exact: true }));
     expect(mount3D).toBe(1);
   });
 
