@@ -440,9 +440,12 @@ await page.waitForTimeout(300);
 // (No waypoint editing / adjusted exports anymore — the app is a viewer.)
 
 // --- session save → remove one robot → restore through the file input ---
+// PR #223 retired the toolbar save button; File ▸ Save session is the pointer
+// path (menu-dispatch.test asserts .save-action stays out of the DOM).
+await page.getByRole('button', { name: 'File', exact: true }).click();
 const [download] = await Promise.all([
   page.waitForEvent('download', { timeout: 10000 }).catch(() => undefined),
-  page.locator('.save-action').click(),
+  page.getByRole('menuitem', { name: 'Save session' }).click(),
 ]);
 check('session download triggers', download !== undefined);
 let restoredRows = 0;
