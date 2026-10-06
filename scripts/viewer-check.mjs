@@ -139,9 +139,11 @@ async function openApp(options = {}) {
     await github.isVisible() && await github.getAttribute('href') === GITHUB_URL, await github.getAttribute('href') ?? 'missing');
 
   // Documented reality, asserted so the spec cannot drift again: the website
-  // build keeps the arrangement entry (it edits the session, never the files).
-  check('arrangement entry is present in the website build',
-    await page.locator('button[aria-keyshortcuts="e"]').count() === 1);
+  // build keeps the arrangement entry (it edits the in-browser session, never
+  // the imported files, and exports nothing). Pinned to the footer instance —
+  // the same shortcut also keys the menu item and the help overlay.
+  check('arrangement entry is present in the website timeline',
+    await page.locator('.app-footer button[aria-keyshortcuts="e"]').count() === 1);
 
   // ------------------------------------------------------------- prefs -----
   await page.locator('button[aria-label="Preferences"]').click(); // locale pinned to en-US above
@@ -155,16 +157,14 @@ async function openApp(options = {}) {
   check('no update-channel picker (the site never self-updates)',
     await page.locator('.preferences-dialog select option[value="beta"]').count() === 0);
 
-  const crossSite = await page.locator('.preferences-dialog a').evaluateAll((nodes) => nodes.map((n) => n.getAttribute('href') ?? ''));
+  await page.keyboard.press('Escape'); // close prefs; the cross-site entry lives in the ⋮ menu
+  await page.locator('.workspace-menu summary').click();
+  const menuLinks = await page.locator('.workspace-menu-items a').evaluateAll((nodes) => nodes.map((n) => n.getAttribute('href') ?? ''));
+  const otherSite = FLAVOR === 'preview' ? SITES.stable : SITES.preview;
+  check(`${FLAVOR} build offers the jump to ${otherSite}`, menuLinks.includes(otherSite), menuLinks.join(' | '));
   if (FLAVOR === 'preview') {
-    check('preview build points back to the stable site',
-      crossSite.includes(SITES.stable), crossSite.join(' | '));
     check('preview banner is up', await page.locator('.site-preview-banner').count() === 1);
   } else {
-    await page.keyboard.press('Escape');
-    await page.locator('.workspace-menu summary').click();
-    const menuLinks = await page.locator('.workspace-menu-items a').evaluateAll((nodes) => nodes.map((n) => n.getAttribute('href') ?? ''));
-    check('stable build offers the preview site', menuLinks.includes(SITES.preview), menuLinks.join(' | '));
     check('stable build shows no preview banner', await page.locator('.site-preview-banner').count() === 0);
   }
 
