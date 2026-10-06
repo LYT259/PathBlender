@@ -58,16 +58,19 @@ await page.keyboard.press('Enter');
 await page.waitForSelector('.robot-library-row', { timeout: 15000 });
 const robotCount = await page.locator('.robot-library-row').count();
 check('welcome: Enter loads the example (keyboard only)', robotCount === 2, `${robotCount} robots`);
-// Nothing may auto-focus when the workspace appears (2026-10-06: an earlier
-// build landed focus on the first robot card, which painted a focus ring on a
-// freshly opened app). The keyboard walks in from the top instead.
-check('welcome: no control is focused on load',
-  (await page.evaluate(() => document.activeElement?.tagName)) === 'BODY', await active());
-const reachedLibrary = await walk(
-  () => page.evaluate(() => document.activeElement?.classList?.contains('robot-library-select') ?? false),
-  { max: 30 },
-);
-check('Tab reaches the robot library', reachedLibrary, await active());
+// The button that loaded the example is gone by then — focus must land on a
+// real control (2026-10-06 keyboard pass), and it must land silently: a focus
+// ring painted on a freshly opened app reads as a stray box over the first team.
+const landed = await page
+  .waitForFunction(() => document.activeElement?.classList?.contains('robot-library-select'), null, { timeout: 3000 })
+  .then(() => true).catch(() => false);
+check('landing: focus moves into the robot library', landed, await active());
+const ring = await page.evaluate(() => {
+  const style = getComputedStyle(document.activeElement);
+  return style.outlineStyle === 'none' || style.outlineWidth === '0px'
+    ? '' : `${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}`;
+});
+check('landing: no focus ring is painted on load', ring === '', ring);
 
 // 2 — ? opens the shortcut help; Tab stays inside; Escape closes.
 await page.keyboard.press('?');
