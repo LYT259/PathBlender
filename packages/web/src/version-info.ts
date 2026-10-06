@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.49';
+export const APP_VERSION = '0.1.8-beta.50';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.50', date: '2026.10.06', note: {
+    en: 'The 3D recenter button now wins over a ViewCube click pressed just before it',
+    zh: '点完 ViewCube 立刻按 3D 复位同样生效——复位不再被视角动画吞掉',
+    'zh-tw': '點完 ViewCube 立即按 3D 復位同樣生效——復位不再被視角動畫吞掉',
+    cs: 'Tlačítko vycentrování 3D ahora vyhraje i nad kliknutím na ViewCube těsně předtím — reset už nepřepíše animace pohledu.',
+    nl: 'De 3D-hercentering wint nu ook van een klik op de ViewCube vlak ervoor; de reset wordt niet meer overschreven door de weergaveanimatie.',
+    fr: 'Le bouton de recentrage 3D l\'emporte désormais même après un clic sur le ViewCube : la réinitialisation n\'est plus écrasée par l\'animation de vue.',
+    he: 'כפתור האיפוס בתלת־ממד גובר עכשיו גם על לחיצה ב־ViewCube שנייה קודם — האיפוס כבר לא נבלע על ידי אנימציית הזווית.',
+    ja: 'ViewCube をクリックした直後に 3D の復帰ボタンを押しても復帰が効くようになりました（視点アニメに上書きされていました）。',
+    ko: 'ViewCube을 클릭한 직후에 3D 재중심 버튼을 누르면 실제로 복원됩니다(시점 애니메이션에 덮어써지던 문제).',
+    pl: 'Przycisk wyśrodkowania 3D wygrywa teraz także z kliknięciem ViewCube chwilę wcześniej — reset nie jest nadpisywany przez animację widoku.',
+    'pt-br': 'O botão de recentralização 3D agora prevalece mesmo clicado logo após um clique no ViewCube — o reset não é mais sobrescrito pela animação de visão.',
+    es: 'El botón de recentrado 3D ya gana aunque se pulse justo después de un clic en el ViewCube: la animación de la vista no sobrescribe el restablecimiento.',
+    tr: 'ViewCube\'a tıkladıktan hemen sonra 3D ortala düğmesine basmak artık gerçekten çalışıyor; sıfırlamayı görünüm animasyonu ezmiyor.',
+  } },
   { version: '0.1.8-beta.49', date: '2026.10.06', note: {
     en: 'Security patch: auto-update downloads now reject malformed TLS 1.3 handshakes',
     zh: '安全补丁：自动更新下载现在会拒掉畸形的 TLS 1.3 握手',
