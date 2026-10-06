@@ -203,6 +203,7 @@ export const ja: Record<MessageKey, string> = {
   'canvas.view': '表示',
   'canvas.fit': 'フィット',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'ヒートマップ',
 
   'import.failed': '{n} 件のファイルをインポートできませんでした:',
   'import.dismiss': '閉じる',

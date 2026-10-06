@@ -155,6 +155,7 @@ export const da = {
   'canvas.view': "Visning",
   'canvas.fit': "Tilpas",
   'canvas.clock': "t = {t} s",
+  'canvas.heatmap': 'Varmekort',
   
   'import.failed': "{n} fil(er) kunne ikke importeres:",
   'import.dismiss': "Luk",

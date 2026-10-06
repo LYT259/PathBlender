@@ -155,6 +155,7 @@ export const az = {
   'canvas.view': 'Görünüş',
   'canvas.fit': 'Sığdır',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'İstilik xəritəsi',
   
   'import.failed': '{n} fayl(lar) idxal edilə bilmədi:',
   'import.dismiss': 'Bağla',

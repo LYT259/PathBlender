@@ -185,6 +185,7 @@ export const id = {
   'canvas.view': 'Tampilan',
   'canvas.fit': 'Sesuaikan',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Peta panas',
   
   'import.failed': '{n} berkas gagal diimpor:',
   'import.dismiss': 'Tutup',

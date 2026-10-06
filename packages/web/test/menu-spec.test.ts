@@ -123,6 +123,13 @@ describe('menu spec', () => {
     expect(find(hidden, 'Edit')!.items.find((e) => e.id === 'visibility-selected')?.label).toBe('Show Selected Team');
   });
 
+  it('heatmap stays enabled in the 3D view (it renders on the ground there too)', () => {
+    const heatmapOf = (c: MenuContext) => find(buildMenuSpec(c), 'View')!.items.find((e) => e.id === 'heatmap');
+    expect(heatmapOf(ctx({ view3D: true }))?.enabled).toBe(true);
+    expect(heatmapOf(ctx({ view3D: false }))?.enabled).toBe(true);
+    expect(heatmapOf(ctx({ view3D: true, robotsCount: 0 }))?.enabled).toBe(false);
+  });
+
   it('every dispatchable id is unique across the whole tree', () => {
     const ids = menuCommandIds(buildMenuSpec(ctx()));
     expect(new Set(ids).size).toBe(ids.length);

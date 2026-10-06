@@ -162,6 +162,7 @@ export const en = {
   'canvas.view': 'View',
   'canvas.fit': "Show whole field",
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Heatmap',
 
   'import.failed': '{n} file(s) failed to import:',
   'import.dismiss': 'Dismiss',

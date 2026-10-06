@@ -185,6 +185,7 @@ export const hi = {
   'canvas.view': 'व्यू',
   'canvas.fit': 'फिट',
   'canvas.clock': 't = {t} से',
+  'canvas.heatmap': 'हीटमैप',
   
   'import.failed': '{n} फ़ाइलें आयात करने में विफल:',
   'import.dismiss': 'खारिज करें',

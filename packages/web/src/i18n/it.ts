@@ -185,6 +185,7 @@ export const it = {
   'canvas.view': 'Vista',
   'canvas.fit': 'Adatta',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Mappa di calore',
   
   'import.failed': '{n} file non importati:',
   'import.dismiss': 'Chiudi',

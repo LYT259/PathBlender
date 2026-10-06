@@ -131,7 +131,7 @@ describe('i18n dictionaries', () => {
     // 'GIF' is the universal acronym every shipped language keeps;
     // 'Heatmap' is the German loanword (de); 'Differential' is the
     // Danish loanword (da).
-    'actions.gif', 'actions.heatmapOn', 'robots.driveDifferential',
+    'actions.gif', 'actions.heatmapOn', 'canvas.heatmap', 'robots.driveDifferential',
     // Dutch coincidences: loanwords and shared unit plurals that spell exactly
     // like the English source (nl 'Timing', 'Updates', 'Bumpers {l} × {w} m',
     // 'Meters/Centimeters/Inches (m/cm/in)').
