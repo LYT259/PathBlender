@@ -108,6 +108,12 @@ interface Scene3D {
    *  re-bake the shadow map on the next frame. Camera-only motion never
    *  calls this — the shadow map stays cached through orbit/zoom/pan. */
   invalidateShadows: () => void;
+  /** One full hidden frame while the canvas is parked (prewarm): compiles
+   *  GL programs, uploads buffers and bakes the shadow map so the user's
+   *  FIRST 3D click of a session renders instantly. No-op while visible —
+   *  the rAF loop draws anyway. Called from the content effects (model
+   *  mount, rig rebuild), never from the loop. */
+  warmup: () => void;
   /** Official 3D field model (when available); replaces the fallback. */
   modelRoot: THREE.Group;
   /** Field id of the model currently inside `modelRoot` (undefined = none).
@@ -227,6 +233,30 @@ const FRAME_ASSETS = {
 export type FrameSize = keyof typeof FRAME_ASSETS;
 
 const framePromises = new Map<FrameSize, Promise<THREE.Group | null>>();
+
+/**
+ * Cheap one-shot WebGL probe. With the prewarmed canvas mounting in every
+ * session, this component's mount effects run even where 3D can never
+ * render (jsdom tests, locked-down webviews) — the GLB prefetches there
+ * would be dead network traffic, and jsdom's fetch stub rejects three's
+ * AbortSignal with an unhandled rejection. No WebGL → no 3D asset loads.
+ */
+let webglProbe: boolean | undefined;
+function hasWebGL(): boolean {
+  if (webglProbe === undefined) {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = (canvas.getContext('webgl2') ??
+        canvas.getContext('webgl')) as WebGLRenderingContext | null;
+      webglProbe = !!gl;
+      gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    } catch {
+      webglProbe = false;
+    }
+  }
+  return webglProbe;
+}
+
 function loadMk5iFrame(size: FrameSize): Promise<THREE.Group | null> {
   const hit = framePromises.get(size);
   if (hit) return hit;
@@ -393,6 +423,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   const [moduleTemplate, setModuleTemplate] = useState<THREE.Group | null>(null);
   const [frameTemplates, setFrameTemplates] = useState<Partial<Record<FrameSize, THREE.Group | null>>>({});
   useEffect(() => {
+    if (!hasWebGL()) return; // no 3D rendering possible — keep the GLBs on disk
     void loadMk5iTemplate().then(setModuleTemplate);
     for (const size of Object.keys(FRAME_ASSETS) as FrameSize[]) {
       void loadMk5iFrame(size).then((g) =>
@@ -709,20 +740,14 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // Persistent containers, created once: the field effect below clears
     // and refills them on every season switch, and the tube/box effect owns
     // `dynamic`. The scaffold (camera included) outlives all of them.
+    // sceneRef is filled in below, after the draw path exists (warmup is
+    // part of Scene3D and needs the ViewCube renderer).
     const dynamic = new THREE.Group();
     dynamic.name = 'pb-dynamic'; // reachable by the regression walkthrough
     const modelRoot = new THREE.Group();
     const fallback = new THREE.Group();
     const fieldRoot = new THREE.Group();
     scene.add(dynamic, modelRoot, fallback, fieldRoot);
-    sceneRef.current = {
-      renderer, scene, camera, controls,
-      cx: 0, cy: 0,
-      dynamic, rigs: [], trails: [],
-      modelRoot, fallback, fieldRoot,
-      backgroundThemed,
-      dirty: markDirty, invalidateShadows, themed, retintCube,
-    };
 
 
 
@@ -1043,6 +1068,30 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
     renderer.domElement.addEventListener('keydown', onKeyDown3d);
 
+    // One full draw of both renderers, shared by the loop and the parked
+    // warmup below.
+    const drawFrame = () => {
+      needsDraw = false;
+      renderer.render(scene, camera);
+      // Mirror the main orientation into the cube and draw it too.
+      cubeGroup.quaternion.copy(camera.quaternion).invert();
+      cubeRenderer.render(cubeScene, cubeCam);
+    };
+    // Parked warmup (prewarm): one hidden frame that compiles every GL
+    // program, uploads the buffers/textures and bakes the shadow map while
+    // the canvas is still display:none — so the FIRST 3D click of a session
+    // only has to resize the buffer and draw. Content effects call this as
+    // things arrive (model mount, rig rebuild); the loop never does, so
+    // parked playback can't turn into continuous hidden rendering.
+    const warmup = () => {
+      if (activeRef.current) return; // visible — the loop draws anyway
+      if (shadowDirty) {
+        shadowDirty = false;
+        renderer.shadowMap.needsUpdate = true;
+      }
+      drawFrame();
+    };
+
     let raf = 0;
     const loop = () => {
       const now = performance.now();
@@ -1097,16 +1146,21 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         cubeRenderer.setPixelRatio(cubeDprWant);
         needsDraw = true;
       }
-      if (needsDraw || moved) {
-        needsDraw = false;
-        renderer.render(scene, camera);
-        // Mirror the main orientation into the cube and draw it too.
-        cubeGroup.quaternion.copy(camera.quaternion).invert();
-        cubeRenderer.render(cubeScene, cubeCam);
-      }
+      if (needsDraw || moved) drawFrame();
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
+
+    // Filled in here, after the draw path exists (warmup is part of
+    // Scene3D and needs the ViewCube renderer created above).
+    sceneRef.current = {
+      renderer, scene, camera, controls,
+      cx: 0, cy: 0,
+      dynamic, rigs: [], trails: [],
+      modelRoot, fallback, fieldRoot,
+      backgroundThemed,
+      dirty: markDirty, invalidateShadows, warmup, themed, retintCube,
+    };
 
     // Test/debug hook: orientation + camera state assertions.
     (window as unknown as { __pb3d?: unknown }).__pb3d = { camera, controls, renderer, scene, modelCacheSize: () => modelCache.size };
@@ -1430,6 +1484,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       snapTagQuadsToDecalPlates(st.fieldRoot, g);
       st.fallback.visible = false;
       st.dirty();
+      // Parked canvas: bake the freshly mounted model while hidden, so the
+      // first 3D click never pays for its shaders/buffers.
+      st.warmup();
     };
 
     const cached = modelCache.get(dir);
@@ -1530,6 +1587,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       });
       st.invalidateShadows();
     }
+    // Parked canvas: bake the fresh rigs/trails while hidden — covers the
+    // initial prewarm and later CAD-template upgrades alike.
+    st.warmup();
   }, [robots, field, moduleTemplate, frameTemplates]);
 
   useEffect(() => {
