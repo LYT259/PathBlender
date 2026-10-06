@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.34';
+export const APP_VERSION = '0.1.8-beta.35';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.35', date: '2026.10.06', note: {
+    en: 'Cleaner checks panel: removed the basis sentence, the robot-count scope line and the closest-approach readout',
+    zh: '检查摘要更简洁：移除依据说明、参与范围行与最近间距读数',
+    'zh-tw': '檢查摘要更簡潔：移除依據說明、參與範圍行與最近間距讀數',
+    cs: 'Přehlednější panel kontrol: odstraněna věta o základu, řádek rozsahu a údaj nejmenší vzdálenosti.',
+    nl: 'Overzichtelijker controlepaneel: de toelichtingszin, de deelnemersregel en de dichtstbenaderingswaarde zijn verwijderd.',
+    fr: 'Panneau de contrôles épuré : suppression de la phrase de base, de la ligne de périmètre et de la distance minimale.',
+    he: 'לוח הבדיקות קומפקטי יותר: הוסרו משפט ההסבר, שורת היקף המשתתפים וקריאת המרחק המזערי',
+    ja: 'チェックパネルを簡潔化：前提の文・参加範囲の行・最接近距離の表示を削除しました',
+    ko: '검사 패널 정리: 근거 문장, 참여 범위 줄, 최근접 거리 표시를 제거했습니다',
+    pl: 'Bardziej zwięzły panel kontroli: usunięto zdanie o podstawie, wiersz zakresu i odczyt minimalnej odległości.',
+    'pt-br': 'Painel de verificações mais limpo: removidos a frase de base, a linha de escopo e a leitura de distância mínima.',
+    es: 'Panel de comprobaciones más limpio: se quitaron la frase de base, la línea de alcance y la lectura de distancia mínima.',
+    tr: 'Daha sade kontrol paneli: temel cümlesi, katılım satırı ve en yakın yaklaşım okuması kaldırıldı.',
+  } },
   { version: '0.1.8-beta.34', date: '2026.10.06', note: {
     en: 'Mirror button icon redrawn as two opposing arrows, UNO reverse-card style',
     zh: '镜像按钮图标重绘为两支反向弯箭头（UNO 反转牌风格）',
