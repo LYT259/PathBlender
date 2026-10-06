@@ -19,6 +19,17 @@ export function bumperColor(alliance: 'red' | 'blue'): string {
   return alliance === 'red' ? '#c8323e' : '#2264cf';
 }
 
+/**
+ * Occupancy-heatmap tint per alliance (2026-10-06): blue keeps the UI
+ * accent (its original color), red pairs with the theme's system-red
+ * token — the same --danger/--accent family the rest of the UI uses.
+ * Tokens are injected so both the 2D canvas and the 3D scene share one
+ * testable rule.
+ */
+export function heatmapColor(alliance: 'red' | 'blue', accent: string, danger: string): string {
+  return alliance === 'red' ? danger : accent;
+}
+
 /** Field labels omit the list's numeric prefix and never replace actual team metadata. */
 export function robotAnnotation(trajectory: Pick<Trajectory, 'teamNumber' | 'displayName'>): string {
   return trajectory.displayName?.trim() || trajectory.teamNumber;

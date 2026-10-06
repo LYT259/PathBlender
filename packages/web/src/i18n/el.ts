@@ -155,6 +155,7 @@ export const el = {
   'canvas.view': 'Προβολή',
   'canvas.fit': 'Προσαρμογή',
   'canvas.clock': 't = {t} δ',
+  'canvas.heatmap': 'Θερμικός χάρτης',
   
   'import.failed': '{n} αρχεία απέτυχαν να εισαχθούν:',
   'import.dismiss': 'Κλείσιμο',

@@ -200,6 +200,7 @@ export const ko: Record<MessageKey, string> = {
   'canvas.view': '보기',
   'canvas.fit': '맞춤',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': '히트맵',
 
   'import.failed': '파일 {n}개를 가져오지 못했습니다:',
   'import.dismiss': '닫기',

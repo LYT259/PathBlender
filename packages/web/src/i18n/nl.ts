@@ -200,6 +200,7 @@ export const nl: Record<MessageKey, string> = {
   'canvas.view': 'Weergave',
   'canvas.fit': 'Passend maken',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Warmtekaart',
 
   'import.failed': '{n} bestand(en) konden niet worden geïmporteerd:',
   'import.dismiss': 'Sluiten',

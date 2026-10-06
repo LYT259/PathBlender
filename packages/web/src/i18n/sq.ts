@@ -155,6 +155,7 @@ export const sq = {
   'canvas.view': 'Pamja',
   'canvas.fit': 'Përshtat',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Harta termike',
   
   'import.failed': '{n} skedarë nuk u importuan:',
   'import.dismiss': 'Mbyll',

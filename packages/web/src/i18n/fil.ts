@@ -185,6 +185,7 @@ export const fil = {
   'canvas.view': 'Tanawin',
   'canvas.fit': 'I-fit',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Heatmap',
   
   'import.failed': '{n} file nabigong i-import:',
   'import.dismiss': 'Isara',
