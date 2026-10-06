@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.61';
+export const APP_VERSION = '0.1.8-beta.62';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.62', date: '2026.10.06', note: {
+    en: 'No stray focus box on the robot list when the app opens',
+    zh: '打开应用时机器人列表不再出现多余的焦点框',
+    'zh-tw': '開啟應用時機器人清單不再出現多餘的焦點框',
+    cs: 'Při otevření aplikace se v seznamu robotů nezobrazuje cizí rámeček zaměření',
+    nl: 'Bij het openen van de app verschijnt geen los focuskader in de robotlijst',
+    fr: 'Aucun cadre de focus parasite dans la liste des robots à l’ouverture de l’application',
+    he: 'אין מסגרת מיקוד מיותרת ברשימת הרובוטים כשהאפליקציה נפתחת',
+    ja: 'アプリの起動時にロボット一覧へ余分なフォーカス枠が出なくなりました',
+    ko: '앱을 열 때 로봇 목록에 불필요한 초점 상자가 더 이상 표시되지 않습니다',
+    pl: 'Po uruchomieniu aplikacji na liście robotów nie pojawia się zbędna ramka fokusu',
+    'pt-br': 'Nenhuma caixa de foco indesejada na lista de robôs ao abrir o aplicativo',
+    es: 'Ya no aparece un cuadro de foco suelto en la lista de robots al abrir la aplicación',
+    tr: 'Uygulama açıldığında robot listesinde gereksiz bir odak kutusu artık görünmüyor',
+  } },
   { version: '0.1.8-beta.61', date: '2026.10.06', note: {
     en: 'Language audit round 7: each language now names the timeline, session, inspector and replay with one word — 34 rows',
     zh: '语言审核第七轮：时间轴、会话、检查器、回放每种语言各用一个词——统一 34 条',
