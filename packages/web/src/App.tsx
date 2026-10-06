@@ -151,6 +151,12 @@ function AppBody() {
   const [inspectorMode, setInspectorMode] = useState<'checks' | 'robot'>('checks');
   const [errors, setErrors] = useState<{ fileName: string; message: string }[]>([]);
   const [view3D, setView3D] = useState(loadView3D);
+  // Once the user has entered 3D this session, the 3D canvas stays mounted
+  // (hidden while 2D shows): remounting it rebuilds the whole WebGL scene
+  // and re-uploads the field model, which showed "loading 3D view…" on every
+  // 2D→3D switch. With it parked, the switch is instant (user request
+  // 2026-10-06). First entry still lazy-loads the chunk behind Suspense.
+  const [ever3D, setEver3D] = useState(loadView3D);
   const [showPrefs, setShowPrefs] = useState(false);
   function openPreferences() {
     if (!IS_DESKTOP) { setShowPrefs(true); return; }
@@ -1016,15 +1022,27 @@ function AppBody() {
                 {field3dAvailable && (
                   <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
                     <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => { setView3D(false); rememberView3D(false); }}>2D</button>
-                    <button aria-pressed={view3D} className={view3D ? 'on' : ''} onClick={() => { setView3D(true); rememberView3D(true); }}>3D</button>
+                    <button aria-pressed={view3D} className={view3D ? 'on' : ''} onClick={() => { setEver3D(true); setView3D(true); rememberView3D(true); }}>3D</button>
                   </div>
                 )}
                 {/* The rest of the bar needs a robot to act on, which the gate
                     above now guarantees. */}
                 <button className="tool-btn canvas-recenter" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="recenter" size={17} /></button>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : view3D ? <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}><FieldCanvas3D showTrail ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} /></Suspense> :
-                <FieldCanvas ref={canvasRef} showTrail showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} />}
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : <>
+                {/* Parked 3D: mounted from the first 3D entry onward, hidden
+                    (not unmounted) while 2D shows — scene, models and camera
+                    survive, so switching back is instant. `active` pauses the
+                    render loop while hidden. Seasons without an official
+                    model unmount it (field3dAvailable), remounting on return
+                    to a modeled season behind the usual loading fallback. */}
+                {ever3D && field3dAvailable && <div className="canvas-3d-keep" hidden={!view3D}>
+                  <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}>
+                    <FieldCanvas3D active={view3D} showTrail ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} />
+                  </Suspense>
+                </div>}
+                {!view3D && <FieldCanvas ref={canvasRef} showTrail showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} />}
+              </>}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => setInspectorMode('checks')} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
           </section>
