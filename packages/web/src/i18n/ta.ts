@@ -9,7 +9,7 @@ export const ta = {
   'sequence.joinOk': 'இணைப்பு தொடர்ச்சியானது',
   'sequence.joinPosition': 'நிலை வேறுபாடு {d}',
   'sequence.joinHeading': 'திசை வேறுபாடு {d}°',
-  'sequence.joinVelocity': 'வேகத் தாவல் {d} m/s',
+  'sequence.joinVelocity': 'வேகத் தாவல் {d} மீ/வி',
   'sequence.joinFix': 'PathPlanner அல்லது Choreo இல் இணைப்பைச் சரிசெய்து வழித்தடத்தை மீண்டும் இறக்குமதி செய்யவும்.',
   'sequence.overAuto': '{auto} வினாடி தானியங்கு காலத்திற்குப் பிறகு {t} வினாடியில் முடிகிறது.',
   'sequence.invalid': 'முடிவுறு, எதிர்மறை அல்லாத தொடக்க நேரத்தை உள்ளிடவும்.',

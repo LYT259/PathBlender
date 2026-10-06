@@ -187,7 +187,7 @@ export const he: Record<MessageKey, string> = {
   'conflicts.pair': '{a} × {b}',
 
   'timeline.speed': '{n}×',
-  'timeline.clock': '{t} / {d} s',
+  'timeline.clock': '{t} / {d} ש׳',
   'timeline.band': 'התנגשות {start}–{end} ש׳',
 
   'toast.gifOnly2d': 'ייצוא GIF זמין ב־2D בלבד',
@@ -204,7 +204,7 @@ export const he: Record<MessageKey, string> = {
   'site.version': 'גרסה',
   'canvas.view': 'תצוגה',
   'canvas.fit': 'התאמה',
-  'canvas.clock': 't = {t} s',
+  'canvas.clock': 't = {t} ש׳',
   'canvas.heatmap': 'מפת חום',
 
   'import.failed': '{n} קבצים נכשלו בייבוא:',
