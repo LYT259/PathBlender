@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.33';
+export const APP_VERSION = '0.1.8-beta.34';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.34', date: '2026.10.06', note: {
+    en: 'Mirror button icon redrawn as two opposing arrows, UNO reverse-card style',
+    zh: '镜像按钮图标重绘为两支反向弯箭头（UNO 反转牌风格）',
+    'zh-tw': '鏡像按鈕圖示重繪為兩支反向彎箭頭（UNO 反轉牌風格）',
+    cs: 'Ikona zrcadlení překreslena na dva protichůdné ohnuté šipky ve stylu karty UNO.',
+    nl: 'Het spiegelicoon is opnieuw getekend als twee tegenovergestelde gebogen pijlen, in UNO reverse-kaartstijl.',
+    fr: 'L’icône de miroir est redessinée en deux flèches courbes opposées, façon carte « Inverser » du UNO.',
+    he: 'אייקון השיקוף צויר מחדש כשני חצים כפופים מנוגדים בסגנון כרטיס ההיפוך של UNO',
+    ja: 'ミラーボタンのアイコンをUNOリバースカード風の逆向き2本の矢印に描き直しました',
+    ko: '미러 버튼 아이콘을 UNO 리버스 카드 스타일의 서로 반대 방향 화살표 두 개로 다시 그렸습니다',
+    pl: 'Ikona lustrzanego odbicia została przerysowana na dwie przeciwne wygięte strzałki w stylu karty UNO.',
+    'pt-br': 'O ícone de espelhamento foi redesenhado como duas setas curvas opostas, ao estilo da carta de reverso do UNO.',
+    es: 'El icono de espejo se ha rediseñado como dos flechas curvas opuestas, al estilo de la carta de reverso de UNO.',
+    tr: 'Aynadurma simgesi, UNO yön değiştirme kartı tarzında birbirine zıt iki kıvrık ok olarak yeniden çizildi.',
+  } },
   { version: '0.1.8-beta.33', date: '2026.10.06', note: {
     en: 'Compact robot cards: icon-only mirror beside visibility, arrange button under the identity',
     zh: '机器人卡片更紧凑：镜像图标与眼睛同列队号行，编排按钮移到信息下方',
