@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.50';
+export const APP_VERSION = '0.1.8-beta.51';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.51', date: '2026.10.06', note: {
+    en: 'Quitting and relaunching now really restores your session (autosave was over the storage limit and silently failing)',
+    zh: '退出重开现在真的会恢复你的会话（自动保存此前超出存储上限且静默失败）',
+    'zh-tw': '退出重開現在真的會恢復你的會話（自動儲存此前超出儲存上限且靜默失敗）',
+    cs: 'Zavření a opětovné spuštění nyní skutečně obnoví vaši relaci — automatické ukládání bylo nad limitem úložiště a potichu selhávalo.',
+    nl: 'Afsluiten en herstarten herstelt je sessie nu echt: automatisch opslaan overschreed het opslaglimiet en faalde stil.',
+    fr: 'Quitter puis relancer restaure vraiment votre session : la sauvegarde automatique dépassait la limite de stockage et échouait en silence.',
+    he: 'יציאה ופתיחה מחדש משחזרות את ההפעלה שלך באמת — השמירה האוטומטית חרגה ממגבלת האחסון ונכשלה בשקט',
+    ja: '終了して再起動するとセッションが実際に復元されます。自動保存がストレージ上限を超え、無言で失敗していました',
+    ko: '종료 후 다시 실행하면 세션이 실제로 복원됩니다. 자동 저장이 저장 용량 한도를 초과해 조용히 실패했습니다',
+    pl: 'Zamknięcie i ponowne uruchomienie naprawdę przywraca sesję — automatyczny zapis przekraczał limit pamięci i po cichu się nie udawał.',
+    'pt-br': 'Sair e reabrir agora restaura de verdade a sua sessão: o salvamento automático passava do limite de armazenamento e falhava em silêncio',
+    es: 'Cerrar y volver a abrir ahora sí restaura tu sesión: el autoguardado superaba el límite de almacenamiento y fallaba en silencio.',
+    tr: 'Çıkıp yeniden açmak artık oturumunu gerçekten geri getiriyor; otomatik kayıt depolama sınırını aşıyor ve sessizce başarısız oluyordu',
+  } },
   { version: '0.1.8-beta.50', date: '2026.10.06', note: {
     en: 'The 3D recenter button now wins over a ViewCube click pressed just before it',
     zh: '点完 ViewCube 立刻按 3D 复位同样生效——复位不再被视角动画吞掉',

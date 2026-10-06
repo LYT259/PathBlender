@@ -230,11 +230,25 @@ export interface SessionFileV1 {
   }>;
 }
 
+/**
+ * Output shaping for `serializeSession`. Both options default to what the
+ * shareable `.pb` file has always been, so existing callers are unchanged.
+ */
+export interface SessionSerializeOptions {
+  /** Two-space indent (the shipped-file shape) or compact text. */
+  pretty?: boolean;
+  /** Leave a robot's route library out — the autosave slot uses this for
+   * libraries the restore path regenerates anyway, and as a quota fallback. */
+  omitRouteOptions?: (st: SessionTrajectory) => boolean;
+}
+
 export function serializeSession(
   sts: readonly SessionTrajectory[],
   fieldId: string,
   field?: import('./field').FieldPackage,
+  options: SessionSerializeOptions = {},
 ): string {
+  const pretty = options.pretty !== false;
   const file: SessionFileV1 = {
     app: APP_MARKER,
     version: 1,
@@ -270,7 +284,8 @@ export function serializeSession(
       visible: st.visible,
       routeId: st.routeId,
       mirrored: st.mirrored === true ? true : undefined,
-      routeOptions: st.routeOptions,
+      // `undefined` drops the key from the JSON entirely.
+      routeOptions: options.omitRouteOptions?.(st) ? undefined : st.routeOptions,
       profileOptions: st.profileOptions,
       profileId: st.profileId,
       sequence: st.sequence,
@@ -286,7 +301,7 @@ export function serializeSession(
       original: st.trajectory.original,
     })),
   };
-  return JSON.stringify(file, null, 2);
+  return JSON.stringify(file, null, pretty ? 2 : 0);
 }
 
 export function deserializeSession(text: string): {
