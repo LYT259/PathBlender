@@ -175,7 +175,7 @@ export const hu = {
   'customField.margin': 'margó (m)',
   'customField.length': 'hossz (m)',
   'customField.width': 'szélesség (m)',
-  'customField.note': 'Kalibrálás a képből: játéktér = képPixelek / ppm − 2×margó. A mentett munkamenetek megőrzik a kalibrációt, de a képet nem.',
+  'customField.note': 'Kalibrálás a képből: játéktér = a kép pixeljei / ppm − 2×margó. A mentett munkamenetek megőrzik a kalibrációt, de a képet nem.',
   'customField.apply': 'Alkalmaz',
   'customField.cancel': 'Mégse',
   'bounds.title': 'Pályahatárok',

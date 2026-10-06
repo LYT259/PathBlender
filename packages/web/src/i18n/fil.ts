@@ -50,7 +50,7 @@ export const fil = {
   'welcome.exampleBadge': 'Halimbawa',
   'welcome.exampleNotice': 'Totoong mga ruta ng 2026 season mula sa mga koponan ng FRC na 8814 at 11019.',
   'welcome.exitExample': 'Tapusin ang halimbawa',
-  'onboarding.play': 'Pindutin ang Play para makita ang mga path, o i-scrub ang timeline.',
+  'onboarding.play': 'Pindutin ang I-play para makita ang mga path, o i-scrub ang timeline.',
   'onboarding.check': 'Pumili ng isyu sa ibaba para tumalon sa sandaling iyon.',
   'onboarding.dismiss': 'Isara ang tip',
   "workspace.loading3d": "Kine-load ang 3D view…",

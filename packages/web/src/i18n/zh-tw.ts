@@ -173,7 +173,7 @@ export const zhTw: Record<MessageKey, string> = {
   'conflicts.title': '衝突',
   'conflicts.toleranceBadge': '±{delta} 秒滑移',
   'checks.tolerance': '公差檢查：起步執行最壞情況 ±{delta} 秒',
-  'conflicts.item': '{start}–{end} 秒 · 最近 {d} 米 @ ({x}, {y})',
+  'conflicts.item': '{start}–{end} 秒 · 最近 {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',
 
   'timeline.speed': '{n}×',
@@ -220,7 +220,7 @@ export const zhTw: Record<MessageKey, string> = {
   'customField.apply': '應用',
   'customField.cancel': '取消',
   'bounds.title': '場地邊界',
-  'bounds.item': '{start}–{end} 秒 · 越出{edge}側圍牆 {depth} 米',
+  'bounds.item': '{start}–{end} 秒 · 越出{edge}側圍牆 {depth}',
   'edges.far': '遠端', 'edges.left': '左', 'edges.near': '近端', 'edges.right': '右',
   'customField.tags': '載入 AprilTag 布局…',
   'updates.upToDate': '已是最新版本',

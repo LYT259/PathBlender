@@ -150,7 +150,7 @@ export const bs = {
   
   'site.tryPreview': "Probajte stranicu za pregled",
   'site.backStable': "Vratite se na stabilnu stranicu",
-  'site.previewNote': " Verzija za pregled — funkcije se mogu mijenjati bilo kada.",
+  'site.previewNote': "Verzija za pregled — funkcije se mogu mijenjati bilo kada.",
   'site.version': "Verzija",
   'canvas.view': "Prikaz",
   'canvas.fit': "Prilagodi",
@@ -175,7 +175,7 @@ export const bs = {
   'customField.margin': "margina (m)",
   'customField.length': "dužina (m)",
   'customField.width': "širina (m)",
-  'customField.note': "Kalibrišite sa slike: teren igre = pikseliSlike / ppm − 2×margina. Sačuvane sesije čuvaju kalibraciju, ali ne i sliku.",
+  'customField.note': "Kalibrišite sa slike: teren igre = pikseli slike / ppm − 2×margina. Sačuvane sesije čuvaju kalibraciju, ali ne i sliku.",
   'customField.apply': "Primijeni",
   'customField.cancel': "Otkaži",
   'bounds.title': "Granice terena",

@@ -175,7 +175,7 @@ export const hr = {
   'customField.margin': 'margina (m)',
   'customField.length': 'duljina (m)',
   'customField.width': 'širina (m)',
-  'customField.note': 'Kalibrirajte iz slike: igraće polje = pikseliSlike / ppm − 2×margina. Spremljene sesije čuvaju kalibraciju, ali ne i sliku.',
+  'customField.note': 'Kalibrirajte iz slike: igraće polje = pikseli slike / ppm − 2×margina. Spremljene sesije čuvaju kalibraciju, ali ne i sliku.',
   'customField.apply': 'Primijeni',
   'customField.cancel': 'Odustani',
   'bounds.title': 'Granice terena',
