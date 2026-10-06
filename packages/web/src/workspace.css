@@ -152,7 +152,6 @@ body.desktop.desktop-macos .workspace-toolbar { padding-left: 100px; }
 }
 @media (max-width: 900px) {
   .workspace-toolbar { gap: 3px; padding-inline: 10px; }
-  .save-action { display: none; }
   .app-body.workspace-body.with-inspector { grid-template-columns: minmax(0, 1fr); }
   .app-body.workspace-body.with-paths.with-inspector { grid-template-columns: 260px minmax(0, 1fr); }
   .workspace-inspector { position: absolute; inset: 0 0 0 auto; z-index: 20; width: 292px; box-shadow: -8px 0 24px var(--shadow); }

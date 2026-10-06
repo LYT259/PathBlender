@@ -141,6 +141,18 @@ describe('welcome flow', () => {
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeEnabled();
   });
 
+  it('hands keyboard focus to the robot library when the welcome page gives way', async () => {
+    // The welcome button is unmounted by the very action it triggered, which
+    // used to drop focus onto <body> — the keyboard had no home to tab from
+    // (2026-10-06 keyboard pass).
+    render(<App />);
+    expect(document.activeElement).toBe(document.body);
+    await openExample();
+    const target = document.querySelector('.robot-library-select');
+    await waitFor(() => expect(document.activeElement).toBe(target));
+    expect(target).toHaveAccessibleName(/#8814/);
+  });
+
   it('replaces a stale example from an older build with the current example on restore', async () => {
     // Autosave written by an old build: the pre-rename demo generation —
     // legacy localized names, 0001/0002 team numbers, random ids.
