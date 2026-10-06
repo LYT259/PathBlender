@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.51';
+export const APP_VERSION = '0.1.8-beta.52';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.52', date: '2026.10.06', note: {
+    en: 'Desktop: quitting right after an edit no longer loses it — the autosave now flushes when the window closes',
+    zh: '桌面版：改完立刻退出不再丢——窗口关闭时自动保存会先落盘',
+    'zh-tw': '桌面版：改完立刻退出不再丟——視窗關閉時自動儲存會先寫入',
+    cs: 'Desktop: ukončení hned po úpravě nic neztratí — automatické ukládání se nyní zapíše při zavření okna.',
+    nl: 'Bureaublad: onmiddellijk afsluiten na een bewerking verliest niets meer — automatisch opslaan schrijft nu bij het sluiten van het venster.',
+    fr: 'Bureau : quitter juste après une modification ne fait plus rien perdre — la sauvegarde automatique s’écrit à la fermeture de la fenêtre.',
+    he: 'בשולחן העבודה: יציאה מיד אחרי עריכה כבר לא מאבדת כלום — השמירה האוטומטית נכתבת בעת סגירת החלון',
+    ja: 'デスクトップ版：編集直後に終了しても失われなくなりました——ウィンドウを閉じるときに自動保存が書き込まれます',
+    ko: '데스크톱: 편집 직후 종료해도 더 이상 사라지지 않습니다 — 창이 닫힐 때 자동 저장이 기록됩니다',
+    pl: 'Wersja desktopowa: zamknięcie zaraz po edycji niczego już nie gubi — automatyczny zapis jest zapisywany przy zamykaniu okna.',
+    'pt-br': 'No app de mesa: sair logo após uma edição não perde mais nada — o salvamento automático grava ao fechar a janela',
+    es: 'En escritorio: salir justo después de editar ya no hace perder nada — el autoguardado se escribe al cerrar la ventana.',
+    tr: 'Masaüstünde: bir düzenlemeden hemen sonra çıkmak artık bir şey kaybettirmiyor — pencere kapanırken otomatik kayıt diske yazılıyor',
+  } },
   { version: '0.1.8-beta.51', date: '2026.10.06', note: {
     en: 'Quitting and relaunching now really restores your session (autosave was over the storage limit and silently failing)',
     zh: '退出重开现在真的会恢复你的会话（自动保存此前超出存储上限且静默失败）',
