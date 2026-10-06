@@ -155,21 +155,23 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     </span>
                   </span>
                 </button></TeamNumberCell>
-                <button type="button" className="robot-arrange-button" disabled={!onArrange} title={t('sequence.arrange')}
-                  onClick={() => onArrange?.(trajectory.id)}><Icon name="timeline" size={15} /><span>{t('sequence.arrange')}</span></button>
+                <div className="robot-library-actions">
                 <button type="button" className="robot-mirror-button" disabled={!onMirrorButtonClick}
                   aria-pressed={mirroredIds?.has(trajectory.id) ?? false}
-                  title={t('robots.mirror')}
+                  title={t('robots.mirror')} aria-label={t('robots.mirror')}
                   onClick={() => onMirrorButtonClick?.(trajectory.id)}>
-                  <Icon name="mirror" size={15} /><span>{t('robots.mirror')}</span>
-                  <span className="robot-mirror-check" aria-hidden="true">{mirroredIds?.has(trajectory.id) && <Icon name="check" size={14} />}</span>
+                  <Icon name="mirror" size={17} />
                 </button>
+                  <button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
+                  <EyeIcon visible={robot.visible} />
+                </button>
+                </div>
+                <button type="button" className="robot-arrange-button" disabled={!onArrange} title={t('sequence.arrange')}
+                  onClick={() => onArrange?.(trajectory.id)}><Icon name="timeline" size={15} /><span>{t('sequence.arrange')}</span></button>
                 {needsSettings && onSelectSettings && <button type="button" className="robot-settings-upload" onClick={() => { settingsRobot.current = trajectory.id; settingsInput.current?.click(); }}>
                   <Icon name="import" size={15} />{t('robots.uploadSettings')}
                 </button>}
-                <div className="robot-library-status"><button className="robot-library-visibility" aria-label={visibilityLabel} title={visibilityLabel} aria-pressed={robot.visible} onClick={() => onUpdate(trajectory.id, { visible: !robot.visible })}>
-                  <EyeIcon visible={robot.visible} />
-                </button><span className="robot-library-meta">
+                <div className="robot-library-status"><span className="robot-library-meta">
                   <span>{sourceLabel(trajectory.source)}</span><span>{shownDuration.toFixed(2)} s</span>
                   {composed && <span>{t('sequence.count', { n: robot.sequence!.segments.length })}</span>}
                   {hit && <span className="robot-library-conflict">{t('robots.collision')}</span>}
