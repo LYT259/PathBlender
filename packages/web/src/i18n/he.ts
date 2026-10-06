@@ -205,6 +205,7 @@ export const he: Record<MessageKey, string> = {
   'canvas.view': 'תצוגה',
   'canvas.fit': 'התאמה',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'מפת חום',
 
   'import.failed': '{n} קבצים נכשלו בייבוא:',
   'import.dismiss': 'סגירה',

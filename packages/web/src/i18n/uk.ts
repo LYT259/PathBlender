@@ -155,6 +155,7 @@ export const uk = {
   'canvas.view': "Перегляд",
   'canvas.fit': "Вмістити",
   'canvas.clock': "t = {t} с",
+  'canvas.heatmap': 'Теплова карта',
   
   'import.failed': "{n} файл(ів) не вдалося імпортувати:",
   'import.dismiss': "Сховати",

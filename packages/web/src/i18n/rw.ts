@@ -155,6 +155,7 @@ export const rw = {
   'canvas.view': "Kureba",
   'canvas.fit': "Huza",
   'canvas.clock': "t = {t} s",
+  'canvas.heatmap': 'Heatmap',
   
   'import.failed': "Dosiye {n} ntizashoboye kuzanwa:",
   'import.dismiss': "Funga",

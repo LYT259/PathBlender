@@ -185,6 +185,7 @@ export const de = {
   'canvas.view': 'Ansicht',
   'canvas.fit': 'Anpassen',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Heatmap',
   
   'import.failed': '{n} Datei(en) konnten nicht importiert werden:',
   'import.dismiss': 'Schließen',

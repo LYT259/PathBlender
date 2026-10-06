@@ -155,6 +155,7 @@ export const hu = {
   'canvas.view': 'Nézet',
   'canvas.fit': 'Igazítás',
   'canvas.clock': 't = {t} mp',
+  'canvas.heatmap': 'Hőtérkép',
   
   'import.failed': '{n} fájl importálása sikertelen:',
   'import.dismiss': 'Elvetés',

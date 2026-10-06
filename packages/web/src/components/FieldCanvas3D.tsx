@@ -17,8 +17,8 @@ import {
   samplePoseAt,
   sampleStateAt,
 } from '@pathblender/core';
-import { createGroundTrail } from '../ground-trail3d';
-import { bumperColor, robotAnnotation } from '../robot-identity';
+import { createGroundTrail, createGroundHeatmap } from '../ground-trail3d';
+import { bumperColor, heatmapColor, robotAnnotation } from '../robot-identity';
 import { buildChassis3D, validateModuleTemplate } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
@@ -71,6 +71,8 @@ interface Props {
   robots: SessionTrajectory[];
   currentT: number;
   showTrail?: boolean;
+  /** Occupancy heatmap over every robot's full timeline (§7.3-3). */
+  showHeatmap?: boolean;
   /** Field construction variant (AndyMark vs welded), when offered. */
   variant?: 'welded' | 'andymark';
   /**
@@ -91,6 +93,7 @@ interface Scene3D {
   cy: number;
   dynamic: THREE.Group;
   trails: ReturnType<typeof createGroundTrail>[];
+  heatmaps: ReturnType<typeof createGroundHeatmap>[];
   /** Procedural MK5i-style chassis rigs, one per robot. */
   rigs: {
     root: THREE.Group;
@@ -385,7 +388,7 @@ function loadProcessedModel(dir: string): Promise<THREE.Group | null> {
 }
 
 export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function FieldCanvas3D(
-  { field, fieldImageUrl, robots, currentT, showTrail = true, variant = 'welded', active = true },
+  { field, fieldImageUrl, robots, currentT, showTrail = true, showHeatmap = false, variant = 'welded', active = true },
   ref,
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -1156,7 +1159,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     sceneRef.current = {
       renderer, scene, camera, controls,
       cx: 0, cy: 0,
-      dynamic, rigs: [], trails: [],
+      dynamic, rigs: [], trails: [], heatmaps: [],
       modelRoot, fallback, fieldRoot,
       backgroundThemed,
       dirty: markDirty, invalidateShadows, warmup, themed, retintCube,
@@ -1414,6 +1417,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const st = sceneRef.current;
     if (!st) return;
     for (const { color, token } of st.themed) color.set(tokenColorHex(token, '#1c1c1e'));
+    for (const { robot, mesh } of st.heatmaps) (mesh.material as THREE.MeshBasicMaterial).color.set(heatmapColor(robot.trajectory.alliance, cssToken('--accent', '#0a84ff'), cssToken('--danger', '#ff453a')));
     st.retintCube();
     st.dirty();
   }, [themeResolved]);
@@ -1563,10 +1567,15 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     st.dynamic.clear();
     st.rigs = [];
     st.trails = [];
+    st.heatmaps = [];
     for (const r of robots) {
       const trail = createGroundTrail(r, st.cx, st.cy);
       st.dynamic.add(trail.mesh);
       st.trails.push(trail);
+      // Occupancy heatmap — one merged footprint-stain mesh per robot.
+      const heatmap = createGroundHeatmap(r, st.cx, st.cy, cssToken('--accent', '#0a84ff'), cssToken('--danger', '#ff453a'));
+      st.dynamic.add(heatmap.mesh);
+      st.heatmaps.push(heatmap);
       // MK5i-style chassis (bumper skirt + frame deck + swerve pods),
       // sized by this robot's season-resolved two-layer geometry; pods use
       // the official CAD module when its template has loaded.
@@ -1599,8 +1608,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     for (const { mesh } of st.trails) {
       mesh.visible = showTrail;
     }
+    // Same for the heatmap stain — the toggle, not the clock, gates it.
+    for (const { mesh } of st.heatmaps) {
+      mesh.visible = showHeatmap;
+    }
     st.dirty();
-  }, [showTrail, robots, field, moduleTemplate, frameTemplates]);
+  }, [showTrail, showHeatmap, robots, field, moduleTemplate, frameTemplates]);
 
   // Drive the chassis rigs along the shared clock: pose from the shared
   // sampler. Modules stay bolted at the installed angle the whole time --

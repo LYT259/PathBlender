@@ -185,6 +185,7 @@ export const ms = {
   'canvas.view': 'Paparan',
   'canvas.fit': 'Padankan',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Peta haba',
   
   'import.failed': '{n} fail gagal diimport:',
   'import.dismiss': 'Tutup',

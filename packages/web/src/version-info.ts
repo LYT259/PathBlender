@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.42';
+export const APP_VERSION = '0.1.8-beta.43';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.43', date: '2026.10.06', note: {
+    en: 'Heatmap by alliance — red for red, blue for blue; heatmap now rendered in 3D as a ground stain; the old trails switch returns on the canvas bar, now gating the heatmap',
+    zh: '热力图按联盟分色——红方红、蓝方蓝；3D 视图同步渲染贴地热力图；旧轨迹尾巴开关回归画布栏，改为控制热力图',
+    'zh-tw': '熱力圖按聯盟分色——紅方紅、藍方藍；3D 檢視同步渲染貼地熱力圖；舊軌跡尾巴開關回歸畫布欄，改為控制熱力圖',
+    cs: 'Teplotní mapa podle aliance — červená pro červené, modrá pro modré; teplotní mapa se nyní vykresluje i ve 3D jako skvrna na zemi; původní přepínač stop se vrací na lištu plátna a ovládá teplotní mapu.',
+    nl: 'Warmtekaart per alliantie — rood voor rood, blauw voor blauw; de warmtekaart wordt nu ook in 3D als grondvlek gerenderd; de oude sporen-schakelaar keert terug op de canvasbalk en stuurt nu de warmtekaart.',
+    fr: 'Carte thermique par alliance — rouge pour les rouges, bleu pour les bleus ; la carte thermique s\'affiche désormais en 3D comme une tache au sol ; l\'ancien interrupteur de trajectoires revient sur la barre du canevas et commande la carte thermique.',
+    he: 'מפת חום לפי ברית — אדום לאדומים, כחול לכחולים; מפת החום מוצגת כעת גם בתלת־ממד ככתם קרקע; מתג השובל הישן חוזר לסרגל הקנבס ומפעיל את מפת החום',
+    ja: '熱力図をアライアンス別に配色 — 赤は赤、青は青；3D表示でも地面の染みとして熱力図を描画；旧ルートテープのスイッチがキャンバスバーに戻り、熱力図を切り替えます',
+    ko: '열지도를 얼라이언스별로 색상화 — 빨강은 빨강, 파랑은 파랑; 3D 보기에서도 바닥 얼룩으로 렌더링; 기존 궤적 스위치가 캔버스 바로 돌아와 열지도를 제어합니다',
+    pl: 'Mapa cieplna wg sojuszu — czerwona dla czerwonych, niebieska dla niebieskich; mapa cieplna renderowana jest teraz w 3D jako plama na podłodze; stary przełącznik śladów wraca na pasek płótna i steruje mapą cieplną.',
+    'pt-br': 'Mapa de calor por aliança — vermelho para os vermelhos, azul para os azuis; o mapa de calor agora é renderizado em 3D como uma mancha no chão; a antiga chave de trilhas volta à barra da tela e controla o mapa de calor.',
+    es: 'Mapa de calor por alianza — rojo para los rojos, azul para los azules; el mapa de calor ahora también se dibuja en 3D como una mancha en el suelo; el antiguo interruptor de rastros vuelve a la barra del lienzo y controla el mapa de calor.',
+    tr: 'İttifaka göre ısı haritası — kırmızılara kırmızı, mavilere mavi; ısı haritası artık 3D\'de zemin lekesi olarak çiziliyor; eski iz anahtarı tuval çubuğuna geri döndü ve artık ısı haritasını kontrol ediyor',
+  } },
   { version: '0.1.8-beta.42', date: '2026.10.06', note: {
     en: 'Prewarm the 3D view in the background — the first 2D-to-3D switch is now instant too',
     zh: '后台预热 3D 视图——第一次 2D 切 3D 现在也是瞬间完成',
