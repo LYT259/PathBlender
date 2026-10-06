@@ -179,10 +179,13 @@ fn build_entry(app: &AppHandle, e: &MenuItemIn, ids: &mut Vec<String>) -> tauri:
             "quit" => Built::Predefined(PredefinedMenuItem::quit(app, Some(&e.label))?),
             "minimize" => Built::Predefined(PredefinedMenuItem::minimize(app, Some(&e.label))?),
             "zoom" => Built::Predefined(PredefinedMenuItem::maximize(app, Some(&e.label))?),
-            "cut" => Built::Predefined(PredefinedMenuItem::cut(app, None)?),
-            "copy" => Built::Predefined(PredefinedMenuItem::copy(app, None)?),
-            "paste" => Built::Predefined(PredefinedMenuItem::paste(app, None)?),
-            "selectAll" => Built::Predefined(PredefinedMenuItem::select_all(app, None)?),
+            // The clipboard roles need their title passed through as well:
+            // AppKit falls back to its own English defaults here, because the
+            // bundle ships no .lproj (the roles above already take our label).
+            "cut" => Built::Predefined(PredefinedMenuItem::cut(app, Some(&e.label))?),
+            "copy" => Built::Predefined(PredefinedMenuItem::copy(app, Some(&e.label))?),
+            "paste" => Built::Predefined(PredefinedMenuItem::paste(app, Some(&e.label))?),
+            "selectAll" => Built::Predefined(PredefinedMenuItem::select_all(app, Some(&e.label))?),
             _ => return Ok(None),
         }));
     }
