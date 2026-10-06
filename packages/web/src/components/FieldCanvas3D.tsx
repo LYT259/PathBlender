@@ -57,6 +57,7 @@ import {
   worldToRender,
   worldToRenderVec3,
 } from '../field3d-frame';
+import { CAM_HOME as FIELD3D_CAM_HOME } from '../field3d-models';
 import type { FieldModelMirror } from '../field3d-frame';
 
 export interface FieldCanvas3DHandle {
@@ -71,6 +72,13 @@ interface Props {
   showTrail?: boolean;
   /** Field construction variant (AndyMark vs welded), when offered. */
   variant?: 'welded' | 'andymark';
+  /**
+   * False while the parent keeps this canvas mounted but hidden (2D active).
+   * The rAF loop keeps ticking but skips all GPU work, so 2D playback never
+   * renders into the hidden buffer — yet the scene, models and camera
+   * survive, making the next 2D→3D switch instant (user request 2026-10-06).
+   */
+  active?: boolean;
 }
 
 interface Scene3D {
@@ -119,9 +127,10 @@ interface Scene3D {
   retintCube: () => void;
 }
 
-// AS-style overview: higher and further back than the early low angle,
-// which read as a tilted slab (strong perspective) rather than a field.
-const CAM_HOME: [number, number, number] = [0, 13.5, 10.5];
+// AS-style overview home: direction comes from field3d-models (the
+// ViewCube's top–front edge — see that module for the derivation); the
+// radius doubles as the zoom clamp (maxDistance below), unchanged since R13.
+const CAM_HOME = FIELD3D_CAM_HOME;
 
 const WALL_H = 0.9;
 /** FRC official tag size (36h11 family, 6.5 in black square). */
@@ -345,11 +354,19 @@ function loadProcessedModel(dir: string): Promise<THREE.Group | null> {
 }
 
 export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function FieldCanvas3D(
-  { field, fieldImageUrl, robots, currentT, showTrail = true, variant = 'welded' },
+  { field, fieldImageUrl, robots, currentT, showTrail = true, variant = 'welded', active = true },
   ref,
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<Scene3D | null>(null);
+  // Hidden-but-mounted: the scaffold effect's loop reads this ref each frame
+  // and skips GPU work while the parent hides the canvas (2D active). On
+  // re-activation one dirty frame redraws the full scene immediately.
+  const activeRef = useRef(active);
+  useEffect(() => {
+    activeRef.current = active;
+    if (active) sceneRef.current?.dirty();
+  }, [active]);
   // Mouse scheme (Onshape/SolidWorks button map) and the three view
   // checkboxes — read at pointer-event time through refs so the scaffold
   // effect's closures stay current. Reverse scroll lives in zoom.ts (the
@@ -971,6 +988,13 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       const now = performance.now();
       const dt = now - lastFrameT;
       lastFrameT = now;
+      // Hidden-but-mounted: skip every frame's GPU work (render, shadow
+      // bake, DPR sync) while the 2D view owns the screen. lastFrameT
+      // still advances so a pending tween/chase resumes with a sane dt.
+      if (!activeRef.current) {
+        raf = requestAnimationFrame(loop);
+        return;
+      }
       // ViewCube tween: ease the camera along the shortest spherical arc.
       if (tween) {
         const t = Math.min(1, (performance.now() - tween.start) / 300);
