@@ -45,8 +45,9 @@ PathBlender fills that gap:
   parsed locally in your browser, and the web build makes **no network
   requests at all**;
 - **Also a desktop app** — the same UI in a lightweight Tauri shell for
-  macOS, adding session save/open, PNG export, folder import and in-app
-  updates (stable or beta channel). Its only network activity is the
+  macOS, adding session save/open, GIF replay and solution-package export,
+  folder import and in-app updates (stable or beta channel). Its only
+  network activity is the
   update check you trigger, which contacts GitHub Releases.
 
 ## Quick start
@@ -110,10 +111,11 @@ check you trigger (GitHub Releases) — path files never leave the app.
 
 Also included: a session-level red/blue alliance view, per-robot team
 number annotations, the season fields above with official AprilTag
-overlays, and a fourteen-language UI — English / 简体中文 / 繁體中文（台灣）/
-繁體中文（中國香港）/ Français / Español / Türkçe / Português (Brasil) /
-עברית / Nederlands / Polski / 日本語 / 한국어 / Čeština — in light and dark
-themes (follows the system).
+overlays, and a 41-language UI (English, 简体中文, 繁體中文, Français,
+Español, Português (Brasil), Türkçe, 日本語, 한국어, Nederlands, Polski,
+Čeština, עברית and 28 more — the language picker in Preferences lists
+every one, and `packages/web/src/i18n/` is the source of truth) — in light
+and dark themes (follows the system).
 
 Full walkthrough per tool and an FAQ:
 [English](docs/user-guide.en.md) ·
@@ -130,9 +132,28 @@ discussion lives in the project's Chief Delphi announcement thread.
 
 ## Status
 
-Viewer scope as described above, implemented and regression-tested
-(unit suites plus a scripted real-browser walkthrough). Desktop builds
-ship from [GitHub Releases](https://github.com/LYT259/pathblender/releases).
+Viewer scope as described above, implemented and regression-tested. Desktop
+builds ship from [GitHub Releases](https://github.com/LYT259/pathblender/releases).
+
+## Verification (for people changing the code)
+
+Three layers, all run locally — none of them ships with the app:
+
+| Layer | Command | What it proves |
+| --- | --- | --- |
+| Unit + jsdom suites | `npm test` (or `-w @pathblender/core` / `-w @pathblender/web`) | Parsers, geometry, fusion and collision maths, and component behaviour in a simulated DOM. |
+| Pointer walkthrough | `npm run build -w @pathblender/web && npm run preview -w @pathblender/web`, then `node scripts/browser-walkthrough.mjs` | The production build driven with a real mouse and real files: folder import, the composer's click-and-drag placement, save/restore through an actual download, all 41 languages including RTL, artwork repaints, service worker, and 3D (model, lit robots, ViewCube picks, season switches). |
+| Keyboard walkthrough | same preview server, then `node scripts/keyboard-walkthrough.mjs` | The same app driven with the keyboard only — every main workflow has to be completable without a mouse. |
+
+Both harnesses print `PASS`/`FAIL` per step, exit non-zero on any failure and
+save screenshots to `/tmp/pb-shots`. Run them after any user-visible change
+and before a release; when the UI changes, update the harness in the same pull
+request — a check that targets a retired control fails the next person rather
+than protecting them.
+
+中文：以上三层都只在本机跑、不随软件发布。单元测试验算法与组件行为；两个
+走查脚本则在真实浏览器里把成品点一遍——一个只用鼠标（含真实文件导入、会话
+存读、41 种语言、3D），一个只用键盘。改动界面时请在同一个 PR 里同步更新脚本。
 
 ## License & attribution
 
