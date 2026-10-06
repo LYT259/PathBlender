@@ -336,6 +336,19 @@ export const mr = {
   "toast.pkgSaved": "उपाय पॅकेज जतन झाला",
   "toast.pkgFailed": "उपाय पॅकेज निर्यात अयशस्वी",
   "toast.pkgNoVideo": "या ब्राउझरमध्ये रीप्ले व्हिडिओ रेकॉर्ड होऊ शकत नाही — पॅकेज त्याशिवाय जतन झाला",
+  'help.title': "कीबोर्ड शॉर्टकट",
+  'help.intro': "शॉर्टकट कीबोर्ड फोकसचे पालन करतात: मजकूर फील्ड सर्व संपादन की ठेवतात, फोकस केलेले कॅनव्हस व्ह्यू की ठेवते आणि Esc नेहमी सर्वात वरचा थर प्रथम रद्द करतो.",
+  'help.group.playback': "प्लेबॅक",
+  'help.group.view': "फील्ड दृश्य",
+  'help.group.robot': "रोबोट",
+  'help.playbackEnd': "शेवटीपर्यंत जा",
+  'help.viewToggle': "2D / 3D बदला",
+  'help.switchRobot': "मागील / पुढील रोबोट",
+  'help.hideShow': "निवडलेला रोबोट दाखवा / लपवा",
+  'help.cubeViews': "प्रमाणित दृश्ये (ViewCube समतुल्य)",
+  'help.composerMove': "फोकस केलेला भाग हलवा",
+  'help.deleteClip': "फोकस केलेला भाग काढा",
+  'help.hint.desktop': "डेस्कटॉप अ‍ॅपमध्ये मेनू Cmd/Ctrl+O (आयात), Cmd/Ctrl+S (सत्र जतन) आणि Cmd/Ctrl+, (सेटिंग्ज) सुद्धा देतात.",
 } as const;
 
 export type MessageKey = keyof typeof mr;

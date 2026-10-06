@@ -336,6 +336,19 @@ export const fil = {
   "toast.pkgSaved": "Na-save ang solution package",
   "toast.pkgFailed": "Nabigo ang pag-export ng solution package",
   "toast.pkgNoVideo": "Hindi kayang i-record ng browser na ito ang replay video — na-save ang package na walang video",
+  'help.title': "Mga shortcut ng keyboard",
+  'help.intro': "Ang mga shortcut ay sumusunod sa focus ng keyboard: pinapanatili ng text fields ang lahat ng editing keys, ang naka-focus na canvas ang may-ari ng view keys, at ang Esc ay laging kanselahin muna ang pinakaibabaw na layer.",
+  'help.group.playback': "Pag-playback",
+  'help.group.view': "Tanaw ng field",
+  'help.group.robot': "Mga robot",
+  'help.playbackEnd': "Tumalon sa dulo",
+  'help.viewToggle': "Palitan ang 2D / 3D",
+  'help.switchRobot': "Nakaraan / susunod na robot",
+  'help.hideShow': "Ipakita / itago ang napiling robot",
+  'help.cubeViews': "Mga standard view (katumbas ng ViewCube)",
+  'help.composerMove': "Ilipat ang naka-focus na segment",
+  'help.deleteClip': "Burahin ang naka-focus na segment",
+  'help.hint.desktop': "Sa desktop app, ang mga menu ay mayroon ding Cmd/Ctrl+O (import), Cmd/Ctrl+S (i-save ang session) at Cmd/Ctrl+, (mga setting).",
 } as const;
 
 export type MessageKey = keyof typeof fil;

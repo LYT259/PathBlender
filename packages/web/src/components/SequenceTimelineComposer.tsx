@@ -86,6 +86,15 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     dragRef.current = null;
     setGhost(null); setMenu(null); setError(null);
   }, [open, activeId]);
+  // Keyboard entry (2026-10-06 keyboard pass): opening the composer moves
+  // focus onto the editing lane, so Tab reaches the segments and Escape has
+  // an owner from the first keystroke. Switching robots re-lands focus on
+  // the new lane the same way.
+  useEffect(() => {
+    if (!open) return;
+    const raf = requestAnimationFrame(() => laneRef.current?.focus());
+    return () => cancelAnimationFrame(raf);
+  }, [open, activeId]);
   useEffect(() => {
     if (!menu) return;
     menuRef.current?.querySelector('button')?.focus();
@@ -148,9 +157,21 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       cancelDrag();
     }} onPointerCancel={cancelDrag} onLostPointerCapture={cancelDrag}
     onKeyDown={(event) => {
+      const native = event.nativeEvent;
+      // IME composition owns Escape — never exit while it is running.
+      if (native.isComposing || native.keyCode === 229) return;
       if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
-      if (event.key === 'Escape') { cancelDrag(); setMenu(null); laneRef.current?.focus(); }
-      if (chosen && (event.key === 'Backspace' || event.key === 'Delete')) { event.preventDefault(); remove(chosen.id); }
+      // Escape cancels exactly one layer, topmost first: an open clip menu,
+      // then a running drag, then the composer itself. Consuming here stops
+      // the document-level fallback from closing the composer underneath.
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        if (menu) { setMenu(null); laneRef.current?.focus(); return; }
+        if (dragRef.current) { cancelDrag(); laneRef.current?.focus(); return; }
+        onClose();
+        return;
+      }
     }}>
     <SequenceComposerToolbar name={robotIdentity(active.robot.trajectory)} color={active.robot.color} onBack={onClose} />
     <div className="sequence-route-library"><div className="sequence-route-options">
@@ -160,6 +181,10 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         aria-label={`${routeLabel(route, active.routes)}: ${route.trajectory.durationS.toFixed(2)} s`}
         onPointerEnter={() => { if (!dragRef.current) onPreviewRoute?.(route.id); }}
         onPointerLeave={() => { if (!dragRef.current) onPreviewRoute?.(null); }}
+        // Keyboard parity for the hover preview: focus shows the route on
+        // the field exactly like a pointer enter, blur clears it.
+        onFocus={() => { if (!dragRef.current) onPreviewRoute?.(route.id); }}
+        onBlur={() => { if (!dragRef.current) onPreviewRoute?.(null); }}
         onPointerDown={(event) => begin(event, 'add', { id: crypto.randomUUID(), routeId: route.id, startS: 0, durationS: route.trajectory.durationS })}
         onClick={(event) => { if (event.detail !== 0 && suppressClick.current) return; append(route.id, route.trajectory.durationS); }}>
         <span aria-hidden="true" className="sequence-grip">⠿</span><span>{routeLabel(route, active.routes)}</span><small>{route.trajectory.durationS.toFixed(2)}s</small>
@@ -192,13 +217,22 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
                 <button type="button" className={`sequence-clip${chosenClip ? ' is-chosen' : ''}${editing && activeGhost?.id === clip.id ? ' is-moving' : ''}`}
                   style={styleFor(clip)} aria-label={`${label}, ${clip.startS.toFixed(2)}–${(clip.startS + clip.durationS).toFixed(2)} s`} aria-pressed={chosenClip}
                   title={`${label}\n${clip.startS.toFixed(2)}–${(clip.startS + clip.durationS).toFixed(2)} s`}
-                  onClick={() => { if (suppressClick.current) return; if (!editing) switchRobot(id); setSelected({ robotId: id, clipId: clip.id }); setError(null); }}
+                  onClick={(event) => { if (event.detail !== 0 && suppressClick.current) return; if (!editing) switchRobot(id); setSelected({ robotId: id, clipId: clip.id }); setError(null); }}
                   onPointerDown={editing ? (event) => begin(event, 'move', clip) : () => { suppressClick.current = false; }}
                   onContextMenu={editing ? (event) => { event.preventDefault(); setSelected({ robotId: id, clipId: clip.id }); setMenu({ robotId: id, clipId: clip.id, x: event.clientX, y: event.clientY }); } : undefined}
                   onKeyDown={editing ? (event) => {
+                    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
                     if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
                       event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect();
                       setSelected({ robotId: id, clipId: clip.id }); setMenu({ robotId: id, clipId: clip.id, x: rect.left, y: rect.bottom });
+                    }
+                    // Delete targets the FOCUSED segment — never a stale
+                    // selection made while focus was elsewhere. One shot per
+                    // press (no key-repeat tearing through the timeline).
+                    if ((event.key === 'Delete' || event.key === 'Backspace') && !event.repeat) {
+                      event.preventDefault(); event.stopPropagation();
+                      remove(clip.id);
+                      return;
                     }
                     if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
                     event.preventDefault();
@@ -231,12 +265,22 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
           const raw = event.currentTarget.value.trim(); const value = raw === '' ? NaN : Number(raw);
           if (value === Number(formatStart(chosen.startS))) return;
           if (!Number.isFinite(value) || !commit({ ...chosen, startS: value })) event.currentTarget.value = formatStart(chosen.startS);
-        }} onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }} /> s</label>
+        }} onKeyDown={(event) => {
+          if (event.key === 'Enter') { event.currentTarget.blur(); return; }
+          // Escape cancels the pending edit first: revert the value and
+          // leave the field; a second Escape (focus now on the lane) then
+          // leaves the composer.
+          if (event.key === 'Escape' && !event.nativeEvent.isComposing) {
+            event.preventDefault(); event.stopPropagation();
+            event.currentTarget.value = formatStart(chosen.startS);
+            event.currentTarget.blur();
+          }
+        }} /> s</label>
       <span>{t('sequence.end')} <b>{(chosen.startS + chosen.durationS).toFixed(2)}s</b></span>
     </div>}
     {menu?.robotId === activeId && <div ref={menuRef} className="sequence-clip-menu" role="menu" aria-label={t('sequence.arrange')}
       style={{ left: Math.max(8, Math.min(menu.x, window.innerWidth - 188)), top: Math.max(8, Math.min(menu.y, window.innerHeight - 54)) }}
-      onKeyDown={(event) => { if (event.key === 'Escape') { setMenu(null); laneRef.current?.focus(); } if (event.key === 'Tab') setMenu(null); }}>
+      onKeyDown={(event) => { if (event.key === 'Escape') { event.stopPropagation(); setMenu(null); laneRef.current?.focus(); } if (event.key === 'Tab') { event.stopPropagation(); setMenu(null); } }}>
       <button type="button" role="menuitem" onClick={() => remove(menu.clipId)}><Icon name="trash" size={14} />{t('sequence.removeRoute')}</button>
     </div>}
     <div className="sequence-composer-footnote"><span role="status" className="sequence-error">{error ?? ''}</span></div>

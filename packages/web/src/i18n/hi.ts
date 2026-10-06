@@ -336,6 +336,19 @@ export const hi = {
   "toast.pkgSaved": "समाधान पैकेज सहेजा गया",
   "toast.pkgFailed": "समाधान पैकेज निर्यात में विफल",
   "toast.pkgNoVideo": "यह ब्राउज़र रीप्ले वीडियो रिकॉर्ड नहीं कर सकता — पैकेज उसके बिना सहेजा गया",
+  'help.title': "कीबोर्ड शॉर्टकट",
+  'help.intro': "शॉर्टकट कीबोर्ड फ़ोकस का पालन करते हैं: टेक्स्ट फ़ील्ड सभी संपादन कुंजियाँ रखते हैं, फ़ोकस्ड कैनवस व्यू कुंजियों का स्वामी है, और Esc हमेशा सबसे ऊपरी परत पहले रद्द करता है।",
+  'help.group.playback': "प्लेबैक",
+  'help.group.view': "फ़ील्ड दृश्य",
+  'help.group.robot': "रोबोट",
+  'help.playbackEnd': "अंत तक जाएँ",
+  'help.viewToggle': "2D / 3D टॉगल करें",
+  'help.switchRobot': "पिछला / अगला रोबोट",
+  'help.hideShow': "चयनित रोबोट दिखाएँ / छिपाएँ",
+  'help.cubeViews': "मानक दृश्य (ViewCube समतुल्य)",
+  'help.composerMove': "फ़ोकस्ड खंड खिसकाएँ",
+  'help.deleteClip': "फ़ोकस्ड खंड हटाएँ",
+  'help.hint.desktop': "डेस्कटॉप ऐप में मेनू Cmd/Ctrl+O (आयात), Cmd/Ctrl+S (सत्र सहेजें) और Cmd/Ctrl+, (सेटिंग्स) भी देते हैं।",
 } as const;
 
 export type MessageKey = keyof typeof hi;

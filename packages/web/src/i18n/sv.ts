@@ -332,6 +332,19 @@ export const sv = {
   "toast.pkgSaved": "Lösningspaket sparat",
   "toast.pkgFailed": "Det gick inte att exportera lösningspaketet",
   "toast.pkgNoVideo": "Den här webbläsaren kan inte spela in uppspelningsvideon — paketet sparades utan den",
+  'help.title': "Tangentbordsgenvägar",
+  'help.intro': "Genvägar följer tangentbordsfokus: textfält behåller alla redigeringstangenter, den fokuserade duken äger vy-tangenter och Esc avbryter alltid översta lagret först.",
+  'help.group.playback': "Uppspelning",
+  'help.group.view': "Planvy",
+  'help.group.robot': "Robotar",
+  'help.playbackEnd': "Hoppa till slutet",
+  'help.viewToggle': "Växla 2D / 3D",
+  'help.switchRobot': "Föregående / nästa robot",
+  'help.hideShow': "Visa / dölj vald robot",
+  'help.cubeViews': "Standardvyer (ViewCube-motsvarighet)",
+  'help.composerMove': "Flytta fokuserat segment",
+  'help.deleteClip': "Ta bort fokuserat segment",
+  'help.hint.desktop': "I skrivbordsappen erbjuder menyerna också Cmd/Ctrl+O (importera), Cmd/Ctrl+S (spara session) och Cmd/Ctrl+, (inställningar).",
 } as const;
 
 export type MessageKey = keyof typeof sv;

@@ -336,6 +336,19 @@ export const ar = {
   "toast.pkgSaved": "تم حفظ حزمة الحل",
   "toast.pkgFailed": "فشل تصدير حزمة الحل",
   "toast.pkgNoVideo": "هذا المتصفح لا يستطيع تسجيل فيديو إعادة التشغيل — حُفظت الحزمة بدونه",
+  'help.title': "اختصارات لوحة المفاتيح",
+  'help.intro': "تتبع الاختصارات تركيز لوحة المفاتيح: تحتفظ حقول النص بكل مفاتيح التحرير، وتمتلك اللوحة المركّزة مفاتيح العرض، ويلغي Esc الطبقة العليا أولاً دائماً.",
+  'help.group.playback': "التشغيل",
+  'help.group.view': "عرض الملعب",
+  'help.group.robot': "الروبوتات",
+  'help.playbackEnd': "الانتقال إلى النهاية",
+  'help.viewToggle': "تبديل 2D / 3D",
+  'help.switchRobot': "الروبوت السابق / التالي",
+  'help.hideShow': "إظهار / إخفاء الروبوت المحدد",
+  'help.cubeViews': "المناظر القياسية (بديل ViewCube)",
+  'help.composerMove': "نقل المقطع المركّز",
+  'help.deleteClip': "حذف المقطع المركّز",
+  'help.hint.desktop': "في تطبيق سطح المكتب توفر القوائم أيضاً Cmd/Ctrl+O (استيراد) وCmd/Ctrl+S (حفظ الجلسة) وCmd/Ctrl+, (الإعدادات).",
 } as const;
 
 export type MessageKey = keyof typeof ar;

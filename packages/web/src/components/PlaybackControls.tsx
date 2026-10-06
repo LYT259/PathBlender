@@ -1,6 +1,9 @@
 import { useI18n } from '../i18n';
 
 const SPEEDS = [0.25, 0.5, 1];
+/** The speed steps, shared with the keyboard stepper (Shift+, / Shift+.) —
+ * one source so the buttons and the keys always agree. */
+export const PLAYBACK_SPEEDS = SPEEDS;
 export interface Playback {
   t: number;
   setT: (v: number) => void;

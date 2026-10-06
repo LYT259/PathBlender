@@ -164,6 +164,13 @@ function AppBody() {
   // 2026-10-06). First entry still lazy-loads the chunk behind Suspense.
   const [ever3D, setEver3D] = useState(loadView3D);
   const [showPrefs, setShowPrefs] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  // Composer focus round trip (2026-10-06 keyboard pass): entering stores
+  // the element that opened it, leaving puts focus back there — or on the
+  // timeline's arrange button when the trigger is gone — so Escape never
+  // strands the keyboard on <body>.
+  const composerTriggerRef = useRef<HTMLElement | null>(null);
+  const composeButtonRef = useRef<HTMLButtonElement | null>(null);
   function openPreferences() {
     if (!IS_DESKTOP) { setShowPrefs(true); return; }
     void import('@tauri-apps/api/core')
@@ -198,6 +205,9 @@ function AppBody() {
     };
     const escape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && workspaceMenuRef.current?.open) {
+        // The open menu is the topmost layer — consume the key so the
+        // composer (or any other Escape owner below) does not also fire.
+        event.stopPropagation();
         workspaceMenuRef.current.open = false;
         workspaceMenuRef.current.querySelector('summary')?.focus();
       }
@@ -218,6 +228,7 @@ function AppBody() {
   // Keep source paths in their original blue-side frame. Both renderers,
   // analysis, inspectors and session exports consume the same alliance view.
   const robots = useMemo(() => robotsForAlliance(sourceRobots, alliance, field), [sourceRobots, alliance, field]);
+  const hasRobots = robots.length > 0;
   const fieldImageUrl = fieldImageFor(fieldId, fieldVariant, fieldStyle, customImageUrl);
   // Per-season rule-max geometry (MK5i plan, 2026-10-02): default-geometry
   // robots are re-resolved against the selected field's season, so checks
@@ -233,6 +244,18 @@ function AppBody() {
   useEffect(() => {
     if (view3D && !field3dAvailable) setView3D(false);
   }, [view3D, field3dAvailable]);
+  // One 2D/3D toggle and one view reset shared by the buttons and the
+  // keyboard shortcuts (same business handler, never a second path).
+  // Switching to 3D also arms the parked-canvas flag (#219).
+  const setViewPref = useCallback((on: boolean) => {
+    if (on) setEver3D(true);
+    setView3D(on);
+    rememberView3D(on);
+  }, []);
+  const resetView = useCallback(() => {
+    if (view3D) canvas3DRef.current?.resetCam();
+    else canvasRef.current?.fit();
+  }, [view3D]);
   // Field/variant memory is written ONLY from the user's own selects —
   // session-file restores must not overwrite it.
 
@@ -549,11 +572,27 @@ function AppBody() {
   // Double-clicking a team's timeline row enters that team's arrangement
   // editing directly; leaving is a click anywhere outside the surface.
   const openSequenceFor = useCallback((id: string) => {
+    composerTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     playback.setPlaying(false);
     selectRobot(id);
     setComposerOpen(true);
   }, [playback.setPlaying, selectRobot, setComposerOpen]);
+  const closeComposer = useCallback(() => {
+    setComposerOpen(false);
+    const trigger = composerTriggerRef.current;
+    composerTriggerRef.current = null;
+    if (trigger?.isConnected) trigger.focus();
+    else composeButtonRef.current?.focus();
+  }, [setComposerOpen]);
   const selectedRobot = robots.find((r) => r.trajectory.id === selectedId) ?? robots[0];
+  // , / . cycle the robot selection in session order (keyboard pass) — the
+  // same selectRobot the cards and timeline rows call, inspector included.
+  const stepRobot = useCallback((dir: number) => {
+    if (robots.length === 0) return;
+    const current = robots.findIndex((r) => r.trajectory.id === (selectedRobot?.trajectory.id ?? ''));
+    const next = robots[(Math.max(0, current) + dir + robots.length) % robots.length]!;
+    selectRobot(next.trajectory.id);
+  }, [robots, selectedRobot, selectRobot]);
   // Arrangement edits share the source store with playback, checks and autosave.
   const sourceSelectedRobot = sourceRobots.find((robot) => robot.trajectory.id === selectedRobot?.trajectory.id);
   const sequenceJoins = useMemo(() => sourceSelectedRobot ? checkSequenceJoins(sourceSelectedRobot) : [], [sourceSelectedRobot]);
@@ -637,6 +676,75 @@ function AppBody() {
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   }, [undoSession, redoSession]);
+
+  // Workspace keyboard shortcuts (2026-10-06 keyboard pass). Scopes:
+  // letters/digits act on the workspace only when no text field owns them,
+  // no modal is open and the composer is closed (it owns its keys); ? opens
+  // the shortcut help from anywhere. Each maps onto the SAME handler its
+  // button calls. Single-shot keys ignore key repeat; view/playback
+  // continuous keys live in the canvases and the playback hook.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.isComposing || e.metaKey || e.ctrlKey || e.altKey) return;
+      // A modal dialog owns the whole keyboard — no workspace keys beneath it.
+      if (document.querySelector('[role="dialog"][aria-modal="true"], dialog[open]')) return;
+      if (e.key === '?' && !e.repeat) {
+        e.preventDefault();
+        setShowHelp(true);
+        return;
+      }
+      if (composerOpen) return;
+      const el = e.target instanceof Element ? e.target : null;
+      if (el?.closest('input, select, textarea, [contenteditable="true"]')) return;
+      if (!hasRobots || e.repeat) return;
+      const selected = selectedRobot?.trajectory.id;
+      if (!selected) return;
+      if (e.code === 'Comma' && !e.shiftKey) {
+        e.preventDefault();
+        stepRobot(-1);
+      } else if (e.code === 'Period' && !e.shiftKey) {
+        e.preventDefault();
+        stepRobot(1);
+      } else if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        openSequenceFor(selected);
+      } else if (e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        const robot = robots.find((r) => r.trajectory.id === selected);
+        if (robot) updateRobot(selected, { visible: !robot.visible });
+      } else if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        toggleMirror(selected);
+      } else if ((e.key === 'v' || e.key === 'V') && field3dAvailable) {
+        e.preventDefault();
+        setViewPref(!view3D);
+      } else if (e.key === '0') {
+        e.preventDefault();
+        resetView();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // stepRobot reads only `robots` + selection; it is defined below and
+    // stable per render, so the full dependency list covers it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [composerOpen, hasRobots, robots, selectedRobot, updateRobot, toggleMirror, openSequenceFor, setViewPref, resetView, view3D, field3dAvailable]);
+
+  // Escape returns from the composer even when focus is OUTSIDE it (the
+  // composer's own handler covers focus inside; this is the safety net for
+  // focus on body or a control the composer does not contain). A modal
+  // dialog owns the top layer and wins.
+  useEffect(() => {
+    if (!composerOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.isComposing) return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"], dialog[open]')) return;
+      e.preventDefault();
+      closeComposer();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [composerOpen, closeComposer]);
 
   // Launch continuity (user report 2026-10-02: quitting in 3D reopened to
   // the welcome page — the 3D pref was honored but only after a fresh
@@ -833,7 +941,6 @@ function AppBody() {
   // handled by the full `set_menu` push in the menu block (the spec carries
   // the labels, so the shell needs no language tables of its own).
 
-  const hasRobots = robots.length > 0;
   const hasExample = robots.some(isExampleRobot);
   // Both side panels stay open while robots exist — there is no collapse
   // entry point left, so a panel can never be closed without a way back.
@@ -1047,13 +1154,12 @@ function AppBody() {
     'remove-selected': () => { if (selectedId) removeSlot(selectedId); },
     'apply-profile': () => setInspectorMode('robot'),
     'arrange-selected': () => { if (selectedId) openSequenceFor(selectedId); },
-    'composer-back': () => setComposerOpen(false),
-    fit: () => {
-      if (view3D) canvas3DRef.current?.resetCam();
-      else canvasRef.current?.fit();
-    },
-    'view-2d': () => { setView3D(false); rememberView3D(false); },
-    'view-3d': () => { setView3D(true); rememberView3D(true); },
+    'composer-back': () => closeComposer(),
+    fit: () => resetView(),
+    // The keyboard pass shares ONE 2D/3D entry with the buttons — it also
+    // arms the parked-canvas flag, which the raw setters skipped.
+    'view-2d': () => setViewPref(false),
+    'view-3d': () => setViewPref(true),
     'alliance-blue': () => switchAlliance('blue'),
     'alliance-red': () => switchAlliance('red'),
     'construction-welded': () => selectVariant('welded'),
@@ -1191,6 +1297,7 @@ function AppBody() {
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
             {hasRobots && !view3D && <button onClick={() => setShowHeatmap((v) => !v)} aria-pressed={showHeatmap}>{tr(showHeatmap ? 'actions.heatmapOff' : 'actions.heatmapOn')}</button>}
             {hasRobots && <button onClick={abToggle}>{tr('actions.abCompare')}</button>}
+            <button onClick={() => setShowHelp(true)} aria-keyshortcuts="?">{tr('help.title')}</button>
             {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
           </div>
         </details>}
@@ -1200,7 +1307,7 @@ function AppBody() {
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
         <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
-          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={(id) => { selectRobot(id); playback.setPlaying(false); setComposerOpen(true); }} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} />}
+          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={openSequenceFor} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
             {hasExample && <div className="example-notice"><strong>{tr('welcome.exampleBadge')}</strong><span>{tr('welcome.exampleNotice')}</span><button className="btn small" onClick={exitExample}>{tr('welcome.exitExample')}</button></div>}
             <div className="canvas-slot">
@@ -1232,13 +1339,13 @@ function AppBody() {
                 <span className="canvas-spacer" />
                 {field3dAvailable && (
                   <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
-                    <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} onClick={() => { setView3D(false); rememberView3D(false); }}>2D</button>
-                    <button aria-pressed={view3D} className={view3D ? 'on' : ''} onClick={() => { setEver3D(true); setView3D(true); rememberView3D(true); }}>3D</button>
+                    <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} aria-keyshortcuts="v" onClick={() => setViewPref(false)}>2D</button>
+                    <button aria-pressed={view3D} className={view3D ? 'on' : ''} aria-keyshortcuts="v" onClick={() => setViewPref(true)}>3D</button>
                   </div>
                 )}
                 {/* The rest of the bar needs a robot to act on, which the gate
                     above now guarantees. */}
-                <button className="tool-btn canvas-recenter" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} onClick={() => view3D ? canvas3DRef.current?.resetCam() : canvasRef.current?.fit()}><Icon name="recenter" size={17} /></button>
+                <button className="tool-btn canvas-recenter" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} aria-keyshortcuts="0" onClick={resetView}><Icon name="recenter" size={17} /></button>
               </div>}
               {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : <>
                 {/* Parked 3D: mounted from the first 3D entry onward, hidden
@@ -1267,8 +1374,8 @@ function AppBody() {
           </aside>
         </main>
         {/* Playback spans the full workspace, below both side panels. */}
-        {hasRobots && !composerOpen && <footer className="app-footer"><Timeline composeAction={<button className="btn small" onClick={() => { playback.setPlaying(false); setComposerOpen(true); }}>{tr('sequence.arrange')}</button>} robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
-        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={composerOpen} onClose={() => setComposerOpen(false)} onChange={editSequence} onPreviewRoute={setPreviewRouteId} joins={sequenceJoins} playback={playback} onJump={jumpToSeam} />}
+        {hasRobots && !composerOpen && <footer className="app-footer"><Timeline composeAction={<button ref={composeButtonRef} className="btn small" aria-keyshortcuts="e" onClick={() => { const id = (selectedRobot ?? robots[0])?.trajectory.id; if (id) openSequenceFor(id); }}>{tr('sequence.arrange')}</button>} robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
+        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={setPreviewRouteId} joins={sequenceJoins} playback={playback} onJump={jumpToSeam} />}
 
       {cfOpen && <CustomFieldPanel
         open
@@ -1283,9 +1390,56 @@ function AppBody() {
       {showPrefs && <Dialog title={tr('prefs.title')} onClose={() => setShowPrefs(false)} className="preferences-dialog">
         <PreferencesPanel desktop={IS_DESKTOP} onClose={() => setShowPrefs(false)} onColorblindSaved={setColorblind} />
       </Dialog>}
+      {showHelp && <Dialog title={tr('help.title')} onClose={() => setShowHelp(false)} className="help-dialog">
+        <p className="help-intro">{tr('help.intro')}</p>
+        <div className="help-groups">
+          <section>
+            <h3>{tr('help.group.playback')}</h3>
+            <HelpRow keys="Space" label={`${tr('timeline.play')} / ${tr('timeline.pause')}`} />
+            <HelpRow keys="← / →" label={`${tr('timeline.stepBack')} / ${tr('timeline.stepForward')} · ⇧ 2 s`} />
+            <HelpRow keys="Home" label={tr('timeline.rewind')} />
+            <HelpRow keys="End" label={tr('help.playbackEnd')} />
+            <HelpRow keys="⇧ , / ⇧ ." label={tr('timeline.playbackSpeed')} />
+          </section>
+          <section>
+            <h3>{tr('help.group.view')}</h3>
+            <HelpRow keys="+ / −" label={tr('prefs.mouse.zoom')} />
+            <HelpRow keys="0" label={tr('canvas.fit')} />
+            <HelpRow keys="V" label={tr('help.viewToggle')} />
+            <HelpRow keys="← → ↑ ↓" label={`${tr('prefs.mouse.rotate')} (3D)`} />
+            <HelpRow keys="⇧ ← → ↑ ↓" label={`${tr('prefs.mouse.pan')} (3D)`} />
+            <HelpRow keys="1 – 6" label={tr('help.cubeViews')} />
+          </section>
+          <section>
+            <h3>{tr('help.group.robot')}</h3>
+            <HelpRow keys=", / ." label={tr('help.switchRobot')} />
+            <HelpRow keys="H" label={tr('help.hideShow')} />
+            <HelpRow keys="M" label={tr('robots.mirror')} />
+            <HelpRow keys="E" label={tr('sequence.arrange')} />
+          </section>
+          <section>
+            <h3>{tr('sequence.arrange')}</h3>
+            <HelpRow keys="Esc" label={tr('sequence.back')} />
+            <HelpRow keys="← / →" label={`${tr('help.composerMove')} · ⇧ 1 s`} />
+            <HelpRow keys="Del / ⌫" label={tr('help.deleteClip')} />
+            <HelpRow keys="⇧ F10" label={tr('sequence.removeRoute')} />
+          </section>
+          <section>
+            <h3>{tr('workspace.more')}</h3>
+            <HelpRow keys="⌘Z / Ctrl+Z" label={tr('workspace.undo')} />
+            <HelpRow keys="⇧⌘Z / Ctrl+⇧Z" label={tr('workspace.redo')} />
+            <HelpRow keys="?" label={tr('help.title')} />
+          </section>
+        </div>
+        <p className="help-desktop-hint">{tr('help.hint.desktop')}</p>
+      </Dialog>}
       </div>
     </div>
   );
+}
+
+function HelpRow({ keys, label }: { keys: string; label: string }) {
+  return <div className="help-row"><kbd dir="ltr">{keys}</kbd><span>{label}</span></div>;
 }
 
 function friendlyParseError(

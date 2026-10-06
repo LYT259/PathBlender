@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.40';
+export const APP_VERSION = '0.1.8-beta.41';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.41', date: '2026.10.06', note: {
+    en: 'Full keyboard pass: layered Escape, composer focus round-trip, canvas view keys, workspace shortcuts (E/H/M/V/0/,/./End/?) and a shortcut-help dialog',
+    zh: '键盘操作全量补齐：Esc 分层退出、编排焦点往返、画布视角键、工作区快捷键（E/H/M/V/0/逗号/句号/End/?）与快捷键帮助',
+    'zh-tw': '鍵盤操作全量補齊：Esc 分層退出、編排焦點往返、畫布視角鍵、工作區快速鍵（E/H/M/V/0/逗號/句號/End/?）與快速鍵說明',
+    cs: 'Plná klávesová podpora: vrstvený Esc, kulatá cesta fokusu v uspořádání, klávesy pohledu plátna, zkratky pracovní oblasti (E/H/M/V/0/,/./End/?) a přehled zkratek.',
+    nl: 'Volledige toetsenbordronde: gelaagde Escape, focus-heen-en-weer in de indeler, canvasweergavetoetsen, werkruimtesneltoetsen (E/H/M/V/0/,/./End/?) en een sneltoetsenhulp.',
+    fr: 'Passe clavier complète : Échap par couches, aller-retour du focus dans l’agencement, touches de vue du canevas, raccourcis d’atelier (E/H/M/V/0/,/./End/?) et aide des raccourcis.',
+    he: 'מעבר מקלדת מלא: Esc שכבתי, מסלול מוקד בסידור, מקשי תצוגה לקנבס, קיצורי סביבת עבודה (E/H/M/V/0/,/./End/?) ועזרת קיצורי מקלדת',
+    ja: 'キーボード対応を全面強化：Esc の階層解除、編成のフォーカス往復、キャンバス視点キー、ワークスペースショートカット（E/H/M/V/0/,/./End/?）、ショートカットヘルプ',
+    ko: '키보드 지원 전면 강화: 계층형 Esc, 편성 포커스 왕복, 캔버스 시점 키, 작업 공간 단축키(E/H/M/V/0/,/./End/?) 및 단축키 도움말',
+    pl: 'Pełna obsługa klawiatury: warstwowy Esc, powrót fokusu w układaniu, klawisze widoku kanwy, skróty obszaru roboczego (E/H/M/V/0/,/./End/?) i pomoc ze skrótami.',
+    'pt-br': 'Passo de teclado completo: Esc em camadas, ida e volta do foco no organizador, teclas de vista do canvas, atalhos do espaço de trabalho (E/H/M/V/0/,/./End/?) e ajuda de atalhos',
+    es: 'Paso de teclado completo: Esc por capas, ida y vuelta del foco en el organizador, teclas de vista del lienzo, atajos del espacio de trabajo (E/H/M/V/0/,/./End/?) y ayuda de atajos',
+    tr: 'Tam klavye turu: katmanlı Esc, düzenlemede odak gidiş-dönüşü, tuval görünüm tuşları, çalışma alanı kısayolları (E/H/M/V/0/,/./End/?) ve kısayol yardımı',
+  } },
   { version: '0.1.8-beta.40', date: '2026.10.06', note: {
     en: 'Complete menu bar (File/Edit/View/Playback/Help) and File > Export Solution Package (ZIP with replay video, overview PNG, per-team sessions and original files)',
     zh: '完整菜单栏（文件/编辑/显示/回放/帮助）与 文件 > 导出方案包（ZIP 内含回放视频、全场总览图、各队会话与原始导入文件）',

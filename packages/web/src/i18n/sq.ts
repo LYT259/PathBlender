@@ -332,6 +332,19 @@ export const sq = {
   "toast.pkgSaved": "Paketa e zgjidhjes u ruajt",
   "toast.pkgFailed": "Eksportimi i paketës dështoi",
   "toast.pkgNoVideo": "Ky shfletues nuk mund të regjistrojë videon e riprodhimit — paketa u ruajt pa të",
+  'help.title': "Shkurtimet e tastierës",
+  'help.intro': "Shkurtimet ndjekin fokusin e tastierës: fushat e tekstit mbajnë të gjitha pikat e redaktimit, kanavasi e fokusuar zotëron pikat e pamjes dhe Esc gjithmonë e anullon së pari shtresën më të sipërme.",
+  'help.group.playback': "Riprodhimi",
+  'help.group.view': "Pamja e fushës",
+  'help.group.robot': "Robotët",
+  'help.playbackEnd': "Kërce në fund",
+  'help.viewToggle': "Ndrysho 2D / 3D",
+  'help.switchRobot': "Roboti i mëparshëm / pasues",
+  'help.hideShow': "Shfaq / fsheh robotin e zgjedhur",
+  'help.cubeViews': "Pamje standarde (ekuivalente me ViewCube)",
+  'help.composerMove': "Zhvendos segmentin e fokusuar",
+  'help.deleteClip': "Fshi segmentin e fokusuar",
+  'help.hint.desktop': "Në aplikacionin desktop menutë ofrojnë edhe Cmd/Ctrl+O (importo), Cmd/Ctrl+S (ruaj seancën) dhe Cmd/Ctrl+, (rregullimet).",
 } as const;
 
 export type MessageKey = keyof typeof sq;
