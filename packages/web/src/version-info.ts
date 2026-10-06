@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.45';
+export const APP_VERSION = '0.1.8-beta.46';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.46', date: '2026.10.06', note: {
+    en: 'Edit menu Cut/Copy/Paste/Select All now follow the app language',
+    zh: '编辑菜单的剪切/拷贝/粘贴/全选现在跟随界面语言',
+    'zh-tw': '編輯選單的剪下/複製/貼上/全選現在跟隨介面語言',
+    cs: 'Vyjmout/Kopírovat/Vložit/Vybrat vše v nabídce Úpravy teď odpovídají jazyku aplikace.',
+    nl: 'Knippen/Kopiëren/Plakken/Alles selecteren in het menu Bewerken volgen nu de taal van de app.',
+    fr: 'Couper/Copier/Coller/Tout sélectionner dans le menu Édition suivent désormais la langue de l’application.',
+    he: 'גזירה, העתקה, הדבקה ובחירת הכול בתפריט עריכה מציגים כעת את שפת האפליקציה',
+    ja: '編集メニューの「カット/コピー/ペースト/すべて選択」がUI言語に追従',
+    ko: '편집 메뉴의 잘라내기/복사/붙여넣기/전체 선택이 이제 앱 언어를 따릅니다',
+    pl: 'Wytnij/Kopiuj/Wklej/Zaznacz wszystko w menu Edycja są teraz w języku aplikacji.',
+    'pt-br': 'Cortar/Copiar/Colar/Selecionar tudo no menu Editar agora seguem o idioma do app',
+    es: 'Cortar/Copiar/Pegar/Seleccionar todo en el menú Edición ahora siguen el idioma de la app',
+    tr: 'Düzen menüsündeki Kes/Kopyala/Yapıştır/Tümünü Seç artık uygulamanın dilini kullanıyor',
+  } },
   { version: '0.1.8-beta.45', date: '2026.10.06', note: {
     en: 'Keyboard focus lands in the robot library the moment the workspace appears, so Tab and shortcuts work right away',
     zh: '工作区一出现，键盘焦点即落在机器人库上，Tab 与快捷键可立即使用',
