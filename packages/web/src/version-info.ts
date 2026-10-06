@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.43';
+export const APP_VERSION = '0.1.8-beta.44';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.44', date: '2026.10.06', note: {
+    en: 'Keyboard focus lands in the robot library the moment the workspace appears, so Tab and shortcuts work right away',
+    zh: '工作区一出现，键盘焦点即落在机器人库上，Tab 与快捷键可立即使用',
+    'zh-tw': '工作區一出現，鍵盤焦點即落在機器人庫上，Tab 與快速鍵可立即使用',
+    cs: 'Jakmile se objeví pracovní prostor, fokus klávesnice přeskočí do knihovny robotů — Tab a klávesové zkratky fungují hned.',
+    nl: 'Zodra de werkruimte verschijnt, springt de toetsenbordfocus naar de robotbibliotheek, zodat Tab en sneltoetsen meteen werken.',
+    fr: 'Dès l\'apparition de l\'espace de travail, le focus du clavier se place dans la bibliothèque de robots : Tabulation et raccourcis fonctionnent immédiatement.',
+    he: 'ברגע שמרחב העבודה מופיע, המיקוד של המקלדת נוחת בספריית הרובוטים — Tab והקיצורים עובדים מיד.',
+    ja: 'ワークスペースが表示された瞬間、キーボードフォーカスがロボットライブラリに移動し、Tab とショートカットキーをすぐ使えます。',
+    ko: '작업 공간이 나타나는 순간 키보드 포커스가 로봇 라이브러리로 이동해 Tab과 단축키를 바로 사용할 수 있습니다.',
+    pl: 'Gdy tylko pojawi się obszar roboczy, fokus klawiatury trafia do biblioteki robotów — Tab i skróty działają od razu.',
+    'pt-br': 'Assim que o espaço de trabalho aparece, o foco do teclado vai para a biblioteca de robôs — Tab e atalhos funcionam na hora.',
+    es: 'En cuanto aparece el espacio de trabajo, el foco del teclado pasa a la biblioteca de robots: Tab y los atajos funcionan de inmediato.',
+    tr: 'Çalışma alanı görünür görünmez klavye odağı robot kitaplığına taşınır; Tab ve kısayollar hemen kullanılabilir.',
+  } },
   { version: '0.1.8-beta.43', date: '2026.10.06', note: {
     en: 'Heatmap by alliance — red for red, blue for blue; heatmap now rendered in 3D as a ground stain; the old trails switch returns on the canvas bar, now gating the heatmap',
     zh: '热力图按联盟分色——红方红、蓝方蓝；3D 视图同步渲染贴地热力图；旧轨迹尾巴开关回归画布栏，改为控制热力图',
