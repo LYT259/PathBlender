@@ -161,7 +161,7 @@ export const id = {
   'field.style.schematic': 'Skematis',
   'field.style.rendered': 'Dirender',
   'conflicts.title': 'Konflik',
-  'conflicts.toleranceBadge': 'geser ±{delta} d',
+  'conflicts.toleranceBadge': 'geser ±{delta} s',
   'checks.tolerance': 'Pemeriksaan toleransi: kasus terburuk ±{delta} detik',
   'conflicts.item': '{start}–{end} s · terdekat {d} @ ({x}, {y})',
   'conflicts.pair': '{a} × {b}',

@@ -123,7 +123,7 @@ describe('i18n dictionaries', () => {
     'menu.help',
     // Words that genuinely coincide with English in at least one shipped
     // language (fr 'Pause'/'Collision'/'alliance', es 'Robot'/'General',
-    // nl 'Timing'/'Updates'/'Meters (m)' etc.).
+    // nl 'Timing'/'Updates' etc.).
     'prefs.section.general', // Spanish 'General' is identical.
     'workspace.details', 'robots.title',
     'robots.collision', 'robots.alliance', 'timeline.pause', 'timeline.collision',
@@ -132,15 +132,16 @@ describe('i18n dictionaries', () => {
     // 'Heatmap' is the German loanword (de); 'Differential' is the
     // Danish loanword (da).
     'actions.gif', 'actions.heatmapOn', 'canvas.heatmap', 'robots.driveDifferential',
-    // Dutch coincidences: loanwords and shared unit plurals that spell exactly
-    // like the English source (nl 'Timing', 'Updates', 'Bumpers {l} × {w} m',
-    // 'Meters/Centimeters/Inches (m/cm/in)').
+    // Dutch coincidences: loanwords that spell exactly like the English source
+    // (nl 'Timing', 'Updates', 'Bumpers {l} × {w} m'). The nl unit labels used to
+    // be on this list too — they carried the English plurals 'Meters/Centimeters
+    // /Inches' — but the 2026-10-06 language audit moved nl to the native
+    // singular forms, so those keys are translated everywhere now.
     'robots.timing', 'prefs.section.updates', 'robots.profileEntry',
-    'prefs.unit.m', 'prefs.unit.cm', 'prefs.unit.in',
     'prefs.unit.yd', // French 'Yards (yd)' is the same unit name.
-    // Vietnamese keeps 'Feet (ft)': the loanword is its standard written form
-    // for the imperial foot (vi 'foot' has no common native name).
-    'prefs.unit.ft',
+    // Malay uses 'Import' as its standard UI verb (it does so in ~20 other
+    // rows), so the settings.json import button lands byte-identical to English.
+    'robots.uploadSettings',
     // Tokens sent to the OS unchanged.
     'prefs.channel.stable', 'prefs.channel.beta',
     // 's' is the universal SI second symbol every dictionary keeps, and

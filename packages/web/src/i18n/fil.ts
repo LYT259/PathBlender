@@ -115,7 +115,7 @@ export const fil = {
   'timeline.position': "Posisyon ng playback",
   "timeline.range": "Saklaw ng playback",
   "timeline.rangeFull": "Buong timeline",
-  "timeline.rangePaths": "Lahat ng nakikitang landas",
+  "timeline.rangePaths": "Lahat ng nakikitang path",
   'timeline.playbackSpeed': "Bilis ng playback",
   'timeline.seconds': "Segundo",
   'timeline.selectRobot': "Piliin si {name}",
