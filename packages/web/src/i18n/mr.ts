@@ -185,6 +185,7 @@ export const mr = {
   'canvas.view': 'दृश्य',
   'canvas.fit': 'फिट',
   'canvas.clock': 't = {t} से',
+  'canvas.heatmap': 'हीटमॅप',
   
   'import.failed': '{n} फाइल आयात करण्यात अयशस्वी:',
   'import.dismiss': 'बंद करा',

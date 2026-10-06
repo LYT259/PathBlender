@@ -185,6 +185,7 @@ export const vi = {
   'canvas.view': 'Chế độ xem',
   'canvas.fit': 'Vừa khung',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Bản đồ nhiệt',
   
   'import.failed': '{n} tệp không nhập được:',
   'import.dismiss': 'Đóng',

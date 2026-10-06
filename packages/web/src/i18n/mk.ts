@@ -155,6 +155,7 @@ export const mk = {
   'canvas.view': 'Приказ',
   'canvas.fit': 'Прилагоди',
   'canvas.clock': 't = {t} с',
+  'canvas.heatmap': 'Топлотна карта',
   
   'import.failed': '{n} датотеки не беа увезени:',
   'import.dismiss': 'Отфрли',

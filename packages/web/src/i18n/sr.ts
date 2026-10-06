@@ -155,6 +155,7 @@ export const sr = {
   'canvas.view': "Prikaz",
   'canvas.fit': "Prilagodi",
   'canvas.clock': "t = {t} s",
+  'canvas.heatmap': 'Топлотна мапа',
   
   'import.failed': "{n} fajlova nije moglo da se uveze:",
   'import.dismiss': "Odbaci",

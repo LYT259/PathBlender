@@ -200,6 +200,7 @@ export const ptBR: Record<MessageKey, string> = {
   'canvas.view': 'Visualização',
   'canvas.fit': 'Ajustar',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Mapa de calor',
 
   'import.failed': '{n} arquivo(s) falharam na importação:',
   'import.dismiss': 'Dispensar',
