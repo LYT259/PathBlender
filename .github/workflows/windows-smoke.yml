@@ -67,7 +67,7 @@ jobs:
           node -e "
             const feed = require('./feed.json');
             const win = feed['windows-x86_64'];
-            if (!win || !win.url.endsWith('-setup.exe') || !win.signature.length) {
+            if (!win || !win.url.endsWith('_x64-setup.exe') || !win.signature.length) {
               console.error('feed.json missing a valid windows-x86_64 entry:', JSON.stringify(feed));
               process.exit(1);
             }
