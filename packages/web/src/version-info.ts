@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.47';
+export const APP_VERSION = '0.1.8-beta.48';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.48', date: '2026.10.06', note: {
+    en: 'Switching alliance, 2D/3D, season or artwork style — and mirroring a team — no longer pauses a running playback',
+    zh: '播放中切换蓝红方、2D/3D、赛季或场地画风，以及镜像某支队伍，都不再打断播放',
+    'zh-tw': '播放中切換藍紅方、2D/3D、賽季或場地畫風，以及鏡像某支隊伍，都不再打斷播放',
+    cs: 'Přepínání spojence, 2D/3D, sezóny nebo stylu mapy — a zrcadlení týmu — už přehrávání nepřeruší',
+    nl: 'Schakelen tussen alliantie, 2D/3D, seizoen of tekenstijl — en een team spiegelen — onderbreekt het afspelen niet meer',
+    fr: 'Changer d’alliance, de vue 2D/3D, de saison ou de style de terrain — et miroiter une équipe — n’interrompt plus la lecture',
+    he: 'מעבר בין כחול/אדום, תצוגת 2D/3D, עונה או סגנון המגרש — והיפוך צוות — כבר לא עוצר את הנגינה',
+    ja: 'ブルー/レッドの切替、2D/3D、シーズンや描写スタイルの変更、チームの左右反転でも再生は止まらなくなりました',
+    ko: '연합 진영, 2D/3D, 시즌 또는 필드 스타일 전환과 팀 좌우 반전이 이제 재생 중에도 멈추지 않습니다',
+    pl: 'Przełączanie sojuszu, widoku 2D/3D, sezonu lub stylu boiska — oraz lustrzenie drużyny — nie zatrzymuje już odtwarzania',
+    'pt-br': 'Trocar de aliança, de 2D/3D, de temporada ou estilo do campo — e espelhar uma equipe — não pausa mais a reprodução',
+    es: 'Cambiar de alianza, de 2D/3D, de temporada o estilo del campo — y reflejar un equipo — ya no detiene la reproducción',
+    tr: 'İttifak, 2D/3D, sezon veya saha çizim stili değişikliği ve bir takımı aynalama artık oynatmayı durdurmuyor',
+  } },
   { version: '0.1.8-beta.47', date: '2026.10.06', note: {
     en: 'Timeline polish: hovering a path row now highlights the whole row — label and track together',
     zh: '时间轴细节：悬停某条路径时整行一起高亮——队名标签与轨迹条不再分开',
