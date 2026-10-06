@@ -185,6 +185,7 @@ export const ar = {
   'canvas.view': 'عرض',
   'canvas.fit': 'ملائمة',
   'canvas.clock': 't = {t} ث',
+  'canvas.heatmap': 'خريطة الحرارة',
   
   'import.failed': '{n} ملف(ات) فشل في استيرادها:',
   'import.dismiss': 'إغلاق',

@@ -155,6 +155,7 @@ export const nb = {
   'canvas.view': "Visning",
   'canvas.fit': "Tilpass",
   'canvas.clock': "t = {t} s",
+  'canvas.heatmap': 'Varmekart',
   
   'import.failed': "{n} fil(er) kunne ikke importeres:",
   'import.dismiss': "Lukk",

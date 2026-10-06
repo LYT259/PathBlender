@@ -155,6 +155,7 @@ export const hr = {
   'canvas.view': 'Prikaz',
   'canvas.fit': 'Prilagodi',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Toplotna karta',
   
   'import.failed': '{n} datoteka nije bilo moguće uvesti:',
   'import.dismiss': 'Odbaci',

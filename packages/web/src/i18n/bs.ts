@@ -155,6 +155,7 @@ export const bs = {
   'canvas.view': "Prikaz",
   'canvas.fit': "Prilagodi",
   'canvas.clock': "t = {t} s",
+  'canvas.heatmap': 'Toplotna mapa',
   
   'import.failed': "{n} datoteka nije bilo moguće uvesti:",
   'import.dismiss': "Odbaci",

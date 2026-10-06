@@ -155,6 +155,7 @@ export const sv = {
   'canvas.view': 'Vy',
   'canvas.fit': 'Anpassa',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Värmekarta',
   
   'import.failed': '{n} fil(er) kunde inte importeras:',
   'import.dismiss': 'Stäng',

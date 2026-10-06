@@ -200,6 +200,7 @@ export const cs: Record<MessageKey, string> = {
   'canvas.view': 'Zobrazení',
   'canvas.fit': 'Přizpůsobit',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Teplotní mapa',
 
   'import.failed': 'Nepodařilo se importovat soubory ({n}):',
   'import.dismiss': 'Zavřít',

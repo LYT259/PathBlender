@@ -155,6 +155,7 @@ export const ro = {
   'canvas.view': 'Vizualizare',
   'canvas.fit': 'Potrivește',
   'canvas.clock': 't = {t} s',
+  'canvas.heatmap': 'Hartă termică',
   
   'import.failed': '{n} fișiere nu au putut fi importate:',
   'import.dismiss': 'Ascunde',
