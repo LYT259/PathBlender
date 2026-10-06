@@ -102,7 +102,7 @@ export {
   serializeSession,
   sessionDuration,
 } from './session';
-export type { SessionFileV1, SessionTrajectory, SessionRouteOption, SessionProfileOption } from './session';
+export type { SessionFileV1, SessionTrajectory, SessionRouteOption, SessionProfileOption, SessionSerializeOptions } from './session';
 
 export {
   SEQUENCE_JOIN_TOLERANCES,

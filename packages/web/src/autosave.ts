@@ -16,6 +16,7 @@ import {
   type FieldPackage,
   type SessionTrajectory,
 } from '@pathblender/core';
+import { isExampleRobot } from './example-robot';
 
 const KEY = 'pb.autosave.v1';
 
@@ -56,29 +57,59 @@ export function readSessionUi(text: string): SessionUiState | undefined {
   }
 }
 
-/** Persist the current session; an empty session clears the slot. */
+/** The slot's own serialization: compact text, and no route library for
+ * robots whose library the restore path regenerates anyway. The shareable .pb
+ * file keeps its pretty print and its full libraries — only this slot shrinks. */
+function autosaveText(
+  sts: readonly SessionTrajectory[],
+  fieldId: string,
+  customField: FieldPackage | undefined,
+  ui: SessionUiState | undefined,
+  stripAllLibraries: boolean,
+): string {
+  const text = serializeSession(sts, fieldId, customField, {
+    pretty: false,
+    omitRouteOptions: stripAllLibraries ? () => true : isExampleRobot,
+  });
+  if (!ui) return text;
+  const file = JSON.parse(text) as Record<string, unknown>;
+  file.ui = ui;
+  return JSON.stringify(file);
+}
+
+/**
+ * Persist the current session; an empty session clears the slot.
+ *
+ * Two shapes, biggest first. A refused write used to be swallowed here, and
+ * that silence is what broke launch-to-launch continuity: the welcome demo's
+ * 22-route library made the payload 7.2 M characters, every browser storage
+ * quota rejected it, and the user reopened to an empty welcome page (user
+ * report 2026-10-06). The fallback drops user route libraries too; if even
+ * that is refused, it says so rather than losing the session without a trace.
+ */
 export function saveAutosave(
   sts: readonly SessionTrajectory[],
   fieldId: string,
   customField?: FieldPackage,
   ui?: SessionUiState,
 ): void {
-  try {
-    if (sts.length === 0) {
+  if (sts.length === 0) {
+    try {
       localStorage.removeItem(KEY);
-      return;
+    } catch {
+      /* nothing to recover — the slot was already unusable */
     }
-    const text = serializeSession(sts, fieldId, customField);
-    if (!ui) {
-      localStorage.setItem(KEY, text);
-      return;
-    }
-    const file = JSON.parse(text) as Record<string, unknown>;
-    file.ui = ui;
-    localStorage.setItem(KEY, JSON.stringify(file, null, 2));
-  } catch {
-    /* quota exceeded — keep the previous autosave */
+    return;
   }
+  for (const stripAllLibraries of [false, true]) {
+    try {
+      localStorage.setItem(KEY, autosaveText(sts, fieldId, customField, ui, stripAllLibraries));
+      return;
+    } catch {
+      /* quota: retry with the smaller shape */
+    }
+  }
+  console.warn('[pathblender] autosave rejected — this session will not come back after quit');
 }
 
 /** Restore the last session, or null when there is nothing usable. */

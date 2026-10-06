@@ -40,6 +40,20 @@ export function refreshExampleRobots(
     const replacement =
       fresh.find((f) => f.trajectory.id === robot.trajectory.id) ?? fresh[ordinal];
     ordinal += 1;
-    return replacement ?? robot;
+    if (!replacement) return robot;
+    // Only the demo's own payload refreshes — the trajectory and its libraries.
+    // Everything the user decided on that robot stays theirs, or a relaunch
+    // quietly undoes it (user report 2026-10-06: a hidden example robot came
+    // back visible). Route ids are deterministic across builds, so a saved
+    // arrangement still resolves against the refreshed library.
+    return {
+      ...replacement,
+      startDelayS: robot.startDelayS,
+      color: robot.color,
+      visible: robot.visible,
+      mirrored: robot.mirrored,
+      profileId: robot.profileId,
+      sequence: robot.sequence,
+    };
   });
 }
