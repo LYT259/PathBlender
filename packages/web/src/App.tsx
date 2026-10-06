@@ -652,13 +652,14 @@ function AppBody() {
    * Per-team left/right mirror (user-approved, 2026-10-05): the flag lives on
    * the slot and the alliance view derives it, so imported samples stay
    * untouched, the toggle is an involution, undo/redo follow the ordinary
-   * history, and routes added to the team inherit the state. Playback pauses
-   * so the whole-slot pose swap never reads as motion; the playhead stays.
+   * history, and routes added to the team inherit the state.
+   * User request 2026-10-06: it is a view switch, not a transport control —
+   * an ongoing playback keeps running (the pause that used to hide the pose
+   * swap is gone, same as alliance / field / artwork / 2D-3D switches).
    */
   const toggleMirror = useCallback((id: string) => {
-    playback.setPlaying(false);
     setRobots((prev) => prev.map((r) => r.trajectory.id === id ? { ...r, mirrored: !(r.mirrored === true) } : r));
-  }, [playback.setPlaying, setRobots]);
+  }, [setRobots]);
   const mirroredIds = useMemo(
     () => new Set(robots.filter((r) => r.mirrored === true).map((r) => r.trajectory.id)),
     [robots],
@@ -1107,11 +1108,13 @@ function AppBody() {
     redoSession();
   }, [redoSession]);
 
+  // Alliance, season, field construction and artwork style are view switches
+  // on the same scene, so they share one rule (user request 2026-10-06): an
+  // ongoing playback keeps running through them instead of pausing.
   const switchAlliance = useCallback((side: 'blue' | 'red') => {
     if (alliance === side) return;
-    playback.setPlaying(false);
     setScene({ alliance: side });
-  }, [alliance, playback.setPlaying, setScene]);
+  }, [alliance, setScene]);
   const selectSeason = useCallback((id: string) => {
     if (id === CUSTOM_FIELD_ID) { setCfOpen(true); return; }
     setScene({ fieldId: id });
