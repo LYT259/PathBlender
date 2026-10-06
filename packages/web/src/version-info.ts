@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.43';
+export const APP_VERSION = '0.1.8-beta.44';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.44', date: '2026.10.06', note: {
+    en: 'Solution-package replay is now a real video: the exported ZIP carries a 20 s 1080p recording',
+    zh: '方案包的回放现在是真正的视频：导出的 ZIP 内含 20 秒 1080p 录像',
+    'zh-tw': '方案包的回放現在是真正的影片：匯出的 ZIP 內含 20 秒 1080p 錄影',
+    cs: 'Přehrávání v balíčku řešení je teď skutečné video — exportovaný ZIP obsahuje 20 s záznam v rozlišení 1080p.',
+    nl: 'De replay in het oplossingspakket is nu een echte video: de geëxporteerde ZIP bevat een opname van 20 s in 1080p.',
+    fr: 'La relecture du package de solution est désormais une vraie vidéo : le ZIP exporté contient un enregistrement de 20 s en 1080p.',
+    he: 'ההפעלה החוזרת בחבילת הפתרון היא כבר וידאו אמיתי: ה־ZIP המיוצא מכיל הקלטה של 20 שניות ב־1080p',
+    ja: 'ソリューションパッケージのリプレイが実際の動画になりました——エクスポートした ZIP に 20 秒・1080p の録画が入ります',
+    ko: '솔루션 패키지의 리플레이가 이제 실제 동영상입니다 — 내보낸 ZIP에 20초 1080p 녹화가 포함됩니다',
+    pl: 'Powtórka w pakiecie rozwiązania to teraz prawdziwe wideo — wyeksportowany ZIP zawiera 20-sekundowe nagranie w 1080p.',
+    'pt-br': 'O replay do pacote de solução agora é um vídeo de verdade: o ZIP exportado traz uma gravação de 20 s em 1080p',
+    es: 'La repetición del paquete de solución ya es un vídeo real: el ZIP exportado incluye una grabación de 20 s en 1080p',
+    tr: 'Çözüm paketinin tekrarı artık gerçek bir video: dışa aktarılan ZIP, 1080p çözünürlüğünde 20 saniyelik bir kayıt içeriyor',
+  } },
   { version: '0.1.8-beta.43', date: '2026.10.06', note: {
     en: 'Heatmap by alliance — red for red, blue for blue; heatmap now rendered in 3D as a ground stain; the old trails switch returns on the canvas bar, now gating the heatmap',
     zh: '热力图按联盟分色——红方红、蓝方蓝；3D 视图同步渲染贴地热力图；旧轨迹尾巴开关回归画布栏，改为控制热力图',
