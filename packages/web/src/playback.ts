@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type SetStateAction } from 'react';
+import { PLAYBACK_SPEEDS } from './components/PlaybackControls';
 
 /** Unified autonomous clock: play / pause / speed / scrub, looping.
  * Keyboard: Space toggles play, ←/→ scrub ±0.5 s (±2 s with Shift),
@@ -45,6 +46,16 @@ export function usePlayback(durationS: number, suspended = false) {
     return () => cancelAnimationFrame(raf);
   }, [playing, speed, duration, setT, suspended]);
 
+  // One step through the same speed list the transport buttons render.
+  // Mode changes are single-shot: held keys must not cycle the speeds.
+  const stepSpeed = useCallback((dir: number) => {
+    setSpeed((s) => {
+      const idx = PLAYBACK_SPEEDS.indexOf(s);
+      const base = idx < 0 ? PLAYBACK_SPEEDS.indexOf(1) : idx;
+      return PLAYBACK_SPEEDS[Math.min(PLAYBACK_SPEEDS.length - 1, Math.max(0, base + dir))] ?? s;
+    });
+  }, [setSpeed]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target instanceof Element ? e.target : null;
@@ -66,11 +77,23 @@ export function usePlayback(durationS: number, suspended = false) {
         e.preventDefault();
         setPlaying(false);
         setT(0);
+      } else if (e.key === 'End') {
+        // Jump to the range end — one shot per press (a jump, not a scrub).
+        if (duration === 0 || e.repeat) return;
+        e.preventDefault();
+        setPlaying(false);
+        setT(duration);
+      } else if (e.code === 'Comma' && e.shiftKey && !e.repeat) {
+        e.preventDefault();
+        stepSpeed(-1);
+      } else if (e.code === 'Period' && e.shiftKey && !e.repeat) {
+        e.preventDefault();
+        stepSpeed(1);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [duration, setPlaying, setT, suspended]);
+  }, [duration, setPlaying, setT, suspended, stepSpeed]);
 
   return { t, setT, playing, setPlaying, speed, setSpeed };
 }

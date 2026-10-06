@@ -332,6 +332,19 @@ export const sr = {
   "toast.pkgSaved": "Paket rešenja je sačuvan",
   "toast.pkgFailed": "Izvoz paketa rešenja nije uspeo",
   "toast.pkgNoVideo": "Ovaj pregledač ne može snimiti video reprodukcije — paket je sačuvan bez njega",
+  'help.title': "Тастерске пречице",
+  'help.intro': "Пречице прате фокус тастатуре: текстуална поља задржавају све тастере за уређивање, фокусирано платно поседује тастере за приказ, а Esc увек прво отказује највиши слој.",
+  'help.group.playback': "Репродукција",
+  'help.group.view': "Приказ терена",
+  'help.group.robot': "Роботи",
+  'help.playbackEnd': "Скок на крај",
+  'help.viewToggle': "Пребаци 2D / 3D",
+  'help.switchRobot': "Претходни / следећи робот",
+  'help.hideShow': "Прикажи / сакриј изабраног робота",
+  'help.cubeViews': "Стандардни прикази (еквивалент ViewCube)",
+  'help.composerMove': "Помери фокусирани сегмент",
+  'help.deleteClip': "Обриши фокусирани сегмент",
+  'help.hint.desktop': "У десктоп апликацији менији нуде и Cmd/Ctrl+O (увоз), Cmd/Ctrl+S (сачувај сесију) и Cmd/Ctrl+, (поставке).",
 } as const;
 
 export type MessageKey = keyof typeof sr;

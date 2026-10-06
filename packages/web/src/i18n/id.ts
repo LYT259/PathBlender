@@ -336,6 +336,19 @@ export const id = {
   "toast.pkgSaved": "Paket solusi tersimpan",
   "toast.pkgFailed": "Ekspor paket solusi gagal",
   "toast.pkgNoVideo": "Peramban ini tidak dapat merekam video putar ulang — paket disimpan tanpanya",
+  'help.title': "Pintasan papan ketik",
+  'help.intro': "Pintasan mengikuti fokus papan ketik: bidang teks mempertahankan semua tombol penyuntingan, kanvas terfokus memiliki tombol tampilan, dan Esc selalu membatalkan lapisan teratas lebih dulu.",
+  'help.group.playback': "Pemutaran",
+  'help.group.view': "Tampilan lapangan",
+  'help.group.robot': "Robot",
+  'help.playbackEnd': "Lompat ke akhir",
+  'help.viewToggle': "Alih 2D / 3D",
+  'help.switchRobot': "Robot sebelumnya / berikutnya",
+  'help.hideShow': "Tampilkan / sembunyikan robot terpilih",
+  'help.cubeViews': "Tampilan standar (setara ViewCube)",
+  'help.composerMove': "Pindahkan segmen terfokus",
+  'help.deleteClip': "Hapus segmen terfokus",
+  'help.hint.desktop': "Di aplikasi desktop, menu juga menyediakan Cmd/Ctrl+O (impor), Cmd/Ctrl+S (simpan sesi), dan Cmd/Ctrl+, (pengaturan).",
 } as const;
 
 export type MessageKey = keyof typeof id;

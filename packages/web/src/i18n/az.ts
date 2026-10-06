@@ -332,6 +332,19 @@ export const az = {
   "toast.pkgSaved": "Həll paketi saxlanıldı",
   "toast.pkgFailed": "Həll paketinin ixracı alınmadı",
   "toast.pkgNoVideo": "Bu brauzer oynatma videosunu yaza bilmir — paket onsuz saxlanıldı",
+  'help.title': "Klaviatura qısayolları",
+  'help.intro': "Qısayollar klaviatura fokusunu izləyir: mətn sahələri bütün redaktə düymələrini saxlayır, fokuslu kanvas görünüş düymələrinə yiyəlik edir və Esc həmişə əvvəl ən üst qatı ləğv edir.",
+  'help.group.playback': "Oynatma",
+  'help.group.view': "Meydan görünüşü",
+  'help.group.robot': "Robotlar",
+  'help.playbackEnd': "Sona keçid",
+  'help.viewToggle': "2D / 3D dəyiş",
+  'help.switchRobot': "Əvvəlki / növbəti robot",
+  'help.hideShow': "Seçilmiş robotu göstər / gizlət",
+  'help.cubeViews': "Standart görünüşlər (ViewCube qarşılığı)",
+  'help.composerMove': "Fokuslu seqmenti köçür",
+  'help.deleteClip': "Fokuslu seqmenti sil",
+  'help.hint.desktop': "Desktop tətbiqində menyular həmçinin Cmd/Ctrl+O (idxal), Cmd/Ctrl+S (sessiyanı saxla) və Cmd/Ctrl+, (tənzimləmələr) təklif edir.",
 } as const;
 
 export type MessageKey = keyof typeof az;

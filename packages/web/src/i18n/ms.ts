@@ -336,6 +336,19 @@ export const ms = {
   "toast.pkgSaved": "Pakej penyelesaian disimpan",
   "toast.pkgFailed": "Eksport pakej penyelesaian gagal",
   "toast.pkgNoVideo": "Pelayar ini tidak dapat merakam video ulang tayang — pakej disimpan tanpanya",
+  'help.title': "Pintasan papan kekunci",
+  'help.intro': "Pintasan mengikut fokus papan kekunci: medan teks mengekalkan semua kekunci suntingan, kanvas difokus memiliki kekunci pandangan dan Esc sentiasa batalkan lapisan teratas dahulu.",
+  'help.group.playback': "Main balik",
+  'help.group.view': "Paparan padang",
+  'help.group.robot': "Robot",
+  'help.playbackEnd': "Lompat ke hujung",
+  'help.viewToggle': "Tukar 2D / 3D",
+  'help.switchRobot': "Robot sebelum / seterusnya",
+  'help.hideShow': "Tunjuk / sembunyi robot dipilih",
+  'help.cubeViews': "Paparan piawai (bersamaan ViewCube)",
+  'help.composerMove': "Alih segmen difokus",
+  'help.deleteClip': "Padam segmen difokus",
+  'help.hint.desktop': "Dalam app desktop menu juga menawarkan Cmd/Ctrl+O (import), Cmd/Ctrl+S (simpan sesi) dan Cmd/Ctrl+, (tetapan).",
 } as const;
 
 export type MessageKey = keyof typeof ms;
