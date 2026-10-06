@@ -176,6 +176,23 @@ describe('no camelCase leftovers in translated prose', () => {
 });
 
 /**
+ * Serbian is written in both alphabets, so a dictionary can drift into a mix
+ * without any structural check noticing — and 36 of sr's 342 rows did exactly
+ * that, which meant one panel could show "Opseg reprodukcije" above
+ * "Опсег репродукције". The project chose Latin for this dictionary (it is what
+ * 306 of its rows already use); this pins the choice so a later paste cannot
+ * reintroduce the mix.
+ */
+describe('Serbian ships one script', () => {
+  it('sr has no Cyrillic letters', () => {
+    for (const key of KEYS) {
+      const cyr = DICTS.sr![key].match(/[\u0400-\u04FF]/);
+      expect(cyr, `sr:${key} is Cyrillic inside a Latin dictionary: ${DICTS.sr![key]}`).toBe(null);
+    }
+  });
+});
+
+/**
  * `bounds.item` interpolates `edges.*` into a fixed frame, and that frame
  * governs a case / article pattern English does not show ("uden for **den**
  * fjerne væg", "jenseits der hinteren Wand", "za дальньою стіною",
@@ -187,8 +204,7 @@ describe('no camelCase leftovers in translated prose', () => {
  */
 const EDGES = ['far', 'left', 'near', 'right'] as const;
 
-describe('the out-of-bounds row reads correctly in every language', () => {
-  it('matches the pinned rendering in test/i18n-edge-render.json', () => {
+describe('the out-of-bounds row reads correctly in every language', () => {  it('matches the pinned rendering in test/i18n-edge-render.json', () => {
     const expected = JSON.parse(
       readFileSync(resolve(__dirname, 'i18n-edge-render.json'), 'utf8'),
     ) as Record<string, string[]>;
