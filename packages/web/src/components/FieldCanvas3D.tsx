@@ -107,6 +107,10 @@ interface Scene3D {
   }[];
   /** Render-on-demand: a frame is drawn only when something changed. */
   dirty: () => void;
+  /** Drop an in-flight ViewCube fly-to. A wholesale camera move (Fit / `0`)
+   *  must win over the tween, which otherwise keeps writing the camera for
+   *  its remaining frames and leaves the reset eaten. */
+  cancelFly: () => void;
   /** The scene CONTENT moved (playback steered the rigs, robots changed):
    *  re-bake the shadow map on the next frame. Camera-only motion never
    *  calls this — the shadow map stays cached through orbit/zoom/pan. */
@@ -1028,6 +1032,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
     const resetCamLocal = () => {
       pinchChase.factor = 1;
+      tween = null;
       controls.target.set(0, 0, 0);
       camera.position.set(...CAM_HOME);
       controls.update();
@@ -1163,6 +1168,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       modelRoot, fallback, fieldRoot,
       backgroundThemed,
       dirty: markDirty, invalidateShadows, warmup, themed, retintCube,
+      cancelFly: () => { tween = null; },
     };
 
     // Test/debug hook: orientation + camera state assertions.
@@ -1650,6 +1656,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       const st = sceneRef.current;
       if (!st) return;
       pinchChaseRef.current?.cancel();
+      st.cancelFly();
       st.controls.target.set(0, 0, 0);
       st.camera.position.set(...CAM_HOME);
       st.controls.update();
