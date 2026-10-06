@@ -63,6 +63,31 @@ describe('refreshExampleRobots (stale-example swap on restore, 2026-10-04)', () 
     expect(out.every(isExampleRobot)).toBe(true);
   });
 
+  it('keeps what the user decided on a refreshed example robot', () => {
+    const { robots } = createWelcomeExample();
+    const edited: typeof robots = robots.map((r, i) => ({
+      ...r,
+      // A stale trajectory under a still-current id: this is what must refresh.
+      trajectory: { ...r.trajectory, teamNumber: `000${i + 1}` },
+      visible: i !== 0,
+      color: '#123456',
+      startDelayS: 2.5,
+      mirrored: true,
+      profileId: r.profileOptions?.[0]?.id ?? r.profileId,
+      sequence: r.sequence,
+    }));
+    const out = refreshExampleRobots(edited, createWelcomeExample().robots);
+    // Demo payload refreshed...
+    expect(out.map((r) => r.trajectory.teamNumber)).toEqual(['8814', '11019']);
+    expect(out.map((r) => r.routeOptions?.length)).toEqual([22, 20]);
+    // ...the user's own state carried over (user report 2026-10-06: a hidden
+    // example robot came back visible after a relaunch).
+    expect(out.map((r) => r.visible)).toEqual([false, true]);
+    expect(out.every((r) => r.color === '#123456')).toBe(true);
+    expect(out.every((r) => r.startDelayS === 2.5)).toBe(true);
+    expect(out.every((r) => r.mirrored === true)).toBe(true);
+  });
+
   it('matches the pre-rename generation (0001/0002) by example ordinal', () => {
     const { robots } = createWelcomeExample();
     const legacy = robots.map((r, i) => ({
