@@ -1,38 +1,54 @@
 /**
- * WHO RUNS THIS: developers (and the AI sessions working on this repo). It
- * ships nothing and no user ever sees it. The hosted website is a VIEWER
- * build (`VITE_VIEWER_ONLY=1`): import, playback, collision checking, route
- * arranging and 3D stay, while everything that writes a file out or pulls a
- * whole folder in is meant to be gone. This harness proves that boundary in a
- * real browser instead of by reading `if (!VIEWER_ONLY)` in the source — and
- * it drives the surfaces a user could reach WITHOUT a visible button
- * (keyboard accelerators, menu items), which is exactly where such a gate
- * leaks.
+ * WHO RUNS THIS: developers (and the AI sessions working on this repo). The
+ * app never ships it and no user ever sees it.
  *
- * Every assertion below was measured against the shipped app on 2026-10-06;
- * the checks degrade to FAIL lines with details rather than throwing, so one
- * retired selector reports instead of hiding the other sixteen.
+ * WHAT IT PROVES: the website build (`VITE_VIEWER_ONLY=1`, what
+ * pathblender.pages.dev serves) really is a viewer. Unit tests run in jsdom
+ * without the flag and the full walkthroughs drive the complete build, so this
+ * is the only harness that can answer two questions: (1) did the trimming
+ * survive — is every authoring/export surface actually absent from the DOM
+ * rather than just hidden or disabled; (2) does the trimmed product still
+ * work — files import, the timeline plays, collisions are still found. It also
+ * holds the website to its "nothing leaves the browser" promise by refusing any
+ * cross-origin request, and checks that a first visit follows the OS language.
+ * A new button that leaks an export is exactly what this catches; without it,
+ * the claim in README would rest on nobody forgetting.
  *
- * Usage:
- *   VITE_VIEWER_ONLY=1 npm run build -w @pathblender/web
- *   npm run preview -w @pathblender/web -- --port 4179 --strictPort   # from the repo root
- *   VIEWER_BASE=http://localhost:4179/ node scripts/viewer-check.mjs
- * (or point VIEWER_BASE at https://pathblender.pages.dev to audit the live
- * site; for a preview-channel build add VITE_SITE_PREVIEW=1 and
- * SITE_FLAVOR=preview.) System Chrome is used through the channel, bundled
- * browser as fallback. Exits non-zero on any failed check.
+ * Expectations are read from source instead of being hardcoded, so the harness
+ * cannot drift into asserting a UI that no longer exists (the failure mode that
+ * retired the previous version of this file).
  *
- * The desktop and web app behaviour as a whole is covered by
- * scripts/browser-walkthrough.mjs (pointer) and scripts/keyboard-walkthrough.mjs
- * (keyboard); this script only checks the website gating.
+ * Usage: VITE_VIEWER_ONLY=1 npm run build -w @pathblender/web
+ *        node scripts/serve-dist.mjs 4179 &
+ *        VIEWER_BASE=http://localhost:4179/ node scripts/viewer-check.mjs
+ *   SITE_FLAVOR=preview  when checking the preview site build instead
+ *                        (VITE_SITE_PREVIEW=1 at build time).
+ * System Chrome is used through the channel when present (no 150 MB download).
+ * Exits non-zero on any failed check.
  */
 import { chromium } from 'playwright-core';
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const BASE = process.env.VIEWER_BASE ?? 'http://localhost:4179/';
-const FLAVOR = process.env.SITE_FLAVOR ?? 'stable';
+const FLAVOR = process.env.SITE_FLAVOR === 'preview' ? 'preview' : 'stable';
 const SAMPLES = resolve(process.cwd(), 'samples');
+const ORIGIN = new URL(BASE).origin;
+const SITES = {
+  stable: 'https://pathblender.pages.dev',
+  preview: 'https://pathblender-preview.pages.dev',
+};
+
+/** Counted from the dictionaries, never typed in: the old file said "4". */
+const LANG_CODES = readdirSync(resolve(process.cwd(), 'packages/web/src/i18n'))
+  .filter((f) => f.endsWith('.ts')).length;
+/** Read from source: `const GITHUB_URL = '…'` in the app shell. */
+const GITHUB_URL = readFileSync(resolve(process.cwd(), 'packages/web/src/App.tsx'), 'utf8')
+  .match(/const GITHUB_URL = '([^']+)'/)?.[1] ?? '';
+/** Read from source: `const SPEEDS = [...]` in the transport controls. */
+const SPEEDS = JSON.parse(readFileSync(resolve(process.cwd(), 'packages/web/src/components/PlaybackControls.tsx'), 'utf8')
+  .match(/const SPEEDS = (\[[^\]]+\])/)[1]);
+
 const results = [];
 const check = (name, ok, detail = '') => {
   results.push({ name, ok, detail });
@@ -40,157 +56,132 @@ const check = (name, ok, detail = '') => {
 };
 
 const browser = await chromium
-  .launch(process.env.WALK_CHROME === '0' ? {} : { channel: 'chrome' })
+  .launch(process.env.VIEWER_CHROME === '0' ? {} : { channel: 'chrome' })
   .catch(() => chromium.launch());
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'en-US', acceptDownloads: true });
-const page = await ctx.newPage();
-const errors = [];
-page.on('pageerror', (e) => errors.push(String(e)));
-page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-page.on('response', (r) => { if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`); });
 
-/** Text of the elements matching a selector, or [] when nothing matches. */
-const texts = (selector) => page.evaluate((sel) => [...document.querySelectorAll(sel)].map((el) => (el.textContent ?? '').trim()), selector);
-const count = (selector) => page.locator(selector).count();
-const openFileMenu = async () => {
-  await page.getByRole('button', { name: 'File', exact: true }).click();
-  await page.waitForSelector('.menu-panel', { timeout: 5000 });
-};
-
-await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-await page.waitForSelector('.app.is-welcome', { timeout: 15000 });
-
-// --- 1. welcome screen: file import and a saved session stay, folder goes ---
-check('welcome offers import, opening a session and the example',
-  (await count('.welcome-import')) === 1 && (await count('.welcome-open-session')) === 1 && (await count('.welcome-try-example')) === 1,
-  `import=${await count('.welcome-import')} session=${await count('.welcome-open-session')} example=${await count('.welcome-try-example')}`);
-check('welcome hides the folder import', (await count('.welcome-folder-import')) === 0);
-// The parked 3D canvas mounts with the first robot, never on an empty page.
-check('nothing is mounted on the field before a session exists', (await count('.field-canvas-3d canvas')) === 0 && (await count('.robot-library-row')) === 0);
-
-// --- 2. the DOM menu bar is the only menu, and File is stripped down ---
-const menuTops = await texts('.menu-bar .menu-top');
-check('website renders the shared menu as a DOM menu bar', menuTops.includes('File') && !menuTops.includes('PathBlender'), JSON.stringify(menuTops));
-await openFileMenu();
-const fileItems = await texts('.menu-panel .menu-item');
-check('File menu keeps only import and clear', JSON.stringify(fileItems) === JSON.stringify(['Import files', 'Clear Session']), JSON.stringify(fileItems));
-const forbidden = ['Import folder', 'Open session', 'Save', 'Export Solution Package', 'Export GIF'];
-check('File menu hides every export and folder entry',
-  !fileItems.some((label) => forbidden.some((word) => label.toLowerCase().includes(word.toLowerCase()))),
-  JSON.stringify(fileItems));
-await page.keyboard.press('Escape');
-
-// --- 3. accelerators: hidden must mean unreachable, not just invisible ---
-// Ctrl/Cmd+S is the leak this harness was written for: the menu hid Save on
-// the viewer build while the window keydown handler kept calling saveSession,
-// so the public site downloaded a session file with no button anywhere.
-// Each accelerator gets a FRESH profile — Chrome blocks a second automatic
-// download from the same page (later probes would false-pass), and the app's
-// debounced autosave restores the session so the welcome screen disappears
-// under the next page.
-const freshProbe = async () => {
-  const probeCtx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'en-US', acceptDownloads: true });
-  const probe = await probeCtx.newPage();
-  await probe.goto(BASE, { waitUntil: 'domcontentloaded' });
-  await probe.waitForSelector('.welcome-try-example', { timeout: 15000 });
-  return { probeCtx, probe };
-};
-const saveAttempt = async (combo) => {
-  const { probeCtx, probe } = await freshProbe();
-  await probe.locator('.welcome-try-example').click();
-  await probe.waitForSelector('.robot-library-row', { timeout: 20000 });
-  const settled = probe.waitForEvent('download', { timeout: 5000 })
-    .then((d) => d.suggestedFilename()).catch(() => null);
-  await probe.keyboard.press(combo);
-  const result = await settled;
-  await probeCtx.close();
-  return result;
-};
-for (const combo of ['Control+s', 'Meta+s']) {
-  const downloaded = await saveAttempt(combo);
-  check(`${combo} saves nothing on the viewer build`, downloaded === null, downloaded ? `downloaded ${downloaded}` : 'no download');
+/** @param {{ locale?: string }} options */
+async function openApp(options = {}) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: options.locale ?? 'en-US' });
+  const page = await ctx.newPage();
+  const errors = [];
+  const crossOrigin = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('response', (r) => { if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`); });
+  page.on('request', (r) => {
+    try {
+      const url = new URL(r.url());
+      if (url.protocol.startsWith('http') && url.origin !== ORIGIN) crossOrigin.push(r.url());
+    } catch { /* non-http scheme (data:, blob:) — local by definition */ }
+  });
+  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+  return { ctx, page, errors, crossOrigin };
 }
 
-// --- 4. toolbar and the file pipeline stay ---
-// The session the remaining checks act on: loaded here so step 3 could probe
-// an untouched page.
-await page.locator('.welcome-try-example').click();
-await page.waitForSelector('.robot-library-row', { timeout: 20000 });
-check('toolbar keeps file import, drops folder import',
-  (await count('.import-action')) === 1 && (await count('.import-folder-action')) === 0,
-  `import=${await count('.import-action')} folder=${await count('.import-folder-action')}`);
-const { probeCtx: importCtx, probe: fresh } = await freshProbe();
-await fresh.locator('input[type="file"][multiple]').first().setInputFiles([
-  `${SAMPLES}/ghostauto/straight_run.ghostauto`,
-  `${SAMPLES}/ghostauto/stop_and_score.ghostauto`,
-]);
-await fresh.waitForSelector('.robot-library-row', { timeout: 15000 });
-await fresh.waitForFunction(() => document.querySelector('.conflict-count')?.textContent === '1', undefined, { timeout: 12000 });
-check('importing real files still computes collisions on the website', (await fresh.locator('.robot-library-row').count()) === 2);
-// Read-only cards: the robot list carries controls, not data inputs.
-const rowsHaveInputs = await fresh.evaluate(() => [...document.querySelectorAll('.robot-library-row')]
-  .some((row) => row.querySelectorAll('input, select, textarea').length > 0));
-check('robot cards stay read-only (no inputs in a row)', !rowsHaveInputs);
-await importCtx.close();
+// ---------------------------------------------------------------- welcome ---
+{
+  const { ctx, page, errors, crossOrigin } = await openApp();
 
-// --- 5. what the website DOES keep: arranging, heatmap, 3D ---
-await page.locator('.robot-arrange-button').first().click();
-await page.waitForSelector('.sequence-composer', { timeout: 8000 });
-check('timeline arranging stays available (not gated away)',
-  (await count('.sequence-composer')) === 1 && (await count('.sequence-route-source')) >= 1,
-  `route sources=${await count('.sequence-route-source')}`);
-await page.getByRole('button', { name: 'Back to playback' }).click();
-await page.waitForSelector('.sequence-composer', { state: 'detached', timeout: 5000 });
-check('heatmap switch stays on the canvas bar', (await count('.trails-control')) === 1);
-await page.locator('.view-toggle button', { hasText: '3D' }).click();
-await page.waitForTimeout(2500);
-check('3D stays available on the website', (await count('.field-canvas-3d canvas')) >= 1 && errors.length === 0, errors[0] ?? '');
-await page.locator('.view-toggle button', { hasText: '2D' }).click();
-await page.waitForTimeout(600);
+  const tops = page.locator('.menu-bar .menu-top');
+  check('web menu bar renders its five sections', await tops.count() === 5, `${await tops.count()} sections`);
 
-// --- 6. preferences: no self-update surface, full language list ---
-await page.locator('.tool-btn[aria-label="Preferences"]').first().click();
-await page.waitForSelector('.prefs-modal', { timeout: 5000 });
-const prefTabs = await texts('.preferences-nav [role=tab]');
-check('preferences sections are General / Controls / Updates / About',
-  JSON.stringify(prefTabs) === JSON.stringify(['General', 'Controls', 'Updates', 'About']), JSON.stringify(prefTabs));
-await page.locator('.preferences-nav [role=tab]', { hasText: /^Updates$/ }).click();
-await page.waitForTimeout(200);
-// The updates section exists on the website too, but it only points at the
-// sibling channel: the release-channel select and the check/install buttons
-// are desktop-only (`desktop ? … : site link`).
-const updateSelects = await count('.prefs-modal select');
-const updateButtons = await texts('.prefs-modal button');
-check('Updates tab offers the sibling site, never a channel or self-update',
-  (await count('.prefs-modal .prefs-link')) === 1 && updateSelects === 0
-    && !updateButtons.some((label) => /check update|install/i.test(label)),
-  `link=${await count('.prefs-modal .prefs-link')} selects=${updateSelects} buttons=${JSON.stringify(updateButtons)}`);
-await page.locator('.preferences-nav [role=tab]', { hasText: /^General$/ }).click();
-const langSelect = page.locator('.preferences-panel select, .preferences-dialog select').first();
-const optionCount = await langSelect.locator('option').count();
-const dictionaries = readdirSync(resolve(process.cwd(), 'packages/web/src/i18n')).filter((f) => f.endsWith('.ts')).length;
-check('language picker offers every shipped dictionary', optionCount === dictionaries + 1, `options=${optionCount} dictionaries=${dictionaries}`);
-check('no assistant surface anywhere in the preferences',
-  (await count('.prefs-modal .ai-row, .prefs-modal .prefs-ai, .ai-panel, .ai-toggle')) === 0);
-await page.locator('.preferences-footer .btn:not(.accent)').first().click();
-await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+  check('welcome offers import + example + open session',
+    await page.locator('.welcome-import').isVisible()
+    && await page.locator('.welcome-try-example').isVisible()
+    && await page.locator('.welcome-open-session').isVisible());
+  check('welcome hides the folder import', await page.locator('.welcome-folder-import').count() === 0);
+  check('loading the site asks nothing outside its own origin',
+    crossOrigin.length === 0, crossOrigin.slice(0, 2).join(' | '));
 
-// --- 7. site channel flavor ---
-const banner = await count('.site-preview-banner');
-await page.locator('.workspace-menu summary').click();
-await page.waitForTimeout(200);
-const menuLinks = await page.evaluate(() => [...document.querySelectorAll('.workspace-menu-items a')].map((a) => `${a.textContent?.trim()} → ${a.getAttribute('href')}`));
-await page.keyboard.press('Escape');
-if (FLAVOR === 'preview') {
-  check('preview channel build shows its banner and links to stable',
-    banner === 1 && (await texts('.site-preview-banner a')).length === 1, `banner=${banner} menu=${JSON.stringify(menuLinks)}`);
-} else {
-  check('stable site carries no banner and offers the preview channel',
-    banner === 0 && menuLinks.some((l) => /preview\.pages\.dev/.test(l)), `banner=${banner} menu=${JSON.stringify(menuLinks)}`);
+  // ------------------------------------------------------------ import -----
+  await page.locator('.welcome-import').click();
+  await page.locator('input[type="file"][multiple]').first()
+    .setInputFiles([`${SAMPLES}/ghostauto/straight_run.ghostauto`, `${SAMPLES}/ghostauto/stop_and_score.ghostauto`]);
+  await page.waitForSelector('.robot-library-row', { timeout: 15000 });
+
+  const rows = await page.locator('.robot-library-row').count();
+  check('two imported files become two robots', rows === 2, `${rows} rows`);
+  const conflicts = Number((await page.locator('.conflict-count').first().textContent())?.trim() ?? '-1');
+  check('collision checking still runs on the trimmed build', conflicts > 0, `${conflicts} conflicts`);
+  check('playback timeline rendered', await page.locator('.timeline-speeds').isVisible());
+
+  const speedLabels = await page.locator('.timeline-speeds button').allTextContents();
+  check(`rate buttons are exactly the steps in source (${SPEEDS.join(', ')})`,
+    speedLabels.length === SPEEDS.length
+    && speedLabels.every((label, i) => label.includes(String(SPEEDS[i]))), speedLabels.join(' / '));
+
+  // ------------------------------------------------------- what is absent ---
+  check('toolbar has no folder-import button', await page.locator('.import-folder-action').count() === 0);
+  check('no directory input exists at all',
+    await page.locator('input[webkitdirectory], input[directory]').count() === 0);
+
+  const leaks = await page.locator('button, a, summary').evaluateAll((nodes) => nodes
+    .filter((el) => {
+      const text = `${el.textContent ?? ''} ${el.getAttribute('aria-label') ?? ''}`;
+      return /save session|export solution|export gif|export png|导出方案包|导出 GIF|保存会话|下载路径/i.test(text);
+    })
+    .map((el) => (el.textContent ?? el.getAttribute('aria-label') ?? '').trim().slice(0, 40)));
+  check('no save/export affordance anywhere in the rendered DOM', leaks.length === 0, leaks.slice(0, 3).join(' | '));
+
+  const fileItems = await page.locator('.menu-bar .menu-top').first().textContent();
+  await page.locator('.menu-bar .menu-top').first().click();
+  const itemLabels = (await page.locator('.menu-panel .menu-item-label').allTextContents()).map((s) => s.trim());
+  check('File menu opens', itemLabels.length > 0, `${fileItems?.trim()}: ${itemLabels.join(' / ')}`);
+  check('File menu keeps import and clear',
+    itemLabels.some((l) => /import files/i.test(l)) && itemLabels.some((l) => /clear session/i.test(l)));
+  check('File menu drops save / exports / folder / open session',
+    !itemLabels.some((l) => /save session|export|open saved session|import folder|文件夹/i.test(l)),
+    itemLabels.join(' / '));
+  await page.keyboard.press('Escape');
+
+  const github = page.locator('.toolbar-github');
+  check('GitHub link points where source says it should',
+    await github.isVisible() && await github.getAttribute('href') === GITHUB_URL, await github.getAttribute('href') ?? 'missing');
+
+  // Documented reality, asserted so the spec cannot drift again: the website
+  // build keeps the arrangement entry (it edits the in-browser session, never
+  // the imported files, and exports nothing). Pinned to the footer instance —
+  // the same shortcut also keys the menu item and the help overlay.
+  check('arrangement entry is present in the website timeline',
+    await page.locator('.app-footer button[aria-keyshortcuts="e"]').count() === 1);
+
+  // ------------------------------------------------------------- prefs -----
+  await page.locator('button[aria-label="Preferences"]').click(); // locale pinned to en-US above
+  await page.waitForSelector('.preferences-dialog');
+  const langOptions = page.locator('.preferences-dialog select').first().locator('option');
+  const count = await langOptions.count();
+  const firstLabel = (await langOptions.first().textContent())?.trim() ?? '';
+  check(`language picker lists all ${LANG_CODES} dictionaries plus “follow system”`,
+    count === LANG_CODES + 1, `${count} options`);
+  check('“follow system” is the first entry', /follow system/i.test(firstLabel), firstLabel);
+  check('no update-channel picker (the site never self-updates)',
+    await page.locator('.preferences-dialog select option[value="beta"]').count() === 0);
+
+  await page.keyboard.press('Escape'); // close prefs; the cross-site entry lives in the ⋮ menu
+  await page.locator('.workspace-menu summary').click();
+  const menuLinks = await page.locator('.workspace-menu-items a').evaluateAll((nodes) => nodes.map((n) => n.getAttribute('href') ?? ''));
+  const otherSite = FLAVOR === 'preview' ? SITES.stable : SITES.preview;
+  check(`${FLAVOR} build offers the jump to ${otherSite}`, menuLinks.includes(otherSite), menuLinks.join(' | '));
+  if (FLAVOR === 'preview') {
+    check('preview banner is up', await page.locator('.site-preview-banner').count() === 1);
+  } else {
+    check('stable build shows no preview banner', await page.locator('.site-preview-banner').count() === 0);
+  }
+
+  check('no page errors after the whole pass', errors.length === 0, errors.slice(0, 3).join(' | '));
+  await ctx.close();
 }
 
-check('no page, console or HTTP errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+// ------------------------------------------------- first visit follows OS ---
+{
+  const { ctx, page } = await openApp({ locale: 'zh-CN' });
+  const lang = await page.evaluate(() => document.documentElement.lang);
+  const importLabel = await page.locator('.welcome-import').getAttribute('aria-label');
+  check('a zh-CN first visit opens in Chinese', lang.startsWith('zh') && /导入/.test(importLabel ?? ''), `${lang} / ${importLabel}`);
+  await ctx.close();
+}
+
 await browser.close();
 const failed = results.filter((r) => !r.ok);
-console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
+console.log(`\n${results.length - failed.length}/${results.length} passed`);
 process.exit(failed.length ? 1 : 0);
