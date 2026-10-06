@@ -193,7 +193,7 @@ describe('shared desktop preferences', () => {
     expect(prefsCheck.calls).toEqual(['stable']);
     expect(button).toBeDisabled(); // checking in flight
     act(() => prefsCheck.onEvent!({ kind: 'upToDate' }));
-    expect(await screen.findByText("You're up to date")).toBeInTheDocument();
+    expect(await screen.findByText("You’re up to date")).toBeInTheDocument();
     expect(button).toBeEnabled();
     // The settings check never routes through the one-shot menu runner…
     expect(emit.checks).toEqual([]);
@@ -239,7 +239,7 @@ describe('shared desktop preferences', () => {
     fireEvent.click(button);
     expect(prefsCheck.calls).toEqual(['stable']);
     act(() => prefsCheck.onEvent!({ kind: 'upToDate' }));
-    expect(await screen.findByText("You're up to date")).toBeInTheDocument();
+    expect(await screen.findByText("You’re up to date")).toBeInTheDocument();
   });
 
   it('checks use the SAVED channel, not the draft — and says so next to the button', async () => {
@@ -249,7 +249,7 @@ describe('shared desktop preferences', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Check for updates' }));
     expect(prefsCheck.calls).toEqual(['stable']);
     act(() => prefsCheck.onEvent!({ kind: 'upToDate' }));
-    expect(await screen.findByText("You're up to date")).toBeInTheDocument();
+    expect(await screen.findByText("You’re up to date")).toBeInTheDocument();
   });
 
   it('opens the native settings window from the toolbar', async () => {

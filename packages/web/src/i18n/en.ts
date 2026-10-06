@@ -197,7 +197,7 @@ export const en = {
   'bounds.item': '{start}–{end} s · {depth} past the {edge} wall',
   'edges.far': 'far', 'edges.left': 'left', 'edges.near': 'near', 'edges.right': 'right',
   'customField.tags': 'Load AprilTag layout…',
-  'updates.upToDate': "You're up to date",
+  'updates.upToDate': "You’re up to date",
   'updates.downloading': 'Found v{v}, downloading and relaunching…',
   'updates.failed': 'Update check failed — check your connection and try again',
   'actions.saveHint': 'Save all robots and session settings (.pb). Reopen with Import. Export individual paths from the robot inspector.',
