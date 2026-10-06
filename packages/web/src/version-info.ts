@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.52';
+export const APP_VERSION = '0.1.8-beta.53';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.53', date: '2026.10.06', note: {
+    en: 'The website build no longer writes session files from the keyboard; saving stays a desktop feature',
+    zh: '网页版不再能通过键盘快捷键写出会话文件；保存仍是桌面版功能',
+    'zh-tw': '網頁版不再能透過鍵盤快速鍵寫出會話檔案；儲存仍是桌面版功能',
+    cs: 'Webová verze už z klávesnice nezapíše soubor relace — ukládání zůstává ve stolní aplikaci.',
+    nl: 'De website schrijft geen sessiebestanden meer via het toetsenbord; opslaan blijft een desktopfunctie.',
+    fr: 'Le site n\'écrit plus de fichier de session depuis le clavier : l\'enregistrement reste une fonction de l\'application de bureau.',
+    he: 'האתר כבר לא כותב קובץ הפעלה במקלדת — השמירה נשארת יכולת של אפליקציית השולחן.',
+    ja: 'Web版はキーボードでセッションファイルを書き出さなくなりました。保存はデスクトップ版の機能のままです。',
+    ko: '웹에서는 키보드로 세션 파일을 내릴 수 없습니다 — 저장은 데스크톱 기능으로 남습니다.',
+    pl: 'Strona internetowa nie zapisuje już plików sesji z klawiatury — zapis pozostaje funkcją aplikacji desktopowej.',
+    'pt-br': 'O site não grava mais arquivos de sessão pelo teclado; salvar continua sendo recurso do aplicativo de desktop.',
+    es: 'El sitio web ya no escribe ficheros de sesión desde el teclado; guardar sigue siendo una función de la app de escritorio.',
+    tr: 'Web sürümü tuş takımıyla oturum dosyası yazmıyor; kaydetme masaüstü uygulamasında kalıyor.',
+  } },
   { version: '0.1.8-beta.52', date: '2026.10.06', note: {
     en: 'Desktop: quitting right after an edit no longer loses it — the autosave now flushes when the window closes',
     zh: '桌面版：改完立刻退出不再丢——窗口关闭时自动保存会先落盘',
