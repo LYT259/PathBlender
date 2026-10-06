@@ -115,7 +115,7 @@ export const it = {
   'timeline.position': "Posizione riproduzione",
   "timeline.range": "Intervallo di riproduzione",
   "timeline.rangeFull": "Intera sequenza temporale",
-  "timeline.rangePaths": "Tutte le traiettorie visibili",
+  "timeline.rangePaths": "Tutti i percorsi visibili",
   'timeline.playbackSpeed': "Velocità riproduzione",
   'timeline.seconds': "Secondi",
   'timeline.selectRobot': "Seleziona {name}",

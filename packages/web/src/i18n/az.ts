@@ -326,7 +326,7 @@ export const az = {
   "menu.jumpFirstIssue": "İlk problemə keç",
   "menu.githubProject": "GitHub-da PathBlender",
   "menu.about": "PathBlender haqqında",
-  "toast.pkgNeedRobots": "Həll paketini ixrac etməzdən əvvəl əvvəlcə trayektoriyaları idxal edin",
+  "toast.pkgNeedRobots": "Həll paketini ixrac etməzdən əvvəl marşrutları idxal edin",
   "toast.pkgRendering": "Paket şəkilləri hazırlanır…",
   "toast.pkgRecording": "20 saniyəlik oynatma yazılır — bu pəncərəni ön planda saxlayın…",
   "toast.pkgSaving": "Paket yığılır…",

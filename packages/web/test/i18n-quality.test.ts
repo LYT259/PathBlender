@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { type Lang } from '../src/i18n';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { en, type MessageKey } from '../src/i18n/en';
@@ -188,6 +189,76 @@ describe('Serbian ships one script', () => {
     for (const key of KEYS) {
       const cyr = DICTS.sr![key].match(/[\u0400-\u04FF]/);
       expect(cyr, `sr:${key} is Cyrillic inside a Latin dictionary: ${DICTS.sr![key]}`).toBe(null);
+    }
+  });
+});
+
+/**
+ * One concept, one word per language. The audit's single largest finding was
+ * the same object named two, three or four different ways inside one dictionary
+ * — fr used five words for "path", tr ran yol/rota across the path/route split
+ * backwards, id mixed jalur/rute/lintasan, hi mixed पथ/रूट/मार्ग — because
+ * nothing checked it. The family below is every key whose English source names a
+ * path or route (the file-format `.path` mention and "trajectory" keys are out,
+ * they are different objects), and each language declares the stems it uses for
+ * it. A new language without a row is a compile error.
+ */
+const PATH_STEMS: Record<Lang, string[]> = {
+  en: ['path', 'route'], ar: ['مسار'], az: ['marşrut'], bg: ['маршрут'], bs: ['rut'],
+  cs: ['tras'], da: ['rut'], de: ['pfad', 'route'], el: ['διαδρομ'], es: ['rut'],
+  fil: ['path', 'ruta'], fr: ['parcours'], he: ['מסלול'], hi: ['पथ', 'मार्ग'],
+  hr: ['rut'], hu: ['útvonal'], hy: ['երթուղ'], id: ['jalur', 'rute'], it: ['percors'],
+  ja: ['パス', 'ルート'], ko: ['경로'], mk: ['рут'], mr: ['मार्ग'], ms: ['laluan'],
+  nb: ['rut'], nn: ['rut'], nl: ['route'], pl: ['tras'], 'pt-BR': ['trajet', 'rota'],
+  ro: ['rut'], rw: ['inzira'], sq: ['rrug'], sr: ['rut'], sv: ['rut'],
+  ta: ['பாதை', 'வழித்தட'], tr: ['yol', 'rota'], uk: ['маршрут'], vi: ['đường đi', 'tuyến'],
+  zh: ['路径', '路线'], 'zh-hk': ['路徑', '路線'], 'zh-tw': ['路徑', '路線'],
+};
+
+/**
+ * Rows still waiting on a decision only a native reviewer can make — the
+ * replacement needs a case or number form the file cannot prove. Listing them
+ * here keeps the debt visible, and the dead-entry check below fails when one is
+ * fixed, so the list can only shrink.
+ */
+const PENDING_PATH_STEMS: Partial<Record<Lang, string[]>> = {
+  // ուղի (road) and հետագիծ (trajectory) in three sequence rows; unifying them
+  // needs the Armenian accusative/plural of երթուղի.
+  hy: ['sequence.replaceRoute', 'sequence.replaced', 'toast.pkgNeedRobots'],
+  // The whole Kinyarwanda dictionary needs a native re-pass (inzira / Inziga /
+  // umuhanda all name the same object today).
+  rw: ['welcome.exampleHint', 'onboarding.play', 'workspace.imported', 'sequence.replaceRoute', 'sequence.replaced'],
+};
+
+const pathFamily = KEYS.filter(
+  (k) => /\b(paths?|routes?)\b/i.test((en as Record<string, string>)[k]) && !/trajector|\.path/i.test((en as Record<string, string>)[k]),
+);
+
+describe('one concept, one term per language', () => {
+  it('paths and routes are named with the stems each language declares', () => {
+    for (const code of CODES) {
+      const stems = PATH_STEMS[code as Lang];
+      const pending = PENDING_PATH_STEMS[code as Lang] ?? [];
+      for (const key of pathFamily) {
+        if (pending.includes(key)) continue;
+        const v = DICTS[code]![key].toLowerCase();
+        expect(
+          stems.some((s) => v.includes(s.toLowerCase())),
+          `${code}:${key} uses a term outside "${stems.join('|')}" — ${DICTS[code]![key]}`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('the pending list carries no dead entries', () => {
+    for (const [code, keys] of Object.entries(PENDING_PATH_STEMS)) {
+      for (const key of keys) {
+        const v = DICTS[code]![key].toLowerCase();
+        expect(
+          PATH_STEMS[code as Lang].some((s) => v.includes(s.toLowerCase())),
+          `${code}:${key} is unified now — drop it from PENDING_PATH_STEMS`,
+        ).toBe(false);
+      }
     }
   });
 });
