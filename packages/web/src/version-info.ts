@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.35';
+export const APP_VERSION = '0.1.8-beta.36';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.36', date: '2026.10.06', note: {
+    en: 'Fix heatmap toggle not redrawing the 2D canvas; hide the heatmap button in 3D view (2D-only feature)',
+    zh: '修复热力图开关不重绘 2D 画布的问题；3D 视图隐藏热力图按钮（该功能仅 2D 可用）',
+    'zh-tw': '修正熱力圖開關不重繪 2D 畫布的問題；3D 檢視隱藏熱力圖按鈕（此功能僅限 2D）',
+    cs: 'Oprava: přepínač teplotní mapy nepřekresloval 2D plátno; tlačítko je ve 3D pohledu skryté (funkce pouze pro 2D).',
+    nl: 'Fix: de warmtekaart-schakelaar hertekende het 2D-canvas niet; de knop is verborgen in de 3D-weergave (alleen-2D-functie).',
+    fr: 'Correction : l\'activation de la carte thermique ne redessinait pas le canevas 2D ; bouton masqué en vue 3D (fonction 2D uniquement).',
+    he: 'תיקון: מתג מפת החום לא צייר מחדש את הקנבס הדו־ממדי; הכפתור מוסתר בתצוגת תלת־ממד (תכונה דו־ממדית בלבד)',
+    ja: 'ヒートマップ切替で2Dキャンバスが再描画されない不具合を修正；3D表示ではボタンを非表示（2D専用機能）',
+    ko: '히트맵 토글이 2D 캔버스를 다시 그리지 않던 문제 수정; 3D 보기에서는 버튼 숨김(2D 전용 기능)',
+    pl: 'Poprawka: przełącznik mapy cieplnej nie odświeżał płótna 2D; przycisk ukryty w widoku 3D (funkcja tylko 2D).',
+    'pt-br': 'Correção: a alternância do mapa de calor não redesenhava a tela 2D; botão oculto na visualização 3D (recurso exclusivo 2D).',
+    es: 'Corrección: el interruptor del mapa de calor no redibujaba el lienzo 2D; botón oculto en la vista 3D (función solo 2D).',
+    tr: 'Düzeltme: ısı haritası anahtarı 2D tuvali yeniden çizmiyordu; düğme 3D görünümde gizlendi (yalnızca 2D özelliği).',
+  } },
   { version: '0.1.8-beta.35', date: '2026.10.06', note: {
     en: 'Cleaner checks panel: removed the basis sentence, the robot-count scope line and the closest-approach readout',
     zh: '检查摘要更简洁：移除依据说明、参与范围行与最近间距读数',
