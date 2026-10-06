@@ -851,27 +851,20 @@ function AppBody() {
     return () => clearTimeout(id);
   }, [robots, fieldId, field, selectedId, t, playbackRange]);
 
-  // The debounce never fires between the last edit and Cmd+Q — flush
-  // synchronously on unload so a quit loses nothing (route pick included).
-  // Desktop needs its own hook: WKWebView never fires `beforeunload` when the
-  // app is quit (measured 2026-10-06 — the WebKit store showed no write at all
-  // across a clean Cmd+Q), so the same flush rides the window close event.
+  // The debounce never fires between the last edit and an abrupt close, so
+  // unload flushes synchronously. Desktop measures differently: WKWebView
+  // fires neither `beforeunload` nor a Tauri `onCloseRequested` when the app
+  // is quit (checked against the WebKit store on disk twice, 2026-10-06 —
+  // a clean Cmd+Q produces no write at all). That is acceptable because the
+  // scene-op save above is immediate: paths, arrangement, colour, visibility
+  // and delay are on disk the moment they change. Only the playhead can be up
+  // to one debounce window stale, and there is no desktop hook to close it.
   const autosaveFlush = useRef<() => void>(() => {});
   autosaveFlush.current = () => saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, { selectedId, t, playbackRange });
   useEffect(() => {
     const flush = () => autosaveFlush.current();
     window.addEventListener('beforeunload', flush);
-    let unlisten: (() => void) | undefined;
-    let detached = false;
-    void import('@tauri-apps/api/window')
-      .then(({ getCurrentWindow }) => getCurrentWindow().onCloseRequested(flush))
-      .then((off) => { if (detached) off(); else unlisten = off; })
-      .catch(() => { /* browser build — beforeunload is the whole story here */ });
-    return () => {
-      detached = true;
-      window.removeEventListener('beforeunload', flush);
-      unlisten?.();
-    };
+    return () => window.removeEventListener('beforeunload', flush);
   }, []);
 
   // PNG export was removed for good (user decision 2026-10-05, recorded in
