@@ -66,7 +66,7 @@ jobs:
           PB_WINDOWS_ARTIFACT="$ART" node scripts/gen-latest-json.mjs "$VERSION" packages/desktop/src-tauri/target/release/bundle > feed.json
           node -e "
             const feed = require('./feed.json');
-            const win = feed['windows-x86_64'];
+            const win = feed.platforms['windows-x86_64'];
             if (!win || !win.url.endsWith('_x64-setup.exe') || !win.signature.length) {
               console.error('feed.json missing a valid windows-x86_64 entry:', JSON.stringify(feed));
               process.exit(1);
