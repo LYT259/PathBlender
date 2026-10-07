@@ -10,8 +10,27 @@
     <title>PathBlender</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <meta name="theme-color" content="#0e1116" />
-    <!-- Content-hashed on purpose: a stable icon URL let browsers pin a superseded favicon forever. -->
-    <link rel="icon" type="image/png" sizes="128x128" href="./src/assets/favicon-day.png" />
+    <!-- Day/night media pair, night first: Chromium honours media on icon links and
+         picks the matching plate natively before any JS runs. Firefox and Safari do not
+         evaluate the media feature for favicon selection and fall back to the LAST
+         link, so the day plate must stay last. Content-hashed on purpose: a stable
+         icon URL let browsers pin a superseded favicon forever. -->
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="128x128"
+      media="(prefers-color-scheme: dark)"
+      href="./src/assets/favicon-night.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="128x128"
+      media="(prefers-color-scheme: light)"
+      href="./src/assets/favicon-day.png"
+    />
+    <!-- iOS home screen cannot switch artwork; the red day plate is the constant. -->
+    <link rel="apple-touch-icon" href="./src/assets/favicon-day.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   </head>
