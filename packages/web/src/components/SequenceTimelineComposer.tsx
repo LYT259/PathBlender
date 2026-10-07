@@ -414,7 +414,12 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       onKeyDown={(event) => { if (event.key === 'Escape') { event.stopPropagation(); setMenu(null); laneRef.current?.focus(); } if (event.key === 'Tab') { event.stopPropagation(); setMenu(null); } }}>
       <button type="button" role="menuitem" onClick={() => remove(menu.clipId)}><Icon name="trash" size={14} />{t('sequence.removeRoute')}</button>
     </div>}
-    <div className="sequence-composer-footnote"><span role="status" className="sequence-error">{error ?? ''}</span></div>
+    <div className="sequence-composer-footnote"><span role="status" className="sequence-error">{error ?? ''}</span>
+      {onPlaybackRangeChange && <select className="timeline-range sequence-footnote-range" aria-label={t('timeline.range')} value={playbackRange}
+        onChange={(event) => onPlaybackRangeChange(event.target.value as PlaybackRange)}>
+        <option value="full">{t('timeline.rangeFull')}</option>
+        <option value="paths">{t('timeline.rangePaths')}</option>
+      </select>}</div>
     {dragPoint && dragRef.current?.kind === 'add' && dragRef.current.clip && (() => {
       // Follow-along copy of the dragged library route (user 2026-10-07):
       // visible inside the lane and out of it, so the gesture always says
@@ -428,14 +433,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     {playback && <div className="timeline-workspace sequence-playback-controls">
       <input type="range" min="0" max={autoPeriodS} step="0.01" value={Math.min(autoPeriodS, playback.t)} aria-label={t('timeline.position')}
         onChange={(event) => { playback.setPlaying(false); playback.setT(Number(event.target.value)); }} />
-      <div className="sequence-playback-row">
-        {onPlaybackRangeChange && <select className="timeline-range" aria-label={t('timeline.range')} value={playbackRange}
-          onChange={(event) => onPlaybackRangeChange(event.target.value as PlaybackRange)}>
-          <option value="full">{t('timeline.rangeFull')}</option>
-          <option value="paths">{t('timeline.rangePaths')}</option>
-        </select>}
-        <PlaybackControls playback={playback} end={playbackEndS ?? autoPeriodS} />
-      </div>
+      <PlaybackControls playback={playback} end={playbackEndS ?? autoPeriodS} />
     </div>}
   </section>;
 }
