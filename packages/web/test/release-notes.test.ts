@@ -125,7 +125,9 @@ describe('release-notes-for.mjs', () => {
   it('the real registry resolves notes for the version this tree ships', () => {
     // The About-page contract: whatever APP_VERSION the tree carries must be
     // able to produce release notes (beta needs its own entry).
-    const ts = execFileSync('node', ['-e', `console.log(require('fs').readFileSync(${JSON.stringify(REAL_VERSION_INFO)},'utf8'))`], { encoding: 'utf8' });
+    // In-process read: the registry grew past 1 MB with 40-language notes
+    // (2026-10-07), which overflows a child-process stdout buffer.
+    const ts = readFileSync(REAL_VERSION_INFO, 'utf8');
     const m = /APP_VERSION = '([^']+)'/.exec(ts);
     expect(m).not.toBeNull();
     const out = run(m![1]);

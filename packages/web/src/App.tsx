@@ -139,7 +139,7 @@ export function App() {
 }
 
 function AppBody() {
-  const { lang, t: tr } = useI18n();
+  const { lang, t: tr, n } = useI18n();
   // Reverse-scroll lives in the zoom module both canvases read — keep it
   // in sync here so 2D also flips while no 3D scene is mounted. The saved
   // checkbox reverses each scheme's own factory direction (Onshape scroll
@@ -940,10 +940,10 @@ function AppBody() {
     }
     const tightest = result.pairs[0]!;
     flash(tr('checks.abDelta', {
-      d: Math.abs(tightest.deltaM).toFixed(2),
+      d: n(Math.abs(tightest.deltaM), 2),
       dir: tightest.deltaM >= 0 ? tr('checks.abSafer') : tr('checks.abTighter'),
     }));
-  }, [robots, flash, tr]);
+  }, [robots, flash, tr, n]);
 
   // Native "Check for Updates…" and channel switches. The Rust shell owns
   // the channel→feed mapping (check_update); feed unreachable (offline, or

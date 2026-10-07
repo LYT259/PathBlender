@@ -5,6 +5,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { broadcastPref, listenPrefs } from '../pref-sync';
+import { formatDecimal } from '../number-format';
 import { en, type MessageKey } from './en';
 import { ar } from './ar';
 import { az } from './az';
@@ -235,6 +236,12 @@ function systemLang(): Lang {
 
 export type TFunc = (key: MessageKey, vars?: Record<string, string | number>) => string;
 
+/**
+ * Locale-aware decimal rendering (number-format.ts): `fractionDigits` fixes
+ * precision like toFixed(), omitting it keeps "0.5"/"1" short.
+ */
+export type NFunc = (value: number, fractionDigits?: number) => string;
+
 function interpolate(template: string, vars?: Record<string, string | number>): string {
   if (!vars) return template;
   return template.replace(/\{(\w+)\}/g, (m, k: string) =>
@@ -270,6 +277,7 @@ interface I18nContextValue {
   langChoice: LangChoice;
   setLang: (l: LangChoice) => void;
   t: TFunc;
+  n: NFunc;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -288,6 +296,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         broadcastPref('lang', l);
       },
       t: (key, vars) => interpolate((DICTS[lang] ?? en)[key] ?? en[key], vars),
+      n: (value, fractionDigits) => formatDecimal(value, lang, fractionDigits),
     }),
     [lang, choice],
   );

@@ -38,7 +38,7 @@ interface Props {
 
 
 export function Timeline({ robots, autoPeriodS, duration, visibleDuration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onEditTeam, onJump, guide, composeAction }: Props) {
-  const { t: tr } = useI18n();
+  const { t: tr, n } = useI18n();
   const { t, setT, setPlaying } = playback;
   const rangeDuration = playbackRange === 'paths' && visibleDuration !== undefined ? visibleDuration : duration;
   const end = playbackEnd(rangeDuration, autoPeriodS, playbackRange);
@@ -92,8 +92,8 @@ export function Timeline({ robots, autoPeriodS, duration, visibleDuration, playb
                 const { trajectory } = robot;
                 const activityLabel = tr('timeline.activity', {
                   name: robotIdentity(trajectory),
-                  start: activeStartT(robot).toFixed(2),
-                  end: activeEndT(robot).toFixed(2),
+                  start: n(activeStartT(robot), 2),
+                  end: n(activeEndT(robot), 2),
                 });
                 return (
                   <div
@@ -124,7 +124,7 @@ export function Timeline({ robots, autoPeriodS, duration, visibleDuration, playb
                           the checks panel owns conflict jumps; the lane keeps only
                           the robot's activity tape and its route events. */}
                       {sequenceEventTimes(robot).map((event, index) => {
-                        const label = tr('timeline.eventAt', { name: event.name, t: event.t.toFixed(2) });
+                        const label = tr('timeline.eventAt', { name: event.name, t: n(event.t, 2) });
                         return <button key={`event-${index}`} type="button" className="timeline-event" style={{ left: percent(event.t) }} title={label} aria-label={label} onClick={() => jump(event.t, [trajectory.id])} />;
                       })}
                     </div>
@@ -151,7 +151,7 @@ export function Timeline({ robots, autoPeriodS, duration, visibleDuration, playb
                   value={currentT}
                   disabled={end === 0}
                   aria-label={tr('timeline.position')}
-                  aria-valuetext={tr('timeline.clock', { t: currentT.toFixed(2), d: end.toFixed(2) })}
+                  aria-valuetext={tr('timeline.clock', { t: n(currentT, 2), d: n(end, 2) })}
                   onChange={(e) => seek(Number(e.target.value))}
                   onKeyDown={(e) => {
                     // End follows the chosen playback range.
