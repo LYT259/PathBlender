@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.75';
+export const APP_VERSION = '0.1.8-beta.76';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.76', date: '2026.10.07', note: {
+    en: 'Whole-row timeline focus rings, no box around the field, conflict dots removed',
+    zh: '时间轴焦点环整条显示；移除场地外框与冲突标记点',
+    'zh-tw': '時間軸焦點環整條顯示；移除場地外框與衝突標記點',
+    cs: 'Rámečky fokusu přes celý řádek časové osy; bez rámu kolem hřiště a bez teček konfliktů',
+    nl: 'Focusranden over de hele tijdlijnrij; geen kader om het veld, geen conflictpunten',
+    fr: 'Anneaux de focus sur toute la ligne de la chronologie ; plus de cadre autour du terrain ni de points de conflit',
+    he: 'מסגרות מיקוד על השורה כולה בציר הזמן; אין מסגרת סביבת המגרש ואין נקודות התנגשות',
+    ja: 'タイムラインのフォーカス枠を行全体に拡大、フィールドの枠と衝突ドットを削除',
+    ko: '타임라인 포커스 테두리를 행 전체로, 필드 박스와 충돌 점 제거',
+    pl: 'Obwiednie fokusu na całym wierszu osi czasu; bez ramki pola i kropek konfliktów',
+    'pt-br': 'Anéis de foco na linha inteira da linha do tempo; sem caixa no campo e sem pontos de conflito',
+    es: 'Anillos de foco en toda la fila de la línea de tiempo; sin caja en el campo y sin puntos de conflicto',
+    tr: 'Zaman çizelgesi odak çerçeveleri tüm satırı kapsıyor; saha kutusu ve çakışma noktaları kaldırıldı',
+  } },
   { version: '0.1.8-beta.75', date: '2026.10.07', note: {
     en: 'Drag the empty part of the arrangement timeline to scrub the playhead; Delete removes the clicked segment; a follow-along badge names the route being dragged in; the library grays out while the playhead sits on an occupied stretch',
     zh: '在编排时间轴空白处按住拖动即可拖动播放头；Delete 直接删除点选的段块；拖入路线时指针旁跟随名称徽标；播放头停在已占用区段时路线库整体置灰',
