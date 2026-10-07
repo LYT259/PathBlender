@@ -165,5 +165,11 @@ describe('app icon appearance provider', () => {
     expect(localStorage.getItem('pb.appIcon')).toBe('dark');
     expect(dockCalls()).toEqual([]);
     expect(bridge.broadcasts).toEqual([]);
+    // the same choice lands on the tab icon instead of the Dock tile
+    expect(
+      document
+        .querySelector<HTMLLinkElement>('head link[rel~="icon"]')
+        ?.getAttribute('href'),
+    ).toContain('favicon-night');
   });
 });
