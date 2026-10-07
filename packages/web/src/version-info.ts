@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.71';
+export const APP_VERSION = '0.1.8-beta.72';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.72', date: '2026.10.07', note: {
+    en: 'Custom mouse controls: assign rotate, pan, zoom, roll or nothing to any button and modifier combo; the wheel always stays zoom',
+    zh: '自定义鼠标控制：可为任意按键与修饰键组合指定旋转、平移、缩放、翻滚或无操作；滚轮固定为缩放',
+    'zh-tw': '自訂滑鼠控制：可為任意按鍵與修飾鍵組合指定旋轉、平移、縮放、翻滾或無動作；滾輪固定為縮放',
+    cs: 'Vlastní ovládání myší: libovolné kombinaci tlačítka a modifikátoru lze přiřadit otáčení, posun, přiblížení, otočení v rovině nebo nic; kolečko zůstává vždy přiblížením',
+    nl: 'Aangepaste muisbediening: wijs aan elke knop- en modificatiecombinatie draaien, verschuiven, zoomen, kantelen of niets toe; het scrollwiel blijft altijd zoomen',
+    fr: 'Contrôles souris personnalisés : attribuez rotation, panoramique, zoom, roulis ou rien à chaque combinaison bouton/modificateur ; la molette reste toujours le zoom',
+    he: 'בקרת עכבר מותאמת אישית: לכל כפתור ושילוב מקשי שינוי אפשר להקצות סיבוב, הזזה, התקרבות, הטיה או כלום; הגלגלת תמיד נשארת התקרבות',
+    ja: 'マウス操作のカスタマイズ：どのボタンと修飾キーの組み合わせにも回転／パン／ズーム／ロール／なしを割り当てられます。ホイールは常にズームのまま',
+    ko: '마우스 제어 사용자 지정: 모든 버튼·수정 키 조합에 회전/이동/확대·축소/롤/동작 없음을 지정할 수 있습니다. 휠은 항상 확대·축소로 유지됩니다',
+    pl: 'Niestandardowa obsługa myszy: każdej kombinacji przycisku i modyfikatora można przypisać obrót, przesuwanie, skalowanie, obrót w płaszczyźnie albo nic; kółko zawsze skaluje widok',
+    'pt-br': 'Controles personalizados do mouse: atribua girar, mover, ampliar, rolar ou nada a qualquer combinação de botão e modificador; a roda sempre fica na ampliação',
+    es: 'Controles personalizados del ratón: asigna rotar, desplazar, zoom, rodar o nada a cualquier combinación de botón y modificador; la rueda siempre hace zoom',
+    tr: 'Özel fare kontrolleri: herhangi bir düğme ve değiştirici kombinasyonuna döndürme, kaydırma, yakınlaştırma, yuvarlama veya hiçbiri atanabilir; tekerlek her zaman yakınlaştırmada kalır',
+  } },
   { version: '0.1.8-beta.71', date: '2026.10.07', note: {
     en: 'Example now survives a dropped or stale connection: automatic retry, one page refresh, and background warm-up',
     zh: '体验示例不再怕断网或旧缓存：自动重试、必要时刷新一次页面，并在后台提前预热',
