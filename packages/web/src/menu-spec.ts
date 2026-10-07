@@ -82,6 +82,8 @@ export interface MenuContext {
   /** Website-only build: no save/export/open-session (viewer.ts). */
   viewerOnly: boolean;
   isDesktop: boolean;
+  /** The built-in example session is on the field (enables the tour entry). */
+  hasExample: boolean;
 }
 
 const sep = (): MenuEntry => ({ role: 'separator' });
@@ -222,7 +224,10 @@ export function buildMenuSpec(ctx: MenuContext): MenuSection[] {
   // The guide entries lead: "what is this for" comes before the project link
   // for a first-time visitor (onboarding plan §5). The shortcuts item gives
   // the keyboard list a visible entry — before, only the ? key opened it.
+  // The tour entry (plan §3) reopens the example checklist from Help; with
+  // no example running it starts one, so the entry works from anywhere.
   const helpItems: MenuEntry[] = [
+    item('open-tour', t('tour.title')),
     item('open-guide', t('menu.userGuide')),
     item('open-shortcuts', t('help.title')),
     sep(),

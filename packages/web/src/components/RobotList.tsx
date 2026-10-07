@@ -28,6 +28,8 @@ interface RobotListProps {
   mirroredIds?: ReadonlySet<string>;
   /** Bumped by Edit ▸ Rename Selected Team (menu bar): opens the inline editor. */
   renameSignal?: number;
+  /** Optional slot above the list heading — the example session's onboarding card. */
+  header?: ReactNode;
 }
 
 interface RobotInspectorProps {
@@ -98,7 +100,7 @@ function TeamNumberCell({ robot, onUpdate, editing, onStartEdit, onEndEdit, chil
 }
 
 /** Selection lives in the workspace so the list, field and inspector agree. */
-export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, onMirrorButtonClick, mirroredIds, renameSignal }: RobotListProps) {  const { t } = useI18n();
+export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, onMirrorButtonClick, mirroredIds, renameSignal, header }: RobotListProps) {  const { t } = useI18n();
   const settingsInput = useRef<HTMLInputElement>(null);
   const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const contextRobot = robots.find((robot) => robot.trajectory.id === contextMenu?.id);
@@ -115,6 +117,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
         if (file && settingsRobot.current) onSelectSettings?.(settingsRobot.current, file);
         event.target.value = '';
       }} />
+      {header}
       <div className="robot-library-heading">
         <h2>{t('robots.title', { n: robots.length })}</h2>
         {robots.length > 0 && <button className="robot-library-add" onClick={onImport} title={t('robots.import')} aria-label={t('robots.import')}>

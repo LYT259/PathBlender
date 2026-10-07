@@ -105,7 +105,7 @@ describe('i18n dictionaries', () => {
     'app.title', 'conflicts.pair', 'customField.ppm', 'timeline.speed',
     'timeline.clock', 'timeline.activity', 'timeline.band', 'canvas.clock',
     'rail.png', 'actions.gif', 'prefs.mouse.onshape', 'prefs.mouse.solidworks',
-    'prefs.mouse.solidworks.right', 'sequence.seconds',
+    'prefs.mouse.solidworks.right', 'sequence.seconds', 'tour.progress',
   ]);
 
   // Pin exemptions to the language in which the previous audit accepted a
