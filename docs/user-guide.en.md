@@ -15,8 +15,8 @@ the fix happens in the tool that owns the path.
 2. **Import path files** — multi-select and mixed formats are fine:
    Choreo `.traj`, PathPlanner `.path` / `.auto`, and Team 103
    Collaborative fork `.ghostauto`. Broken files report why they failed
-   without blocking the rest. On the desktop app you can also import a
-   whole folder (see the route library below).
+   without blocking the rest. You can also import a whole folder — on the
+   web app as well as the desktop (see the route library below).
 3. **Press play.** Collision risks show up as red rings on the field, red
    segments on the timeline, and entries in the conflict panel (who,
    when, where) — click one to jump the clock straight to that moment.
@@ -44,7 +44,7 @@ the fix happens in the tool that owns the path.
    PathPlanner, re-exports, and you drop the new file into the open
    session. Re-check. Repeat until the timeline is clean.
 
-## Route library (desktop app)
+## Route library
 
 **Import folder** ingests a team's whole deploy directory: bystander
 files are skipped and every route lands in a library. A picker beside
@@ -97,7 +97,7 @@ rest of the alliance.
 | Import / playback / collision checking | ✓ | ✓ |
 | Save & open session files | open only | ✓ |
 | GIF replay / solution package export | — | ✓ |
-| Folder import / route library | — | ✓ |
+| Folder import / route library | ✓ | ✓ |
 | In-app updates | — | ✓ |
 
 ## FAQ

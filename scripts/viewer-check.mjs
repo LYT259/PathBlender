@@ -6,11 +6,12 @@
  * pathblender.pages.dev serves) really is a viewer. Unit tests run in jsdom
  * without the flag and the full walkthroughs drive the complete build, so this
  * is the only harness that can answer two questions: (1) did the trimming
- * survive — is every authoring/export surface actually absent from the DOM
- * rather than just hidden or disabled; (2) does the trimmed product still
- * work — files import, the timeline plays, collisions are still found. It also
- * holds the website to its "nothing leaves the browser" promise by refusing any
- * cross-origin request, and checks that a first visit follows the OS language.
+ * survive — is every export surface actually absent from the DOM rather than
+ * just hidden or disabled; (2) does the trimmed product still
+ * work — files import, a whole folder imports, the timeline plays, collisions
+ * are still found. It also holds the website to its "nothing leaves the
+ * browser" promise by refusing any cross-origin request, and checks that a
+ * first visit follows the OS language.
  * A new button that leaks an export is exactly what this catches; without it,
  * the claim in README would rest on nobody forgetting.
  *
@@ -85,17 +86,17 @@ async function openApp(options = {}) {
   const tops = page.locator('.menu-bar .menu-top');
   check('web menu bar renders its five sections', await tops.count() === 5, `${await tops.count()} sections`);
 
-  check('welcome offers import + example + open session',
+  check('welcome offers import + folder import + example + open session',
     await page.locator('.welcome-import').isVisible()
+    && await page.locator('.welcome-folder-import').isVisible()
     && await page.locator('.welcome-try-example').isVisible()
     && await page.locator('.welcome-open-session').isVisible());
-  check('welcome hides the folder import', await page.locator('.welcome-folder-import').count() === 0);
   check('loading the site asks nothing outside its own origin',
     crossOrigin.length === 0, crossOrigin.slice(0, 2).join(' | '));
 
   // ------------------------------------------------------------ import -----
   await page.locator('.welcome-import').click();
-  await page.locator('input[type="file"][multiple]').first()
+  await page.locator('input[type="file"][multiple]:not([webkitdirectory])').first()
     .setInputFiles([`${SAMPLES}/ghostauto/straight_run.ghostauto`, `${SAMPLES}/ghostauto/stop_and_score.ghostauto`]);
   await page.waitForSelector('.robot-library-row', { timeout: 15000 });
 
@@ -110,10 +111,30 @@ async function openApp(options = {}) {
     speedLabels.length === SPEEDS.length
     && speedLabels.every((label, i) => label.includes(String(SPEEDS[i]))), speedLabels.join(' / '));
 
+  // --------------------------------------------------- folder import -------
+  // The website imports the way the app does. This is the channel that used to
+  // exist only as an ungated drag-and-drop back door (2026-10-06: the buttons
+  // were trimmed while the recursive drop handler shipped, so the site had the
+  // capability and no control). It is a real control now, and it is exercised
+  // as one — a directory path handed to the directory input, the way the
+  // engine hands a chosen folder over.
+  check('toolbar offers the folder import', await page.locator('.import-folder-action').isVisible());
+  const dirInputs = await page.locator('input[webkitdirectory]').count();
+  check('the directory input is mounted', dirInputs === 1, `${dirInputs} directory inputs`);
+
+  const rowsBeforeFolder = await page.locator('.robot-library-row').count();
+  await page.locator('.import-folder-action').click();
+  await page.locator('input[webkitdirectory]').setInputFiles(`${SAMPLES}/ghostauto`);
+  await page.waitForFunction(
+    (n) => document.querySelectorAll('.robot-library-row').length === n + 1,
+    rowsBeforeFolder,
+    { timeout: 15000 },
+  );
+  check('a chosen folder lands as one team, its routes in the library',
+    await page.locator('.import-banner').count() === 0,
+    `${rowsBeforeFolder} → ${await page.locator('.robot-library-row').count()} teams`);
+
   // ------------------------------------------------------- what is absent ---
-  check('toolbar has no folder-import button', await page.locator('.import-folder-action').count() === 0);
-  check('no directory input exists at all',
-    await page.locator('input[webkitdirectory], input[directory]').count() === 0);
 
   const leaks = await page.locator('button, a, summary').evaluateAll((nodes) => nodes
     .filter((el) => {
@@ -127,10 +148,12 @@ async function openApp(options = {}) {
   await page.locator('.menu-bar .menu-top').first().click();
   const itemLabels = (await page.locator('.menu-panel .menu-item-label').allTextContents()).map((s) => s.trim());
   check('File menu opens', itemLabels.length > 0, `${fileItems?.trim()}: ${itemLabels.join(' / ')}`);
-  check('File menu keeps import and clear',
-    itemLabels.some((l) => /import files/i.test(l)) && itemLabels.some((l) => /clear session/i.test(l)));
-  check('File menu drops save / exports / folder / open session',
-    !itemLabels.some((l) => /save session|export|open saved session|import folder|文件夹/i.test(l)),
+  check('File menu keeps both imports and clear',
+    itemLabels.some((l) => /import files/i.test(l))
+    && itemLabels.some((l) => /import folder/i.test(l))
+    && itemLabels.some((l) => /clear session/i.test(l)));
+  check('File menu drops save / exports / open session',
+    !itemLabels.some((l) => /save session|export|open saved session/i.test(l)),
     itemLabels.join(' / '));
   await page.keyboard.press('Escape');
 
@@ -191,7 +214,7 @@ async function openApp(options = {}) {
 for (const combo of ['Control+s', 'Meta+s']) {
   const { ctx, page } = await openApp();
   await page.locator('.welcome-import').click();
-  await page.locator('input[type="file"][multiple]').first()
+  await page.locator('input[type="file"][multiple]:not([webkitdirectory])').first()
     .setInputFiles(`${SAMPLES}/ghostauto/straight_run.ghostauto`);
   await page.waitForSelector('.robot-library-row', { timeout: 15000 });
   const settled = page.waitForEvent('download', { timeout: 5000 })

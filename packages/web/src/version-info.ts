@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.63';
+export const APP_VERSION = '0.1.8-beta.64';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.64', date: '2026.10.07', note: {
+    en: 'The web app now imports whole folders, same as the desktop app',
+    zh: '网页版新增整包文件夹导入，与桌面版一致',
+    'zh-tw': '網頁版新增整包資料夾匯入，與桌面版一致',
+    cs: 'Webová aplikace umí importovat celé složky, stejně jako desktopová',
+    nl: 'De web-app importeert nu ook hele mappen, net als de desktop-app',
+    fr: 'L’application web importe désormais des dossiers entiers, comme l’application de bureau',
+    he: 'אפליקציית האינטרנט מייבאת עכשיו תיקיות שלמות, בדיוק כמו אפליקציית שולחן העבודה',
+    ja: 'ウェブ版でもフォルダー丸ごとインポートに対応しました（デスクトップ版と同じ）',
+    ko: '웹 앱도 폴더 전체를 가져올 수 있습니다(데스크톱 앱과 동일)',
+    pl: 'Aplikacja webowa importuje teraz całe foldery, tak samo jak aplikacja desktopowa',
+    'pt-br': 'O aplicativo web agora importa pastas inteiras, igual ao aplicativo de desktop',
+    es: 'La aplicación web ahora importa carpetas enteras, igual que la de escritorio',
+    tr: 'Web uygulaması artık masaüstü uygulamadaki gibi klasörlerin tamamını içe aktarıyor',
+  } },
   { version: '0.1.8-beta.63', date: '2026.10.06', note: {
     en: 'No stray focus box on the robot list when the app opens',
     zh: '打开应用时机器人列表不再出现多余的焦点框',
