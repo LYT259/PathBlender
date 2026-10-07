@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.68';
+export const APP_VERSION = '0.1.8-beta.69';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.69', date: '2026.10.07', note: {
+    en: 'Focus rings: rounded, never clipped, and scoped to whole team cards',
+    zh: '焦点框：统一圆角、不再被裁切，机器人卡片整体成框',
+    'zh-tw': '焦點框：統一圓角、不再被裁切，機器人卡片整體成框',
+    cs: 'Rámečky zaměření: zaoblené, nikdy ne oříznuté, a zobrazované celé karty týmu',
+    nl: 'Focusranden: afgerond, nooit bijgesneden en om de hele teamkaart',
+    fr: 'Anneaux de focus : arrondis, jamais rognés, et englobant toute la carte d’équipe',
+    he: 'מסגרות מיקוד: מעוגלות, לעולם לא קטועות, ומקיפות את כל כרטיס הקבוצה',
+    ja: 'フォーカス枠：角丸に統一、切れ目なし、ロボットカード全体を囲むように',
+    ko: '포커스 테두리: 둥근 모서리, 잘림 없음, 로봇 카드 전체를 감싸도록',
+    pl: 'Obwiednie fokusu: zaokrąglone, nigdy przycinane, obejmują całą kartę zespołu',
+    'pt-br': 'Anéis de foco: arredondados, nunca cortados e envolvendo o cartão inteiro da equipe',
+    es: 'Anillos de foco: redondeados, nunca recortados y alrededor de toda la tarjeta de equipo',
+    tr: 'Odak çerçeveleri: yuvarlatılmış, hiç kırpılmayan ve tüm takım kartını saran',
+  } },
   { version: '0.1.8-beta.68', date: '2026.10.07', note: {
     en: 'Exported replay video declares an honest 30 fps; example-module preload keeps example tests stable',
     zh: '导出的回放视频如实声明 30 fps；示例模块预载让示例相关测试保持稳定',

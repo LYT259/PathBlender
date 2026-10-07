@@ -27,7 +27,8 @@
   font-size: 13px;
   padding: 0 10px;
   cursor: pointer;
-  border-radius: 0;
+  /* Rounded so the inside focus ring follows suit (focus-audit 2026-10-07). */
+  border-radius: 6px;
 }
 
 .menu-top:hover,

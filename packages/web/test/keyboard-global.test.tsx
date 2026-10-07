@@ -109,6 +109,23 @@ describe('workspace shortcuts', () => {
     expect((document.querySelector('.robot-library-visibility') as HTMLButtonElement).getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('the robot card is one Tab stop and the status count is no control', async () => {
+    await importTwo();
+    // The identity button is programmatic-focus only (tabindex=-1): the row
+    // <li> is the card's single Tab stop, so one card never costs two stops.
+    const select = document.querySelector('.robot-library-select') as HTMLElement;
+    expect(select.getAttribute('tabindex')).toBe('-1');
+    const row = document.querySelector('.robot-library-row') as HTMLElement;
+    expect(row.getAttribute('tabindex')).toBe('0');
+    // The issue count in the status bar is a pure indicator — no ring, no click.
+    const status = document.querySelector('.workspace-status .status-check')!;
+    expect(status.tagName).toBe('SPAN');
+    expect((status as HTMLElement).tabIndex).toBe(-1);
+    const before = document.querySelector('.conflict-panel');
+    fireEvent.click(status);
+    expect(document.querySelector('.conflict-panel')).toBe(before);
+  });
+
   it('keys are inert while a modal dialog is open, and ? does not open help beneath it', async () => {
     await importTwo();
     fireEvent.click(screen.getByRole('button', { name: /preferences/i }));

@@ -33,7 +33,9 @@
 .timeline-legend i.timeline-legend-event { background: var(--fg-dim); border-radius: 1px; transform: rotate(45deg); }
 .timeline-empty { color: var(--fg-dim); margin: 10px 0 0; font-size: 12px; }
 
-.timeline-scroller { overflow: auto; max-height: 210px; margin-top: 10px; padding: 0 2px 2px; scrollbar-width: thin; }
+/* Padding carries the 2px outline + 2px offset of the row buttons' rings —
+   2px clipped them at the top/left edges (focus-audit 2026-10-07). */
+.timeline-scroller { overflow: auto; max-height: 210px; margin-top: 6px; padding: 4px; scrollbar-width: thin; }
 .timeline-surface { min-width: 550px; padding-right: var(--timeline-end-inset); position: relative; }
 .timeline-axis, .timeline-row { display: grid; grid-template-columns: var(--timeline-label-width) minmax(0, 1fr); column-gap: var(--timeline-column-gap); }
 /* The ruler rides below the track rows (user spec, 2026-10-02): the numbers
@@ -51,6 +53,9 @@
   -webkit-appearance: none; appearance: none; position: absolute; top: 14px; left: -7px;
   width: calc(100% + 14px); height: 22px; margin: 0; padding: 0;
   border: 0; background: transparent; cursor: ew-resize; z-index: 3;
+  /* Rounded so its inset focus ring is rounded too — a full-width square ring
+     read as a foreign rectangle (user report, focus-audit 2026-10-07). */
+  border-radius: 8px;
 }
 .timeline-scrubber::-webkit-slider-runnable-track { height: 2px; background: var(--border); border: 0; }
 .timeline-scrubber::-moz-range-track { height: 2px; background: var(--border); border: 0; }
@@ -80,6 +85,9 @@
 .timeline-playhead-plane { position: absolute; top: 0; bottom: 0; left: calc(var(--timeline-label-width) + var(--timeline-column-gap)); right: var(--timeline-end-inset); pointer-events: none; z-index: 2; }
 .timeline-playhead { position: absolute; top: 0; bottom: 0; width: 1px; transform: translateX(-.5px); background: var(--accent); }
 .timeline-workspace button:focus-visible, .timeline-scrubber:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* The scrubber spans the full width and overhangs the surface by a thumb
+   width, so an outside ring clips no matter the padding — draw it inset. */
+.timeline-workspace .timeline-scrubber:focus-visible { outline-offset: -2px; }
 
 @media (max-width: 780px) {
   .timeline.timeline-workspace { padding: 10px 12px 12px; --timeline-label-width: 112px; --timeline-column-gap: 10px; }
