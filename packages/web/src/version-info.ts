@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.63';
+export const APP_VERSION = '0.1.8-beta.64';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.64', date: '2026.10.07', note: {
+    en: 'Tab icon: full-bleed logo without the white border — now follows light/dark appearance',
+    zh: '标签页图标：改为满幅 Logo、去掉外圈白边，并跟随深浅色外观自动切换',
+    'zh-tw': '分頁圖示：改為滿幅 Logo、去掉外圈白邊，並跟隨深淺色外觀自動切換',
+    cs: 'Ikona karty: logo bez bílého rámečku — nyní podle světlého nebo tmavého vzhledu',
+    nl: 'Tabbladpictogram: logo zonder witte rand — volgt nu het lichte of donkere uiterlijk',
+    fr: 'Icône d’onglet : logo sans bordure blanche — suit désormais l’apparence claire ou sombre',
+    he: 'סמל הלשונית: הלוגו בפריסה מלאה, בלי המסגרת הלבנה — מתחלף לפי המראה הבהיר או הכהה',
+    ja: 'タブのアイコン：白枠をなくしてロゴを全面に表示、ライト／ダーク外観にも自動で対応',
+    ko: '탭 아이콘: 흰 테두리를 없애고 로고를 전체에 표시, 라이트/다크 외관도 자동으로 따릅니다',
+    pl: 'Ikona karty: logo bez białej ramki — teraz dopasowuje się do jasnego lub ciemnego wyglądu',
+    'pt-br': 'Ícone da aba: logotipo sem a borda branca — agora acompanha o tema claro ou escuro',
+    es: 'Icono de la pestaña: logotipo sin el borde blanco — ahora sigue el tema claro u oscuro',
+    tr: 'Sekme simgesi: beyaz çerçevesiz tam alan logo — artık açık/koyu görünüme uyuyor',
+  } },
   { version: '0.1.8-beta.63', date: '2026.10.06', note: {
     en: 'No stray focus box on the robot list when the app opens',
     zh: '打开应用时机器人列表不再出现多余的焦点框',
