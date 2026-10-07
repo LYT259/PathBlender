@@ -1,14 +1,12 @@
-import { useId, useRef, useState, Fragment, type KeyboardEvent } from 'react';
+import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { LANGUAGES, langLabel, useI18n, type LangChoice } from '../i18n';
 import { useTheme, type ThemeMode } from '../theme';
 import { useAppIcon, type IconAppearanceMode } from '../app-icon';
 import { readColorblind, writeColorblind } from '../pref-sync';
 import {
   CUSTOM_MOUSE_BUTTONS,
-  CUSTOM_MOUSE_MODS,
   DEFAULT_CUSTOM_MOUSE_MAP,
   MOUSE_SCHEMES,
-  customSlot,
   useCustomMouseControls,
   useDefaultConstrained,
   useMouseControls,
@@ -17,8 +15,6 @@ import {
   type CustomMouseAction,
   type CustomMouseButton,
   type CustomMouseMap,
-  type CustomMouseMod,
-  type CustomMouseSlot,
   type MouseControlsScheme,
 } from '../mouse-controls';
 import { LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
@@ -238,7 +234,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
             {mouse === 'custom'
               ? <CustomMouseEditor
                   map={customEffective}
-                  onChange={(slot, action) => setCustomDraft({ ...customEffective, [slot]: action })}
+                  onChange={(button, action) => setCustomDraft({ ...customEffective, [button]: action })}
                   onReset={() => setCustomDraft({ ...DEFAULT_CUSTOM_MOUSE_MAP })}
                 />
               : <details className="preferences-mouse-details"><summary>{t('prefs.mouse.shortcuts')}</summary>
@@ -328,45 +324,36 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   </div>;
 }
 
-/** The six actions a custom drag slot can hold (option order = table order). */
+/** The six actions a custom drag button can hold (option order = table order). */
 const CUSTOM_ACTIONS: CustomMouseAction[] = ['rotate', 'constrained', 'pan', 'zoom', 'roll', 'none'];
 
 /**
- * Onshape-style assignment table for the custom scheme: a select per
- * (drag button, held modifier) slot — actions as the presets' tables have
- * them, buttons as columns. The wheel has no cell on purpose: it always
- * zooms (user request 2026-10-07) and only its direction reverses below.
+ * Assignment rows for the custom scheme: one select per drag button
+ * (user request 2026-10-07 — a per-modifier matrix read as too complex).
+ * Modifier combos are fixed rules, stated below the rows rather than
+ * edited; the wheel has no row on purpose: it always zooms and only its
+ * direction reverses via the existing checkbox.
  */
 function CustomMouseEditor({ map, onChange, onReset }: {
   map: CustomMouseMap;
-  onChange: (slot: CustomMouseSlot, action: CustomMouseAction) => void;
+  onChange: (button: CustomMouseButton, action: CustomMouseAction) => void;
   onReset: () => void;
 }) {
   const { t } = useI18n();
   const caption = t('prefs.mouse.custom.editor');
-  const modifierName = (mod: CustomMouseMod | null) =>
-    mod ? (mod === 'ctrl' ? 'Ctrl' : mod === 'alt' ? 'Alt' : 'Shift') : t('prefs.mouse.custom.modNone');
   return <div className="preferences-mouse-custom">
     <p className="preferences-mouse-custom-caption">{caption}</p>
     <div className="preferences-mouse-custom-grid" role="group" aria-label={caption}>
-      <span className="preferences-mouse-custom-head" aria-hidden="true" />
-      {CUSTOM_MOUSE_BUTTONS.map((button) => (
-        <span key={button} className="preferences-mouse-custom-head">{t(`prefs.mouse.btn.${button}`)}</span>
-      ))}
-      {CUSTOM_MOUSE_MODS.map((mod) => <Fragment key={mod ?? 'plain'}>
-        <span className="preferences-mouse-custom-rowlabel">
-          {t(mod ? `prefs.mouse.custom.${mod}` : 'prefs.mouse.custom.plain')}
-        </span>
-        {CUSTOM_MOUSE_BUTTONS.map((button) => {
-          const slot = customSlot(button, mod);
-          return <select key={slot} className="preferences-mouse-custom-select" value={map[slot]}
-            aria-label={t('prefs.mouse.custom.slotAria', { button: t(`prefs.mouse.btn.${button}`), modifier: modifierName(mod) })}
-            onChange={(event) => onChange(slot, event.target.value as CustomMouseAction)}>
-            {CUSTOM_ACTIONS.map((action) => <option key={action} value={action}>{t(`prefs.mouse.${action}`)}</option>)}
-          </select>;
-        })}
-      </Fragment>)}
+      {CUSTOM_MOUSE_BUTTONS.map((button) => <div key={button} className="preferences-mouse-custom-row">
+        <span>{t(`prefs.mouse.btn.${button}`)}</span>
+        <select className="preferences-mouse-custom-select" value={map[button]}
+          aria-label={t('prefs.mouse.custom.buttonAria', { button: t(`prefs.mouse.btn.${button}`) })}
+          onChange={(event) => onChange(button, event.target.value as CustomMouseAction)}>
+          {CUSTOM_ACTIONS.map((action) => <option key={action} value={action}>{t(`prefs.mouse.${action}`)}</option>)}
+        </select>
+      </div>)}
     </div>
+    <p className="preferences-setting-description">{t('prefs.mouse.custom.derived')}</p>
     <p className="preferences-setting-description">{t('prefs.mouse.custom.wheelNote')}</p>
     <button type="button" className="btn preferences-mouse-custom-reset" onClick={onReset}>{t('prefs.mouse.custom.reset')}</button>
   </div>;
