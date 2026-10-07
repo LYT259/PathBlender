@@ -214,6 +214,25 @@ describe('auto sequence in the workspace', () => {
     expect(JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]).robots[0].sequence.segments).toHaveLength(2);
   });
 
+  it('entering the composer never pauses a running playback', async () => {
+    render(<App />);
+    const files = ['A'].map((name) => {
+      const file = new File([raw], `${name}.ghostauto`, { type: 'application/json' });
+      Object.defineProperty(file, 'webkitRelativePath', { value: `team/${name}.ghostauto` });
+      return file;
+    });
+    dropFiles(files);
+    await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
+    fireEvent.click(screen.getByRole('button', { name: 'Play', exact: true }));
+    // Open WITHOUT the helper's slider scrub (scrubbing is a transport act
+    // and pauses by design); entering must keep the transport running.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
+    await waitFor(() => expect(document.querySelector('.sequence-composer')).not.toBeNull());
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
+    // The range selector ships inside the composer and is wired to the shared state.
+    expect(screen.getByRole('combobox', { name: 'Playback range' })).toBeInTheDocument();
+  });
+
   it("editing stays open over another robot's controls; only blank area exits", async () => {
     render(<App />);
     const files = ['team/A', 'other/B'].map((name) => {

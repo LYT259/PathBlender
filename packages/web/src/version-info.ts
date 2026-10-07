@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.80';
+export const APP_VERSION = '0.1.8-beta.81';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.81', date: '2026.10.07', note: {
+    en: 'Grayed routes preview on hover too; entering the arrangement editor no longer pauses playback; the playback-range choice now applies inside the editor with a synced selector',
+    zh: '置灰路线悬停也能预览；进入编排不再暂停播放；播放范围选择在编排内生效并提供同步的选择框',
+    'zh-tw': '轉灰路線懸停也能預覽；進入編排不再暫停播放；播放範圍選擇在編排內生效並提供同步的選擇框',
+    cs: 'Zešedlé trasy se při najetí také zobrazují jako náhled; vstup do editoru sekvence přehrávání nepozastavuje; volba rozsahu přehrávání platí i v editoru se synchronizovaným přepínačem',
+    nl: 'Grijze routes tonen bij aanwijzen ook een voorbeeld; het openen van de sequentie-editor pauzeert het afspelen niet meer; de afspeelbereikkeuze geldt ook in de editor, met een gesynchroniseerde keuzelijst',
+    fr: 'Les parcours grisés affichent aussi un aperçu au survol ; entrer dans l’éditeur de séquence ne met plus la lecture en pause ; le choix de plage de lecture s’applique aussi dans l’éditeur, avec un sélecteur synchronisé',
+    he: 'גם מסלולים אפורים מציגים תצוגה מקדימה בריחוף; כניסה לעורך הרצף כבר לא עוצרת את ההשמעה; בחירת טווח ההשמעה חלה גם בעורך עם בורר מסונכרן',
+    ja: 'グレー表示のルートもホバーでプレビューできます。シーケンス編集への入場で再生が一時停止しなくなりました。再生範囲の選択が編集内でも有効になり、同期されたセレクターを搭載します',
+    ko: '회색 표시된 루트도 마우스를 올리면 미리 볼 수 있습니다. 시퀀스 편집기 진입 시 재생이 일시정지되지 않으며, 재생 범위 선택이 편집 안에서도 적용되고 동기화된 선택 상자가 제공됩니다',
+    pl: 'Wyszarzone trasy też pokazują podgląd po najechaniu; wejście do edytora sekwencji nie wstrzymuje odtwarzania; wybór zakresu odtwarzania obowiązuje też w edytorze, z zsynchronizowanym przełącznikiem',
+    'pt-br': 'Rotas cinzas também mostram prévia ao passar o mouse; entrar no editor de sequência não pausa mais a reprodução; a escolha de intervalo de reprodução vale dentro do editor, com um seletor sincronizado',
+    es: 'Las rutas grises también muestran vista previa al pasar el cursor; entrar al editor de secuencia ya no pausa la reproducción; la elección de rango de reproducción se aplica también dentro del editor, con un selector sincronizado',
+    tr: 'Gri rotalar da üzerine gelince önizleme gösteriyor; dizi editörüne girmek oynatmayı durdurmuyor; oynatma aralığı seçimi editör içinde de geçerli ve eşitlenmiş bir seçiciyle geliyor',
+  } },
   { version: '0.1.8-beta.80', date: '2026.10.07', note: {
     en: 'Timeline scrubbing hardened: drag works from any track and the ruler, and no longer depends on pointer capture',
     zh: '时间轴拖动加固：任意轨道与刻度尺都能拖动播放头，且不再依赖指针捕获',

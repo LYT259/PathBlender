@@ -92,7 +92,7 @@
 .sequence-clip strong, .sequence-ghost strong { display: flex; align-items: baseline; gap: 7px; }
 .sequence-clip strong small, .sequence-ghost strong small { color: var(--fg-dim); font-size: 10px; font-weight: 400; }
 .sequence-route-source { touch-action: none; user-select: none; }
-.sequence-route-source:disabled { opacity: .4; cursor: not-allowed; }
+.sequence-route-source[aria-disabled='true'] { opacity: .4; cursor: not-allowed; }
 .sequence-ghost { top: 4px; height: 32px; }
 .sequence-gap-guide { position: absolute; top: 36px; border-top: 1px solid currentColor; color: var(--warn); z-index: 4; pointer-events: none; }
 .sequence-gap-guide.next { color: var(--accent); top: 46px; }
@@ -103,6 +103,7 @@
 .sequence-gap-guide > span { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); padding: 0 3px; background: var(--bg-panel); font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sequence-playhead { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--accent); z-index: 5; pointer-events: none; }
 .sequence-playback-controls { padding: 4px 18px 12px; }
+.sequence-playback-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 2px; }
 /* Radius + inset ring: a full-width square ring read as a foreign rectangle
    (user report, focus-audit 2026-10-07). */
 .sequence-playback-controls > input { display: block; width: 100%; margin: 0; accent-color: var(--accent); border-radius: 8px; }
