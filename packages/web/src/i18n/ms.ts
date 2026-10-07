@@ -38,6 +38,8 @@ export const ms = {
   'prefs.appIcon': "Ikon aplikasi",
   'welcome.title': 'Import laluan untuk bermula',
   'welcome.description': 'Main semula laluan bersama-sama dan semak gangguan.',
+  'welcome.tagline': "Sebelum perlawanan: letakkan program autonomi setiap sekutu di padang yang sama, mainkan bersama-sama, dan kesan lebih awal risiko pelanggaran antara robot.",
+  'welcome.audience': "Untuk kumpulan strategi dan pengaturcaraan pakatan. Fail diproses pada mesin anda dan tidak pernah dimuat naik — PathBlender menganalisis, suntingan dibuat dalam Choreo atau PathPlanner.",
   'welcome.folderAdvice': 'Import keseluruhan folder supaya Anda boleh menukar laluan apabila konflik muncul.',
   'welcome.importFile': 'Import fail laluan',
   'welcome.importFileHint': 'Pilih laluan yang dieksport daripada Choreo atau PathPlanner',
@@ -318,6 +320,7 @@ export const ms = {
   "menu.view": "Paparan",
   "menu.playback": "Main semula",
   "menu.help": "Bantuan",
+  'menu.userGuide': "Panduan pantas",
   "menu.minimize": "Kecilkan",
   "menu.zoom": "Zum",
   "menu.cut": "Potong",
@@ -352,6 +355,7 @@ export const ms = {
   'help.composerMove': "Alih segmen difokus",
   'help.deleteClip': "Padam segmen difokus",
   'help.hint.desktop': "Dalam app desktop menu juga menawarkan Cmd/Ctrl+O (import), Cmd/Ctrl+S (simpan sesi) dan Cmd/Ctrl+, (tetapan).",
+  'guide.fullOnline': "Panduan penuh dalam talian",
 } as const;
 
 export type MessageKey = keyof typeof ms;

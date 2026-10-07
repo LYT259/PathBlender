@@ -38,6 +38,8 @@ export const de = {
   'prefs.appIcon': "App-Symbol",
   'welcome.title': 'Pfade importieren, um loszulegen',
   'welcome.description': 'Pfade gemeinsam abspielen und prüfen, ob sie sich gegenseitig behindern.',
+  'welcome.tagline': "Bring vor dem Match die Autos aller Alliance-Partner auf ein Feld, spiele sie gemeinsam ab und erkenne Kollisionen zwischen Robotern, bevor es zu spät ist.",
+  'welcome.audience': "Für Strategie- und Programmierteams einer Alliance. Dateien werden auf deinem Rechner ausgewertet und nie hochgeladen — PathBlender analysiert, Änderungen passieren in Choreo oder PathPlanner.",
   'welcome.folderAdvice': 'Importieren Sie einen ganzen Ordner, um bei Konflikten die Route zu wechseln.',
   'welcome.importFile': 'Pfaddateien importieren',
   'welcome.importFileHint': 'Wählen Sie aus Choreo oder PathPlanner exportierte Pfade',
@@ -318,6 +320,7 @@ export const de = {
   "menu.view": "Ansicht",
   "menu.playback": "Wiedergabe",
   "menu.help": "Hilfe",
+  'menu.userGuide': "Kurzanleitung",
   "menu.minimize": "Minimieren",
   "menu.zoom": "Zoom",
   "menu.cut": "Ausschneiden",
@@ -352,6 +355,7 @@ export const de = {
   'help.composerMove': "Fokussiertes Segment verschieben",
   'help.deleteClip': "Fokussiertes Segment löschen",
   'help.hint.desktop': "In der Desktop-App bieten die Menüs zusätzlich Cmd/Ctrl+O (Import), Cmd/Ctrl+S (Sitzung sichern) und Cmd/Ctrl+, (Einstellungen).",
+  'guide.fullOnline': "Vollständige Anleitung online",
 } as const;
 
 export type MessageKey = keyof typeof de;

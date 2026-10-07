@@ -92,6 +92,22 @@ check(
   (await page.locator('.workspace-empty .welcome-import').count()) === 1 &&
     (await page.locator('.workspace-empty .welcome-folder-import').count()) === 1,
 );
+// --- Quick guide (2026-10-07 onboarding plan): the welcome screen states the
+// purpose and offers the in-app guide; opening it shows the topic body and
+// Escape closes it back to the welcome screen. ---
+check(
+  'welcome states what the app is for',
+  (await page.locator('.start-tagline').count()) === 1 && (await page.locator('.start-tagline').textContent() ?? '').length > 10,
+);
+await page.locator('.start-guide-link').click();
+await page.waitForSelector('.guide-dialog');
+check(
+  'quick guide opens with the transforms topic',
+  (await page.locator('.guide-dialog').textContent()).includes('PathBlender'),
+);
+await page.keyboard.press('Escape');
+await page.waitForSelector('.guide-dialog', { state: 'detached' });
+check('quick guide closes on Escape', true);
 await page.screenshot({ path: `${SHOTS}/01-empty.png` });
 
 // --- AI retreat (2026-09-20): no assistant surface anywhere ---

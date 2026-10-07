@@ -40,6 +40,8 @@ export const zh: Record<MessageKey, string> = {
   'prefs.appIcon': "应用图标",
   'welcome.title': '从导入路径开始',
   'welcome.description': '一起回放路径，查看机器人之间是否有干涉。',
+  'welcome.tagline': "比赛前，把联盟各队的自动路线放到同一块场地上，同时回放，提前发现机器人之间的碰撞风险。",
+  'welcome.audience': "适合联盟策略组与编程组：文件都在本机解析、绝不上传；PathBlender 只做分析，修改回 Choreo / PathPlanner 完成。",
   'welcome.folderAdvice': '建议导入整个路径文件夹，发现干涉时可以快速切换路线。',
   'welcome.importFile': '导入路径文件',
   'welcome.importFileHint': 'Choreo 或 PathPlanner 路径文件',
@@ -325,6 +327,7 @@ export const zh: Record<MessageKey, string> = {
   "menu.view": "显示",
   "menu.playback": "回放",
   "menu.help": "帮助",
+  'menu.userGuide': "快速指南",
   "menu.minimize": "最小化",
   "menu.zoom": "缩放",
   "menu.cut": "剪切",
@@ -359,4 +362,5 @@ export const zh: Record<MessageKey, string> = {
   'help.composerMove': "移动聚焦的片段",
   'help.deleteClip': "删除聚焦的片段",
   'help.hint.desktop': "桌面版菜单还提供 Cmd/Ctrl+O（导入）、Cmd/Ctrl+S（保存会话）与 Cmd/Ctrl+,（设置）。",
+  'guide.fullOnline': "完整指南（在线）",
 };

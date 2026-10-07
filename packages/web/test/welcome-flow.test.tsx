@@ -5,6 +5,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeSession, parsePathFile, serializeSession } from '@pathblender/core';
 import { App } from '../src/App';
+import { en } from '../src/i18n/en';
 
 const sampleText = readFileSync(resolve(__dirname, '../../../samples/ghostauto/straight_run.ghostauto'), 'utf8');
 const playHint = 'Press Play to see the paths, or scrub the timeline.';
@@ -26,9 +27,17 @@ describe('welcome flow', () => {
   it('shows the brand and starting actions while retaining accessible descriptions', () => {
     render(<App />);
     const welcome = screen.getByRole('region', { name: 'Import paths to get started' });
-    expect(within(welcome).getAllByRole('button')).toHaveLength(4);
+    expect(within(welcome).getAllByRole('button')).toHaveLength(5);
     expect(within(welcome).getByRole('heading', { name: 'PathBlender' })).toBeInTheDocument();
-    expect(welcome.textContent).toBe('PathBlenderImport path filesImport folderOpen saved sessionTry an example');
+    // The purpose pitch (2026-10-07 onboarding plan) sits between the brand
+    // and the buttons; the quick-guide link closes the column.
+    expect(welcome.textContent).toBe([
+      'PathBlender',
+      en['welcome.tagline'],
+      en['welcome.audience'],
+      'Import path files', 'Import folder', 'Open saved session', 'Try an example',
+      en['menu.userGuide'],
+    ].join(''));
     expect(within(welcome).getByRole('button', { name: 'Import path files' })).toHaveAccessibleDescription(/Choreo or PathPlanner/);
     const folder = within(welcome).getByRole('button', { name: 'Import folder' });
     expect(folder).toHaveAccessibleDescription(/several routes.*choose which to replay/);

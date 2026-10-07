@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.83';
+export const APP_VERSION = '0.1.8-beta.85';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.85', date: '2026.10.07', note: {
+    en: "Welcome screen explains what PathBlender is for; Help menu gains an in-app quick guide with the core topics (alliance switch vs mirror, checks, sharing)",
+    "zh": "欢迎页讲清 PathBlender 的用途；帮助菜单新增应用内快速指南（含联盟切换与左右镜像、检查结果、保存分享等主题）",
+    "zh-tw": "歡迎頁說明 PathBlender 的用途；說明選單新增應用程式內快速指南（含聯盟切換與左右鏡像、檢查結果、儲存分享等主題）",
+    "cs": "Uvítací obrazovka vysvětluje, k čemu PathBlender slouží; v nabídce nápovědy přibyla vestavěná rychlá příručka (přepnutí aliance vs. zrcadlení, kontroly, sdílení)",
+    "nl": "Het welkomstscherm legt uit waar PathBlender voor is; in het Help-menu zit nu een ingebouwde korte gids (alliantie-omschakeling vs. spiegelen, controles, delen)",
+    "fr": "L’écran d’accueil explique à quoi sert PathBlender ; le menu Aide gagne un guide rapide intégré (changement d’alliance vs. miroir, contrôles, partage)",
+    "he": "מסך הפתיחה מסביר למה PathBlender נועד; בתפריט העזרה נוסף מדריך מהיר מובנה (החלפת ברית מול שיקוף, בדיקות, שיתוף)",
+    "ja": "ウェルカム画面で PathBlender の用途を説明。ヘルプメニューにアプリ内クイックガイドを追加（アライアンス切替とミラー、検査結果、共有など）",
+    "ko": "환영 화면에서 PathBlender의 용도를 설명합니다. 도움말 메뉴에 앱 내 빠른 안내 추가(얼라이언스 전환 vs 미러, 검사 결과, 공유 등)",
+    "pl": "Ekran powitalny wyjaśnia, do czego służy PathBlender; menu Pomocy zyskuje wbudowany krótki przewodnik (przełączenie sojuszu vs. odbicie, kontrole, udostępnianie)",
+    "pt-br": "A tela de boas-vindas explica para que serve o PathBlender; o menu Ajuda ganha um guia rápido integrado (troca de aliança vs. espelhamento, checagens, compartilhamento)",
+    "es": "La pantalla de bienvenida explica para qué sirve PathBlender; el menú Ayuda gana una guía rápida integrada (cambio de alianza vs. espejo, comprobaciones, compartir)",
+    "tr": "Karşılama ekranı PathBlender’ın ne için olduğunu açıklıyor; Yardım menüsüne yerleşik hızlı kılavuz eklendi (ittifak geçişi ve aynalama, kontroller, paylaşım)",
+  } },
   { version: '0.1.8-beta.83', date: '2026.10.07', note: {
     en: 'The playback-range selector moves to the top row beside Back to playback, full size like the main timeline',
     zh: '播放范围选择框移到顶部「返回回放」那一行，尺寸与主时间轴一致',

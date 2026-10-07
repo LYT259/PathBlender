@@ -38,6 +38,8 @@ export const id = {
   'prefs.appIcon': "Ikon aplikasi",
   'welcome.title': 'Impor jalur untuk memulai',
   'welcome.description': 'Putar ulang jalur bersama dan periksa interferensi.',
+  'welcome.tagline': "Sebelum pertandingan: letakkan program otonom semua sekutu di satu arena, putar bersamaan, dan temukan lebih awal risiko tabrakan antarrobot.",
+  'welcome.audience': "Untuk grup strategi dan pemrograman aliansi. File diurai di mesin Anda dan tidak pernah diunggah — PathBlender menganalisis, suntingan dilakukan di Choreo atau PathPlanner.",
   'welcome.folderAdvice': 'Impor seluruh folder agar bisa mengganti rute saat muncul konflik.',
   'welcome.importFile': 'Impor berkas jalur',
   'welcome.importFileHint': 'Pilih jalur yang diekspor dari Choreo atau PathPlanner',
@@ -318,6 +320,7 @@ export const id = {
   "menu.view": "Tampilan",
   "menu.playback": "Pemutaran",
   "menu.help": "Bantuan",
+  'menu.userGuide': "Panduan cepat",
   "menu.minimize": "Perkecil",
   "menu.zoom": "Perbesar",
   "menu.cut": "Potong",
@@ -352,6 +355,7 @@ export const id = {
   'help.composerMove': "Pindahkan segmen terfokus",
   'help.deleteClip': "Hapus segmen terfokus",
   'help.hint.desktop': "Di aplikasi desktop, menu juga menyediakan Cmd/Ctrl+O (impor), Cmd/Ctrl+S (simpan sesi), dan Cmd/Ctrl+, (pengaturan).",
+  'guide.fullOnline': "Panduan lengkap online",
 } as const;
 
 export type MessageKey = keyof typeof id;

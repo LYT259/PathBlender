@@ -38,6 +38,8 @@ export const da = {
   'prefs.appIcon': "App-ikon",
   'welcome.title': 'Importer ruter for at komme i gang',
   'welcome.description': 'Afspil ruter sammen, og tjek for interferens.',
+  'welcome.tagline': "Før kampen: læg alle allieredes autonome programmer på samme bane, afspil dem sammen, og fang risikoen for kollisioner mellem robotter i god tid.",
+  'welcome.audience': "Til alliancens strategi- og programmeringsgrupper. Filer analyseres på din maskine og uploades aldrig — PathBlender analyserer; redigeringer sker i Choreo eller PathPlanner.",
   'welcome.folderAdvice': 'Importér en hel mappe, så du kan skifte rute, når der opstår en konflikt.',
   'welcome.importFile': 'Importér rutefiler',
   'welcome.importFileHint': 'Vælg ruter eksporteret fra Choreo eller PathPlanner',
@@ -314,6 +316,7 @@ export const da = {
   "menu.view": "Vis",
   "menu.playback": "Afspilning",
   "menu.help": "Hjælp",
+  'menu.userGuide': "Hurtigguide",
   "menu.minimize": "Minimér",
   "menu.zoom": "Zoom",
   "menu.cut": "Klip",
@@ -348,6 +351,7 @@ export const da = {
   'help.composerMove': "Flyt fokuseret segment",
   'help.deleteClip': "Slet fokuseret segment",
   'help.hint.desktop': "I desktopappen tilbyder menuerne også Cmd/Ctrl+O (importér), Cmd/Ctrl+S (gem session) og Cmd/Ctrl+, (indstillinger).",
+  'guide.fullOnline': "Den fulde guide online",
 } as const;
 
 export type MessageKey = keyof typeof da;

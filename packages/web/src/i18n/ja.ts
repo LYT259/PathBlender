@@ -50,6 +50,8 @@ export const ja: Record<MessageKey, string> = {
   'prefs.appIcon': "アプリアイコン",
   'welcome.title': 'パスをインポートして始めましょう',
   'welcome.description': 'パスをまとめて再生し、干渉がないかチェックできます。',
+  'welcome.tagline': "試合前に、アライアンス各チームの自動プログラムを同じフィールドに並べて同時に再生し、ロボット同士の衝突リスクをいち早く発見します。",
+  'welcome.audience': "アライアンスの戦略チームとプログラミングチーム向けです。ファイルはすべて端末内で解析され、アップロードされません。PathBlender は分析のみを行い、編集は Choreo または PathPlanner で行います。",
   'welcome.folderAdvice': 'フォルダごとインポートしておくと、競合が見つかったときにルートを切り替えられます。',
   'welcome.importFile': 'パスファイルをインポート',
   'welcome.importFileHint': 'Choreo または PathPlanner からエクスポートしたパスを選択します',
@@ -338,6 +340,7 @@ export const ja: Record<MessageKey, string> = {
   "menu.view": "表示",
   "menu.playback": "再生",
   "menu.help": "ヘルプ",
+  'menu.userGuide': "クイックガイド",
   "menu.minimize": "最小化",
   "menu.zoom": "ズーム",
   "menu.cut": "カット",
@@ -372,4 +375,5 @@ export const ja: Record<MessageKey, string> = {
   'help.composerMove': "選択中セグメントを移動",
   'help.deleteClip': "選択中セグメントを削除",
   'help.hint.desktop': "デスクトップ版のメニューには Cmd/Ctrl+O（読み込み）・Cmd/Ctrl+S（セッション保存）・Cmd/Ctrl+,（設定）もあります。",
+  'guide.fullOnline': "完全ガイド（オンライン）",
 };

@@ -7,6 +7,7 @@ import { EXAMPLE_RELOADING, consumeExampleRetryFlag, loadWelcomeExample, prefetc
 import { compareScenarios, remapColorblind } from '@pathblender/core';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
+import { GuideDialog } from './components/GuideDialog';
 import { PreferencesPanel } from './components/PreferencesPanel';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { UsageTip, useUsageTip } from './components/UsageTip';
@@ -166,6 +167,8 @@ function AppBody() {
   const [ever3D, setEver3D] = useState(loadView3D);
   const [showPrefs, setShowPrefs] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  // In-app quick guide (onboarding plan §5): Help menu, welcome screen link.
+  const [showGuide, setShowGuide] = useState(false);
   // Composer focus round trip (2026-10-06 keyboard pass): entering stores
   // the element that opened it, leaving puts focus back there — or on the
   // timeline's arrange button when the trigger is gone — so Escape never
@@ -177,6 +180,13 @@ function AppBody() {
     void import('@tauri-apps/api/core')
       .then(({ invoke }) => invoke('open_preferences'))
       .catch(() => setShowPrefs(true));
+  }
+  /** External links: the desktop shell owns the default browser, the web opens a tab. */
+  function openExternalUrl(url: string) {
+    if (!IS_DESKTOP) { window.open(url, '_blank', 'noopener'); return; }
+    void import('@tauri-apps/api/core')
+      .then(({ invoke }) => invoke('open_external', { url }))
+      .catch(() => { window.open(url, '_blank', 'noopener'); });
   }
   const [exampleLoading, setExampleLoading] = useState(false);
   // A file import wins over a pending example module load.
@@ -1275,12 +1285,9 @@ function AppBody() {
     'jump-first-issue': jumpFirstIssue,
     preferences: openPreferences,
     'check-update': () => void checkForUpdates(),
-    github: () => {
-      if (!IS_DESKTOP) { window.open(GITHUB_URL, '_blank', 'noopener'); return; }
-      void import('@tauri-apps/api/core')
-        .then(({ invoke }) => invoke('open_external', { url: GITHUB_URL }))
-        .catch(() => { window.open(GITHUB_URL, '_blank', 'noopener'); });
-    },
+    'open-guide': () => setShowGuide(true),
+    'open-shortcuts': () => setShowHelp(true),
+    github: () => openExternalUrl(GITHUB_URL),
     about: () => { if (IS_DESKTOP) openPreferences(); else setShowPrefs(true); },
   };
   for (const f of FIELDS) {
@@ -1444,7 +1451,7 @@ function AppBody() {
                     above now guarantees. */}
                 <button className="tool-btn canvas-recenter" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} aria-keyshortcuts="0" onClick={resetView}><Icon name="recenter" size={17} /></button>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={() => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : <>
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={() => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} onOpenGuide={() => setShowGuide(true)} /> : <>
                 {/* Parked 3D: mounted at the first 3D entry — or earlier,
                     prewarmed hidden once robots exist (see prewarm3D above) —
                     then hidden (not unmounted) while 2D shows: scene, models
@@ -1492,6 +1499,7 @@ function AppBody() {
       {showPrefs && <Dialog title={tr('prefs.title')} onClose={() => setShowPrefs(false)} className="preferences-dialog">
         <PreferencesPanel desktop={IS_DESKTOP} onClose={() => setShowPrefs(false)} onColorblindSaved={setColorblind} />
       </Dialog>}
+      {showGuide && <GuideDialog onClose={() => setShowGuide(false)} onOpenShortcuts={() => { setShowGuide(false); setShowHelp(true); }} onOpenUrl={openExternalUrl} />}
       {showHelp && <Dialog title={tr('help.title')} onClose={() => setShowHelp(false)} className="help-dialog">
         <p className="help-intro">{tr('help.intro')}</p>
         <div className="help-groups">

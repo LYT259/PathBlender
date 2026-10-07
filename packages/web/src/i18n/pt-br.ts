@@ -49,6 +49,8 @@ export const ptBR: Record<MessageKey, string> = {
   'prefs.appIcon': "Ícone do aplicativo",
   'welcome.title': 'Importe trajetórias para começar',
   'welcome.description': 'Reproduza as trajetórias juntas e verifique interferências.',
+  'welcome.tagline': "Antes da partida: coloque os autos de todos os aliados no mesmo campo, reproduza-os juntos e descubra cedo os riscos de colisão entre robôs.",
+  'welcome.audience': "Para os grupos de estratégia e programação da aliança. Os arquivos são analisados na sua máquina e nunca enviados — o PathBlender analisa; as edições acontecem no Choreo ou PathPlanner.",
   'welcome.folderAdvice': 'Importe uma pasta inteira para poder trocar de rota quando aparecer um conflito.',
   'welcome.importFile': 'Importar arquivos de trajetória',
   'welcome.importFileHint': 'Escolha trajetórias exportadas do Choreo ou do PathPlanner',
@@ -335,6 +337,7 @@ export const ptBR: Record<MessageKey, string> = {
   "menu.view": "Visualizar",
   "menu.playback": "Reprodução",
   "menu.help": "Ajuda",
+  'menu.userGuide': "Guia rápido",
   "menu.minimize": "Minimizar",
   "menu.zoom": "Zoom",
   "menu.cut": "Cortar",
@@ -369,4 +372,5 @@ export const ptBR: Record<MessageKey, string> = {
   'help.composerMove': "Mover o segmento em foco",
   'help.deleteClip': "Excluir o segmento em foco",
   'help.hint.desktop': "No app desktop os menus também oferecem Cmd/Ctrl+O (importar), Cmd/Ctrl+S (salvar sessão) e Cmd/Ctrl+, (ajustes).",
+  'guide.fullOnline': "Guia completo online",
 };
