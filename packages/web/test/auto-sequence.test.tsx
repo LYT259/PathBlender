@@ -209,6 +209,32 @@ describe('auto sequence in the workspace', () => {
     expect(JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]).robots[0].sequence.segments).toHaveLength(2);
   });
 
+  it("editing stays open over another robot's controls; only blank area exits", async () => {
+    render(<App />);
+    const files = ['team/A', 'other/B'].map((name) => {
+      const file = new File([raw], `${name.split('/')[1]}.ghostauto`, { type: 'application/json' });
+      Object.defineProperty(file, 'webkitRelativePath', { value: `${name}.ghostauto` });
+      return file;
+    });
+    dropFiles(files);
+    await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
+    openComposer();
+    await waitFor(() => expect(document.querySelector('.sequence-composer')).not.toBeNull());
+    // Hiding the OTHER robot is a functional click — it must apply without
+    // exiting edit mode (user 2026-10-07).
+    const otherRow = [...document.querySelectorAll('.robot-library-row')][1]!;
+    const hide = otherRow.querySelector('.robot-library-visibility') as HTMLButtonElement;
+    fireEvent.pointerDown(hide); fireEvent.click(hide);
+    expect(document.querySelector('.sequence-composer')).not.toBeNull();
+    expect(otherRow).toHaveClass('is-hidden');
+    // Selecting that robot via its tabbable row is functional too.
+    fireEvent.pointerDown(otherRow); fireEvent.click(otherRow);
+    expect(document.querySelector('.sequence-composer')).not.toBeNull();
+    // A pointerdown on blank page area still exits.
+    fireEvent.pointerDown(document.body);
+    expect(document.querySelector('.sequence-composer')).toBeNull();
+  });
+
   it('restores a saved composition from a session file', async () => {
     const a: Trajectory = {
       id: 'restored', name: 'A', teamName: 'Team', teamNumber: '0001', source: 'ghostauto', alliance: 'blue',

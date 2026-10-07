@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.73';
+export const APP_VERSION = '0.1.8-beta.74';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.74', date: '2026.10.07', note: {
+    en: 'Composer stays open when clicking other controls such as hiding another robot; only a blank-area click exits editing. Hovering or focusing a placed clip now previews that route',
+    zh: '编排模式下点击隐藏等其他控件不再退出，只有点空白区域才退出；悬停或聚焦已编排的段块即可预览该路线',
+    'zh-tw': '編排模式下點擊隱藏等其他控制項不再退出，只有點空白區域才退出；懸停或聚焦已編排的段塊即可預覽該路線',
+    cs: 'Editor sekvence se při kliknutí na další ovládací prvky (např. skrytí jiného robota) nezavírá; ukončí ho jen kliknutí na prázdnou plochu. Pořízení najetím nebo zaměření už umístěného segmentu zobrazí náhled trasy',
+    nl: 'De sequentie-editor sluit niet meer bij klikken op andere bedieningselementen zoals een andere robot verbergen; alleen een klik op een leeg gebied beëindigt het bewerken. Een geplaatst segment previewen kan nu door aanwijzen of focussen',
+    fr: 'L’éditeur de séquence reste ouvert lors d’un clic sur d’autres commandes (masquer un autre robot, par exemple) ; seul un clic sur une zone vide quitte l’édition. Survoler ou focaliser un segment placé en affiche désormais l’aperçu du parcours',
+    he: 'עורך הרצף נשאר פתוח בלחיצה על פקדים אחרים כמו הסתרת רובוט אחר; רק לחיצה על אזור ריק מסיימת את העריכה. ריחוף או מיקוד על מקטע מוצב מציגים כעת תצוגה מקדימה של המסלול',
+    ja: 'シーケンス編集中に他のロボットを隠すなどのコントロール操作では編集モードを終了しなくなりました。空白エリアのクリックのみで終了します。配置済みセグメントへのホバー・フォーカスでそのルートをプレビューできます',
+    ko: '시퀀스 편집 중 다른 로봇 숨기기 등의 컨트롤을 클릭해도 편집 모드가 종료되지 않으며 빈 영역 클릭 시에만 종료됩니다. 배치된 세그먼트를 마우스로 가리키거나 포커스하면 해당 루트를 미리 볼 수 있습니다',
+    pl: 'Edytor sekwencji nie zamyka się przy klikaniu innych kontrolek, np. ukrycia innego robota; wychodzi z edycji tylko kliknięcie pustego obszaru. Najechanie lub fokusowanie umieszczonego segmentu pokazuje teraz podgląd trasy',
+    'pt-br': 'O editor de sequência continua aberto ao clicar em outros controles, como ocultar outro robô; só um clique em área vazia encerra a edição. Passar o mouse ou focar um segmento posicionado agora mostra a prévia daquela rota',
+    es: 'El editor de secuencia permanece abierto al pulsar otros controles, como ocultar otro robot; solo un clic en una zona vacía sale de la edición. Pasar el cursor o enfocar un segmento colocado ahora muestra la vista previa de esa ruta',
+    tr: 'Dizi editörü başka bir robotu gizleme gibi diğer denetimlere tıklandığında artık kapanmıyor; yalnızca boş bir alana tıklamak düzenlemeyi bitiriyor. Yerleştirilmiş bir segmentin üzerine gelmek veya odaklamak artık o rotanın önizlemesini gösteriyor',
+  } },
   { version: '0.1.8-beta.73', date: '2026.10.07', note: {
     en: 'Sequence library continuity gating: routes that do not start where the playhead segment ends are grayed out and sorted after the draggable ones',
     zh: '编排路线库按连续性筛选：起点不衔接进度条所在段终点的路线置灰，并排到可拖入路线之后',
