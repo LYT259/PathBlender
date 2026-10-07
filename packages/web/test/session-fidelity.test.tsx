@@ -5,7 +5,7 @@
  * the debounce via a beforeunload flush.
  */
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_GEOMETRY, makeSession, serializeSession, type SessionTrajectory } from '@pathblender/core';
 import { App } from '../src/App';
 
@@ -31,6 +31,14 @@ function seedAutosave(robots: SessionTrajectory[], ui?: Record<string, unknown>)
   if (ui) file.ui = ui;
   localStorage.setItem('pb.autosave.v1', JSON.stringify(file));
 }
+
+// The relaunch flows below restore example robots, which lazy-imports the
+// ~1.6 MB example module at mount; under parallel-session load that import
+// alone could eat the whole 10 s find budget (acceptance round, 2026-10-07).
+// Preloading it here makes the app's import() resolve from the cache.
+beforeAll(async () => {
+  await import('../src/welcome-example');
+});
 
 beforeEach(() => localStorage.clear());
 

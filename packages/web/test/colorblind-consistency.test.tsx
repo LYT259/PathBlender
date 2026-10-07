@@ -18,7 +18,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App';
 import { makeSession, parseGhostAuto, serializeSession } from '@pathblender/core';
 
@@ -39,6 +39,14 @@ function firstDotColor(): string {
   return (dot.style.backgroundColor || dot.style.background).toLowerCase();
 }
 
+// The example route set is ~1.6 MB of lazy-imported text. Transforming it
+// at click time regularly blew waitFor's 1 s default under parallel-session
+// load (the acceptance round caught this as a deterministic flake); loading
+// it once up front makes the app's dynamic import() resolve from the module
+// cache, so the assertions time the state update, not the transform.
+beforeAll(async () => {
+  await import('../src/welcome-example');
+});
 beforeEach(() => {
   localStorage.clear();
   localStorage.setItem('pb.lengthUnit', 'm');
@@ -82,6 +90,9 @@ describe('colorblind palette across session entry points', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Try an example' }));
     // The example is a lazy chunk that parses ~1.6 MB of route text; on a
     // loaded machine that outlasts waitFor's 1 s default (seen at load 100+).
+    // The beforeAll preload below removes the transform from the timing, and
+    // the generous timeout stays as belt-and-braces (PR #265 raised it for
+    // the same root cause).
     await waitFor(() => expect(document.querySelector('.band-dot')).not.toBeNull(), { timeout: 20000 });
     expect(firstDotColor()).toMatch(/#0072b2|rgb\(0, 114, 178\)/);
   }, 30000);
