@@ -74,7 +74,6 @@ const TAGS: Record<Lang, string> = {
   vi: 'vi',
   zh: 'zh',
   'zh-hk': 'zh-HK',
-  'zh-tw': 'zh-TW',
 };
 
 const cache = new Map<string, Intl.NumberFormat>();
