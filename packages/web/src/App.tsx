@@ -1471,7 +1471,7 @@ function AppBody() {
           </aside>
         </main>
         {/* Playback spans the full workspace, below both side panels. */}
-        {hasRobots && !composerOpen && <footer className="app-footer"><Timeline composeAction={<button ref={composeButtonRef} className="btn small" aria-keyshortcuts="e" onClick={() => { const id = (selectedRobot ?? robots[0])?.trajectory.id; if (id) openSequenceFor(id); }}>{tr('sequence.arrange')}</button>} robots={robots} conflicts={conflicts} bounds={bounds} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
+        {hasRobots && !composerOpen && <footer className="app-footer"><Timeline composeAction={<button ref={composeButtonRef} className="btn small" aria-keyshortcuts="e" onClick={() => { const id = (selectedRobot ?? robots[0])?.trajectory.id; if (id) openSequenceFor(id); }}>{tr('sequence.arrange')}</button>} robots={robots} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
         {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={setPreviewRouteId} joins={sequenceJoins} playback={playback} onJump={jumpToSeam} />}
 
       {cfOpen && <CustomFieldPanel
@@ -1500,12 +1500,11 @@ function AppBody() {
           </section>
           <section>
             <h3>{tr('help.group.view')}</h3>
-            <HelpRow keys="+ / −" label={tr('prefs.mouse.zoom')} />
+            {/* The canvas-scope keys (zoom/orbit/pan/cube presets) went with
+                the canvas focus feature (user 2026-10-07) — scrubbing, refit
+                and the view toggle are global and stay listed. */}
             <HelpRow keys="0" label={tr('canvas.fit')} />
             <HelpRow keys="V" label={tr('help.viewToggle')} />
-            <HelpRow keys="← → ↑ ↓" label={`${tr('prefs.mouse.rotate')} (3D)`} />
-            <HelpRow keys="⇧ ← → ↑ ↓" label={`${tr('prefs.mouse.pan')} (3D)`} />
-            <HelpRow keys="1 – 6" label={tr('help.cubeViews')} />
           </section>
           <section>
             <h3>{tr('help.group.robot')}</h3>

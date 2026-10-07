@@ -205,18 +205,9 @@ body.desktop.desktop-macos .toolbar { padding-left: 84px; }
 }
 .help-desktop-hint { margin: 14px 0 0; color: var(--fg-dim); font-size: 12px; line-height: 1.5; }
 
-/* Focused canvases (2D + 3D) show the standard focus ring inset — the
-   keyboard view keys need a visible owner. The canvases carry a radius so
-   that inset ring is rounded like every other ring (focus-audit 2026-10-07). */
-.field-canvas,
-.field-canvas-3d canvas {
-  border-radius: 10px;
-}
-.field-canvas:focus-visible,
-.field-canvas-3d canvas:focus-visible {
-  outline: 2px solid var(--accent, #0a84ff);
-  outline-offset: -2px;
-}
+/* The canvases carry no focus ring and no Tab stop (user 2026-10-07):
+   clicking the field does nothing, so a box around the whole field read
+   as a broken promise. Playback keys are global and need no canvas focus. */
 
 /* ---------- AI side panel (VS Code style) ---------- */
 .ai-panel {
@@ -372,6 +363,10 @@ input[type="number"], input[type="text"] {
 }
 .seg button:hover:not(:disabled) { color: var(--fg); }
 .seg button:disabled { opacity: 0.35; cursor: default; }
+/* Pills sit shoulder to shoulder inside the seg tray — an outside ring
+   slides under the neighbouring pill's background (read: clipped), so the
+   focus ring draws inside the pill (focus-audit 2026-10-07). */
+.seg button:focus-visible { outline-offset: -2px; }
 .seg button.on { background: var(--seg-on); color: var(--fg); box-shadow: var(--seg-on-shadow); }
 .seg button.on-blue { background: var(--seg-blue-bg); color: var(--seg-blue-fg); }
 .seg button.on-red { background: var(--seg-red-bg); color: var(--seg-red-fg); }

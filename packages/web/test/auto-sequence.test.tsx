@@ -145,7 +145,12 @@ describe('auto sequence in the workspace', () => {
   function dropFiles(files: File[]) {
     fireEvent.drop(window, { dataTransfer: { files } });
   }
-  const openComposer = () => fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
+  const openComposer = () => {
+    fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
+    // Park the playhead on empty lane (A spans 0–8.3 s) — the occupancy gate
+    // grays the library while the playhead sits ON a segment.
+    fireEvent.change(screen.getByRole('slider', { name: 'Playback position' }), { target: { value: '9' } });
+  };
   const clipsInComposer = () => within(document.querySelector('.sequence-composer') as HTMLElement).getAllByRole('button', { name: /, \d+\.\d+–/ });
   function setStart(value: string) {
     const input = screen.getByRole('spinbutton', { name: 'Start' });

@@ -29,7 +29,7 @@ describe('composer hover preview in the real app', () => {
     fireEvent.drop(window, { dataTransfer: { files } });
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
     fireEvent.doubleClick(document.querySelector('.timeline-activity')!);
-    fireEvent.change(screen.getByRole('slider', { name: 'Playback position' }), { target: { value: '6' } });
+    fireEvent.change(screen.getByRole('slider', { name: 'Playback position' }), { target: { value: '9' } });
     const before = field();
     const autosaved = JSON.parse(localStorage.getItem('pb.autosave.v1')!);
     const source = screen.getByRole('button', { name: 'B: 8.30 s' });

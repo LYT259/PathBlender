@@ -10,31 +10,41 @@ import { applySequenceSegments, sequenceViewFor, type AutoSequenceSegment } from
 import { canPlaceClip, clipsFor, sameClipLayout, segmentsFromClips, snapClipStart, boundedClipStart, clipGaps } from '../src/sequence-timeline-clips';
 
 const raw = readFileSync(resolve(__dirname, '../../../samples/ghostauto/straight_run.ghostauto'), 'utf8');
-/** Samples of the base route translated so the copy starts at `from`'s end pose. */
-function shiftedToChain(base: Trajectory): Trajectory['samples'] {
+/** Samples of the base route translated `times` legs down the chain: the
+ * copy starts exactly where the previous leg ends, so the playhead-gated
+ * library keeps B draggable after A and C draggable after B. */
+function shiftedToChain(base: Trajectory, times = 1): Trajectory['samples'] {
   const first = base.samples[0]!;
   const last = base.samples.at(-1)!;
-  return base.samples.map((s) => ({ ...s, x: s.x + last.x - first.x, y: s.y + last.y - first.y, heading: s.heading + last.heading - first.heading }));
+  return base.samples.map((s) => ({
+    ...s,
+    x: s.x + (last.x - first.x) * times,
+    y: s.y + (last.y - first.y) * times,
+    heading: s.heading + (last.heading - first.heading) * times,
+  }));
 }
 function fixture(id = 'one', duration = 4): SessionTrajectory {
   const trajectory = { ...parseGhostAuto(raw, 'A.ghostauto'), id, teamNumber: id, name: 'A', durationS: duration };
-  // B starts exactly where A ends ((2,2)→(11.96,2)) so the playhead-gated
-  // library keeps it draggable after A; the original A is the blocked case.
+  // A: (2,2)→(11.96,2); B starts at A's end; C starts at B's end. The
+  // original A is the blocked case at every anchor.
   return { ...makeSession(trajectory), routeId: 'a', routeOptions: [
     { id: 'a', relPath: 'A.ghostauto', trajectory },
     { id: 'b', relPath: 'B.ghostauto', trajectory: { ...trajectory, id: `${id}-b`, name: 'B', durationS: 3, samples: shiftedToChain(trajectory) } },
+    { id: 'c', relPath: 'C.ghostauto', trajectory: { ...trajectory, id: `${id}-c`, name: 'C', durationS: 3, samples: shiftedToChain(trajectory, 2) } },
   ] };
 }
 
 
-function LiveHarness({ robot = fixture(), autoPeriodS = 20, onCommit = () => {}, onClose = vi.fn(), t = 0 }: {
-  robot?: SessionTrajectory; autoPeriodS?: number; onCommit?: (r: SessionTrajectory) => void; onClose?: () => void; t?: number;
+function LiveHarness({ robot = fixture(), autoPeriodS = 20, onCommit = () => {}, onClose = vi.fn(), t = 5, setT = vi.fn() }: {
+  robot?: SessionTrajectory; autoPeriodS?: number; onCommit?: (r: SessionTrajectory) => void; onClose?: () => void; t?: number; setT?: (v: number) => void;
 }) {
   const [saved, setSaved] = useState(robot);
   const [playing, setPlaying] = useState(false);
+  // Stateful playhead: scrub and append-advance move it for real, like App.
+  const [now, setNow] = useState(t);
   return <I18nProvider><SequenceTimelineComposer robots={[saved]} selectedId={saved.trajectory.id} onSelect={vi.fn()} autoPeriodS={autoPeriodS}
     open onClose={onClose} onChange={(segments) => { const next = applySequenceSegments(saved, segments); setSaved(next); onCommit(next); }}
-    joins={checkSequenceJoins(saved)} onJump={vi.fn()} playback={{ t, setT: vi.fn(), playing, setPlaying, speed: 1, setSpeed: vi.fn() }} /></I18nProvider>;
+    joins={checkSequenceJoins(saved)} onJump={vi.fn()} playback={{ t: now, setT: (v) => { setNow(v); setT(v); }, playing, setPlaying, speed: 1, setSpeed: vi.fn() }} /></I18nProvider>;
 }
 beforeEach(() => {
   localStorage.clear(); localStorage.setItem('pb.lang', 'en'); vi.clearAllMocks();
@@ -43,7 +53,10 @@ beforeEach(() => {
 });
 const activeLane = () => document.querySelector('.sequence-track.is-editing .sequence-track-lane') as HTMLElement;
 const clips = () => within(activeLane()).queryAllByRole('button', { name: /, \d+\.\d+–/ });
+// Default playhead t=5 sits on EMPTY lane (A spans 0–4 s): the occupancy
+// gate grays the whole library while the playhead is ON a segment.
 const addB = () => fireEvent.click(screen.getByRole('button', { name: /^B: \d+\.\d\d s$/ }));
+const addC = () => fireEvent.click(screen.getByRole('button', { name: /^C: \d+\.\d\d s$/ }));
 function geometry() {
   vi.spyOn(activeLane(), 'getBoundingClientRect').mockReturnValue({ left: 0, top: 100, right: 1000, bottom: 194, width: 1000, height: 94, x: 0, y: 100, toJSON: () => {} });
 }
@@ -92,7 +105,10 @@ describe('timeline placement helpers', () => {
 describe('live arrangement editing', () => {
   it('clicks append even when another clip is selected, and commits immediately', () => {
     const commit = vi.fn(); render(<LiveHarness onCommit={commit} />);
-    fireEvent.click(clips()[0]!); addB(); addB();
+    fireEvent.click(clips()[0]!);
+    // Append advances the playhead to the new end, so C stays draggable —
+    // chaining needs no scrub between appends.
+    addB(); addC();
     expect(clips()).toHaveLength(3);
     expect(commit).toHaveBeenCalledTimes(2);
     expect(activeEndT(commit.mock.calls[1]![0])).toBe(10);
@@ -197,7 +213,7 @@ describe('playhead-gated route library', () => {
     // measured gap, and sorts after the draggable routes.
     localStorage.setItem('pb.lengthUnit', 'm');
     render(<LiveHarness t={5} />);
-    expect(labels()).toEqual(['B', 'A']);
+    expect(labels()).toEqual(['B', 'A', 'C']);
     const [b, a] = sources();
     expect(b).toBeEnabled();
     expect(a).toBeDisabled();
@@ -215,7 +231,78 @@ describe('playhead-gated route library', () => {
   it('keeps every route available before the first segment starts', () => {
     const robot = applySequenceSegments(fixture(), [{ id: 'late', routeId: 'a', waitBeforeS: 2 }]);
     render(<LiveHarness robot={robot} t={1} />);
-    expect(labels()).toEqual(['A', 'B']);
+    expect(labels()).toEqual(['A', 'B', 'C']);
     expect(sources().every((b) => !b.disabled)).toBe(true);
+  });
+});
+
+describe('lane scrub, chosen-delete, drag badge and occupancy gating', () => {
+  const sources = () => [...document.querySelectorAll('.sequence-route-source')] as HTMLButtonElement[];
+  const labels = () => sources().map((b) => b.getAttribute('aria-label')!.split(':')[0]);
+
+  it('presses and drags empty lane space to scrub the playhead, clamped to the axis', () => {
+    const setT = vi.fn(); render(<LiveHarness t={5} setT={setT} />); geometry();
+    const lane = activeLane();
+    // A press jumps straight to the pressed time.
+    fireEvent.pointerDown(lane, { button: 0, clientX: 500, clientY: 130 });
+    expect(setT).toHaveBeenLastCalledWith(10);
+    // Dragging scrubs continuously; beyond the lane clamps to the season.
+    fireEvent.pointerMove(lane, { clientX: 250, clientY: 130 });
+    expect(setT).toHaveBeenLastCalledWith(5);
+    fireEvent.pointerMove(lane, { clientX: 2000, clientY: 130 });
+    expect(setT).toHaveBeenLastCalledWith(20);
+    fireEvent.pointerMove(lane, { clientX: -80, clientY: 130 });
+    expect(setT).toHaveBeenLastCalledWith(0);
+    fireEvent.pointerUp(lane, { clientX: -80, clientY: 130 });
+    // A clip press is a move gesture, never a scrub.
+    const before = setT.mock.calls.length;
+    fireEvent.pointerDown(clips()[0]!, { button: 0, clientX: 200, clientY: 130 });
+    fireEvent.pointerUp(clips()[0]!, { clientX: 200, clientY: 130 });
+    expect(setT.mock.calls.length).toBe(before);
+  });
+
+  it('Delete removes the CLICKED (chosen) clip even though the click did not focus it', () => {
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} />);
+    fireEvent.click(clips()[0]!); // jsdom clicks do not focus — same as desktop WebKit
+    expect(document.activeElement).not.toBe(clips()[0]!);
+    fireEvent.keyDown(activeLane(), { key: 'Delete' });
+    expect(clips()).toHaveLength(0);
+    expect(activeEndT(commit.mock.calls[0]![0])).toBe(0);
+  });
+
+  it('shows a follow-along badge naming the dragged route, in the lane and out of it', () => {
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
+    const source = screen.getByRole('button', { name: 'B: 3.00 s' });
+    fireEvent.pointerDown(source, { button: 0, clientX: 20, clientY: 30 });
+    // Below the lane: no ghost yet, but the badge already identifies the drag.
+    fireEvent.pointerMove(source, { clientX: 300, clientY: 250 });
+    expect(document.querySelector('.sequence-ghost')).toBeNull();
+    const badge = document.querySelector('.sequence-drag-badge')!;
+    expect(badge.textContent).toContain('B');
+    expect(badge.textContent).toContain('3.00s');
+    // Inside the lane the ghost appears and the badge keeps riding the pointer.
+    fireEvent.pointerMove(source, { clientX: 500, clientY: 130 });
+    expect(document.querySelector('.sequence-ghost')).not.toBeNull();
+    expect(document.querySelector('.sequence-drag-badge')).not.toBeNull();
+    fireEvent.pointerUp(source, { clientX: 500, clientY: 130 });
+    expect(commit).toHaveBeenCalledTimes(1);
+    expect(document.querySelector('.sequence-drag-badge')).toBeNull();
+  });
+
+  it('grays the whole library while the playhead sits on an occupied stretch, restoring at the seam', () => {
+    // t = 2 is inside A (0–4 s): nowhere to drop at the playhead.
+    const commit = vi.fn(); const { unmount } = render(<LiveHarness onCommit={commit} t={2} />);
+    expect(labels()).toEqual(['A', 'B', 'C']); // all blocked → stable original order
+    expect(sources().every((b) => b.disabled)).toBe(true);
+    expect(sources()[0]!.getAttribute('aria-label')).toContain('occupied stretch');
+    fireEvent.click(sources()[1]!);
+    expect(commit).not.toHaveBeenCalled();
+    // t = 4 is exactly A's end: a seam is free space — pose gating takes over again.
+    unmount();
+    const seam = vi.fn(); render(<LiveHarness onCommit={seam} t={4} />);
+    expect(labels()).toEqual(['B', 'A', 'C']);
+    expect(seam).not.toHaveBeenCalled();
+    fireEvent.click(screen.getAllByRole('button', { name: /^B: \d+\.\d\d s$/ })[0]!);
+    expect(seam).toHaveBeenCalledTimes(1);
   });
 });
