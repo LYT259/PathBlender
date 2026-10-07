@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.78';
+export const APP_VERSION = '0.1.8-beta.79';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.79', date: '2026.10.07', note: {
+    en: 'Custom mouse controls simplified: one action per button, with Ctrl/Shift/Alt combos derived automatically',
+    zh: '自定义鼠标控制简化：每个按键只选一个动作，Ctrl/Shift/Alt 组合键自动推导',
+    'zh-tw': '自訂滑鼠控制簡化：每個按鍵只選一個動作，Ctrl/Shift/Alt 組合鍵自動推導',
+    cs: 'Vlastní ovládání myší zjednodušeno: jedna akce na tlačítko, kombinace Ctrl/Shift/Alt se odvozují automaticky',
+    nl: 'Aangepaste muisbediening vereenvoudigd: één actie per knop, Ctrl/Shift/Alt-combo’s worden automatisch afgeleid',
+    fr: 'Contrôles souris personnalisés simplifiés : une action par bouton, les combos Ctrl/Shift/Alt se déduisent automatiquement',
+    he: 'בקרת עכבר מותאמת אישית הופשטה: פעולה אחת לכל כפתור, ושילובי Ctrl/Shift/Alt נגזרים אוטומטית',
+    ja: 'マウスのカスタマイズを簡素化：ボタンごとに動作を1つ選ぶだけで、Ctrl/Shift/Alt の組み合わせは自動で決まります',
+    ko: '마우스 사용자 지정 간소화: 버튼마다 동작을 하나만 고르고, Ctrl/Shift/Alt 조합은 자동으로 결정됩니다',
+    pl: 'Niestandardowa obsługa myszy uproszczona: jedna akcja na przycisk, a kombinacje Ctrl/Shift/Alt wynikają automatycznie',
+    'pt-br': 'Controles personalizados do mouse simplificados: uma ação por botão, e as combinações Ctrl/Shift/Alt são derivadas automaticamente',
+    es: 'Controles personalizados del ratón simplificados: una acción por botón, y los combos Ctrl/Shift/Alt se derivan automáticamente',
+    tr: 'Özel fare kontrolleri basitleştirildi: düğme başına tek eylem, Ctrl/Shift/Alt kombinasyonları otomatik belirlenir',
+  } },
   { version: '0.1.8-beta.78', date: '2026.10.07', note: {
     en: 'Compact arrangement timeline (half the height, no dead space), rounded timeline corners, and field-bounds warnings now start at 1 inch of penetration',
     zh: '编排时间轴压缩近半（去掉段块上下的空隙）并改为圆角；场地出界警示改为超出 1 英寸才触发',
