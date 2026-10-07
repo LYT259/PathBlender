@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.79';
+export const APP_VERSION = '0.1.8-beta.80';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.80', date: '2026.10.07', note: {
+    en: 'Timeline scrubbing hardened: drag works from any track and the ruler, and no longer depends on pointer capture',
+    zh: '时间轴拖动加固：任意轨道与刻度尺都能拖动播放头，且不再依赖指针捕获',
+    'zh-tw': '時間軸拖動加固：任意軌道與刻度尺都能拖動播放頭，且不再依賴指標捕獲',
+    cs: 'Posun po časové ose zpevněn: hlavičku lze táhnout z libovolné dráhy i z pravítka a už nezávisí na zachycení ukazatele',
+    nl: 'Tijdlijn-slepen verhard: de afspeelkop is vanaf elke baan en de liniaal te slepen en hangt niet meer af van pointer capture',
+    fr: 'Le balayage de la timeline est renforcé : la tête de lecture se tire depuis n’importe quelle piste et la règle, sans dépendre de la capture du pointeur',
+    he: 'גרירת ציר הזמן חוזקה: אפשר לגרור את ראש ההשמעה מכל מסלול ומהסרגל, ללא תלות בלכידת מצביע',
+    ja: 'タイムラインのスクラブを強化：どのトラックからでも、またルーラーからでも再生位置をドラッグでき、ポインタキャプチャに依存しなくなりました',
+    ko: '타임라인 스크럽 강화: 모든 트랙과 눈금자에서 재생 위치를 드래그할 수 있고 포인터 캡처에 의존하지 않습니다',
+    pl: 'Wzmocnione przeciąganie po osi czasu: głowicę można ciągnąć z każdej ścieżki i z linijki, bez zależności od przechwycenia wskaźnika',
+    'pt-br': 'Arrasto da linha do tempo reforçado: o cursor de reprodução pode ser arrastado de qualquer faixa e da régua, sem depender da captura do ponteiro',
+    es: 'Barrido de la línea de tiempo reforzado: el cabezal se puede arrastrar desde cualquier pista y desde la regla, sin depender de la captura del puntero',
+    tr: 'Zaman çizgesi sürükleme sağlamlaştırıldı: oynatma kafası herhangi bir kulvardan ve cetvelden sürüklenebilir ve artık işaretçi yakalamaya bağlı değil',
+  } },
   { version: '0.1.8-beta.79', date: '2026.10.07', note: {
     en: 'Custom mouse controls simplified: one action per button, with Ctrl/Shift/Alt combos derived automatically',
     zh: '自定义鼠标控制简化：每个按键只选一个动作，Ctrl/Shift/Alt 组合键自动推导',

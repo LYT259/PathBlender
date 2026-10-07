@@ -306,3 +306,41 @@ describe('lane scrub, chosen-delete, drag badge and occupancy gating', () => {
     expect(seam).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('scrub hardening: window-driven drag, reference lane and ruler surfaces', () => {
+  const referenceLane = () => document.querySelector('.sequence-track:not(.is-editing) .sequence-track-lane') as HTMLElement;
+  const axisRuler = () => document.querySelector('.sequence-axis > div') as HTMLElement;
+  function mockRect(el: Element, left = 0, width = 1000) {
+    vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({ left, top: 100, right: left + width, bottom: 194, width, height: 94, x: left, y: 100, toJSON: () => {} });
+  }
+
+  it('keeps scrubbing from window pointermove — no pointer capture required', () => {
+    const setT = vi.fn(); render(<LiveHarness t={5} setT={setT} />); geometry();
+    fireEvent.pointerDown(activeLane(), { button: 0, clientX: 500, clientY: 130 });
+    expect(setT).toHaveBeenLastCalledWith(10);
+    // A move dispatched straight at the window (capture lost, pointer off
+    // the composer) still drives the scrub.
+    fireEvent.pointerMove(window, { clientX: 250, clientY: 400 });
+    expect(setT).toHaveBeenLastCalledWith(5);
+    fireEvent.pointerUp(window, { clientX: 250, clientY: 400 });
+    fireEvent.pointerMove(window, { clientX: 900, clientY: 400 });
+    expect(setT).toHaveBeenLastCalledWith(5); // gesture ended — no further moves
+  });
+
+  it('scrubs from a reference lane and from the second ruler', () => {
+    const other = fixture('two', 4);
+    const setT = vi.fn();
+    render(<I18nProvider><SequenceTimelineComposer robots={[fixture(), other]} selectedId={undefined} onSelect={vi.fn()}
+      autoPeriodS={20} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()}
+      playback={{ t: 5, setT, playing: false, setPlaying: vi.fn(), speed: 1, setSpeed: vi.fn() }} /></I18nProvider>);
+    geometry(); // editing lane (first track) rect for move()
+    const ref = referenceLane(); mockRect(ref);
+    fireEvent.pointerDown(ref, { button: 0, clientX: 300, clientY: 130 });
+    expect(setT).toHaveBeenLastCalledWith(6);
+    fireEvent.pointerUp(ref, { clientX: 300, clientY: 130 });
+    const ruler = axisRuler(); mockRect(ruler);
+    fireEvent.pointerDown(ruler, { button: 0, clientX: 900, clientY: 8 });
+    expect(setT).toHaveBeenLastCalledWith(18);
+    fireEvent.pointerUp(ruler, { clientX: 900, clientY: 8 });
+  });
+});
