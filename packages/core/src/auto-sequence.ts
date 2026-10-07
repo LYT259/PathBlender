@@ -205,6 +205,43 @@ export function checkSequenceJoins(
   return issues;
 }
 
+export interface RouteContinuity {
+  /** Whether `next` may follow `prev`: both pose gaps within the join tolerances. */
+  connects: boolean;
+  /** Measured start-to-end pose gap, meters. */
+  positionGapM: number;
+  /** Measured start-to-end heading gap, degrees. */
+  headingGapDeg: number;
+}
+
+/**
+ * Pose continuity for the composer's route library: can `next` physically
+ * follow `prev` — does its first sample sit where `prev`'s last sample left
+ * the robot? Same position/heading tolerances as the seam grading, so a
+ * route the library accepts produces a seam the timeline badges as
+ * continuous. The speed jump is deliberately NOT part of the verdict: a
+ * wait parks the robot at zero velocity, so a speed difference is honest to
+ * report on the seam but not a reason to refuse the route. Trajectories
+ * without samples carry no measurable pose and are never gated.
+ */
+export function routeConnectsAfter(
+  prev: Trajectory,
+  next: Trajectory,
+  opts: SequenceJoinOptions = {},
+): RouteContinuity {
+  const endState = lastSample(prev);
+  const startState = firstSample(next);
+  if (!endState || !startState) return { connects: true, positionGapM: 0, headingGapDeg: 0 };
+  const positionGapM = Math.hypot(startState.x - endState.x, startState.y - endState.y);
+  const headingGapDeg = Math.abs(wrapAngle(startState.heading - endState.heading)) * RAD_TO_DEG;
+  return {
+    connects: positionGapM <= (opts.positionTolM ?? SEQUENCE_JOIN_TOLERANCES.positionM)
+      && headingGapDeg <= (opts.headingTolDeg ?? SEQUENCE_JOIN_TOLERANCES.headingDeg),
+    positionGapM,
+    headingGapDeg,
+  };
+}
+
 export interface SequenceTimingIssue {
   finishS: number;
   autoPeriodS: number;

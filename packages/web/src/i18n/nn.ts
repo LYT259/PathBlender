@@ -10,6 +10,7 @@ export const nn = {
   'sequence.joinPosition': 'posisjonsavvik {d}',
   'sequence.joinHeading': 'retningsavvik {d}°',
   'sequence.joinVelocity': 'fartshopp {d} m/s',
+  'sequence.libraryBlocked': 'Starten held ikkje fram slutten på {name} (posisjonsavvik {p}, retningsavvik {h})',
   'sequence.joinFix': 'Rett opp skøyten i PathPlanner eller Choreo, og importer ruta på nytt.',
   'sequence.overAuto': 'Ferdig ved {t} s, etter den {auto} s lange autonome perioden.',
   'sequence.invalid': 'Skriv inn ei endeleg, ikkje-negativ starttid.',

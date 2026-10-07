@@ -10,6 +10,7 @@ export const it = {
   'sequence.joinPosition': 'scarto di posizione {d}',
   'sequence.joinHeading': 'scarto di direzione {d}°',
   'sequence.joinVelocity': 'salto di velocità {d} m/s',
+  "sequence.libraryBlocked": "L’inizio non prosegue la fine di {name} (scarto di posizione {p}, scarto di direzione {h})",
   'sequence.joinFix': 'Correggi la giunzione in PathPlanner o Choreo e reimporta il percorso.',
   'sequence.overAuto': 'Termina a {t} s, oltre il periodo autonomo di {auto} s.',
   'sequence.invalid': 'Inserisci un tempo di inizio finito e non negativo.',

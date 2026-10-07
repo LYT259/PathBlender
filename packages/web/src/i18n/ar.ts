@@ -10,6 +10,7 @@ export const ar = {
   'sequence.joinPosition': 'فجوة الموضع {d}',
   'sequence.joinHeading': 'فجوة الاتجاه {d}°',
   'sequence.joinVelocity': 'قفزة السرعة {d} م/ث',
+  'sequence.libraryBlocked': 'البداية لا تُكمل نهاية {name} (فجوة الموضع {p}، فجوة الاتجاه {h})',
   'sequence.joinFix': 'أصلح الوصلة في PathPlanner أو Choreo ثم أعد استيراد المسار.',
   'sequence.overAuto': 'ينتهي عند {t} ثانية، بعد فترة التشغيل الذاتي البالغة {auto} ثانية.',
   'sequence.invalid': 'أدخل وقت بداية صالحًا وغير سالب.',

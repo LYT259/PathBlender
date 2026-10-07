@@ -10,23 +10,31 @@ import { applySequenceSegments, sequenceViewFor, type AutoSequenceSegment } from
 import { canPlaceClip, clipsFor, sameClipLayout, segmentsFromClips, snapClipStart, boundedClipStart, clipGaps } from '../src/sequence-timeline-clips';
 
 const raw = readFileSync(resolve(__dirname, '../../../samples/ghostauto/straight_run.ghostauto'), 'utf8');
+/** Samples of the base route translated so the copy starts at `from`'s end pose. */
+function shiftedToChain(base: Trajectory): Trajectory['samples'] {
+  const first = base.samples[0]!;
+  const last = base.samples.at(-1)!;
+  return base.samples.map((s) => ({ ...s, x: s.x + last.x - first.x, y: s.y + last.y - first.y, heading: s.heading + last.heading - first.heading }));
+}
 function fixture(id = 'one', duration = 4): SessionTrajectory {
   const trajectory = { ...parseGhostAuto(raw, 'A.ghostauto'), id, teamNumber: id, name: 'A', durationS: duration };
+  // B starts exactly where A ends ((2,2)→(11.96,2)) so the playhead-gated
+  // library keeps it draggable after A; the original A is the blocked case.
   return { ...makeSession(trajectory), routeId: 'a', routeOptions: [
     { id: 'a', relPath: 'A.ghostauto', trajectory },
-    { id: 'b', relPath: 'B.ghostauto', trajectory: { ...trajectory, id: `${id}-b`, name: 'B', durationS: 3 } },
+    { id: 'b', relPath: 'B.ghostauto', trajectory: { ...trajectory, id: `${id}-b`, name: 'B', durationS: 3, samples: shiftedToChain(trajectory) } },
   ] };
 }
 
 
-function LiveHarness({ robot = fixture(), autoPeriodS = 20, onCommit = () => {}, onClose = vi.fn() }: {
-  robot?: SessionTrajectory; autoPeriodS?: number; onCommit?: (r: SessionTrajectory) => void; onClose?: () => void;
+function LiveHarness({ robot = fixture(), autoPeriodS = 20, onCommit = () => {}, onClose = vi.fn(), t = 0 }: {
+  robot?: SessionTrajectory; autoPeriodS?: number; onCommit?: (r: SessionTrajectory) => void; onClose?: () => void; t?: number;
 }) {
   const [saved, setSaved] = useState(robot);
   const [playing, setPlaying] = useState(false);
   return <I18nProvider><SequenceTimelineComposer robots={[saved]} selectedId={saved.trajectory.id} onSelect={vi.fn()} autoPeriodS={autoPeriodS}
     open onClose={onClose} onChange={(segments) => { const next = applySequenceSegments(saved, segments); setSaved(next); onCommit(next); }}
-    joins={checkSequenceJoins(saved)} onJump={vi.fn()} playback={{ t: 0, setT: vi.fn(), playing, setPlaying, speed: 1, setSpeed: vi.fn() }} /></I18nProvider>;
+    joins={checkSequenceJoins(saved)} onJump={vi.fn()} playback={{ t, setT: vi.fn(), playing, setPlaying, speed: 1, setSpeed: vi.fn() }} /></I18nProvider>;
 }
 beforeEach(() => {
   localStorage.clear(); localStorage.setItem('pb.lang', 'en'); vi.clearAllMocks();
@@ -177,5 +185,37 @@ describe('bounded timing and live gap arithmetic', () => {
     expect(clipGaps([a], b)).toEqual([{ fromS: 4, toS: 3, side: 'previous' }]);
     expect(clipGaps([a], { ...b, startS: 4 })).toEqual([{ fromS: 4, toS: 4, side: 'previous' }]);
     expect(clipGaps([], a)).toEqual([]);
+  });
+});
+
+describe('playhead-gated route library', () => {
+  const sources = () => [...document.querySelectorAll('.sequence-route-source')] as HTMLButtonElement[];
+  const labels = () => sources().map((b) => b.getAttribute('aria-label')!.split(':')[0]);
+  it('grays, disables and demotes routes that do not continue the playhead segment', () => {
+    // Playhead past A (0–4 s): B starts at A's end and stays draggable; A
+    // itself (and anything starting elsewhere) is disabled, explains its
+    // measured gap, and sorts after the draggable routes.
+    localStorage.setItem('pb.lengthUnit', 'm');
+    render(<LiveHarness t={5} />);
+    expect(labels()).toEqual(['B', 'A']);
+    const [b, a] = sources();
+    expect(b).toBeEnabled();
+    expect(a).toBeDisabled();
+    expect(a!.getAttribute('aria-label')).toContain('position gap 9.96 m');
+    expect(a!.getAttribute('aria-label')).toContain('heading gap 0.0°');
+  });
+  it('refuses adds from a grayed route — click and drag both commit nothing', () => {
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} t={5} />); geometry();
+    const a = sources().find((b) => b.getAttribute('aria-label')?.startsWith('A: '))!;
+    fireEvent.click(a);
+    drag(a, 20, 500, 30);
+    expect(commit).not.toHaveBeenCalled();
+    expect(document.querySelector('.sequence-ghost')).toBeNull();
+  });
+  it('keeps every route available before the first segment starts', () => {
+    const robot = applySequenceSegments(fixture(), [{ id: 'late', routeId: 'a', waitBeforeS: 2 }]);
+    render(<LiveHarness robot={robot} t={1} />);
+    expect(labels()).toEqual(['A', 'B']);
+    expect(sources().every((b) => !b.disabled)).toBe(true);
   });
 });
