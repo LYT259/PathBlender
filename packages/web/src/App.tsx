@@ -11,6 +11,7 @@ import { GuideDialog } from './components/GuideDialog';
 import { PreferencesPanel } from './components/PreferencesPanel';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { UsageTip, useUsageTip } from './components/UsageTip';
+import { OnboardingTasks, useTourProgress, type TourTaskId } from './components/OnboardingTasks';
 import {
   applyProfileToTrajectory,
   CUSTOM_FIELD_ID,
@@ -660,8 +661,17 @@ function AppBody() {
   // Arrangement edits share the source store with playback, checks and autosave.
   const sourceSelectedRobot = sourceRobots.find((robot) => robot.trajectory.id === selectedRobot?.trajectory.id);
   const sequenceJoins = useMemo(() => sourceSelectedRobot ? checkSequenceJoins(sourceSelectedRobot) : [], [sourceSelectedRobot]);
+  /* Onboarding tour (2026-10-07 plan §3): tasks are marked only while the
+     example session is active — the ref re-binds the fresh closure every
+     render so the stable action callbacks below can mark without each
+     carrying the whole scene as a dependency. */
+  const tour = useTourProgress();
+  const tourMarkRef = useRef<(id: TourTaskId) => void>(() => {});
+  tourMarkRef.current = (id) => { if (hasExample) tour.mark(id); };
+
   const editSequence = useCallback((segments: AutoSequenceSegment[]) => {
     if (!sourceSelectedRobot) return;
+    tourMarkRef.current('plan');
     const id = sourceSelectedRobot.trajectory.id;
     setRobots((previous) => previous.map((robot) => {
       if (robot.trajectory.id !== id) return robot;
@@ -692,6 +702,7 @@ function AppBody() {
    * swap is gone, same as alliance / field / artwork / 2D-3D switches).
    */
   const toggleMirror = useCallback((id: string) => {
+    tourMarkRef.current('mirror');
     setRobots((prev) => prev.map((r) => r.trajectory.id === id ? { ...r, mirrored: !(r.mirrored === true) } : r));
   }, [setRobots]);
   const mirroredIds = useMemo(
@@ -1020,6 +1031,12 @@ function AppBody() {
   // the labels, so the shell needs no language tables of its own).
 
   const hasExample = robots.some(isExampleRobot);
+
+  // Play detection for the tour (plan §3): needs hasExample, so it lives
+  // here rather than with the tour hook — deps arrays evaluate eagerly.
+  useEffect(() => {
+    if (hasExample && playback.playing) tourMarkRef.current('play');
+  }, [playback.playing, hasExample]);
   // Both side panels stay open while robots exist — there is no collapse
   // entry point left, so a panel can never be closed without a way back.
   const leftOpen = hasRobots;
@@ -1110,6 +1127,7 @@ function AppBody() {
   }, [hasRobots]);
   const jumpToIssue = (time: number, robotIds: string[] = []) => {
     dismissCheckTip();
+    tourMarkRef.current('issue');
     playback.setPlaying(false);
     setT(time);
     if (robotIds[0]) {
@@ -1185,6 +1203,7 @@ function AppBody() {
   // ongoing playback keeps running through them instead of pausing.
   const switchAlliance = useCallback((side: 'blue' | 'red') => {
     if (alliance === side) return;
+    tourMarkRef.current('alliance');
     setScene({ alliance: side });
   }, [alliance, setScene]);
   const selectSeason = useCallback((id: string) => {
@@ -1232,7 +1251,8 @@ function AppBody() {
     hasIssues: issueCount > 0,
     viewerOnly: VIEWER_ONLY,
     isDesktop: IS_DESKTOP,
-  }), [tr, robots.length, selectedId, sourceRobots, selectedRobot, composerOpen, canUndo, canRedo, view3D, field3dAvailable, alliance, fieldId, fieldVariant, field, fieldStyle, showHeatmap, playback.playing, playback.speed, playbackRange, issueCount]);
+    hasExample,
+  }), [tr, robots.length, selectedId, sourceRobots, selectedRobot, composerOpen, canUndo, canRedo, view3D, field3dAvailable, alliance, fieldId, fieldVariant, field, fieldStyle, showHeatmap, playback.playing, playback.speed, playbackRange, issueCount, hasExample]);
 
   // The full menu action table — one entry per menu-spec id. The web MenuBar
   // calls runMenuCommand directly; the desktop shell dispatches pb-menu-<id>
@@ -1287,6 +1307,9 @@ function AppBody() {
     'check-update': () => void checkForUpdates(),
     'open-guide': () => setShowGuide(true),
     'open-shortcuts': () => setShowHelp(true),
+    // Tour entry (plan §3): opens the example when none is running and
+    // un-dismisses the checklist; progress survives both.
+    'open-tour': () => { if (!hasExample) void tryExample(); tour.reopen(); },
     github: () => openExternalUrl(GITHUB_URL),
     about: () => { if (IS_DESKTOP) openPreferences(); else setShowPrefs(true); },
   };
@@ -1402,7 +1425,7 @@ function AppBody() {
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
         <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
-          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={openSequenceFor} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} />}
+          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={openSequenceFor} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} header={hasExample && !tour.dismissed ? <OnboardingTasks done={tour.done} onDismiss={tour.dismiss} /> : undefined} />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
             {hasExample && <div className="example-notice"><strong>{tr('welcome.exampleBadge')}</strong><span>{tr('welcome.exampleNotice')}</span><button className="btn small" onClick={exitExample}>{tr('welcome.exitExample')}</button></div>}
             <div className="canvas-slot">
