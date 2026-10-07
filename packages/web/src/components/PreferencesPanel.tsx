@@ -1,14 +1,24 @@
-import { useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useId, useRef, useState, Fragment, type KeyboardEvent } from 'react';
 import { LANGUAGES, langLabel, useI18n, type LangChoice } from '../i18n';
 import { useTheme, type ThemeMode } from '../theme';
 import { useAppIcon, type IconAppearanceMode } from '../app-icon';
 import { readColorblind, writeColorblind } from '../pref-sync';
 import {
+  CUSTOM_MOUSE_BUTTONS,
+  CUSTOM_MOUSE_MODS,
+  DEFAULT_CUSTOM_MOUSE_MAP,
   MOUSE_SCHEMES,
+  customSlot,
+  useCustomMouseControls,
   useDefaultConstrained,
   useMouseControls,
   usePenAsMouse,
   useReverseScrollZoom,
+  type CustomMouseAction,
+  type CustomMouseButton,
+  type CustomMouseMap,
+  type CustomMouseMod,
+  type CustomMouseSlot,
   type MouseControlsScheme,
 } from '../mouse-controls';
 import { LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
@@ -53,6 +63,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   const { mode: iconMode, systemDark, setMode: setIconMode } = useAppIcon();
   const { channel, setChannel } = useUpdateChannel();
   const [mouseControls, setMouseControls] = useMouseControls();
+  const [customMouse, setCustomMouse] = useCustomMouseControls();
   const [lengthUnit, setLengthUnit] = useLengthUnit();
   const [reverseScroll, setReverseScroll] = useReverseScrollZoom();
   const [defaultConstrained, setDefaultConstrained] = useDefaultConstrained();
@@ -67,6 +78,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   const [iconDraft, setIconDraft] = useState<IconAppearanceMode | null>(null);
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
   const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
+  const [customDraft, setCustomDraft] = useState<CustomMouseMap | null>(null);
   const [unitDraft, setUnitDraft] = useState<LengthUnit | null>(null);
   const [reverseDraft, setReverseDraft] = useState<boolean | null>(null);
   const [constrainedDraft, setConstrainedDraft] = useState<boolean | null>(null);
@@ -84,6 +96,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   const icon = iconDraft ?? iconMode;
   const updateChannel = channelDraft ?? channel;
   const mouse = mouseDraft ?? mouseControls;
+  const customEffective = customDraft ?? customMouse;
   const unit = unitDraft ?? lengthUnit;
   const reverse = reverseDraft ?? reverseScroll;
   const constrained = constrainedDraft ?? defaultConstrained;
@@ -92,7 +105,8 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   const dirty = language !== langChoice || theme !== mode || icon !== iconMode ||
     updateChannel !== channel || mouse !== mouseControls || unit !== lengthUnit ||
     reverse !== reverseScroll || constrained !== defaultConstrained || pen !== penAsMouse ||
-    colorblind !== savedColorblind;
+    colorblind !== savedColorblind ||
+    (customDraft !== null && JSON.stringify(customDraft) !== JSON.stringify(customMouse));
   const updateStatusText =
     updateCheck.kind === 'checking' ? t('prefs.checking')
       : updateCheck.kind === 'upToDate' ? t('updates.upToDate')
@@ -146,6 +160,10 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
       setUpdateCheck({ kind: 'idle' });
     }
     if (mouse !== mouseControls) setMouseControls(mouse);
+    if (customDraft !== null) {
+      setCustomMouse(customDraft);
+      setCustomDraft(null); // deep-compared against the store, so drop it once saved
+    }
     if (unit !== lengthUnit) setLengthUnit(unit);
     if (reverse !== reverseScroll) setReverseScroll(reverse);
     if (constrained !== defaultConstrained) setDefaultConstrained(constrained);
@@ -216,8 +234,14 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
                 {MOUSE_SCHEMES.map((choice) => <option key={choice} value={choice}>{t(`prefs.mouse.${choice}`)}</option>)}
               </select>
             </label>
-            <MouseControlsDiagram scheme={mouse} iconMode={icon} constrained={constrained} />
-            <details className="preferences-mouse-details"><summary>{t('prefs.mouse.shortcuts')}</summary>
+            <MouseControlsDiagram scheme={mouse} iconMode={icon} constrained={constrained} custom={customEffective} />
+            {mouse === 'custom'
+              ? <CustomMouseEditor
+                  map={customEffective}
+                  onChange={(slot, action) => setCustomDraft({ ...customEffective, [slot]: action })}
+                  onReset={() => setCustomDraft({ ...DEFAULT_CUSTOM_MOUSE_MAP })}
+                />
+              : <details className="preferences-mouse-details"><summary>{t('prefs.mouse.shortcuts')}</summary>
             <div className="preferences-mouse-table">
               {(mouse === 'solidworks'
                 // SOLIDWORKS: Alt+middle is Roll View (its own row); the
@@ -239,16 +263,19 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
                 <span>{t(row.label)}</span>
                 <strong>{t(row.bind)}</strong>
               </div>)}
-            </div></details>
+            </div></details>}
             <div className="preferences-mouse-options">
             <label className="preferences-setting preferences-checkbox">
               <span>{t('prefs.mouse.reverseScroll')}</span>
               <input type="checkbox" checked={reverse} onChange={(event) => setReverseDraft(event.target.checked)} />
             </label>
-            <label className="preferences-setting preferences-checkbox">
+            {/* The constrained-rotate default only steers the presets; in the
+                custom scheme constrained rotation is a directly assignable
+                action, so the checkbox would do nothing there. */}
+            {mouse !== 'custom' && <label className="preferences-setting preferences-checkbox">
               <span>{t('prefs.mouse.defaultConstrained')}</span>
               <input type="checkbox" checked={constrained} onChange={(event) => setConstrainedDraft(event.target.checked)} />
-            </label>
+            </label>}
             <label className="preferences-setting preferences-checkbox">
               <span>{t('prefs.mouse.penAsMouse')}</span>
               <input type="checkbox" checked={pen} onChange={(event) => setPenDraft(event.target.checked)} />
@@ -298,5 +325,49 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
           <button type="button" className="btn accent" disabled={!dirty} onClick={save}>{t('prefs.save')}</button></div>
       </footer>}
     </div>
+  </div>;
+}
+
+/** The six actions a custom drag slot can hold (option order = table order). */
+const CUSTOM_ACTIONS: CustomMouseAction[] = ['rotate', 'constrained', 'pan', 'zoom', 'roll', 'none'];
+
+/**
+ * Onshape-style assignment table for the custom scheme: a select per
+ * (drag button, held modifier) slot — actions as the presets' tables have
+ * them, buttons as columns. The wheel has no cell on purpose: it always
+ * zooms (user request 2026-10-07) and only its direction reverses below.
+ */
+function CustomMouseEditor({ map, onChange, onReset }: {
+  map: CustomMouseMap;
+  onChange: (slot: CustomMouseSlot, action: CustomMouseAction) => void;
+  onReset: () => void;
+}) {
+  const { t } = useI18n();
+  const caption = t('prefs.mouse.custom.editor');
+  const modifierName = (mod: CustomMouseMod | null) =>
+    mod ? (mod === 'ctrl' ? 'Ctrl' : mod === 'alt' ? 'Alt' : 'Shift') : t('prefs.mouse.custom.modNone');
+  return <div className="preferences-mouse-custom">
+    <p className="preferences-mouse-custom-caption">{caption}</p>
+    <div className="preferences-mouse-custom-grid" role="group" aria-label={caption}>
+      <span className="preferences-mouse-custom-head" aria-hidden="true" />
+      {CUSTOM_MOUSE_BUTTONS.map((button) => (
+        <span key={button} className="preferences-mouse-custom-head">{t(`prefs.mouse.btn.${button}`)}</span>
+      ))}
+      {CUSTOM_MOUSE_MODS.map((mod) => <Fragment key={mod ?? 'plain'}>
+        <span className="preferences-mouse-custom-rowlabel">
+          {t(mod ? `prefs.mouse.custom.${mod}` : 'prefs.mouse.custom.plain')}
+        </span>
+        {CUSTOM_MOUSE_BUTTONS.map((button) => {
+          const slot = customSlot(button, mod);
+          return <select key={slot} className="preferences-mouse-custom-select" value={map[slot]}
+            aria-label={t('prefs.mouse.custom.slotAria', { button: t(`prefs.mouse.btn.${button}`), modifier: modifierName(mod) })}
+            onChange={(event) => onChange(slot, event.target.value as CustomMouseAction)}>
+            {CUSTOM_ACTIONS.map((action) => <option key={action} value={action}>{t(`prefs.mouse.${action}`)}</option>)}
+          </select>;
+        })}
+      </Fragment>)}
+    </div>
+    <p className="preferences-setting-description">{t('prefs.mouse.custom.wheelNote')}</p>
+    <button type="button" className="btn preferences-mouse-custom-reset" onClick={onReset}>{t('prefs.mouse.custom.reset')}</button>
   </div>;
 }
