@@ -152,6 +152,8 @@ export const hr = {
   'canvas.fit': 'Prilagodi',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Toplotna karta',
+  'canvas.trail': 'Trag',
+  'canvas.overlays': 'Prekrivanja',
   
   'import.failed': '{n} datoteka nije bilo moguće uvesti:',
   'import.dismiss': 'Odbaci',

@@ -152,6 +152,8 @@ export const hy = {
   'canvas.fit': 'Հարմարեցնել',
   'canvas.clock': 't = {t} վ',
   'canvas.heatmap': 'Ջերմային քարտեզ',
+  'canvas.trail': 'Հետք',
+  'canvas.overlays': 'Շերտեր',
   
   'import.failed': '{n} ֆայլ(եր) չհաջողվեց ներմուծել․',
   'import.dismiss': 'Փակել',

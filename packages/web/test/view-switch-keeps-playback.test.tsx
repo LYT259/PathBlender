@@ -105,11 +105,12 @@ const cases: Array<[string, () => void]> = [
     fireEvent.click(group.getByRole('button', { name: 'Welded' }));
   }],
   ['occupancy heatmap on and off', () => {
-    const box = screen.getByRole('checkbox', { name: 'Heatmap' }) as HTMLInputElement;
+    const group = within(screen.getByRole('group', { name: 'Overlays' }));
+    const box = group.getByRole('button', { name: 'Heatmap' });
     fireEvent.click(box);
-    expect(box).toBeChecked();
+    expect(box).toHaveAttribute('aria-pressed', 'false');
     fireEvent.click(box);
-    expect(box).not.toBeChecked();
+    expect(box).toHaveAttribute('aria-pressed', 'true');
   }],
   ['mirroring a team on and off', () => {
     const mirror = document.querySelector('.robot-mirror-button') as HTMLButtonElement;

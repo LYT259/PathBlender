@@ -182,6 +182,8 @@ export const mr = {
   'canvas.fit': 'फिट',
   'canvas.clock': 't = {t} से',
   'canvas.heatmap': 'हीटमॅप',
+  'canvas.trail': 'मार्गरेषा',
+  'canvas.overlays': 'थर',
   
   'import.failed': '{n} फाइल आयात करण्यात अयशस्वी:',
   'import.dismiss': 'बंद करा',

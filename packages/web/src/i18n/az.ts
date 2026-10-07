@@ -152,6 +152,8 @@ export const az = {
   'canvas.fit': 'Sığdır',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'İstilik xəritəsi',
+  'canvas.trail': 'İz',
+  'canvas.overlays': 'Qatlar',
   
   'import.failed': '{n} fayl(lar) idxal edilə bilmədi:',
   'import.dismiss': 'Bağla',
