@@ -32,7 +32,7 @@ export interface GuideTopic {
 
 /** The online full guide follows the reader's script family, else English. */
 export function guideUrlForLang(lang: Lang): string {
-  const file = lang === 'zh' || lang === 'zh-hk' || lang === 'zh-tw'
+  const file = lang === 'zh' || lang === 'zh-hk'
     ? 'user-guide.zh.md'
     : 'user-guide.en.md';
   return `https://github.com/LYT259/pathblender/blob/stable/docs/${file}`;
@@ -40,7 +40,9 @@ export function guideUrlForLang(lang: Lang): string {
 
 export function pickLocalized(text: LocalizedText, lang: Lang): string {
   if (lang === 'zh') return text.hans ?? text.en;
-  if (lang === 'zh-hk' || lang === 'zh-tw') return text.hant ?? text.hans ?? text.en;
+  // zh-hk is the one selectable Traditional UI since the 2026-10-07
+  // withdrawal of the Taiwan row (fifth batch pending).
+  if (lang === 'zh-hk') return text.hant ?? text.hans ?? text.en;
   return text.en;
 }
 

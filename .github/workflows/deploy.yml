@@ -1,0 +1,48 @@
+name: Deploy public viewer
+
+on:
+  push:
+    branches: [beta]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+          cache: npm
+      - run: npm ci
+      - run: npm run version:check
+      - run: npm run typecheck
+      - run: npm test
+      - name: Build viewer
+        env:
+          VITE_VIEWER_ONLY: '1'
+        run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/web/dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy viewer
+        id: deployment
+        uses: actions/deploy-pages@v4

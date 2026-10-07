@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # new-worktree — create a dev worktree with cloned dependencies.
 #
-# Encodes the house ritual (see AGENTS.md "主树停靠协议"): the main tree must
+# Encodes the house ritual ("main tree stays parked on beta"): the main tree must
 # stay parked on beta, so every change — features, fixes, docs, experiments —
 # happens in its own worktree. This script creates it in one step:
 #

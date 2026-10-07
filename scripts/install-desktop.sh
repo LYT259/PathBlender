@@ -58,7 +58,7 @@ if (( FORCE_TREE == 0 )); then
     echo "  (--force-tree overrides deliberately)" >&2
     exit 1
   fi
-  # Known build-rewritten noise is fine (see AGENTS.md); anything else means
+  # Known build-rewritten noise is fine; anything else means
   # someone is mid-work in this tree.
   if ! git diff --quiet HEAD -- . ':(exclude)packages/web/public/sw.js' ':(exclude)packages/desktop/src-tauri/gen/schemas/capabilities.json'; then
     echo "install-desktop.sh: REFUSING — tree has changes beyond the known build noise" >&2
