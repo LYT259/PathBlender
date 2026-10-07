@@ -183,17 +183,35 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     if (kind === 'move') setSelected({ robotId: activeId!, clipId: clip.id });
     setMenu(null); setError(null);
   }
-  /** Scrub the playhead from empty lane space (user 2026-10-07): a press
-   * jumps there at once, dragging scrubs continuously. Clips, seams and the
-   * wait markers stay theirs — only inert lane background starts a scrub. */
+  /** Scrub the playhead from inert timeline surfaces (user 2026-10-07):
+   * empty lane space on ANY track and the second-ruler above them — a press
+   * jumps there at once, dragging scrubs continuously. Clips and seam pills
+   * are buttons and keep their own gestures. Window-level drivers keep the
+   * drag alive even where pointer capture is unreliable (WKWebView) or the
+   * pointer leaves the composer; they only act while the scrub still owns
+   * dragRef, so Escape cancels through the normal path. */
   function beginScrub(event: PointerEvent<HTMLDivElement>) {
     if (event.button !== 0 || !playback) return;
     if (event.target !== event.currentTarget && (event.target as Element).closest('button')) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (!rect.width) return;
     suppressClick.current = false;
     dragRef.current = { robotId: activeId!, kind: 'scrub', x: event.clientX, y: event.clientY, moved: false };
     event.currentTarget.setPointerCapture(event.pointerId);
+    const scrubTo = (clientX: number) => playback.setT(clampToAxis((clientX - rect.left) / rect.width * axis, axis));
     playback.setPlaying(false);
-    playback.setT(clampToAxis((event.clientX - event.currentTarget.getBoundingClientRect().left) / event.currentTarget.getBoundingClientRect().width * axis, axis));
+    scrubTo(event.clientX);
+    const onMove = (e: globalThis.PointerEvent) => {
+      if (dragRef.current?.kind === 'scrub') scrubTo(e.clientX);
+    };
+    const end = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
     setMenu(null); setError(null);
   }
   function move(event: PointerEvent) {
@@ -283,14 +301,13 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       </button>; })}
     </div></div>
     <div className="sequence-timeline-scroll" dir="ltr"><div className="sequence-timeline-surface">
-      <div className="sequence-axis"><span>s</span><div>{ticks.map((tick) => <span key={tick} style={{ left: percent(tick) }}>{tick}</span>)}</div></div>
+      <div className="sequence-axis"><span>s</span><div onPointerDown={beginScrub}>{ticks.map((tick) => <span key={tick} style={{ left: percent(tick) }}>{tick}</span>)}</div></div>
       {tracks.map(({ robot, routes, clips }) => {
         const id = robot.trajectory.id;
         const editing = id === activeId;
         return <div className={`sequence-track${editing ? ' is-editing' : ''}`} key={id} style={{ '--robot-color': robot.color } as CSSProperties}>
           <button type="button" className="sequence-track-name" aria-pressed={editing} onClick={() => switchRobot(id)}><span><i />{robotIdentity(robot.trajectory)}</span><small>{t(editing ? 'sequence.editing' : 'sequence.reference')}</small></button>
-          <div className="sequence-track-lane" ref={editing ? laneRef : undefined} tabIndex={editing ? -1 : undefined}
-            onPointerDown={editing ? beginScrub : undefined}
+          <div className="sequence-track-lane" ref={editing ? laneRef : undefined} tabIndex={editing ? -1 : undefined} onPointerDown={beginScrub}
             aria-label={`${robotIdentity(robot.trajectory)} ${t('sequence.arrange')}`} style={{ backgroundSize: `${2 / axis * 100}% 100%` }}>
             <span className="sequence-auto-end" style={{ left: '100%' }} title={limitMessage} />
             {clips.map((clip, index) => {
