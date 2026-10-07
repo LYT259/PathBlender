@@ -122,9 +122,9 @@ export function buildMenuSpec(ctx: MenuContext): MenuSection[] {
 
   const fileItems: MenuEntry[] = [
     item('import', t('actions.import'), { accelerator: 'CmdOrCtrl+O' }),
+    item('import-folder', t('library.importFolder')),
   ];
   if (!ctx.viewerOnly) {
-    fileItems.push(item('import-folder', t('library.importFolder')));
     fileItems.push(item('open-session', t('welcome.openSession')));
     fileItems.push(sep());
     fileItems.push(item('save', t('actions.save'), { accelerator: 'CmdOrCtrl+S' }));

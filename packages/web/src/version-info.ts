@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.64';
+export const APP_VERSION = '0.1.8-beta.65';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,20 +32,35 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.65', date: '2026.10.07', note: {
+    en: 'Tab icon: full-bleed logo without the white border — now follows light/dark appearance',
+    zh: '标签页图标：改为满幅 Logo、去掉外圈白边，并跟随深浅色外观自动切换',
+    'zh-tw': '分頁圖示：改為滿幅 Logo、去掉外圈白邊，並跟隨深淺色外觀自動切換',
+    cs: 'Ikona karty: logo bez bílého rámečku — nyní podle světlého nebo tmavého vzhledu',
+    nl: 'Tabbladpictogram: logo zonder witte rand — volgt nu het lichte of donkere uiterlijk',
+    fr: 'Icône d’onglet : logo sans bordure blanche — suit désormais l’apparence claire ou sombre',
+    he: 'סמל הלשונית: הלוגו בפריסה מלאה, בלי המסגרת הלבנה — מתחלף לפי המראה הבהיר או הכהה',
+    ja: 'タブのアイコン：白枠をなくしてロゴを全面に表示、ライト／ダーク外観にも自動で対応',
+    ko: '탭 아이콘: 흰 테두리를 없애고 로고를 전체에 표시, 라이트/다크 외관도 자동으로 따릅니다',
+    pl: 'Ikona karty: logo bez białej ramki — teraz dopasowuje się do jasnego lub ciemnego wyglądu',
+    'pt-br': 'Ícone da aba: logotipo sem a borda branca — agora acompanha o tema claro ou escuro',
+    es: 'Icono de la pestaña: logotipo sin el borde blanco — ahora sigue el tema claro u oscuro',
+    tr: 'Sekme simgesi: beyaz çerçevesiz tam alan logo — artık açık/koyu görünüme uyuyor',
+  } },
   { version: '0.1.8-beta.64', date: '2026.10.07', note: {
-    en: 'welcome-example test waits out a loaded machine',
-    zh: '示例加载测试放宽等待，高负载机器不再误报',
-    'zh-tw': '示例載入測試放寬等待，高負載機器不再誤報',
-    cs: 'Test ukázkového příkladu vydrží vytížený stroj bez falešného selhání',
-    nl: 'Voorbeeldtest wacht lang genoeg op een zwaar belaste machine',
-    fr: 'Le test de l’exemple attend assez longtemps sur une machine chargée',
-    he: 'בדיקת הדוגמה ממתינה מספיק גם במכונה עמוסה',
-    ja: 'サンプル読み込みテストが高負荷環境でも誤失敗しないよう待機を延長',
-    ko: '예제 로드 테스트가 과부하 상태에서도 거짓 실패하지 않도록 대기 시간 확보',
-    pl: 'Test przykładu czeka wystarczająco długo na obciążonej maszynie',
-    'pt-br': 'Teste do exemplo espera o suficiente em uma máquina carregada',
-    es: 'La prueba del ejemplo espera lo suficiente en una máquina cargada',
-    tr: 'Örnek testi yoğun bir makinede yeterince bekliyor',
+    en: 'The web app now imports whole folders, same as the desktop app',
+    zh: '网页版新增整包文件夹导入，与桌面版一致',
+    'zh-tw': '網頁版新增整包資料夾匯入，與桌面版一致',
+    cs: 'Webová aplikace umí importovat celé složky, stejně jako desktopová',
+    nl: 'De web-app importeert nu ook hele mappen, net als de desktop-app',
+    fr: 'L’application web importe désormais des dossiers entiers, comme l’application de bureau',
+    he: 'אפליקציית האינטרנט מייבאת עכשיו תיקיות שלמות, בדיוק כמו אפליקציית שולחן העבודה',
+    ja: 'ウェブ版でもフォルダー丸ごとインポートに対応しました（デスクトップ版と同じ）',
+    ko: '웹 앱도 폴더 전체를 가져올 수 있습니다(데스크톱 앱과 동일)',
+    pl: 'Aplikacja webowa importuje teraz całe foldery, tak samo jak aplikacja desktopowa',
+    'pt-br': 'O aplicativo web agora importa pastas inteiras, igual ao aplicativo de desktop',
+    es: 'La aplicación web ahora importa carpetas enteras, igual que la de escritorio',
+    tr: 'Web uygulaması artık masaüstü uygulamadaki gibi klasörlerin tamamını içe aktarıyor',
   } },
   { version: '0.1.8-beta.63', date: '2026.10.06', note: {
     en: 'No stray focus box on the robot list when the app opens',

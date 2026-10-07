@@ -59,6 +59,9 @@ describe('viewer build session gate', () => {
     fireEvent.keyDown(window, { key: 's', metaKey: true });
     await waitFor(() => expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument());
     expect(saveText).not.toHaveBeenCalled();
-    expect(document.querySelector('.welcome-folder-import')).toBeNull();
+    // Only the write door closed: the site shares every import channel with
+    // the app, whole-folder import included (2026-10-06).
+    expect(document.querySelector('.import-folder-action')).not.toBeNull();
+    expect(document.querySelector('input[webkitdirectory]')).not.toBeNull();
   });
 });

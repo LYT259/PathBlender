@@ -21,12 +21,12 @@ PathBlender 補上這個空缺：
 - **路線庫**（桌面版）——整包匯入一個隊伍的 deploy 目錄：無關檔案自動跳過，所有路線進入路線庫，每台機器人旁的選擇器即時切換目前自動；PathPlanner `settings.json` 可把真實保險桿尺寸套用到機器人；
 
 - **零安裝、零上傳（網頁版）**——純靜態網頁應用，檔案解析完全在你的瀏覽器裡完成，網頁建構**不發出任何網路請求**；
-- **也有桌面版**——同一介面裝入輕量 Tauri 殼（macOS），增加工作階段儲存/開啟、GIF 回放與方案包匯出、資料夾匯入與應用內更新（stable 或 beta 通道）。唯一的網路活動是你主動觸發的檢查更新，只連線 GitHub Releases。
+- **也有桌面版**——同一介面裝入輕量 Tauri 殼（macOS），增加工作階段儲存/開啟、GIF 回放與方案包匯出、應用內更新（stable 或 beta 通道）。唯一的網路活動是你主動觸發的檢查更新，只連線 GitHub Releases。
 
 ## 快速上手
 
 1. 取得應用（見下）——手上沒有路徑檔案時，先按歡迎頁的**試試範例**載入內建多機器人工作階段，立刻體驗回放與碰撞檢查。
-2. 把各隊的路徑檔案匯入——`.traj`、`.ghostauto`、`.path`、`.auto` 隨意混合（桌面版支援單一檔案或整個資料夾；`.auto` 引用到的每個 `.path` 必須同批匯入）。壞檔案會逐一報錯說明原因，不影響其他檔案匯入。
+2. 把各隊的路徑檔案匯入——`.traj`、`.ghostauto`、`.path`、`.auto` 隨意混合（網頁版與桌面版都支援單一檔案或整個資料夾；`.auto` 引用到的每個 `.path` 必須同批匯入）。壞檔案會逐一報錯說明原因，不影響其他檔案匯入。
 3. 按**播放**。衝突處：場地紅色圓環 + 時間軸紅色區段 + 衝突面板列出「誰和誰、什麼時刻、在哪裡」——點一條跳到那個瞬間。
 4. 排查：從路線庫幫機器人換一條路線、切換聯盟視角、撥動時間軸。確定問題所在後，回到所屬隊伍的工具修改、重新匯出、把新檔案拖進來——工作階段原地更新。
 5. **分享**：儲存工作階段檔案，或匯出 2D 視圖的 GIF 回放／方案包傳群組（桌面版功能）。
@@ -49,7 +49,7 @@ PathBlender 補上這個空缺：
 ## 取得方式
 
 - **macOS 桌面版**（Apple Silicon，macOS 13+）——從 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 下載 `PathBlender_<版本號>_aarch64.dmg`，打開後把 PathBlender 拖入「應用程式」。更新：選單 **PathBlender → 檢查更新…**（Beta 版先在 **偏好設定 → 更新** 開啟 Beta 通道）。Windows 與 Linux 安裝包尚未提供——程式碼跨平台，已在計畫中。發布頁上的其它檔案（`.tar.gz`、`.sig`、`.json`）是更新器內部檔案，無需下載。
-- **網頁版**（檢視器建構：匯入、回放與檢查；無工作階段儲存/回放與方案包匯出/資料夾匯入）——[pathblender.pages.dev](https://pathblender.pages.dev)，預覽通道 [pathblender-preview.pages.dev](https://pathblender-preview.pages.dev)。
+- **網頁版**（檢視器建構：與桌面版相同的匯入——單一檔案或整個資料夾——加上回放與檢查；無工作階段儲存/開啟、GIF 回放與方案包匯出）——[pathblender.pages.dev](https://pathblender.pages.dev)，預覽通道 [pathblender-preview.pages.dev](https://pathblender-preview.pages.dev)。
 
 ## 隱私
 
