@@ -241,7 +241,7 @@ export const tr: Record<MessageKey, string> = {
   'customField.apply': 'Uygula',
   'customField.cancel': 'Vazgeç',
   'bounds.title': 'Saha sınırları',
-  'bounds.item': '{start}–{end} s · {edge} duvarın {depth} ötesi',
+  'bounds.item': '{start}–{end} sn · {edge} duvarın {depth} ötesi',
   'edges.far': 'uzak', 'edges.left': 'sol', 'edges.near': 'yakın', 'edges.right': 'sağ',
   'customField.tags': 'AprilTag yerleşimini yükle…',
   'updates.upToDate': 'Güncelsiniz',
