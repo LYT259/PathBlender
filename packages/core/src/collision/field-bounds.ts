@@ -29,18 +29,20 @@ export interface FieldBoundsOptions {
 }
 
 /**
- * Boundary forgiveness, meters (user report 2026-10-04): a bumper that
- * merely kisses the wall line is not "out of bounds". Two error sources
- * live under this threshold: floating-point / sampling quantization
- * (microns at most) and the millimetre-level rounding between Choreo
- * start poses, the official field model and the 0.1016 m (4 in) bumper
- * depth — the confirmed instance is the welcome example's #8814 starting
- * 3.6 mm over the line, a real, match-legal wall-hug start. 0.02 m covers
- * that instance 5.5× while staying under one fifth of the bumper depth,
- * so a genuinely wall-crossing drive (half a bumper, >0.05 m, like the
- * tuned out_of_bounds sample) is still reported.
+ * Boundary forgiveness, meters (user decisions 2026-10-04 and 2026-10-07):
+ * a bumper that barely crosses the wall line is not a reportable "out of
+ * bounds" — during a match a sub-inch overlap is plausibly a legal
+ * wall-hug (field-model rounding, pose quantization), and only a clearly
+ * visible incursion deserves the warning. The threshold is exactly
+ * 1 inch (user rule: "只有等于或超过 1 英寸才报警"): penetrations below it
+ * stay silent, at or above it the interval is reported with its measured
+ * depth. The 2026-10-04 instance that set the previous 0.02 m value (the
+ * welcome example's #8814 starting 3.6 mm over the line) stays forgiven;
+ * the #8814 example's 0.9 in wall brush that triggered this change now
+ * sits below the threshold too. A genuinely wall-crossing drive (half a
+ * bumper, >0.05 m) remains well above and is still reported.
  */
-export const BOUNDS_TOLERANCE_M = 0.02;
+export const BOUNDS_TOLERANCE_M = 0.0254;
 
 /**
  * SAT overlap between an OBB and the playfield AABB. Returns the overlap
@@ -68,8 +70,10 @@ function obbVsField(
 
   let depth = 0;
   const edges: OutOfBoundsInterval['edges'] = [];
+  // ≥, not >: the user rule is "equal to or beyond 1 inch warns" — exactly
+  // at the threshold already counts as out.
   const check = (d: number, edge: 'far' | 'left' | 'near' | 'right') => {
-    if (d > BOUNDS_TOLERANCE_M) {
+    if (d >= BOUNDS_TOLERANCE_M) {
       depth = Math.max(depth, d);
       edges.push(edge);
     }

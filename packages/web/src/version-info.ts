@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.77';
+export const APP_VERSION = '0.1.8-beta.78';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.78', date: '2026.10.07', note: {
+    en: 'Compact arrangement timeline (half the height, no dead space), rounded timeline corners, and field-bounds warnings now start at 1 inch of penetration',
+    zh: '编排时间轴压缩近半（去掉段块上下的空隙）并改为圆角；场地出界警示改为超出 1 英寸才触发',
+    'zh-tw': '編排時間軸壓縮近半（去掉段塊上下的空隙）並改為圓角；場地出界警示改為超出 1 英寸才觸發',
+    cs: 'Kompaktní časová osa sekvence (zhruba poloviční výška, bez mrtvého prostoru) a zaoblené rohy; upozornění na překročení hranice hřiště se spouští až od 1 palce přesahu',
+    nl: 'Compacte sequentietijdlijn (ongeveer half zo hoog, geen dode ruimte) met afgeronde hoeken; waarschuwingen voor het verlaten van het veld beginnen bij 1 inch doordringing',
+    fr: 'Chronologie de séquence compacte (hauteur quasi divisée par deux, plus d’espace mort) et coins arrondis ; l’alerte de sortie de terrain ne se déclenche qu’à partir de 1 pouce de dépassement',
+    he: 'ציר זמן קומפקטי של הרצף (כמחצית הגובה, ללא שטח מת) ופינות מעוגלות; אזהרות יציאה מגבולות המגרש מופעלות רק מחדירה של אינץ’',
+    ja: 'シーケンス時間軸を約半分の高さに圧縮（無駄な空間を削除）し、角を丸めました。フィールド境界の警告は1インチを超えたときだけ発火します',
+    ko: '시퀀스 타임라인을 약 절반 높이로 압축(빈 공간 제거)하고 모서리를 둥글게 만들었습니다. 필드 경계 경고는 1인치 초과부터 발생합니다',
+    pl: 'Kompaktowa oś czasu sekwencji (prawie połowa wysokości, bez martwej przestrzeni) i zaokrąglone narożniki; ostrzeżenia o wyjeździe poza pole startują od 1 cala penetracji',
+    'pt-br': 'Linha do tempo da sequência compacta (quase metade da altura, sem espaço morto) e cantos arredondados; avisos de saída do campo passam a disparar a partir de 1 polegada de penetração',
+    es: 'Línea de tiempo de secuencia compacta (casi la mitad de alto, sin espacio muerto) y esquinas redondeadas; los avisos de salida del campo se activan a partir de 1 pulgada de penetración',
+    tr: 'Kompakt dizi zaman çizgisi (yarı yükseklikte, ölü alan yok) ve yuvarlatılmış köşeler; saha sınırı uyarıları artık 1 inç taşma ile başlıyor',
+  } },
   { version: '0.1.8-beta.77', date: '2026.10.07', note: { "en": "Improve translation terminology and localized accessibility messages", "zh": "改进翻译术语与本地化无障碍提示", "zh-tw": "改善翻譯術語與在地化無障礙提示", "cs": "Vylepšení překladové terminologie a lokalizovaných zpráv pro přístupnost", "nl": "Verbeterde vertaalterminologie en gelokaliseerde toegankelijkheidsmeldingen", "fr": "Amélioration de la terminologie et des messages d’accessibilité traduits", "he": "שיפור מונחי התרגום והודעות הנגישות המתורגמות", "ja": "翻訳用語とアクセシビリティ通知の翻訳を改善", "ko": "번역 용어와 현지화된 접근성 메시지 개선", "pl": "Poprawa terminologii tłumaczeń i zlokalizowanych komunikatów dostępności", "pt-br": "Melhoria da terminologia e das mensagens de acessibilidade traduzidas", "es": "Mejora de la terminología y de los mensajes de accesibilidad traducidos", "tr": "Çeviri terimleri ve yerelleştirilmiş erişilebilirlik mesajları iyileştirildi" } },
   { version: '0.1.8-beta.76', date: '2026.10.07', note: {
     en: 'Whole-row timeline focus rings, no box around the field, conflict dots removed',
