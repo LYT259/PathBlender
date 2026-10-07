@@ -67,6 +67,10 @@ describe('field boundary detection', () => {
     expect(detectFieldBounds([parked(BOUNDS_TOLERANCE_M - 0.001)], REBUILT_2026)).toHaveLength(0);
     const over = detectFieldBounds([parked(BOUNDS_TOLERANCE_M + 0.001)], REBUILT_2026);
     expect(over).toHaveLength(1);
+    // The 2026-10-07 user rule in real units: a 0.9 in wall brush (the
+    // #8814 example case) stays silent; at exactly 1 in it starts reporting.
+    expect(detectFieldBounds([parked(0.9 * 0.0254)], REBUILT_2026)).toHaveLength(0);
+    expect(detectFieldBounds([parked(0.0254)], REBUILT_2026)).toHaveLength(1);
     // A real crossing (10 cm) is still flagged with its penetration depth.
     const real = detectFieldBounds([parked(0.1)], REBUILT_2026);
     expect(real).toHaveLength(1);
