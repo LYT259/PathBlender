@@ -7,7 +7,7 @@
  * entry (a beta bump without a note must fail here, not at tag time).
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -57,7 +57,11 @@ describe('release-notes-for.mjs', () => {
   it('a beta version prints exactly its own note', () => {
     const out = run('0.2.0-beta.2', fixtureRegistry());
     expect(out.status).toBe(0);
-    expect(out.stdout).toContain("Fix 'quotes' in notes / 引号转义");
+    expect(out.stdout).toContain("Fix 'quotes' in notes");
+    expect(out.stdout).toContain("引号转义");
+    expect(out.stdout).toContain("<summary>简体中文</summary>");
+    expect(out.stdout).toContain("<summary>繁體中文（中國香港）</summary>");
+    expect(out.stdout.slice(0, out.stdout.indexOf("<details>"))).not.toContain("引号转义");
     expect(out.stdout).not.toContain('First beta');
     expect(out.stdout).not.toContain('Stable release with everything');
   });
@@ -76,6 +80,24 @@ describe('release-notes-for.mjs', () => {
     const out = run('0.2.0-beta.9', fixtureRegistry());
     expect(out.status).toBe(1);
     expect(out.stdout).toContain('no VERSION_NOTES entry');
+  });
+
+  it('generating a historical stable release excludes notes from future releases', () => {
+    const registry = fixtureRegistry();
+    writeFileSync(registry, readFileSync(registry, 'utf8').replace('export const VERSION_NOTES: VersionNote[] = [', "export const VERSION_NOTES: VersionNote[] = [\n  { version: '0.3.0-beta.1', date: '2026.10.07', note: { en: 'Future capability', zh: '未来功能' } },"));
+    const out = run('0.2.0', registry);
+    expect(out.status).toBe(0);
+    expect(out.stdout).not.toContain('Future capability');
+    expect(out.stdout).not.toContain('未来功能');
+    expect(out.stdout).toContain('First beta');
+  });
+
+  it('rejects an artifact manifest from a different release', () => {
+    const manifest = join(mkdtempSync(join(tmpdir(), 'pb-notes-manifest-')), 'manifest.json');
+    writeFileSync(manifest, JSON.stringify({ version: '0.1.9' }));
+    const out = run('0.2.0', fixtureRegistry(), { PB_RELEASE_ARTIFACTS: manifest });
+    expect(out.status).toBe(1);
+    expect(out.stdout).toContain('manifest version mismatch');
   });
 
   it('always carries the platform/download, known-issues and update sections', () => {

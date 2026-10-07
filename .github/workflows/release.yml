@@ -1,19 +1,13 @@
 # Release: on a pushed v* tag, build + sign desktop installers, generate
 # the updater feed, and publish a GitHub Release with all artifacts.
-# Web app deploys separately via deploy.yml (Pages, push to stable).
+# Web app deploys separately via deploy.yml (Pages, push to beta).
 #
 # Signing: repo secret TAURI_SIGNING_PRIVATE_KEY (content of
 # ~/.tauri/pathblender-updater.key) + TAURI_SIGNING_PRIVATE_KEY_PASSWORD
 # (see docs/releasing.md — key backup discipline).
 #
-# Platform matrix: macOS and Windows are active today (Windows ships an NSIS
-# installer; the updater feed gains a windows-x86_64 entry via
-# PB_WINDOWS_ARTIFACT). The Linux job below is still commented out entirely
-# (not an `if: false` stub) until the deb/AppImage bundle configs land in
-# tauri.conf.json (report v1.10 §7.1 runtime matrix); uncomment it when that
-# lands, and note `publish` needs its `needs:` and artifact copies extended too.
-# Windows verification without a physical PC: .github/workflows/windows-smoke.yml
-# (manual dispatch — build, silent-install, launch check, screenshot).
+# Public releases contain a Universal macOS DMG, Windows NSIS installer,
+# Linux DEB/AppImage/RPM, and signed updater artifacts for all four platform keys.
 name: Release
 
 on:
@@ -29,6 +23,7 @@ jobs:
   # must never package a tree that fails the repo's own checks — same gate
   # deploy.yml runs before a Pages deploy.
   checks:
+    if: github.event.repository.private == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,13 +56,15 @@ jobs:
         with:
           node-version: 23
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
       - name: Install workspace deps
-        run: npm install
+        run: npm ci
       - name: Build signed desktop bundle
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: cd packages/desktop && npx tauri build
+        run: cd packages/desktop && npx tauri build --target universal-apple-darwin --bundles app
       - name: Package, seal and verify desktop artifacts
         # The shared pipeline scripts/package-desktop-artifacts.sh — the same
         # one install-desktop.sh runs locally: inject the day+night icon
@@ -80,15 +77,15 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: scripts/package-desktop-artifacts.sh "${GITHUB_REF_NAME#v}"
+        run: scripts/package-desktop-artifacts.sh "${GITHUB_REF_NAME#v}" --target universal-apple-darwin
       - name: Stage artifacts
         run: |
           mkdir -p release
-          B=packages/desktop/src-tauri/target/release/bundle
+          B=packages/desktop/src-tauri/target/universal-apple-darwin/release/bundle
           cp "$B/macos/PathBlender.app.tar.gz" "$B/macos/PathBlender.app.tar.gz.sig" release/
           # No `|| true`: a release without a (verified) dmg must fail loudly —
           # beta.22 shipped a pre-seal image collected from a stale path.
-          cp "$B/dmg/PathBlender_"*_aarch64.dmg release/
+          cp "$B/dmg/PathBlender_${GITHUB_REF_NAME#v}_universal.dmg" release/
       - uses: actions/upload-artifact@v4
         with:
           name: macos
@@ -104,7 +101,7 @@ jobs:
           node-version: 23
       - uses: dtolnay/rust-toolchain@stable
       - name: Install workspace deps
-        run: npm install
+        run: npm ci
       - name: Build NSIS installer
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -122,50 +119,48 @@ jobs:
           name: windows
           path: release/
 
-  # build-linux:
-  #   if: false  # enable when deb/AppImage targets land
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-node@v4
-  #       with: { node-version: 23 }
-  #     - uses: dtolnay/rust-toolchain@stable
-  #     - run: npm install
-  #     - env:
-  #         TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-  #         TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-  #       run: cd packages/desktop && npx tauri build --bundles deb,appimage
-  #     - run: |
-  #         mkdir release
-  #         cp packages/desktop/src-tauri/target/release/bundle/deb/*.deb release/
-  #         cp packages/desktop/src-tauri/target/release/bundle/appimage/* release/
-  #     - uses: actions/upload-artifact@v4
-  #       with: { name: linux, path: release/ }
+  build-linux:
+    needs: [checks]
+    # Build against the oldest supported glibc/WebKitGTK 4.1 base.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux bundle prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf rpm
+      - run: npm ci
+      - name: Build Linux installers
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: cd packages/desktop && npx tauri build --config src-tauri/tauri.linux.conf.json --bundles deb,appimage,rpm
+      - name: Stage artifacts
+        run: |
+          mkdir -p release
+          B=packages/desktop/src-tauri/target/release/bundle
+          cp "$B"/deb/*.deb "$B"/appimage/*.AppImage "$B"/appimage/*.AppImage.sig "$B"/rpm/*.rpm release/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: release/
 
   publish:
-    needs: [build-macos, build-windows]
+    needs: [build-macos, build-windows, build-linux]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with: { path: artifacts }
-      - name: Gather artifacts
-        run: |
-          mkdir -p bundle/macos release
-          cp artifacts/macos/*.tar.gz* bundle/macos/
-          cp artifacts/macos/*.tar.gz* release/
-          cp artifacts/macos/*.dmg release/ || true
-          # Windows: setup.exe + .sig become release assets AND the feed entry.
-          # Strict copies (no `|| true`): if the windows job succeeded but its
-          # artifacts are missing, the release must fail loudly — same policy
-          # as the dmg check above. bundle/nsis/ is where gen-latest-json.mjs
-          # reads the signature from (same pattern as bundle/macos/ above).
-          mkdir -p bundle/nsis
-          cp artifacts/windows/*-setup.exe release/
-          cp artifacts/windows/*-setup.exe.sig release/
-          cp artifacts/windows/*-setup.exe* bundle/nsis/
-          echo "PB_WINDOWS_ARTIFACT=$(basename artifacts/windows/*-setup.exe)" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - name: Gather and validate every platform artifact
+        run: node scripts/prepare-release-artifacts.mjs "${GITHUB_REF_NAME#v}" artifacts bundle release
       - name: Compose user-facing release notes
         # Single source of per-version user notes (task: one text drives the
         # About page, the GitHub Release body AND the updater feed): the
