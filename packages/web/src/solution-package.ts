@@ -301,15 +301,26 @@ async function defaultRecordTake(scene: ExportScene, mime: string, seconds: numb
   const stopped = new Promise<void>((resolve) => { recorder.onstop = () => resolve(); });
   recorder.start(500);
   const started = performance.now();
+  // Draw at most 30 fps even though rAF ticks at the display rate: painting
+  // every 60 Hz tick left the muxer declaring 59.94 as the container frame
+  // rate while only ~30 frames per second actually made it in — the README
+  // said "30 fps" and the metadata disagreed (acceptance round, 2026-10-07).
+  // Regular ~33.3 ms spacing makes the declared rate honest.
+  const FRAME_INTERVAL_MS = 1000 / 30;
+  let lastDraw = -FRAME_INTERVAL_MS; // so the first tick always draws
   await new Promise<void>((resolve) => {
     const step = () => {
-      const elapsed = (performance.now() - started) / 1000;
+      const now = performance.now();
+      const elapsed = (now - started) / 1000;
       if (elapsed >= seconds) {
         drawScene(made.ctx, scene, seconds, `t = ${seconds.toFixed(2)} s`);
         resolve();
         return;
       }
-      drawScene(made.ctx, scene, elapsed, `t = ${elapsed.toFixed(2)} s`);
+      if (now - lastDraw >= FRAME_INTERVAL_MS - 4) { // small catch-up slack
+        lastDraw = now;
+        drawScene(made.ctx, scene, elapsed, `t = ${elapsed.toFixed(2)} s`);
+      }
       requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
