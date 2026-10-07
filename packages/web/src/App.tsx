@@ -1302,39 +1302,35 @@ function AppBody() {
       <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label="primary">
         {hasRobots && <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>}
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
-        {!VIEWER_ONLY && (
-          <>
-            {hasRobots && <button className="btn accent import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>}
-            <input
-              ref={folderInputRef}
-              type="file"
-              multiple
-              hidden
-              // Directory mode must be a CONTENT attribute. WebKit reads it at
-              // parse time and ignores an IDL assignment (`el.webkitdirectory =
-              // true`), which silently degraded this to a plain file panel: a
-              // chosen folder is not a valid file, so the change came back with
-              // zero files and nothing happened. `directory` is the standardized
-              // spelling; engines that know it accept either.
-              // @ts-expect-error non-standard attributes, supported everywhere
-              webkitdirectory=""
-              directory=""
-              onChange={(e) => {
-                const el = e.currentTarget;
-                const list = Array.from(el.files ?? []);
-                // Reset before reporting, and never let the reset decide
-                // whether the user hears back: some engines refuse a value
-                // write on a file input.
-                try {
-                  el.value = '';
-                } catch {
-                  /* the picker keeps its selection; the import already ran */
-                }
-                void onFolderPicked(list);
-              }}
-            />
-          </>
-        )}
+        {hasRobots && <button className="btn accent import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>}
+        <input
+          ref={folderInputRef}
+          type="file"
+          multiple
+          hidden
+          // Directory mode must be a CONTENT attribute. WebKit reads it at
+          // parse time and ignores an IDL assignment (`el.webkitdirectory =
+          // true`), which silently degraded this to a plain file panel: a
+          // chosen folder is not a valid file, so the change came back with
+          // zero files and nothing happened. `directory` is the standardized
+          // spelling; engines that know it accept either.
+          // @ts-expect-error non-standard attributes, supported everywhere
+          webkitdirectory=""
+          directory=""
+          onChange={(e) => {
+            const el = e.currentTarget;
+            const list = Array.from(el.files ?? []);
+            // Reset before reporting, and never let the reset decide
+            // whether the user hears back: some engines refuse a value
+            // write on a file input.
+            try {
+              el.value = '';
+            } catch {
+              /* the picker keeps its selection; the import already ran */
+            }
+            void onFolderPicked(list);
+          }}
+        />
         <input ref={sessionInputRef} type="file" accept=".pb,.ghpb.json" hidden aria-label={tr('welcome.openSession')} onChange={(e) => {
           const file = e.currentTarget.files?.[0];
           e.currentTarget.value = '';
@@ -1408,7 +1404,7 @@ function AppBody() {
                 {/* The old trails switch, restored 2026-10-06 to gate the occupancy heatmap (2D and 3D). */}
                 <label className="switch trails-control"><input type="checkbox" checked={showHeatmap} onChange={(e) => setShowHeatmap(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.heatmap')}</span></label>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={VIEWER_ONLY ? undefined : () => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : <>
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={() => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : <>
                 {/* Parked 3D: mounted at the first 3D entry — or earlier,
                     prewarmed hidden once robots exist (see prewarm3D above) —
                     then hidden (not unmounted) while 2D shows: scene, models

@@ -59,14 +59,16 @@ describe('menu spec', () => {
     expect(file.items.find((e) => e.id === 'import')?.accelerator).toBe('CmdOrCtrl+O');
   });
 
-  it('viewer-only websites drop save/export/open-session but keep import and clear', () => {
+  it('viewer-only websites drop save/export/open-session but keep both imports', () => {
     const file = find(buildMenuSpec(ctx({ viewerOnly: true })), 'File')!;
     const ids = idsOf(file.items);
     expect(ids).not.toContain('save');
     expect(ids).not.toContain('export-package');
     expect(ids).not.toContain('export-gif');
     expect(ids).not.toContain('open-session');
-    expect(ids).not.toContain('import-folder');
+    // The website is meant to import the way the app does, folder included;
+    // only the write/export doors are trimmed.
+    expect(ids).toContain('import-folder');
     expect(ids).toContain('import');
     expect(ids).toContain('clear');
   });
