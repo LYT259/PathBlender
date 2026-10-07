@@ -30,9 +30,9 @@ export interface VersionNote {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.2.0', date: '2026.10.03', note: { en: 'Stable release with everything since 0.1.5', zh: '正式版：汇集 0.1.5 以来全部改进' } },
-  { version: '0.2.0-beta.2', date: '2026.10.02', note: { en: "Fix 'quotes' in notes", zh: '引号转义' } },
-  { version: '0.2.0-beta.1', date: '2026.10.01', note: { en: 'First beta', zh: '首个 beta' } },
+  { version: '0.2.0', date: '2026.10.03', note: { en: 'Stable release with everything since 0.1.5', zh: '正式版：汇集 0.1.5 以来全部改进', es: 'Versión estable con todo desde 0.1.5', fr: 'Version stable avec tout depuis 0.1.5', tr: '0.1.5’ten beri her şeyi içeren kararlı sürüm', 'pt-br': 'Versão estável com tudo desde 0.1.5', he: 'גרסה יציבה עם הכל מאז 0.1.5' } },
+  { version: '0.2.0-beta.2', date: '2026.10.02', note: { en: "Fix 'quotes' in notes", zh: '引号转义', es: 'Corregir comillas en las notas', fr: 'Corriger les guillemets dans les notes', tr: 'Notlardaki tırnak işaretlerini düzelt', 'pt-br': 'Corrigir aspas nas notas', he: 'תיקון מרכאות בהערות' } },
+  { version: '0.2.0-beta.1', date: '2026.10.01', note: { en: 'First beta', zh: '首个 beta', es: 'Primera beta', fr: 'Première bêta', tr: 'İlk beta', 'pt-br': 'Primeiro beta', he: 'בטא ראשונה' } },
   { version: '0.1.5', date: '2026.10.02', note: { en: '' } },
 ];
 `,
@@ -61,6 +61,14 @@ describe('release-notes-for.mjs', () => {
     expect(out.stdout).toContain("引号转义");
     expect(out.stdout).toContain("<summary>简体中文</summary>");
     expect(out.stdout).toContain("<summary>繁體中文（中國香港）</summary>");
+    // The five extra public-facing locales (2026-10-07) fold in after Chinese;
+    // a beta prints its own note in each of them, outside the English lead.
+    expect(out.stdout).toContain("<summary>Español</summary>");
+    expect(out.stdout).toContain("<summary>Türkçe</summary>");
+    expect(out.stdout).toContain("<summary>עברית</summary>");
+    expect(out.stdout).toContain('Corriger les guillemets dans les notes');
+    expect(out.stdout).toContain('Notlardaki tırnak işaretlerini düzelt');
+    expect(out.stdout.slice(0, out.stdout.indexOf("<details>"))).not.toContain('Corriger les guillemets');
     expect(out.stdout.slice(0, out.stdout.indexOf("<details>"))).not.toContain("引号转义");
     expect(out.stdout).not.toContain('First beta');
     expect(out.stdout).not.toContain('Stable release with everything');

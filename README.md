@@ -1,6 +1,6 @@
 # PathBlender
 
-**English** | [简体中文](README.zh-CN.md) | [繁體中文](README.zh-Hant.md)
+**English** | [简体中文](README.zh-CN.md) | [繁體中文（中國香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
 **Multi-source autonomous path fusion viewer for FRC alliance strategy.**
 
@@ -45,10 +45,10 @@ PathBlender fills that gap:
   parsed locally in your browser, and the web build makes **no network
   requests at all**;
 - **Also a desktop app** — the same UI in a lightweight Tauri shell for
-  macOS, adding session save/open, GIF replay and solution-package export,
-  and in-app updates (stable or beta channel). Its only
-  network activity is the
-  update check you trigger, which contacts GitHub Releases.
+  macOS, Windows and Linux, adding session save/open, GIF replay and
+  solution-package export, and in-app updates (stable or beta channel).
+  Its only network activity is the update check you trigger, which
+  contacts GitHub Releases.
 
 ## Quick start
 
@@ -90,15 +90,19 @@ any other season or a practice field).
 
 ## Where to get it
 
-- **macOS desktop app** (Apple Silicon, macOS 13+) — download the
-  `PathBlender_<version>_aarch64.dmg` from
-  [GitHub Releases](https://github.com/LYT259/pathblender/releases), open
-  it, and drag PathBlender to Applications. Updates: menu
-  **PathBlender → Check for Updates…** (beta builds: enable the beta
-  channel in **Preferences → Updates** first). Windows and Linux
-  installers are not provided yet — the code is cross-platform and they
-  are planned. The release page's other assets (`.tar.gz`, `.sig`,
-  `.json`) are updater internals — you don't need them.
+- **macOS** (macOS 13+; one Universal download for Apple Silicon and
+  Intel) — `PathBlender_<version>_universal.dmg` from
+  [GitHub Releases](https://github.com/LYT259/pathblender/releases): open
+  it and drag PathBlender to Applications.
+- **Windows** (x86_64) — the `*_x64-setup.exe` installer from the same
+  Releases page.
+- **Linux** (x86_64) — DEB, AppImage and RPM packages from the same
+  Releases page. In-app updates use the AppImage; DEB/RPM users update by
+  installing the new package over the old one.
+- Updates: menu **PathBlender → Check for Updates…** (beta builds: enable
+  the beta channel in **Preferences → Updates** first). The release page's
+  other assets (`.tar.gz`, `.sig`, `.json`) are updater internals — you
+  don't need them.
 - **Web app** (viewer build: the same imports as the app — files and whole
   folders — plus playback and checking; no session
   save / GIF and solution-package export) —
@@ -113,8 +117,8 @@ check you trigger (GitHub Releases) — path files never leave the app.
 
 Also included: a session-level red/blue alliance view, per-robot team
 number annotations, the season fields above with official AprilTag
-overlays, and a **41-language** UI — English / 简体中文 / 繁體中文（中國香港）/
-繁體中文（中國台灣）/ Français / Español / Deutsch / Italiano / Português
+overlays, and a **40-language** UI — English / 简体中文 /
+繁體中文（中國香港） / Français / Español / Deutsch / Italiano / Português
 (Brasil) / Nederlands / Polski / Čeština / Türkçe / Ελληνικά / עברית /
 العربية / हिन्दी / 日本語 / 한국어, with the full list in the language menu —
 in light and dark themes (follows the system).
@@ -144,7 +148,7 @@ Four checks, all run locally — none of them ships with the app:
 | Layer | Command | What it proves |
 | --- | --- | --- |
 | Unit + jsdom suites | `npm test` (or `-w @pathblender/core` / `-w @pathblender/web`) | Parsers, geometry, fusion and collision maths, and component behaviour in a simulated DOM. |
-| Pointer walkthrough | `npm run build -w @pathblender/web && npm run preview -w @pathblender/web`, then `node scripts/browser-walkthrough.mjs` | The production build driven with a real mouse and real files: folder import, the composer's click-and-drag placement, save/restore through an actual download, all 41 languages including RTL, artwork repaints, service worker, and 3D (model, lit robots, ViewCube picks, season switches). |
+| Pointer walkthrough | `npm run build -w @pathblender/web && npm run preview -w @pathblender/web`, then `node scripts/browser-walkthrough.mjs` | The production build driven with a real mouse and real files: folder import, the composer's click-and-drag placement, save/restore through an actual download, all 40 languages including RTL, artwork repaints, service worker, and 3D (model, lit robots, ViewCube picks, season switches). |
 | Keyboard walkthrough | same preview server, then `node scripts/keyboard-walkthrough.mjs` | The same app driven with the keyboard only — every main workflow has to be completable without a mouse. |
 | Website gate check | `VITE_VIEWER_ONLY=1 npm run build -w @pathblender/web`, then `node scripts/serve-dist.mjs 4179` and `VIEWER_BASE=http://localhost:4179/ node scripts/viewer-check.mjs` | The hosted viewer build keeps import, playback, collision checking and timeline arranging, asks nothing outside its own origin on load, follows the OS language on first visit — and cannot write a file out through any route, including the Ctrl/Cmd+S accelerators that have no button at all. Re-run it whenever a save or export affordance moves. |
 
