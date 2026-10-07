@@ -48,19 +48,21 @@ import { zhTw } from '../src/i18n/zh-tw';
 import { I18nProvider, isRtl, LANGUAGES, LANG_META, langLabel, langFromTags, type Lang } from '../src/i18n';
 
 /**
- * Every shipped dictionary. Adding a language means adding one row here (plus
- * `DICTS`, a `LANG_META` row and a `langFromTags` branch in
- * `src/i18n/index.tsx`, and a menu table in `packages/desktop`); these tests
- * then hold it to the same bar as English. Each full dictionary is typed
- * `Record<MessageKey, string>`, so a missing key is a compile error too — the
- * runtime checks below cover the blanks and the placeholders a type cannot.
+ * Every shipped dictionary — including zh-tw, which ships as the base under the
+ * zh-hk override table but has had no picker row since the 2026-10-07
+ * withdrawal (fifth batch pending). Adding a *selectable* language means
+ * adding one row here (plus `DICTS`, a `LANG_META` row and a `langFromTags`
+ * branch in `src/i18n/index.tsx`, and a menu table in `packages/desktop`);
+ * these tests then hold it to the same bar as English. Each full dictionary is
+ * typed `Record<MessageKey, string>`, so a missing key is a compile error too —
+ * the runtime checks below cover the blanks and the placeholders a type cannot.
  */
 const DICTS: Record<string, Record<string, string>> = {
   en, ar, az, bg, bs, cs, da, de, el, es, fil, fr, he, hi, hr, hu, hy, id, it: itDict,
   ja, ko, mk, mr, ms, nb, nl, nn, pl, 'pt-BR': ptBR, ro, rw, sq, sr, sv, ta,
   tr, uk, vi, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
 };
-const CODES = Object.keys(DICTS) as Lang[];
+const CODES = Object.keys(DICTS) as (keyof typeof DICTS)[];
 const KEYS = Object.keys(en);
 /** What the picker shows, in the order it shows it ('system' is a mode). */
 const pickerLabels = LANGUAGES.flatMap((l) => (l === 'system' ? [] : [langLabel(l)]));
@@ -149,10 +151,11 @@ describe('i18n dictionaries', () => {
     'vi': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta"],
     'zh': [],
     'zh-hk': [],
+    // Ships as the zh-hk base, not as a picker row — see the DICTS comment.
     'zh-tw': [],
-  } satisfies Record<Exclude<Lang, 'en'>, readonly MessageKey[]>;
+  } satisfies Record<Exclude<Lang, 'en'> | 'zh-tw', readonly MessageKey[]>;
 
-  function englishResidue(code: Exclude<Lang, 'en'>, dictionary: Record<string, string>): string[] {
+  function englishResidue(code: Exclude<Lang, 'en'> | 'zh-tw', dictionary: Record<string, string>): string[] {
     const allowed: readonly string[] = KEEP_VERBATIM[code];
     return Object.entries(en)
       .filter(([key, source]) => !UNIVERSAL_VERBATIM.has(key as MessageKey) && !allowed.includes(key) && dictionary[key] === source)
@@ -191,31 +194,39 @@ describe('language picker', () => {
   /**
    * Order comes from the registry's ASCII English sort key, not from a
    * collator — see the comment on LANGUAGES (report §7.2 v1.20). 'system' is a
-   * mode and stays pinned first; Chinese sorts first, so the three Chinese
+   * mode and stays pinned first; Chinese sorts first, so the two Chinese
    * names head the list and the rest keep their own alphabetical order.
    */
   it('offers the languages in a fixed alphabetical order after “system”', () => {
     expect([...LANGUAGES]).toEqual([
       'system',
       // English-name sort of the shipped registry — the stable, engine-
-      // independent order the picker promises (2026-10-04, batch 3+4).
-      'sq', 'ar', 'hy', 'az', 'bs', 'bg', 'zh', 'zh-hk', 'zh-tw', 'hr', 'cs',
+      // independent order the picker promises (2026-10-04, batch 3+4;
+      // 2026-10-07 dropped the zh-tw row).
+      'sq', 'ar', 'hy', 'az', 'bs', 'bg', 'zh', 'zh-hk', 'hr', 'cs',
       'da', 'nl', 'en', 'fil', 'fr', 'de', 'el', 'he', 'hi', 'hu', 'id', 'it',
       'ja', 'rw', 'ko', 'mk', 'ms', 'mr', 'nb', 'nn', 'pl', 'pt-BR', 'ro', 'sr',
       'es', 'sv', 'ta', 'tr', 'uk', 'vi',
     ]);
   });
 
-  it('lists exactly the shipped dictionaries', () => {
-    for (const code of CODES) expect(LANGUAGES).toContain(code);
-    expect(LANGUAGES).toHaveLength(CODES.length + 1); // +1: the 'system' mode
+  it('lists every selectable dictionary, and nothing the picker cannot honour', () => {
+    for (const code of CODES) {
+      if (code === 'zh-tw') continue;
+      expect(LANGUAGES).toContain(code);
+    }
+    // zh-tw still ships as the zh-hk base but must not be selectable
+    // (withdrawn 2026-10-07, fifth batch pending).
+    expect(LANGUAGES).not.toContain('zh-tw');
+    expect(LANGUAGES).toHaveLength(CODES.length); // 40 selectable + the 'system' mode
   });
 
 it('labels each language in its own language', () => {
-    // Self-maintaining: every shipped code must render its own endonym
+    // Self-maintaining: every selectable code must render its own endonym
     // (no English fallthrough in the picker) — the shipped set order is
-    // pinned by the dedicated ordering test above.
-    for (const code of CODES) {
+    // pinned by the dedicated ordering test above. zh-tw has no registry row.
+    for (const code of LANGUAGES) {
+      if (code === 'system') continue;
       const meta = LANG_META[code];
       expect(meta, code).toBeDefined();
       expect(langLabel(code), code).toBe(meta.endonym);
@@ -356,17 +367,20 @@ describe('system language detection', () => {
     expect(langFromTags(['tl'])).toBe('fil');
   });
 
-  it('splits Traditional Chinese by region, with Macau reading Hong Kong', () => {
-    // Report §7.2 v1.23: 澳门不单开 locale，就近并入 zh-hk (same rule as
-    // es-AR → es-MX), and a bare `zh-Hant` carries no region so it takes the
-    // larger community's dictionary.
+  it('routes every Traditional Chinese reader to Hong Kong, Macau included', () => {
+    // Report §7.2 v1.23 routed TW and a bare `zh-Hant` to zh-tw; the Taiwan
+    // picker row was withdrawn on 2026-10-07 (public-round decision, fifth
+    // batch pending), so every Traditional reader — HK, MO, TW and region-less
+    // Hant — now reads the Hong Kong dictionary. The zh-tw dictionary still
+    // ships underneath it (zh-hk is an override table), it just is not
+    // selectable.
     expect(langFromTags(['zh-HK'])).toBe('zh-hk');
     expect(langFromTags(['zh-Hant-HK'])).toBe('zh-hk');
     expect(langFromTags(['zh-MO'])).toBe('zh-hk');
     expect(langFromTags(['zh-Hant-MO'])).toBe('zh-hk');
-    expect(langFromTags(['zh-TW'])).toBe('zh-tw');
-    expect(langFromTags(['zh-Hant-TW'])).toBe('zh-tw');
-    expect(langFromTags(['zh-Hant'])).toBe('zh-tw');
+    expect(langFromTags(['zh-TW'])).toBe('zh-hk');
+    expect(langFromTags(['zh-Hant-TW'])).toBe('zh-hk');
+    expect(langFromTags(['zh-Hant'])).toBe('zh-hk');
     // Hans always wins over the region: a Simplified-Chrome install in Hong
     // Kong (`zh-Hans-HK`) must not open in Traditional.
     expect(langFromTags(['zh-Hans-HK'])).toBe('zh');
@@ -387,7 +401,8 @@ describe('RTL (Arabic and Hebrew)', () => {
     expect(isRtl('he')).toBe(true);
     expect(isRtl('ar')).toBe(true);
     for (const code of CODES) {
-      if (code !== 'he' && code !== 'ar') expect(isRtl(code), code).toBe(false);
+      if (code === 'he' || code === 'ar' || code === 'zh-tw') continue;
+      expect(isRtl(code), code).toBe(false);
     }
   });
 
@@ -401,6 +416,18 @@ describe('RTL (Arabic and Hebrew)', () => {
     render(provider());
     expect(document.documentElement.getAttribute('dir')).toBe('ltr');
     expect(document.documentElement.getAttribute('lang')).toBe('en');
+  });
+
+  it('migrates a stored zh-tw choice to the Hong Kong dictionary, in place', () => {
+    // The Taiwan row was withdrawn (2026-10-07, fifth batch pending). A user
+    // who had picked it must relaunch into Traditional Chinese — not a blank
+    // dictionary, not English, and not a silent 'system' that starts
+    // following the OS language instead of the choice they made.
+    localStorage.setItem('pb.lang', 'zh-tw');
+    render(createElement(I18nProvider, null, createElement('div')));
+    expect(document.documentElement.getAttribute('lang')).toBe('zh-hk');
+    expect(localStorage.getItem('pb.lang')).toBe('zh-hk');
+    localStorage.clear();
   });
 });
 

@@ -10,13 +10,13 @@ SDS export does not — SDS never ships motors).
 ## Provenance
 
 - **Shipped geometry** — "MK5i DesignApp.step" (FRC Designs Onshape
-  module, exported by the user 2026-10-02):
+  module, exported 2026-10-02):
   sha256 `8ee3d6af0843d0a62502dc38c04e0d80b0dd948d36a2f0d9cb4dbf2cc9deac1a`.
   It is a community re-creation, not SDS's own geometry; core
   dimensions match the official layout drawing (module height
   6.16–6.17 in both; 18 named parts incl. 2× Kraken X60, turret,
   molded wheel, L plate, fasteners). **License UNVERIFIED — blocks any
-  public release** (release-checklist item, AGENTS.md red line 2):
+  public release** (release checklist item):
   the correct domain is **frcdesign.org** (the old note's
   `frcdesigns.com` was wrong). Research 2026-10-05: the site is a
   community open-source CAD course, but the active GitHub repos
@@ -32,17 +32,17 @@ SDS export does not — SDS never ships motors).
   `mk5i.x_t` (product page → "CAD Model" Google Drive link;
   `attachment; filename="MK5i.x_t"`), sha256
   `b9a36e6bb3a948c04217f2f55293cf283b91d8151bd1ad5e7d789cff7008d203`,
-  byte-identical across two downloads and the user's copy. Its Onshape
+  byte-identical across two independent downloads. Its Onshape
   STEP re-export ("MK5i Official.step") measured 7.45×7.45 in plan ×
   6.16 in high — used to cross-check the FRC Designs core dims.
 - Parasolid has no open-source reader, so both STEP hops went through
-  Onshape (user-side); everything after STEP is automated below.
+  Onshape; everything after STEP is automated below.
 
 ## Rebuild (deterministic)
 
 ```sh
 blender --background --python scripts/cad/mk5i-convert.py -- \
-  ~/Downloads/MK5i\ DesignApp.step packages/web/public/models/mk5i-module.glb
+  /path/to/mk5i-module.step packages/web/public/models/mk5i-module.glb
 ```
 
 Calibration is measured from the mesh (steering axis = turret bbox
@@ -123,7 +123,7 @@ measured on the shipped module GLB.
 - **The earlier 0.042118 m reading was a misidentified face** — the
   fork/gearbox underside. It put the plate BELOW the fork top
   (impossible), sank the frame assembly 19.4 mm UNDER the field floor
-  ("metal frame touches the ground", user 2026-10-04) and floated the
+  ("metal frame touches the ground", reported 2026-10-04) and floated the
   real plate 50 mm above the rails.
 - Result: `MODULE_MOUNT_Y_M = 0.061516 (rail top, frame-y) − 0.092126
   = −0.030610` — NEGATIVE, i.e. the frame assembly RISES 30.6 mm;
@@ -183,7 +183,7 @@ mounting bolts.
 
 `assets/robots/mk5i-module-top.png` — the 2D canvas's module artwork
 (`FieldCanvas.tsx` draws it parked at each corner's installed yaw; the
-2D view shows no steering animation by user decision).
+2D view shows no steering animation).
 
 - **Tool** — `scripts/cad/glb-topview.py`, headless Blender:
 

@@ -9,7 +9,7 @@
  *
  * COVERAGE (pointer + real file system): welcome state → two .ghostauto
  * imports → collision jump → folder import and its route library in the
- * composer → playback rates → all 41 languages + RTL round trips → theme
+ * composer → playback rates → all 40 languages + RTL round trips → theme
  * staging → out-of-bounds panel → season + construction persistence across a
  * reload → artwork repaint proofs → custom field → read-only inspector →
  * robot removal through the context menu → PathPlanner batch → session
@@ -282,12 +282,16 @@ await page.locator('.preferences-nav [role=tab]', { hasText: /^About$/ }).click(
 }
 await page.locator('.preferences-nav [role=tab]', { hasText: /^General$/ }).click();
 const optionCount = await langSelect.locator('option').count();
-// The picker must offer every dictionary the app ships — counted from the
+// The picker must offer every selectable dictionary — counted from the
 // i18n folder so the harness grows with the language set instead of rotting
-// against a frozen number (it read "15" for two expansion rounds).
+// against a frozen number (it read "15" for two expansion rounds). One file
+// in the folder is not a selectable row: zh-tw.ts ships as the base the
+// zh-hk override table spreads over, without a picker entry since the
+// 2026-10-07 withdrawal (fifth batch pending).
+const NOT_SELECTABLE = 1;
 const dictionaries = readdir(resolve(process.cwd(), 'packages/web/src/i18n'))
-  .filter((f) => f.endsWith('.ts')).length;
-check('language list offers every shipped dictionary', optionCount === dictionaries + 1, `options=${optionCount} dictionaries=${dictionaries}`);
+  .filter((f) => f.endsWith('.ts')).length - NOT_SELECTABLE;
+check('language list offers every selectable dictionary', optionCount === dictionaries + 1, `options=${optionCount} selectable dictionaries=${dictionaries}`);
 check('follow-system sits first', /Follow system|跟随系统|跟隨系統/i.test((await langSelect.locator('option').first().textContent()) ?? ''));
 await langSelect.selectOption('zh');
 await page.waitForTimeout(150);

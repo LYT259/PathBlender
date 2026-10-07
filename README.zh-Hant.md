@@ -1,6 +1,6 @@
 # PathBlender
 
-[English](README.md) | [简体中文](README.zh-CN.md) | **繁體中文**
+[English](README.md) | [简体中文](README.zh-CN.md) | **繁體中文（中國香港）** | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
 **面向 FRC 聯盟策略協作的多源自動路徑融合檢視器。**
 
@@ -20,10 +20,10 @@ PathBlender 補上這個空缺：
 - **統一時間軸回放**——所有機器人在同一條自動時鐘上（15 秒；2026 賽季 20 秒），播放/暫停/拖動/變速（0.25×–1×）；
 - **碰撞與干涉檢查**——全程保險桿矩形 OBB 重疊檢測，衝突報告（誰和誰、什麼時刻、在哪裡）、越界標記；
 - **3D 場地視圖**——2022–2026 官方場地 3D 模型（焊接場/AndyMark 場兩種結構有差異時都提供），自由環繞、一鍵適配；自訂匯入的場地維持 2D。2D 視圖每個賽季提供示意圖與渲染圖兩種底圖，疊加官方 AprilTag 佈局；
-- **路線庫**（桌面版）——整包匯入一個隊伍的 deploy 目錄：無關檔案自動跳過，所有路線進入路線庫，每台機器人旁的選擇器即時切換目前自動；PathPlanner `settings.json` 可把真實保險桿尺寸套用到機器人；
+- **路線庫**——整包匯入一個隊伍的 deploy 目錄：無關檔案自動跳過，所有路線進入路線庫，每台機器人旁的選擇器即時切換目前自動；PathPlanner `settings.json` 可把真實保險桿尺寸套用到機器人；
 
 - **零安裝、零上傳（網頁版）**——純靜態網頁應用，檔案解析完全在你的瀏覽器裡完成，網頁建構**不發出任何網路請求**；
-- **也有桌面版**——同一介面裝入輕量 Tauri 殼（macOS），增加工作階段儲存/開啟、GIF 回放與方案包匯出、應用內更新（stable 或 beta 通道）。唯一的網路活動是你主動觸發的檢查更新，只連線 GitHub Releases。
+- **也有桌面版**——同一介面裝入輕量 Tauri 殼（macOS、Windows、Linux），增加工作階段儲存/開啟、GIF 回放與方案包匯出、應用內更新（stable 或 beta 通道）。唯一的網路活動是你主動觸發的檢查更新，只連線 GitHub Releases。
 
 ## 快速上手
 
@@ -50,14 +50,17 @@ PathBlender 補上這個空缺：
 
 ## 取得方式
 
-- **macOS 桌面版**（Apple Silicon，macOS 13+）——從 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 下載 `PathBlender_<版本號>_aarch64.dmg`，打開後把 PathBlender 拖入「應用程式」。更新：選單 **PathBlender → 檢查更新…**（Beta 版先在 **偏好設定 → 更新** 開啟 Beta 通道）。Windows 與 Linux 安裝包尚未提供——程式碼跨平台，已在計畫中。發布頁上的其它檔案（`.tar.gz`、`.sig`、`.json`）是更新器內部檔案，無需下載。
+- **macOS**（macOS 13+；Apple Silicon 與 Intel 一個通用包）——從 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 下載 `PathBlender_<版本號>_universal.dmg`，打開後把 PathBlender 拖入「應用程式」。
+- **Windows**（x86_64）——同一發布頁的 `*_x64-setup.exe` 安裝包。
+- **Linux**（x86_64）——同一發布頁的 DEB / AppImage / RPM 包。應用內更新走 AppImage；DEB/RPM 使用者下載新套件覆蓋安裝即可更新。
+- 更新：選單 **PathBlender → 檢查更新…**（Beta 版先在 **偏好設定 → 更新** 開啟 Beta 通道）。發布頁上的其它檔案（`.tar.gz`、`.sig`、`.json`）是更新器內部檔案，無需下載。
 - **網頁版**（檢視器建構：與桌面版相同的匯入——單一檔案或整個資料夾——加上回放與檢查；無工作階段儲存/開啟、GIF 回放與方案包匯出）——[pathblender.pages.dev](https://pathblender.pages.dev)。
 
 ## 隱私
 
 路徑檔案**完全在你的裝置上解析**。零後端、零帳號、零遙測、零分析。網頁建構不發出任何網路請求；桌面版只有你主動點「檢查更新」時才連網（存取 GitHub Releases）——路徑檔案絕不離開應用程式。
 
-另含：工作階段級紅藍聯盟視角、機器人隊號標註、上述賽季場地與官方 AprilTag 疊加、41 種介面語言——English / 简体中文 / 繁體中文（中國香港）/ 繁體中文（中國台灣）/ Français / Español / Deutsch / Italiano / Português (Brasil) / Nederlands / Polski / Čeština / Türkçe / Ελληνικά / עברית / العربية / हिन्दी / 日本語 / 한국어，完整清單見介面語言選單——深淺色主題跟隨系統。
+另含：工作階段級紅藍聯盟視角、機器人隊號標註、上述賽季場地與官方 AprilTag 疊加、40 種介面語言——English / 简体中文 / 繁體中文（中國香港）/ Français / Español / Deutsch / Italiano / Português (Brasil) / Nederlands / Polski / Čeština / Türkçe / Ελληνικά / עברית / العربية / हिन्दी / 日本語 / 한국어，完整清單見介面語言選單——深淺色主題跟隨系統。
 
 完整操作指南與 FAQ：[English](docs/user-guide.en.md) · [简体中文](docs/user-guide.zh.md)。
 

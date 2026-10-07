@@ -14,7 +14,7 @@
  * build never re-bumps (the number lives in source, so repeated builds keep
  * it — only a merge does).
  *
- * Concurrency rule (AGENTS.md): run this on the feature branch right
+ * Concurrency rule: run this on the feature branch right
  * before merging. If another merge reached beta in the meantime, rebase
  * first and run it again — the number is allocated by the branch state at
  * merge time, so two merges can never carry the same number.
@@ -71,7 +71,7 @@ if (!/^version\s*=\s*"/m.test(read(TOML)) || !read(TOML).includes(`version = "${
   process.exit(1);
 }
 
-// Update-note i18n discipline (AGENTS.md 2026-10-03): dates use the
+// Update-note i18n discipline (2026-10-03): dates use the
 // YYYY.MM.DD form, and a new note enters with the English text only —
 // fill the remaining languages in the same commit (version-notes.test.ts
 // refuses a newest entry that misses a language).

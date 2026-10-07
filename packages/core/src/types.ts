@@ -1,7 +1,7 @@
 /**
  * Unified internal trajectory model.
  *
- * Architecture invariant (AGENTS.md): every external format converts into
+ * Architecture invariant: every external format converts into
  * these types at the parse boundary; rendering and collision detection only
  * ever consume this model. No format-specific fields leak through.
  *

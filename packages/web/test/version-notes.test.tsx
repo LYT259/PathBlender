@@ -8,7 +8,7 @@ import { AppIconProvider } from '../src/app-icon';
 import { APP_VERSION, NOTE_LANGS, noteText, VERSION_NOTES } from '../src/version-info';
 
 /**
- * Update-note i18n discipline (AGENTS.md 2026-10-03): the registry carries
+ * Update-note i18n discipline (2026-10-03): the registry carries
  * every shipped UI language, dates use the YYYY.MM.DD form, and EVERY entry
  * must ship ALL languages — bump-version.mjs writes English only, so a bump
  * whose translations were not filled in the same commit fails here.
