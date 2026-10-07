@@ -10,6 +10,7 @@ export const bs = {
   'sequence.joinPosition': 'razlika pozicije {d}',
   'sequence.joinHeading': 'razlika smjera {d}°',
   'sequence.joinVelocity': 'skok brzine {d} m/s',
+  'sequence.libraryBlocked': 'Početak ne nastavlja kraj {name} (razlika pozicije {p}, razlika smjera {h})',
   'sequence.joinFix': 'Ispravite spoj u PathPlanneru ili Choreu i ponovo uvezite rutu.',
   'sequence.overAuto': 'Završava na {t} s, nakon autonomnog perioda od {auto} s.',
   'sequence.invalid': 'Unesite konačno, nenegativno vrijeme početka.',

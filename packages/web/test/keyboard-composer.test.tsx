@@ -22,12 +22,21 @@ vi.mock('../src/components/FieldCanvas', async () => {
 
 const raw = readFileSync(resolve(__dirname, '../../../samples/ghostauto/straight_run.ghostauto'), 'utf8');
 beforeEach(() => { localStorage.clear(); localStorage.setItem('pb.lang', 'en'); });
+/** B's file content: the same run translated to start exactly where A ends, so the playhead-gated route library keeps B draggable after A. */
+const chainedRaw = (() => {
+  const doc = JSON.parse(raw);
+  const states: { x: number; y: number }[] = doc.states;
+  const dx = states[states.length - 1]!.x - states[0]!.x;
+  const dy = states[states.length - 1]!.y - states[0]!.y;
+  return JSON.stringify({ ...doc, states: states.map((s) => ({ ...s, x: s.x + dx, y: s.y + dy })) });
+})();
+const fileFor = (name: string) => new File([name.endsWith('/B.ghostauto') ? chainedRaw : raw], name.split('/').at(-1)!, { type: 'application/json' });
 
 /** One team with two routes (A + B) so the composer has a library. */
 async function openComposer() {
   render(<App />);
   const files = ['team/A', 'team/B'].map((name) => {
-    const file = new File([raw], `${name.split('/')[1]}.ghostauto`, { type: 'application/json' });
+    const file = fileFor(`${name}.ghostauto`);
     Object.defineProperty(file, 'webkitRelativePath', { value: `${name}.ghostauto` });
     return file;
   });
@@ -135,7 +144,7 @@ describe('composer keyboard', () => {
   it('the route preview follows focus like the pointer', async () => {
     render(<App />);
     const files = ['team/A', 'team/B', 'other/C'].map((name) => {
-      const file = new File([raw], `${name.split('/')[1]}.ghostauto`, { type: 'application/json' });
+      const file = fileFor(`${name}.ghostauto`);
       Object.defineProperty(file, 'webkitRelativePath', { value: `${name}.ghostauto` });
       return file;
     });

@@ -109,6 +109,7 @@ export {
   checkSequenceJoins,
   checkSequenceTiming,
   resolveSequence,
+  routeConnectsAfter,
   sampleSequenceState,
   sequenceEventTimes,
 } from './auto-sequence';
@@ -116,6 +117,7 @@ export type {
   AutoSequence,
   AutoSequenceSegment,
   ResolvedSequenceSegment,
+  RouteContinuity,
   SequenceJoinIssue,
   SequenceJoinOptions,
   SequenceTimingIssue,

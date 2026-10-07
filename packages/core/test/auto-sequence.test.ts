@@ -6,6 +6,7 @@ import {
   detectCollisions,
   makeSession,
   resolveSequence,
+  routeConnectsAfter,
   samplePoseAt,
   sampleSequenceState,
   sampleStateAt,
@@ -219,6 +220,49 @@ describe('checkSequenceJoins', () => {
       { id: 's1', routeId: 'a', waitBeforeS: 0, trajectory: route() },
     ]));
     expect(checkSequenceJoins(single)).toEqual([]);
+  });
+});
+
+/** A route whose first sample sits at (x, y) with `headingDeg`, at rest. */
+function startingAt(x: number, y: number, headingDeg = 0, first: Partial<Trajectory['samples'][number]> = {}): Trajectory {
+  const heading = headingDeg * Math.PI / 180;
+  return route({ samples: [
+    { t: 0, x, y, heading, vx: 0, vy: 0, omega: 0, ...first },
+    { t: 2, x: x + 2, y, heading, vx: 0, vy: 0, omega: 0 },
+  ] });
+}
+
+describe('routeConnectsAfter', () => {
+  it('connects a route that starts exactly where the previous one ends', () => {
+    // route() ends at (2, 0) heading 0.
+    expect(routeConnectsAfter(route(), startingAt(2, 0))).toEqual({ connects: true, positionGapM: 0, headingGapDeg: 0 });
+  });
+
+  it('accepts a position gap within the default 1 cm tolerance and measures it', () => {
+    const check = routeConnectsAfter(route(), startingAt(2.008, -0.004));
+    expect(check.connects).toBe(true);
+    expect(check.positionGapM).toBeCloseTo(Math.hypot(0.008, 0.004), 9);
+  });
+
+  it('blocks on position and heading separately, reporting both measurements', () => {
+    expect(routeConnectsAfter(route(), startingAt(3, 0))).toEqual({ connects: false, positionGapM: 1, headingGapDeg: 0 });
+    expect(routeConnectsAfter(route(), startingAt(2, 0, 90))).toEqual({ connects: false, positionGapM: 0, headingGapDeg: 90 });
+  });
+
+  it('never gates on the speed jump — a wait parks the robot at rest', () => {
+    const check = routeConnectsAfter(route(), startingAt(2, 0, 0, { vx: 5 }));
+    expect(check.connects).toBe(true);
+  });
+
+  it('honours tolerance overrides', () => {
+    expect(routeConnectsAfter(route(), startingAt(2.05, 0), { positionTolM: 0.1 }).connects).toBe(true);
+    expect(routeConnectsAfter(route(), startingAt(2.05, 0), { positionTolM: 0.01 }).connects).toBe(false);
+    expect(routeConnectsAfter(route(), startingAt(2, 0, 5), { headingTolDeg: 10 }).connects).toBe(true);
+  });
+
+  it('does not gate trajectories without samples', () => {
+    expect(routeConnectsAfter(route({ samples: [] }), startingAt(2, 0)).connects).toBe(true);
+    expect(routeConnectsAfter(route(), route({ samples: [] })).connects).toBe(true);
   });
 });
 

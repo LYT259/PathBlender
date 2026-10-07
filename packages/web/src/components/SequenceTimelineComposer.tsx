@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import type { SequenceJoinIssue, SessionTrajectory } from '@pathblender/core';
+import type { RouteContinuity, SequenceJoinIssue, SessionRouteOption, SessionTrajectory } from '@pathblender/core';
+import { routeConnectsAfter } from '@pathblender/core';
 import { sequenceViewFor, type AutoSequenceSegment } from '../auto-sequence-state';
 import { boundedClipStart, canPlaceClip, clipGaps, clipsFor, placeClip, segmentsFromClips, type TimelineClip } from '../sequence-timeline-clips';
 import { robotIdentity } from '../robot-identity';
@@ -69,6 +70,32 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     ? t('sequence.joinPosition', { d: formatLength(issue.delta, unit) })
     : issue.kind === 'heading' ? t('sequence.joinHeading', { d: issue.delta.toFixed(1) })
       : t('sequence.joinVelocity', { d: issue.delta.toFixed(2) });
+  // Route-library continuity gating (2026-10-07): with the playhead on or
+  // past a segment — the same "last segment started at or before t" the
+  // playback sampler uses — a route dragged in continues from that
+  // segment's end pose. Routes that start elsewhere stay listed but gray,
+  // disabled and after the draggable ones: a composition must not teleport
+  // the robot, and the user asked to see what can actually come next.
+  // Before the first segment (or with no playback) nothing precedes the
+  // playhead and every route stays available.
+  const playheadT = playback?.t;
+  const anchorClip = playheadT === undefined ? undefined
+    : [...activeClips].sort((a, b) => a.startS - b.startS).filter((clip) => clip.startS <= playheadT).at(-1);
+  const anchorRoute = anchorClip ? active?.routes.find((route) => route.id === anchorClip.routeId) : undefined;
+  const anchorLabel = anchorRoute && active ? routeLabel(anchorRoute, active.routes) : '';
+  const library: { route: SessionRouteOption; blocked: boolean; continuity?: RouteContinuity }[] = [];
+  for (const route of active?.routes ?? []) {
+    const overAuto = route.trajectory.durationS > autoPeriodS;
+    const continuity = anchorRoute ? routeConnectsAfter(anchorRoute.trajectory, route.trajectory) : undefined;
+    library.push({
+      route,
+      blocked: route.trajectory.durationS <= 0 || overAuto || (continuity ? !continuity.connects : false),
+      continuity,
+    });
+  }
+  // Draggable first (stable within each group), grayed after — the picker
+  // answers "what can follow the playhead" in one glance.
+  library.sort((a, b) => Number(a.blocked) - Number(b.blocked));
 
   useEffect(() => {
     if (!open) return;
@@ -175,20 +202,28 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     }}>
     <SequenceComposerToolbar name={robotIdentity(active.robot.trajectory)} color={active.robot.color} onBack={onClose} />
     <div className="sequence-route-library"><div className="sequence-route-options">
-      {active.routes.map((route) => <button type="button" key={route.id} className="sequence-route-source" draggable={false}
-        disabled={route.trajectory.durationS <= 0 || route.trajectory.durationS > autoPeriodS}
-        title={route.trajectory.durationS > autoPeriodS ? limitMessage : `${route.relPath} · ${route.trajectory.durationS.toFixed(2)}s`}
-        aria-label={`${routeLabel(route, active.routes)}: ${route.trajectory.durationS.toFixed(2)} s`}
-        onPointerEnter={() => { if (!dragRef.current) onPreviewRoute?.(route.id); }}
-        onPointerLeave={() => { if (!dragRef.current) onPreviewRoute?.(null); }}
+      {library.map(({ route, blocked, continuity }) => {
+        const reason = blocked && route.trajectory.durationS <= autoPeriodS && continuity
+          ? t('sequence.libraryBlocked', {
+            name: anchorLabel,
+            p: formatLength(continuity.positionGapM, unit),
+            h: `${continuity.headingGapDeg.toFixed(1)}°`,
+          })
+          : route.trajectory.durationS > autoPeriodS ? limitMessage : null;
+        return <button type="button" key={route.id} className="sequence-route-source" draggable={false}
+        disabled={blocked}
+        title={reason ? `${route.relPath} · ${route.trajectory.durationS.toFixed(2)}s · ${reason}` : `${route.relPath} · ${route.trajectory.durationS.toFixed(2)}s`}
+        aria-label={`${routeLabel(route, active.routes)}: ${route.trajectory.durationS.toFixed(2)} s${reason ? ` · ${reason}` : ''}`}
+        onPointerEnter={() => { if (blocked || dragRef.current) return; onPreviewRoute?.(route.id); }}
+        onPointerLeave={() => { if (dragRef.current) return; onPreviewRoute?.(null); }}
         // Keyboard parity for the hover preview: focus shows the route on
         // the field exactly like a pointer enter, blur clears it.
-        onFocus={() => { if (!dragRef.current) onPreviewRoute?.(route.id); }}
-        onBlur={() => { if (!dragRef.current) onPreviewRoute?.(null); }}
-        onPointerDown={(event) => begin(event, 'add', { id: crypto.randomUUID(), routeId: route.id, startS: 0, durationS: route.trajectory.durationS })}
-        onClick={(event) => { if (event.detail !== 0 && suppressClick.current) return; append(route.id, route.trajectory.durationS); }}>
+        onFocus={() => { if (blocked || dragRef.current) return; onPreviewRoute?.(route.id); }}
+        onBlur={() => { if (dragRef.current) return; onPreviewRoute?.(null); }}
+        onPointerDown={(event) => { if (blocked) return; begin(event, 'add', { id: crypto.randomUUID(), routeId: route.id, startS: 0, durationS: route.trajectory.durationS }); }}
+        onClick={(event) => { if (blocked || (event.detail !== 0 && suppressClick.current)) return; append(route.id, route.trajectory.durationS); }}>
         <span aria-hidden="true" className="sequence-grip">⠿</span><span>{routeLabel(route, active.routes)}</span><small>{route.trajectory.durationS.toFixed(2)}s</small>
-      </button>)}
+      </button>; })}
     </div></div>
     <div className="sequence-timeline-scroll" dir="ltr"><div className="sequence-timeline-surface">
       <div className="sequence-axis"><span>s</span><div>{ticks.map((tick) => <span key={tick} style={{ left: percent(tick) }}>{tick}</span>)}</div></div>

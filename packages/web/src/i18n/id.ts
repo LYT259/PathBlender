@@ -10,6 +10,7 @@ export const id = {
   'sequence.joinPosition': 'selisih posisi {d}',
   'sequence.joinHeading': 'selisih arah {d}°',
   'sequence.joinVelocity': 'lonjakan kecepatan {d} m/s',
+  'sequence.libraryBlocked': 'Awal tidak meneruskan akhir {name} (selisih posisi {p}, selisih arah {h})',
   'sequence.joinFix': 'Perbaiki sambungan di PathPlanner atau Choreo, lalu impor ulang rutenya.',
   'sequence.overAuto': 'Selesai pada {t} dtk, melewati periode otonom {auto} dtk.',
   'sequence.invalid': 'Masukkan waktu mulai yang terhingga dan tidak negatif.',

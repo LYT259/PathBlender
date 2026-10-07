@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.72';
+export const APP_VERSION = '0.1.8-beta.73';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.73', date: '2026.10.07', note: {
+    en: 'Sequence library continuity gating: routes that do not start where the playhead segment ends are grayed out and sorted after the draggable ones',
+    zh: '编排路线库按连续性筛选：起点不衔接进度条所在段终点的路线置灰，并排到可拖入路线之后',
+    'zh-tw': '編排路線庫按連續性篩選：起點不銜接進度條所在段終點的路線轉灰，並排到可拖入路線之後',
+    cs: 'Knihovna tras v editoru sekvence filtruje podle návaznosti: trasy, které nezačínají tam, kde končí segment pod přehrávací hlavičkou, jsou zešedlé a seřazené za použitelnými',
+    nl: 'De routebibliotheek in de sequentie-editor filtert op aansluiting: routes die niet beginnen waar het segment onder de afspeelkop eindigt, worden grijs weergegeven en na de sleepbare routes gesorteerd',
+    fr: 'Filtrage par continuité dans la bibliothèque de parcours : les parcours qui ne commencent pas là où finit le segment sous la tête de lecture sont grisés et placés après les parcours utilisables',
+    he: 'סינון רציפות בספריית המסלולים: מסלולים שאינם מתחילים במקום שבו מסתיים הקטע מתחת לראש ההשמעה מוצגים באפור וממוינים אחרי המסלולים הזמינים',
+    ja: 'シーケンスのルートライブラリを連続性で絞り込み：再生位置のセグメントの終点から始まらないルートはグレー表示され、ドラッグ可能なルートの後ろに並びます',
+    ko: '시퀀스 루트 라이브러리 연속성 필터: 재생 위치 세그먼트의 끝점에서 시작하지 않는 루트는 회색으로 표시되고 드래그 가능한 루트 뒤로 정렬됩니다',
+    pl: 'Filtrowanie ciągłości w bibliotece tras sekwencji: trasy, które nie zaczynają się tam, gdzie kończy się segment pod głowicą odtwarzania, są wyszarzone i sortowane za trasami dostępnymi',
+    'pt-br': 'Filtro de continuidade na biblioteca de rotas da sequência: rotas que não começam onde o segmento sob o cursor de reprodução termina ficam cinzas e vão para depois das rotas arrastáveis',
+    es: 'Filtro de continuidad en la biblioteca de rutas de la secuencia: las rutas que no empiezan donde termina el segmento bajo el cabezal de reproducción se muestran en gris y se ordenan tras las arrastrables',
+    tr: 'Dizi rota kitaplığında süreklilik süzgeci: oynatma kafasının üzerindeki segmentin bittiği yerde başlamayan rotalar gri gösterilir ve sürüklenebilir rotalardan sonraya sıralanır',
+  } },
   { version: '0.1.8-beta.72', date: '2026.10.07', note: {
     en: 'Custom mouse controls: assign rotate, pan, zoom, roll or nothing to any button and modifier combo; the wheel always stays zoom',
     zh: '自定义鼠标控制：可为任意按键与修饰键组合指定旋转、平移、缩放、翻滚或无操作；滚轮固定为缩放',

@@ -10,6 +10,7 @@ export const el = {
   'sequence.joinPosition': 'διαφορά θέσης {d}',
   'sequence.joinHeading': 'διαφορά κατεύθυνσης {d}°',
   'sequence.joinVelocity': 'άλμα ταχύτητας {d} m/s',
+  'sequence.libraryBlocked': 'Η αρχή δεν συνεχίζει το τέλος του {name} (διαφορά θέσης {p}, διαφορά κατεύθυνσης {h})',
   'sequence.joinFix': 'Διορθώστε την ένωση στο PathPlanner ή το Choreo και εισαγάγετε ξανά τη διαδρομή.',
   'sequence.overAuto': 'Ολοκληρώνεται στα {t} s, μετά την αυτόνομη περίοδο των {auto} s.',
   'sequence.invalid': 'Εισαγάγετε πεπερασμένο, μη αρνητικό χρόνο έναρξης.',
