@@ -3,12 +3,12 @@ import type { IconAppearanceMode } from '../app-icon';
 import dayIcon from '../assets/app-icon-day.png';
 import nightIcon from '../assets/app-icon-night.png';
 import { useI18n } from '../i18n';
-import { resolveMouseAction, type MouseControlsScheme } from '../mouse-controls';
+import { resolveMouseAction, type CustomMouseMap, type MouseControlsScheme } from '../mouse-controls';
 
 type MouseCallout = { button: 'left' | 'right' | 'middle' | 'wheel'; action: 'rotate' | 'constrained' | 'pan' | 'zoom' | 'roll' };
 
 /** Flat mouse illustration; leader lines remain physically left/right in RTL. */
-export function MouseControlsDiagram({ scheme, iconMode = 'system', constrained = false }: { scheme: MouseControlsScheme; iconMode?: IconAppearanceMode; constrained?: boolean }) {
+export function MouseControlsDiagram({ scheme, iconMode = 'system', constrained = false, custom }: { scheme: MouseControlsScheme; iconMode?: IconAppearanceMode; constrained?: boolean; custom?: CustomMouseMap }) {
   const { t } = useI18n();
   const [systemDark, setSystemDark] = useState(() => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true);
   useEffect(() => {
@@ -20,7 +20,7 @@ export function MouseControlsDiagram({ scheme, iconMode = 'system', constrained 
   }, []);
   const buttons = (['left', 'right', 'middle', 'wheel'] as const).flatMap<MouseCallout>((button) => {
     if (button === 'wheel') return [{ button, action: 'zoom' as const }];
-    const action = resolveMouseAction(scheme, { left: 0, middle: 1, right: 2 }[button], { ctrlKey: false, altKey: false, shiftKey: false }, constrained);
+    const action = resolveMouseAction(scheme, { left: 0, middle: 1, right: 2 }[button], { ctrlKey: false, altKey: false, shiftKey: false }, constrained, custom);
     if (action.kind === 'none') return [];
     // Plain buttons never produce 'roll' (Alt-only) or 'dragZoom'
     // (Shift-only); the mapping stays exhaustive so a future scheme that

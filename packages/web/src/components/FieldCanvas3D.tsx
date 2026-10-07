@@ -24,6 +24,7 @@ import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
 import {
   resolveMouseAction,
+  useCustomMouseControls,
   useDefaultConstrained,
   useMouseControls,
   usePenAsMouse,
@@ -412,6 +413,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   const [mouseScheme] = useMouseControls();
   const mouseSchemeRef = useRef(mouseScheme);
   useEffect(() => { mouseSchemeRef.current = mouseScheme; }, [mouseScheme]);
+  const [customMouseMap] = useCustomMouseControls();
+  const customMouseMapRef = useRef(customMouseMap);
+  useEffect(() => { customMouseMapRef.current = customMouseMap; }, [customMouseMap]);
   const [defaultConstrained] = useDefaultConstrained();
   const defaultConstrainedRef = useRef(defaultConstrained);
   useEffect(() => { defaultConstrainedRef.current = defaultConstrained; }, [defaultConstrained]);
@@ -524,7 +528,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     //   solidworks — middle = orbit, Alt+middle = ROLL (spin in the screen
     //             plane), Ctrl+middle = pan, Shift+middle = drag-zoom,
     //             wheel = zoom.
-    // Left does nothing in either scheme (a viewer has no selection).
+    //   custom — every drag slot comes from the user's own map (custom
+    //             MouseMap); the wheel always stays zoom.
+    // Left does nothing by default in every scheme (a viewer has no
+    // selection), but custom may assign it.
     const pan = { active: false, x: 0, y: 0 };
     const dragZoom = { active: false, lastY: 0 };
     const roll = { active: false, x: 0 };
@@ -543,7 +550,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // Pen gate: a stylus only drives the view when "use pen as mouse".
       if (e.pointerType === 'pen' && !penAsMouseRef.current) return;
       const action = resolveMouseAction(
-        mouseSchemeRef.current, e.button, e, defaultConstrainedRef.current,
+        mouseSchemeRef.current, e.button, e, defaultConstrainedRef.current, customMouseMapRef.current,
       );
       if (action.kind === 'none') return;
       e.preventDefault(); // middle: no autoscroll; right: no native menu

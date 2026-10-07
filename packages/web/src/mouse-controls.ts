@@ -2,8 +2,10 @@
  * Mouse-controls preferences (user request 2026-10-02, verified against
  * Onshape's production UI 2026-10-03 and SOLIDWORKS' official view-
  * manipulation docs 2026-10-04): the view-manipulation scheme plus
- * Onshape's three view checkboxes. Two schemes ship, with bindings taken
- * verbatim from each vendor's own table:
+ * Onshape's three view checkboxes. Three schemes ship — the two presets
+ * carry bindings taken verbatim from each vendor's own table, and the
+ * third (custom, user request 2026-10-07) lets the user assign an action
+ * to every drag slot themselves:
  *
  * - onshape (default): right drag = rotate, Alt+right drag = constrained
  *   rotate, Ctrl+right drag OR middle drag = pan, wheel = zoom (scroll up
@@ -12,6 +14,9 @@
  *   in the screen plane — NOT constrained rotate; that was a bug fixed
  *   2026-10-04), Ctrl+middle drag = pan, wheel OR Shift+middle drag =
  *   zoom (scroll up zooms OUT — SOLIDWORKS' factory default).
+ * - custom: every (button, modifier) drag slot holds a user-chosen
+ *   action; the wheel is NOT assignable — it always zooms (user request
+ *   2026-10-07). Slots start as a copy of the onshape preset.
  *
  * Storage/broadcast follows the theme.tsx pattern (localStorage +
  * pref-sync events) so the settings window, the desktop shell and open
@@ -21,13 +26,13 @@
 import { useEffect, useState } from 'react';
 import { broadcastPref, listenPrefs } from './pref-sync';
 
-export type MouseControlsScheme = 'onshape' | 'solidworks';
+export type MouseControlsScheme = 'onshape' | 'solidworks' | 'custom';
 
 const STORAGE_KEY = 'pb.mouseControls';
-export const MOUSE_SCHEMES: MouseControlsScheme[] = ['onshape', 'solidworks'];
+export const MOUSE_SCHEMES: MouseControlsScheme[] = ['onshape', 'solidworks', 'custom'];
 
 function normalize(value: string | null): MouseControlsScheme {
-  return value === 'solidworks' ? 'solidworks' : 'onshape';
+  return value === 'solidworks' || value === 'custom' ? value : 'onshape';
 }
 
 export function readMouseControls(): MouseControlsScheme {
@@ -71,12 +76,112 @@ export function useMouseControls(): [MouseControlsScheme, (s: MouseControlsSchem
 }
 
 /**
+ * The custom scheme's per-slot assignments. A slot is a mouse button
+ * (left/middle/right) with an optional held modifier; the wheel is not a
+ * slot — it always zooms and only its direction can be reversed.
+ */
+export type CustomMouseButton = 'left' | 'middle' | 'right';
+export type CustomMouseMod = 'ctrl' | 'alt' | 'shift';
+export type CustomMouseSlot = CustomMouseButton | `${CustomMouseButton}.${CustomMouseMod}`;
+export type CustomMouseAction = 'rotate' | 'constrained' | 'pan' | 'zoom' | 'roll' | 'none';
+export type CustomMouseMap = Record<CustomMouseSlot, CustomMouseAction>;
+
+export const CUSTOM_MOUSE_BUTTONS: CustomMouseButton[] = ['left', 'middle', 'right'];
+export const CUSTOM_MOUSE_MODS: (CustomMouseMod | null)[] = [null, 'ctrl', 'alt', 'shift'];
+
+const ACTIONS: CustomMouseAction[] = ['rotate', 'constrained', 'pan', 'zoom', 'roll', 'none'];
+
+/** Slot key helpers shared by storage, routing and the editor UI. */
+export function customSlot(button: CustomMouseButton, mod: CustomMouseMod | null): CustomMouseSlot {
+  return mod ? `${button}.${mod}` : button;
+}
+
+/**
+ * Custom defaults: a copy of the onshape preset (2026-10-07), so picking
+ * Custom changes nothing until the user edits a slot.
+ */
+export const DEFAULT_CUSTOM_MOUSE_MAP: CustomMouseMap = {
+  left: 'none',
+  'left.ctrl': 'none',
+  'left.alt': 'none',
+  'left.shift': 'none',
+  middle: 'pan',
+  'middle.ctrl': 'none',
+  'middle.alt': 'none',
+  'middle.shift': 'none',
+  right: 'rotate',
+  'right.ctrl': 'pan',
+  'right.alt': 'constrained',
+  'right.shift': 'none',
+};
+
+const CUSTOM_STORAGE_KEY = 'pb.customMouseControls';
+
+/** Parse + validate: unknown slots/actions and malformed JSON fall back to defaults. */
+export function normalizeCustomMouseMap(value: string | null): CustomMouseMap {
+  const map: CustomMouseMap = { ...DEFAULT_CUSTOM_MOUSE_MAP };
+  if (!value) return map;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (typeof parsed !== 'object' || parsed === null) return map;
+    for (const [slot, action] of Object.entries(parsed)) {
+      if ((CUSTOM_MOUSE_BUTTONS as string[]).some((b) => slot === b || slot.startsWith(`${b}.`))
+        && (ACTIONS as string[]).includes(action as CustomMouseAction)) {
+        map[slot as CustomMouseSlot] = action as CustomMouseAction;
+      }
+    }
+  } catch {
+    // Malformed JSON (never written by this app): keep defaults.
+  }
+  return map;
+}
+
+export function readCustomMouseControls(): CustomMouseMap {
+  try {
+    return normalizeCustomMouseMap(localStorage.getItem(CUSTOM_STORAGE_KEY));
+  } catch {
+    return { ...DEFAULT_CUSTOM_MOUSE_MAP };
+  }
+}
+
+const customListeners = new Set<(map: CustomMouseMap) => void>();
+
+export function writeCustomMouseControls(map: CustomMouseMap): void {
+  try {
+    localStorage.setItem(CUSTOM_STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    // Storage can be unavailable (private mode); the in-memory choice
+    // still applies for this session.
+  }
+  customListeners.forEach((fn) => fn(map));
+  broadcastPref('customMouseControls', JSON.stringify(map));
+}
+
+/** Live custom map: updates across windows when the preference broadcasts. */
+export function useCustomMouseControls(): [CustomMouseMap, (map: CustomMouseMap) => void] {
+  const [map, setMap] = useState<CustomMouseMap>(readCustomMouseControls);
+  useEffect(() => {
+    customListeners.add(setMap);
+    const unlisten = listenPrefs((key, value) => {
+      if (key === 'customMouseControls') setMap(normalizeCustomMouseMap(value));
+    });
+    return () => {
+      customListeners.delete(setMap);
+      unlisten();
+    };
+  }, []);
+  return [map, writeCustomMouseControls];
+}
+
+/**
  * What a pressed mouse button does in the 3D view — the pure routing table
  * behind the schemes above (unit-tested; the canvas handlers stay thin).
  * `defaultConstrained` is Onshape's "set default rotation behavior to
  * constrained rotate" checkbox: in the Onshape scheme it swaps which of
  * plain/Alt drags is the turntable-only rotation; in the SOLIDWORKS scheme
- * it only re-tunes plain middle drag (Alt+middle stays Roll View).
+ * it only re-tunes plain middle drag (Alt+middle stays Roll View). In the
+ * custom scheme it is unused — constrained rotation is a directly
+ * assignable action there, and `custom` carries the slot map.
  */
 export type ViewMouseAction =
   | { kind: 'orbit'; constrained: boolean }
@@ -90,7 +195,26 @@ export function resolveMouseAction(
   button: number,
   mods: { ctrlKey: boolean; shiftKey: boolean; altKey: boolean },
   defaultConstrained: boolean,
+  custom?: CustomMouseMap,
 ): ViewMouseAction {
+  if (scheme === 'custom') {
+    // Strict priority like the presets: the highest held modifier's own
+    // slot decides, even when its action is "do nothing" — an explicit
+    // None must be able to shadow the plain drag. Shift > Ctrl > Alt
+    // matches the SOLIDWORKS table's reading order.
+    const mod: CustomMouseMod | null = mods.shiftKey ? 'shift' : mods.ctrlKey ? 'ctrl' : mods.altKey ? 'alt' : null;
+    const name: CustomMouseButton | null = button === 0 ? 'left' : button === 1 ? 'middle' : button === 2 ? 'right' : null;
+    if (!name) return { kind: 'none' };
+    const action = (custom ?? DEFAULT_CUSTOM_MOUSE_MAP)[customSlot(name, mod)];
+    switch (action) {
+      case 'rotate': return { kind: 'orbit', constrained: false };
+      case 'constrained': return { kind: 'orbit', constrained: true };
+      case 'pan': return { kind: 'pan' };
+      case 'zoom': return { kind: 'dragZoom' };
+      case 'roll': return { kind: 'roll' };
+      default: return { kind: 'none' };
+    }
+  }
   if (scheme === 'solidworks') {
     if (button !== 1) return { kind: 'none' };
     if (mods.shiftKey) return { kind: 'dragZoom' };
