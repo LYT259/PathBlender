@@ -49,6 +49,8 @@ export const cs: Record<MessageKey, string> = {
   'prefs.appIcon': "Ikona aplikace",
   'welcome.title': 'Začněte importem tras',
   'welcome.description': 'Přehrávejte trasy současně a kontrolujte vzájemné kolize.',
+  'welcome.tagline': "Před zápasem: dejte auta všech spojenců na jedno hřiště, přehrajte je společně a včas odhalte riziko srážek mezi roboty.",
+  'welcome.audience': "Pro strategické a programátorské skupiny aliance. Soubory se zpracovávají na vašem počítači a nikdy se nenahrávají — PathBlender analyzuje, úpravy probíhají v Choreo nebo PathPlanner.",
   'welcome.folderAdvice': 'Importujte celou složku, abyste při konfliktu mohli přepnout na jinou trasu.',
   'welcome.importFile': 'Importovat soubory tras',
   'welcome.importFileHint': 'Vyberte trasy exportované z aplikací Choreo nebo PathPlanner',
@@ -335,6 +337,7 @@ export const cs: Record<MessageKey, string> = {
   "menu.view": "Zobrazit",
   "menu.playback": "Přehrávání",
   "menu.help": "Nápověda",
+  'menu.userGuide': "Rychlá příručka",
   "menu.minimize": "Zmenšit",
   "menu.zoom": "Zvětšení",
   "menu.cut": "Vyjmout",
@@ -369,4 +372,5 @@ export const cs: Record<MessageKey, string> = {
   'help.composerMove': "Přesunout zaměřený segment",
   'help.deleteClip': "Smazat zaměřený segment",
   'help.hint.desktop': "V desktopové aplikaci nabídky obsahují také Cmd/Ctrl+O (import), Cmd/Ctrl+S (uložit relaci) a Cmd/Ctrl+, (předvolby).",
+  'guide.fullOnline': "Kompletní příručka online",
 };

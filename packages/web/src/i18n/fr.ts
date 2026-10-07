@@ -46,6 +46,8 @@ export const fr: Record<MessageKey, string> = {
   'prefs.appIcon': "Icône de l’application",
   'welcome.title': 'Importez des parcours pour commencer',
   'welcome.description': 'Rejouez les parcours ensemble et repérez les interférences.',
+  'welcome.tagline': "Avant le match : placez les autos de tous les partenaires d’alliance sur un même terrain, rejouez-les ensemble et repérez les risques de collision entre robots à temps.",
+  'welcome.audience': "Pour les groupes de stratégie et de programmation de l’alliance. Les fichiers sont analysés sur votre machine et ne sont jamais envoyés — PathBlender analyse, les modifications se font dans Choreo ou PathPlanner.",
   'welcome.folderAdvice': 'Importez un dossier complet pour changer de parcours en cas de conflit.',
   'welcome.importFile': 'Importer des fichiers de parcours',
   'welcome.importFileHint': 'Choisissez des parcours exportés depuis Choreo ou PathPlanner',
@@ -333,6 +335,7 @@ export const fr: Record<MessageKey, string> = {
   "menu.view": "Présentation",
   "menu.playback": "Lecture",
   "menu.help": "Aide",
+  'menu.userGuide': "Guide rapide",
   "menu.minimize": "Réduire",
   "menu.zoom": "Zoom",
   "menu.cut": "Couper",
@@ -367,4 +370,5 @@ export const fr: Record<MessageKey, string> = {
   'help.composerMove': "Déplacer le segment focalisé",
   'help.deleteClip': "Supprimer le segment focalisé",
   'help.hint.desktop': "Dans l’app de bureau, les menus proposent aussi Cmd/Ctrl+O (importer), Cmd/Ctrl+S (enregistrer la session) et Cmd/Ctrl+, (réglages).",
+  'guide.fullOnline': "Guide complet en ligne",
 };

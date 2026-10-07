@@ -38,6 +38,8 @@ export const fil = {
   'prefs.appIcon': "Icon ng app",
   'welcome.title': 'Mag-import ng mga path para magsimula',
   'welcome.description': 'I-replay ang mga path nang magkasama at suriin ang interference.',
+  'welcome.tagline': "Bago ang laro: ilagay ang mga autonomous na programa ng bawat kakampi sa iisang field, i-play ang mga ito nang sabay-sabay, at maagap na tuklasin ang panganib ng banggaan ng mga robot.",
+  'welcome.audience': "Para sa mga grupo ng estratehiya at programming ng alyansa. Pinoproseso ang mga file sa sarili mong device at hindi kailanman ina-upload — nag-a-analisa ang PathBlender; ang mga pagbabago ay ginagawa sa Choreo o PathPlanner.",
   'welcome.folderAdvice': 'Mag-import ng buong folder para makapagpalit ng ruta kapag may lumitaw na conflict.',
   'welcome.importFile': 'Mag-import ng mga path file',
   'welcome.importFileHint': 'Pumili ng mga path na na-export mula sa Choreo o PathPlanner',
@@ -318,6 +320,7 @@ export const fil = {
   "menu.view": "Tingnan",
   "menu.playback": "Pag-playback",
   "menu.help": "Tulong",
+  'menu.userGuide': "Mabilis na gabay",
   "menu.minimize": "Paliitin",
   "menu.zoom": "I-zoom",
   "menu.cut": "Gupitin",
@@ -352,6 +355,7 @@ export const fil = {
   'help.composerMove': "Ilipat ang naka-focus na segment",
   'help.deleteClip': "Burahin ang naka-focus na segment",
   'help.hint.desktop': "Sa desktop app, ang mga menu ay mayroon ding Cmd/Ctrl+O (import), Cmd/Ctrl+S (i-save ang session) at Cmd/Ctrl+, (mga setting).",
+  'guide.fullOnline': "Kumpletong gabay online",
 } as const;
 
 export type MessageKey = keyof typeof fil;

@@ -38,6 +38,8 @@ export const ro = {
   'prefs.appIcon': "Iconița aplicației",
   'welcome.title': 'Importă rute pentru a începe',
   'welcome.description': 'Redă rutele împreună și verifică interferențele.',
+  'welcome.tagline': "Înaintea meciului: puneți programele autonome ale tuturor aliaților pe același teren, redați-le împreună și prindeți din timp riscurile de coliziune între roboți.",
+  'welcome.audience': "Pentru grupurile de strategie și programare ale alianței. Fișierele sunt analizate pe calculatorul tău și nu sunt niciodată încărcate — PathBlender analizează; modificările se fac în Choreo sau PathPlanner.",
   'welcome.folderAdvice': 'Importă un folder întreg ca să poți comuta rutele când apare un conflict.',
   'welcome.importFile': 'Importă fișiere de rută',
   'welcome.importFileHint': 'Alege rute exportate din Choreo sau PathPlanner',
@@ -314,6 +316,7 @@ export const ro = {
   "menu.view": "Vizualizare",
   "menu.playback": "Redare",
   "menu.help": "Ajutor",
+  'menu.userGuide': "Ghid rapid",
   "menu.minimize": "Minimizează",
   "menu.zoom": "Zoom",
   "menu.cut": "Taie",
@@ -348,6 +351,7 @@ export const ro = {
   'help.composerMove': "Mută segmentul focalizat",
   'help.deleteClip': "Șterge segmentul focalizat",
   'help.hint.desktop': "În aplicația desktop meniurile oferă și Cmd/Ctrl+O (importare), Cmd/Ctrl+S (salvează sesiunea) și Cmd/Ctrl+, (setări).",
+  'guide.fullOnline': "Ghidul complet online",
 } as const;
 
 export type MessageKey = keyof typeof ro;

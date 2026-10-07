@@ -38,6 +38,8 @@ export const sr = {
   'prefs.appIcon': "Ikona aplikacije",
   'welcome.title': 'Uvezite rute da počnete',
   'welcome.description': 'Reproducujte rute zajedno i proverite smetnje.',
+  'welcome.tagline': "Pre meča: postavite autonomne programe svih saveznika na isto igralište, pokrenite ih zajedno i na vreme uhvatite rizik od sudara između robota.",
+  'welcome.audience': "Za grupe za strategiju i programiranje saveza. Datoteke se obrađuju na vašem računaru i nikad se ne otpremaju — PathBlender analizira, izmene se prave u Choreu ili PathPlanneru.",
   'welcome.folderAdvice': 'Uvezite ceo folder da biste mogli da menjate rute kada dođe do konflikta.',
   'welcome.importFile': 'Uvoz fajlova ruta',
   'welcome.importFileHint': 'Izaberite rute izvezene iz Chorea ili PathPlannera',
@@ -314,6 +316,7 @@ export const sr = {
   "menu.view": "Prikaz",
   "menu.playback": "Reprodukcija",
   "menu.help": "Pomoć",
+  'menu.userGuide': "Kratki vodič",
   "menu.minimize": "Minimiziraj",
   "menu.zoom": "Zumiraj",
   "menu.cut": "Iseci",
@@ -348,6 +351,7 @@ export const sr = {
   'help.composerMove': "Pomeri fokusirani segment",
   'help.deleteClip': "Obriši fokusirani segment",
   'help.hint.desktop': "U desktop aplikaciji meniji nude i Cmd/Ctrl+O (uvoz), Cmd/Ctrl+S (sačuvaj sesiju) i Cmd/Ctrl+, (postavke).",
+  'guide.fullOnline': "Kompletan vodič online",
 } as const;
 
 export type MessageKey = keyof typeof sr;

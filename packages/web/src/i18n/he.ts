@@ -54,6 +54,8 @@ export const he: Record<MessageKey, string> = {
   'prefs.appIcon': "סמל היישום",
   'welcome.title': 'ייבאו מסלולים כדי להתחיל',
   'welcome.description': 'נגנו מסלולים יחד ובדקו הפרעות.',
+  'welcome.tagline': "לפני המשחק: הציבו את התוכניות האוטונומיות של כל בעלי הברית על אותו מגרש, הריצו אותן יחד וגלו מוקדם סיכוני התנגשות בין רובוטים.",
+  'welcome.audience': "לקבוצות האסטרטגיה והתכנות של הברית. הקבצים מנותחים במחשב שלכם ולעולם לא מועלים — PathBlender מנתח, והעריכות נעשות ב־Choreo או ב־PathPlanner.",
   'welcome.folderAdvice': 'ייבאו תיקייה שלמה כדי שתוכלו להחליף מסלול כשיש התנגשות.',
   'welcome.importFile': 'ייבאו קבצי מסלול',
   'welcome.importFileHint': 'בחרו מסלולים שיוצאו מ־Choreo או מ־PathPlanner',
@@ -340,6 +342,7 @@ export const he: Record<MessageKey, string> = {
   "menu.view": "תצוגה",
   "menu.playback": "השמעה",
   "menu.help": "עזרה",
+  'menu.userGuide': "מדריך מהיר",
   "menu.minimize": "מזער",
   "menu.zoom": "זום",
   "menu.cut": "גזור",
@@ -374,4 +377,5 @@ export const he: Record<MessageKey, string> = {
   'help.composerMove': "הזזת המקטע הממוקד",
   'help.deleteClip': "מחיקת המקטע הממוקד",
   'help.hint.desktop': "ביישום השולחני התפריטים מציעים גם Cmd/Ctrl+O (ייבוא), Cmd/Ctrl+S (שמירת ההפעלה) ו־Cmd/Ctrl+, (הגדרות).",
+  'guide.fullOnline': "המדריך המלא באינטרנט",
 };

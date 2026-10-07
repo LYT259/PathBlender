@@ -38,6 +38,8 @@ export const rw = {
   'prefs.appIcon': "Igishushanyo cya porogaramu",
   'welcome.title': 'Injiza inzira kugira ngo utangire',
   'welcome.description': 'Garura inzira hamwe maze usuzume inzitizi.',
+  'welcome.tagline': "Mbere y’umukino: shyira inzira za mugenzi bawe bose ku kibuga kimwe, zigarure hamwe, maze umenye ibyago byo kugongana hagati ya roboti mbere y’igihe.",
+  'welcome.audience': "Byagenewe itsinda rya strategy n’irya porogaramu by’umubano: amadosiye yose yasuzumwa kuri mudasobu wawe kandi ntibazwa iyobera — PathBlender isuzuma gusa, amahinduka ukora muri Choreo cyangwa PathPlanner.",
   'welcome.folderAdvice': 'Injiza ububiko bwose kugira ngo ushobore guhindura inzira iyo amakimbirane yagaragaye.',
   'welcome.importFile': 'Injiza amadosiye y’inzira',
   'welcome.importFileHint': 'Hitamo inzira zoherejwe kuva muri Choreo cyangwa PathPlanner',
@@ -314,6 +316,7 @@ export const rw = {
   "menu.view": "Reba",
   "menu.playback": "Gukina",
   "menu.help": "Ubufasha",
+  'menu.userGuide': "Amabwiriza yihuse",
   "menu.minimize": "Kugabanya",
   "menu.zoom": "Ihindurangano",
   "menu.cut": "Gucamo",
@@ -348,6 +351,7 @@ export const rw = {
   'help.composerMove': "Simbuluka igice cyagaragajwe",
   'help.deleteClip': "Siba igice cyagaragajwe",
   'help.hint.desktop': "Muri app ya desktop, ibikubiyemo birahari: Cmd/Ctrl+O (kwinjiza), Cmd/Ctrl+S (kubika isesengura), Cmd/Ctrl+, (ibigenzo).",
+  'guide.fullOnline': "Amabwiriza yuzuye kuri Internet",
 } as const;
 
 export type MessageKey = keyof typeof rw;

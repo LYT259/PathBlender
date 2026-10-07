@@ -38,6 +38,8 @@ export const el = {
   'prefs.appIcon': "Εικονίδιο εφαρμογής",
   'welcome.title': 'Εισάγετε διαδρομές για να ξεκινήσετε',
   'welcome.description': 'Αναπαράγετε τις διαδρομές μαζί και ελέγξτε για παρεμβολές.',
+  'welcome.tagline': "Πριν από τον αγώνα: βάλτε τα αυτόνομα προγράμματα όλων των συμμάχων στο ίδιο γήπεδο, αναπαράστατέ τα μαζί και εντοπίστε εγκαίρως τον κίνδυνο σύγκρουσης μεταξύ ρομπότ.",
+  'welcome.audience': "Για τις ομάδες στρατηγικής και προγραμματισμού της συμμαχίας. Τα αρχεία αναλύονται στον υπολογιστή σας και δεν ανεβαίνουν ποτέ πουθενά — το PathBlender αναλύει, οι αλλαγές γίνονται στο Choreo ή το PathPlanner.",
   'welcome.folderAdvice': 'Εισάγετε ολόκληρο φάκελο ώστε να μπορείτε να αλλάζετε διαδρομές όταν εμφανίζεται σύγκρουση.',
   'welcome.importFile': 'Εισαγωγή αρχείων διαδρομής',
   'welcome.importFileHint': 'Επιλέξτε διαδρομές εξαγμένες από Choreo ή PathPlanner',
@@ -314,6 +316,7 @@ export const el = {
   "menu.view": "Προβολή",
   "menu.playback": "Αναπαραγωγή",
   "menu.help": "Βοήθεια",
+  'menu.userGuide': "Γρήγορος οδηγός",
   "menu.minimize": "Σμίκρυνση",
   "menu.zoom": "Μεγέθυνση",
   "menu.cut": "Αποκοπή",
@@ -348,6 +351,7 @@ export const el = {
   'help.composerMove': "Μετακίνηση εστιασμένου τμήματος",
   'help.deleteClip': "Διαγραφή εστιασμένου τμήματος",
   'help.hint.desktop': "Στην εφαρμογή desktop τα μενού προσφέρουν επίσης Cmd/Ctrl+O (εισαγωγή), Cmd/Ctrl+S (αποθήκευση συνεδρίας) και Cmd/Ctrl+, (ρυθμίσεις).",
+  'guide.fullOnline': "Πλήρης οδηγός στο διαδίκτυο",
 } as const;
 
 export type MessageKey = keyof typeof el;

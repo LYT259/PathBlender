@@ -9,6 +9,8 @@ export const en = {
   'prefs.appIcon': "App icon",
   'welcome.title': 'Import paths to get started',
   'welcome.description': 'Replay paths together and check for interference.',
+  'welcome.tagline': "Put every alliance partner’s auto on one field, replay them together, and catch robot-to-robot conflicts before the match.",
+  'welcome.audience': "For alliance strategy and programming groups. Files are parsed on your machine and never uploaded — PathBlender analyzes, edits happen in Choreo or PathPlanner.",
   'welcome.folderAdvice': 'Import a whole folder so you can switch routes when a conflict appears.',
   'welcome.importFile': 'Import path files',
   'welcome.importFileHint': 'Choose paths exported from Choreo or PathPlanner',
@@ -332,6 +334,7 @@ export const en = {
   'menu.view': 'View',
   'menu.playback': 'Playback',
   'menu.help': 'Help',
+  'menu.userGuide': "Quick guide",
   'menu.minimize': 'Minimize',
   'menu.zoom': 'Zoom',
   'menu.cut': 'Cut',
@@ -366,6 +369,7 @@ export const en = {
   'help.composerMove': "Move the focused segment",
   'help.deleteClip': "Delete the focused segment",
   'help.hint.desktop': "In the desktop app the menus also carry Cmd/Ctrl+O (import), Cmd/Ctrl+S (save session) and Cmd/Ctrl+, (settings).",
+  'guide.fullOnline': "Full guide online",
 } as const;
 
 export type MessageKey = keyof typeof en;
