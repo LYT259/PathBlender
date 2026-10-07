@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.81';
+export const APP_VERSION = '0.1.8-beta.82';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.82', date: '2026.10.07', note: {
+    en: 'Transport buttons centered again in the arrangement editor; the playback-range selector now sits in the corner without shifting anything',
+    zh: '编排器走带按钮恢复居中；播放范围选择框改放角落，不再挪动任何现有控件',
+    'zh-tw': '編排器走帶按鈕置中恢復；播放範圍選擇框改放角落，不再挪動任何現有控制項',
+    cs: 'Přenosová tlačítka v editoru sekvence jsou znovu na středu; přepínač rozsahu přehrávání přesedl do rohu, aniž by cokoli posouval',
+    nl: 'Transportknoppen in de sequentie-editor staan weer gecentreerd; de afspeelbereikkeuze staat nu in de hoek zonder iets te verschuiven',
+    fr: 'Les boutons de transport sont de nouveau centrés dans l’éditeur de séquence ; le sélecteur de plage de lecture se place dans le coin sans déplacer quoi que ce soit',
+    he: 'כפתורי ההעברה בעורך הרצף חזרו למרכז; בורר טווח ההשמעה יושב בפינה בלי להזיז דבר',
+    ja: 'シーケンス編集の再生ボタンを中央に戻しました。再生範囲セレクターは既存の部品を一切動かさず隅に配置します',
+    ko: '시퀀스 편집기의 재생 버튼이 다시 가운데에 놓이고, 재생 범위 선택 상자는 기존 요소를 전혀 이동시키지 않는 모서리에 배치됩니다',
+    pl: 'Przyciski transportu w edytorze sekwencji znów są wyśrodkowane; przełącznik zakresu odtwarzania siedzi w rogu, niczego nie przesuwając',
+    'pt-br': 'Botões de transporte centralizados de novo no editor de sequência; o seletor de intervalo de reprodução vai para o canto sem deslocar nada',
+    es: 'Los botones de transporte vuelven a estar centrados en el editor de secuencia; el selector de rango de reproducción se coloca en la esquina sin mover nada',
+    tr: 'Dizi editöründeki taşıma düğmeleri yeniden ortada; oynatma aralığı seçici, hiçbir şeyi kaydırmadan köşeye yerleşiyor',
+  } },
   { version: '0.1.8-beta.81', date: '2026.10.07', note: {
     en: 'Grayed routes preview on hover too; entering the arrangement editor no longer pauses playback; the playback-range choice now applies inside the editor with a synced selector',
     zh: '置灰路线悬停也能预览；进入编排不再暂停播放；播放范围选择在编排内生效并提供同步的选择框',
