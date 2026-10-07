@@ -13,7 +13,7 @@
  * entry for Traditional readers.
  */
 
-export const APP_VERSION = '0.1.8-beta.89';
+export const APP_VERSION = '0.1.8-beta.90';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -37,6 +37,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.90', date: '2026.10.07', note: {
+    en: 'Point-of-use tips: mirror button explains its per-robot scope, first import shows a basics checklist, check advice suggests comparing alternatives; user guide adds a mirror before/after comparison',
+    zh: '就地提示上线：镜像按钮说明仅作用于该机器人，首次导入显示基础核查清单，检查建议提示对比替代方案；使用指南新增镜像前后对比图',
+    'zh-tw': '就地提示上線：鏡像按鈕說明僅作用於該機器人，首次匯入顯示基礎核查清單，檢查建議提示對比替代方案；使用指南新增鏡像前後對比圖',
+    cs: 'Tipy v místě použití: tlačítko zrcadlení vysvětluje, že platí jen pro daného robota, první import ukáže kontrolní seznam základů, rada u kontrol navrhuje porovnat alternativy; příručka přidává srovnání před a po zrcadlení',
+    nl: 'Tips op hun plek: de spiegelknop legt uit dat hij alleen voor die robot geldt, de eerste import toont een checklist van de basis, de controle-tip stelt voor alternatieven te vergelijken; de gids krijgt een voor/na-vergelijking van spiegelen',
+    fr: "Astuces au bon endroit : le bouton miroir précise qu’il ne vaut que pour ce robot, le premier import affiche une liste de vérifications de base, le conseil d’analyse suggère de comparer des solutions ; le guide ajoute une comparaison avant/après miroir",
+    he: 'רמזים במקום השימוש: כפתור השיקוף מסביר שהוא חל רק על הרובוט הזה, הייבוא הראשון מציג רשימת בדיקת יסודות, עצת הבדיקה מציעה להשוות חלופות; המדריך מוסיף השוואת לפני/אחרי שיקוף',
+    ja: 'その場所で出るヒントを追加：ミラーボタンは自分のロボットのみに効くことを説明、初回インポートで基本チェックリストを表示、チェックの助言は代替案の比較を提案；ガイドにミラー前後の比較画像を追加',
+    ko: '사용 지점 힌트 추가: 미러 버튼이 해당 로봇에만 적용됨을 알려주고, 첫 가져오기 때 기본 점검 목록을 보여주며, 검사 조언은 대안 비교를 제안합니다; 사용 안내서에 미러 전후 비교 이미지 추가',
+    pl: 'Podpowiedzi w miejscu użycia: przycisk odbicia wyjaśnia, że działa tylko dla danego robota, pierwszy import pokazuje listę podstaw, porada przy kontrolach sugeruje porównanie alternatyw; przewodnik dodaje porównanie przed/po odbiciu',
+    'pt-br': 'Dicas no momento do uso: o botão de espelhamento explica que vale só para aquele robô, o primeiro import mostra uma lista de conferência do básico, o conselho das verificações sugere comparar alternativas; o guia ganha uma comparação antes/depois do espelhamento',
+    es: 'Consejos en el punto de uso: el botón de espejo explica que solo afecta a ese robot, la primera importación muestra una lista de lo básico, el consejo de comprobación sugiere comparar alternativas; la guía añade una comparación del espejo antes y después',
+    tr: 'Kullanım anında ipuçları: yansıtma düğmesi yalnızca o robota uygulandığını açıklar, ilk içe aktarma bir temel kontrol listesi gösterir, kontrol tavsiyesi alternatifleri karşılaştırmayı önerir; kılavuza yansıtma öncesi/sonrası karşılaştırması eklendi',
+  } },
   { version: '0.1.8-beta.89', date: '2026.10.07', note: {
     en: "The example session gains a five-task getting-started checklist — real actions tick the tasks, progress is local, and Help reopens it any time",
     zh: "示例会话新增五任务入门清单——真实操作自动打勾，进度只存本地，帮助菜单随时重开",
