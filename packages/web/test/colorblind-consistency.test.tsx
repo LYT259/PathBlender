@@ -80,9 +80,11 @@ describe('colorblind palette across session entry points', () => {
     localStorage.setItem('pb.colorblind', '1');
     render(<App />);
     fireEvent.click(await screen.findByRole('button', { name: 'Try an example' }));
-    await waitFor(() => expect(document.querySelector('.band-dot')).not.toBeNull());
+    // The example is a lazy chunk that parses ~1.6 MB of route text; on a
+    // loaded machine that outlasts waitFor's 1 s default (seen at load 100+).
+    await waitFor(() => expect(document.querySelector('.band-dot')).not.toBeNull(), { timeout: 20000 });
     expect(firstDotColor()).toMatch(/#0072b2|rgb\(0, 114, 178\)/);
-  });
+  }, 30000);
 
   it('Save in the embedded panel applies the palette in a plain browser shell', async () => {
     render(<App />);
