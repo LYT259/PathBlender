@@ -19,6 +19,7 @@
 .sequence-timeline-surface { min-width: 660px; padding-right: 14px; }
 .sequence-axis, .sequence-track { display: grid; grid-template-columns: var(--sequence-label-width) minmax(0, 1fr); }
 .sequence-axis { height: 22px; font-size: 10px; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
+.sequence-axis > div { cursor: ew-resize; touch-action: none; user-select: none; }
 .sequence-axis > span { text-align: right; padding-right: 14px; }
 .sequence-axis > div { position: relative; }
 .sequence-axis > div > span { position: absolute; transform: translateX(-50%); }
@@ -29,8 +30,7 @@
 .sequence-track-name small { color: var(--fg-dim); font-size: 9px; padding-left: 13px; }
 .sequence-track.is-editing .sequence-track-name { background: var(--accent-dim); }
 .sequence-track.is-editing .sequence-track-name small { color: var(--accent); }
-.sequence-track-lane { height: 33px; position: relative; overflow: hidden; border-radius: 8px; background-image: linear-gradient(to right, var(--border) 1px, transparent 1px); background-color: var(--bg-card); border-block: 1px solid var(--border); }
-.sequence-track.is-editing .sequence-track-lane { touch-action: none; user-select: none; cursor: ew-resize; }
+.sequence-track-lane { height: 33px; position: relative; overflow: hidden; border-radius: 8px; cursor: ew-resize; touch-action: none; user-select: none; background-image: linear-gradient(to right, var(--border) 1px, transparent 1px); background-color: var(--bg-card); border-block: 1px solid var(--border); }
 .sequence-track-lane:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .sequence-track.is-editing .sequence-track-lane { height: 52px; border-block-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
 .sequence-clip { position: absolute; top: 6px; height: 21px; min-width: 2px; display: flex; flex-direction: column; justify-content: center; gap: 5px; overflow: hidden; padding: 0 7px; border: 1px solid color-mix(in srgb, var(--robot-color) 50%, var(--border)); border-radius: 4px; background: color-mix(in srgb, var(--robot-color) 18%, var(--bg-panel)); color: var(--fg); text-align: left; font: inherit; font-size: 10px; cursor: pointer; }
@@ -51,7 +51,7 @@
 .sequence-clip.is-moving { opacity: .3; }
 .sequence-auto-end { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--fg-dim); pointer-events: none; }
 .sequence-auto-end.is-over { border-left-color: var(--danger); }
-.sequence-wait { position: absolute; top: 20px; height: 1px; border-top: 1px dashed var(--fg-dim); text-align: center; color: var(--fg-dim); }
+.sequence-wait { position: absolute; top: 20px; pointer-events: none; height: 1px; border-top: 1px dashed var(--fg-dim); text-align: center; color: var(--fg-dim); }
 .sequence-wait > span { display: block; margin-top: 5px; font-size: 10px; overflow: hidden; white-space: nowrap; }
 .sequence-seam { position: absolute; top: 34px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; max-width: 240px; overflow: hidden; padding: 1px 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--fg-dim); font: inherit; font-size: 9px; line-height: 1.2; white-space: nowrap; text-overflow: ellipsis; z-index: 1; cursor: pointer; }
 .sequence-seam:hover { border-color: var(--accent); color: var(--fg); }
