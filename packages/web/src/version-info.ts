@@ -6,7 +6,11 @@
  *
  * Each note carries all shipped UI languages (update-note i18n discipline,
  * AGENTS.md 2026-10-03): dates use the YYYY.MM.DD form, and the newest entry
- * must ship every language — version-notes.test.ts enforces both.
+ * must ship every language — version-notes.test.ts enforces both. `zh-tw`
+ * stays in NOTE_LANGS after the Taiwan picker row was withdrawn (2026-10-07,
+ * fifth batch pending): it is the Traditional carrier zh-hk readers see
+ * (noteText) and the historical record — removing it would blank every past
+ * entry for Traditional readers.
  */
 
 export const APP_VERSION = '0.1.8-beta.86';
@@ -21,8 +25,9 @@ export interface VersionNote {
 }
 
 /**
- * Note text for a UI language. Hong Kong reads the Taiwan wording, and any
- * missing language falls back to Simplified Chinese then English — a
+ * Note text for a UI language. Hong Kong reads the Taiwan wording — the only
+ * Traditional notes carrier now that the zh-tw picker row is withdrawn — and
+ * any missing language falls back to Simplified Chinese then English — a
  * freshly bumped note renders sensibly until its translations land.
  */
 export function noteText(note: VersionNote['note'], lang: string): string {
