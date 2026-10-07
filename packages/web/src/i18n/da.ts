@@ -11,6 +11,7 @@ export const da = {
   'sequence.joinHeading': 'retningsforskel {d}°',
   'sequence.joinVelocity': 'hastighedsspring {d} m/s',
   'sequence.libraryBlocked': 'Starten fortsætter ikke slutningen af {name} (positionsforskel {p}, retningsforskel {h})',
+  'sequence.libraryOccupied': 'Afspilningshovedet står på et optaget stykke — træk det først hen til et tomt mellemrum',
   'sequence.joinFix': 'Ret samlingen i PathPlanner eller Choreo, og importer ruten igen.',
   'sequence.overAuto': 'Slutter ved {t} s, efter den {auto} s lange autonome periode.',
   'sequence.invalid': 'Indtast et endeligt, ikke-negativt starttidspunkt.',

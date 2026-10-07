@@ -11,6 +11,7 @@ export const rw = {
   "sequence.joinHeading": "itandukaniro ry’icyerekezo {d}°",
   "sequence.joinVelocity": "gusimbuka kw’umuvuduko {d} m/s",
   "sequence.libraryBlocked": "Itangika ntirikomeza impera ya {name} (itandukaniro ryaho {p}, itandukaniro ry’icyerekezo {h})",
+  "sequence.libraryOccupied": "Ibihe biri ku gice cyuzuye — mbere uritere ku mwanya uwubahwe",
   "sequence.joinFix": "Kosora aho bihuriye muri PathPlanner cyangwa Choreo, hanyuma wongere kwinjiza inzira.",
   "sequence.overAuto": "Isoza kuri {t} s, nyuma y’igihe cya {auto} s cya auto.",
   "sequence.invalid": "Andika igihe cyo gutangira gifatika kandi kitari munsi ya zeru.",

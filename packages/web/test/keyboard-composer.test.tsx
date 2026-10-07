@@ -48,6 +48,9 @@ async function openComposer() {
   opener.focus();
   fireEvent.click(opener);
   await waitFor(() => expect(document.querySelector('.sequence-composer')).not.toBeNull());
+  // Park the playhead on empty lane (A spans 0–8.3 s): the occupancy gate
+  // grays the library while the playhead sits ON a segment.
+  fireEvent.change(screen.getByRole('slider', { name: 'Playback position' }), { target: { value: '9' } });
   return opener;
 }
 
@@ -97,22 +100,29 @@ describe('composer keyboard', () => {
     await waitFor(() => expect(clips()).toHaveLength(2));
     const second = clips()[1] as HTMLButtonElement;
     second.focus();
-    // Delete on the lane (not the clip) must not remove anything.
+    // Delete now also serves the CLICKED-chosen clip (2026-10-07): the
+    // appended clip is the chosen one, so a lane-level Delete removes it.
+    // Focused-clip Delete stays authoritative when the clip itself is the
+    // event target — covered by the previous test.
     fireEvent.keyDown(document.querySelector('.sequence-track-lane')!, { key: 'Delete' });
-    expect(clips()).toHaveLength(2);
+    expect(clips()).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'B: 8.30 s' }));
+    await waitFor(() => expect(clips()).toHaveLength(2));
+    const readded = clips()[1] as HTMLButtonElement;
+    readded.focus();
     // Right = +0.1 s, Shift+Right = +1 s; the auto-period edge clamps.
     const startOf = (el: Element) => parseFloat(el.getAttribute('aria-label')!.split(', ')[1]!);
-    const before = startOf(second);
-    fireEvent.keyDown(second, { key: 'ArrowRight' });
-    expect(startOf(second)).toBeCloseTo(before + 0.1, 5);
-    fireEvent.keyDown(second, { key: 'ArrowRight', shiftKey: true });
-    expect(startOf(second)).toBeCloseTo(before + 1.1, 5);
-    fireEvent.keyDown(second, { key: 'ArrowRight', shiftKey: true });
-    fireEvent.keyDown(second, { key: 'ArrowRight', shiftKey: true });
+    const before = startOf(readded);
+    fireEvent.keyDown(readded, { key: 'ArrowRight' });
+    expect(startOf(readded)).toBeCloseTo(before + 0.1, 5);
+    fireEvent.keyDown(readded, { key: 'ArrowRight', shiftKey: true });
+    expect(startOf(readded)).toBeCloseTo(before + 1.1, 5);
+    fireEvent.keyDown(readded, { key: 'ArrowRight', shiftKey: true });
+    fireEvent.keyDown(readded, { key: 'ArrowRight', shiftKey: true });
     // A press past the edge: the auto period clamps the start.
-    fireEvent.keyDown(second, { key: 'ArrowRight', shiftKey: true });
+    fireEvent.keyDown(readded, { key: 'ArrowRight', shiftKey: true });
     // 20 s auto period − 8.30 s duration → start clamps at 11.70.
-    expect(startOf(second)).toBeCloseTo(11.7, 5);
+    expect(startOf(readded)).toBeCloseTo(11.7, 5);
   });
 
   it('overlap moves are rejected with the error status and no layout change', async () => {
@@ -152,6 +162,7 @@ describe('composer keyboard', () => {
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
     fireEvent.doubleClick(document.querySelector('.timeline-activity')!);
     await waitFor(() => expect(document.querySelector('.sequence-composer')).not.toBeNull());
+    fireEvent.change(screen.getByRole('slider', { name: 'Playback position' }), { target: { value: '9' } });
     const source = screen.getByRole('button', { name: 'B: 8.30 s' });
     fireEvent.focus(source);
     await waitFor(() => expect(JSON.parse(screen.getByTestId('field').textContent!).robots).toHaveLength(1));

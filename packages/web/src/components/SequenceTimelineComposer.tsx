@@ -28,8 +28,9 @@ interface Props {
 }
 interface Drag {
   robotId: string;
-  kind: 'add' | 'move';
-  clip: TimelineClip;
+  /** 'scrub' drags the playhead from empty lane space; no clip rides along. */
+  kind: 'add' | 'move' | 'scrub';
+  clip?: TimelineClip;
   x: number;
   y: number;
   moved: boolean;
@@ -37,6 +38,7 @@ interface Drag {
 }
 const formatStart = (value: number) => Number.isInteger(value) ? value.toFixed(1) : String(value);
 const finish = (clips: TimelineClip[]) => Math.max(0, ...clips.map((clip) => clip.startS + clip.durationS));
+const clampToAxis = (t: number, axisS: number) => Math.min(axisS, Math.max(0, t));
 
 /** Pointer capture works across WebKit and mouse/touch/pen, without relying
  * on custom HTML drag payloads. A gesture is one undoable operation. */
@@ -47,6 +49,9 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   const [ghost, setGhost] = useState<{ robotId: string; clip: TimelineClip } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ robotId: string; clipId: string; x: number; y: number } | null>(null);
+  // Screen point of a running library drag — drives the follow-along badge
+  // so the dragged route stays identified even outside the lane.
+  const [dragPoint, setDragPoint] = useState<{ x: number; y: number } | null>(null);
   const laneRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -79,6 +84,12 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   // Before the first segment (or with no playback) nothing precedes the
   // playhead and every route stays available.
   const playheadT = playback?.t;
+  // Occupancy gating (2026-10-07): the playhead marks where a dragged-in
+  // route would go. On a stretch a placed segment already occupies there is
+  // nowhere to drop, so the whole library grays out; an empty stretch (or a
+  // segment boundary, where the next leg butts on seamlessly) restores it.
+  const occupied = playheadT !== undefined
+    && activeClips.some((clip) => clip.startS <= playheadT && playheadT < clip.startS + clip.durationS);
   const anchorClip = playheadT === undefined ? undefined
     : [...activeClips].sort((a, b) => a.startS - b.startS).filter((clip) => clip.startS <= playheadT).at(-1);
   const anchorRoute = anchorClip ? active?.routes.find((route) => route.id === anchorClip.routeId) : undefined;
@@ -89,7 +100,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     const continuity = anchorRoute ? routeConnectsAfter(anchorRoute.trajectory, route.trajectory) : undefined;
     library.push({
       route,
-      blocked: route.trajectory.durationS <= 0 || overAuto || (continuity ? !continuity.connects : false),
+      blocked: occupied || route.trajectory.durationS <= 0 || overAuto || (continuity ? !continuity.connects : false),
       continuity,
     });
   }
@@ -150,7 +161,14 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     return true;
   }
   function append(routeId: string, durationS: number) {
-    commit({ id: crypto.randomUUID(), routeId, startS: finish(activeClips), durationS });
+    const startS = finish(activeClips);
+    // The playhead IS the insertion point: once the appended route lands,
+    // advance it to the new end so the library (gated by playhead occupancy
+    // and continuity) immediately answers "what can come next" — chaining
+    // several routes needs no scrub between appends.
+    if (commit({ id: crypto.randomUUID(), routeId, startS, durationS })) {
+      playback?.setT(Math.min(autoPeriodS, startS + durationS));
+    }
   }
   function remove(clipId: string) {
     onChange(segmentsFromClips(activeClips.filter((clip) => clip.id !== clipId)));
@@ -165,22 +183,43 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     if (kind === 'move') setSelected({ robotId: activeId!, clipId: clip.id });
     setMenu(null); setError(null);
   }
+  /** Scrub the playhead from empty lane space (user 2026-10-07): a press
+   * jumps there at once, dragging scrubs continuously. Clips, seams and the
+   * wait markers stay theirs — only inert lane background starts a scrub. */
+  function beginScrub(event: PointerEvent<HTMLDivElement>) {
+    if (event.button !== 0 || !playback) return;
+    if (event.target !== event.currentTarget && (event.target as Element).closest('button')) return;
+    suppressClick.current = false;
+    dragRef.current = { robotId: activeId!, kind: 'scrub', x: event.clientX, y: event.clientY, moved: false };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    playback.setPlaying(false);
+    playback.setT(clampToAxis((event.clientX - event.currentTarget.getBoundingClientRect().left) / event.currentTarget.getBoundingClientRect().width * axis, axis));
+    setMenu(null); setError(null);
+  }
   function move(event: PointerEvent) {
     const drag = dragRef.current;
     const rect = laneRef.current?.getBoundingClientRect();
     if (!drag || drag.robotId !== activeId || !rect?.width) return;
     if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 3) return;
     drag.moved = true; suppressClick.current = true; event.preventDefault();
+    if (drag.kind === 'scrub') {
+      playback?.setT(clampToAxis((event.clientX - rect.left) / rect.width * axis, axis));
+      return;
+    }
+    // The follow-along badge rides the pointer for library drags — the user
+    // must see WHICH route is being dragged, inside the lane or out of it.
+    if (drag.kind === 'add') setDragPoint({ x: event.clientX, y: event.clientY });
     if (drag.kind === 'add' && (event.clientY < rect.top || event.clientY > rect.bottom || event.clientX < rect.left || event.clientX > rect.right)) {
       drag.candidate = undefined; setGhost(null); return;
     }
+    const clip = drag.clip!;
     const raw = drag.kind === 'add' ? (event.clientX - rect.left) / rect.width * axis
-      : drag.clip.startS + (event.clientX - drag.x) / rect.width * axis;
-    const startS = boundedClipStart(raw, activeClips, drag.clip, 8 / rect.width * axis, autoPeriodS);
-    drag.candidate = { ...drag.clip, startS };
+      : clip.startS + (event.clientX - drag.x) / rect.width * axis;
+    const startS = boundedClipStart(raw, activeClips, clip, 8 / rect.width * axis, autoPeriodS);
+    drag.candidate = { ...clip, startS };
     setGhost({ robotId: activeId!, clip: drag.candidate });
   }
-  function cancelDrag() { dragRef.current = null; setGhost(null); onPreviewRoute?.(null); }
+  function cancelDrag() { dragRef.current = null; setGhost(null); setDragPoint(null); onPreviewRoute?.(null); }
   function switchRobot(id: string) { cancelDrag(); setMenu(null); setError(null); onSelect(id); }
   const ghostRoute = active.routes.find((route) => route.id === activeGhost?.routeId);
   return <section ref={rootRef} className="sequence-composer" aria-label={t('sequence.arrange')}
@@ -205,17 +244,29 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         onClose();
         return;
       }
+      // Delete also serves a CLICKED (chosen) segment — not only a focused
+      // one (user 2026-10-07): desktop WebKit does not focus buttons on
+      // click, so the clip-level handler never saw the key. One shot per
+      // press; the clip-level handler stays authoritative when a clip holds
+      // focus (it stops propagation first).
+      if ((event.key === 'Delete' || event.key === 'Backspace') && !event.repeat && !menu && chosen) {
+        event.preventDefault(); event.stopPropagation();
+        remove(chosen.id);
+      }
     }}>
     <SequenceComposerToolbar name={robotIdentity(active.robot.trajectory)} color={active.robot.color} onBack={onClose} />
     <div className="sequence-route-library"><div className="sequence-route-options">
       {library.map(({ route, blocked, continuity }) => {
-        const reason = blocked && route.trajectory.durationS <= autoPeriodS && continuity
-          ? t('sequence.libraryBlocked', {
+        // Gray-reason precedence: occupancy (nowhere to drop at all) over
+        // the auto-period limit over the pose mismatch.
+        const reason = !blocked ? null
+          : occupied ? t('sequence.libraryOccupied')
+          : route.trajectory.durationS > autoPeriodS ? limitMessage
+          : continuity ? t('sequence.libraryBlocked', {
             name: anchorLabel,
             p: formatLength(continuity.positionGapM, unit),
             h: `${continuity.headingGapDeg.toFixed(1)}°`,
-          })
-          : route.trajectory.durationS > autoPeriodS ? limitMessage : null;
+          }) : null;
         return <button type="button" key={route.id} className="sequence-route-source" draggable={false}
         disabled={blocked}
         title={reason ? `${route.relPath} · ${route.trajectory.durationS.toFixed(2)}s · ${reason}` : `${route.relPath} · ${route.trajectory.durationS.toFixed(2)}s`}
@@ -239,6 +290,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         return <div className={`sequence-track${editing ? ' is-editing' : ''}`} key={id} style={{ '--robot-color': robot.color } as CSSProperties}>
           <button type="button" className="sequence-track-name" aria-pressed={editing} onClick={() => switchRobot(id)}><span><i />{robotIdentity(robot.trajectory)}</span><small>{t(editing ? 'sequence.editing' : 'sequence.reference')}</small></button>
           <div className="sequence-track-lane" ref={editing ? laneRef : undefined} tabIndex={editing ? -1 : undefined}
+            onPointerDown={editing ? beginScrub : undefined}
             aria-label={`${robotIdentity(robot.trajectory)} ${t('sequence.arrange')}`} style={{ backgroundSize: `${2 / axis * 100}% 100%` }}>
             <span className="sequence-auto-end" style={{ left: '100%' }} title={limitMessage} />
             {clips.map((clip, index) => {
@@ -275,9 +327,10 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
                       event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect();
                       setSelected({ robotId: id, clipId: clip.id }); setMenu({ robotId: id, clipId: clip.id, x: rect.left, y: rect.bottom });
                     }
-                    // Delete targets the FOCUSED segment — never a stale
-                    // selection made while focus was elsewhere. One shot per
-                    // press (no key-repeat tearing through the timeline).
+                    // Delete on a FOCUSED clip is handled here (authoritative
+                    // — stops propagation); the section-level handler covers
+                    // the CLICKED-chosen case, since desktop WebKit does not
+                    // focus buttons on click. One shot per press either way.
                     if ((event.key === 'Delete' || event.key === 'Backspace') && !event.repeat) {
                       event.preventDefault(); event.stopPropagation();
                       remove(clip.id);
@@ -333,6 +386,16 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       <button type="button" role="menuitem" onClick={() => remove(menu.clipId)}><Icon name="trash" size={14} />{t('sequence.removeRoute')}</button>
     </div>}
     <div className="sequence-composer-footnote"><span role="status" className="sequence-error">{error ?? ''}</span></div>
+    {dragPoint && dragRef.current?.kind === 'add' && dragRef.current.clip && (() => {
+      // Follow-along copy of the dragged library route (user 2026-10-07):
+      // visible inside the lane and out of it, so the gesture always says
+      // WHICH route is being carried. Dropping in the lane records it;
+      // dropping elsewhere discards it.
+      const source = active.routes.find((route) => route.id === dragRef.current!.clip!.routeId);
+      return <div className="sequence-drag-badge" aria-hidden="true" style={{ left: dragPoint.x, top: dragPoint.y }}>
+        <span>{source ? routeLabel(source, active.routes) : dragRef.current.clip.routeId}</span><small>{source ? `${source.trajectory.durationS.toFixed(2)}s` : ''}</small>
+      </div>;
+    })()}
     {playback && <div className="timeline-workspace sequence-playback-controls">
       <input type="range" min="0" max={autoPeriodS} step="0.01" value={Math.min(autoPeriodS, playback.t)} aria-label={t('timeline.position')}
         onChange={(event) => { playback.setPlaying(false); playback.setT(Number(event.target.value)); }} />

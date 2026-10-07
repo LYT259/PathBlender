@@ -17,6 +17,7 @@ export const zhTw: Record<MessageKey, string> = {
   'sequence.joinHeading': "朝向差 {d}°",
   'sequence.joinVelocity': "速度跳變 {d} m/s",
   'sequence.libraryBlocked': '起點與 {name} 的終點不連續（位置差 {p}，朝向差 {h}）',
+  'sequence.libraryOccupied': '播放頭停在已被路線佔用的區段——先拖到空白處',
   'sequence.joinFix': "請在 PathPlanner 或 Choreo 中修好接縫後重新匯入路線。",
   'sequence.overAuto': "完成於 {t} 秒，超出 {auto} 秒的自動階段。",
   'sequence.invalid': "請輸入有效且不小於 0 的開始時間。",

@@ -11,6 +11,7 @@ export const uk = {
   'sequence.joinHeading': 'різниця напрямку {d}°',
   'sequence.joinVelocity': 'стрибок швидкості {d} м/с',
   'sequence.libraryBlocked': 'Початок не продовжує кінець {name} (різниця позицій {p}, різниця напрямку {h})',
+  'sequence.libraryOccupied': 'Головка відтворення на зайнятій ділянці — спершу перетягніть її на вільне місце',
   'sequence.joinFix': 'Виправте стик у PathPlanner або Choreo та імпортуйте маршрут знову.',
   'sequence.overAuto': 'Завершує на {t} с, після автономного періоду в {auto} с.',
   'sequence.invalid': 'Введіть скінченний, невід’ємний час старту.',
