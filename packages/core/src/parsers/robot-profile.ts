@@ -141,7 +141,7 @@ export function geometryFromConfig(cfg: Record<string, unknown>): {
  * Project-form config values may be expression-wrapped ({exp: '65 kg',
  * val: 65}); the embedded .traj form carries plain numbers. Unwrap the
  * pairs so both forms feed the same geometryFromConfig. Depth-capped:
- * external files are untrusted (AGENTS.md §3).
+ * external files are untrusted.
  */
 function unwrapExprValues(v: unknown, depth: number): unknown {
   const rec = asRecord(v);

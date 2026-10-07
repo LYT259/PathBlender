@@ -1,7 +1,7 @@
 /**
  * Corrupt/negative sample regression: every parser must reject each file
  * with the right error kind and a user-actionable message — never crash
- * (AGENTS.md red line §3: external files are untrusted).
+ * (external files are untrusted — parsers must fail loudly, never crash).
  */
 
 import { readFileSync } from 'node:fs';
