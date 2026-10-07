@@ -178,10 +178,6 @@ export const vi = {
   
   'toast.gifFailed': 'GIF thất bại',
   
-  'site.tryPreview': 'Thử trang xem trước',
-  'site.backStable': 'Quay lại trang ổn định',
-  'site.previewNote': 'Bản dựng xem trước — tính năng có thể thay đổi bất cứ lúc nào.',
-  'site.version': 'Phiên bản',
   'canvas.view': 'Chế độ xem',
   'canvas.fit': 'Vừa khung',
   'canvas.clock': 't = {t} s',
@@ -283,9 +279,7 @@ export const vi = {
   'prefs.unit.cm': 'Centimét (cm)',
   'prefs.unit.in': 'Inch (in)',
   'prefs.unit.ftin': 'Feet + inch (3′2″)',
-  'prefs.units.hint': 'Khoảng cách trong bảng kiểm tra dùng đơn vị này, ví dụ',
   'prefs.colorblind': 'Bảng màu an toàn mù màu',
-  'prefs.colorblindHint': 'Đổi màu robot sang bộ an toàn cho người mù màu (Okabe-Ito)',
   'prefs.theme': 'Giao diện',
   'theme.system': 'Theo hệ thống',
   'theme.dark': 'Tối',

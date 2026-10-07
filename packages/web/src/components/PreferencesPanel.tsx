@@ -11,7 +11,7 @@ import {
   useReverseScrollZoom,
   type MouseControlsScheme,
 } from '../mouse-controls';
-import { LENGTH_UNITS, lengthUnitExample, useLengthUnit, type LengthUnit } from '../length-units';
+import { LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
 import { checkForUpdate, installPendingUpdate } from '../update-check';
 import { noteText, VERSION_NOTES } from '../version-info';
@@ -19,7 +19,6 @@ import dayIcon from '../assets/app-icon-day.png';
 import nightIcon from '../assets/app-icon-night.png';
 import { BUILD_VERSION } from '../build-version';
 import { copyText } from '../download';
-import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from '../viewer';
 import { Icon } from './Icon';
 import { MouseControlsDiagram } from './MouseControlsDiagram';
 import { IconAppearancePicker } from './IconAppearancePicker';
@@ -76,7 +75,10 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck>({ kind: 'idle' });
   const id = useId();
   const tabRefs = useRef<Partial<Record<Section, HTMLButtonElement | null>>>({});
-  const sections: Section[] = desktop || VIEWER_ONLY ? ['general', 'controls', 'updates', 'about'] : ['general', 'controls', 'about'];
+  // The website keeps no Updates section (user request 2026-10-07): the site
+  // itself is the beta channel and never self-updates, so the tab is
+  // desktop-only.
+  const sections: Section[] = desktop ? ['general', 'controls', 'updates', 'about'] : ['general', 'controls', 'about'];
   const language = languageDraft ?? langChoice;
   const theme = themeDraft ?? mode;
   const icon = iconDraft ?? iconMode;
@@ -194,11 +196,10 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
             </div>
           </fieldset>
           {desktop && <IconAppearancePicker value={icon} onChange={setIconDraft} />}
-          <label className="preferences-setting">
+          <label className="preferences-setting preferences-checkbox">
             <span>{t('prefs.colorblind')}</span>
             <input type="checkbox" checked={colorblind} onChange={(e) => setColorblindDraft(e.target.checked)} />
           </label>
-          <p className="preferences-setting-description">{t('prefs.colorblindHint')}</p>
         </>}
         {section === 'controls' && <>
           <div className="preferences-group preferences-units-group">
@@ -208,7 +209,6 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
                 {LENGTH_UNITS.map((choice) => <option key={choice} value={choice}>{t(`prefs.unit.${choice}`)}</option>)}
               </select>
             </label>
-            <p className="preferences-setting-description">{`${t('prefs.units.hint')} ${lengthUnitExample(unit)}`}</p>
           </div>
           <div className="preferences-group preferences-mouse-group">
             <label className="preferences-setting"><span>{t('prefs.mouseControls')}</span>
@@ -256,30 +256,26 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
           </div>
 
         </>}
-        {section === 'updates' && <>
-          {desktop ? <div className="preferences-group">
-            <label className="preferences-setting"><span>{t('prefs.channel')}</span>
-              <select value={updateChannel} onChange={(event) => setChannelDraft(event.target.value as UpdateChannel)}>
-                <option value="stable">{t('prefs.channel.stable')}</option><option value="beta">{t('prefs.channel.beta')}</option>
-              </select>
-            </label>
-            <div className="preferences-update-check">
-              <div className="update-actions">
-                <button type="button" className="btn accent" disabled={updateCheck.kind === 'checking' || updateCheck.kind === 'installing'}
-                  aria-describedby={`${id}-update-status`} onClick={startUpdateCheck}><Icon name="refresh" size={15} />{t('prefs.checkUpdates')}</button>
-                {updateCheck.kind === 'found' &&
-                  <button type="button" className="btn" onClick={startInstall}>{t('prefs.installUpdate')}</button>}
-              </div>
-              <p id={`${id}-update-status`} role="status">{updateStatusText}</p>
-              {savedChannelHint && <p>{savedChannelHint}</p>}
+        {section === 'updates' && <div className="preferences-group">
+          <label className="preferences-setting"><span>{t('prefs.channel')}</span>
+            <select value={updateChannel} onChange={(event) => setChannelDraft(event.target.value as UpdateChannel)}>
+              <option value="stable">{t('prefs.channel.stable')}</option><option value="beta">{t('prefs.channel.beta')}</option>
+            </select>
+          </label>
+          <div className="preferences-update-check">
+            <div className="update-actions">
+              <button type="button" className="btn accent" disabled={updateCheck.kind === 'checking' || updateCheck.kind === 'installing'}
+                aria-describedby={`${id}-update-status`} onClick={startUpdateCheck}><Icon name="refresh" size={15} />{t('prefs.checkUpdates')}</button>
+              {updateCheck.kind === 'found' &&
+                <button type="button" className="btn" onClick={startInstall}>{t('prefs.installUpdate')}</button>}
             </div>
-          </div> : <div className="preferences-group"><div className="preferences-setting"><span>{t('site.version')}</span>
-            <a className="prefs-link" href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{t(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')} ↗</a>
-          </div></div>}
-        </>}
+            <p id={`${id}-update-status`} role="status">{updateStatusText}</p>
+            {savedChannelHint && <p>{savedChannelHint}</p>}
+          </div>
+        </div>}
         {section === 'about' && <>
           <div className="preferences-product"><div className="preferences-product-title"><strong>PathBlender</strong><img
-            className="preferences-product-icon" alt="" width="48" height="48"
+            className="preferences-product-icon" alt="" width="72" height="72"
             src={(icon === 'system' ? systemDark : icon === 'dark') ? nightIcon : dayIcon} />
           </div><span className="preferences-version" dir="ltr">{BUILD_VERSION}</span>
             <button className="btn" type="button" onClick={() => {
@@ -295,10 +291,12 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
           </div>}
         </>}
       </section>
-      <footer className="preferences-footer"><span className="preferences-save-hint">{dirty ? t('prefs.unsaved') : ''}</span>
+      {/* About holds nothing editable (user request 2026-10-07): no footer
+         buttons there — General/Controls/Updates keep the staging pair. */}
+      {section !== 'about' && <footer className="preferences-footer"><span className="preferences-save-hint">{dirty ? t('prefs.unsaved') : ''}</span>
         <div><button type="button" className="btn" onClick={onClose}>{t('prefs.cancel')}</button>
           <button type="button" className="btn accent" disabled={!dirty} onClick={save}>{t('prefs.save')}</button></div>
-      </footer>
+      </footer>}
     </div>
   </div>;
 }

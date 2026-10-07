@@ -102,8 +102,7 @@ any other season or a practice field).
 - **Web app** (viewer build: the same imports as the app — files and whole
   folders — plus playback and checking; no session
   save / GIF and solution-package export) —
-  [pathblender.pages.dev](https://pathblender.pages.dev), with a preview
-  channel at [pathblender-preview.pages.dev](https://pathblender-preview.pages.dev).
+  [pathblender.pages.dev](https://pathblender.pages.dev).
 
 ## Privacy
 

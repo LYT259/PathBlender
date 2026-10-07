@@ -193,10 +193,6 @@ export const nl: Record<MessageKey, string> = {
 
   'toast.gifFailed': 'GIF mislukt',
 
-  'site.tryPreview': 'Previewsite proberen',
-  'site.backStable': 'Terug naar de stabiele site',
-  'site.previewNote': 'Preview-build — functies kunnen op elk moment veranderen.',
-  'site.version': 'Versie',
   'canvas.view': 'Weergave',
   'canvas.fit': 'Passend maken',
   'canvas.clock': 't = {t} s',
@@ -300,9 +296,7 @@ export const nl: Record<MessageKey, string> = {
   'prefs.unit.cm': 'Centimeter (cm)',
   'prefs.unit.in': 'Inch (in)',
   'prefs.unit.ftin': 'Voet + inch (3′2″)',
-  'prefs.units.hint': 'Afstanden in het paneel Controles gebruiken deze eenheid, bijv.',
   'prefs.colorblind': 'Kleurenblindpalet',
-  'prefs.colorblindHint': 'Wissel robotkleuren naar een kleurenblind-veilige set (Okabe-Ito)',
   'prefs.theme': 'Thema',
   'theme.system': 'Systeem volgen',
   'theme.dark': 'Donker',

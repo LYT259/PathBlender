@@ -35,7 +35,9 @@
 .preferences-theme-choice input:checked ~ span:last-child { color: var(--fg); font-weight: 500; }
 .preferences-theme-choice input:focus-visible + .preferences-theme-preview { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 .preferences-product { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-.preferences-product-title { display: flex; align-items: center; gap: 12px; }
+/* About header (user request 2026-10-07): the name stays left, the app icon
+   sits at the far right of the content row and runs larger than the old 48px. */
+.preferences-product-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
 .preferences-product-icon { display: block; object-fit: contain; flex-shrink: 0; }
 .preferences-product-title > strong { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
 .preferences-product > span { font-size: 13px; color: var(--fg); }

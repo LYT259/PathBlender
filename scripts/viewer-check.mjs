@@ -22,8 +22,6 @@
  * Usage: VITE_VIEWER_ONLY=1 npm run build -w @pathblender/web
  *        node scripts/serve-dist.mjs 4179 &
  *        VIEWER_BASE=http://localhost:4179/ node scripts/viewer-check.mjs
- *   SITE_FLAVOR=preview  when checking the preview site build instead
- *                        (VITE_SITE_PREVIEW=1 at build time).
  * System Chrome is used through the channel when present (no 150 MB download).
  * Exits non-zero on any failed check.
  */
@@ -32,13 +30,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const BASE = process.env.VIEWER_BASE ?? 'http://localhost:4179/';
-const FLAVOR = process.env.SITE_FLAVOR === 'preview' ? 'preview' : 'stable';
 const SAMPLES = resolve(process.cwd(), 'samples');
 const ORIGIN = new URL(BASE).origin;
-const SITES = {
-  stable: 'https://pathblender.pages.dev',
-  preview: 'https://pathblender-preview.pages.dev',
-};
 
 /** Counted from the dictionaries, never typed in: the old file said "4". */
 const LANG_CODES = readdirSync(resolve(process.cwd(), 'packages/web/src/i18n'))
@@ -179,17 +172,18 @@ async function openApp(options = {}) {
   check('“follow system” is the first entry', /follow system/i.test(firstLabel), firstLabel);
   check('no update-channel picker (the site never self-updates)',
     await page.locator('.preferences-dialog select option[value="beta"]').count() === 0);
+  // The site keeps no Updates tab at all (user request 2026-10-07): the
+  // website itself is the beta channel.
+  check('no Updates tab in the website settings',
+    await page.locator('.preferences-dialog [role="tab"]:has-text("Updates")').count() === 0);
 
-  await page.keyboard.press('Escape'); // close prefs; the cross-site entry lives in the ⋮ menu
+  // The preview-site cross links and banner are gone everywhere (2026-10-07):
+  // the ⋮ menu carries no off-site jump and no banner markup renders at all.
+  await page.keyboard.press('Escape'); // close prefs; the ⋮ menu still opens
   await page.locator('.workspace-menu summary').click();
   const menuLinks = await page.locator('.workspace-menu-items a').evaluateAll((nodes) => nodes.map((n) => n.getAttribute('href') ?? ''));
-  const otherSite = FLAVOR === 'preview' ? SITES.stable : SITES.preview;
-  check(`${FLAVOR} build offers the jump to ${otherSite}`, menuLinks.includes(otherSite), menuLinks.join(' | '));
-  if (FLAVOR === 'preview') {
-    check('preview banner is up', await page.locator('.site-preview-banner').count() === 1);
-  } else {
-    check('stable build shows no preview banner', await page.locator('.site-preview-banner').count() === 0);
-  }
+  check('workspace ⋮ menu links nowhere off-site', menuLinks.length === 0, menuLinks.join(' | '));
+  check('no preview banner markup', await page.locator('.site-preview-banner').count() === 0);
 
   check('no page errors after the whole pass', errors.length === 0, errors.slice(0, 3).join(' | '));
   await ctx.close();

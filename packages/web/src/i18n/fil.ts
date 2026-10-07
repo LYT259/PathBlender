@@ -178,10 +178,6 @@ export const fil = {
   
   'toast.gifFailed': 'Nabigo ang GIF',
   
-  'site.tryPreview': 'Subukan ang preview site',
-  'site.backStable': 'Bumalik sa stable site',
-  'site.previewNote': 'Preview build — maaaring magbago ang mga feature anumang oras.',
-  'site.version': 'Bersyon',
   'canvas.view': 'Tanawin',
   'canvas.fit': 'I-fit',
   'canvas.clock': 't = {t} s',
@@ -283,9 +279,7 @@ export const fil = {
   'prefs.unit.cm': 'Sentimetro (cm)',
   'prefs.unit.in': 'Pulgada (in)',
   'prefs.unit.ftin': 'Talampakan + pulgada (3′2″)',
-  'prefs.units.hint': 'Ginagamit ng mga distansya sa checks panel ang unit na ito, hal.',
   'prefs.colorblind': 'Paleta para sa colorblind',
-  'prefs.colorblindHint': 'Palitan ang mga kulay ng robot ng set na ligtas sa colorblind (Okabe-Ito)',
   'prefs.theme': 'Tema',
   'theme.system': 'Sundin ang system',
   'theme.dark': 'Madilim',
