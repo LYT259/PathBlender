@@ -102,6 +102,12 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     const close = (event: globalThis.PointerEvent) => {
       const target = event.target instanceof Element ? event.target : null;
       if (!target || rootRef.current?.contains(target) || target.closest('[data-session-history]')) return;
+      // Functional controls keep the composer open (user 2026-10-07):
+      // hiding another robot, switching selection or opening a menu must not
+      // exit edit mode — only a pointerdown on blank page/field area does.
+      // Focusable widgets stand in for "functional" (buttons, inputs, the
+      // tabbable robot rows); inert chrome around them counts as blank.
+      if (target.closest('button, input, select, textarea, a, label, summary, [contenteditable="true"], [tabindex]:not([tabindex="-1"])')) return;
       const focused = document.activeElement;
       if (focused instanceof HTMLInputElement && rootRef.current?.contains(focused)) focused.blur();
       onClose();
@@ -252,6 +258,14 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
                 <button type="button" className={`sequence-clip${chosenClip ? ' is-chosen' : ''}${editing && activeGhost?.id === clip.id ? ' is-moving' : ''}`}
                   style={styleFor(clip)} aria-label={`${label}, ${clip.startS.toFixed(2)}–${(clip.startS + clip.durationS).toFixed(2)} s`} aria-pressed={chosenClip}
                   title={`${label}\n${clip.startS.toFixed(2)}–${(clip.startS + clip.durationS).toFixed(2)} s`}
+                  // Hovering a placed leg previews that route on the field
+                  // exactly like the library buttons (user 2026-10-07) —
+                  // editing lane only: the preview resolves through the
+                  // selected robot's own library. Keyboard parity via focus.
+                  onPointerEnter={editing ? () => { if (!dragRef.current) onPreviewRoute?.(clip.routeId); } : undefined}
+                  onPointerLeave={editing ? () => { if (!dragRef.current) onPreviewRoute?.(null); } : undefined}
+                  onFocus={editing ? () => { if (!dragRef.current) onPreviewRoute?.(clip.routeId); } : undefined}
+                  onBlur={editing ? () => { if (!dragRef.current) onPreviewRoute?.(null); } : undefined}
                   onClick={(event) => { if (event.detail !== 0 && suppressClick.current) return; if (!editing) switchRobot(id); setSelected({ robotId: id, clipId: clip.id }); setError(null); }}
                   onPointerDown={editing ? (event) => begin(event, 'move', clip) : () => { suppressClick.current = false; }}
                   onContextMenu={editing ? (event) => { event.preventDefault(); setSelected({ robotId: id, clipId: clip.id }); setMenu({ robotId: id, clipId: clip.id, x: event.clientX, y: event.clientY }); } : undefined}
