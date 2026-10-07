@@ -27,6 +27,7 @@ export const he: Record<MessageKey, string> = {
   'sequence.joinHeading': 'פער כיוון {d}°',
   'sequence.joinVelocity': 'קפיצת מהירות {d} מ/ש׳',
   'sequence.libraryBlocked': 'ההתחלה אינה ממשיכה את הסוף של {name} (פער מיקום {p}, פער כיוון {h})',
+  'sequence.libraryOccupied': 'ראש ההשמעה נמצא על קטע תפוס — גררו אותו קודם למרווח פנוי',
   'sequence.joinFix': 'תקן את החיבור ב־PathPlanner או ב־Choreo וייבא את המסלול מחדש.',
   'sequence.overAuto': 'מסתיים ב־{t} ש׳, אחרי התקופה האוטונומית של {auto} ש׳.',
   'sequence.invalid': 'הזן זמן התחלה סופי ולא שלילי.',

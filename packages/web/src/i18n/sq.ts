@@ -11,6 +11,7 @@ export const sq = {
   'sequence.joinHeading': 'diferencë drejtimi {d}°',
   'sequence.joinVelocity': 'kërcim shpejtësie {d} m/s',
   'sequence.libraryBlocked': 'Fillimi nuk vazhdon fundin e {name} (diferencë pozicioni {p}, diferencë drejtimi {h})',
+  'sequence.libraryOccupied': 'Koka e riprodhimit është në një pjesë të zënë — tërhiqeni fillimisht në një hapësirë të lirë',
   'sequence.joinFix': 'Rregullo lidhjen në PathPlanner ose Choreo dhe riimporto rrugën.',
   'sequence.overAuto': 'Përfundon në {t} s, pas periudhës autonome prej {auto} s.',
   'sequence.invalid': 'Shkruaj një kohë fillimi të fundme dhe jo negative.',
