@@ -13,7 +13,7 @@
  * entry for Traditional readers.
  */
 
-export const APP_VERSION = '0.1.8-beta.86';
+export const APP_VERSION = '0.1.8-beta.87';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -37,6 +37,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.87', date: '2026.10.07', note: { en: 'One release pipeline now ships macOS Universal, Windows and Linux installers; README and release notes add five more languages', zh: '一条发布流水线产出 macOS 通用包、Windows 与 Linux 安装包；README 与发布说明新增五种语言', 'zh-tw': '一條發布流水線產出 macOS 通用包、Windows 與 Linux 安裝包；README 與發布說明新增五種語言', cs: 'Jeden release pipeline nyní vydává instalační balíčky macOS Universal, Windows a Linux; README a poznámky k vydání v pěti dalších jazycích', nl: 'Eén release-pipeline levert nu macOS Universal-, Windows- en Linux-installatieprogramma’s; README en release-opmerkingen in vijf extra talen', fr: 'Un seul pipeline de publication fournit désormais les installateurs macOS Universal, Windows et Linux ; README et notes de version en cinq langues de plus', he: 'צינור הפצה אחד מספק מעכשיו מתקינים ל-macOS Universal, ל-Windows ול-Linux; קובץ ה-README והערות ההפצה בחמש שפות נוספות', ja: '一本のリリースパイプラインで macOS Universal・Windows・Linux のインストーラーを提供；README とリリースノートに 5 言語を追加', ko: '하나의 릴리스 파이프라인으로 macOS Universal·Windows·Linux 설치 제공; README와 릴리스 노트에 다섯 언어 추가', pl: 'Jeden pipeline wydawniczy dostarcza teraz instalatory macOS Universal, Windows i Linux; README i notki wydania w pięciu kolejnych językach', 'pt-br': 'Um único pipeline de release agora entrega instaladores para macOS Universal, Windows e Linux; README e notas de versão em mais cinco idiomas', es: 'Un solo pipeline de publicación entrega instaladores de macOS Universal, Windows y Linux; README y notas de versión en cinco idiomas más', tr: 'Tek bir sürüm hattı artık macOS Universal, Windows ve Linux kurulumlarını veriyor; README ve sürüm notları beş dil daha' } },
   { version: '0.1.8-beta.86', date: '2026.10.07', note: {
     en: 'The browser tab icon now follows the system light/dark mode — red plate by day, black by night — and iOS home screens get the matching app icon',
     zh: '浏览器标签页图标现跟随系统深浅色模式自动切换——白天红底、夜间黑底——iOS 主屏幕也换上对应的 App 图标',

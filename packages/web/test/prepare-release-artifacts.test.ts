@@ -33,7 +33,7 @@ describe('complete release collection', () => {
     expect(feed.platforms['darwin-x86_64']).toEqual(feed.platforms['darwin-aarch64']);
     expect(feed.platforms['linux-x86_64'].url).toContain(result.manifest.linux.appimage);
     const registry = join(f.input, 'version-info.ts');
-    writeFileSync(registry, "{ version: '0.2.0', date: '2026.10.07', note: { en: 'Update', zh: '更新' } }");
+    writeFileSync(registry, "{ version: '0.2.0', date: '2026.10.07', note: { en: 'Update', zh: '更新', es: 'Actualización', fr: 'Mise à jour', tr: 'Güncelleme', 'pt-br': 'Atualização', he: 'עדכון' } }");
     const notes = execFileSync('node', [join(ROOT, 'scripts/release-notes-for.mjs'), '0.2.0', registry], { encoding: 'utf8', env: { ...process.env, ...result.environment } });
     for (const file of [result.manifest.macos.dmg, result.manifest.windows.nsis, ...Object.values(result.manifest.linux)]) expect(notes).toContain(file);
     expect(notes).not.toContain('installers are not provided');
