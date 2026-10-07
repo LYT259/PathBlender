@@ -1,5 +1,6 @@
 /** German strings. */
 export const de = {
+  "canvas.webglUnavailable": "WebGL ist nicht verfügbar",
   'sequence.start': 'Start',
   'sequence.end': 'Ende',
   'sequence.seconds': 's',

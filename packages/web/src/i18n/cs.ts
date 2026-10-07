@@ -11,6 +11,7 @@ import type { MessageKey } from './en';
  * verified.
  */
 export const cs: Record<MessageKey, string> = {
+  "canvas.webglUnavailable": "WebGL není dostupné",
   'sequence.start': 'Start',
   'sequence.end': 'Konec',
   'sequence.seconds': 's',

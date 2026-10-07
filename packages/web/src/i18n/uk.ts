@@ -1,5 +1,6 @@
 /** Ukrainian strings. */
 export const uk = {
+  "canvas.webglUnavailable": "WebGL недоступний",
   'sequence.start': 'Початок',
   'sequence.end': 'Кінець',
   'sequence.seconds': 'с',

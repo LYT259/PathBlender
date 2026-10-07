@@ -11,6 +11,7 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const pl: Record<MessageKey, string> = {
+  "canvas.webglUnavailable": "WebGL jest niedostępne",
   'sequence.start': 'Start',
   'sequence.end': 'Koniec',
   'sequence.seconds': 's',

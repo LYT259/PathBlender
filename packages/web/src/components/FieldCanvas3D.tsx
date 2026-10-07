@@ -426,7 +426,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   const pinchChaseRef = useRef<{ cancel: () => void } | null>(null);
   const { t } = useI18n();
   // Environments without WebGL (jsdom, locked-down webviews) fall back to a
-  // quiet empty pane instead of crashing the app.
+  // localized failure message instead of crashing the app.
   const [glFailed, setGlFailed] = useState(false);
   // Official MK5i CAD module (null = not yet loaded / fell back) — the
   // rig-build effect re-runs when it arrives so existing views upgrade.
@@ -1615,6 +1615,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     },
   }));
 
-  if (glFailed) return <div className="field-canvas-3d" aria-label="WebGL unavailable" />;
+  if (glFailed) return <div className="field-canvas-3d" role="status">{t('canvas.webglUnavailable')}</div>;
   return <div ref={hostRef} className="field-canvas-3d" />;
 });

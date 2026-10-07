@@ -1,5 +1,6 @@
 /** Romanian strings. */
 export const ro = {
+  "canvas.webglUnavailable": "WebGL nu este disponibil",
   'sequence.start': 'Start',
   'sequence.end': 'Sfârșit',
   'sequence.seconds': 's',

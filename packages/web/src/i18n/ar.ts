@@ -1,5 +1,6 @@
 /** Arabic strings. */
 export const ar = {
+  "canvas.webglUnavailable": "WebGL غير متاح",
   'sequence.start': 'البداية',
   'sequence.end': 'النهاية',
   'sequence.seconds': 'ث',

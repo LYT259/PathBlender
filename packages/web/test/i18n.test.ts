@@ -98,88 +98,91 @@ describe('i18n dictionaries', () => {
    * deliberately verbatim. The whitelist is the whole allow-list, so a new key
    * that ships as its own English text fails the run.
    */
-  const KEEP_VERBATIM = new Set([
-    // Brand and format names, never translated.
-    'app.title',
-    // Mouse-scheme brand names and the em-dash "no action" cell.
-    'prefs.mouse.onshape', 'prefs.mouse.solidworks', 'prefs.mouse.solidworks.right',
-    'prefs.mouse.onshape.wheel', 'prefs.mouse.solidworks.wheel',
-    // 'Zoom' is the loanword in the Romance dictionaries (es/fr/pt-BR).
-    'prefs.mouse.zoom',
-    // 'Drag' is the loanword in Filipino, whose own button labels use it.
-    'prefs.mouse.custom.plain',
-    // 'Ctrl/Alt/Shift + drag' coincide with English in the North-Germanic
-    // dictionaries (nb/nn/sv), whose button labels already use 'drag'.
-    'prefs.mouse.custom.ctrl', 'prefs.mouse.custom.alt', 'prefs.mouse.custom.shift',
-    // Symbols and unit strings the field itself renders.
-    'conflicts.pair', 'customField.ppm', 'timeline.speed', 'timeline.clock',
-    'timeline.activity', 'timeline.band', 'canvas.clock', 'rail.png',
-    // View-cube initials: the Latin abbreviations collide, so the Latin-script
-    // dictionaries keep the English letters. Non-Latin scripts ship native
-    // initials: zh/zh-tw and ja/ko use single ideographs, and the third-batch
-    // ar/hi/mr/ta use script-native abbreviations instead.
-    'vc.top', 'vc.bottom', 'vc.front', 'vc.back', 'vc.left', 'vc.right',
-    // Native-menu labels that macOS keeps as loanwords: 'Zoom' is the
-    // standard View-menu entry in the Germanic/Romance dictionaries, and
-    // Italian/Filipino keep the 'File' menu name itself.
-    'menu.zoom', 'menu.file',
-    // Dutch 'Help' is the genuine Dutch word — it coincides with English
-    // exactly like the whitelisted nl 'Timing'/'Updates' above.
-    'menu.help',
-    // Words that genuinely coincide with English in at least one shipped
-    // language (fr 'Pause'/'Collision'/'alliance', es 'Robot'/'General',
-    // nl 'Timing'/'Updates' etc.).
-    'prefs.section.general', // Spanish 'General' is identical.
-    'workspace.details', 'robots.title',
-    'robots.collision', 'robots.alliance', 'timeline.pause',
-    'about.version',
-    // 'GIF' is the universal acronym every shipped language keeps;
-    // 'Heatmap' is the German loanword (de); 'Differential' is the
-    // Danish loanword (da).
-    'actions.gif', 'actions.heatmapOn', 'canvas.heatmap', 'robots.driveDifferential',
-    // The canvas overlay pair: Kinyarwanda keeps the English loans (its
-    // dictionary already ships 'Heatmap' verbatim for the same reason);
-    // every other language translates both terms.
-    'canvas.trail', 'canvas.overlays',
-    // Dutch coincidences: loanwords that spell exactly like the English source
-    // (nl 'Timing', 'Updates', 'Bumpers {l} × {w} m'). The nl unit labels used to
-    // be on this list too — they carried the English plurals 'Meters/Centimeters
-    // /Inches' — but the 2026-10-06 language audit moved nl to the native
-    // singular forms, so those keys are translated everywhere now.
-    'robots.timing', 'prefs.section.updates', 'robots.profileEntry',
-    'prefs.unit.yd', // French 'Yards (yd)' is the same unit name.
-    // Malay uses 'Import' as its standard UI verb (it does so in ~20 other
-    // rows), so the settings.json import button lands byte-identical to English.
-    'robots.uploadSettings',
-    // Tokens sent to the OS unchanged.
-    'prefs.channel.stable', 'prefs.channel.beta',
-    // 's' is the universal SI second symbol every dictionary keeps, and
-    // 'Start'/'Route' are loanwords a wide group of languages (de/nl/sv/da/
-    // nb/nn/cs/pl/ro) spells exactly like English. French 'segments' also
-    // coincides with the English plural.
-    'sequence.seconds', 'sequence.start', 'sequence.count',
+  // Brand names, mathematical templates and symbols are language-independent.
+  const UNIVERSAL_VERBATIM = new Set<MessageKey>([
+    'app.title', 'conflicts.pair', 'customField.ppm', 'timeline.speed',
+    'timeline.clock', 'timeline.activity', 'timeline.band', 'canvas.clock',
+    'rail.png', 'actions.gif', 'prefs.mouse.onshape', 'prefs.mouse.solidworks',
+    'prefs.mouse.solidworks.right', 'sequence.seconds',
   ]);
+
+  // Pin exemptions to the language in which the previous audit accepted a
+  // loanword or the existing view-cube convention. Do not derive this table
+  // from dictionaries at runtime: that would bless every new English leak.
+  const KEEP_VERBATIM = {
+    'ar': [],
+    'az': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta"],
+    'bg': [],
+    'bs': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta"],
+    'cs': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.stable","prefs.channel.beta","sequence.start"],
+    'da': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","robots.alliance","timeline.pause","about.version","robots.driveDifferential","robots.timing","prefs.channel.beta","sequence.start"],
+    'de': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","about.version","actions.heatmapOn","canvas.heatmap","prefs.section.updates","prefs.channel.beta","sequence.start"],
+    'el': ["prefs.channel.beta"],
+    'es': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.section.general","workspace.details","robots.title","prefs.channel.beta"],
+    'fil': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","prefs.mouse.custom.plain","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.file","workspace.details","robots.collision","actions.heatmapOn","canvas.heatmap","robots.timing","prefs.channel.stable","prefs.channel.beta"],
+    'fr': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","robots.title","robots.collision","robots.alliance","timeline.pause","about.version","prefs.unit.yd","prefs.channel.stable","sequence.count"],
+    'he': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","prefs.channel.stable","prefs.channel.beta"],
+    'hi': [],
+    'hr': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta"],
+    'hu': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details"],
+    'hy': [],
+    'id': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta"],
+    'it': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","menu.file","workspace.details","prefs.channel.beta"],
+    'ja': ["prefs.channel.stable","prefs.channel.beta"],
+    'ko': ["prefs.channel.stable","prefs.channel.beta"],
+    'mk': [],
+    'mr': [],
+    'ms': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","robots.uploadSettings","prefs.channel.beta"],
+    'nb': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","prefs.mouse.custom.plain","prefs.mouse.custom.ctrl","prefs.mouse.custom.alt","prefs.mouse.custom.shift","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","timeline.pause","robots.timing","prefs.channel.beta","sequence.start"],
+    'nl': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","menu.help","workspace.details","robots.title","robots.timing","prefs.section.updates","robots.profileEntry","prefs.channel.stable","prefs.channel.beta","sequence.start"],
+    'nn': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","prefs.mouse.custom.plain","prefs.mouse.custom.ctrl","prefs.mouse.custom.alt","prefs.mouse.custom.shift","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","timeline.pause","prefs.channel.beta","sequence.start"],
+    'pl': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.stable","prefs.channel.beta","sequence.start"],
+    'pt-BR': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.channel.stable","prefs.channel.beta"],
+    'ro': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.section.general","workspace.details","prefs.channel.beta","sequence.start"],
+    'rw': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","canvas.heatmap","canvas.trail","canvas.overlays","prefs.channel.beta"],
+    'sq': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta"],
+    'sr': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta"],
+    'sv': ["prefs.mouse.custom.plain","prefs.mouse.custom.ctrl","prefs.mouse.custom.alt","prefs.mouse.custom.shift","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","about.version","robots.driveDifferential","robots.timing","prefs.channel.beta","sequence.start"],
+    'ta': [],
+    'tr': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta"],
+    'uk': [],
+    'vi': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta"],
+    'zh': [],
+    'zh-hk': [],
+    'zh-tw': [],
+  } satisfies Record<Exclude<Lang, 'en'>, readonly MessageKey[]>;
+
+  function englishResidue(code: Exclude<Lang, 'en'>, dictionary: Record<string, string>): string[] {
+    const allowed: readonly string[] = KEEP_VERBATIM[code];
+    return Object.entries(en)
+      .filter(([key, source]) => !UNIVERSAL_VERBATIM.has(key as MessageKey) && !allowed.includes(key) && dictionary[key] === source)
+      .map(([key]) => key);
+  }
 
   it('nothing is left sitting on the English text', () => {
     for (const code of CODES) {
       if (code === 'en') continue;
-      for (const [key, source] of Object.entries(en)) {
-        if (KEEP_VERBATIM.has(key)) continue;
-        expect(DICTS[code]![key], `${code}:${key} still holds the English text`).not.toBe(source);
-      }
+      expect(englishResidue(code, DICTS[code]!), code).toEqual([]);
     }
   });
 
+  it('an exemption in one language never hides a leak in another', () => {
+    expect(englishResidue('es', DICTS.es!)).toEqual([]); // Spanish General.
+    expect(englishResidue('nl', { ...DICTS.nl, 'prefs.section.general': en['prefs.section.general'] }))
+      .toContain('prefs.section.general');
+    expect(englishResidue('zh', { ...DICTS.zh, 'vc.top': en['vc.top'] })).toContain('vc.top');
+  });
+
   it('the verbatim whitelist does not carry dead entries', () => {
-    // A key that stopped being identical to English should leave the list, or
-    // the gate silently allows a future regression on it. A key that left the
-    // source dictionary (the retired ai.* set) is just as dead — the `key in
-    // en` check used to let it ride, because an absent key compared to an
-    // absent key is `undefined === undefined`.
-    for (const key of KEEP_VERBATIM) {
-      expect(KEYS, `en:${key} is no longer a source key; drop it from KEEP_VERBATIM`).toContain(key);
-      const stillVerbatim = CODES.some((c) => c !== 'en' && DICTS[c]![key] === en[key as keyof typeof en]);
-      expect(stillVerbatim, `en:${key} is translated everywhere; drop it from KEEP_VERBATIM`).toBe(true);
+    for (const [code, keys] of Object.entries(KEEP_VERBATIM)) {
+      for (const key of keys) {
+        expect(KEYS, code + ':' + key).toContain(key);
+        expect(DICTS[code]![key], code + ':' + key + ' is translated now; drop its exemption').toBe(en[key as MessageKey]);
+      }
+    }
+    for (const key of UNIVERSAL_VERBATIM) {
+      expect(KEYS).toContain(key);
+      expect(CODES.some((c) => c !== 'en' && DICTS[c]![key] === en[key])).toBe(true);
     }
   });
 });

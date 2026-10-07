@@ -11,6 +11,7 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const ko: Record<MessageKey, string> = {
+  "canvas.webglUnavailable": "WebGL을 사용할 수 없습니다",
   'sequence.start': '시작',
   'sequence.end': '종료',
   'sequence.seconds': '초',

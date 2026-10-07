@@ -1,5 +1,6 @@
 /** Vietnamese strings. */
 export const vi = {
+  "canvas.webglUnavailable": "WebGL không khả dụng",
   'sequence.start': 'Bắt đầu',
   'sequence.end': 'Kết thúc',
   'sequence.seconds': 's',

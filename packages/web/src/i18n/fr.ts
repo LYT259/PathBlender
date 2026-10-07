@@ -8,6 +8,7 @@ import type { MessageKey } from './en';
  * i18n.test.ts enforces the key set, the placeholders and non-empty values.
  */
 export const fr: Record<MessageKey, string> = {
+  "canvas.webglUnavailable": "WebGL indisponible",
   'sequence.start': 'Début',
   'sequence.end': 'Fin',
   'sequence.seconds': 's',

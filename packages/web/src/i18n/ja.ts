@@ -12,6 +12,7 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const ja: Record<MessageKey, string> = {
+  "canvas.webglUnavailable": "WebGL を利用できません",
   'sequence.start': '開始',
   'sequence.end': '終了',
   'sequence.seconds': '秒',

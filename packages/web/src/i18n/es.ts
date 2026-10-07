@@ -7,6 +7,7 @@ import type { MessageKey } from './en';
  * English; i18n.test.ts enforces both.
  */
 export const es: Record<MessageKey, string> = {
+  "canvas.webglUnavailable": "WebGL no está disponible",
   'sequence.start': 'Inicio',
   'sequence.end': 'Fin',
   'sequence.seconds': 's',

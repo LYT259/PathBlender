@@ -1,5 +1,6 @@
 /** Albanian strings. */
 export const sq = {
+  "canvas.webglUnavailable": "WebGL nuk është i disponueshëm",
   'sequence.start': 'Fillimi',
   'sequence.end': 'Fundi',
   'sequence.seconds': 's',

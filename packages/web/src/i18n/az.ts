@@ -1,5 +1,6 @@
 /** Azerbaijani strings. */
 export const az = {
+  "canvas.webglUnavailable": "WebGL əlçatan deyil",
   'sequence.start': 'Başlanğıc',
   'sequence.end': 'Son',
   'sequence.seconds': 'san',

@@ -1,5 +1,6 @@
 /** Armenian strings. */
 export const hy = {
+  "canvas.webglUnavailable": "WebGL-ը հասանելի չէ",
   'sequence.start': 'Սկիզբ',
   'sequence.end': 'Ավարտ',
   'sequence.seconds': 'վ',
@@ -22,8 +23,8 @@ export const hy = {
   'sequence.reference': "Սեղմեք փոխելու համար",
   'sequence.overlap': "Երթուղիները չեն կարող համընկնել։ Տեղափոխեք ազատ տարածք։",
   'sequence.removeRoute': "Հեռացնել երթուղին",
-  'sequence.replaceRoute': 'Փոխարինել ընտրված ուղին',
-  'sequence.replaced': 'Ուղին փոխարինվեց',
+  'sequence.replaceRoute': 'Փոխարինել ընտրված երթուղին',
+  'sequence.replaced': 'Երթուղին փոխարինվեց',
   'sequence.reset': "Վերակայել դասավորությունը",
   'sequence.autoEnd': "Ինքնավար փուլի ավարտ",
   'sequence.added': "Երթուղին ավելացված է",
@@ -332,7 +333,7 @@ export const hy = {
   "menu.jumpFirstIssue": "Անցնել առաջին խնդրին",
   "menu.githubProject": "PathBlender-ը GitHub-ում",
   "menu.about": "PathBlender-ի մասին",
-  "toast.pkgNeedRobots": "Նախ ներմուծեք հետագծերը, ապա արտահանեք լուծման փաթեթը",
+  "toast.pkgNeedRobots": "Նախ ներմուծեք երթուղիները, ապա արտահանեք լուծման փաթեթը",
   "toast.pkgRendering": "Ստեղծվում են փաթեթի պատկերները…",
   "toast.pkgRecording": "Ձայնագրվում է 20 վայրկյան նվագարկումը — պահեք այս պատուհանը առաջին պլանում…",
   "toast.pkgSaving": "Հավաքվում է փաթեթը…",

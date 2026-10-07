@@ -1,5 +1,6 @@
 /** Malay strings. */
 export const ms = {
+  "canvas.webglUnavailable": "WebGL tidak tersedia",
   'sequence.start': 'Mula',
   'sequence.end': 'Tamat',
   'sequence.seconds': 's',
