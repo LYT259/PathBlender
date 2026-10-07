@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.82';
+export const APP_VERSION = '0.1.8-beta.83';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.83', date: '2026.10.07', note: {
+    en: 'The playback-range selector moves to the top row beside Back to playback, full size like the main timeline',
+    zh: '播放范围选择框移到顶部「返回回放」那一行，尺寸与主时间轴一致',
+    'zh-tw': '播放範圍選擇框移到頂部「返回回放」那一行，尺寸與主時間軸一致',
+    cs: 'Přepínač rozsahu přehrávání se stěhuje do horní řady vedle tlačítka zpět, v plné velikosti jako hlavní časová osa',
+    nl: 'De afspeelbereikkeuze staat nu in de bovenste rij naast Terug naar afspelen, op volledige grootte zoals de hoofd-tijdlijn',
+    fr: 'Le sélecteur de plage de lecture passe dans la rangée du haut, à côté de Retour à la lecture, à pleine taille comme la timeline principale',
+    he: 'בורר טווח ההשמעה עובר לשורה העליונה ליד חזרה להשמעה, בגודל מלא כמו ציר הזמן הראשי',
+    ja: '再生範囲セレクターを上部の「回放に戻る」行へ移し、メインのタイムラインと同じサイズにしました',
+    ko: '재생 범위 선택 상자를 상단 「재생으로 돌아가기」 행으로 옮기고 메인 타임라인과 같은 크기로 맞췄습니다',
+    pl: 'Przełącznik zakresu odtwarzania przechodzi do górnego rzędu obok przycisku powrotu, w pełnym rozmiarze jak główna oś czasu',
+    'pt-br': 'O seletor de intervalo de reprodução vai para a linha de topo ao lado de Voltar à reprodução, no tamanho completo da linha do tempo principal',
+    es: 'El selector de rango de reproducción pasa a la fila superior junto a Volver a la reproducción, a tamaño completo como la línea de tiempo principal',
+    tr: 'Oynatma aralığı seçicisi, geri dönme düğmesinin yanındaki üst sıraya taşındı; ana zaman çizgesiyle aynı boyutta',
+  } },
   { version: '0.1.8-beta.82', date: '2026.10.07', note: {
     en: 'Transport buttons centered again in the arrangement editor; the playback-range selector now sits in the corner without shifting anything',
     zh: '编排器走带按钮恢复居中；播放范围选择框改放角落，不再挪动任何现有控件',
