@@ -10,6 +10,7 @@ export const hu = {
   'sequence.joinPosition': 'pozícióeltérés {d}',
   'sequence.joinHeading': 'irányeltérés {d}°',
   'sequence.joinVelocity': 'sebességugrás {d} m/s',
+  'sequence.libraryBlocked': 'A kezdet nem folytatja a(z) {name} végét (pozícióeltérés {p}, irányeltérés {h})',
   'sequence.joinFix': 'Javítsd ki az illesztést a PathPlannerben vagy a Choreóban, majd importáld újra az útvonalat.',
   'sequence.overAuto': 'A(z) {auto} mp-es autonóm szakasz után, {t} mp-nél ér véget.',
   'sequence.invalid': 'Adj meg véges, nem negatív kezdési időt.',

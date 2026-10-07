@@ -10,6 +10,7 @@ export const sr = {
   'sequence.joinPosition': 'razlika položaja {d}',
   'sequence.joinHeading': 'razlika smera {d}°',
   'sequence.joinVelocity': 'skok brzine {d} m/s',
+  'sequence.libraryBlocked': 'Početak ne nastavlja kraj {name} (razlika položaja {p}, razlika smera {h})',
   'sequence.joinFix': 'Ispravite spoj u PathPlanner-u ili Choreo-u i ponovo uvezite rutu.',
   'sequence.overAuto': 'Završava u {t} s, posle autonomnog perioda od {auto} s.',
   'sequence.invalid': 'Unesite konačno, nenegativno vreme početka.',

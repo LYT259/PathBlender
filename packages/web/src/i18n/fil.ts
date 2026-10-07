@@ -10,6 +10,7 @@ export const fil = {
   'sequence.joinPosition': 'agwat ng posisyon {d}',
   'sequence.joinHeading': 'agwat ng direksiyon {d}°',
   'sequence.joinVelocity': 'pagtalon ng bilis {d} m/s',
+  'sequence.libraryBlocked': 'Hindi pinagpapatuloy ng simula ang dulo ng {name} (agwat ng posisyon {p}, agwat ng direksiyon {h})',
   'sequence.joinFix': 'Ayusin ang dugtungan sa PathPlanner o Choreo at muling i-import ang ruta.',
   'sequence.overAuto': 'Matatapos sa {t} s, lampas sa {auto} s na autonomous period.',
   'sequence.invalid': 'Maglagay ng finite at hindi negatibong oras ng simula.',

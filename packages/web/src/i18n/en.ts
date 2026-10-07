@@ -308,6 +308,7 @@ export const en = {
   'sequence.joinPosition': 'position gap {d}',
   'sequence.joinHeading': 'heading gap {d}°',
   'sequence.joinVelocity': 'speed jump {d} m/s',
+  'sequence.libraryBlocked': 'Start does not continue the end of {name} (position gap {p}, heading gap {h})',
   'sequence.joinFix': 'Fix the join in PathPlanner or Choreo and re-import the route.',
   'sequence.overAuto': 'Finishes at {t} s, after the {auto} s autonomous period.',
   'sequence.invalid': 'Enter a finite, non-negative start time.',

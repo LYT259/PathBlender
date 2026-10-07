@@ -22,6 +22,7 @@ export const ja: Record<MessageKey, string> = {
   'sequence.joinPosition': '位置のずれ {d}',
   'sequence.joinHeading': '向きのずれ {d}°',
   'sequence.joinVelocity': '速度の跳び {d} m/s',
+  'sequence.libraryBlocked': '始点は {name} の終点から連続していません（位置のずれ {p}、向きのずれ {h}）',
   'sequence.joinFix': 'PathPlanner または Choreo で接続を修正し、ルートを再インポートしてください。',
   'sequence.overAuto': '{auto} 秒の自動ステージを超えて、{t} 秒で終了します。',
   'sequence.invalid': '有限で負でない開始時間を入力してください。',

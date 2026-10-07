@@ -11,11 +11,19 @@ vi.mock('../src/components/FieldCanvas', async () => {
 const raw = readFileSync(resolve(__dirname, '../../../samples/ghostauto/straight_run.ghostauto'), 'utf8');
 beforeEach(() => { localStorage.clear(); localStorage.setItem('pb.lang', 'en'); });
 const field = () => JSON.parse(screen.getByTestId('field').textContent!);
+/** B's file content: the same run translated to start exactly where A ends, so the playhead-gated route library keeps B draggable after A. */
+const chainedRaw = (() => {
+  const doc = JSON.parse(raw);
+  const states: { x: number; y: number }[] = doc.states;
+  const dx = states[states.length - 1]!.x - states[0]!.x;
+  const dy = states[states.length - 1]!.y - states[0]!.y;
+  return JSON.stringify({ ...doc, states: states.map((s) => ({ ...s, x: s.x + dx, y: s.y + dy })) });
+})();
 describe('composer hover preview in the real app', () => {
   it('temporarily isolates the hovered route and leaves saved composition, history and playback position intact', async () => {
     render(<App />);
     const files = ['team/A', 'team/B', 'other/C'].map((name) => {
-      const file = new File([raw], `${name.split('/')[1]}.ghostauto`, { type: 'application/json' });
+      const file = new File([name === 'team/B' ? chainedRaw : raw], `${name.split('/')[1]}.ghostauto`, { type: 'application/json' });
       Object.defineProperty(file, 'webkitRelativePath', { value: `${name}.ghostauto` }); return file;
     });
     fireEvent.drop(window, { dataTransfer: { files } });

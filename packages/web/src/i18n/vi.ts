@@ -10,6 +10,7 @@ export const vi = {
   'sequence.joinPosition': 'lệch vị trí {d}',
   'sequence.joinHeading': 'lệch hướng {d}°',
   'sequence.joinVelocity': 'nhảy tốc độ {d} m/s',
+  'sequence.libraryBlocked': 'Điểm đầu không nối tiếp điểm cuối của {name} (lệch vị trí {p}, lệch hướng {h})',
   'sequence.joinFix': 'Sửa mối nối trong PathPlanner hoặc Choreo rồi nhập lại tuyến.',
   'sequence.overAuto': 'Kết thúc ở {t} s, sau thời gian tự động {auto} s.',
   'sequence.invalid': 'Nhập thời gian bắt đầu hữu hạn và không âm.',

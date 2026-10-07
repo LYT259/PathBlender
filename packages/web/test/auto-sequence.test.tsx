@@ -32,6 +32,15 @@ function fixture(id = 'robot-a', duration = 4): SessionTrajectory {
   };
 }
 
+/** B's file content: the same run translated to start exactly where A ends, so the playhead-gated route library keeps B draggable after A. */
+const chainedRaw = (() => {
+  const doc = JSON.parse(raw);
+  const states: { x: number; y: number }[] = doc.states;
+  const dx = states[states.length - 1]!.x - states[0]!.x;
+  const dy = states[states.length - 1]!.y - states[0]!.y;
+  return JSON.stringify({ ...doc, states: states.map((s) => ({ ...s, x: s.x + dx, y: s.y + dy })) });
+})();
+
 beforeEach(() => { localStorage.clear(); localStorage.setItem('pb.lang', 'en'); vi.clearAllMocks(); });
 
 describe('auto sequence state', () => {
@@ -147,7 +156,7 @@ describe('auto sequence in the workspace', () => {
   it('saves each operation immediately and undoes edits before undoing entry into the composer', async () => {
     render(<App />);
     const files = ['A', 'B'].map((name) => {
-      const file = new File([raw], `${name}.ghostauto`, { type: 'application/json' });
+      const file = new File([name === 'B' ? chainedRaw : raw], `${name}.ghostauto`, { type: 'application/json' });
       Object.defineProperty(file, 'webkitRelativePath', { value: `team/${name}.ghostauto` });
       return file;
     });
@@ -182,7 +191,7 @@ describe('auto sequence in the workspace', () => {
   it('outside exit keeps edits, and undo restores the previous mode without discarding them', async () => {
     render(<App />);
     const files = ['A', 'B'].map((name) => {
-      const file = new File([raw], `${name}.ghostauto`, { type: 'application/json' });
+      const file = new File([name === 'B' ? chainedRaw : raw], `${name}.ghostauto`, { type: 'application/json' });
       Object.defineProperty(file, 'webkitRelativePath', { value: `team/${name}.ghostauto` });
       return file;
     });

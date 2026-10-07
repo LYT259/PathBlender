@@ -10,6 +10,7 @@ export const ro = {
   'sequence.joinPosition': 'diferență de poziție {d}',
   'sequence.joinHeading': 'diferență de orientare {d}°',
   'sequence.joinVelocity': 'salt de viteză {d} m/s',
+  'sequence.libraryBlocked': 'Începutul nu continuă sfârșitul lui {name} (diferență de poziție {p}, diferență de orientare {h})',
   'sequence.joinFix': 'Corectează îmbinarea în PathPlanner sau Choreo și reimportă ruta.',
   'sequence.overAuto': 'Se termină la {t} s, după perioada autonomă de {auto} s.',
   'sequence.invalid': 'Introdu un timp de start finit și nenegativ.',
