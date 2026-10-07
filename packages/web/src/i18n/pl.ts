@@ -21,6 +21,7 @@ export const pl: Record<MessageKey, string> = {
   'sequence.joinPosition': 'różnica pozycji {d}',
   'sequence.joinHeading': 'różnica kierunku {d}°',
   'sequence.joinVelocity': 'skok prędkości {d} m/s',
+  'sequence.libraryBlocked': 'Początek nie kontynuuje końca {name} (różnica pozycji {p}, różnica kierunku {h})',
   'sequence.joinFix': 'Popraw połączenie w PathPlanner lub Choreo i zaimportuj trasę ponownie.',
   'sequence.overAuto': 'Kończy się w {t} s, po {auto}-sekundowym okresie autonomicznym.',
   'sequence.invalid': 'Wprowadź skończony, nieujemny czas startu.',

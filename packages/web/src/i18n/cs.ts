@@ -21,6 +21,7 @@ export const cs: Record<MessageKey, string> = {
   'sequence.joinPosition': 'rozdíl polohy {d}',
   'sequence.joinHeading': 'rozdíl směru {d}°',
   'sequence.joinVelocity': 'skok rychlosti {d} m/s',
+  'sequence.libraryBlocked': 'Začátek nenavazuje na konec {name} (rozdíl polohy {p}, rozdíl směru {h})',
   'sequence.joinFix': 'Opravte napojení v PathPlanneru nebo Choreu a trasu znovu importujte.',
   'sequence.overAuto': 'Končí v {t} s, po {auto}sekundovém autonomním úseku.',
   'sequence.invalid': 'Zadejte konečný, nezáporný čas startu.',

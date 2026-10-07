@@ -10,6 +10,7 @@ export const ms = {
   'sequence.joinPosition': 'beza kedudukan {d}',
   'sequence.joinHeading': 'beza arah {d}°',
   'sequence.joinVelocity': 'lonjakan laju {d} m/s',
+  'sequence.libraryBlocked': 'Permulaan tidak menyambung hujung {name} (beza kedudukan {p}, beza arah {h})',
   'sequence.joinFix': 'Betulkan sambungan dalam PathPlanner atau Choreo dan import semula laluan.',
   'sequence.overAuto': 'Tamat pada {t} s, melepasi tempoh autonomi {auto} s.',
   'sequence.invalid': 'Masukkan masa mula yang terhingga dan bukan negatif.',

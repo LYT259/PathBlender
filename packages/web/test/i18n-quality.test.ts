@@ -86,6 +86,7 @@ const PREFORMATTED: Record<string, string> = {
   'conflicts.item': '{d}',
   'bounds.item': '{depth}',
   'sequence.joinPosition': '{d}',
+  'sequence.libraryBlocked': '{p}',
 };
 
 describe('pre-formatted measurements are not given a second unit', () => {

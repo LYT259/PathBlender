@@ -10,6 +10,7 @@ export const ta = {
   'sequence.joinPosition': 'நிலை வேறுபாடு {d}',
   'sequence.joinHeading': 'திசை வேறுபாடு {d}°',
   'sequence.joinVelocity': 'வேகத் தாவல் {d} மீ/வி',
+  'sequence.libraryBlocked': 'தொடக்கம் {name} இன் முடிவைத் தொடர்வதில்லை (நிலை வேறுபாடு {p}, திசை வேறுபாடு {h})',
   'sequence.joinFix': 'PathPlanner அல்லது Choreo இல் இணைப்பைச் சரிசெய்து வழித்தடத்தை மீண்டும் இறக்குமதி செய்யவும்.',
   'sequence.overAuto': '{auto} வினாடி தானியங்கு காலத்திற்குப் பிறகு {t} வினாடியில் முடிகிறது.',
   'sequence.invalid': 'முடிவுறு, எதிர்மறை அல்லாத தொடக்க நேரத்தை உள்ளிடவும்.',

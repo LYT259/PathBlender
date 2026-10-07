@@ -10,6 +10,7 @@ export const bg = {
   'sequence.joinPosition': 'разлика в позицията {d}',
   'sequence.joinHeading': 'разлика в посоката {d}°',
   'sequence.joinVelocity': 'скок на скоростта {d} м/с',
+  'sequence.libraryBlocked': 'Началото не продължава края на {name} (разлика в позицията {p}, разлика в посоката {h})',
   'sequence.joinFix': 'Поправете връзката в PathPlanner или Choreo и импортирайте маршрута отново.',
   'sequence.overAuto': 'Завършва на {t} s, след автономния период от {auto} s.',
   'sequence.invalid': 'Въведете крайно, неотрицателно начално време.',

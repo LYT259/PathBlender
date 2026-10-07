@@ -10,6 +10,7 @@ export const sv = {
   'sequence.joinPosition': 'positionsskillnad {d}',
   'sequence.joinHeading': 'riktningsskillnad {d}°',
   'sequence.joinVelocity': 'hastighetshopp {d} m/s',
+  'sequence.libraryBlocked': 'Starten fortsätter inte slutet på {name} (positionsskillnad {p}, riktningsskillnad {h})',
   'sequence.joinFix': 'Åtgärda skarven i PathPlanner eller Choreo och importera rutten igen.',
   'sequence.overAuto': 'Klar vid {t} s, efter den {auto} s långa autonoma perioden.',
   'sequence.invalid': 'Ange en ändlig, icke-negativ starttid.',
