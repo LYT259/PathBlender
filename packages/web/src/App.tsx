@@ -3,6 +3,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useSessionHistory } from './session-history';
 import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
 import { isExampleRobot, refreshExampleRobots } from './example-robot';
+import { EXAMPLE_RELOADING, consumeExampleRetryFlag, loadWelcomeExample, prefetchWelcomeExample } from './example-loader';
 import { compareScenarios, remapColorblind } from '@pathblender/core';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
@@ -1025,7 +1026,7 @@ function AppBody() {
     const request = ++exampleRequest.current;
     setExampleLoading(true);
     try {
-      const { createWelcomeExample } = await import('./welcome-example');
+      const { createWelcomeExample } = await loadWelcomeExample();
       if (request !== exampleRequest.current) return;
       const example = createWelcomeExample();
       // Show it on the field the user actually uses — first visit defaults
@@ -1046,8 +1047,10 @@ function AppBody() {
       setErrors([]);
       setT(0);
       setComposerOpen(false);
-    } catch {
-      if (request === exampleRequest.current) flash(tr('welcome.exampleFailed'), 'error');
+    } catch (err) {
+      // The reload fallback replaces the whole document — no error toast for
+      // it, the page re-opens the example by itself once it lands.
+      if (err !== EXAMPLE_RELOADING && request === exampleRequest.current) flash(tr('welcome.exampleFailed'), 'error');
     } finally {
       if (request === exampleRequest.current) setExampleLoading(false);
     }
@@ -1067,6 +1070,29 @@ function AppBody() {
     importedFileStoreRef.current.clear();
     settingsFilesRef.current.clear();
   };
+  // Landing side of the loader's reload fallback: the reloaded page re-opens
+  // the example by itself, unless an autosaved session is already taking over
+  // the scene (mount effects read pre-update state, so ask the source).
+  useEffect(() => {
+    if (!consumeExampleRetryFlag()) return;
+    if (loadAutosave()?.robots.length) return;
+    void tryExample();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
+  }, []);
+  // Warm the example chunk while the welcome page is on screen, so the click
+  // that asks for it needs no fresh 456 KB round-trip (and survives a link
+  // that drops right afterwards). Failure is logged inside the loader and
+  // never pinned — a later click retries.
+  useEffect(() => {
+    if (hasRobots) return;
+    const warm = () => void prefetchWelcomeExample().catch(() => undefined);
+    if (typeof requestIdleCallback === 'function') {
+      const id = requestIdleCallback(warm);
+      return () => cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(warm, 1500);
+    return () => window.clearTimeout(id);
+  }, [hasRobots]);
   const jumpToIssue = (time: number, robotIds: string[] = []) => {
     dismissCheckTip();
     playback.setPlaying(false);
