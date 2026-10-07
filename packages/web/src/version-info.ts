@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.74';
+export const APP_VERSION = '0.1.8-beta.75';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.75', date: '2026.10.07', note: {
+    en: 'Drag the empty part of the arrangement timeline to scrub the playhead; Delete removes the clicked segment; a follow-along badge names the route being dragged in; the library grays out while the playhead sits on an occupied stretch',
+    zh: '在编排时间轴空白处按住拖动即可拖动播放头；Delete 直接删除点选的段块；拖入路线时指针旁跟随名称徽标；播放头停在已占用区段时路线库整体置灰',
+    'zh-tw': '在編排時間軸空白處按住拖動即可拖動播放頭；Delete 直接刪除點選的段塊；拖入路線時指標旁跟隨名稱徽標；播放頭停在已佔用區段時路線庫整體轉灰',
+    cs: 'Prázdnou částí časové osy sekvence lze taženem posouvat přehrávací hlavičku; Delete odstraní kliknutý segment; při přetahování trasy ji doprovází štítek s názvem; knihovna tras zešedne, když hlavička stojí na obsazeném úseku',
+    nl: 'Sleep het lege deel van de tijdlijn om de afspeelkop te verplaatsen; Delete verwijdert het aangeklikte segment; tijdens het slepen volgt een naamlabel de route; de bibliotheek wordt grijs zolang de afspeelkop op een bezet stuk staat',
+    fr: 'La zone vide de la timeline de séquence se tire pour déplacer la tête de lecture ; Delete supprime le segment cliqué ; un badge nominatif accompagne le parcours tiré ; la bibliothèque grise tant que la tête de lecture est sur une zone occupée',
+    he: 'גרירת החלק הריק של ציר הזמן מזיזה את ראש ההשמעה; Delete מסיר את המקטע שנלחץ; תג שם מלווה את המסלול הנגרר; הספרייה אפורה כשראש ההשמעה על קטע תפוס',
+    ja: 'シーケンス時間軸の空き領域をドラッグして再生位置を動かせます。Delete キーでクリック選択中のセグメントを削除。ドラッグ中のルートには名称バッジが追従。再生位置が使用中の区間にある間はライブラリがグレー表示になります',
+    ko: '시퀀스 타임라인의 빈 영역을 드래그해 재생 위치를 옮길 수 있습니다. Delete 키로 클릭 선택한 세그먼트를 삭제합니다. 드래그 중인 루트에는 이름 배지가 따라다닙니다. 재생 위치가 차지된 구간에 있으면 라이브러리가 회색으로 표시됩니다',
+    pl: 'Pusty obszar osi czasu sekwencji można przeciągać, by przesuwać głowicę odtwarzania; Delete usuwa kliknięty segment; przeciąganej trasie towarzyszy plakietka z nazwą; biblioteka szarzeje, gdy głowica stoi na zajętym odcinku',
+    'pt-br': 'Arraste a parte vazia da linha do tempo da sequência para mover o cursor de reprodução; Delete remove o segmento clicado; um crachá com o nome acompanha a rota sendo arrastada; a biblioteca fica cinza enquanto o cursor está sobre um trecho ocupado',
+    es: 'Arrastra la zona vacía de la línea de tiempo de la secuencia para mover el cabezal de reproducción; Supr elimina el segmento pulsado; una insignia con el nombre acompaña a la ruta arrastrada; la biblioteca se pone gris mientras el cabezal está sobre un tramo ocupado',
+    tr: 'Dizi zaman çizgisinin boş alanını sürükleyerek oynatma kafasını taşıyabilirsiniz; Delete tıklanan segmenti kaldırır; sürüklenen rotayı bir ad rozeti takip eder; oynatma kafası dolu bir bölümdeyken kitaplık griye döner',
+  } },
   { version: '0.1.8-beta.74', date: '2026.10.07', note: {
     en: 'Composer stays open when clicking other controls such as hiding another robot; only a blank-area click exits editing. Hovering or focusing a placed clip now previews that route',
     zh: '编排模式下点击隐藏等其他控件不再退出，只有点空白区域才退出；悬停或聚焦已编排的段块即可预览该路线',

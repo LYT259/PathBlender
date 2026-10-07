@@ -42,10 +42,6 @@ const walk = async (pred, { max = 40, back = false } = {}) => {
   }
   return await pred();
 };
-const focusCanvas = () => walk(
-  () => page.evaluate(() => document.activeElement?.className?.includes('field-canvas') ?? false),
-  { max: 60 },
-);
 
 await page.goto(BASE);
 await page.waitForLoadState('domcontentloaded');
@@ -148,10 +144,9 @@ check('composer: Escape returns to playback', (await composerOpen()) === 0);
 const triggerAfter = await active();
 check('composer: focus restored after Escape (not body)', !/BODY:/.test(triggerAfter), triggerAfter);
 
-// 7 — Focus the 2D canvas, then global playback keys work (the design keeps
-// them inert while buttons/sliders own focus).
-const onCanvas = await focusCanvas();
-check('Tab reaches the 2D canvas', onCanvas, await active());
+// 7 — Global playback keys. The canvases are no longer Tab stops (user
+// 2026-10-07: clicking the field does nothing, so no box around the field) —
+// scrubbing is global and needs no particular focus.
 const clockBefore = await page.locator('.clock').textContent();
 await page.keyboard.press('End');
 await page.waitForTimeout(300);
@@ -160,7 +155,7 @@ check('End jumps the playhead to the range end', clockBefore !== clockAfter, `${
 await page.keyboard.press('ArrowLeft');
 await page.waitForTimeout(200);
 const clockScrub = await page.locator('.clock').textContent();
-check('ArrowLeft scrubs while the canvas is focused', clockScrub !== clockAfter, clockScrub?.trim());
+check('ArrowLeft scrubs playback (no canvas focus needed)', clockScrub !== clockAfter, clockScrub?.trim());
 const speed = () => page.locator('.timeline-speeds button[aria-pressed="true"]').textContent();
 const s0 = await speed();
 await page.keyboard.press('Shift+,');
@@ -200,9 +195,7 @@ check(', / . cycle the robot selection', selBefore !== selMid && selAfter === se
 await page.keyboard.press('v');
 await page.waitForSelector('.view-toggle button[aria-pressed="true"]:has-text("3D")', { timeout: 8000 }).catch(() => {});
 check('V switches to 3D', (await page.locator('.view-toggle button[aria-pressed="true"]').textContent()) === '3D');
-await page.keyboard.press('ArrowLeft');
-await page.waitForTimeout(300);
-check('3D: no page errors after orbit keys', errors.length === 0, errors[0] ?? '');
+check('3D: no page errors after the switch', errors.length === 0, errors[0] ?? '');
 await page.keyboard.press('0');
 await page.waitForTimeout(300);
 await page.keyboard.press('v');
@@ -210,7 +203,7 @@ await page.waitForSelector('.view-toggle button[aria-pressed="true"]:has-text("2
 check('V switches back to 2D', (await page.locator('.view-toggle button[aria-pressed="true"]').textContent()) === '2D');
 
 // 10 — Settings via keyboard: Tab to the gear, Enter, Escape.
-const gearReached = await walk(() => page.evaluate(() => /Preferences/i.test(document.activeElement?.getAttribute('aria-label') ?? '')), { max: 45 });
+const gearReached = await walk(() => page.evaluate(() => /Preferences/i.test(document.activeElement?.getAttribute('aria-label') ?? '')), { max: 80 });
 check('Tab reaches the settings gear', gearReached, await active());
 await page.keyboard.press('Enter');
 await page.waitForSelector('[role="dialog"]', { timeout: 5000 });

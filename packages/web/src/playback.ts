@@ -60,10 +60,14 @@ export function usePlayback(durationS: number, suspended = false) {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target instanceof Element ? e.target : null;
       if (suspended || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey ||
-          el?.closest('input, select, textarea, button, a, summary, [role="button"], [role="slider"], [role="dialog"], dialog, [contenteditable]:not([contenteditable="false"])') ||
+          el?.closest('input, select, textarea, [role="slider"], [role="dialog"], dialog, [contenteditable]:not([contenteditable="false"])') ||
           document.querySelector('dialog[open], [role="dialog"][aria-modal="true"]')) {
         return;
       }
+      // Space activates the focused button/link, so it never doubles as
+      // play/pause; scrub/step keys cannot activate anything and work from
+      // button focus too (2026-10-07: keyboard pass review).
+      if (e.code === 'Space' && el?.closest('button, a, summary, [role="button"]')) return;
       if (e.code === 'Space') {
         if (duration === 0 || e.repeat) return;
         e.preventDefault();
