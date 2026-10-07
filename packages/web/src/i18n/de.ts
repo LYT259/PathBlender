@@ -182,6 +182,8 @@ export const de = {
   'canvas.fit': 'Anpassen',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Heatmap',
+  'canvas.trail': 'Spur',
+  'canvas.overlays': 'Einblendungen',
   
   'import.failed': '{n} Datei(en) konnten nicht importiert werden:',
   'import.dismiss': 'Schließen',

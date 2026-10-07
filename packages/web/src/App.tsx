@@ -358,7 +358,11 @@ function AppBody() {
   // §6.5-①: the tolerance slider rescans pair windows at relative start
   // shifts ±2δ — worst-case execution timing, not just the paper plan.
   const [toleranceS, setToleranceS] = useState(0);
-  const [showHeatmap, setShowHeatmap] = useState(false);
+  // The canvas-bar overlay pair (trail tape + occupancy heatmap) defaults to
+  // both ON, and each side toggles independently — both-on, both-off and
+  // either mix are all valid (user request 2026-10-07).
+  const [showTrail, setShowTrail] = useState(true);
+  const [showHeatmap, setShowHeatmap] = useState(true);
   // A-B compare: first click snapshots the scenario, second reports deltas.
   const abBaselineRef = useRef<SessionTrajectory[] | null>(null);
   // Hidden robots are absent for checks too (user request 2026-10-04):
@@ -1390,6 +1394,15 @@ function AppBody() {
                   </div>
                 </div>
                 <span className="canvas-spacer" />
+                {/* Overlay pair, styled after the 2D/3D switch but with each
+                    side its own toggle (user request 2026-10-07): the trail
+                    tape and the occupancy heatmap can be shown together,
+                    separately, or not at all. It sits LEFT of the 2D/3D
+                    switch on purpose — it is not part of that group. */}
+                <div className="seg overlay-toggle" role="group" aria-label={tr('canvas.overlays')}>
+                  <button type="button" aria-pressed={showTrail} className={showTrail ? 'on' : ''} onClick={() => setShowTrail((v) => !v)}>{tr('canvas.trail')}</button>
+                  <button type="button" aria-pressed={showHeatmap} className={showHeatmap ? 'on' : ''} onClick={() => setShowHeatmap((v) => !v)}>{tr('canvas.heatmap')}</button>
+                </div>
                 {field3dAvailable && (
                   <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>
                     <button aria-pressed={!view3D} className={!view3D ? 'on' : ''} aria-keyshortcuts="v" onClick={() => setViewPref(false)}>2D</button>
@@ -1399,8 +1412,6 @@ function AppBody() {
                 {/* The rest of the bar needs a robot to act on, which the gate
                     above now guarantees. */}
                 <button className="tool-btn canvas-recenter" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} aria-keyshortcuts="0" onClick={resetView}><Icon name="recenter" size={17} /></button>
-                {/* The old trails switch, restored 2026-10-06 to gate the occupancy heatmap (2D and 3D). */}
-                <label className="switch trails-control"><input type="checkbox" checked={showHeatmap} onChange={(e) => setShowHeatmap(e.target.checked)} /><span className="sw-track" aria-hidden="true" /><span className="sw-text">{tr('canvas.heatmap')}</span></label>
               </div>}
               {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={() => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} /> : <>
                 {/* Parked 3D: mounted at the first 3D entry — or earlier,
@@ -1415,10 +1426,10 @@ function AppBody() {
                     loading fallback. */}
                 {(ever3D || prewarm3D) && field3dAvailable && <div className="canvas-3d-keep" hidden={!view3D}>
                   <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}>
-                    <FieldCanvas3D active={view3D} showTrail showHeatmap={showHeatmap} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} />
+                    <FieldCanvas3D active={view3D} showTrail={showTrail} showHeatmap={showHeatmap} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} />
                   </Suspense>
                 </div>}
-                {!view3D && <FieldCanvas ref={canvasRef} showTrail showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} />}
+                {!view3D && <FieldCanvas ref={canvasRef} showTrail={showTrail} showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} />}
               </>}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span>{/* A pure indicator, not a control — no ring, no click (user 2026-10-07). */}

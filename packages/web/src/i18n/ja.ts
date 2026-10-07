@@ -200,6 +200,8 @@ export const ja: Record<MessageKey, string> = {
   'canvas.fit': 'フィット',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'ヒートマップ',
+  'canvas.trail': '軌跡',
+  'canvas.overlays': 'オーバーレイ',
 
   'import.failed': '{n} 件のファイルをインポートできませんでした:',
   'import.dismiss': '閉じる',
