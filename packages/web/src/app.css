@@ -206,7 +206,12 @@ body.desktop.desktop-macos .toolbar { padding-left: 84px; }
 .help-desktop-hint { margin: 14px 0 0; color: var(--fg-dim); font-size: 12px; line-height: 1.5; }
 
 /* Focused canvases (2D + 3D) show the standard focus ring inset — the
-   keyboard view keys need a visible owner. */
+   keyboard view keys need a visible owner. The canvases carry a radius so
+   that inset ring is rounded like every other ring (focus-audit 2026-10-07). */
+.field-canvas,
+.field-canvas-3d canvas {
+  border-radius: 10px;
+}
 .field-canvas:focus-visible,
 .field-canvas-3d canvas:focus-visible {
   outline: 2px solid var(--accent, #0a84ff);
@@ -289,6 +294,9 @@ input[type="number"], input[type="text"] {
 }
 .switch input:checked + .sw-track { background: var(--ok); }
 .switch input:checked + .sw-track::after { left: 12.5px; }
+/* The track carries the switch's ring; the visually-hidden input paints none
+   of its own (focus-audit 2026-10-07: square ghost ring on the input). */
+.switch input:focus-visible { outline: none; }
 .switch input:focus-visible + .sw-track { outline: 2px solid var(--accent); }
 .sw-text { color: var(--fg-dim); font-size: 12px; }
 
@@ -407,6 +415,8 @@ input[type="number"], input[type="text"] {
   display: flex; align-items: center; gap: 8px;
   font-size: 12px; color: var(--fg-dim); margin: 2px 0 8px;
 }
+/* Radius so the focus ring rounds like every other ring (focus-audit). */
+.tolerance-row input[type='range'] { border-radius: 6px; }
 .tolerance-row input[type='range'] { flex: 1; min-width: 60px; accent-color: var(--accent); }
 .tolerance-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tolerance-badge {

@@ -158,7 +158,10 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     setContextMenu({ id: trajectory.id, x: rect.left + 12, y: rect.bottom });
                   }
                 }} className={`robot-library-row${needsSettings && onSelectSettings ? ' needs-settings' : ''}${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
-                <TeamNumberCell robot={robot} onUpdate={onUpdate} editing={editingId === trajectory.id} onStartEdit={() => setEditingId(trajectory.id)} onEndEdit={() => setEditingId(null)}><button className="robot-library-select" aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
+                <TeamNumberCell robot={robot} onUpdate={onUpdate} editing={editingId === trajectory.id} onStartEdit={() => setEditingId(trajectory.id)} onEndEdit={() => setEditingId(null)}>{/* tabindex=-1: the row <li> is the card's single Tab stop; this button stays
+                    the programmatic focus anchor (landing, Escape-restore), and its
+                    focus ring is drawn on the whole card via :has() (2026-10-07). */}
+                <button className="robot-library-select" tabIndex={-1} aria-label={selectionLabel} aria-pressed={selectedId === trajectory.id} onClick={() => onSelect(trajectory.id)}>
                   <span className="band-dot" style={{ background: robot.color }} aria-hidden="true" />
                   <span className="robot-library-content">
                     <span className="robot-library-name" title={robotIdentity(trajectory)}>

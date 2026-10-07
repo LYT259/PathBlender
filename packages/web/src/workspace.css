@@ -97,7 +97,8 @@ body.desktop.desktop-macos .workspace-toolbar { padding-left: 100px; }
 .alliance-toggle button.alliance-red.on { background: #ce3340; color: #fff; }
 .workspace-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 32px; min-height: 0; overflow-y: auto; background: var(--bg-panel); }
 .workspace-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; padding: 5px 14px; background: var(--bar-bg); color: var(--fg-dim); border-top: 1px solid var(--border); font-size: 10px; }
-.workspace-status button { border: 0; padding: 0; background: none; color: var(--fg-dim); font-size: inherit; display: flex; gap: 5px; align-items: center; cursor: pointer; }
+/* The issue count is a pure status indicator — deliberately not a control. */
+.workspace-status .status-check { font-size: inherit; display: flex; gap: 5px; align-items: center; }
 .workspace-status .status-warning { color: var(--oob); }
 .workspace-inspector { display: flex; flex-direction: column; border-left: 1px solid var(--border); background: var(--bg-panel); min-height: 0; }
 .inspector-header { display: flex; align-items: center; padding: 11px 10px; gap: 4px; min-height: 54px; border-bottom: 1px solid var(--border); background: var(--bar-bg); }
