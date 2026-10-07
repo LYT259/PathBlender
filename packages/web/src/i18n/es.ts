@@ -192,10 +192,6 @@ export const es: Record<MessageKey, string> = {
 
   'toast.gifFailed': 'Falló el GIF',
 
-  'site.tryPreview': 'Probar el sitio de vista previa',
-  'site.backStable': 'Volver al sitio estable',
-  'site.previewNote': 'Versión de vista previa: las funciones pueden cambiar en cualquier momento.',
-  'site.version': 'Versión',
   'canvas.view': 'Vista',
   'canvas.fit': 'Ajustar',
   'canvas.clock': 't = {t} s',
@@ -299,9 +295,7 @@ export const es: Record<MessageKey, string> = {
   'prefs.unit.cm': 'Centímetros (cm)',
   'prefs.unit.in': 'Pulgadas (in)',
   'prefs.unit.ftin': 'Pies + pulgadas (3′2″)',
-  'prefs.units.hint': 'Las distancias del panel de comprobaciones usan esta unidad, p. ej.',
   'prefs.colorblind': 'Paleta para daltonismo',
-  'prefs.colorblindHint': 'Cambia los colores de los robots por un conjunto seguro para daltonismo (Okabe-Ito)',
   'prefs.theme': 'Tema',
   'theme.system': 'Seguir el sistema',
   'theme.dark': 'Oscuro',

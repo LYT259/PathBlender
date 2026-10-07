@@ -55,6 +55,9 @@ describe('colorblind palette staging', () => {
     localStorage.setItem('pb.colorblind', '0');
     await renderPanel();
     const box = await screen.findByRole('checkbox', { name: 'Colorblind palette' });
+    // The explanatory hint line under the row is gone (user request
+    // 2026-10-07) — the switch speaks for itself.
+    expect(screen.queryByText(/Okabe-Ito/i)).not.toBeInTheDocument();
     const save = screen.getByRole('button', { name: 'Save' });
     expect(box).not.toBeChecked();
     expect(save).toBeDisabled();

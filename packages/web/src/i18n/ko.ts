@@ -193,10 +193,6 @@ export const ko: Record<MessageKey, string> = {
 
   'toast.gifFailed': 'GIF 실패',
 
-  'site.tryPreview': '프리뷰 사이트 사용해 보기',
-  'site.backStable': '정식 사이트로 돌아가기',
-  'site.previewNote': '프리뷰 빌드 — 기능은 언제든 변경될 수 있습니다.',
-  'site.version': '버전',
   'canvas.view': '보기',
   'canvas.fit': '맞춤',
   'canvas.clock': 't = {t} s',
@@ -300,9 +296,7 @@ export const ko: Record<MessageKey, string> = {
   'prefs.unit.cm': '센티미터 (cm)',
   'prefs.unit.in': '인치 (in)',
   'prefs.unit.ftin': '피트 + 인치 (3′2″)',
-  'prefs.units.hint': '검사 패널의 거리에 이 단위를 사용합니다. 예:',
   'prefs.colorblind': '색각 안전 팔레트',
-  'prefs.colorblindHint': '로봇 색상을 색각 이상에 안전한 세트(Okabe-Ito)로 교체합니다',
   'prefs.theme': '테마',
   'theme.system': '시스템 설정 따르기',
   'theme.dark': '다크',

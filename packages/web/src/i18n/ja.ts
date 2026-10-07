@@ -196,10 +196,6 @@ export const ja: Record<MessageKey, string> = {
 
   'toast.gifFailed': 'GIF に失敗',
 
-  'site.tryPreview': 'プレビューサイトを試す',
-  'site.backStable': '安定版サイトに戻る',
-  'site.previewNote': 'プレビュービルド — 機能は予告なく変更される場合があります。',
-  'site.version': 'バージョン',
   'canvas.view': '表示',
   'canvas.fit': 'フィット',
   'canvas.clock': 't = {t} s',
@@ -303,9 +299,7 @@ export const ja: Record<MessageKey, string> = {
   'prefs.unit.cm': 'センチメートル (cm)',
   'prefs.unit.in': 'インチ (in)',
   'prefs.unit.ftin': 'フィート + インチ (3′2″)',
-  'prefs.units.hint': 'チェックパネルの距離にはこの単位が使われます。例:',
   'prefs.colorblind': '色覚安全パレット',
-  'prefs.colorblindHint': 'ロボットの色を色覚障害に安全なセット（Okabe-Ito）に切り替えます',
   'prefs.theme': 'テーマ',
   'theme.system': 'システムに従う',
   'theme.dark': 'ダーク',

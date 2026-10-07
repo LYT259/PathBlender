@@ -120,8 +120,3 @@ export function formatLength(meters: number, unit: LengthUnit): string {
       return `${sign}${formatLengthNumber(meters, unit)} ${unit}`;
   }
 }
-
-/** Example line for the settings page, in the chosen unit. */
-export function lengthUnitExample(unit: LengthUnit): string {
-  return formatLength(0.927, unit);
-}

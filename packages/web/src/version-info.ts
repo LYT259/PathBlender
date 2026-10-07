@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.65';
+export const APP_VERSION = '0.1.8-beta.66';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.66', date: '2026.10.07', note: {
+    en: 'Settings cleanup: colorblind toggle becomes a switch, larger About icon, website drops its Updates section',
+    zh: '设置清理：色盲配色改为滑动开关，「关于」图标放大，网站版移除「更新」分区',
+    'zh-tw': '設定清理：色盲配色改為滑動開關，「關於」圖示放大，網頁版移除「更新」分區',
+    cs: 'Úklid nastavení: přepínač pro barvoslepou paletu, větší ikona na kartě O aplikaci a web bez oddílu Aktualizace',
+    nl: 'Opschoon van de instellingen: schakelaar voor het kleurenblinde palet, groter pictogram bij “Over” en de website zonder updategedeelte',
+    fr: 'Nettoyage des réglages : interrupteur pour la palette daltonienne, icône « À propos » agrandie, et le site web perd sa section Mises à jour',
+    he: 'סידור ההגדרות: מתג לפלטת עיוורי־צבעים, סמל מוגדל ב«אודות», והאתר ללא מדור עדכונים',
+    ja: '設定の整理：色覚サポート切替をスイッチに変更、「について」のアイコンを拡大、Web版から「アップデート」項目を削除',
+    ko: '설정 정리: 색맹 배색을 슬라이드 스위치로 변경, «정보» 아이콘 확대, 웹 버전에서 «업데이트» 섹션 제거',
+    pl: 'Porządki w ustawieniach: przełącznik palety dla daltonistów, większa ikona w „Informacjach” i witryna bez sekcji aktualizacji',
+    'pt-br': 'Limpeza nas configurações: interruptor para a paleta daltônica, ícone do Sobre maior e o site sem a seção de atualização',
+    es: 'Limpieza de ajustes: interruptor para la paleta daltónica, icono de Acerca de más grande y el sitio web sin sección de actualizaciones',
+    tr: 'Ayarlar temizliği: renk körü paleti artık bir anahtar, Hakkında simgesi büyütüldü ve web sitesinden güncelleme bölümü kaldırıldı',
+  } },
   { version: '0.1.8-beta.65', date: '2026.10.07', note: {
     en: 'Tab icon: full-bleed logo without the white border — now follows light/dark appearance',
     zh: '标签页图标：改为满幅 Logo、去掉外圈白边，并跟随深浅色外观自动切换',
