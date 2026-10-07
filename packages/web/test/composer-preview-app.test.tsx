@@ -44,6 +44,35 @@ describe('composer hover preview in the real app', () => {
     fireEvent.pointerDown(undo); fireEvent.click(undo);
     expect(document.querySelector('.sequence-composer')).toBeNull();
   });
+  it('previews a placed leg when its clip is hovered or focused, and restores on leave', async () => {
+    render(<App />);
+    const files = ['team/A', 'other/B'].map((name) => {
+      const file = new File([raw], `${name.split('/')[1]}.ghostauto`, { type: 'application/json' });
+      Object.defineProperty(file, 'webkitRelativePath', { value: `${name}.ghostauto` }); return file;
+    });
+    fireEvent.drop(window, { dataTransfer: { files } });
+    await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
+    fireEvent.doubleClick(document.querySelector('.timeline-activity')!);
+    await waitFor(() => expect(document.querySelector('.sequence-composer')).not.toBeNull());
+    const before = field();
+    expect(before.robots).toHaveLength(2);
+    const clip = document.querySelector('.sequence-track.is-editing .sequence-clip')!;
+    fireEvent.pointerEnter(clip);
+    expect(field().robots).toHaveLength(1);
+    expect(field().robots[0].sequence).toBeUndefined();
+    fireEvent.pointerLeave(clip);
+    expect(field()).toEqual(before);
+    // Keyboard parity: focus previews the leg exactly like a hover.
+    fireEvent.focus(clip);
+    expect(field().robots).toHaveLength(1);
+    fireEvent.blur(clip);
+    expect(field()).toEqual(before);
+    // A clip on a reference track (another robot) never previews — the
+    // preview resolves through the selected robot's own library.
+    const referenceClip = document.querySelector('.sequence-track:not(.is-editing) .sequence-clip')!;
+    fireEvent.pointerEnter(referenceClip);
+    expect(field()).toEqual(before);
+  });
   it('closes the more menu on an outside pointer or Escape', async () => {
     render(<App />);
     fireEvent.drop(window, { dataTransfer: { files: [new File([raw], 'A.ghostauto')] } });
