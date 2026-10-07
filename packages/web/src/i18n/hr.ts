@@ -11,6 +11,7 @@ export const hr = {
   'sequence.joinHeading': 'razlika smjera {d}°',
   'sequence.joinVelocity': 'skok brzine {d} m/s',
   'sequence.libraryBlocked': 'Početak ne nastavlja kraj {name} (razlika položaja {p}, razlika smjera {h})',
+  'sequence.libraryOccupied': 'Glava za reprodukciju je na zauzetom dijelu — prvo je povucite na prazan prostor',
   'sequence.joinFix': 'Ispravite spoj u PathPlanneru ili Choreu i ponovno uvezite rutu.',
   'sequence.overAuto': 'Završava u {t} s, nakon autonomnog razdoblja od {auto} s.',
   'sequence.invalid': 'Unesite konačno, nenegativno vrijeme početka.',

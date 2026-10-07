@@ -22,6 +22,7 @@ export const ko: Record<MessageKey, string> = {
   'sequence.joinHeading': '방향 차이 {d}°',
   'sequence.joinVelocity': '속도 점프 {d} m/s',
   'sequence.libraryBlocked': '시작점이 {name}의 끝에서 이어지지 않음(위치 차이 {p}, 방향 차이 {h})',
+  'sequence.libraryOccupied': '재생 위치가 이미 루트가 차지한 구간에 있습니다. 먼저 빈 구간으로 드래그하세요',
   'sequence.joinFix': 'PathPlanner 또는 Choreo에서 이음새를 고치고 경로를 다시 가져오세요.',
   'sequence.overAuto': '{auto}초 오토 시간을 넘어 {t}초에 끝납니다.',
   'sequence.invalid': '유한하고 0 이상인 시작 시간을 입력하세요.',

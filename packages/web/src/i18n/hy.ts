@@ -11,6 +11,7 @@ export const hy = {
   'sequence.joinHeading': 'ուղղության շեղում {d}°',
   'sequence.joinVelocity': 'արագության թռիչք {d} մ/վ',
   'sequence.libraryBlocked': 'Սկիզբը չի շարունակում {name}-ի ավարտը (դիրքի շեղում {p}, ուղղության շեղում {h})',
+  'sequence.libraryOccupied': 'Ընթացքի գլուխը զբաղված հատվածի վրա է — նախ քաշեք այն դատարկ տեղ',
   'sequence.joinFix': 'Ուղղեք միացումը PathPlanner-ում կամ Choreo-ում և նորից ներմուծեք երթուղին։',
   'sequence.overAuto': 'Ավարտվում է {t} վրկ-ում՝ {auto} վ տևողությամբ ավտո շրջանից հետո։',
   'sequence.invalid': 'Մուտքագրեք վերջավոր, ոչ բացասական մեկնարկի ժամանակ։',

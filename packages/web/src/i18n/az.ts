@@ -11,6 +11,7 @@ export const az = {
   'sequence.joinHeading': 'istiqamət fərqi {d}°',
   'sequence.joinVelocity': 'sürət sıçrayışı {d} m/s',
   'sequence.libraryBlocked': 'Başlanğıc {name} sonunu davam etdirmir (mövqe fərqi {p}, istiqamət fərqi {h})',
+  'sequence.libraryOccupied': 'Oynatma başı dolu hissənin üstündədir — əvvəl onu boş yerə sürükləyin',
   'sequence.joinFix': 'Birləşməni PathPlanner və ya Choreo-da düzəldin və marşrutu yenidən idxal edin.',
   'sequence.overAuto': '{auto} saniyəlik avto dövründən sonra, {t} saniyədə bitir.',
   'sequence.invalid': 'Sonlu, mənfi olmayan başlanğıc vaxtı daxil edin.',
