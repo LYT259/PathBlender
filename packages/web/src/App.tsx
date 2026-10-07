@@ -321,7 +321,11 @@ function AppBody() {
     ? robotsForAlliance([previewSource], alliance, field).map((robot) => withSeasonGeometry(robot, field.year))
     : undefined, [previewSource, alliance, field]);
   useEffect(() => { setPreviewRouteId(null); }, [composerOpen, selectedId]);
-  const playback = usePlayback(composerOpen ? field.autoPeriodS : playbackEnd(playbackRange === 'paths' ? visibleDuration : duration, field.autoPeriodS, playbackRange), !!previewSource);
+  // One transport end for BOTH modes (user 2026-10-07): editing used to
+  // force the full auto period; the playback-range choice now governs
+  // inside the composer too, with a synced selector in its control bar.
+  const playbackEndS = playbackEnd(playbackRange === 'paths' ? visibleDuration : duration, field.autoPeriodS, playbackRange);
+  const playback = usePlayback(playbackEndS, !!previewSource);
   const { t, setT } = playback;
   useEffect(() => {
     if ((playback.playing || t > 0) && showPlayTip) dismissPlayTip();
@@ -620,12 +624,13 @@ function AppBody() {
   }, []);
   // Double-clicking a team's timeline row enters that team's arrangement
   // editing directly; leaving is a click anywhere outside the surface.
+  // Entering is a view change and must not stop the transport (user
+  // 2026-10-07, same rule as the 16.12 view switches).
   const openSequenceFor = useCallback((id: string) => {
     composerTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    playback.setPlaying(false);
     selectRobot(id);
     setComposerOpen(true);
-  }, [playback.setPlaying, selectRobot, setComposerOpen]);
+  }, [selectRobot, setComposerOpen]);
   const closeComposer = useCallback(() => {
     setComposerOpen(false);
     const trigger = composerTriggerRef.current;
@@ -1472,7 +1477,7 @@ function AppBody() {
         </main>
         {/* Playback spans the full workspace, below both side panels. */}
         {hasRobots && !composerOpen && <footer className="app-footer"><Timeline composeAction={<button ref={composeButtonRef} className="btn small" aria-keyshortcuts="e" onClick={() => { const id = (selectedRobot ?? robots[0])?.trajectory.id; if (id) openSequenceFor(id); }}>{tr('sequence.arrange')}</button>} robots={robots} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
-        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={setPreviewRouteId} joins={sequenceJoins} playback={playback} onJump={jumpToSeam} />}
+        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={setPreviewRouteId} joins={sequenceJoins} playback={playback} playbackEndS={playbackEndS} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} onJump={jumpToSeam} />}
 
       {cfOpen && <CustomFieldPanel
         open
