@@ -49,6 +49,8 @@ export const ko: Record<MessageKey, string> = {
   'prefs.appIcon': "앱 아이콘",
   'welcome.title': '경로를 가져와 시작하세요',
   'welcome.description': '경로를 함께 재생하고 간섭을 확인합니다.',
+  'welcome.tagline': "경기 전에 얼라이언스 각 팀의 자율 경로를 같은 필드에 올려 함께 재생하고, 로봇 간 충돌 위험을 미리 발견하세요.",
+  'welcome.audience': "얼라이언스 전략 팀과 프로그래밍 팀을 위한 도구입니다. 파일은 모두 내 기기에서만 해석되며 업로드되지 않습니다. PathBlender는 분석만 하고, 수정은 Choreo 또는 PathPlanner에서 이루어집니다.",
   'welcome.folderAdvice': '폴더 전체를 가져오면 간섭이 나타났을 때 경로를 전환할 수 있습니다.',
   'welcome.importFile': '경로 파일 가져오기',
   'welcome.importFileHint': 'Choreo 또는 PathPlanner에서 내보낸 경로를 선택합니다',
@@ -335,6 +337,7 @@ export const ko: Record<MessageKey, string> = {
   "menu.view": "보기",
   "menu.playback": "재생",
   "menu.help": "도움말",
+  'menu.userGuide': "빠른 안내",
   "menu.minimize": "최소화",
   "menu.zoom": "줌",
   "menu.cut": "오려두기",
@@ -369,4 +372,5 @@ export const ko: Record<MessageKey, string> = {
   'help.composerMove': "포커스된 구간 이동",
   'help.deleteClip': "포커스된 구간 삭제",
   'help.hint.desktop': "데스크톱 앱 메뉴에는 Cmd/Ctrl+O(가져오기), Cmd/Ctrl+S(세션 저장), Cmd/Ctrl+,(설정)도 있습니다.",
+  'guide.fullOnline': "전체 안내 (온라인)",
 };

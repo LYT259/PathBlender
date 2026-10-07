@@ -44,6 +44,8 @@ export const zhTw: Record<MessageKey, string> = {
   'prefs.appIcon': "應用圖標",
   'welcome.title': '從匯入路徑開始',
   'welcome.description': '一起重播路徑，查看機器人之間是否有干涉。',
+  'welcome.tagline': "比賽前，把聯盟各隊的自動路徑放到同一塊場地上，同時播放，提前發現機器人之間的碰撞風險。",
+  'welcome.audience': "適合聯盟策略組與程式組：檔案都在本機解析、絕不上傳；PathBlender 只做分析，修改回 Choreo / PathPlanner 完成。",
   'welcome.folderAdvice': '建議匯入整個路徑資料夾，發現干涉時可以快速切換路線。',
   'welcome.importFile': '匯入路徑檔案',
   'welcome.importFileHint': 'Choreo 或 PathPlanner 路徑檔案',
@@ -329,6 +331,7 @@ export const zhTw: Record<MessageKey, string> = {
   "menu.view": "顯示",
   "menu.playback": "回放",
   "menu.help": "說明",
+  'menu.userGuide': "快速指南",
   "menu.minimize": "最小化",
   "menu.zoom": "縮放",
   "menu.cut": "剪下",
@@ -363,4 +366,5 @@ export const zhTw: Record<MessageKey, string> = {
   'help.composerMove': "移動聚焦的片段",
   'help.deleteClip': "刪除聚焦的片段",
   'help.hint.desktop': "桌面版選單另提供 Cmd/Ctrl+O（匯入）、Cmd/Ctrl+S（儲存工作階段）與 Cmd/Ctrl+,（設定）。",
+  'guide.fullOnline': "完整指南（線上）",
 };

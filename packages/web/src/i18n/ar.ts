@@ -38,6 +38,8 @@ export const ar = {
   'prefs.appIcon': "أيقونة التطبيق",
   'welcome.title': 'استورد المسارات للبدء',
   'welcome.description': 'شغّل المسارات معًا وتحقق من التداخلات.',
+  'welcome.tagline': "قبل المباراة: ضع البرامج الذاتية لجميع الحلفاء على الملعب نفسه وشغّلها معًا لاكتشاف مخاطر تصادم الروبوتات مبكرًا.",
+  'welcome.audience': "لفرق الاستراتيجية والبرمجة في التحالف. تُحلَّل الملفات على جهازك ولا تُرفع أبدًا — يقوم PathBlender بالتحليل، أما التعديلات فتتم في Choreo أو PathPlanner.",
   'welcome.folderAdvice': 'استورد مجلدًا كاملاً لتتمكن من تبديل المسارات عند ظهور تعارض.',
   'welcome.importFile': 'استيراد ملفات المسار',
   'welcome.importFileHint': 'اختر مسارات تم تصديرها من Choreo أو PathPlanner',
@@ -318,6 +320,7 @@ export const ar = {
   "menu.view": "عرض",
   "menu.playback": "التشغيل",
   "menu.help": "مساعدة",
+  'menu.userGuide': "دليل سريع",
   "menu.minimize": "تصغير",
   "menu.zoom": "تكبير",
   "menu.cut": "قص",
@@ -352,6 +355,7 @@ export const ar = {
   'help.composerMove': "نقل المقطع المركّز",
   'help.deleteClip': "حذف المقطع المركّز",
   'help.hint.desktop': "في تطبيق سطح المكتب توفر القوائم أيضاً Cmd/Ctrl+O (استيراد) وCmd/Ctrl+S (حفظ الجلسة) وCmd/Ctrl+, (الإعدادات).",
+  'guide.fullOnline': "الدليل الكامل عبر الإنترنت",
 } as const;
 
 export type MessageKey = keyof typeof ar;

@@ -44,6 +44,8 @@ export const tr: Record<MessageKey, string> = {
   'prefs.appIcon': "Uygulama simgesi",
   'welcome.title': 'Başlamak için yolları içe aktarın',
   'welcome.description': 'Yolları birlikte oynatın ve birbirine engel olma durumlarını kontrol edin.',
+  'welcome.tagline': "Maçtan önce: müttefik takımların otomasyonlarını aynı sahaya koyun, birlikte oynatın ve robotlar arası çarpışma risklerini önceden yakalayın.",
+  'welcome.audience': "İttifakın strateji ve programlama grupları içindir. Dosyalar makinenizde çözümlenir ve asla yüklenmez — PathBlender analiz eder; düzenlemeler Choreo veya PathPlanner’da yapılır.",
   'welcome.folderAdvice': 'Bir çakışma olduğunda rota değiştirebilmek için klasörün tamamını içe aktarın.',
   'welcome.importFile': 'Yol dosyalarını içe aktar',
   'welcome.importFileHint': 'Choreo veya PathPlanner’dan dışa aktarılan yolları seçin',
@@ -333,6 +335,7 @@ export const tr: Record<MessageKey, string> = {
   "menu.view": "Görünüm",
   "menu.playback": "Oynatma",
   "menu.help": "Yardım",
+  'menu.userGuide': "Hızlı kılavuz",
   "menu.minimize": "Küçült",
   "menu.zoom": "Yakınlaştırma",
   "menu.cut": "Kes",
@@ -367,4 +370,5 @@ export const tr: Record<MessageKey, string> = {
   'help.composerMove': "Odaklı bölümü taşı",
   'help.deleteClip': "Odaklı bölümü sil",
   'help.hint.desktop': "Masaüstü uygulamada menüler ayrıca Cmd/Ctrl+O (içe aktar), Cmd/Ctrl+S (oturumu kaydet) ve Cmd/Ctrl+, (ayarlar) sunar.",
+  'guide.fullOnline': "Tam kılavuz çevrimiçi",
 };

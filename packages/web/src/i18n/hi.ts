@@ -38,6 +38,8 @@ export const hi = {
   'prefs.appIcon': "ऐप आइकन",
   'welcome.title': 'शुरू करने के लिए पथ आयात करें',
   'welcome.description': 'पथों को एक साथ रीप्ले करें और हस्तक्षेप की जाँच करें।',
+  'welcome.tagline': "मैच से पहले: सहयोगी टीमों के ऑटोनॉमस प्रोग्राम एक ही मैदान पर रखें, उन्हें एक साथ चलाएँ और रोबोटों के टकराव के जोखिम पहले ही पकड़ें।",
+  'welcome.audience': "गठबंधन की रणनीति और प्रोग्रामिंग टीमों के लिए। फ़ाइलें आपकी मशीन पर पार्स होती हैं और कभी अपलोड नहीं होतीं — PathBlender केवल विश्लेषण करता है, संपादन Choreo या PathPlanner में होता है।",
   'welcome.folderAdvice': 'पूरा फ़ोल्डर आयात करें ताकि संघर्ष होने पर मार्ग बदल सकें।',
   'welcome.importFile': 'पथ फ़ाइलें आयात करें',
   'welcome.importFileHint': 'Choreo या PathPlanner से निर्यात किए गए पथ चुनें',
@@ -318,6 +320,7 @@ export const hi = {
   "menu.view": "देखें",
   "menu.playback": "प्लेबैक",
   "menu.help": "सहायता",
+  'menu.userGuide': "त्वरित गाइड",
   "menu.minimize": "छोटा करें",
   "menu.zoom": "ज़ूम",
   "menu.cut": "काटें",
@@ -352,6 +355,7 @@ export const hi = {
   'help.composerMove': "फ़ोकस्ड खंड खिसकाएँ",
   'help.deleteClip': "फ़ोकस्ड खंड हटाएँ",
   'help.hint.desktop': "डेस्कटॉप ऐप में मेनू Cmd/Ctrl+O (आयात), Cmd/Ctrl+S (सत्र सहेजें) और Cmd/Ctrl+, (सेटिंग्स) भी देते हैं।",
+  'guide.fullOnline': "पूरी गाइड ऑनलाइन",
 } as const;
 
 export type MessageKey = keyof typeof hi;

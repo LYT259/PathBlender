@@ -38,6 +38,8 @@ export const sq = {
   'prefs.appIcon': "Ikona e aplikacionit",
   'welcome.title': 'Importoni rrugë për të filluar',
   'welcome.description': 'Riprodhoni rrugët së bashku dhe kontrolloni ndërhyrjet.',
+  'welcome.tagline': "Para ndeshjes: vendini programet autonome të të gjithë aleatëve në të njëjtën fushë, luaji bashkë dhe zbuloni herët rrezikun e përplasjeve mes robotëve.",
+  'welcome.audience': "Për grupet e strategjisë dhe programimit të aleancës. Skedarët analizohen në kompjuterin tuaj dhe nuk ngarkohen kurrë — PathBlender analizon, ndryshimet bëhen në Choreo ose PathPlanner.",
   'welcome.folderAdvice': 'Importoni një dosje të plotë që të mund të ndërroni rrugët kur shfaqet një konflikt.',
   'welcome.importFile': 'Importoni skedarë rrugësh',
   'welcome.importFileHint': 'Zgjidhni rrugë të eksportuara nga Choreo ose PathPlanner',
@@ -314,6 +316,7 @@ export const sq = {
   "menu.view": "Shiko",
   "menu.playback": "Riprodhim",
   "menu.help": "Ndihmë",
+  'menu.userGuide': "Udhëzues i shpejtë",
   "menu.minimize": "Zvogëlo",
   "menu.zoom": "Zmadho",
   "menu.cut": "Prit",
@@ -348,6 +351,7 @@ export const sq = {
   'help.composerMove': "Zhvendos segmentin e fokusuar",
   'help.deleteClip': "Fshi segmentin e fokusuar",
   'help.hint.desktop': "Në aplikacionin desktop menutë ofrojnë edhe Cmd/Ctrl+O (importo), Cmd/Ctrl+S (ruaj seancën) dhe Cmd/Ctrl+, (rregullimet).",
+  'guide.fullOnline': "Udhëzuesi i plotë në internet",
 } as const;
 
 export type MessageKey = keyof typeof sq;

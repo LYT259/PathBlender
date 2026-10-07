@@ -38,6 +38,8 @@ export const mr = {
   'prefs.appIcon': "अ‍ॅप चिन्ह",
   'welcome.title': 'प्रारंभ करण्यासाठी मार्ग आयात करा',
   'welcome.description': 'मार्ग एकत्र रीप्ले करा आणि व्यत्यय तपासा.',
+  'welcome.tagline': "सामन्यापूर्वी: सर्व मित्रांचे स्वायत्त प्रोग्रॅम एकाच मैदानावर ठेवा, ते एकत्र चालवा आणि रोबॉट्समधील टक्करीचा धोका लवकर ओळखा.",
+  'welcome.audience': "युतीच्या धोरण आणि प्रोग्रामिंग गटांसाठी. फाइल्स तुमच्या मशीनवर पार्स होतात आणि कधीही अपलोड होत नाहीत — PathBlender फक्त विश्लेषण करते, संपादन Choreo किंवा PathPlanner मध्ये होते.",
   'welcome.folderAdvice': 'संघर्ष दिसल्यावर मार्ग बदलण्यासाठी संपूर्ण फोल्डर आयात करा.',
   'welcome.importFile': 'मार्ग फाइली आयात करा',
   'welcome.importFileHint': 'Choreo किंवा PathPlanner मधून निर्यात केलेले मार्ग निवडा',
@@ -318,6 +320,7 @@ export const mr = {
   "menu.view": "पहा",
   "menu.playback": "प्लेबॅक",
   "menu.help": "मदत",
+  'menu.userGuide': "जलद मार्गदर्शक",
   "menu.minimize": "लहान करा",
   "menu.zoom": "झूम",
   "menu.cut": "कापा",
@@ -352,6 +355,7 @@ export const mr = {
   'help.composerMove': "फोकस केलेला भाग हलवा",
   'help.deleteClip': "फोकस केलेला भाग काढा",
   'help.hint.desktop': "डेस्कटॉप अ‍ॅपमध्ये मेनू Cmd/Ctrl+O (आयात), Cmd/Ctrl+S (सत्र जतन) आणि Cmd/Ctrl+, (सेटिंग्ज) सुद्धा देतात.",
+  'guide.fullOnline': "संपूर्ण मार्गदर्शक ऑनलाइन",
 } as const;
 
 export type MessageKey = keyof typeof mr;
