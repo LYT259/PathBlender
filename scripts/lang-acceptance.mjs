@@ -51,14 +51,16 @@ for (const lang of LANGS) {
     const wantDir = lang === 'ar' || lang === 'he' ? 'rtl' : 'ltr';
     check(`${lang}: direction ${wantDir}`, dir === wantDir, `got ${dir}`);
 
-    // Welcome copy translated: the h1 (welcome.title) must not be English
-    // for non-en languages.
-    const title = (await page.locator('h1').first().textContent())?.trim() ?? '';
+    // welcome.title is the start screen's accessible name (aria-label, not
+    // visible text): en must carry it verbatim, every other language must
+    // carry its own translation — doubles as the AT-name localization check.
+    const ariaTitle = await page.evaluate(() =>
+      document.querySelector('.start-screen')?.getAttribute('aria-label') ?? '');
+    const enTitle = 'Import paths to get started';
     if (lang !== 'en') {
-      const enTitle = 'Import paths to get started';
-      check(`${lang}: welcome title translated`, title !== enTitle, title.slice(0, 40));
+      check(`${lang}: start-screen AT name translated`, ariaTitle !== enTitle && ariaTitle !== '', ariaTitle.slice(0, 40));
     } else {
-      check('en: welcome title', title === 'Import paths to get started', title.slice(0, 40));
+      check('en: start-screen AT name', ariaTitle === enTitle, ariaTitle.slice(0, 40));
     }
 
     // No horizontal overflow on the welcome screen.

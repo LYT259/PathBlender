@@ -19,6 +19,13 @@
  *  - mr: CLDR defaults to Devanagari digits; the dictionary's own
  *    convention is Latin digits with a point.
  *
+ * Beyond the tag, hy and rw are separator-pinned: their CLDR decimal symbol
+ * drifted between engine builds (Node's ICU answered comma, this machine's
+ * Chrome answered point during the 2026-10-07 acceptance sweep), and both
+ * dictionaries hard-code commas, so the '.'-to-',' normalize below keeps
+ * runtime, dictionaries and both gate tables in agreement everywhere.
+ * With useGrouping:false a '.' can only ever be the decimal separator.
+ *
  * Not routed through here on purpose: values that feed `type="number"`
  * inputs (`Number()` must parse them back) and the English-only solution
  * package artifacts (README, replay video overlay) — those are data, not
@@ -94,5 +101,6 @@ function formatter(lang: Lang, min: number, max: number): Intl.NumberFormat {
 export function formatDecimal(value: number, lang: Lang, fractionDigits?: number): string {
   const min = fractionDigits ?? 0;
   const max = fractionDigits ?? 2;
-  return formatter(lang, min, max).format(value);
+  const out = formatter(lang, min, max).format(value);
+  return lang === 'hy' || lang === 'rw' ? out.replace('.', ',') : out;
 }
