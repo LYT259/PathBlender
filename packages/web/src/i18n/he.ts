@@ -198,10 +198,6 @@ export const he: Record<MessageKey, string> = {
 
   'toast.gifFailed': 'ה־GIF נכשל',
 
-  'site.tryPreview': 'נסו את אתר התצוגה המקדימה',
-  'site.backStable': 'חזרה לאתר היציב',
-  'site.previewNote': 'גרסת תצוגה מקדימה — תכונות עשויות להשתנות בכל רגע.',
-  'site.version': 'גרסה',
   'canvas.view': 'תצוגה',
   'canvas.fit': 'התאמה',
   'canvas.clock': 't = {t} ש׳',
@@ -305,9 +301,7 @@ export const he: Record<MessageKey, string> = {
   'prefs.unit.cm': 'סנטימטרים (ס״מ)',
   'prefs.unit.in': 'אינצ׳ים (in)',
   'prefs.unit.ftin': 'רגל + אינצ׳ים (3′2″)',
-  'prefs.units.hint': 'המרחקים בחלונית הבדיקות משתמשים ביחידה הזו, למשל.',
   'prefs.colorblind': 'פלטת עיוורון צבעים',
-  'prefs.colorblindHint': 'החלפת צבעי רובוטים לערכה בטוחה לעיוורי צבעים (Okabe-Ito)',
   'prefs.theme': 'ערכת נושא',
   'theme.system': 'עקוב אחר המערכת',
   'theme.dark': 'כהה',

@@ -191,10 +191,6 @@ export const tr: Record<MessageKey, string> = {
 
   'toast.gifFailed': 'GIF başarısız',
 
-  'site.tryPreview': 'Önizleme sitesini deneyin',
-  'site.backStable': 'Kararlı siteye dön',
-  'site.previewNote': 'Önizleme derlemesi — özellikler her an değişebilir.',
-  'site.version': 'Sürüm',
   'canvas.view': 'Görünüm',
   'canvas.fit': 'Sığdır',
   'canvas.clock': 't = {t} s',
@@ -298,9 +294,7 @@ export const tr: Record<MessageKey, string> = {
   'prefs.unit.cm': 'Santimetre (cm)',
   'prefs.unit.in': 'İnç (in)',
   'prefs.unit.ftin': 'Fit + inç (3′2″)',
-  'prefs.units.hint': 'Kontrol panelindeki mesafeler bu birimi kullanır, örn.',
   'prefs.colorblind': 'Renk körlüğü paleti',
-  'prefs.colorblindHint': 'Robot renklerini renk körlüğüne uygun bir sete geçirin (Okabe-Ito)',
   'prefs.theme': 'Tema',
   'theme.system': 'Sistemi izleyin',
   'theme.dark': 'Koyu',

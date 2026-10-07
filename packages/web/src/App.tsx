@@ -61,7 +61,7 @@ import { runUpdateCheck } from './update-check';
 import { listenPrefs, readColorblind } from './pref-sync';
 import { effectiveReverseScroll, useMouseControls, useReverseScrollZoom } from './mouse-controls';
 import { setReverseScrollZoom } from './zoom';
-import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from './viewer';
+import { VIEWER_ONLY } from './viewer';
 
 const SESSION_EXT = '.pb';
 // Sessions saved before the 2026-10-03 rename carry the legacy double
@@ -1353,12 +1353,10 @@ function AppBody() {
           <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
             {hasRobots && <button onClick={abToggle}>{tr('actions.abCompare')}</button>}
             <button onClick={() => setShowHelp(true)} aria-keyshortcuts="?">{tr('help.title')}</button>
-            {VIEWER_ONLY && <a href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{tr(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')}</a>}
           </div>
         </details>}
         <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={openPreferences}><Icon name="settings" /></button>
       </header>
-      {VIEWER_ONLY && SITE_PREVIEW && <div className="site-preview-banner" role="contentinfo"><span>{tr('site.previewNote')}</span><a href={SITE_URLS.stable}>{tr('site.backStable')}</a></div>}
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
         <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>

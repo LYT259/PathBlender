@@ -178,10 +178,6 @@ export const ta = {
   
   'toast.gifFailed': 'GIF தோல்வி',
   
-  'site.tryPreview': 'முன்னோட்ட தளத்தை முயற்சிக்கவும்',
-  'site.backStable': 'நிலையான தளத்திற்குத் திரும்பு',
-  'site.previewNote': 'முன்னோட்ட உருவாக்கம் — அம்சங்கள் எப்போது வேண்டுமானாலும் மாறலாம்.',
-  'site.version': 'பதிப்பு',
   'canvas.view': 'காட்சி',
   'canvas.fit': 'பொருத்து',
   'canvas.clock': 't = {t} வி',
@@ -283,9 +279,7 @@ export const ta = {
   'prefs.unit.cm': 'சென்டிமீட்டர் (செ.மீ)',
   'prefs.unit.in': 'அங்குலம் (in)',
   'prefs.unit.ftin': 'அடி + அங்குலம் (3′2″)',
-  'prefs.units.hint': 'சரிபார்ப்பு பேனலில் உள்ள தூரங்கள் இந்த அலகைப் பயன்படுத்துகின்றன, எ.கா.',
   'prefs.colorblind': 'நிறக்குருடு தட்டு',
-  'prefs.colorblindHint': 'ரோபோ நிறங்களை நிறக்குருடுக்கு பாதுகாப்பான தொகுப்பாக (Okabe-Ito) மாற்று',
   'prefs.theme': 'தீம்',
   'theme.system': 'கணினியைப் பின்பற்று',
   'theme.dark': 'இருள்',

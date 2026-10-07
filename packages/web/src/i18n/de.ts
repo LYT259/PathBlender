@@ -178,10 +178,6 @@ export const de = {
   
   'toast.gifFailed': 'GIF fehlgeschlagen',
   
-  'site.tryPreview': 'Vorschau-Website ausprobieren',
-  'site.backStable': 'Zur stabilen Website zurückkehren',
-  'site.previewNote': 'Vorschau-Build — Funktionen können sich jederzeit ändern.',
-  'site.version': 'Version',
   'canvas.view': 'Ansicht',
   'canvas.fit': 'Anpassen',
   'canvas.clock': 't = {t} s',
@@ -283,9 +279,7 @@ export const de = {
   'prefs.unit.cm': 'Zentimeter (cm)',
   'prefs.unit.in': 'Zoll (in)',
   'prefs.unit.ftin': 'Fuß + Zoll (3′2″)',
-  'prefs.units.hint': 'Abstände im Prüfungsbereich verwenden diese Einheit, z.B.',
   'prefs.colorblind': 'Farbenblind-Palette',
-  'prefs.colorblindHint': 'Robotfarben gegen ein farbenblind-sicheres Set tauschen (Okabe-Ito)',
   'prefs.theme': 'Design',
   'theme.system': 'System folgen',
   'theme.dark': 'Dunkel',

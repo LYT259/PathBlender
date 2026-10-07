@@ -178,10 +178,6 @@ export const ar = {
   
   'toast.gifFailed': 'فشل GIF',
   
-  'site.tryPreview': 'جرّب موقع المعاينة',
-  'site.backStable': 'العودة إلى الموقع المستقر',
-  'site.previewNote': 'إصدار معاينة — قد تتغير الميزات في أي وقت.',
-  'site.version': 'الإصدار',
   'canvas.view': 'عرض',
   'canvas.fit': 'ملائمة',
   'canvas.clock': 't = {t} ث',
@@ -283,9 +279,7 @@ export const ar = {
   'prefs.unit.cm': 'سنتيمتر (سم)',
   'prefs.unit.in': 'بوصة (in)',
   'prefs.unit.ftin': 'قدم + بوصة (3′2″)',
-  'prefs.units.hint': 'المسافات في لوحة الفحوصات تستخدم هذه الوحدة، مثلًا',
   'prefs.colorblind': 'لوحة لعمى الألوان',
-  'prefs.colorblindHint': 'استبدل ألوان الروبوتات بطقم آمن لعمى الألوان (Okabe-Ito)',
   'prefs.theme': 'المظهر',
   'theme.system': 'متابعة النظام',
   'theme.dark': 'داكن',

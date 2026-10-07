@@ -188,10 +188,6 @@ export const zhTw: Record<MessageKey, string> = {
 
   'toast.gifFailed': 'GIF 失敗',
 
-  'site.tryPreview': '試用預覽版網站',
-  'site.backStable': '返回穩定版',
-  'site.previewNote': '預覽版——功能可能隨時變化。',
-  'site.version': '版本',
   'canvas.view': '視圖',
   'canvas.fit': "顯示全場",
   'canvas.clock': 't = {t} 秒',
@@ -294,9 +290,7 @@ export const zhTw: Record<MessageKey, string> = {
   'prefs.unit.cm': '公分 (cm)',
   'prefs.unit.in': '英吋 (in)',
   'prefs.unit.ftin': '英呎+英吋 (3′2″)',
-  'prefs.units.hint': '檢查面板中的距離使用此單位，例：',
   'prefs.colorblind': '色盲安全配色',
-  'prefs.colorblindHint': '把機器人顏色換成色覺障礙友善配色（Okabe-Ito）',
   'prefs.theme': '主題',
   'theme.system': '跟隨系統',
   'theme.dark': '深色',
