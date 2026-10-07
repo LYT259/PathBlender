@@ -43,7 +43,8 @@ export const en = {
   'welcome.exampleNotice': 'Real 2026 routes from FRC teams 8814 and 11019.',
   'welcome.exitExample': 'End example',
   'onboarding.play': 'Press Play to see the paths, or scrub the timeline.',
-  'onboarding.check': 'Select an issue below to jump to that moment.',
+  'onboarding.check': "Select an issue below to jump to that moment — then compare alternatives: swap a route or shift a start time",
+  'onboarding.import': "Imported — check the basics first: season & field, bumper size, red/blue alliance",
   'onboarding.dismiss': 'Dismiss tip',
   "workspace.loading3d": "Loading 3D view…",
   "workspace.paths": "Paths",
@@ -305,6 +306,7 @@ export const en = {
   'checks.estimated': 'Some dimensions are estimates. Verify robot data before relying on these results.',
   'robots.bumperDefault': 'default',
   'robots.mirror': "Mirror left/right",
+  'robots.mirrorHint': "Flips this robot and its route library only — original files stay unchanged",
 
   'sequence.arrange': 'Arrange timeline',
   'sequence.back': 'Back to playback',
