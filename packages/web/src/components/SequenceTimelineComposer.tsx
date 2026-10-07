@@ -6,6 +6,7 @@ import { boundedClipStart, canPlaceClip, clipGaps, clipsFor, placeClip, segments
 import { robotIdentity } from '../robot-identity';
 import { routeLabel } from '../route-library';
 import { formatLength, useLengthUnit } from '../length-units';
+import type { PlaybackRange } from '../playback-range';
 import { useI18n } from '../i18n';
 import { Icon } from './Icon';
 import { SequenceComposerToolbar } from './SequenceComposerToolbar';
@@ -24,6 +25,11 @@ interface Props {
   onPreviewRoute?: (routeId: string | null) => void;
   joins?: SequenceJoinIssue[];
   playback?: Playback;
+  /** Transport end honoring the playback-range choice — shared with the
+   * main timeline so playing inside the composer matches it (2026-10-07). */
+  playbackEndS?: number;
+  playbackRange?: PlaybackRange;
+  onPlaybackRangeChange?: (value: PlaybackRange) => void;
   onJump: (time: number) => void;
 }
 interface Drag {
@@ -42,7 +48,7 @@ const clampToAxis = (t: number, axisS: number) => Math.min(axisS, Math.max(0, t)
 
 /** Pointer capture works across WebKit and mouse/touch/pen, without relying
  * on custom HTML drag payloads. A gesture is one undoable operation. */
-export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, open, onClose, onChange, onPreviewRoute, joins = [], playback, onJump }: Props) {
+export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, open, onClose, onChange, onPreviewRoute, joins = [], playback, playbackEndS, playbackRange = 'full', onPlaybackRangeChange, onJump }: Props) {
   const { t } = useI18n();
   const [unit] = useLengthUnit();
   const [selected, setSelected] = useState<{ robotId: string; clipId: string } | null>(null);
@@ -286,14 +292,20 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
             h: `${continuity.headingGapDeg.toFixed(1)}°`,
           }) : null;
         return <button type="button" key={route.id} className="sequence-route-source" draggable={false}
-        disabled={blocked}
+        // aria-disabled, not the disabled attribute (user 2026-10-07): a
+        // disabled button receives no pointer/focus events, so a grayed
+        // route could never be hovered for its preview. The button stays
+        // interactive for hover/focus/keyboard reading; the ADD gestures
+        // below refuse blocked routes themselves.
+        aria-disabled={blocked ? 'true' : undefined}
         title={reason ? `${route.relPath} · ${route.trajectory.durationS.toFixed(2)}s · ${reason}` : `${route.relPath} · ${route.trajectory.durationS.toFixed(2)}s`}
         aria-label={`${routeLabel(route, active.routes)}: ${route.trajectory.durationS.toFixed(2)} s${reason ? ` · ${reason}` : ''}`}
-        onPointerEnter={() => { if (blocked || dragRef.current) return; onPreviewRoute?.(route.id); }}
+        // Every route previews on hover or focus — grayed ones too (user
+        // 2026-10-07): seeing where a blocked route goes is part of
+        // planning. Only a running drag suspends the preview swap.
+        onPointerEnter={() => { if (dragRef.current) return; onPreviewRoute?.(route.id); }}
         onPointerLeave={() => { if (dragRef.current) return; onPreviewRoute?.(null); }}
-        // Keyboard parity for the hover preview: focus shows the route on
-        // the field exactly like a pointer enter, blur clears it.
-        onFocus={() => { if (blocked || dragRef.current) return; onPreviewRoute?.(route.id); }}
+        onFocus={() => { if (dragRef.current) return; onPreviewRoute?.(route.id); }}
         onBlur={() => { if (dragRef.current) return; onPreviewRoute?.(null); }}
         onPointerDown={(event) => { if (blocked) return; begin(event, 'add', { id: crypto.randomUUID(), routeId: route.id, startS: 0, durationS: route.trajectory.durationS }); }}
         onClick={(event) => { if (blocked || (event.detail !== 0 && suppressClick.current)) return; append(route.id, route.trajectory.durationS); }}>
@@ -416,7 +428,14 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     {playback && <div className="timeline-workspace sequence-playback-controls">
       <input type="range" min="0" max={autoPeriodS} step="0.01" value={Math.min(autoPeriodS, playback.t)} aria-label={t('timeline.position')}
         onChange={(event) => { playback.setPlaying(false); playback.setT(Number(event.target.value)); }} />
-      <PlaybackControls playback={playback} end={autoPeriodS} />
+      <div className="sequence-playback-row">
+        {onPlaybackRangeChange && <select className="timeline-range" aria-label={t('timeline.range')} value={playbackRange}
+          onChange={(event) => onPlaybackRangeChange(event.target.value as PlaybackRange)}>
+          <option value="full">{t('timeline.rangeFull')}</option>
+          <option value="paths">{t('timeline.rangePaths')}</option>
+        </select>}
+        <PlaybackControls playback={playback} end={playbackEndS ?? autoPeriodS} />
+      </div>
     </div>}
   </section>;
 }

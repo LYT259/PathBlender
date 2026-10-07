@@ -215,8 +215,8 @@ describe('playhead-gated route library', () => {
     render(<LiveHarness t={5} />);
     expect(labels()).toEqual(['B', 'A', 'C']);
     const [b, a] = sources();
-    expect(b).toBeEnabled();
-    expect(a).toBeDisabled();
+    expect(b).not.toHaveAttribute('aria-disabled');
+    expect(a).toHaveAttribute('aria-disabled', 'true');
     expect(a!.getAttribute('aria-label')).toContain('position gap 9.96 m');
     expect(a!.getAttribute('aria-label')).toContain('heading gap 0.0°');
   });
@@ -232,7 +232,7 @@ describe('playhead-gated route library', () => {
     const robot = applySequenceSegments(fixture(), [{ id: 'late', routeId: 'a', waitBeforeS: 2 }]);
     render(<LiveHarness robot={robot} t={1} />);
     expect(labels()).toEqual(['A', 'B', 'C']);
-    expect(sources().every((b) => !b.disabled)).toBe(true);
+    expect(sources().every((b) => b.getAttribute('aria-disabled') !== 'true')).toBe(true);
   });
 });
 
@@ -293,7 +293,7 @@ describe('lane scrub, chosen-delete, drag badge and occupancy gating', () => {
     // t = 2 is inside A (0–4 s): nowhere to drop at the playhead.
     const commit = vi.fn(); const { unmount } = render(<LiveHarness onCommit={commit} t={2} />);
     expect(labels()).toEqual(['A', 'B', 'C']); // all blocked → stable original order
-    expect(sources().every((b) => b.disabled)).toBe(true);
+    expect(sources().every((b) => b.getAttribute('aria-disabled') === 'true')).toBe(true);
     expect(sources()[0]!.getAttribute('aria-label')).toContain('occupied stretch');
     fireEvent.click(sources()[1]!);
     expect(commit).not.toHaveBeenCalled();
@@ -342,5 +342,41 @@ describe('scrub hardening: window-driven drag, reference lane and ruler surfaces
     fireEvent.pointerDown(ruler, { button: 0, clientX: 900, clientY: 8 });
     expect(setT).toHaveBeenLastCalledWith(18);
     fireEvent.pointerUp(ruler, { clientX: 900, clientY: 8 });
+  });
+});
+
+describe('grayed routes still preview; entering edit never pauses; range follows inside', () => {
+  const sources = () => [...document.querySelectorAll('.sequence-route-source')] as HTMLButtonElement[];
+
+  it('hovers and focuses a BLOCKED route to preview it, while adds stay refused', () => {
+    const preview = vi.fn();
+    render(<I18nProvider><SequenceTimelineComposer robots={[fixture()]} selectedId={undefined} onSelect={vi.fn()}
+      autoPeriodS={20} open onClose={vi.fn()} onChange={vi.fn()} onPreviewRoute={preview} onJump={vi.fn()}
+      playback={{ t: 2, setT: vi.fn(), playing: false, setPlaying: vi.fn(), speed: 1, setSpeed: vi.fn() }} /></I18nProvider>);
+    // t=2 sits inside A (0–4 s): every route is occupancy-grayed.
+    const grayed = sources()[0]!;
+    expect(grayed.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.pointerEnter(grayed);
+    expect(preview).toHaveBeenLastCalledWith(expect.any(String));
+    fireEvent.pointerLeave(grayed);
+    expect(preview).toHaveBeenLastCalledWith(null);
+    fireEvent.focus(grayed);
+    expect(preview).toHaveBeenLastCalledWith(expect.any(String));
+    fireEvent.blur(grayed);
+    expect(preview).toHaveBeenLastCalledWith(null);
+    // Grayed stays un-addable by keyboard and pointer.
+    fireEvent.click(grayed);
+    expect(document.querySelectorAll('.sequence-clip')).toHaveLength(1);
+  });
+
+  it('shows the playback-range selector, wired to the shared state', () => {
+    const change = vi.fn();
+    render(<I18nProvider><SequenceTimelineComposer robots={[fixture()]} selectedId={undefined} onSelect={vi.fn()}
+      autoPeriodS={20} open onClose={vi.fn()} onChange={vi.fn()} playbackRange="paths" onPlaybackRangeChange={change} onJump={vi.fn()}
+      playback={{ t: 0, setT: vi.fn(), playing: false, setPlaying: vi.fn(), speed: 1, setSpeed: vi.fn() }} playbackEndS={7} /></I18nProvider>);
+    const select = screen.getByRole('combobox', { name: 'Playback range' });
+    expect(select).toHaveValue('paths');
+    fireEvent.change(select, { target: { value: 'full' } });
+    expect(change).toHaveBeenCalledWith('full');
   });
 });
