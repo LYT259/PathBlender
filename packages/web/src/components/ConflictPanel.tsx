@@ -26,6 +26,7 @@ export function ConflictPanel({ robots, conflicts, bounds, onJump, guide, tolera
   const issues = conflicts.length + bounds.length;
   const hidden = robots.filter((r) => !r.visible).length;
   const estimated = robots.some((r) => r.trajectory.geometrySource === 'default');
+  const toleranceLabel = t('checks.tolerance', { delta: toleranceS.toFixed(1) });
   const title = !robots.length ? 'checks.emptyTitle' : issues ? 'checks.issues' : robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle';
   return <section className="conflict-panel" aria-label={t('conflicts.title')}>
     <div className={`check-summary ${issues ? 'has-issues' : robots.length > 1 ? 'is-clear' : ''}`}>
@@ -39,7 +40,7 @@ export function ConflictPanel({ robots, conflicts, bounds, onJump, guide, tolera
     {!!robots.length && <h3 className="check-section-heading">{t('conflicts.title')}<span className={`conflict-count ${conflicts.length ? 'bad' : ''}`}>{conflicts.length}</span></h3>}
     {robots.length >= 2 && (
       <label className="tolerance-row">
-        <span className="tolerance-label">{t('checks.tolerance')}</span>
+        <span className="tolerance-label">{toleranceLabel}</span>
         <input
           type="range"
           min={0}
@@ -47,7 +48,7 @@ export function ConflictPanel({ robots, conflicts, bounds, onJump, guide, tolera
           step={0.1}
           value={toleranceS}
           onChange={(e) => onToleranceChange?.(Number(e.target.value))}
-          aria-label={t('checks.tolerance')}
+          aria-label={toleranceLabel}
         />
         <span className="tolerance-value">±{toleranceS.toFixed(1)} s</span>
       </label>

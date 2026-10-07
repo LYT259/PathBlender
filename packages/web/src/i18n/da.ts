@@ -1,5 +1,6 @@
 /** Danish strings. */
 export const da = {
+  "canvas.webglUnavailable": "WebGL er ikke tilgængeligt",
   'sequence.start': 'Start',
   'sequence.end': 'Slut',
   'sequence.seconds': 's',

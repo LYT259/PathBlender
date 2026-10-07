@@ -1,5 +1,6 @@
 /** Hindi strings. */
 export const hi = {
+  "canvas.webglUnavailable": "WebGL उपलब्ध नहीं है",
   'sequence.start': 'शुरुआत',
   'sequence.end': 'समाप्ति',
   'sequence.seconds': 'से',

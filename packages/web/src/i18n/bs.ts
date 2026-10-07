@@ -1,5 +1,6 @@
 /** Bosnian strings. */
 export const bs = {
+  "canvas.webglUnavailable": "WebGL nije dostupan",
   'sequence.start': 'Početak',
   'sequence.end': 'Kraj',
   'sequence.seconds': 's',

@@ -1,5 +1,6 @@
 /** Croatian strings. */
 export const hr = {
+  "canvas.webglUnavailable": "WebGL nije dostupan",
   'sequence.start': 'Početak',
   'sequence.end': 'Kraj',
   'sequence.seconds': 's',

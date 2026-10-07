@@ -1,5 +1,6 @@
 /** Norwegian Bokmål strings. */
 export const nb = {
+  "canvas.webglUnavailable": "WebGL er ikke tilgjengelig",
   'sequence.start': 'Start',
   'sequence.end': 'Slutt',
   'sequence.seconds': 's',

@@ -1,5 +1,6 @@
 /** Hungarian strings. */
 export const hu = {
+  "canvas.webglUnavailable": "A WebGL nem érhető el",
   'sequence.start': 'Kezdés',
   'sequence.end': 'Vég',
   'sequence.seconds': 'mp',

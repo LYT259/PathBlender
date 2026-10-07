@@ -2,6 +2,7 @@ import type { MessageKey } from './en';
 
 /** 简体中文。 */
 export const zh: Record<MessageKey, string> = {
+  "canvas.webglUnavailable": "WebGL 不可用",
   'sequence.start': '开始',
   'sequence.end': '结束',
   'sequence.seconds': '秒',

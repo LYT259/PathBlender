@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.76';
+export const APP_VERSION = '0.1.8-beta.77';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.77', date: '2026.10.07', note: { "en": "Improve translation terminology and localized accessibility messages", "zh": "改进翻译术语与本地化无障碍提示", "zh-tw": "改善翻譯術語與在地化無障礙提示", "cs": "Vylepšení překladové terminologie a lokalizovaných zpráv pro přístupnost", "nl": "Verbeterde vertaalterminologie en gelokaliseerde toegankelijkheidsmeldingen", "fr": "Amélioration de la terminologie et des messages d’accessibilité traduits", "he": "שיפור מונחי התרגום והודעות הנגישות המתורגמות", "ja": "翻訳用語とアクセシビリティ通知の翻訳を改善", "ko": "번역 용어와 현지화된 접근성 메시지 개선", "pl": "Poprawa terminologii tłumaczeń i zlokalizowanych komunikatów dostępności", "pt-br": "Melhoria da terminologia e das mensagens de acessibilidade traduzidas", "es": "Mejora de la terminología y de los mensajes de accesibilidad traducidos", "tr": "Çeviri terimleri ve yerelleştirilmiş erişilebilirlik mesajları iyileştirildi" } },
   { version: '0.1.8-beta.76', date: '2026.10.07', note: {
     en: 'Whole-row timeline focus rings, no box around the field, conflict dots removed',
     zh: '时间轴焦点环整条显示；移除场地外框与冲突标记点',
