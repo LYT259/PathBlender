@@ -12,6 +12,13 @@ export default defineConfig({
   // Relative base keeps the build deployable to a GitHub Pages subpath later.
   base: './',
   define: { __PB_GIT_HASH__: JSON.stringify(gitHash) },
+  build: {
+    // The night tab icon is swapped in at runtime through a link href, so it must
+    // stay a real URL — Vite would otherwise inline it as a data URI (it fits
+    // under the 4 kB limit) and browsers are inconsistent about data-URI icons.
+    assetsInlineLimit: (file) =>
+      /favicon-(day|night)\.png$/.test(file) ? false : undefined,
+  },
   plugins: [react()],
   resolve: {
     alias: {
