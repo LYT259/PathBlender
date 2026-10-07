@@ -4,6 +4,8 @@
 
 **Multi-source autonomous path fusion viewer for FRC alliance strategy.**
 
+> **Before a match: put every alliance partner’s auto on one field, replay them together, and catch robot-to-robot conflicts while there is still time to change the plan.**
+
 Blend autonomous path files exported from different toolchains onto one
 field: unified-timeline playback and collision checking, built for
 **alliance strategy groups** — not just the programming team. It is a

@@ -37,7 +37,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.8-beta.87', date: '2026.10.07', note: { en: 'One release pipeline now ships macOS Universal, Windows and Linux installers; README and release notes add five more languages', zh: '一条发布流水线产出 macOS 通用包、Windows 与 Linux 安装包；README 与发布说明新增五种语言', 'zh-tw': '一條發布流水線產出 macOS 通用包、Windows 與 Linux 安裝包；README 與發布說明新增五種語言', cs: 'Jeden release pipeline nyní vydává instalační balíčky macOS Universal, Windows a Linux; README a poznámky k vydání v pěti dalších jazycích', nl: 'Eén release-pipeline levert nu macOS Universal-, Windows- en Linux-installatieprogramma’s; README en release-opmerkingen in vijf extra talen', fr: 'Un seul pipeline de publication fournit désormais les installateurs macOS Universal, Windows et Linux ; README et notes de version en cinq langues de plus', he: 'צינור הפצה אחד מספק מעכשיו מתקינים ל-macOS Universal, ל-Windows ול-Linux; קובץ ה-README והערות ההפצה בחמש שפות נוספות', ja: '一本のリリースパイプラインで macOS Universal・Windows・Linux のインストーラーを提供；README とリリースノートに 5 言語を追加', ko: '하나의 릴리스 파이프라인으로 macOS Universal·Windows·Linux 설치 제공; README와 릴리스 노트에 다섯 언어 추가', pl: 'Jeden pipeline wydawniczy dostarcza teraz instalatory macOS Universal, Windows i Linux; README i notki wydania w pięciu kolejnych językach', 'pt-br': 'Um único pipeline de release agora entrega instaladores para macOS Universal, Windows e Linux; README e notas de versão em mais cinco idiomas', es: 'Un solo pipeline de publicación entrega instaladores de macOS Universal, Windows y Linux; README y notas de versión en cinco idiomas más', tr: 'Tek bir sürüm hattı artık macOS Universal, Windows ve Linux kurulumlarını veriyor; README ve sürüm notları beş dil daha' } },
+  { version: '0.1.8-beta.87', date: '2026.10.07', note: {
+    en: "User guide reworked into a seven-step first-check walkthrough with an annotated workspace map and an alliance-switch-vs-mirror section; READMEs open with the one-line pitch",
+    "zh": "使用指南改写为七步「第一次联盟路径检查」教程，新增工作区标注图与「联盟切换 vs 左右镜像」专节；README 开头加上一句话定位",
+    "zh-tw": "使用指南改寫為七步「第一次聯盟路徑檢查」教學，新增工作區標註圖與「聯盟切換 vs 左右鏡像」專節；README 開頭加上一句話定位",
+    "cs": "Uživatelská příručka přepracována na sedmikrokový průvodce „první kontrolou aliance“, s popsaným mapováním pracoviště a sekcí přepnutí aliance vs. zrcadlení; README začíná jednořádkovým představením",
+    "nl": "De gebruikersgids is herschreven als een gids in zeven stappen voor „uw eerste alliantie-controle”, met een geannoteerde werkruimte-kaart en een sectie alliantie-omschakeling vs. spiegelen; de README’s openen met één zin",
+    "fr": "Le guide utilisateur devient un parcours en sept étapes « première vérification d’alliance », avec une carte annotée de l’espace de travail et une section changement d’alliance vs. miroir ; les README s’ouvrent sur une phrase",
+    "he": "מדריך המשתמש נכתב מחדש כהדרכה בת שבעה צעדים ל־בדיקת ברית ראשונה, עם מפת סביבת עבודה מוסברת ופרק החלפת ברית מול שיקוף; ה־README נפתח במשפט אחד",
+    "ja": "ユーザーガイドを「初めてのアライアンス経路チェック」7 ステップ版に再構成。ワークスペース注釈図と「アライアンス切替 vs ミラー」節を追加、README 冒頭に一文を追加",
+    "ko": "사용 안내서를 7단계 '첫 얼라이언스 경로 검사' 워크스루로 재구성했습니다. 작업 공간 주석 지도와 '얼라이언스 전환 vs 미러' 절 추가, README 첫머리에 한 문장 추가",
+    "pl": "Przewodnik użytkownika przebudowany na siedmiokrokowy „pierwszy przegląd sojuszu”, z opisaną mapą obszaru roboczego i sekcją przełączenie sojuszu vs. odbicie; README otwiera jedno zdanie",
+    "pt-br": "O guia do usuário virou um passo a passo de sete etapas para a \"primeira checagem de aliança\", com um mapa anotado do espaço de trabalho e uma seção troca de aliança vs. espelhamento; os READMEs abrem com uma frase",
+    "es": "La guía de usuario se reorganiza en siete pasos para la \"primera comprobación de alianza\", con un mapa anotado del espacio de trabajo y una sección cambio de alianza vs. espejo; los README abren con una frase",
+    "tr": "Kullanıcı kılavuzu yedi adımlı „ilk ittifak kontrolü” kılavuzuna dönüştü; açıklamalı çalışma alanı haritası ve ittifak geçişi–aynalama bölümü eklendi; README’ler tek cümleyle açılıyor",
+  } },
   { version: '0.1.8-beta.86', date: '2026.10.07', note: {
     en: 'The browser tab icon now follows the system light/dark mode — red plate by day, black by night — and iOS home screens get the matching app icon',
     zh: '浏览器标签页图标现跟随系统深浅色模式自动切换——白天红底、夜间黑底——iOS 主屏幕也换上对应的 App 图标',

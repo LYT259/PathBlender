@@ -1,27 +1,22 @@
 # PathBlender User Guide (for alliance strategy groups)
 
-A pre-match coordination tool: put every team's exported autonomous path
-files onto one field, replay them on a shared timeline, and automatically
-check for collisions. **All files are parsed on your machine — nothing is
-uploaded anywhere.** PathBlender is a viewer: it shows you the problem;
-the fix happens in the tool that owns the path.
+**Before a match: put every alliance partner's auto on one field, replay
+them together, and catch robot-to-robot conflicts while there is still time
+to change the plan.**
 
-## Three steps
+A pre-match coordination tool for alliance strategy and programming
+groups. **All files are parsed on your machine — nothing is uploaded
+anywhere.** PathBlender is a viewer: it shows you the problem; the fix
+happens in the tool that owns the path. An in-app **quick guide** ships
+with the app (Help menu → Quick guide, or the link on the welcome screen)
+and reads offline.
 
-1. **Open the app** — the desktop app, or the web app at
-   [pathblender.pages.dev](https://pathblender.pages.dev) (Safari /
-   Chrome / Edge all work). No files yet? Press **Try the example** on
-   the welcome screen first.
-2. **Import path files** — multi-select and mixed formats are fine:
-   Choreo `.traj`, PathPlanner `.path` / `.auto`, and Team 103
-   Collaborative fork `.ghostauto`. Broken files report why they failed
-   without blocking the rest. You can also import a whole folder — on the
-   web app as well as the desktop (see the route library below).
-3. **Press play.** Collision risks show up as red rings on the field, red
-   segments on the timeline, and entries in the conflict panel (who,
-   when, where) — click one to jump the clock straight to that moment.
+## Your first alliance path check
 
-## How each team exports
+Seven steps from zero to a finished check. No files yet? Every step can be
+practised first on the built-in **Try the example** session.
+
+### 1. Collect each team's files
 
 | Team's tool | File(s) | How |
 |---|---|---|
@@ -30,19 +25,108 @@ the fix happens in the tool that owns the path.
 | PathPlanner (bonus) | `settings.json` | Import it too and every robot gets the project's real bumper size |
 | 103 Collaborative fork | `.ghostauto` | Export a ghost from the fork — it carries the robot size and team name |
 
-## What to do when a conflict appears
+**What you should have**: at least one path file per team, with each
+`.auto` in the same folder as the `.path` files it references so they can
+be selected together.
+**If not**: a lone `.path` still imports — the trajectory is regenerated
+with a generic robot profile and flagged "timing is an estimate" (see FAQ).
 
-1. **Read the report**: the conflict panel says which two robots, at what
-   time, and where on the field; out-of-bounds moments are marked on the
-   timeline.
-2. **Inspect**: click a conflict to jump the clock to it; scrub the
-   timeline; flip the red/blue alliance view to watch the same blend from
-   the side of the field those robots actually start on; switch a robot's
-   route from the library to compare alternatives.
-3. **Fix in the source tool**: PathBlender deliberately does not edit
-   paths — the team that owns the path changes it in Choreo /
-   PathPlanner, re-exports, and you drop the new file into the open
-   session. Re-check. Repeat until the timeline is clean.
+### 2. Import every team's routes
+
+On the welcome screen press **Import path files** — multi-select and mixed
+formats in one go — or **Import folder** to ingest a team's whole deploy
+directory (bystander files are skipped; every route lands in the library).
+
+**What you should see**: one robot per team (with team number) in the
+robot list on the left, the field in the middle, the timeline at the
+bottom. A broken file reports why it failed without blocking the rest.
+
+### 3. Check the basics
+
+Four things to verify before analysing on top of them:
+
+- **Season & field**: the selector at the top shows this season
+  (2022–2026 are built in);
+- **Bumper sizes**: click a robot and check the **Details** tab on the
+  right; `.ghostauto` and `settings.json` imports carry real sizes, the
+  rest default to the season's rule size;
+- **Red/blue alliance**: the toggle in the toolbar — switch to the half
+  those robots actually start their match on;
+- **Where time comes from**: `.traj` / `.ghostauto` timings come from the
+  export; a `.path` without its `settings.json` is a local estimate —
+  treat borderline calls as advisory.
+
+### 4. Replay everything together
+
+Press **Play**. Every robot runs on one shared clock (t = 0 is the start
+of the autonomous period): pause, scrub the timeline to any moment, run
+at 0.25×–1×, or step half a second at a time.
+
+**What you should see**: all the robots moving on the field at once, one
+band per robot on the timeline showing its own true start and end.
+
+### 5. Locate the check results
+
+A conflict shows up in three places at once: a **red ring** on the field,
+a **red segment** on the timeline, and an entry in the checks panel —
+**which two robots, at what time, where**.
+
+**Where to click**: any entry in the checks panel jumps the clock straight
+to that moment; robots leaving the field are marked out of bounds at the
+exact times it happens.
+**What you should see**: the clock jumps and the two robots meet/overlap
+inside the red ring.
+
+### 6. Compare plans
+
+When a conflict appears, compare the alternatives in PathBlender first,
+then decide who changes what:
+
+- **Switch routes**: the picker beside each robot swaps in another route
+  from its library live (undo switches back);
+- **Shift start times**: press the robot's **Arrange** (or E) and adjust
+  when it starts; playback follows the new plan immediately;
+- **Spatial transforms**: see "Alliance switch vs. mirror" below — they
+  act on different things; don't mix them up.
+
+Every adjustment here is an analysis view: **your imported files are never
+rewritten**.
+
+### 7. Fix in the source tool, re-check, share
+
+Once "who changes what" is decided: the team that owns the path edits it
+in Choreo / PathPlanner, re-exports, and you drop the new file into the
+open session — it updates in place. Re-check and repeat until the timeline
+is clean. Then hand the result to the alliance chat (desktop): save the
+`.pb` session, export a GIF replay, or pack a solution package.
+
+## Finding your way around
+
+![Annotated workspace](screenshots/workspace-annotated.en.png)
+
+(1) Robot list (each robot, its current route, visibility) · (2) Field
+(2D/3D playback; conflicts ring in red) · (3) Checks panel (who and when;
+click to jump) · (4) Timeline (one shared clock; scrub to any moment).
+
+## Alliance switch vs. left/right mirror
+
+Two different spatial transforms that look similar but act on different
+things:
+
+| | Session red/blue switch | Per-robot left/right mirror |
+|---|---|---|
+| **Entry point** | The red/blue toggle in the toolbar (same in the View menu) | The **Mirror left/right** button on the robot's row (or M with it selected, or the Edit menu) |
+| **Acts on** | **The whole session**: every robot moves to the chosen half together | **One robot**: that robot and its route library flip about the field centreline |
+| **When to use it** | Watch the same blend from the half those robots actually start on | A partner exported routes written for the other alliance's side |
+
+Three shared boundaries worth stating up front when demoing:
+
+- Both are **derived views**: the original files are untouched, and
+  collision checking runs on exactly the coordinates you see;
+- Neither **reverses time**: playback still runs forward on the shared
+  clock — this is a spatial flip, not playing an auto backwards;
+- What changes is the analysis view, **not the real robot's program** —
+  real changes still happen in the source tool.
 
 ## Route library
 
@@ -68,18 +152,14 @@ rest of the alliance.
 
 ## Other things you'll use
 
-- **Alliance view**: one red/blue toggle for the whole session. Every file
-  is normalised to the blue-origin convention on import (which is what
-  Choreo and PathPlanner export), so choosing **red** mirrors the whole set
-  onto the red half of the field — where those robots actually start in a
-  match. The flip is a derived view: imported paths are never rewritten, and
-  collision checking runs on exactly what you see;
 - **Session file & exports** (desktop): save/open a `.pb` session (sessions saved
   before the rename as `.ghpb.json` still open) to hand the exact field to
   the next strategy meeting; export a GIF replay of the
   current 2D view, or a solution package carrying the paths, the session and
   the replay, for the alliance chat. Everything also lives in the
   PathBlender menu;
+- **Keyboard shortcuts**: press `?` anywhere (Help menu → Keyboard
+  shortcuts);
 - **Appearance & languages**: light/dark/follow-system in Preferences
   (⌘, on desktop); the UI ships in 40 languages — English, 简体中文,
   繁體中文（中國香港）, Français, Español, Deutsch,
