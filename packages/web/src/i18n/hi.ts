@@ -182,6 +182,8 @@ export const hi = {
   'canvas.fit': 'फिट',
   'canvas.clock': 't = {t} से',
   'canvas.heatmap': 'हीटमैप',
+  'canvas.trail': 'निशान',
+  'canvas.overlays': 'ओवरले',
   
   'import.failed': '{n} फ़ाइलें आयात करने में विफल:',
   'import.dismiss': 'खारिज करें',

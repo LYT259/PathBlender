@@ -152,6 +152,8 @@ export const bg = {
   'canvas.fit': 'Попади',
   'canvas.clock': 't = {t} с',
   'canvas.heatmap': 'Топлинна карта',
+  'canvas.trail': 'Следа',
+  'canvas.overlays': 'Наслоявания',
   
   'import.failed': '{n} файла не бяха импортирани:',
   'import.dismiss': 'Затвори',

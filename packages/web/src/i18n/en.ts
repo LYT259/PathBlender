@@ -159,6 +159,8 @@ export const en = {
   'canvas.fit': "Show whole field",
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Heatmap',
+  'canvas.trail': 'Trail',
+  'canvas.overlays': 'Overlays',
 
   'import.failed': '{n} file(s) failed to import:',
   'import.dismiss': 'Dismiss',

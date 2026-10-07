@@ -152,6 +152,8 @@ export const nb = {
   'canvas.fit': "Tilpass",
   'canvas.clock': "t = {t} s",
   'canvas.heatmap': 'Varmekart',
+  'canvas.trail': 'Spor',
+  'canvas.overlays': 'Overlegg',
   
   'import.failed': "{n} fil(er) kunne ikke importeres:",
   'import.dismiss': "Lukk",

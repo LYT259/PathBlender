@@ -152,6 +152,8 @@ export const uk = {
   'canvas.fit': "Вмістити",
   'canvas.clock': "t = {t} с",
   'canvas.heatmap': 'Теплова карта',
+  'canvas.trail': 'Слід',
+  'canvas.overlays': 'Шари',
   
   'import.failed': "{n} файл(ів) не вдалося імпортувати:",
   'import.dismiss': "Сховати",

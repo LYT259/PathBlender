@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.68';
+export const APP_VERSION = '0.1.8-beta.69';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.69', date: '2026.10.07', note: {
+    en: 'Trail tape and heatmap now each have their own switch beside the 2D/3D toggle — both on by default',
+    zh: '轨迹尾巴与热力图在 2D/3D 切换旁各有独立开关，默认全部开启',
+    'zh-tw': '軌跡尾巴與熱力圖在 2D/3D 切換旁各有獨立開關，預設全部開啟',
+    cs: 'Pás trasy a teplotní mapa mají nyní vedle přepínače 2D/3D každý svůj vlastní přepínač — ve výchozím stavu jsou oba zapnuté.',
+    nl: 'Routespoor en warmtekaart hebben nu elk een eigen schakelaar naast de 2D/3D-wissel — standaard allebei aan.',
+    fr: 'La trainée et la carte thermique ont désormais chacune leur commutateur à côté du bouton 2D/3D — toutes deux activées par défaut.',
+    he: 'פס המסלול ומפת החום מקבלים כעת כל אחד מתג משלו ליד מתג ה־2D/3D — שניהם דלוקים כברירת מחדל',
+    ja: '軌跡テープとヒートマップに 2D/3D 切替の横にそれぞれ独立したスイッチが付きました — デフォルトで両方オンです',
+    ko: '궤적 테이프와 히트맵에 2D/3D 전환 옆에 각각 독립 스위치가 생겼습니다 — 기본적으로 둘 다 켜져 있습니다',
+    pl: 'Ślad trasy i mapa cieplna mają teraz obok przełącznika 2D/3D swoje własne przełączniki — domyślnie oba włączone.',
+    'pt-br': 'A trilha e o mapa de calor agora têm, ao lado do seletor 2D/3D, cada um a própria chave — ambos ligados por padrão.',
+    es: 'La estela y el mapa de calor tienen ahora cada uno su propio interruptor junto al de 2D/3D — ambos activados por defecto.',
+    tr: 'İz şeridi ve ısı haritası artık 2D/3D düğmesinin yanında kendi anahtarlarına sahip — ikisi de varsayılan olarak açık.',
+  } },
   { version: '0.1.8-beta.68', date: '2026.10.07', note: {
     en: 'Exported replay video declares an honest 30 fps; example-module preload keeps example tests stable',
     zh: '导出的回放视频如实声明 30 fps；示例模块预载让示例相关测试保持稳定',

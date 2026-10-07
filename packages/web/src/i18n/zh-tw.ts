@@ -192,6 +192,8 @@ export const zhTw: Record<MessageKey, string> = {
   'canvas.fit': "顯示全場",
   'canvas.clock': 't = {t} 秒',
   'canvas.heatmap': '熱力圖',
+  'canvas.trail': '軌跡尾巴',
+  'canvas.overlays': '畫面疊加',
 
   'import.failed': '{n} 個檔案匯入失敗：',
   'import.dismiss': '關閉',

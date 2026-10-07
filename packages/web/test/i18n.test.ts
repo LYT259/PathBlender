@@ -132,6 +132,10 @@ describe('i18n dictionaries', () => {
     // 'Heatmap' is the German loanword (de); 'Differential' is the
     // Danish loanword (da).
     'actions.gif', 'actions.heatmapOn', 'canvas.heatmap', 'robots.driveDifferential',
+    // The canvas overlay pair: Kinyarwanda keeps the English loans (its
+    // dictionary already ships 'Heatmap' verbatim for the same reason);
+    // every other language translates both terms.
+    'canvas.trail', 'canvas.overlays',
     // Dutch coincidences: loanwords that spell exactly like the English source
     // (nl 'Timing', 'Updates', 'Bumpers {l} × {w} m'). The nl unit labels used to
     // be on this list too — they carried the English plurals 'Meters/Centimeters

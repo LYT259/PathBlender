@@ -152,6 +152,8 @@ export const mk = {
   'canvas.fit': 'Прилагоди',
   'canvas.clock': 't = {t} с',
   'canvas.heatmap': 'Топлотна карта',
+  'canvas.trail': 'Траг',
+  'canvas.overlays': 'Слоеви',
   
   'import.failed': '{n} датотеки не беа увезени:',
   'import.dismiss': 'Отфрли',

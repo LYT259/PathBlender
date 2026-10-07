@@ -152,6 +152,8 @@ export const sr = {
   'canvas.fit': "Prilagodi",
   'canvas.clock': "t = {t} s",
   'canvas.heatmap': 'Toplotna mapa',
+  'canvas.trail': 'Trag',
+  'canvas.overlays': 'Slojevi',
   
   'import.failed': "{n} fajlova nije moglo da se uveze:",
   'import.dismiss': "Odbaci",

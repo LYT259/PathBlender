@@ -152,6 +152,8 @@ export const bs = {
   'canvas.fit': "Prilagodi",
   'canvas.clock': "t = {t} s",
   'canvas.heatmap': 'Toplotna mapa',
+  'canvas.trail': 'Trag',
+  'canvas.overlays': 'Slojevi',
   
   'import.failed': "{n} datoteka nije bilo moguće uvesti:",
   'import.dismiss': "Odbaci",
