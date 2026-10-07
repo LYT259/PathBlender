@@ -91,7 +91,7 @@ export const de = {
   "workspace.season": "Spielsaison",
   "workspace.edit2d": "Bearbeitung beenden, um zu 3D zu wechseln",
   "workspace.imported": "{n} Pfade in dieser Sitzung",
-  "checks.emptyTitle": "Bereit, wenn Sie sind",
+  "checks.emptyTitle": "Noch nichts zu prüfen",
   "checks.singleTitle": "Allianzpartner hinzufügen",
   "checks.singleBody": "Feldgrenzen geprüft. Importieren Sie einen weiteren Roboter, um Pfade zu vergleichen.",
   "checks.clearTitle": "Keine Konflikte erkannt",
@@ -101,7 +101,7 @@ export const de = {
   "actions.abCompare": "A-B-Vergleich",
   "checks.abBaselineSet": "Baseline gespeichert — Szenario ändern und erneut vergleichen",
   "checks.abNoPairs": "Keine vergleichbaren Paare zwischen den Szenarien",
-  "checks.abDelta": "Engstes Paar {dir} um {d} m",
+  "checks.abDelta": "Engstes Paar: {d} m {dir}",
   "checks.abSafer": "sicherer",
   "checks.abTighter": "enger",
   "checks.jump": "An diesem Moment pausieren",
@@ -150,7 +150,7 @@ export const de = {
   'actions.import': 'Dateien importieren',
   'actions.save': 'Sitzung speichern',
   'actions.gif': 'GIF',
-  'actions.clear': 'Löschen',
+  'actions.clear': 'Leeren',
   
   'robots.title': 'Roboter ({n})',
   'robots.remove': 'Entfernen',
@@ -230,7 +230,7 @@ export const de = {
   'edges.far': 'hinteren', 'edges.left': 'linken', 'edges.near': 'vorderen', 'edges.right': 'rechten',
   'customField.tags': 'AprilTag-Layout laden…',
   'updates.upToDate': "Sie sind auf dem neuesten Stand",
-  'updates.downloading': 'v{v} gefunden, herunterladen und neu starten…',
+  'updates.downloading': 'v{v} gefunden, wird heruntergeladen und neu gestartet…',
   'updates.failed': 'Update-Prüfung fehlgeschlagen — überprüfen Sie Ihre Verbindung und versuchen Sie es erneut',
   'actions.saveHint': 'Alle Roboter und Sitzungseinstellungen speichern (.pb). Wieder öffnen mit Import. Einzelne Pfade aus dem Roboter-Inspektor exportieren.',
   'actions.clearHint': 'Alle Roboter aus der aktuellen Sitzung entfernen (berührt nie die importierten Dateien)',
@@ -238,7 +238,7 @@ export const de = {
   'rail.save': 'Speichern',
   'rail.png': 'PNG',
   'rail.prefs': 'Einstellungen',
-  'rail.clear': 'Löschen',
+  'rail.clear': 'Leeren',
   "prefs.section.controls": "Steuerung",
   "prefs.section.general": "Allgemein",
   "prefs.section.updates": "Updates",
@@ -372,8 +372,9 @@ export const de = {
   'help.hideShow': "Ausgewählten Roboter zeigen / verbergen",
   'help.composerMove': "Fokussiertes Segment verschieben",
   'help.deleteClip': "Fokussiertes Segment löschen",
-  'help.hint.desktop': "In der Desktop-App bieten die Menüs zusätzlich Cmd/Ctrl+O (Import), Cmd/Ctrl+S (Sitzung sichern) und Cmd/Ctrl+, (Einstellungen).",
+
   'guide.fullOnline': "Vollständige Anleitung online",
+  'help.hint.desktop': "In der Desktop-App bieten die Menüs zusätzlich Cmd/Ctrl+O (Import), Cmd/Ctrl+S (Sitzung speichern) und Cmd/Ctrl+, (Einstellungen).",
 } as const;
 
 export type MessageKey = keyof typeof de;

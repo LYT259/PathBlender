@@ -37,7 +37,7 @@ describe('version notes registry', () => {
   it('every entry ships every UI language, not just the newest', () => {
     for (const note of VERSION_NOTES) {
       for (const lang of NOTE_LANGS) {
-        expect(note.note[lang]?.trim(), `${note.version}:${lang}`).not.toBe('');
+        expect(note.note[lang]?.trim() ?? '', `${note.version}:${lang}`).not.toBe('');
       }
     }
   });

@@ -100,7 +100,7 @@ function TeamNumberCell({ robot, onUpdate, editing, onStartEdit, onEndEdit, chil
 }
 
 /** Selection lives in the workspace so the list, field and inspector agree. */
-export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, onMirrorButtonClick, mirroredIds, renameSignal, header }: RobotListProps) {  const { t } = useI18n();
+export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, onMirrorButtonClick, mirroredIds, renameSignal, header }: RobotListProps) {  const { t, n, lang } = useI18n();
   const settingsInput = useRef<HTMLInputElement>(null);
   const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const contextRobot = robots.find((robot) => robot.trajectory.id === contextMenu?.id);
@@ -142,7 +142,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
             const selectionLabel = [
               robotIdentity(trajectory),
               sourceLabel(trajectory.source),
-              `${shownDuration.toFixed(2)} s`,
+              `${n(shownDuration, 2)} s`,
               hit ? t('robots.collision') : '',
             ].filter(Boolean).join(', ');
             return (
@@ -191,7 +191,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                   <Icon name="import" size={15} />{t('robots.uploadSettings')}
                 </button>}
                 <div className="robot-library-status"><span className="robot-library-meta">
-                  <span>{sourceLabel(trajectory.source)}</span><span>{shownDuration.toFixed(2)} s</span>
+                  <span>{sourceLabel(trajectory.source)}</span><span>{n(shownDuration, 2)} s</span>
                   {composed && <span>{t('sequence.count', { n: robot.sequence!.segments.length })}</span>}
                   {hit && <span className="robot-library-conflict">{t('robots.collision')}</span>}
                 </span>{needsSettings && <span className="robot-library-settings-missing">{t('robots.settingsNotImported')}</span>}</div>
@@ -211,7 +211,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
 }
 
 export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: RobotInspectorProps) {
-  const { t } = useI18n();
+  const { t, n, lang } = useI18n();
   const [unit] = useLengthUnit();
   if (!robot) return <div className="robot-inspector-empty">{t('robots.selectPrompt')}</div>;
   const { trajectory } = robot;
@@ -233,9 +233,9 @@ export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: Robot
         </div>
         <p className="robot-inspector-caption">{t('robots.bumper')}</p>
         <dl className="robot-dimensions">
-          <div className={`robot-dimension-card ${fileGeometry ? 'is-verified' : 'is-default'}`}><dt>{t('robots.length')}</dt><dd>{formatLength(trajectory.geometry.lengthM, unit)}</dd></div>
-          <div className={`robot-dimension-card ${fileGeometry ? 'is-verified' : 'is-default'}`}><dt>{t('robots.width')}</dt><dd>{formatLength(trajectory.geometry.widthM, unit)}</dd></div>
-          {trajectory.massKG !== undefined && <div><dt>{t('robots.mass')}</dt><dd>{trajectory.massKG.toFixed(0)} kg</dd></div>}
+          <div className={`robot-dimension-card ${fileGeometry ? 'is-verified' : 'is-default'}`}><dt>{t('robots.length')}</dt><dd>{formatLength(trajectory.geometry.lengthM, unit, lang)}</dd></div>
+          <div className={`robot-dimension-card ${fileGeometry ? 'is-verified' : 'is-default'}`}><dt>{t('robots.width')}</dt><dd>{formatLength(trajectory.geometry.widthM, unit, lang)}</dd></div>
+          {trajectory.massKG !== undefined && <div><dt>{t('robots.mass')}</dt><dd>{n(trajectory.massKG, 0)} kg</dd></div>}
           {trajectory.holonomic !== undefined && <div><dt>{t('robots.drive')}</dt><dd>{t(trajectory.holonomic ? 'robots.driveHolonomic' : 'robots.driveDifferential')}</dd></div>}
         </dl>
         {libraryProfiles.length > 0 && (
@@ -253,7 +253,7 @@ export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: Robot
               <option value="">{t('robots.profilePick')}</option>
               {libraryProfiles.map((entry) => (
                 <option key={entry.id} value={entry.id} title={entry.relPath}>
-                  {entry.profile.name} · {formatLengthNumber(entry.profile.geometry.lengthM, unit)}×{formatLengthNumber(entry.profile.geometry.widthM, unit)} {unit}
+                  {entry.profile.name} · {formatLengthNumber(entry.profile.geometry.lengthM, unit, lang)}×{formatLengthNumber(entry.profile.geometry.widthM, unit, lang)} {unit}
                 </option>
               ))}
             </select>

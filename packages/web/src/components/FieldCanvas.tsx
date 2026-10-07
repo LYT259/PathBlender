@@ -64,7 +64,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   },
   ref,
 ) {
-  const { t } = useI18n();
+  const { t, n } = useI18n();
   const { resolved: theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -389,7 +389,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         bounds,
         showTrail,
         showHeatmap,
-        clockLabel: t('canvas.clock', { t: effT.toFixed(2) }),
+        clockLabel: t('canvas.clock', { t: n(effT, 2) }),
       });
     };
     requestDraw();

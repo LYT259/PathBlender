@@ -17,7 +17,7 @@ interface Props {
 }
 
 export function ConflictPanel({ robots, conflicts, bounds, onJump, guide, toleranceS = 0, onToleranceChange }: Props) {
-  const { t } = useI18n();
+  const { t, n, lang } = useI18n();
   const [unit] = useLengthUnit();
   const nameOf = (id: string) => {
     const robot = robots.find((r) => r.trajectory.id === id);
@@ -26,7 +26,7 @@ export function ConflictPanel({ robots, conflicts, bounds, onJump, guide, tolera
   const issues = conflicts.length + bounds.length;
   const hidden = robots.filter((r) => !r.visible).length;
   const estimated = robots.some((r) => r.trajectory.geometrySource === 'default');
-  const toleranceLabel = t('checks.tolerance', { delta: toleranceS.toFixed(1) });
+  const toleranceLabel = t('checks.tolerance', { delta: n(toleranceS, 1) });
   const title = !robots.length ? 'checks.emptyTitle' : issues ? 'checks.issues' : robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle';
   return <section className="conflict-panel" aria-label={t('conflicts.title')}>
     <div className={`check-summary ${issues ? 'has-issues' : robots.length > 1 ? 'is-clear' : ''}`}>
@@ -50,18 +50,18 @@ export function ConflictPanel({ robots, conflicts, bounds, onJump, guide, tolera
           onChange={(e) => onToleranceChange?.(Number(e.target.value))}
           aria-label={toleranceLabel}
         />
-        <span className="tolerance-value">±{toleranceS.toFixed(1)} s</span>
+        <span className="tolerance-value">±{n(toleranceS, 1)} s</span>
       </label>
     )}
     {conflicts.length > 0 && <ul className="conflict-list">{conflicts.map((c) => {
       return <li key={`${c.aId}-${c.bId}-${c.startT}-${c.kind}`} className={`conflict-item${c.kind === 'tolerance' ? ' is-tolerance' : ''}`}>
       <button className="conflict-jump" onClick={() => onJump(c.closestT, [c.aId, c.bId])} title={t('checks.jump')}>
-        <span className="conflict-pair">{t('conflicts.pair', { a: nameOf(c.aId), b: nameOf(c.bId) })}{c.kind === 'tolerance' && <em className="tolerance-badge">{t('conflicts.toleranceBadge', { delta: c.toleranceS ?? toleranceS })}</em>}</span>
-        <span className="conflict-when">{t('conflicts.item', { start: c.startT.toFixed(2), end: c.endT.toFixed(2), d: formatLength(c.minCenterDistanceM, unit), x: ((c.closestA.x + c.closestB.x) / 2).toFixed(1), y: ((c.closestA.y + c.closestB.y) / 2).toFixed(1) })}</span>
+        <span className="conflict-pair">{t('conflicts.pair', { a: nameOf(c.aId), b: nameOf(c.bId) })}{c.kind === 'tolerance' && <em className="tolerance-badge">{t('conflicts.toleranceBadge', { delta: n(c.toleranceS ?? toleranceS, 1) })}</em>}</span>
+        <span className="conflict-when">{t('conflicts.item', { start: n(c.startT, 2), end: n(c.endT, 2), d: formatLength(c.minCenterDistanceM, unit, lang), x: n((c.closestA.x + c.closestB.x) / 2, 1), y: n((c.closestA.y + c.closestB.y) / 2, 1) })}</span>
         <span className="issue-action">{t('checks.jump')} →</span>
       </button>
     </li>;
     })}</ul>}
-    {bounds.length > 0 && <><h3 className="check-section-heading">{t('bounds.title')}<span className="conflict-count bounds-count">{bounds.length}</span></h3><ul className="conflict-list">{bounds.map((b) => <li key={`${b.robotId}-${b.startT}`} className="conflict-item"><button className="conflict-jump bounds" onClick={() => onJump((b.startT + b.endT) / 2, [b.robotId])}><span className="conflict-pair">{nameOf(b.robotId)}</span><span className="conflict-when">{t('bounds.item', { start: b.startT.toFixed(2), end: b.endT.toFixed(2), depth: formatLength(b.maxPenetrationM, unit), edge: b.edges.map((e) => t(`edges.${e}` as const)).join('/') })}</span><span className="issue-action">{t('checks.jump')} →</span></button></li>)}</ul></>}
+    {bounds.length > 0 && <><h3 className="check-section-heading">{t('bounds.title')}<span className="conflict-count bounds-count">{bounds.length}</span></h3><ul className="conflict-list">{bounds.map((b) => <li key={`${b.robotId}-${b.startT}`} className="conflict-item"><button className="conflict-jump bounds" onClick={() => onJump((b.startT + b.endT) / 2, [b.robotId])}><span className="conflict-pair">{nameOf(b.robotId)}</span><span className="conflict-when">{t('bounds.item', { start: n(b.startT, 2), end: n(b.endT, 2), depth: formatLength(b.maxPenetrationM, unit, lang), edge: b.edges.map((e) => t(`edges.${e}` as const)).join('/') })}</span><span className="issue-action">{t('checks.jump')} →</span></button></li>)}</ul></>}
   </section>;
 }

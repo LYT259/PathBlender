@@ -49,7 +49,7 @@ const clampToAxis = (t: number, axisS: number) => Math.min(axisS, Math.max(0, t)
 /** Pointer capture works across WebKit and mouse/touch/pen, without relying
  * on custom HTML drag payloads. A gesture is one undoable operation. */
 export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, open, onClose, onChange, onPreviewRoute, joins = [], playback, playbackEndS, playbackRange = 'full', onPlaybackRangeChange, onJump }: Props) {
-  const { t } = useI18n();
+  const { t, n, lang } = useI18n();
   const [unit] = useLengthUnit();
   const [selected, setSelected] = useState<{ robotId: string; clipId: string } | null>(null);
   const [ghost, setGhost] = useState<{ robotId: string; clip: TimelineClip } | null>(null);
@@ -76,11 +76,11 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   const percent = (time: number) => `${time / axis * 100}%`;
   const styleFor = (clip: TimelineClip): CSSProperties => ({ left: percent(clip.startS), width: percent(clip.durationS) });
   const validGhost = !activeGhost || canPlaceClip(activeClips, activeGhost, autoPeriodS);
-  const limitMessage = `${t('sequence.autoEnd')}: ${autoPeriodS.toFixed(2)}s`;
+  const limitMessage = `${t('sequence.autoEnd')}: ${n(autoPeriodS, 2)}s`;
   const joinDetail = (issue: SequenceJoinIssue) => issue.kind === 'position'
     ? t('sequence.joinPosition', { d: formatLength(issue.delta, unit) })
-    : issue.kind === 'heading' ? t('sequence.joinHeading', { d: issue.delta.toFixed(1) })
-      : t('sequence.joinVelocity', { d: issue.delta.toFixed(2) });
+    : issue.kind === 'heading' ? t('sequence.joinHeading', { d: n(issue.delta, 1) })
+      : t('sequence.joinVelocity', { d: n(issue.delta, 2) });
   // Route-library continuity gating (2026-10-07): with the playhead on or
   // past a segment — the same "last segment started at or before t" the
   // playback sampler uses — a route dragged in continues from that
@@ -293,8 +293,8 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
           : route.trajectory.durationS > autoPeriodS ? limitMessage
           : continuity ? t('sequence.libraryBlocked', {
             name: anchorLabel,
-            p: formatLength(continuity.positionGapM, unit),
-            h: `${continuity.headingGapDeg.toFixed(1)}°`,
+            p: formatLength(continuity.positionGapM, unit, lang),
+            h: `${n(continuity.headingGapDeg, 1)}°`,
           }) : null;
         return <button type="button" key={route.id} className="sequence-route-source" draggable={false}
         // aria-disabled, not the disabled attribute (user 2026-10-07): a
@@ -303,8 +303,8 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         // interactive for hover/focus/keyboard reading; the ADD gestures
         // below refuse blocked routes themselves.
         aria-disabled={blocked ? 'true' : undefined}
-        title={reason ? `${route.relPath} · ${route.trajectory.durationS.toFixed(2)}s · ${reason}` : `${route.relPath} · ${route.trajectory.durationS.toFixed(2)}s`}
-        aria-label={`${routeLabel(route, active.routes)}: ${route.trajectory.durationS.toFixed(2)} s${reason ? ` · ${reason}` : ''}`}
+        title={reason ? `${route.relPath} · ${n(route.trajectory.durationS, 2)}s · ${reason}` : `${route.relPath} · ${n(route.trajectory.durationS, 2)}s`}
+        aria-label={`${routeLabel(route, active.routes)}: ${n(route.trajectory.durationS, 2)} s${reason ? ` · ${reason}` : ''}`}
         // Every route previews on hover or focus — grayed ones too (user
         // 2026-10-07): seeing where a blocked route goes is part of
         // planning. Only a running drag suspends the preview swap.
@@ -314,7 +314,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         onBlur={() => { if (dragRef.current) return; onPreviewRoute?.(null); }}
         onPointerDown={(event) => { if (blocked) return; begin(event, 'add', { id: crypto.randomUUID(), routeId: route.id, startS: 0, durationS: route.trajectory.durationS }); }}
         onClick={(event) => { if (blocked || (event.detail !== 0 && suppressClick.current)) return; append(route.id, route.trajectory.durationS); }}>
-        <span aria-hidden="true" className="sequence-grip">⠿</span><span>{routeLabel(route, active.routes)}</span><small>{route.trajectory.durationS.toFixed(2)}s</small>
+        <span aria-hidden="true" className="sequence-grip">⠿</span><span>{routeLabel(route, active.routes)}</span><small>{n(route.trajectory.durationS, 2)}s</small>
       </button>; })}
     </div></div>
     <div className="sequence-timeline-scroll" dir="ltr"><div className="sequence-timeline-surface">
@@ -340,10 +340,10 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
                   aria-label={seamIssues.length ? seamIssues.map(joinDetail).join(' · ') : t('sequence.joinOk')} onClick={() => onJump(previousEnd)}>
                   <Icon name={seamIssues.length ? 'warning' : 'check'} size={11} />
                 </button>}
-                {editing && gap > 0 && !activeGhost && <span className="sequence-wait" style={{ left: percent(previousEnd), width: percent(gap) }}><span>{gap.toFixed(2)}s</span></span>}
+                {editing && gap > 0 && !activeGhost && <span className="sequence-wait" style={{ left: percent(previousEnd), width: percent(gap) }}><span>{n(gap, 2)}s</span></span>}
                 <button type="button" className={`sequence-clip${chosenClip ? ' is-chosen' : ''}${editing && activeGhost?.id === clip.id ? ' is-moving' : ''}`}
-                  style={styleFor(clip)} aria-label={`${label}, ${clip.startS.toFixed(2)}–${(clip.startS + clip.durationS).toFixed(2)} s`} aria-pressed={chosenClip}
-                  title={`${label}\n${clip.startS.toFixed(2)}–${(clip.startS + clip.durationS).toFixed(2)} s`}
+                  style={styleFor(clip)} aria-label={`${label}, ${n(clip.startS, 2)}–${n(clip.startS + clip.durationS, 2)} s`} aria-pressed={chosenClip}
+                  title={`${label}\n${n(clip.startS, 2)}–${n(clip.startS + clip.durationS, 2)} s`}
                   // Hovering a placed leg previews that route on the field
                   // exactly like the library buttons (user 2026-10-07) —
                   // editing lane only: the preview resolves through the
@@ -375,18 +375,18 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
                     const raw = clip.startS + (event.shiftKey ? 1 : .1) * (event.key === 'ArrowLeft' ? -1 : 1);
                     commit({ ...clip, startS: Math.min(Math.max(0, autoPeriodS - clip.durationS), Math.max(0, Math.round(raw * 1e9) / 1e9)) });
                   } : undefined}>
-                  <strong>{label}<small>{clip.durationS.toFixed(2)}s</small></strong>
+                  <strong>{label}<small>{n(clip.durationS, 2)}s</small></strong>
                 </button>
               </div>;
             })}
             {editing && clips.length === 0 && !activeGhost && <span className="sequence-empty-lane">{t('sequence.empty')}</span>}
             {editing && activeGhost && <>
               <div className={`sequence-ghost${validGhost ? '' : ' is-invalid'}`} style={styleFor(activeGhost)}>
-                <strong>{ghostRoute ? routeLabel(ghostRoute, active.routes) : activeGhost.routeId}<small>{activeGhost.durationS.toFixed(2)}s</small></strong>
+                <strong>{ghostRoute ? routeLabel(ghostRoute, active.routes) : activeGhost.routeId}<small>{n(activeGhost.durationS, 2)}s</small></strong>
               </div>
               {clipGaps(clips, activeGhost).map((gap) => <div key={gap.side} className={`sequence-gap-guide ${gap.side}${gap.toS < gap.fromS ? ' is-overlap' : ''}`}
                 style={{ left: percent(Math.min(gap.fromS, gap.toS)), width: percent(Math.abs(gap.toS - gap.fromS)) }}>
-                <span>{(gap.toS - gap.fromS).toFixed(2)}s</span>
+                <span>{n(gap.toS - gap.fromS, 2)}s</span>
               </div>)}
             </>}
             {playback && <span className="sequence-playhead" style={{ left: percent(Math.min(autoPeriodS, playback.t)) }} />}
@@ -412,7 +412,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
             event.currentTarget.blur();
           }
         }} /> s</label>
-      <span>{t('sequence.end')} <b>{(chosen.startS + chosen.durationS).toFixed(2)}s</b></span>
+      <span>{t('sequence.end')} <b>{n(chosen.startS + chosen.durationS, 2)}s</b></span>
     </div>}
     {menu?.robotId === activeId && <div ref={menuRef} className="sequence-clip-menu" role="menu" aria-label={t('sequence.arrange')}
       style={{ left: Math.max(8, Math.min(menu.x, window.innerWidth - 188)), top: Math.max(8, Math.min(menu.y, window.innerHeight - 54)) }}
@@ -427,7 +427,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       // dropping elsewhere discards it.
       const source = active.routes.find((route) => route.id === dragRef.current!.clip!.routeId);
       return <div className="sequence-drag-badge" aria-hidden="true" style={{ left: dragPoint.x, top: dragPoint.y }}>
-        <span>{source ? routeLabel(source, active.routes) : dragRef.current.clip.routeId}</span><small>{source ? `${source.trajectory.durationS.toFixed(2)}s` : ''}</small>
+        <span>{source ? routeLabel(source, active.routes) : dragRef.current.clip.routeId}</span><small>{source ? `${n(source.trajectory.durationS, 2)}s` : ''}</small>
       </div>;
     })()}
     {playback && <div className="timeline-workspace sequence-playback-controls">
