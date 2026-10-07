@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.86';
+export const APP_VERSION = '0.1.8-beta.87';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.87', date: '2026.10.07', note: {
+    en: "User guide reworked into a seven-step first-check walkthrough with an annotated workspace map and an alliance-switch-vs-mirror section; READMEs open with the one-line pitch",
+    "zh": "使用指南改写为七步「第一次联盟路径检查」教程，新增工作区标注图与「联盟切换 vs 左右镜像」专节；README 开头加上一句话定位",
+    "zh-tw": "使用指南改寫為七步「第一次聯盟路徑檢查」教學，新增工作區標註圖與「聯盟切換 vs 左右鏡像」專節；README 開頭加上一句話定位",
+    "cs": "Uživatelská příručka přepracována na sedmikrokový průvodce „první kontrolou aliance“, s popsaným mapováním pracoviště a sekcí přepnutí aliance vs. zrcadlení; README začíná jednořádkovým představením",
+    "nl": "De gebruikersgids is herschreven als een gids in zeven stappen voor „uw eerste alliantie-controle”, met een geannoteerde werkruimte-kaart en een sectie alliantie-omschakeling vs. spiegelen; de README’s openen met één zin",
+    "fr": "Le guide utilisateur devient un parcours en sept étapes « première vérification d’alliance », avec une carte annotée de l’espace de travail et une section changement d’alliance vs. miroir ; les README s’ouvrent sur une phrase",
+    "he": "מדריך המשתמש נכתב מחדש כהדרכה בת שבעה צעדים ל־בדיקת ברית ראשונה, עם מפת סביבת עבודה מוסברת ופרק החלפת ברית מול שיקוף; ה־README נפתח במשפט אחד",
+    "ja": "ユーザーガイドを「初めてのアライアンス経路チェック」7 ステップ版に再構成。ワークスペース注釈図と「アライアンス切替 vs ミラー」節を追加、README 冒頭に一文を追加",
+    "ko": "사용 안내서를 7단계 '첫 얼라이언스 경로 검사' 워크스루로 재구성했습니다. 작업 공간 주석 지도와 '얼라이언스 전환 vs 미러' 절 추가, README 첫머리에 한 문장 추가",
+    "pl": "Przewodnik użytkownika przebudowany na siedmiokrokowy „pierwszy przegląd sojuszu”, z opisaną mapą obszaru roboczego i sekcją przełączenie sojuszu vs. odbicie; README otwiera jedno zdanie",
+    "pt-br": "O guia do usuário virou um passo a passo de sete etapas para a \"primeira checagem de aliança\", com um mapa anotado do espaço de trabalho e uma seção troca de aliança vs. espelhamento; os READMEs abrem com uma frase",
+    "es": "La guía de usuario se reorganiza en siete pasos para la \"primera comprobación de alianza\", con un mapa anotado del espacio de trabajo y una sección cambio de alianza vs. espejo; los README abren con una frase",
+    "tr": "Kullanıcı kılavuzu yedi adımlı „ilk ittifak kontrolü” kılavuzuna dönüştü; açıklamalı çalışma alanı haritası ve ittifak geçişi–aynalama bölümü eklendi; README’ler tek cümleyle açılıyor",
+  } },
   { version: '0.1.8-beta.86', date: '2026.10.07', note: {
     en: 'The browser tab icon now follows the system light/dark mode — red plate by day, black by night — and iOS home screens get the matching app icon',
     zh: '浏览器标签页图标现跟随系统深浅色模式自动切换——白天红底、夜间黑底——iOS 主屏幕也换上对应的 App 图标',
