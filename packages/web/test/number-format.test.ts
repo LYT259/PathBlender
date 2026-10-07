@@ -13,7 +13,10 @@ import { LANG_META, type Lang } from '../src/i18n';
 
 const COMMA: Lang[] = ['az', 'bg', 'bs', 'cs', 'da', 'de', 'el', 'es', 'fr', 'hr', 'hu', 'id', 'it', 'mk',
   'nb', 'nl', 'nn', 'pl', 'pt-BR', 'ro', 'rw', 'sq', 'sr', 'sv', 'tr', 'uk', 'vi', 'hy'];
-const POINT: Lang[] = ['en', 'ar', 'mr', 'fil', 'he', 'hi', 'ja', 'ko', 'ms', 'ta', 'zh', 'zh-hk', 'zh-tw'];
+// zh-tw is no longer a UI language (2026-10-07 picker withdrawal: the
+// dictionary still ships as zh-hk's base and the notes carrier, but it is
+// absent from LANG_META, which this coverage table mirrors).
+const POINT: Lang[] = ['en', 'ar', 'mr', 'fil', 'he', 'hi', 'ja', 'ko', 'ms', 'ta', 'zh', 'zh-hk'];
 
 describe('formatDecimal separators match the dictionary-side convention', () => {
   it('comma languages render 0.5 as "0,50"', () => {

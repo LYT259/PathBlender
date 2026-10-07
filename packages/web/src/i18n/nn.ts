@@ -75,7 +75,7 @@ export const nn = {
   'onboarding.play': 'Trykk Spel for å sjå rutene, eller dra i tidslinja.',
 
   'onboarding.import': "Importert — sjekk det grunnleggjande fyrst: sesong og bane, støtfangarstørrelse, raud/blå",
-  'onboarding.check': 'Vel eit problem under for å hoppa til det augneblikket.',
+  'onboarding.check': 'Vel eit problem under for å hoppa til det augneblikket — jamfør alternativ: byt ei rute eller forskuv ei starttid.',
   'onboarding.dismiss': 'Lukk råd',
   "workspace.loading3d": "Lastar 3D-vising…",
   "workspace.paths": "Ruter",

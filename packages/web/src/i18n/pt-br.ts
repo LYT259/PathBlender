@@ -85,7 +85,7 @@ export const ptBR: Record<MessageKey, string> = {
   'onboarding.play': 'Pressione Reproduzir para ver as trajetórias, ou arraste a linha do tempo.',
 
   'onboarding.import': "Importado — confira o básico primeiro: temporada e campo, tamanho do para-choque, vermelho/azul",
-  'onboarding.check': 'Selecione um problema abaixo para pular para aquele momento.',
+  'onboarding.check': 'Selecione um problema abaixo para pular para aquele momento — depois compare alternativas: troque uma rota ou desloque um horário de início.',
   'onboarding.dismiss': 'Dispensar dica',
   'workspace.loading3d': 'Carregando visualização 3D…',
   'workspace.paths': 'Trajetórias',

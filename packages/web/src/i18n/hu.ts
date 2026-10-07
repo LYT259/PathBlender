@@ -38,7 +38,7 @@ export const hu = {
   'prefs.appIcon': "Alkalmazásikon",
   'welcome.title': 'Importálj útvonalakat a kezdéshez',
   'welcome.description': 'Játszd le az útvonalakat együtt, és ellenőrizd az ütközéseket.',
-  'welcome.tagline': "A meccs előtt: rakd egy pályára minden szövetséges automata programját, játssza le őket együtt, és fedezze fel időben a robotok ütközési kockázatát.",
+  'welcome.tagline': "A meccs előtt: rakd egy pályára minden szövetséges automata programját, játszd le őket együtt, és fedezd fel időben a robotok ütközési kockázatát.",
   'tour.title': "Első lépések",
   'tour.progress': "{n}/{m}",
   'tour.collapse': "Lista összecsukása",
