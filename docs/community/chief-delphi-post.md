@@ -1,7 +1,7 @@
 # Chief Delphi release post — DRAFT (do not post until the app is deployed)
 
 > Local draft only. Fill in the app URL before posting. Keep the attribution
-> and disclaimer sections intact (AGENTS.md red line §2, FIRST IP policy §IV).
+> and disclaimer sections intact (project attribution rules, FIRST IP policy §IV).
 
 ---
 

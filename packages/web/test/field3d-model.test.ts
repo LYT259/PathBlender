@@ -192,7 +192,7 @@ describe('official models register tag-for-tag against the WPILib layouts', () =
 
   it('the retired Ry(180°)+offset mount is rejected by metres, not millimetres', () => {
     // The pre-fix hard-coded transform (fitted to the retired Onshape model,
-    // engineering-log 2026.9.13) must fail loudly — this is the guard
+    // measured 2026.9.13) must fail loudly — this is the guard
     // against re-introducing an eyeballed constant.
     const field = byId.get('crescendo-2024')!;
     const centers = decalCenters('2024-crescendo', /FE-00083_ID(\d+)/);
