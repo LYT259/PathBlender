@@ -197,6 +197,8 @@ export const fr: Record<MessageKey, string> = {
   'canvas.fit': 'Ajuster',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Carte thermique',
+  'canvas.trail': 'Traînée',
+  'canvas.overlays': 'Calques',
 
   "import.failed": "{n} fichier(s) n’ont pas pu être importés :",
   'import.dismiss': 'Ignorer',

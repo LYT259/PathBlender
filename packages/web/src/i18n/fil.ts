@@ -182,6 +182,8 @@ export const fil = {
   'canvas.fit': 'I-fit',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Heatmap',
+  'canvas.trail': 'Bakas',
+  'canvas.overlays': 'Mga overlay',
   
   'import.failed': '{n} file nabigong i-import:',
   'import.dismiss': 'Isara',

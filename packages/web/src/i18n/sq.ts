@@ -152,6 +152,8 @@ export const sq = {
   'canvas.fit': 'Përshtat',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Harta e nxehtësisë',
+  'canvas.trail': 'Gjurma',
+  'canvas.overlays': 'Shtresat',
   
   'import.failed': '{n} skedarë nuk u importuan:',
   'import.dismiss': 'Mbyll',

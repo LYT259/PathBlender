@@ -197,6 +197,8 @@ export const cs: Record<MessageKey, string> = {
   'canvas.fit': 'Přizpůsobit',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Teplotní mapa',
+  'canvas.trail': 'Stopa',
+  'canvas.overlays': 'Překryvy',
 
   'import.failed': 'Nepodařilo se importovat soubory ({n}):',
   'import.dismiss': 'Zavřít',
