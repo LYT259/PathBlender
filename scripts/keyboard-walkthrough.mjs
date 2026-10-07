@@ -91,13 +91,16 @@ const laneFocused = await page.waitForFunction(
 check('E enters the composer', (await composerOpen()) === 1);
 check('composer: focus lands on the editing lane', laneFocused);
 
-// At t=0 the example's first clip occupies the playhead. The current
-// occupancy gate correctly disables the route library, so expecting Tab to
-// reach a source here would test the retired behaviour. Make a real empty
-// stretch using only the keyboard: move the first editing clip right by 1 s.
+// At t=0 the example's first clip occupies the playhead. The occupancy gate
+// grays the whole route library (aria-disabled, not the disabled attribute —
+// 2026-10-07 user decision: a disabled button gets no hover, and grayed routes
+// must stay hoverable for their preview), so expecting Tab to reach a usable
+// source here would test the retired behaviour. Make a real empty stretch
+// using only the keyboard: move the first editing clip right by 1 s.
 const sources = page.locator('.sequence-route-source');
-check('composer: occupied playhead disables the route library',
-  await sources.count() > 0 && await page.locator('.sequence-route-source:enabled').count() === 0);
+check('composer: occupied playhead grays the route library (aria-disabled)',
+  await sources.count() > 0 &&
+  (await sources.count()) === (await page.locator('.sequence-route-source[aria-disabled="true"]').count()));
 const reachedFirstClip = await walk(() => page.evaluate(() => {
   const el = document.activeElement;
   return !!el?.classList.contains('sequence-clip') && !!el.closest('.sequence-track.is-editing');
@@ -105,7 +108,7 @@ const reachedFirstClip = await walk(() => page.evaluate(() => {
 if (!reachedFirstClip) throw new Error('keyboard cannot reach the editing clip');
 await page.keyboard.press('Shift+ArrowRight');
 const libraryEnabled = await page.waitForFunction(
-  () => !!document.querySelector('.sequence-route-source:not(:disabled)'),
+  () => !!document.querySelector('.sequence-route-source:not([aria-disabled="true"])'),
   null, { timeout: 3000 },
 ).then(() => true).catch(() => false);
 check('composer: moving the first clip leaves an empty stretch with available routes', libraryEnabled);
