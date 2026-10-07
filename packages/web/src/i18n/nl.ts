@@ -22,6 +22,7 @@ export const nl: Record<MessageKey, string> = {
   'sequence.joinHeading': 'richtingsverschil {d}°',
   'sequence.joinVelocity': 'snelheidssprong {d} m/s',
   'sequence.libraryBlocked': 'Het begin zet het einde van {name} niet voort (positieverschil {p}, richtingsverschil {h})',
+  'sequence.libraryOccupied': 'De afspeelkop staat op een bezet stuk — sleep hem eerst naar een lege plek',
   'sequence.joinFix': 'Herstel de overgang in PathPlanner of Choreo en importeer de route opnieuw.',
   'sequence.overAuto': 'Klaar op {t} s, na de autonome periode van {auto} s.',
   'sequence.invalid': 'Voer een eindige, niet-negatieve starttijd in.',
