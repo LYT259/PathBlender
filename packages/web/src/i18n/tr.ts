@@ -6,6 +6,7 @@ import type { MessageKey } from './en';
  * placeholders stay byte-identical to English (i18n.test.ts).
  */
 export const tr: Record<MessageKey, string> = {
+  "canvas.webglUnavailable": "WebGL kullanılamıyor",
   'sequence.start': 'Başlangıç',
   'sequence.end': 'Bitiş',
   'sequence.seconds': 'sn',

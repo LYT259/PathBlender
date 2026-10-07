@@ -82,9 +82,33 @@ check('help dialog: Escape closes it', (await page.getByRole('dialog', { name: '
 // 3 — E enters the composer; focus lands on the editing lane.
 await page.keyboard.press('e');
 await page.waitForSelector('.sequence-composer', { timeout: 5000 });
-const laneFocused = await page.evaluate(() => document.activeElement?.className?.includes('sequence-track-lane') ?? false);
+// The component focuses the lane in requestAnimationFrame, after mounting.
+// Wait for that observable result rather than sampling before the next frame.
+const laneFocused = await page.waitForFunction(
+  () => document.activeElement?.classList?.contains('sequence-track-lane'),
+  null, { timeout: 3000 },
+).then(() => true).catch(() => false);
 check('E enters the composer', (await composerOpen()) === 1);
 check('composer: focus lands on the editing lane', laneFocused);
+
+// At t=0 the example's first clip occupies the playhead. The current
+// occupancy gate correctly disables the route library, so expecting Tab to
+// reach a source here would test the retired behaviour. Make a real empty
+// stretch using only the keyboard: move the first editing clip right by 1 s.
+const sources = page.locator('.sequence-route-source');
+check('composer: occupied playhead disables the route library',
+  await sources.count() > 0 && await page.locator('.sequence-route-source:enabled').count() === 0);
+const reachedFirstClip = await walk(() => page.evaluate(() => {
+  const el = document.activeElement;
+  return !!el?.classList.contains('sequence-clip') && !!el.closest('.sequence-track.is-editing');
+}));
+if (!reachedFirstClip) throw new Error('keyboard cannot reach the editing clip');
+await page.keyboard.press('Shift+ArrowRight');
+const libraryEnabled = await page.waitForFunction(
+  () => !!document.querySelector('.sequence-route-source:not(:disabled)'),
+  null, { timeout: 3000 },
+).then(() => true).catch(() => false);
+check('composer: moving the first clip leaves an empty stretch with available routes', libraryEnabled);
 
 // 4 — Shift+Tab back into the route library, Enter appends a segment. The
 // example ships 22 routes for team 8814, so which entry the tab order hands

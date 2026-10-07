@@ -1,5 +1,6 @@
 /** Greek strings. */
 export const el = {
+  "canvas.webglUnavailable": "Το WebGL δεν είναι διαθέσιμο",
   'sequence.start': 'Έναρξη',
   'sequence.end': 'Τέλος',
   'sequence.seconds': 's',

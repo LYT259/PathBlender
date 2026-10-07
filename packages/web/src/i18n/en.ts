@@ -1,5 +1,6 @@
 /** English strings (source of truth for the key set). */
 export const en = {
+  "canvas.webglUnavailable": "WebGL unavailable",
   'prefs.checkUpdates': "Check for updates",
   'prefs.checking': "Checking for updates…",
   'prefs.updateAvailable': "Version {v} is available.",

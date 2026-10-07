@@ -1,5 +1,6 @@
 /** Filipino strings. */
 export const fil = {
+  "canvas.webglUnavailable": "Hindi magagamit ang WebGL",
   'sequence.start': 'Simula',
   'sequence.end': 'Dulo',
   'sequence.seconds': 's',

@@ -1,5 +1,6 @@
 /** Marathi strings. */
 export const mr = {
+  "canvas.webglUnavailable": "WebGL उपलब्ध नाही",
   'sequence.start': 'सुरुवात',
   'sequence.end': 'शेवट',
   'sequence.seconds': 'से',

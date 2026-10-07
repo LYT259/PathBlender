@@ -1,5 +1,6 @@
 /** Tamil strings. */
 export const ta = {
+  "canvas.webglUnavailable": "WebGL கிடைக்கவில்லை",
   'sequence.start': 'தொடக்கம்',
   'sequence.end': 'முடிவு',
   'sequence.seconds': 'வி',

@@ -11,6 +11,7 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const ptBR: Record<MessageKey, string> = {
+  "canvas.webglUnavailable": "WebGL indisponível",
   'sequence.start': 'Início',
   'sequence.end': 'Fim',
   'sequence.seconds': 's',

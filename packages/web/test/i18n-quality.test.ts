@@ -161,7 +161,7 @@ describe('copy that names a button names the real one', () => {
  */
 const BRANDS = [
   'pathblender', 'pathplanner', 'github', 'apriltag', 'andymark', 'viewcube',
-  'imagepixels', 'solidworks', 'okabe', 'choreo', 'onshape',
+  'imagepixels', 'webgl', 'solidworks', 'okabe', 'choreo', 'onshape',
 ];
 
 describe('no camelCase leftovers in translated prose', () => {
@@ -264,25 +264,40 @@ const PATH_STEMS: Record<Lang, string[]> = {
   zh: ['路径', '路线'], 'zh-hk': ['路徑', '路線'], 'zh-tw': ['路徑', '路線'],
 };
 
-/**
- * Rows still waiting on a decision only a native reviewer can make — the
- * replacement needs a case or number form the file cannot prove. Listing them
- * here keeps the debt visible, and the dead-entry check below fails when one is
- * fixed, so the list can only shrink.
- */
-const PENDING_PATH_STEMS: Partial<Record<Lang, string[]>> = {
-  // ուղի (road) and հետագիծ (trajectory) in three sequence rows; unifying them
-  // needs the Armenian accusative/plural of երթուղի.
-  hy: ['sequence.replaceRoute', 'sequence.replaced', 'toast.pkgNeedRobots'],
-  // Kinyarwanda still names the route 'umuhanda' in the two sequence rows; the dictionary
-  // needs a native re-pass for its other core nouns.
-  // umuhanda all name the same object today).
-  rw: ['sequence.replaceRoute', 'sequence.replaced'],
-};
-
 const pathFamily = KEYS.filter(
   (k) => /\b(paths?|routes?)\b/i.test((en as Record<string, string>)[k]) && !/trajector|\.path/i.test((en as Record<string, string>)[k]),
 );
+
+/**
+ * Evidence-backed rw concepts (2026-10-07): GNOME's non-fuzzy Paths entry
+ * uses inzira; Rwanda National Police uses kugongana for collisions; UNICEF
+ * Rwanda uses isesengura for analysis. The product's saved session is a saved
+ * analysis, so this is descriptive wording, not a claimed standard IT term.
+ * Bumper stays an explicit FRC technical term instead of naming only its cloth.
+ * These gates prevent known semantic regressions; they do not certify fluency.
+ */
+describe('Kinyarwanda operational concepts keep their reviewed meaning', () => {
+  it('saved analysis is never called a school lesson', () => {
+    const keys = ['welcome.openSession', 'workspace.imported', 'robots.removeFromSession',
+      'actions.save', 'import.notSession', 'customField.note', 'actions.saveHint',
+      'actions.clearHint', 'menu.clearSession', 'help.hint.desktop'];
+    for (const key of keys) {
+      expect(DICTS.rw![key], key).toMatch(/sesengura/);
+      expect(DICTS.rw![key], key).not.toMatch(/\b(?:isomo|somo|Ibisomo|session)\b/);
+    }
+  });
+
+  it('collision labels and bumper geometry do not name a meeting or cloth', () => {
+    for (const key of ['robots.collision', 'timeline.band', 'robots.visible']) {
+      expect(DICTS.rw![key], key).toContain('kugongana');
+      expect(DICTS.rw![key], key).not.toContain('guhura');
+    }
+    for (const key of ['robots.bumper', 'robots.applyProfileHint', 'robots.profileEntry', 'robots.settingsNotProfile']) {
+      expect(DICTS.rw![key].toLowerCase(), key).toContain('bumper');
+      expect(DICTS.rw![key], key).not.toMatch(/igitambaro|bampero/);
+    }
+  });
+});
 
 /**
  * The same discipline for the second-worst family — what the app calls
@@ -313,9 +328,7 @@ describe('one concept, one term per language', () => {
   it('paths and routes are named with the stems each language declares', () => {
     for (const code of CODES) {
       const stems = PATH_STEMS[code as Lang];
-      const pending = PENDING_PATH_STEMS[code as Lang] ?? [];
       for (const key of pathFamily) {
-        if (pending.includes(key)) continue;
         const v = DICTS[code]![key].toLowerCase();
         expect(
           stems.some((s) => v.includes(s.toLowerCase())),
@@ -338,17 +351,7 @@ describe('one concept, one term per language', () => {
     }
   });
 
-  it('the pending list carries no dead entries', () => {
-    for (const [code, keys] of Object.entries(PENDING_PATH_STEMS)) {
-      for (const key of keys) {
-        const v = DICTS[code]![key].toLowerCase();
-        expect(
-          PATH_STEMS[code as Lang].some((s) => v.includes(s.toLowerCase())),
-          `${code}:${key} is unified now — drop it from PENDING_PATH_STEMS`,
-        ).toBe(false);
-      }
-    }
-  });
+
 });
 
 /**
@@ -382,4 +385,3 @@ describe('the out-of-bounds row reads correctly in every language', () => {  it(
     }
   });
 });
-
