@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.67';
+export const APP_VERSION = '0.1.8-beta.68';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.68', date: '2026.10.07', note: {
+    en: 'Exported replay video declares an honest 30 fps; example-module preload keeps example tests stable',
+    zh: '导出的回放视频如实声明 30 fps；示例模块预载让示例相关测试保持稳定',
+    'zh-tw': '匯出的回放影片如實宣告 30 fps；範例模組預載讓範例相關測試保持穩定',
+    cs: 'Exportované video přehrávání uvádí skutečných 30 fps; přednačtení ukázkového modulu drží ukázkové testy stabilní.',
+    nl: 'Geëxporteerde replayvideo vermeldt een eerlijke 30 fps; voorladen van de voorbeeldmodule houdt de voorbeeldtests stabiel.',
+    fr: 'La vidéo de relecture exportée annonce un honnête 30 i/s ; le préchargement du module d’exemple stabilise les tests associés.',
+    he: 'וידאו ההפעלה המיוצא מצהיר על 30 פריימים לשנייה אמיתי; טעינה מוקדמת של מודול הדוגמה מייצבת את בדיקות הדוגמה',
+    ja: 'エクスポートしたリプレイ動画が正直な 30 fps を宣言。サンプルモジュールの事前読み込みでサンプル系テストを安定化',
+    ko: '내보낸 재생 영상이 정직한 30 fps를 선언합니다. 샘플 모듈 사전 로드로 샘플 테스트가 안정적으로 유지됩니다',
+    pl: 'Eksportowane wideo powtórki deklaruje uczciwe 30 fps; wstępne wczytanie modułu przykładu utrzymuje testy przykładu stabilne.',
+    'pt-br': 'O vídeo de repetição exportado declara 30 fps honestos; o pré-carregamento do módulo de exemplo mantém os testes de exemplo estáveis.',
+    es: 'El video de repetición exportado declara 30 fps honestos; la precarga del módulo de ejemplo mantiene estables los tests del ejemplo.',
+    tr: 'Dışa aktarılan oynatma videosu dürüstçe 30 fps bildiriyor; örnek modülün ön yüklenmesi örnek testlerini kararlı tutuyor',
+  } },
   { version: '0.1.8-beta.67', date: '2026.10.07', note: {
     en: 'welcome-example test waits out a loaded machine',
     zh: '示例加载测试放宽等待，高负载机器不再误报',
