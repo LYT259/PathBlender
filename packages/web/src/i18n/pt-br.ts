@@ -193,10 +193,6 @@ export const ptBR: Record<MessageKey, string> = {
 
   'toast.gifFailed': 'Falha no GIF',
 
-  'site.tryPreview': 'Experimentar o site de pré-visualização',
-  'site.backStable': 'Voltar ao site estável',
-  'site.previewNote': 'Build de pré-visualização — os recursos podem mudar a qualquer momento.',
-  'site.version': 'Versão',
   'canvas.view': 'Visualização',
   'canvas.fit': 'Ajustar',
   'canvas.clock': 't = {t} s',
@@ -300,9 +296,7 @@ export const ptBR: Record<MessageKey, string> = {
   'prefs.unit.cm': 'Centímetros (cm)',
   'prefs.unit.in': 'Polegadas (in)',
   'prefs.unit.ftin': 'Pés + polegadas (3′2″)',
-  'prefs.units.hint': 'As distâncias no painel de verificações usam esta unidade, por exemplo.',
   'prefs.colorblind': 'Paleta para daltonismo',
-  'prefs.colorblindHint': 'Troque as cores dos robôs por um conjunto seguro para daltonismo (Okabe-Ito)',
   'prefs.theme': 'Tema',
   'theme.system': 'Seguir o sistema',
   'theme.dark': 'Escuro',

@@ -178,10 +178,6 @@ export const mr = {
   
   'toast.gifFailed': 'GIF अयशस्वी',
   
-  'site.tryPreview': 'प्रीव्ह्यू साइट वापरून पहा',
-  'site.backStable': 'स्थिर साइटवर परत',
-  'site.previewNote': 'प्रीव्ह्यू बिल्ड — वैशिष्ट्ये कधीही बदलू शकतात.',
-  'site.version': 'आवृत्ती',
   'canvas.view': 'दृश्य',
   'canvas.fit': 'फिट',
   'canvas.clock': 't = {t} से',
@@ -283,9 +279,7 @@ export const mr = {
   'prefs.unit.cm': 'सेंटीमीटर (से.मी)',
   'prefs.unit.in': 'इंच (in)',
   'prefs.unit.ftin': 'फूट + इंच (3′2″)',
-  'prefs.units.hint': 'तपासणी पॅनेलमधील अंतर हे एकक वापरतात, उदा.',
   'prefs.colorblind': 'वर्णांधता पॅलेट',
-  'prefs.colorblindHint': 'रोबोट रंग वर्णांधता-सुरक्षित संचात (Okabe-Ito) बदला',
   'prefs.theme': 'थीम',
   'theme.system': 'सिस्टम फॉलो करा',
   'theme.dark': 'गडद',

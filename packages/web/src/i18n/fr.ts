@@ -193,10 +193,6 @@ export const fr: Record<MessageKey, string> = {
 
   "toast.gifFailed": "Échec du GIF",
 
-  "site.tryPreview": "Essayer le site d’aperçu",
-  'site.backStable': 'Revenir au site stable',
-  "site.previewNote": "Version d’aperçu — les fonctions peuvent changer à tout moment.",
-  'site.version': 'Version',
   'canvas.view': 'Vue',
   'canvas.fit': 'Ajuster',
   'canvas.clock': 't = {t} s',
@@ -298,9 +294,7 @@ export const fr: Record<MessageKey, string> = {
   'prefs.unit.cm': 'Centimètres (cm)',
   'prefs.unit.in': 'Pouces (in)',
   'prefs.unit.ftin': 'Pieds + pouces (3′2″)',
-  'prefs.units.hint': 'Les distances du panneau de contrôles utilisent cette unité, ex. :',
   'prefs.colorblind': 'Palette daltonien',
-  'prefs.colorblindHint': 'Remplacez les couleurs des robots par un jeu sûr pour les daltoniens (Okabe-Ito)',
   'prefs.theme': 'Thème',
   'theme.system': 'Suivre le système',
   'theme.dark': 'Sombre',
