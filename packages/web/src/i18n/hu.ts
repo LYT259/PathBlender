@@ -152,6 +152,8 @@ export const hu = {
   'canvas.fit': 'Igazítás',
   'canvas.clock': 't = {t} mp',
   'canvas.heatmap': 'Hőtérkép',
+  'canvas.trail': 'Nyomvonal',
+  'canvas.overlays': 'Átfedések',
   
   'import.failed': '{n} fájl importálása sikertelen:',
   'import.dismiss': 'Elvetés',

@@ -182,6 +182,8 @@ export const it = {
   'canvas.fit': 'Adatta',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Mappa di calore',
+  'canvas.trail': 'Scia',
+  'canvas.overlays': 'Sovrapposizioni',
   
   'import.failed': '{n} file non importati:',
   'import.dismiss': 'Chiudi',

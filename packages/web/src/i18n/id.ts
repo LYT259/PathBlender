@@ -182,6 +182,8 @@ export const id = {
   'canvas.fit': 'Sesuaikan',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Peta panas',
+  'canvas.trail': 'Jejak',
+  'canvas.overlays': 'Lapisan',
   
   'import.failed': '{n} berkas gagal diimpor:',
   'import.dismiss': 'Tutup',

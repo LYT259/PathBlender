@@ -197,6 +197,8 @@ export const ko: Record<MessageKey, string> = {
   'canvas.fit': '맞춤',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': '히트맵',
+  'canvas.trail': '궤적',
+  'canvas.overlays': '오버레이',
 
   'import.failed': '파일 {n}개를 가져오지 못했습니다:',
   'import.dismiss': '닫기',

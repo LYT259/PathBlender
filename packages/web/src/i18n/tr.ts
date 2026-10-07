@@ -195,6 +195,8 @@ export const tr: Record<MessageKey, string> = {
   'canvas.fit': 'Sığdır',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Isı haritası',
+  'canvas.trail': 'İz',
+  'canvas.overlays': 'Katmanlar',
 
   'import.failed': '{n} dosya içe aktarılamadı:',
   'import.dismiss': 'Kapat',
