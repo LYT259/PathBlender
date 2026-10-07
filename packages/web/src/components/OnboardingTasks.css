@@ -1,0 +1,40 @@
+/* Onboarding checklist card (2026-10-07 plan §3): sits above the robot list
+   while the example session is active. Quiet by design — the field stays the
+   hero; the card only lists what to try next and gets out of the way
+   (collapse or close) without ever blocking the workspace. */
+.tour-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-panel);
+}
+.tour-head { display: flex; align-items: center; gap: 8px; }
+.tour-name { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+.tour-progress { margin-left: auto; color: var(--fg-dim); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.tour-toggle, .tour-close {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; padding: 0;
+  border: 0; border-radius: 6px; background: transparent; color: var(--fg-dim); cursor: pointer;
+}
+.tour-toggle:hover, .tour-close:hover { color: var(--fg); background: var(--hover); }
+.tour-toggle:focus-visible, .tour-close:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.tour-toggle svg { transition: transform 0.15s ease; transform: rotate(-90deg); }
+.tour-toggle[aria-expanded='false'] svg { transform: rotate(90deg); }
+.tour-tasks { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.tour-tasks li { display: flex; gap: 8px; align-items: flex-start; }
+.tour-check {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 17px; height: 17px; margin-top: 1px;
+  border: 1.5px solid var(--border); border-radius: 50%;
+  color: var(--accent);
+}
+.tour-tasks li.is-done .tour-check { border-color: var(--accent); background: var(--accent-dim); }
+.tour-text { display: grid; gap: 1px; min-width: 0; }
+.tour-task-title { font-size: 12px; line-height: 1.4; color: var(--fg); }
+.tour-tasks li.is-done .tour-task-title { color: var(--fg-dim); }
+.tour-task-hint { font-size: 11.5px; line-height: 1.45; color: var(--fg-dim); }
+.tour-finished { margin: 0; padding-top: 2px; border-top: 1px dashed var(--border); font-size: 11.5px; line-height: 1.5; color: var(--fg-dim); }

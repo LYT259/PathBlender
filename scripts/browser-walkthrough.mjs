@@ -110,6 +110,26 @@ await page.waitForSelector('.guide-dialog', { state: 'detached' });
 check('quick guide closes on Escape', true);
 await page.screenshot({ path: `${SHOTS}/01-empty.png` });
 
+// --- Onboarding tour (2026-10-07 plan §3): the example session carries a
+// five-task checklist; a real mirror click completes its task, dismissing
+// hides the card, and the example exits cleanly back to the welcome page. ---
+await page.locator('.welcome-try-example').click();
+await page.waitForSelector('.robot-library-row', { timeout: 10000 });
+await page.waitForSelector('.tour-card');
+check('tour card appears with the example at 0/5', (await page.locator('.tour-card .tour-progress').textContent()) === '0/5');
+await page.locator('.robot-library-row').first()
+  .getByRole('button', { name: /mirror/i }).first().click();
+await page.waitForFunction(() => document.querySelector('.tour-card .tour-progress')?.textContent === '1/5');
+check('mirror click completes its tour task', true);
+await page.screenshot({ path: `${SHOTS}/02-tour-card.png` });
+await page.locator('.tour-card .tour-close').click();
+await page.waitForSelector('.tour-card', { state: 'detached' });
+check('tour card dismisses', true);
+await page.getByRole('button', { name: /end example/i }).click();
+await page.waitForSelector('.workspace-empty');
+check('example exits back to the welcome page', true);
+
+
 // --- AI retreat (2026-09-20): no assistant surface anywhere ---
 await (await prefsGear()).click();
 await page.waitForSelector('.prefs-modal');
