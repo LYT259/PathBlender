@@ -176,7 +176,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                 <button type="button" className="robot-mirror-button" disabled={!onMirrorButtonClick}
                   aria-pressed={mirroredIds?.has(trajectory.id) ?? false}
                   aria-keyshortcuts="m"
-                  title={t('robots.mirror')} aria-label={t('robots.mirror')}
+                  title={t('robots.mirror')} aria-label={t('robots.mirror')} aria-description={t('robots.mirrorHint')}
                   onClick={() => onMirrorButtonClick?.(trajectory.id)}>
                   <Icon name="mirror" size={17} />
                 </button>

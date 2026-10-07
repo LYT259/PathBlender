@@ -7,9 +7,11 @@ import { makeSession, parsePathFile, serializeSession } from '@pathblender/core'
 import { App } from '../src/App';
 import { en } from '../src/i18n/en';
 
+const checkHint = en['onboarding.check'];
+
 const sampleText = readFileSync(resolve(__dirname, '../../../samples/ghostauto/straight_run.ghostauto'), 'utf8');
 const playHint = 'Press Play to see the paths, or scrub the timeline.';
-const checkHint = 'Select an issue below to jump to that moment.';
+
 
 function sessionInput() {
   return document.querySelector<HTMLInputElement>('input[type="file"][accept=".pb,.ghpb.json"]')!;
