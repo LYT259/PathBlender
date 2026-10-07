@@ -34,18 +34,20 @@ describe('playback clock bounds and keyboard ownership', () => {
     expect(result.current.t).toBe(0);
   });
 
-  it('leaves Space and arrow keys to buttons and modal dialogs', () => {
+  it('leaves Space to the focused button, scrubs from button focus, and dialogs block all', () => {
     const { result } = renderHook(() => usePlayback(10));
     const ui = render(<button type="button">Import paths</button>);
-    fireEvent.keyDown(screen.getByRole('button'), { code: 'Space', key: ' ' });
-    fireEvent.keyDown(screen.getByRole('button'), { code: 'ArrowRight', key: 'ArrowRight' });
+    const button = screen.getByRole('button');
+    // Space activates the focused button — never play/pause.
+    fireEvent.keyDown(button, { code: 'Space', key: ' ' });
     expect(result.current.playing).toBe(false);
-    expect(result.current.t).toBe(0);
+    // Scrub keys cannot activate anything, so they work from button focus.
+    fireEvent.keyDown(button, { code: 'ArrowRight', key: 'ArrowRight' });
+    expect(result.current.t).toBe(0.5);
     ui.rerender(<div role="dialog" aria-modal="true">Preferences</div>);
     fireEvent.keyDown(window, { code: 'Space', key: ' ' });
     fireEvent.keyDown(window, { code: 'ArrowRight', key: 'ArrowRight' });
-    expect(result.current.playing).toBe(false);
-    expect(result.current.t).toBe(0);
+    expect(result.current.t).toBe(0.5);
   });
 
   it('does not toggle repeatedly while Space is held; explicit scrubbing pauses', () => {

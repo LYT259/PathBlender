@@ -1,9 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import type {
-  CollisionInterval,
-  OutOfBoundsInterval,
-  SessionTrajectory,
-} from '@pathblender/core';
+import type { SessionTrajectory } from '@pathblender/core';
 import { activeEndT, activeStartT, sequenceEventTimes } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import './Timeline.css';
@@ -15,8 +11,6 @@ import { PlaybackControls, type Playback } from './PlaybackControls';
 
 interface Props {
   robots: SessionTrajectory[];
-  conflicts: CollisionInterval[];
-  bounds: OutOfBoundsInterval[];
   /** Current season's Autonomous Period (FieldPackage.autoPeriodS) — the
    *  ruler's floor so an empty/short session still spans the whole auto. */
   autoPeriodS: number;
@@ -43,7 +37,7 @@ interface Props {
 }
 
 
-export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, visibleDuration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onEditTeam, onJump, guide, composeAction }: Props) {
+export function Timeline({ robots, autoPeriodS, duration, visibleDuration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onEditTeam, onJump, guide, composeAction }: Props) {
   const { t: tr } = useI18n();
   const { t, setT, setPlaying } = playback;
   const rangeDuration = playbackRange === 'paths' && visibleDuration !== undefined ? visibleDuration : duration;
@@ -83,8 +77,8 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, vis
         {composeAction}
         {robots.length > 0 && (
           <div className="timeline-legend">
-            <span><i className="timeline-legend-collision" />{tr('timeline.collision')}</span>
-            <span><i className="timeline-legend-bounds" />{tr('timeline.outOfBounds')}</span>
+            {/* Collision/out-of-bounds legend entries went with the lane
+                markers (user 2026-10-07) — events are the only lane dot. */}
             <span><i className="timeline-legend-event" />{tr('timeline.event')}</span>
           </div>
         )}
@@ -96,8 +90,6 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, vis
             <div className="timeline-rows">
               {robots.map((robot) => {
                 const { trajectory } = robot;
-                const robotConflicts = conflicts.filter((c) => c.aId === trajectory.id || c.bId === trajectory.id);
-                const robotBounds = bounds.filter((b) => b.robotId === trajectory.id);
                 const activityLabel = tr('timeline.activity', {
                   name: robotIdentity(trajectory),
                   start: activeStartT(robot).toFixed(2),
@@ -128,22 +120,9 @@ export function Timeline({ robots, conflicts, bounds, autoPeriodS, duration, vis
                         aria-label={activityLabel}
                         title={activityLabel}
                       />
-                      {robotBounds.map((issue, index) => {
-                        const label = tr('timeline.issue', {
-                          kind: tr('timeline.outOfBounds'), name: robotIdentity(trajectory),
-                          start: issue.startT.toFixed(2), end: issue.endT.toFixed(2),
-                        });
-                        return <button key={`bounds-${index}`} type="button" className="timeline-issue timeline-bounds" style={intervalStyle(issue.startT, issue.endT)} aria-label={label} title={label} onClick={() => jump(issue.startT, [trajectory.id])} />;
-                      })}
-                      {robotConflicts.map((issue, index) => {
-                        const otherId = issue.aId === trajectory.id ? issue.bId : issue.aId;
-                        const other = robots.find((r) => r.trajectory.id === otherId);
-                        const label = tr('timeline.issue', {
-                          kind: tr('timeline.collision'), name: `${robotIdentity(trajectory)} × ${other ? robotIdentity(other.trajectory) : otherId}`,
-                          start: issue.startT.toFixed(2), end: issue.endT.toFixed(2),
-                        });
-                        return <button key={`collision-${index}`} type="button" className="timeline-issue timeline-collision" style={intervalStyle(issue.startT, issue.endT)} aria-label={label} title={label} onClick={() => jump(issue.startT, [issue.aId, issue.bId], trajectory.id)} />;
-                      })}
+                      {/* Conflict/out-of-bounds markers removed (user 2026-10-07):
+                          the checks panel owns conflict jumps; the lane keeps only
+                          the robot's activity tape and its route events. */}
                       {sequenceEventTimes(robot).map((event, index) => {
                         const label = tr('timeline.eventAt', { name: event.name, t: event.t.toFixed(2) });
                         return <button key={`event-${index}`} type="button" className="timeline-event" style={{ left: percent(event.t) }} title={label} aria-label={label} onClick={() => jump(event.t, [trajectory.id])} />;
