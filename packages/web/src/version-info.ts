@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.65';
+export const APP_VERSION = '0.1.8-beta.66';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.66', date: '2026.10.07', note: {
+    en: 'welcome-example test waits out a loaded machine',
+    zh: '示例加载测试放宽等待，高负载机器不再误报',
+    'zh-tw': '示例載入測試放寬等待，高負載機器不再誤報',
+    cs: 'Test ukázkového příkladu vydrží vytížený stroj bez falešného selhání',
+    nl: 'Voorbeeldtest wacht lang genoeg op een zwaar belaste machine',
+    fr: 'Le test de l’exemple attend assez longtemps sur une machine chargée',
+    he: 'בדיקת הדוגמה ממתינה מספיק גם במכונה עמוסה',
+    ja: 'サンプル読み込みテストが高負荷環境でも誤失敗しないよう待機を延長',
+    ko: '예제 로드 테스트가 과부하 상태에서도 거짓 실패하지 않도록 대기 시간 확보',
+    pl: 'Test przykładu czeka wystarczająco długo na obciążonej maszynie',
+    'pt-br': 'Teste do exemplo espera o suficiente em uma máquina carregada',
+    es: 'La prueba del ejemplo espera lo suficiente en una máquina cargada',
+    tr: 'Örnek testi yoğun bir makinede yeterince bekliyor',
+  } },
   { version: '0.1.8-beta.65', date: '2026.10.07', note: {
     en: 'Tab icon: full-bleed logo without the white border — now follows light/dark appearance',
     zh: '标签页图标：改为满幅 Logo、去掉外圈白边，并跟随深浅色外观自动切换',
