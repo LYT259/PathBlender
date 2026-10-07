@@ -81,18 +81,20 @@ rest of the alliance.
   the replay, for the alliance chat. Everything also lives in the
   PathBlender menu;
 - **Appearance & languages**: light/dark/follow-system in Preferences
-  (⌘, on desktop); the UI ships in 41 languages — English, 简体中文,
-  繁體中文（中國台灣）, 繁體中文（中國香港）, Français, Español, Deutsch,
+  (⌘, on desktop); the UI ships in 40 languages — English, 简体中文,
+  繁體中文（中國香港）, Français, Español, Deutsch,
   Italiano, Português (Brasil), Nederlands, Polski, Čeština, Türkçe,
   Ελληνικά, עברית, العربية, हिन्दी, 日本語, 한국어 among them — the full
   list is in the language menu, and the app follows your system language
   until you pick one;
 - **Updates** (desktop): menu **PathBlender → Check for Updates…**;
   Preferences → Updates switches between the stable and beta channels.
+  On Linux, in-app updates use the AppImage; DEB/RPM installs update by
+  installing the new package.
 
 ## Web app vs desktop app
 
-| | Web | Desktop (macOS) |
+| | Web | Desktop (macOS / Windows / Linux) |
 |---|---|---|
 | Import / playback / collision checking | ✓ | ✓ |
 | Save & open session files | open only | ✓ |
