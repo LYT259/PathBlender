@@ -19,6 +19,8 @@
 
 import { useEffect, useState } from 'react';
 import { broadcastPref, listenPrefs } from './pref-sync';
+import { formatDecimal } from './number-format';
+import type { Lang } from './i18n';
 
 export type LengthUnit = 'cm' | 'ft' | 'in' | 'm' | 'yd' | 'ftin';
 
@@ -83,24 +85,24 @@ export function lengthUnitSuffix(unit: LengthUnit): string {
  * pair readouts like '35.4×35.4 in' (the unit is appended once by the
  * caller). Same conversions and precision as formatLength.
  */
-export function formatLengthNumber(meters: number, unit: LengthUnit): string {
+export function formatLengthNumber(meters: number, unit: LengthUnit, lang: Lang = 'en'): string {
   const v = Math.abs(meters);
   switch (unit) {
     case 'm':
-      return v.toFixed(2);
+      return formatDecimal(v, lang, 2);
     case 'cm':
-      return (v * 100).toFixed(1);
+      return formatDecimal(v * 100, lang, 1);
     case 'in':
-      return (v * IN_PER_M).toFixed(1);
+      return formatDecimal(v * IN_PER_M, lang, 1);
     case 'ft':
-      return (v * FT_PER_M).toFixed(2);
+      return formatDecimal(v * FT_PER_M, lang, 2);
     case 'yd':
-      return (v * YD_PER_M).toFixed(2);
+      return formatDecimal(v * YD_PER_M, lang, 2);
     case 'ftin': {
       const totalIn = v * IN_PER_M;
       const ft = Math.floor(totalIn / 12);
       const inch = totalIn - ft * 12;
-      return ft > 0 ? `${ft}′${inch.toFixed(1)}″` : `${inch.toFixed(1)}″`;
+      return ft > 0 ? `${ft}′${formatDecimal(inch, lang, 1)}″` : `${formatDecimal(inch, lang, 1)}″`;
     }
   }
 }
@@ -111,12 +113,12 @@ export function formatLengthNumber(meters: number, unit: LengthUnit): string {
  * Negative values (penetration depths) format their magnitude with a
  * leading minus.
  */
-export function formatLength(meters: number, unit: LengthUnit): string {
+export function formatLength(meters: number, unit: LengthUnit, lang: Lang = 'en'): string {
   const sign = meters < 0 ? '-' : '';
   switch (unit) {
     case 'ftin':
-      return `${sign}${formatLengthNumber(meters, unit)}`;
+      return `${sign}${formatLengthNumber(meters, unit, lang)}`;
     default:
-      return `${sign}${formatLengthNumber(meters, unit)} ${unit}`;
+      return `${sign}${formatLengthNumber(meters, unit, lang)} ${unit}`;
   }
 }

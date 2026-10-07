@@ -186,12 +186,12 @@ export const he: Record<MessageKey, string> = {
   'robots.driveDifferential': 'דיפרנציאלי',
   'robots.visible': 'נראה בהשמעה ובבדיקת התנגשות',
 
-  'vc.top': 'T',
-  'vc.bottom': 'B',
-  'vc.front': 'F',
-  'vc.back': 'K',
-  'vc.left': 'L',
-  'vc.right': 'R',
+  'vc.top': 'ע',
+  'vc.bottom': 'ת',
+  'vc.front': 'ק',
+  'vc.back': 'א',
+  'vc.left': 'ש',
+  'vc.right': 'י',
   'field.variant': 'מבנה המגרש (מרותך לעומת בנוי AndyMark)',
 
   'field.style': 'סגנון איור המגרש (סכמטי לעומת מצויר)',

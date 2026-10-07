@@ -26,13 +26,13 @@ function TransportIcon({ kind }: { kind: 'rewind' | 'back' | 'play' | 'pause' | 
 }
 
 export function PlaybackControls({ playback, end }: { playback: Playback; end: number }) {
-  const { t: tr } = useI18n();
+  const { t: tr, n } = useI18n();
   const { t, setT, playing, setPlaying, speed, setSpeed } = playback;
   const currentT = Math.min(end, Math.max(0, t));
   const seek = (time: number) => { setPlaying(false); setT(Math.min(end, Math.max(0, time))); };
   return (      <div className="timeline-playback-bar">
         <span className="clock timeline-clock">
-          {tr('timeline.clock', { t: currentT.toFixed(2), d: end.toFixed(2) })}
+          {tr('timeline.clock', { t: n(currentT, 2), d: n(end, 2) })}
         </span>
         <div className="timeline-transport">
           <button type="button" onClick={() => seek(0)} disabled={end === 0} aria-label={tr('timeline.rewind')} title={tr('timeline.rewind')}>
@@ -58,7 +58,7 @@ export function PlaybackControls({ playback, end }: { playback: Playback; end: n
         <div className="timeline-speeds" role="group" aria-label={tr('timeline.playbackSpeed')}>
           {SPEEDS.map((s) => (
             <button type="button" key={s} aria-pressed={s === speed} onClick={() => setSpeed(s)}>
-              {tr('timeline.speed', { n: s })}
+              {tr('timeline.speed', { n: n(s) })}
             </button>
           ))}
         </div>

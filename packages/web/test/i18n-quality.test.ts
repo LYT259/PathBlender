@@ -114,11 +114,13 @@ describe('pre-formatted measurements are not given a second unit', () => {
 
 /**
  * Hard-coded decimals in labels must follow the locale's separator, or the
- * step buttons read "0.5" next to every app-formatted "0,5". `es` and `ar` are
- * deliberately unenforced: one Spanish dictionary serves both comma (Spain)
- * and point (Latin America) countries, and Arabic accepts both in tech UI.
+ * step buttons read "0.5" next to every app-formatted "0,5". Since the
+ * 2026-10-07 number-format display layer (number-format.ts), runtime numbers
+ * use the same Intl locale as these tables, so `es` follows its CLDR/RAE
+ * comma. Only `ar` stays unenforced: Arabic accepts both separators in tech
+ * UI and the project renders it with a point (number-format.ts pins 'en').
  */
-const COMMA = ['az', 'bg', 'bs', 'cs', 'da', 'de', 'el', 'fr', 'hu', 'id', 'it', 'mk',
+const COMMA = ['az', 'bg', 'bs', 'cs', 'da', 'de', 'el', 'es', 'fr', 'hu', 'id', 'it', 'mk',
   'nb', 'nl', 'nn', 'pl', 'pt-BR', 'ro', 'rw', 'sq', 'sr', 'sv', 'tr', 'uk', 'vi', 'hy'];
 const POINT = ['fil', 'hi', 'ja', 'ko', 'mr', 'ms', 'ta', 'zh', 'zh-hk', 'zh-tw'];
 const DECIMAL_KEYS = ['timeline.stepBack', 'timeline.stepForward'];

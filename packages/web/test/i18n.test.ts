@@ -123,7 +123,7 @@ describe('i18n dictionaries', () => {
     'es': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.section.general","workspace.details","robots.title","prefs.channel.beta"],
     'fil': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.file","workspace.details","robots.collision","actions.heatmapOn","canvas.heatmap","robots.timing","prefs.channel.stable","prefs.channel.beta"],
     'fr': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","robots.title","robots.collision","robots.alliance","timeline.pause","about.version","prefs.unit.yd","prefs.channel.stable","sequence.count"],
-    'he': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","prefs.channel.stable","prefs.channel.beta"],
+    'he': ["prefs.channel.stable","prefs.channel.beta"],
     'hi': [],
     'hr': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta"],
     'hu': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details"],
