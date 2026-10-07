@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.85';
+export const APP_VERSION = '0.1.8-beta.84';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,20 +32,20 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.8-beta.85', date: '2026.10.07', note: {
-    en: "Welcome screen explains what PathBlender is for; Help menu gains an in-app quick guide with the core topics (alliance switch vs mirror, checks, sharing)",
-    "zh": "欢迎页讲清 PathBlender 的用途；帮助菜单新增应用内快速指南（含联盟切换与左右镜像、检查结果、保存分享等主题）",
-    "zh-tw": "歡迎頁說明 PathBlender 的用途；說明選單新增應用程式內快速指南（含聯盟切換與左右鏡像、檢查結果、儲存分享等主題）",
-    "cs": "Uvítací obrazovka vysvětluje, k čemu PathBlender slouží; v nabídce nápovědy přibyla vestavěná rychlá příručka (přepnutí aliance vs. zrcadlení, kontroly, sdílení)",
-    "nl": "Het welkomstscherm legt uit waar PathBlender voor is; in het Help-menu zit nu een ingebouwde korte gids (alliantie-omschakeling vs. spiegelen, controles, delen)",
-    "fr": "L’écran d’accueil explique à quoi sert PathBlender ; le menu Aide gagne un guide rapide intégré (changement d’alliance vs. miroir, contrôles, partage)",
-    "he": "מסך הפתיחה מסביר למה PathBlender נועד; בתפריט העזרה נוסף מדריך מהיר מובנה (החלפת ברית מול שיקוף, בדיקות, שיתוף)",
-    "ja": "ウェルカム画面で PathBlender の用途を説明。ヘルプメニューにアプリ内クイックガイドを追加（アライアンス切替とミラー、検査結果、共有など）",
-    "ko": "환영 화면에서 PathBlender의 용도를 설명합니다. 도움말 메뉴에 앱 내 빠른 안내 추가(얼라이언스 전환 vs 미러, 검사 결과, 공유 등)",
-    "pl": "Ekran powitalny wyjaśnia, do czego służy PathBlender; menu Pomocy zyskuje wbudowany krótki przewodnik (przełączenie sojuszu vs. odbicie, kontrole, udostępnianie)",
-    "pt-br": "A tela de boas-vindas explica para que serve o PathBlender; o menu Ajuda ganha um guia rápido integrado (troca de aliança vs. espelhamento, checagens, compartilhamento)",
-    "es": "La pantalla de bienvenida explica para qué sirve PathBlender; el menú Ayuda gana una guía rápida integrada (cambio de alianza vs. espejo, comprobaciones, compartir)",
-    "tr": "Karşılama ekranı PathBlender’ın ne için olduğunu açıklıyor; Yardım menüsüne yerleşik hızlı kılavuz eklendi (ittifak geçişi ve aynalama, kontroller, paylaşım)",
+  { version: '0.1.8-beta.84', date: '2026.10.07', note: {
+    en: 'The browser tab icon now follows the system light/dark mode — red plate by day, black by night — and iOS home screens get the matching app icon',
+    zh: '浏览器标签页图标现跟随系统深浅色模式自动切换——白天红底、夜间黑底——iOS 主屏幕也换上对应的 App 图标',
+    'zh-tw': '瀏覽器分頁圖示現跟隨系統深淺色模式自動切換——白天紅底、夜間黑底——iOS 主畫面也換上對應的 App 圖示',
+    cs: 'Ikona karty v prohlížeči nyní sleduje světlý a tmavý režim systému — přes den červená, v noci černá — a domovská obrazovka iOS dostává odpovídající ikonu aplikace',
+    nl: 'Het tabbladpictogram in de browser volgt nu de lichte en donkere modus van het systeem — overdag rood, ’s nachts zwart — en het iOS-thuisscherm krijgt het bijpassende app-pictogram',
+    fr: 'L’icône de l’onglet du navigateur suit désormais les modes clair et sombre du système — rouge le jour, noir la nuit — et l’écran d’accueil iOS reçoit l’icône d’app correspondante',
+    he: 'אייקון הטאב בדפדפן עוקב עכשיו אחר מצב בהיר וכהה במערכת — אדום ביום, שחור בלילה — ומסך הבית ב-iOS מקבל את אייקון האפליקציה התואם',
+    ja: 'ブラウザーのタブアイコンがシステムのライト／ダークモードに従って自動で切り替わります——昼は赤、夜は黒——iOS のホーム画面にも対応するアプリアイコンが付きます',
+    ko: '브라우저 탭 아이콘이 이제 시스템의 라이트·다크 모드를 따라 자동으로 전환됩니다 — 낮에는 빨강, 밤에는 검정 — iOS 홈 화면에도 맞는 앱 아이콘이 적용됩니다',
+    pl: 'Ikona karty przeglądarki uwzględnia teraz jasny i ciemny tryb systemu — czerwona w dzień, czarna w nocy — a ekran główny iOS otrzymuje pasującą ikonę aplikacji',
+    'pt-br': 'O ícone da aba do navegador agora acompanha o modo claro e escuro do sistema — vermelho de dia, preto à noite — e a tela de início do iOS recebe o ícone do aplicativo correspondente',
+    es: 'El icono de la pestaña del navegador ahora sigue el modo claro y oscuro del sistema — rojo de día, negro de noche — y la pantalla de inicio de iOS recibe el icono de la app correspondiente',
+    tr: 'Tarayıcı sekmesi simgesi artık sistemin açık ve koyu modunu izliyor — gündüz kırmızı, gece siyah — ve iOS ana ekranı eşleşen uygulama simgesini alıyor',
   } },
   { version: '0.1.8-beta.83', date: '2026.10.07', note: {
     en: 'The playback-range selector moves to the top row beside Back to playback, full size like the main timeline',
