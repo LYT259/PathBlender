@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.85';
+export const APP_VERSION = '0.1.8-beta.86';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.86', date: '2026.10.07', note: {
+    en: 'The browser tab icon now follows the system light/dark mode — red plate by day, black by night — and iOS home screens get the matching app icon',
+    zh: '浏览器标签页图标现跟随系统深浅色模式自动切换——白天红底、夜间黑底——iOS 主屏幕也换上对应的 App 图标',
+    'zh-tw': '瀏覽器分頁圖示現跟隨系統深淺色模式自動切換——白天紅底、夜間黑底——iOS 主畫面也換上對應的 App 圖示',
+    cs: 'Ikona karty v prohlížeči nyní sleduje světlý a tmavý režim systému — přes den červená, v noci černá — a domovská obrazovka iOS dostává odpovídající ikonu aplikace',
+    nl: 'Het tabbladpictogram in de browser volgt nu de lichte en donkere modus van het systeem — overdag rood, ’s nachts zwart — en het iOS-thuisscherm krijgt het bijpassende app-pictogram',
+    fr: 'L’icône de l’onglet du navigateur suit désormais les modes clair et sombre du système — rouge le jour, noir la nuit — et l’écran d’accueil iOS reçoit l’icône d’app correspondante',
+    he: 'אייקון הטאב בדפדפן עוקב עכשיו אחר מצב בהיר וכהה במערכת — אדום ביום, שחור בלילה — ומסך הבית ב-iOS מקבל את אייקון האפליקציה התואם',
+    ja: 'ブラウザーのタブアイコンがシステムのライト／ダークモードに従って自動で切り替わります——昼は赤、夜は黒——iOS のホーム画面にも対応するアプリアイコンが付きます',
+    ko: '브라우저 탭 아이콘이 이제 시스템의 라이트·다크 모드를 따라 자동으로 전환됩니다 — 낮에는 빨강, 밤에는 검정 — iOS 홈 화면에도 맞는 앱 아이콘이 적용됩니다',
+    pl: 'Ikona karty przeglądarki uwzględnia teraz jasny i ciemny tryb systemu — czerwona w dzień, czarna w nocy — a ekran główny iOS otrzymuje pasującą ikonę aplikacji',
+    'pt-br': 'O ícone da aba do navegador agora acompanha o modo claro e escuro do sistema — vermelho de dia, preto à noite — e a tela de início do iOS recebe o ícone do aplicativo correspondente',
+    es: 'El icono de la pestaña del navegador ahora sigue el modo claro y oscuro del sistema — rojo de día, negro de noche — y la pantalla de inicio de iOS recibe el icono de la app correspondiente',
+    tr: 'Tarayıcı sekmesi simgesi artık sistemin açık ve koyu modunu izliyor — gündüz kırmızı, gece siyah — ve iOS ana ekranı eşleşen uygulama simgesini alıyor',
+  } },
   { version: '0.1.8-beta.85', date: '2026.10.07', note: {
     en: "Welcome screen explains what PathBlender is for; Help menu gains an in-app quick guide with the core topics (alliance switch vs mirror, checks, sharing)",
     "zh": "欢迎页讲清 PathBlender 的用途；帮助菜单新增应用内快速指南（含联盟切换与左右镜像、检查结果、保存分享等主题）",
