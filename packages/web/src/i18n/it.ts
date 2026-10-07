@@ -38,6 +38,8 @@ export const it = {
   'prefs.appIcon': "Icona app",
   'welcome.title': 'Importa percorsi per iniziare',
   'welcome.description': 'Riproduci i percorsi insieme e controlla le interferenze.',
+  'welcome.tagline': "Prima della partita: metti gli autos di tutti gli alleati sullo stesso campo, riproducili insieme e individua in anticipo i rischi di collisione tra robot.",
+  'welcome.audience': "Per i gruppi di strategia e programmazione dell’alleanza. I file vengono analizzati sul tuo computer e non vengono mai caricati — PathBlender analizza, le modifiche avvengono in Choreo o PathPlanner.",
   'welcome.folderAdvice': 'Importa una cartella intera per cambiare percorso quando si presenta un conflitto.',
   'welcome.importFile': 'Importa file di percorso',
   'welcome.importFileHint': 'Scegli percorsi esportati da Choreo o PathPlanner',
@@ -318,6 +320,7 @@ export const it = {
   "menu.view": "Visualizza",
   "menu.playback": "Riproduzione",
   "menu.help": "Aiuto",
+  'menu.userGuide': "Guida rapida",
   "menu.minimize": "Riduci",
   "menu.zoom": "Zoom",
   "menu.cut": "Taglia",
@@ -352,6 +355,7 @@ export const it = {
   'help.composerMove': "Sposta il segmento focalizzato",
   'help.deleteClip': "Elimina il segmento focalizzato",
   'help.hint.desktop': "Nell’app desktop i menu offrono anche Cmd/Ctrl+O (importa), Cmd/Ctrl+S (salva sessione) e Cmd/Ctrl+, (impostazioni).",
+  'guide.fullOnline': "Guida completa online",
 } as const;
 
 export type MessageKey = keyof typeof it;

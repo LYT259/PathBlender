@@ -49,6 +49,8 @@ export const nl: Record<MessageKey, string> = {
   'prefs.appIcon': "App-pictogram",
   'welcome.title': 'Importeer routes om te beginnen',
   'welcome.description': 'Routes samen afspelen en controleren op interferentie.',
+  'welcome.tagline': "Zet vóór de wedstrijd de autos van alle bondgenoten op één veld, speel ze samen af en ontdek het botsingsrisico tussen robots op tijd.",
+  'welcome.audience': "Voor strategie- en programmeergroepen van het bondgenootschap. Bestanden worden op je machine verwerkt en nooit geüpload — PathBlender analyseert, bewerken doe je in Choreo of PathPlanner.",
   'welcome.folderAdvice': 'Importeer een hele map om van route te kunnen wisselen als er een conflict optreedt.',
   'welcome.importFile': 'Routebestanden importeren',
   'welcome.importFileHint': 'Kies routes die uit Choreo of PathPlanner zijn geëxporteerd',
@@ -335,6 +337,7 @@ export const nl: Record<MessageKey, string> = {
   "menu.view": "Weergave",
   "menu.playback": "Afspelen",
   "menu.help": "Help",
+  'menu.userGuide': "Snelle gids",
   "menu.minimize": "Minimaliseer",
   "menu.zoom": "Zoom",
   "menu.cut": "Knip",
@@ -369,4 +372,5 @@ export const nl: Record<MessageKey, string> = {
   'help.composerMove': "Het gerichte segment verplaatsen",
   'help.deleteClip': "Het gerichte segment verwijderen",
   'help.hint.desktop': "In de desktopapp bieden de menu’s ook Cmd/Ctrl+O (importeren), Cmd/Ctrl+S (sessie opslaan) en Cmd/Ctrl+, (instellingen).",
+  'guide.fullOnline': "Volledige gids online",
 };

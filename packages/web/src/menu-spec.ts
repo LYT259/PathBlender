@@ -219,7 +219,15 @@ export function buildMenuSpec(ctx: MenuContext): MenuSection[] {
     ],
   };
 
-  const helpItems: MenuEntry[] = [item('github', t('menu.githubProject'))];
+  // The guide entries lead: "what is this for" comes before the project link
+  // for a first-time visitor (onboarding plan §5). The shortcuts item gives
+  // the keyboard list a visible entry — before, only the ? key opened it.
+  const helpItems: MenuEntry[] = [
+    item('open-guide', t('menu.userGuide')),
+    item('open-shortcuts', t('help.title')),
+    sep(),
+    item('github', t('menu.githubProject')),
+  ];
   // macOS keeps About in the app menu; other platforms (and the web) get it here.
   helpItems.push(sep(), item('about', t('menu.about'), { macHide: true }));
   if (ctx.isDesktop) helpItems.push(item('check-update', t('prefs.checkUpdates')));

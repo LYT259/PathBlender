@@ -38,6 +38,8 @@ export const vi = {
   'prefs.appIcon': "Biểu tượng ứng dụng",
   'welcome.title': 'Nhập đường đi để bắt đầu',
   'welcome.description': 'Phát lại các đường đi cùng nhau và kiểm tra nguy cơ cản trở lẫn nhau.',
+  'welcome.tagline': "Trước trận đấu: đặt chương trình tự động của mọi đồng minh lên cùng một sân, phát lại chúng cùng lúc và phát hiện sớm nguy cơ va chạm giữa các robot.",
+  'welcome.audience': "Dành cho nhóm chiến lược và lập trình của liên minh. Tệp được phân tích trên máy của bạn và không bao giờ được tải lên — PathBlender phân tích, còn chỉnh sửa thực hiện trong Choreo hoặc PathPlanner.",
   'welcome.folderAdvice': 'Nhập cả thư mục để có thể đổi tuyến khi có xung đột.',
   'welcome.importFile': 'Nhập tệp đường đi',
   'welcome.importFileHint': 'Chọn đường đi xuất từ Choreo hoặc PathPlanner',
@@ -318,6 +320,7 @@ export const vi = {
   "menu.view": "Xem",
   "menu.playback": "Phát lại",
   "menu.help": "Trợ giúp",
+  'menu.userGuide': "Hướng dẫn nhanh",
   "menu.minimize": "Thu nhỏ",
   "menu.zoom": "Thu phóng",
   "menu.cut": "Cắt",
@@ -352,6 +355,7 @@ export const vi = {
   'help.composerMove': "Di chuyển phân đoạn đang tiêu điểm",
   'help.deleteClip': "Xóa phân đoạn đang tiêu điểm",
   'help.hint.desktop': "Trong ứng dụng desktop, menu còn có Cmd/Ctrl+O (nhập), Cmd/Ctrl+S (lưu phiên) và Cmd/Ctrl+, (cài đặt).",
+  'guide.fullOnline': "Hướng dẫn đầy đủ trực tuyến",
 } as const;
 
 export type MessageKey = keyof typeof vi;

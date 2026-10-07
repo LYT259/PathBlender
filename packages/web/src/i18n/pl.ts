@@ -49,6 +49,8 @@ export const pl: Record<MessageKey, string> = {
   'prefs.appIcon': "Ikona aplikacji",
   'welcome.title': 'Importuj trasy, aby rozpocząć',
   'welcome.description': 'Odtwarzaj trasy jednocześnie i sprawdzaj, czy się wzajemnie nie zakłócają.',
+  'welcome.tagline': "Przed meczem: zbierz auta wszystkich sojuszników na jednym boisku, odtwórz je razem i wcześnie wykryj ryzyko kolizji między robotami.",
+  'welcome.audience': "Dla grup strategii i programowania sojuszu. Pliki są analizowane na twoim komputerze i nigdy nie są wysyłane — PathBlender analizuje, a edycje wykonujesz w Choreo lub PathPlanner.",
   'welcome.folderAdvice': 'Importuj cały folder, aby móc zmienić trasę, gdy pojawi się konflikt.',
   'welcome.importFile': 'Importuj pliki tras',
   'welcome.importFileHint': 'Wybierz trasy wyeksportowane z Choreo lub PathPlanner',
@@ -338,6 +340,7 @@ export const pl: Record<MessageKey, string> = {
   "menu.view": "Widok",
   "menu.playback": "Odtwarzanie",
   "menu.help": "Pomoc",
+  'menu.userGuide': "Krótki przewodnik",
   "menu.minimize": "Minimalizuj",
   "menu.zoom": "Powiększenie",
   "menu.cut": "Wytnij",
@@ -372,4 +375,5 @@ export const pl: Record<MessageKey, string> = {
   'help.composerMove': "Przesuń segment pod fokusem",
   'help.deleteClip': "Usuń segment pod fokusem",
   'help.hint.desktop': "W aplikacji desktopowej menu oferują też Cmd/Ctrl+O (import), Cmd/Ctrl+S (zapis sesji) i Cmd/Ctrl+, (ustawienia).",
+  'guide.fullOnline': "Pełny przewodnik online",
 };

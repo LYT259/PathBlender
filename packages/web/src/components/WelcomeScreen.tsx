@@ -10,6 +10,8 @@ interface WelcomeScreenProps {
   onOpenSession: () => void;
   onTryExample: () => void;
   exampleLoading?: boolean;
+  /** Opens the in-app quick guide; the Help menu carries the same entry. */
+  onOpenGuide?: () => void;
 }
 
 function WelcomeIcon({ name }: { name: 'file' | 'folder' | 'session' | 'example' }) {
@@ -20,7 +22,7 @@ function WelcomeIcon({ name }: { name: 'file' | 'folder' | 'session' | 'example'
   </svg>;
 }
 
-export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryExample, exampleLoading = false }: WelcomeScreenProps) {
+export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryExample, exampleLoading = false, onOpenGuide }: WelcomeScreenProps) {
   const { t } = useI18n();
   const { resolved } = useTheme();
 
@@ -31,6 +33,12 @@ export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryEx
           <img className="start-brand-icon" src={resolved === 'dark' ? nightIcon : dayIcon} alt="" width="136" height="136" draggable={false} />
           <h1>PathBlender</h1>
         </header>
+        {/* What this is for, before the buttons (onboarding plan §1): a first-time
+            visitor should be able to tell what the app does without importing. */}
+        <div className="start-pitch">
+          <p className="start-tagline">{t('welcome.tagline')}</p>
+          <p className="start-audience">{t('welcome.audience')}</p>
+        </div>
         <div className="start-imports">
           <button type="button" className="start-action start-action-primary welcome-import" onClick={onImport} aria-label={t('welcome.importFile')} aria-description={t('welcome.importFileHint')}>
             <WelcomeIcon name="file" />
@@ -51,6 +59,9 @@ export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryEx
             <span className="start-action-title">{t(exampleLoading ? 'welcome.loadingExample' : 'welcome.tryExample')}</span>
           </button>
         </div>
+        {onOpenGuide && <div className="start-guide">
+          <button type="button" className="start-guide-link" onClick={onOpenGuide}>{t('menu.userGuide')}</button>
+        </div>}
       </div>
     </section>
   );

@@ -38,6 +38,8 @@ export const az = {
   'prefs.appIcon': "Proqram nişanı",
   'welcome.title': 'Başlamaq üçün marşrutları idxal edin',
   'welcome.description': 'Marşrutları birlikdə yenidən oynadın və maneələri yoxlayın.',
+  'welcome.tagline': "Matçdan əvvəl: müttəfiq komandaların avtonom proqramlarını eyni meydanda birlikdə oynadın və robotlar arasında toqquşma risklərini vaxtında aşkar edin.",
+  'welcome.audience': "İttifaqın strategiya və proqramlaşdırma qrupları üçündür. Fayllar sizin maşınızda təhlil olunur və heç vaxt yüklənmir — PathBlender təhlil edir, düzəlişlər isə Choreo və ya PathPlanner'da aparılır.",
   'welcome.folderAdvice': 'Konflikt olduqda marşrutları dəyişmək üçün bütün qovluğu idxal edin.',
   'welcome.importFile': 'Marşrut fayllarını idxal et',
   'welcome.importFileHint': 'Choreo və ya PathPlanner-dən ixrac edilmiş marşrutları seçin',
@@ -314,6 +316,7 @@ export const az = {
   "menu.view": "Görünüş",
   "menu.playback": "Oynatma",
   "menu.help": "Yardım",
+  'menu.userGuide': "Sürətli bələdçi",
   "menu.minimize": "Kiçilt",
   "menu.zoom": "Yaxınlaşdırma",
   "menu.cut": "Kəs",
@@ -348,6 +351,7 @@ export const az = {
   'help.composerMove': "Fokuslu seqmenti köçür",
   'help.deleteClip': "Fokuslu seqmenti sil",
   'help.hint.desktop': "Desktop tətbiqində menyular həmçinin Cmd/Ctrl+O (idxal), Cmd/Ctrl+S (sessiyanı saxla) və Cmd/Ctrl+, (tənzimləmələr) təklif edir.",
+  'guide.fullOnline': "Tam bələdçi onlayn",
 } as const;
 
 export type MessageKey = keyof typeof az;

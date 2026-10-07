@@ -38,6 +38,8 @@ export const nb = {
   'prefs.appIcon': "Appikon",
   'welcome.title': 'Importer ruter for å komme i gang',
   'welcome.description': "Spill av rutene sammen og sjekk for forstyrrelser.",
+  'welcome.tagline': "Før kampen: legg alle alliertes automatiske programmer på samme bane, spill dem av sammen, og fang risikoen for kollisjoner mellom roboter i god tid.",
+  'welcome.audience': "For alliansens strategi- og programmeringsgrupper. Filene analyseres på maskinen din og lastes aldri opp — PathBlender analyserer; redigeringer skjer i Choreo eller PathPlanner.",
   'welcome.folderAdvice': 'Importer hele mapper slik at du kan bytte rute når det oppstår en konflikt.',
   'welcome.importFile': 'Importer rutefiler',
   'welcome.importFileHint': 'Velg ruter eksportert fra Choreo eller PathPlanner',
@@ -314,6 +316,7 @@ export const nb = {
   "menu.view": "Vis",
   "menu.playback": "Avspilling",
   "menu.help": "Hjelp",
+  'menu.userGuide': "Hurtigguide",
   "menu.minimize": "Minimer",
   "menu.zoom": "Zoom",
   "menu.cut": "Klipp",
@@ -348,6 +351,7 @@ export const nb = {
   'help.composerMove': "Flytt fokusert segment",
   'help.deleteClip': "Slett fokusert segment",
   'help.hint.desktop': "I skrivebordsappen tilbyr menyene også Cmd/Ctrl+O (importer), Cmd/Ctrl+S (lagre sesjonen) og Cmd/Ctrl+, (innstillinger).",
+  'guide.fullOnline': "Fullstendig guide på nett",
 } as const;
 
 export type MessageKey = keyof typeof nb;

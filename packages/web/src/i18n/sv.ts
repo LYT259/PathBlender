@@ -38,6 +38,8 @@ export const sv = {
   'prefs.appIcon': "Appikon",
   'welcome.title': 'Importera rutter för att komma igång',
   'welcome.description': 'Spela upp rutter tillsammans och kontrollera störningar.',
+  'welcome.tagline': "Före matchen: lägg alla allierades autonoma program på samma plan, spela upp dem tillsammans och upptäck krockrisken mellan roboterna i god tid.",
+  'welcome.audience': "För alliansens strategi- och programmeringsgrupper. Filerna analyseras på din maskin och laddas aldrig upp — PathBlender analyserar; ändringar görs i Choreo eller PathPlanner.",
   'welcome.folderAdvice': 'Importera en hel mapp så att du kan byta rutt om en konflikt uppstår.',
   'welcome.importFile': 'Importera rutt-filer',
   'welcome.importFileHint': 'Välj rutter exporterade från Choreo eller PathPlanner',
@@ -314,6 +316,7 @@ export const sv = {
   "menu.view": "Visa",
   "menu.playback": "Uppspelning",
   "menu.help": "Hjälp",
+  'menu.userGuide': "Snabbguide",
   "menu.minimize": "Minimera",
   "menu.zoom": "Zoom",
   "menu.cut": "Klipp ut",
@@ -348,6 +351,7 @@ export const sv = {
   'help.composerMove': "Flytta fokuserat segment",
   'help.deleteClip': "Ta bort fokuserat segment",
   'help.hint.desktop': "I skrivbordsappen erbjuder menyerna också Cmd/Ctrl+O (importera), Cmd/Ctrl+S (spara session) och Cmd/Ctrl+, (inställningar).",
+  'guide.fullOnline': "Fullständig guide online",
 } as const;
 
 export type MessageKey = keyof typeof sv;

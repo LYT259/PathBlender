@@ -38,6 +38,8 @@ export const uk = {
   'prefs.appIcon': "Іконка додатка",
   'welcome.title': 'Імпортуйте маршрути, щоб почати',
   'welcome.description': 'Відтворюйте маршрути разом і перевіряйте перешкоди.',
+  'welcome.tagline': "До матчу: розмістіть авто всіх партнерів альянсу на одному полі, відтворіть їх разом і вчасно виявте ризик зіткнення між роботами.",
+  'welcome.audience': "Для груп стратегії та програмування альянсу. Файли обробляються на вашому комп’ютері й нікуди не надсилаються — PathBlender аналізує, зміни відбуваються в Choreo або PathPlanner.",
   'welcome.folderAdvice': 'Імпортуйте цілу теку, щоб змінювати маршрути, коли виникає конфлікт.',
   'welcome.importFile': 'Імпорт файлів маршрутів',
   'welcome.importFileHint': 'Виберіть маршрути, експортовані з Choreo або PathPlanner',
@@ -314,6 +316,7 @@ export const uk = {
   "menu.view": "Вигляд",
   "menu.playback": "Відтворення",
   "menu.help": "Довідка",
+  'menu.userGuide': "Швидкий посібник",
   "menu.minimize": "Мінімізувати",
   "menu.zoom": "Масштаб",
   "menu.cut": "Вирізати",
@@ -348,6 +351,7 @@ export const uk = {
   'help.composerMove': "Перемістити фокусований сегмент",
   'help.deleteClip': "Видалити фокусований сегмент",
   'help.hint.desktop': "У застосунку для комп’ютера меню також пропонують Cmd/Ctrl+O (імпорт), Cmd/Ctrl+S (зберегти сесію) і Cmd/Ctrl+, (налаштування).",
+  'guide.fullOnline': "Повний посібник онлайн",
 } as const;
 
 export type MessageKey = keyof typeof uk;

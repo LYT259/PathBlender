@@ -38,6 +38,8 @@ export const bg = {
   'prefs.appIcon': "Икона на приложението",
   'welcome.title': 'Импорт на маршрути, за да започнете',
   'welcome.description': 'Възпроизвеждайте маршрутите заедно и проверете пресечките.',
+  'welcome.tagline': "Преди мача: сложете автономните програми на всички съюзници на едно игрище, пуснете ги заедно и хванете навреме риска от сблъсъци между роботите.",
+  'welcome.audience': "За групите за стратегия и програмиране на съюза. Файловете се обработват на вашата машина и никога не се качват — PathBlender анализира, промените се правят в Choreo или PathPlanner.",
   'welcome.folderAdvice': 'Импортирайте цяла папка, за да можете да сменяте маршрутите при конфликт.',
   'welcome.importFile': 'Импорт на файлове с маршрути',
   'welcome.importFileHint': 'Изберете маршрути, експортирани от Choreo или PathPlanner',
@@ -314,6 +316,7 @@ export const bg = {
   "menu.view": "Изглед",
   "menu.playback": "Възпроизвеждане",
   "menu.help": "Помощ",
+  'menu.userGuide': "Кратко ръководство",
   "menu.minimize": "Минимизирай",
   "menu.zoom": "Мащаб",
   "menu.cut": "Изрежи",
@@ -348,6 +351,7 @@ export const bg = {
   'help.composerMove': "Премести фокусирания сегмент",
   'help.deleteClip': "Изтрий фокусирания сегмент",
   'help.hint.desktop': "В десктопното приложение менютата предлагат и Cmd/Ctrl+O (внос), Cmd/Ctrl+S (запис на сесията) и Cmd/Ctrl+, (настройки).",
+  'guide.fullOnline': "Пълно ръководство онлайн",
 } as const;
 
 export type MessageKey = keyof typeof bg;

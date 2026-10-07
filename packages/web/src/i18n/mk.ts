@@ -38,6 +38,8 @@ export const mk = {
   'prefs.appIcon': "Икона на апликацијата",
   'welcome.title': 'Увезете рути за да започнете',
   'welcome.description': 'Репродуцирајте ги рутите заедно и проверете ги пресечките.',
+  'welcome.tagline': "Пред натпреварот: ставете ги автономните програми на сите сојузници на еден терен, пуштете ги заедно и навреме фатете ризик од судир меѓу роботите.",
+  'welcome.audience': "За групите за стратегија и програмирање на сојузот. Датотеките се обработуваат на вашата машина и никогаш не се подигаат — PathBlender анализира, измените се прават во Choreo или PathPlanner.",
   'welcome.folderAdvice': 'Увезете цела папка за да можете да ги менувате рутите кога ќе се појави конфликт.',
   'welcome.importFile': 'Увоз на датотеки со рути',
   'welcome.importFileHint': 'Изберете рути извезени од Choreo или PathPlanner',
@@ -314,6 +316,7 @@ export const mk = {
   "menu.view": "Преглед",
   "menu.playback": "Репродукција",
   "menu.help": "Помош",
+  'menu.userGuide': "Кратко упатство",
   "menu.minimize": "Минимизирај",
   "menu.zoom": "Зумирај",
   "menu.cut": "Исечи",
@@ -348,6 +351,7 @@ export const mk = {
   'help.composerMove': "Помести го фокусираниот сегмент",
   'help.deleteClip': "Избриши го фокусираниот сегмент",
   'help.hint.desktop': "Во десктоп апликацијата менијата нудат и Cmd/Ctrl+O (увоз), Cmd/Ctrl+S (зачувај сесија) и Cmd/Ctrl+, (поставки).",
+  'guide.fullOnline': "Целосно упатство онлајн",
 } as const;
 
 export type MessageKey = keyof typeof mk;

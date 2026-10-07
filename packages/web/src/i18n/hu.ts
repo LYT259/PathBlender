@@ -38,6 +38,8 @@ export const hu = {
   'prefs.appIcon': "Alkalmazásikon",
   'welcome.title': 'Importálj útvonalakat a kezdéshez',
   'welcome.description': 'Játszd le az útvonalakat együtt, és ellenőrizd az ütközéseket.',
+  'welcome.tagline': "A meccs előtt: rakd egy pályára minden szövetséges automata programját, játssza le őket együtt, és fedezze fel időben a robotok ütközési kockázatát.",
+  'welcome.audience': "A szövetség stratégiai és programozói csoportjainak. A fájlok a saját gépeden elemződnek és sosem töltődnek fel — a PathBlender elemez, a szerkesztés a Choreóban vagy a PathPlannerben történik.",
   'welcome.folderAdvice': 'Importálj egy teljes mappát, hogy konfliktus esetén útvonalat válthass.',
   'welcome.importFile': 'Útvonalfájlok importálása',
   'welcome.importFileHint': 'Válassz Choreóból vagy PathPlannerből exportált útvonalakat',
@@ -314,6 +316,7 @@ export const hu = {
   "menu.view": "Nézet",
   "menu.playback": "Lejátszás",
   "menu.help": "Súgó",
+  'menu.userGuide': "Rövid útmutató",
   "menu.minimize": "Kis méret",
   "menu.zoom": "Nagyítás",
   "menu.cut": "Kivágás",
@@ -348,6 +351,7 @@ export const hu = {
   'help.composerMove': "Fókuszált szakasz áthelyezése",
   'help.deleteClip': "Fókuszált szakasz törlése",
   'help.hint.desktop': "Az asztali alkalmazás menüi Cmd/Ctrl+O (import), Cmd/Ctrl+S (munkamenet mentése) és Cmd/Ctrl+, (beállítások) is kínálnak.",
+  'guide.fullOnline': "Teljes útmutató online",
 } as const;
 
 export type MessageKey = keyof typeof hu;
