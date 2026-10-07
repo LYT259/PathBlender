@@ -89,12 +89,12 @@ describe('mouse controls & units settings', () => {
     panel();
     const units = screen.getByLabelText(/length unit/i, { selector: 'select' }) as HTMLSelectElement;
     expect(Array.from(units.options).map(option => option.value)).toEqual(['cm', 'ft', 'in', 'm', 'yd']);
-    // ft/yd are fully wired (2026-10-04): an example in the chosen unit,
-    // Save enabled, and the choice persists like any other unit.
+    // ft/yd are fully wired (2026-10-04): Save enabled, and the choice
+    // persists like any other unit. The hint sentence under the picker was
+    // removed (user request 2026-10-07) — nothing else may appear under it.
     fireEvent.change(units, { target: { value: 'ft' } });
-    expect(screen.getByText('Distances in the checks panel use this unit, e.g. 3.04 ft')).toBeInTheDocument();
+    expect(document.querySelector('.preferences-units-group .preferences-setting-description')).toBeNull();
     fireEvent.change(units, { target: { value: 'yd' } });
-    expect(screen.getByText('Distances in the checks panel use this unit, e.g. 1.01 yd')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(localStorage.getItem('pb.lengthUnit')).toBe('yd');
   });
@@ -107,7 +107,6 @@ describe('mouse controls & units settings', () => {
     panel();
     const units = screen.getByLabelText(/length unit/i, { selector: 'select' }) as HTMLSelectElement;
     expect(units.value).toBe('ftin');
-    expect(screen.getByText('Distances in the checks panel use this unit, e.g. 3′0.5″')).toBeInTheDocument();
     fireEvent.change(units, { target: { value: 'ft' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(localStorage.getItem('pb.lengthUnit')).toBe('ft');

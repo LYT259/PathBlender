@@ -155,10 +155,6 @@ export const en = {
 
   'toast.gifFailed': 'GIF failed',
 
-  'site.tryPreview': 'Try the preview site',
-  'site.backStable': 'Return to the stable site',
-  'site.previewNote': 'Preview build — features may change at any time.',
-  'site.version': 'Version',
   'canvas.view': 'View',
   'canvas.fit': "Show whole field",
   'canvas.clock': 't = {t} s',
@@ -268,9 +264,7 @@ export const en = {
   'prefs.unit.cm': 'Centimeters (cm)',
   'prefs.unit.in': 'Inches (in)',
   'prefs.unit.ftin': 'Feet + inches (3′2″)',
-  'prefs.units.hint': 'Distances in the checks panel use this unit, e.g.',
   'prefs.colorblind': 'Colorblind palette',
-  'prefs.colorblindHint': 'Swap robot colors for a color-vision-deficiency-safe set (Okabe-Ito)',
   'prefs.theme': 'Theme',
   'theme.system': 'Follow system',
   'theme.dark': 'Dark',

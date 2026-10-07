@@ -178,10 +178,6 @@ export const ms = {
   
   'toast.gifFailed': 'GIF gagal',
   
-  'site.tryPreview': 'Cuba laman pratonton',
-  'site.backStable': 'Kembali ke laman stabil',
-  'site.previewNote': 'Binaan pratonton — ciri mungkin berubah pada bila-bila masa.',
-  'site.version': 'Versi',
   'canvas.view': 'Paparan',
   'canvas.fit': 'Padankan',
   'canvas.clock': 't = {t} s',
@@ -283,9 +279,7 @@ export const ms = {
   'prefs.unit.cm': 'Sentimeter (cm)',
   'prefs.unit.in': 'Inci (in)',
   'prefs.unit.ftin': 'Kaki + inci (3′2″)',
-  'prefs.units.hint': 'Jarak dalam panel semakan menggunakan unit ini, mis.',
   'prefs.colorblind': 'Palet buta warna',
-  'prefs.colorblindHint': 'Tukar warna robot kepada set selamat untuk buta warna (Okabe-Ito)',
   'prefs.theme': 'Tema',
   'theme.system': 'Ikut sistem',
   'theme.dark': 'Gelap',

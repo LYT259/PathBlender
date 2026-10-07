@@ -42,7 +42,7 @@
 - [ ] 网站上线（2026-09-09 起实际走 Cloudflare Pages 直传，报告 §7.1 的国内可达性方案即此渠道；**2026-10-04 已定弃用、转公开后退役**；**2026-10-06 用户定稿：转公开前为试用演示恢复本渠道为常设——每次分支合并到 beta 后重部署 `pathblender.pages.dev`，直至转公开**）：
       `VITE_VIEWER_ONLY=1 npm run build -w packages/web` 然后
       `npx wrangler pages deploy packages/web/dist --project-name=pathblender --branch=stable`（本机直传，零 Actions 额度）；
-      β 预览站 `pathblender-preview` 仍弃用不动（`--branch=beta` + `VITE_SITE_PREVIEW=1` 的旧条款仅存档）。
+      β 预览站 `pathblender-preview` 仍弃用不动（`--branch=beta` + `VITE_SITE_PREVIEW=1` 的旧条款仅存档；**2026-10-07 起 UI 侧的预览站交叉入口与横幅已随 `VITE_SITE_PREVIEW` 构建开关一并删除——网站本身即 beta 通道，构建不再区分站点 flavor**）。
       **部署后核对线上版本与树内一致**（回读 `https://pathblender.pages.dev/sw.js` 的缓存名 `pb-<版本>-<时间戳>`；2026-10-02 审计曾发现线上挂着转型前旧构建，此条为常规核对项）。
 - [ ] GitHub Pages 工作流已于 2026-10-02 移除：私有 Free 仓库无法启用 Pages，deploy.yml 在每次 stable 推送上稳定失败（5/5）。**2026-10-04 用户定稿：弃 Cloudflare，转公开后全用 GitHub Pages——重建 deploy.yml 自动部署（viewer 构建），wrangler 直传条款届时退役**。**2026-10-06 用户定稿（取代「push stable 触发」）：转公开后每次分支合并到 beta 就重新部署 Pages——deploy.yml 届时按 push beta 触发重建**。
 - [ ] **转公开日清单（用户决定 2026-10-02：仓库暂不转公开；转公开之后才有 Demo 网站；2026-10-05 增补 Windows 项）**——按序执行，防止 README 的站点链接先于 Demo 上线：
