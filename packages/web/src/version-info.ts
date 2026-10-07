@@ -13,7 +13,7 @@
  * entry for Traditional readers.
  */
 
-export const APP_VERSION = '0.1.8-beta.90';
+export const APP_VERSION = '0.1.8-beta.91';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -37,6 +37,47 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.91', date: '2026.10.07', note: { en: 'Languages round: every interface language sentence-reviewed and formally supported; numbers now follow each locale; update notes cover all interface languages',
+    zh: '语言专项：全部界面语言逐句审校并转为正式支持；数字按各地区格式显示；更新说明覆盖全部界面语言',
+    'zh-tw': '語言專項：全部介面語言逐句審校並轉為正式支援；數字按各地區格式顯示；更新說明涵蓋全部介面語言',
+    cs: 'Jazykové kolo: všechny jazyky rozhraní větně zrevidovány a oficiálně podporovány; čísla se řídí národním formátem; poznámky k aktualizacím pokrývají všechny jazyky',
+    nl: 'Rondje talen: elke interfacetaal zin voor zin herzien en nu officieel ondersteund; getallen volgen de lokale notatie; updateopmerkingen in elke interfacetaal',
+    fr: 'Palier langues : chaque langue d’interface relue phrase par phrase et désormais officiellement prise en charge ; les nombres suivent le format local ; notes de mise à jour dans toutes les langues',
+    he: 'סבב שפות: כל שפות הממשק נבדקו משפט־משפט ונתמכות רשמית; המספרים פועלים לפי המוסכמה המקומית; הערות העדכון בכל שפות הממשק',
+    ja: '言語ラウンド：全インターフェース言語を文単位で審校し正式サポートに；数値は各ロケールの書式に統一；更新ノートは全言語に対応',
+    ko: '언어 라운드: 모든 인터페이스 언어를 문장 단위로 검토해 정식 지원으로 전환; 숫자는 각 로캘 형식을 따름; 업데이트 노트가 모든 언어를 포괄',
+    pl: 'Runda językowa: każdy język interfejsu sprawdzony zdanie po zdaniu i oficjalnie obsługiwany; liczby w formacie regionalnym; notki o aktualizacjach we wszystkich językach',
+    'pt-br': 'Rodada de idiomas: cada idioma da interface revisado frase por frase e com suporte oficial; números seguem o formato de cada localidade; notas de atualização em todos os idiomas',
+    es: 'Ronda de idiomas: cada idioma de la interfaz revisado frase por frase y con soporte oficial; los números siguen el formato de cada región; notas de actualización en todos los idiomas',
+    tr: 'Dil turu: arayüzün her dili cümle cümle gözden geçirildi ve resmî olarak destekleniyor; sayılar yerel biçimi izliyor; güncelleme notları tüm dillerde',
+    ar: 'جولة اللغات: كل لغات الواجهة مُراجَعة جملةً جملة ومدعومة رسميًا؛ الأرقام تتبع تنسيق كل لغة؛ ملاحظات التحديث بكل لغات الواجهة',
+    az: 'Dillər raundi: interfeysin hər dili cümlə-cümlə gözdən keçirilib və rəsmi dəstəklənir; ədədlər hər lokalin formatına uyğundur; yeniləmə qeydləri bütün dillərdədir',
+    bg: 'Езикова серия: всеки език от интерфейса е прегледан изречение по изречение и официално се поддържа; числата следват местния формат; бележките за актуализациите са на всички езици',
+    bs: 'Krugi jezika: svaki jezik sučelja pregledan rečenica po rečenici i zvanično podržan; brojevi prate lokalni format; napomene o ažuriranju na svim jezicima',
+    da: 'Sprogrunde: hvert grænsefladesprog gennemgået sætning for sætning og nu officielt understøttet; tal følger det lokale format; opdateringsnoter på alle sprog',
+    de: 'Sprachenrunde: jede Oberflächensprache Satz für Satz geprüft und jetzt offiziell unterstützt; Zahlen folgen dem jeweiligen Länderformat; Update-Hinweise in allen Sprachen',
+    el: 'Γύρος γλωσσών: κάθε γλώσσα διεπαφής ελέγχθηκε πρόταση-πρόταση και υποστηρίζεται επίσημα· οι αριθμοί ακολουθούν την τοπική μορφή· σημειώσεις ενημέρωσης σε όλες τις γλώσσες',
+    fil: 'Ronda ng mga wika: bawat wika ng interface binasa nang pangungusap-pangungusap at opisyal nang sinusuportahan; sumusunod ang mga numero sa format ng bawat locale; may update notes sa lahat ng wika',
+    hi: 'भाषा दौर: इंटरफ़ेस की हर भाषा वाक्य-दर-वाक्य समीक्षित और अब औपचारिक रूप से समर्थित; संख्याएँ हर लोकेल के प्रारूप में; अपडेट नोट्स सभी भाषाओं में',
+    hr: 'Krug jezika: svaki jezik sučelja pregledan rečenica po rečenici i službeno podržan; brojevi slijede lokalni zapis; napomene o ažuriranju na svim jezicima',
+    hu: 'Nyelvi kör: a felület minden nyelve mondatról mondatra ellenőrizve és hivatalosan támogatott; a számok a területi formát követik; a frissítési megjegyzések minden nyelven elérhetők',
+    hy: 'Լեզուների փուլ․ ինտերֆեյսի բոլոր լեզուները ստուգված են նախադասություն առ նախադասություն և պաշտոնապես աջակցվում են․ թվերը հետևում են տեղական ձևաչափին․ թարմացումների ծանոթագրությունները՝ բոլոր լեզուներով',
+    id: 'Putaran bahasa: setiap bahasa antarmuka ditinjau kalimat demi kalimat dan kini didukung resmi; angka mengikuti format lokal; catatan pembaruan dalam semua bahasa',
+    it: 'Giornata lingue: ogni lingua dell’interfaccia riveduta frase per frase e ufficialmente supportata; i numeri seguono il formato locale; note di aggiornamento in tutte le lingue',
+    mk: 'Јазична рунда: секој јазик на интерфејсот прегледан реченица по реченица и официјално поддржан; бројките го следат локалниот формат; забелешките за ажурирање на сите јазици',
+    mr: 'भाषा फेरी: संवादपटाची प्रत्येक भाषा वाक्यानुवाक्य तपासली व अधिकृत समर्थनात; संख्या प्रत्येक प्रदेशाच्या स्वरूपात; अद्ययावाट टिपा सर्व भाषांमध्ये',
+    ms: 'Pusingan bahasa: setiap bahasa antara muka disemak ayat demi ayat dan kini disokong secara rasmi; nombor mengikut format setempat; nota kemas kini dalam semua bahasa',
+    nb: 'Språkrunde: hvert grensesnittspråk gjennomgått setning for setning og nå offisielt støttet; tall følger det lokale formatet; oppdateringsnotater på alle språk',
+    nn: 'Språkrunde: kvart grensesnittspråk gått gjennom setning for setning og no offisielt støtta; tal følgjer det lokale formatet; oppdateringsnotat på alle språk',
+    ro: 'Rundă de limbi: fiecare limbă a interfeței revizuită propoziție cu propoziție și susținută oficial; numerele urmează formatul local; note de actualizare în toate limbile',
+    rw: 'Igihe cy’indimi: ururimi rwose rwa interface rwasesenguwe umugani ku mundwi kandi ruratemewe ngarukamwaka; imibare ikurikiza imiterere y’ururimi buri ruhande; ibyanditswe by’ivugurura mu ndimi zose',
+    sq: 'Raundi i gjuhëve: çdo gjuhë e ndërfaqes rishikuar fjali për fjalë dhe mbështetur zyrtarisht; numrat ndjekin formatin e secilit rajon; shënimet e përditësimit në të gjitha gjuhët',
+    sr: 'Kruga jezika: svaki jezik interfejsa pregledan rečenicu po rečenici i zvanično podržan; brojevi prate lokalni format; beleške o ažuriranju na svim jezicima',
+    sv: 'Språkrunda: varje gränssnittsspråk granskat mening för mening och nu officiellt stött; tal följer det lokala formatet; uppdateringsanteckningar på alla språk',
+    ta: 'மொழிச் சுற்று: இடைமுகத்தின் ஒவ்வொரு மொழியும் வாக்கியம் வாக்கியமாக மறு ஆய்வு செய்யப்பட்டு அதிகாரப்பூர்வ ஆதரவு பெற்றது; எண்கள் ஒவ்வொரு இடத்தின் வடிவத்தையும் பின்பற்றுகின்றன; புதுப்பிப்பு குறிப்புகள் அனைத்து மொழிகளிலும்',
+    uk: 'Мовний раунд: кожну мову інтерфейсу перевірено речення за реченням і офіційно підтримано; числа відповідають формату кожного регіону; нотатки про оновлення всіма мовами',
+    vi: 'Vòng ngôn ngữ: mọi ngôn ngữ giao diện được rà soát từng câu và hỗ trợ chính thức; số liệu theo định dạng từng vùng; ghi chú cập nhật bằng tất cả ngôn ngữ',
+  } },
   { version: '0.1.8-beta.90', date: '2026.10.07', note: {
     en: 'Point-of-use tips: mirror button explains its per-robot scope, first import shows a basics checklist, check advice suggests comparing alternatives; user guide adds a mirror before/after comparison',
     zh: '就地提示上线：镜像按钮说明仅作用于该机器人，首次导入显示基础核查清单，检查建议提示对比替代方案；使用指南新增镜像前后对比图',
