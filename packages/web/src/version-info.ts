@@ -13,7 +13,7 @@
  * entry for Traditional readers.
  */
 
-export const APP_VERSION = '0.1.8-beta.87';
+export const APP_VERSION = '0.1.8-beta.88';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -37,6 +37,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.88', date: '2026.10.07', note: { en: 'Release pipeline ships macOS Universal, Windows and Linux installers; README and release notes add five more languages', zh: '发布流水线产出 macOS 通用包、Windows 与 Linux 安装包；README 与发布说明新增五种语言', 'zh-tw': '發布流水線產出 macOS 通用包、Windows 與 Linux 安裝包；README 與發布說明新增五種語言', cs: 'Release pipeline vydává instalační balíčky macOS Universal, Windows a Linux; README a poznámky k vydání v pěti dalších jazycích', nl: 'De release-pipeline levert macOS Universal-, Windows- en Linux-installatieprogramma’s; README en release-opmerkingen in vijf extra talen', fr: 'Le pipeline de publication fournit les installateurs macOS Universal, Windows et Linux ; README et notes de version en cinq langues de plus', he: 'צינור ההפצה מספק מתקינים ל-macOS Universal, ל-Windows ול-Linux; קובץ ה-README והערות ההפצה בחמש שפות נוספות', ja: 'リリースパイプラインが macOS Universal・Windows・Linux のインストーラーを提供；README とリリースノートに 5 言語を追加', ko: '릴리스 파이프라인이 macOS Universal·Windows·Linux 설치 제공; README와 릴리스 노트에 다섯 언어 추가', pl: 'Pipeline wydawniczy dostarcza instalatory macOS Universal, Windows i Linux; README i notki wydania w pięciu kolejnych językach', 'pt-br': 'O pipeline de release entrega instaladores para macOS Universal, Windows e Linux; README e notas de versão em mais cinco idiomas', es: 'El pipeline de publicación entrega instaladores de macOS Universal, Windows y Linux; README y notas de versión en cinco idiomas más', tr: 'Sürüm hattı macOS Universal, Windows ve Linux kurulumlarını veriyor; README ve sürüm notları beş dil daha' } },
   { version: '0.1.8-beta.87', date: '2026.10.07', note: {
     en: "User guide reworked into a seven-step first-check walkthrough with an annotated workspace map and an alliance-switch-vs-mirror section; READMEs open with the one-line pitch",
     "zh": "使用指南改写为七步「第一次联盟路径检查」教程，新增工作区标注图与「联盟切换 vs 左右镜像」专节；README 开头加上一句话定位",
