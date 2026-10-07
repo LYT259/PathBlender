@@ -1,5 +1,6 @@
 /** Serbian strings (Latin script, modern standard usage). */
 export const sr = {
+  "canvas.webglUnavailable": "WebGL nije dostupan",
   'sequence.start': 'Početak',
   'sequence.end': 'Kraj',
   'sequence.seconds': 's',

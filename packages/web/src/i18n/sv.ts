@@ -1,5 +1,6 @@
 /** Swedish strings. */
 export const sv = {
+  "canvas.webglUnavailable": "WebGL är inte tillgängligt",
   'sequence.start': 'Start',
   'sequence.end': 'Slut',
   'sequence.seconds': 's',

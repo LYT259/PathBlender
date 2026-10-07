@@ -1,5 +1,6 @@
 /** Italian strings. */
 export const it = {
+  "canvas.webglUnavailable": "WebGL non disponibile",
   'sequence.start': 'Inizio',
   'sequence.end': 'Fine',
   'sequence.seconds': 's',

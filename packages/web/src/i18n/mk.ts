@@ -1,5 +1,6 @@
 /** Macedonian strings. */
 export const mk = {
+  "canvas.webglUnavailable": "WebGL не е достапен",
   'sequence.start': 'Почеток',
   'sequence.end': 'Крај',
   'sequence.seconds': 'с',

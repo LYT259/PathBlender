@@ -16,6 +16,7 @@ import type { MessageKey } from './en';
  * verified (red book §准确性、完整性与长期维护要求).
  */
 export const he: Record<MessageKey, string> = {
+  "canvas.webglUnavailable": "WebGL אינו זמין",
   'sequence.start': 'התחלה',
   'sequence.end': 'סוף',
   'sequence.seconds': 'ש׳',

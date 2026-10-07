@@ -87,4 +87,15 @@
 注册表在 `packages/web/src/i18n/index.tsx` 的 `LANG_META`：每语言一行 `{ englishName（排序键，纯 ASCII）, endonym（显示名） }`。
 显示用自称，**排序用英文键**，「跟随系统」钉顶不参与排序；不用 `Intl.Collator`（V8 与 WebKit 对 CJK 的排序表版本不一致，会让开发服务器与桌面壳排出不同顺序）。
 新增语言 = 加一行 `LANG_META` + 一份 `Record<MessageKey, string>` 字典（同区域变体走第 6 节的覆盖表，不复制整份）+ `langFromTags()` 一条分支 + 桌面 `lib.rs` 一张菜单表（`i18n.test.ts` 会逐个断言，漏菜单表就红）。
-当前顺序（十五个界面选项下恒定）：跟随系统 · 简体中文 · 繁體中文（中國香港） · 繁體中文（中國台灣） · Čeština · Nederlands · English · Français · עברית · 日本語 · 한국어 · Polski · Português (Brasil) · Español · Türkçe。
+当前有 41 个界面语言码，连同「跟随系统」共 42 个选项；精确顺序以 `LANGUAGES` 注册表与 `i18n.test.ts` 的排序断言为准。早期十五个选项的列表是历史快照，不作当前范围。
+
+
+## 8. rw / hy 的术语复核（2026-10-07）
+
+卢旺达语将 route/path 统一为 `inzira`，collision 为 `kugongana`；产品中保存的 session 按其实际含义描述为 `isesengura`（分析），不宣称这是标准 IT 专名。导入用 `Injiza`；没有可靠本族行业词的 FRC 技术名 `bumper` 保留原词，周围句子本地化，不再把整个保护结构称为布料。路径库用存放处的描述词 `ububiko`。
+
+依据为 [GNOME/GIMP 的 Paths 译例](https://raw.githubusercontent.com/GNOME/gimp/master/po/rw.po)、[卢旺达警察的碰撞用例](https://police.gov.rw/rw/amakuru/amakuru-ya-polisi/news-detail/news/abapolisi-20-basoje-amahugurwa-yo-gutwara-moto-zifashishwa-mu-gucunga-umutekano-wo-mu-muhanda/)、[UNICEF Rwanda 的 analysis 用例](https://www.unicef.org/rwanda/rw/reports/isesengura-ku-mibereho-yabana-mu-rwanda)，以及 [GNOME Characters 的插入/存放词根](https://raw.githubusercontent.com/GNOME/gnome-characters/main/po/rw.po)。词根与实际用例支持术语选择；具体软件句子和语法一致关系仍是结合上下文的审核结果，不是这些来源对本产品的认证。
+
+亚美尼亚语路径统一为 `երթուղի`，本次替换提示使用定指单数 `երթուղին`，导入多个路径的提示使用 `երթուղիները`。复数、定冠词及非生命直接宾语的规则可由 [Armenian handbook](https://slaviccenters.duke.edu/sites/slaviccenters.duke.edu/files/handbook_of_armenian.pdf) 查证；语法可以按规则审核，不把「缺一个母语者」当作永远无法完成的条件。
+
+漏译豁免按语言登记：某语种与英文恰好同形的词，只豁免该语种；品牌、格式、符号单独处理。保留的技术名必须可以解释来源，不将未查证的英语残留自动认定为借词。结构测试、术语一致性检查与文本快照用于防止已修问题回归，不替代语义审校。

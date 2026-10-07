@@ -1,5 +1,6 @@
 /** Indonesian strings. */
 export const id = {
+  "canvas.webglUnavailable": "WebGL tidak tersedia",
   'sequence.start': 'Mulai',
   'sequence.end': 'Selesai',
   'sequence.seconds': 'dtk',

@@ -99,7 +99,7 @@ export function MenuBar({ menus, onCommand }: MenuBarProps) {
   };
 
   return (
-    <nav className="menu-bar" ref={barRef} role="menubar" aria-label="menu">
+    <nav className="menu-bar" ref={barRef} role="menubar" aria-label={visible.map((menu) => menu.label).join(' · ')}>
       {visible.map((menu, index) => (
         <div className="menu-section" key={menu.label}>
           <button

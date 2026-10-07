@@ -1329,7 +1329,7 @@ function AppBody() {
       {/* The web has no native menu — the shared spec renders as a DOM
           menubar. Desktop keeps its native menu and never mounts this. */}
       {!IS_DESKTOP && <MenuBar menus={menuSpec} onCommand={runMenuCommand} />}
-      <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label="primary">
+      <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label={tr('app.title')}>
         {hasRobots && <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>}
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
         {hasRobots && <button className="btn accent import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>}

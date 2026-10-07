@@ -1,5 +1,6 @@
 /** Bulgarian strings. */
 export const bg = {
+  "canvas.webglUnavailable": "WebGL не е наличен",
   'sequence.start': 'Начало',
   'sequence.end': 'Край',
   'sequence.seconds': 'с',
