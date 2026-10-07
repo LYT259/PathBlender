@@ -167,8 +167,11 @@ async function openApp(options = {}) {
   const langOptions = page.locator('.preferences-dialog select').first().locator('option');
   const count = await langOptions.count();
   const firstLabel = (await langOptions.first().textContent())?.trim() ?? '';
-  check(`language picker lists all ${LANG_CODES} dictionaries plus “follow system”`,
-    count === LANG_CODES + 1, `${count} options`);
+  // f601437 (beta.88) withdrew the zh-tw picker row — the dictionary still
+  // ships for zh-hk to override and for saved prefs — so the picker offers
+  // one row fewer than the dictionary directory holds.
+  check(`language picker lists every picker row plus “follow system”`,
+    count === LANG_CODES, `${count} options`);
   check('“follow system” is the first entry', /follow system/i.test(firstLabel), firstLabel);
   check('no update-channel picker (the site never self-updates)',
     await page.locator('.preferences-dialog select option[value="beta"]').count() === 0);

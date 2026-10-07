@@ -63,13 +63,13 @@ describe('Help menu leads with the guide entries', () => {
   it('carries open-guide and open-shortcuts ahead of the project link (web)', () => {
     const help = buildMenuSpec(menuCtx()).find((m) => m.label === 'Help')!;
     const ids = help.items.map((e) => e.id ?? `role:${e.role}`);
-    expect(ids).toEqual(['open-guide', 'open-shortcuts', 'role:separator', 'github', 'role:separator', 'about']);
+    expect(ids).toEqual(['open-tour', 'open-guide', 'open-shortcuts', 'role:separator', 'github', 'role:separator', 'about']);
   });
 
   it('desktop appends the update check after About', () => {
     const help = buildMenuSpec(menuCtx({ isDesktop: true })).find((m) => m.label === 'Help')!;
     expect(help.items.map((e) => e.id ?? `role:${e.role}`)).toEqual(
-      ['open-guide', 'open-shortcuts', 'role:separator', 'github', 'role:separator', 'about', 'check-update'],
+      ['open-tour', 'open-guide', 'open-shortcuts', 'role:separator', 'github', 'role:separator', 'about', 'check-update'],
     );
   });
 });
