@@ -1,0 +1,56 @@
+{
+  "en": {
+    "label": "English",
+    "changes": "What's new",
+    "download": "Platforms & download",
+    "issues": "Known issues & limitations",
+    "update": "How to update",
+    "fallback": "- Improvements and fixes; see the in-app version history.",
+    "platforms": {
+      "macos": "macOS 13.0+ (Apple Silicon and Intel)",
+      "macosLegacy": "macOS 13.0+ (Apple Silicon)",
+      "windows": "Windows x86_64 (NSIS)",
+      "deb": "Linux x86_64 (DEB)",
+      "appimage": "Linux x86_64 (AppImage)",
+      "rpm": "Linux x86_64 (RPM)"
+    },
+    "web": "Download installers from the assets below. On macOS, open the DMG and drag PathBlender to Applications. The [web viewer](https://lyt259.github.io/pathblender/) supports importing paths, playback and checking; session saving and exports require the desktop app.",
+    "instructions": "- Use **Check for Updates…** in the desktop app; for beta builds, enable the Beta channel in **Preferences → Updates** first. You can also install the package for your platform from the assets below.\n- Full per-version notes are available in **About PathBlender**.\n- On Linux, automatic updates use the AppImage. DEB/RPM users should download and install the new package for their distribution."
+  },
+  "zh": {
+    "label": "简体中文",
+    "changes": "新变化",
+    "download": "平台与下载",
+    "issues": "已知问题与限制",
+    "update": "更新方法",
+    "fallback": "- 改进与修复，详见应用内版本历史。",
+    "platforms": {
+      "macos": "macOS 13.0+（Apple Silicon 与 Intel）",
+      "macosLegacy": "macOS 13.0+（Apple Silicon）",
+      "windows": "Windows x86_64（NSIS）",
+      "deb": "Linux x86_64（DEB）",
+      "appimage": "Linux x86_64（AppImage）",
+      "rpm": "Linux x86_64（RPM）"
+    },
+    "web": "从下方附件下载安装包。macOS 用户打开 DMG 后将 PathBlender 拖入 Applications。[网页查看器](https://lyt259.github.io/pathblender/)支持导入路径、回放与检查；保存会话和导出需使用桌面版。",
+    "instructions": "- 在桌面应用中选择**检查更新…**；Beta 版先在**偏好设置 → 更新**启用 Beta 通道。也可下载下方适合自己平台的安装包。\n- 完整版本记录见**关于 PathBlender**。\n- Linux 自动更新使用 AppImage；DEB/RPM 用户请下载并安装适合发行版的新包。"
+  },
+  "zh-hk": {
+    "label": "繁體中文（中國香港）",
+    "changes": "新變化",
+    "download": "平台與下載",
+    "issues": "已知問題與限制",
+    "update": "更新方法",
+    "fallback": "- 改進與修復，詳見應用程式內的版本歷史。",
+    "platforms": {
+      "macos": "macOS 13.0+（Apple Silicon 與 Intel）",
+      "macosLegacy": "macOS 13.0+（Apple Silicon）",
+      "windows": "Windows x86_64（NSIS）",
+      "deb": "Linux x86_64（DEB）",
+      "appimage": "Linux x86_64（AppImage）",
+      "rpm": "Linux x86_64（RPM）"
+    },
+    "web": "從下方附件下載安裝套件。macOS 使用者開啟 DMG 後將 PathBlender 拖入 Applications。[網頁檢視器](https://lyt259.github.io/pathblender/)支援匯入路徑、播放與檢查；儲存工作階段和匯出需使用桌面版。",
+    "instructions": "- 在桌面應用程式中選擇**檢查更新…**；Beta 版先在**偏好設定 → 更新**啟用 Beta 頻道。亦可下載下方適合自己平台的安裝套件。\n- 完整版本記錄見**關於 PathBlender**。\n- Linux 自動更新使用 AppImage；DEB/RPM 使用者請下載並安裝適合發行版的新套件。"
+  }
+}
