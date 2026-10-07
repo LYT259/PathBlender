@@ -278,7 +278,12 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         remove(chosen.id);
       }
     }}>
-    <SequenceComposerToolbar name={robotIdentity(active.robot.trajectory)} color={active.robot.color} onBack={onClose} />
+    <SequenceComposerToolbar name={robotIdentity(active.robot.trajectory)} color={active.robot.color} onBack={onClose}
+      trailing={onPlaybackRangeChange && <select className="timeline-range" aria-label={t('timeline.range')} value={playbackRange}
+        onChange={(event) => onPlaybackRangeChange(event.target.value as PlaybackRange)}>
+        <option value="full">{t('timeline.rangeFull')}</option>
+        <option value="paths">{t('timeline.rangePaths')}</option>
+      </select>} />
     <div className="sequence-route-library"><div className="sequence-route-options">
       {library.map(({ route, blocked, continuity }) => {
         // Gray-reason precedence: occupancy (nowhere to drop at all) over
@@ -414,12 +419,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       onKeyDown={(event) => { if (event.key === 'Escape') { event.stopPropagation(); setMenu(null); laneRef.current?.focus(); } if (event.key === 'Tab') { event.stopPropagation(); setMenu(null); } }}>
       <button type="button" role="menuitem" onClick={() => remove(menu.clipId)}><Icon name="trash" size={14} />{t('sequence.removeRoute')}</button>
     </div>}
-    <div className="sequence-composer-footnote"><span role="status" className="sequence-error">{error ?? ''}</span>
-      {onPlaybackRangeChange && <select className="timeline-range sequence-footnote-range" aria-label={t('timeline.range')} value={playbackRange}
-        onChange={(event) => onPlaybackRangeChange(event.target.value as PlaybackRange)}>
-        <option value="full">{t('timeline.rangeFull')}</option>
-        <option value="paths">{t('timeline.rangePaths')}</option>
-      </select>}</div>
+    <div className="sequence-composer-footnote"><span role="status" className="sequence-error">{error ?? ''}</span></div>
     {dragPoint && dragRef.current?.kind === 'add' && dragRef.current.clip && (() => {
       // Follow-along copy of the dragged library route (user 2026-10-07):
       // visible inside the lane and out of it, so the gesture always says
