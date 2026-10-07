@@ -184,10 +184,6 @@ export const zh: Record<MessageKey, string> = {
 
   'toast.gifFailed': 'GIF 失败',
 
-  'site.tryPreview': '试用预览版网站',
-  'site.backStable': '返回稳定版',
-  'site.previewNote': '预览版——功能可能随时变化。',
-  'site.version': '版本',
   'canvas.view': '视图',
   'canvas.fit': "显示全场",
   'canvas.clock': 't = {t} 秒',
@@ -290,9 +286,7 @@ export const zh: Record<MessageKey, string> = {
   'prefs.unit.cm': '厘米 (cm)',
   'prefs.unit.in': '英寸 (in)',
   'prefs.unit.ftin': '英尺+英寸 (3′2″)',
-  'prefs.units.hint': '检查面板中的距离使用此单位，例：',
   'prefs.colorblind': '色盲安全配色',
-  'prefs.colorblindHint': '把机器人颜色换成色觉障碍友好配色（Okabe-Ito）',
   'prefs.theme': '主题',
   'theme.system': '跟随系统',
   'theme.dark': '深色',

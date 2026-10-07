@@ -178,10 +178,6 @@ export const hi = {
   
   'toast.gifFailed': 'GIF विफल',
   
-  'site.tryPreview': 'प्रीव्यू साइट आज़माएं',
-  'site.backStable': 'स्थिर साइट पर लौटें',
-  'site.previewNote': 'प्रीव्यू बिल्ड — सुविधाएं किसी भी समय बदल सकती हैं।',
-  'site.version': 'संस्करण',
   'canvas.view': 'व्यू',
   'canvas.fit': 'फिट',
   'canvas.clock': 't = {t} से',
@@ -283,9 +279,7 @@ export const hi = {
   'prefs.unit.cm': 'सेंटीमीटर (से.मी)',
   'prefs.unit.in': 'इंच (in)',
   'prefs.unit.ftin': 'फीट + इंच (3′2″)',
-  'prefs.units.hint': 'जाँच पैनल में दूरियां इस इकाई का उपयोग करती हैं, उदा.',
   'prefs.colorblind': 'वर्णांधता पैलेट',
-  'prefs.colorblindHint': 'रोबोट रंगों को वर्णांधता-सुरक्षित सेट (Okabe-Ito) से बदलें',
   'prefs.theme': 'थीम',
   'theme.system': 'सिस्टम का पालन करें',
   'theme.dark': 'डार्क',

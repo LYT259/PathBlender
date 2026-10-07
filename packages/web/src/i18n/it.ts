@@ -178,10 +178,6 @@ export const it = {
   
   'toast.gifFailed': 'GIF non riuscito',
   
-  'site.tryPreview': 'Prova il sito di anteprima',
-  'site.backStable': 'Torna al sito stabile',
-  'site.previewNote': 'Build di anteprima — le funzionalità possono cambiare in qualsiasi momento.',
-  'site.version': 'Versione',
   'canvas.view': 'Vista',
   'canvas.fit': 'Adatta',
   'canvas.clock': 't = {t} s',
@@ -283,9 +279,7 @@ export const it = {
   'prefs.unit.cm': 'Centimetri (cm)',
   'prefs.unit.in': 'Pollici (in)',
   'prefs.unit.ftin': 'Piedi + pollici (3′2″)',
-  'prefs.units.hint': 'Le distanze nel pannello controlli usano questa unità, es.',
   'prefs.colorblind': 'Tavolozza daltonici',
-  'prefs.colorblindHint': 'Sostituisci i colori dei robot con un set sicuro per daltonici (Okabe-Ito)',
   'prefs.theme': 'Tema',
   'theme.system': 'Segui sistema',
   'theme.dark': 'Scuro',

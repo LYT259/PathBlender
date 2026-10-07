@@ -41,4 +41,18 @@ describe('About identity', () => {
     about(); expect(icon()).toHaveAttribute('src', expect.stringContaining('day'));
     expect(localStorage.getItem('pb.appIcon')).toBeNull();
   });
+  it('runs the icon larger (user request 2026-10-07)', () => {
+    mount(); about();
+    expect(icon()).toHaveAttribute('width', '72');
+    expect(icon()).toHaveAttribute('height', '72');
+  });
+  it('shows no Cancel/Save footer on About — nothing there to stage', () => {
+    mount(); about();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
+    // The staging pair returns on sections that actually hold settings.
+    fireEvent.click(screen.getByRole('tab', { name: 'General' }));
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+  });
 });

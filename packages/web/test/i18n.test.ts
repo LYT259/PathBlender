@@ -127,7 +127,7 @@ describe('i18n dictionaries', () => {
     'prefs.section.general', // Spanish 'General' is identical.
     'workspace.details', 'robots.title',
     'robots.collision', 'robots.alliance', 'timeline.pause', 'timeline.collision',
-    'site.version', 'about.version',
+    'about.version',
     // 'GIF' is the universal acronym every shipped language keeps;
     // 'Heatmap' is the German loanword (de); 'Differential' is the
     // Danish loanword (da).

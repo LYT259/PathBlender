@@ -196,10 +196,6 @@ export const pl: Record<MessageKey, string> = {
 
   'toast.gifFailed': 'GIF nieudany',
 
-  'site.tryPreview': 'Wypróbuj witrynę testową',
-  'site.backStable': 'Wróć do witryny stabilnej',
-  'site.previewNote': 'Wersja testowa — funkcje mogą się zmienić w każdej chwili.',
-  'site.version': 'Wersja',
   'canvas.view': 'Widok',
   'canvas.fit': 'Dopasuj',
   'canvas.clock': 't = {t} s',
@@ -303,9 +299,7 @@ export const pl: Record<MessageKey, string> = {
   'prefs.unit.cm': 'Centymetry (cm)',
   'prefs.unit.in': 'Cale (in)',
   'prefs.unit.ftin': 'Stopy + cale (3′2″)',
-  'prefs.units.hint': 'Odległości w panelu sprawdzeń używają tej jednostki, np.',
   'prefs.colorblind': 'Paleta dla daltonistów',
-  'prefs.colorblindHint': 'Zamień kolory robotów na zestaw bezpieczny dla daltonistów (Okabe-Ito)',
   'prefs.theme': 'Motyw',
   'theme.system': 'Zgodnie z systemem',
   'theme.dark': 'Ciemny',

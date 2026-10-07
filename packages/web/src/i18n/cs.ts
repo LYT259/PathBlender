@@ -193,10 +193,6 @@ export const cs: Record<MessageKey, string> = {
 
   'toast.gifFailed': 'GIF selhal',
 
-  'site.tryPreview': 'Vyzkoušet web s náhledovou verzí',
-  'site.backStable': 'Zpět na stabilní web',
-  'site.previewNote': 'Náhledové sestavení — funkce se mohou kdykoli změnit.',
-  'site.version': 'Verze',
   'canvas.view': 'Zobrazení',
   'canvas.fit': 'Přizpůsobit',
   'canvas.clock': 't = {t} s',
@@ -300,9 +296,7 @@ export const cs: Record<MessageKey, string> = {
   'prefs.unit.cm': 'Centimetry (cm)',
   'prefs.unit.in': 'Palce (in)',
   'prefs.unit.ftin': 'Stopy + palce (3′2″)',
-  'prefs.units.hint': 'Vzdálenosti v panelu kontrol používají tuto jednotku, např.',
   'prefs.colorblind': 'Paleta pro barvoslepost',
-  'prefs.colorblindHint': 'Vyměňte barvy robotů za sadu bezpečnou pro poruchy barvocitu (Okabe-Ito)',
   'prefs.theme': 'Motiv',
   'theme.system': 'Podle systému',
   'theme.dark': 'Tmavý',
