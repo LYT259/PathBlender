@@ -9,7 +9,7 @@
  * must ship every language — version-notes.test.ts enforces both.
  */
 
-export const APP_VERSION = '0.1.8-beta.70';
+export const APP_VERSION = '0.1.8-beta.71';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -32,6 +32,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.71', date: '2026.10.07', note: {
+    en: 'Example now survives a dropped or stale connection: automatic retry, one page refresh, and background warm-up',
+    zh: '体验示例不再怕断网或旧缓存：自动重试、必要时刷新一次页面，并在后台提前预热',
+    'zh-tw': '體驗範例不再怕斷網或舊快取：自動重試、必要時重新整理一次頁面，並在背景提前預熱',
+    cs: 'Ukázka teď přežije výpadek či zastaralé připojení: automatické opakování, jedno obnovení stránky a přednačtení na pozadí',
+    nl: 'Het voorbeeld overleeft nu een gevallen of verouderde verbinding: automatische herkansing, één keer verversen en op de achtergrond voorverwarmd',
+    fr: 'L’exemple survit désormais à une connexion interrompue ou périmée : nouvelle tentative automatique, un rafraîchissement de la page et un préchargement en arrière-plan',
+    he: 'הדוגמה עכשיו שורדת חיבור שנקטע או התיישן: ניסיון חוזר אוטומטי, רענון דף אחד וטעינה מוקדמת ברקע',
+    ja: 'サンプルが切断や古い接続でも開けるように：自動リトライ、必要なら1回だけ再読み込み、バックグラウンドで事前読み込み',
+    ko: '예제가 끊기거나 오래된 연결에서도 열립니다: 자동 재시도, 필요 시 한 번 새로고침, 백그라운드 사전 로드',
+    pl: 'Przykład teraz przetrwa zerwane lub przestarzałe połączenie: automatyczna ponowna próba, jedno odświeżenie strony i rozgrzewka w tle',
+    'pt-br': 'O exemplo agora sobrevive a uma conexão interrompida ou desatualizada: nova tentativa automática, uma atualização da página e pré-carregamento em segundo plano',
+    es: 'El ejemplo ahora sobrevive a una conexión interrumpida o caducada: reintento automático, una sola actualización de la página y precarga en segundo plano',
+    tr: 'Örnek artık kesilen veya eskiyen bir bağlantıda da açılıyor: otomatik yeniden deneme, tek sayfa yenileme ve arka planda ön yükleme',
+  } },
   { version: '0.1.8-beta.70', date: '2026.10.07', note: {
     en: 'Focus rings: rounded, never clipped, and scoped to whole team cards',
     zh: '焦点框：统一圆角、不再被裁切，机器人卡片整体成框',
