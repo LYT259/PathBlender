@@ -1432,7 +1432,8 @@ function AppBody() {
                 {!view3D && <FieldCanvas ref={canvasRef} showTrail={showTrail} showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} />}
               </>}
             </div>
-            {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span><button onClick={() => setInspectorMode('checks')} className={issueCount ? 'status-warning' : ''}><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</button></div>}
+            {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span>{/* A pure indicator, not a control — no ring, no click (user 2026-10-07). */}
+              <span className={`status-check${issueCount ? ' status-warning' : ''}`} role="status"><Icon name={issueCount ? 'warning' : 'check'} size={14} />{issueCount ? tr('checks.issues', { n: issueCount }) : tr(robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle')}</span></div>}
           </section>
           <aside className="workspace-inspector" hidden={!rightOpen}>
             <div className="inspector-header"><div className="seg inspector-tabs" role="group" aria-label={tr('workspace.panels')}>
