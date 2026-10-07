@@ -194,6 +194,9 @@ function AppBody() {
   const exampleRequest = useRef(0);
   const { visible: showPlayTip, dismiss: dismissPlayTip } = useUsageTip('play');
   const { visible: showCheckTip, dismiss: dismissCheckTip } = useUsageTip('checks');
+  // Post-import basics check (plan §4.4): surfaces once after a real import
+  // (not with the example — its settings are curated) and dismisses locally.
+  const { visible: showImportTip, dismiss: dismissImportTip } = useUsageTip('import');
   const [cfOpen, setCfOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'error' } | null>(null);
   const toastTimer = useRef<number | null>(null);
@@ -1425,7 +1428,9 @@ function AppBody() {
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
         <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
-          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={openSequenceFor} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} header={hasExample && !tour.dismissed ? <OnboardingTasks done={tour.done} onDismiss={tour.dismiss} /> : undefined} />}
+          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={openSequenceFor} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} header={
+            hasExample && !tour.dismissed ? <OnboardingTasks done={tour.done} onDismiss={tour.dismiss} /> : !hasExample && hasRobots && showImportTip ? <div className="tour-card tour-import-tip"><UsageTip text={tr('onboarding.import')} onDismiss={dismissImportTip} /></div> : undefined
+          } />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
             {hasExample && <div className="example-notice"><strong>{tr('welcome.exampleBadge')}</strong><span>{tr('welcome.exampleNotice')}</span><button className="btn small" onClick={exitExample}>{tr('welcome.exitExample')}</button></div>}
             <div className="canvas-slot">

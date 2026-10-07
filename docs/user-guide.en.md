@@ -119,6 +119,13 @@ things:
 | **Acts on** | **The whole session**: every robot moves to the chosen half together | **One robot**: that robot and its route library flip about the field centreline |
 | **When to use it** | Watch the same blend from the half those robots actually start on | A partner exported routes written for the other alliance's side |
 
+![Mirror before/after](screenshots/mirror-before-after.en.png)
+
+The built-in example is the quickest way to feel it (Help → Getting started
+walks you through a five-task checklist): mirroring #8814 clears its conflict
+with #11019 on the spot, and one more click restores it — the mirror only
+flips that one robot's analysis view across the centreline.
+
 Three shared boundaries worth stating up front when demoing:
 
 - Both are **derived views**: the original files are untouched, and
