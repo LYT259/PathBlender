@@ -13,7 +13,7 @@
  * entry for Traditional readers.
  */
 
-export const APP_VERSION = '0.1.8-beta.88';
+export const APP_VERSION = '0.1.8-beta.89';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -37,6 +37,21 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.8-beta.89', date: '2026.10.07', note: {
+    en: "The example session gains a five-task getting-started checklist — real actions tick the tasks, progress is local, and Help reopens it any time",
+    zh: "示例会话新增五任务入门清单——真实操作自动打勾，进度只存本地，帮助菜单随时重开",
+    'zh-tw': "示例工作階段新增五任務入門清單——真實操作自動打勾，進度只存本機，說明選單隨時重開",
+    cs: "Ukázková relace dostává pětiúkolový seznam pro začátek — skutečné akce odškrtávají úkoly, průběh zůstává lokální a Nápověda jej kdykoli znovu otevře",
+    nl: "De voorbeeldsessie krijgt een vijftakelijke startlijst — echte acties vinken de taken af, de voortgang blijft lokaal en Help opent hem altijd weer",
+    fr: "La session d’exemple gagne une liste de démarrage en cinq tâches — les vraies actions cochent les exercices, la progression reste locale et le menu Aide la rouvre à tout moment",
+    he: "ההפעלה לדוגמה מקבלת רשימת התחלה בת חמישה תרגילים — פעולות אמיתיות מסמנות את המשימות, ההתקדמות נשמרת מקומית והעזרה פותחת אותה בכל עת",
+    ja: "サンプルセッションに 5 課題のはじめかたチェックリストを追加——実際の操作でタスクがチェックされ、進行状況はローカル保存、ヘルプからいつでも再表示できます",
+    ko: "예제 세션에 5과제 시작하기 체크리스트가 생겼습니다 — 실제 조작으로 과제가 체크되고, 진행 상황은 로컬에만 저장되며, 도움말에서 언제든 다시 열 수 있습니다",
+    pl: "Sesja przykładowa zyskuje listę startową z pięcioma zadaniami — prawdziwe działania odhaczają zadania, postęp zostaje lokalnie, a Pomoc otwiera listę w każdej chwili",
+    'pt-br': "A sessão de exemplo ganha uma lista de início com cinco tarefas — ações reais marcam as tarefas, o progresso fica local e o menu Ajuda reabre quando quiser",
+    es: "La sesión de ejemplo gana una lista de inicio de cinco tareas: las acciones reales las completan, el progreso queda local y el menú Ayuda la reabre en cualquier momento",
+    tr: "Örnek oturum, beş görevlik bir başlangıç listesi kazandı — gerçek işlemler görevleri işaretler, ilerleme yerel kalır ve Yardım onu her zaman yeniden açar",
+  } },
   { version: '0.1.8-beta.88', date: '2026.10.07', note: { en: 'Release pipeline ships macOS Universal, Windows and Linux installers; README and release notes add five more languages', zh: '发布流水线产出 macOS 通用包、Windows 与 Linux 安装包；README 与发布说明新增五种语言', 'zh-tw': '發布流水線產出 macOS 通用包、Windows 與 Linux 安裝包；README 與發布說明新增五種語言', cs: 'Release pipeline vydává instalační balíčky macOS Universal, Windows a Linux; README a poznámky k vydání v pěti dalších jazycích', nl: 'De release-pipeline levert macOS Universal-, Windows- en Linux-installatieprogramma’s; README en release-opmerkingen in vijf extra talen', fr: 'Le pipeline de publication fournit les installateurs macOS Universal, Windows et Linux ; README et notes de version en cinq langues de plus', he: 'צינור ההפצה מספק מתקינים ל-macOS Universal, ל-Windows ול-Linux; קובץ ה-README והערות ההפצה בחמש שפות נוספות', ja: 'リリースパイプラインが macOS Universal・Windows・Linux のインストーラーを提供；README とリリースノートに 5 言語を追加', ko: '릴리스 파이프라인이 macOS Universal·Windows·Linux 설치 제공; README와 릴리스 노트에 다섯 언어 추가', pl: 'Pipeline wydawniczy dostarcza instalatory macOS Universal, Windows i Linux; README i notki wydania w pięciu kolejnych językach', 'pt-br': 'O pipeline de release entrega instaladores para macOS Universal, Windows e Linux; README e notas de versão em mais cinco idiomas', es: 'El pipeline de publicación entrega instaladores de macOS Universal, Windows y Linux; README y notas de versión en cinco idiomas más', tr: 'Sürüm hattı macOS Universal, Windows ve Linux kurulumlarını veriyor; README ve sürüm notları beş dil daha' } },
   { version: '0.1.8-beta.87', date: '2026.10.07', note: {
     en: "User guide reworked into a seven-step first-check walkthrough with an annotated workspace map and an alliance-switch-vs-mirror section; READMEs open with the one-line pitch",
