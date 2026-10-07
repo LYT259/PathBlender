@@ -188,6 +188,8 @@ export const zh: Record<MessageKey, string> = {
   'canvas.fit': "显示全场",
   'canvas.clock': 't = {t} 秒',
   'canvas.heatmap': '热力图',
+  'canvas.trail': '轨迹尾巴',
+  'canvas.overlays': '画面叠加',
 
   'import.failed': '{n} 个文件导入失败：',
   'import.dismiss': '关闭',

@@ -182,6 +182,8 @@ export const ms = {
   'canvas.fit': 'Padankan',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Peta haba',
+  'canvas.trail': 'Jejak',
+  'canvas.overlays': 'Tindanan',
   
   'import.failed': '{n} fail gagal diimport:',
   'import.dismiss': 'Tutup',

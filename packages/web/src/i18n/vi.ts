@@ -182,6 +182,8 @@ export const vi = {
   'canvas.fit': 'Vừa khung',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Bản đồ nhiệt',
+  'canvas.trail': 'Dấu vết',
+  'canvas.overlays': 'Lớp phủ',
   
   'import.failed': '{n} tệp không nhập được:',
   'import.dismiss': 'Đóng',

@@ -152,6 +152,8 @@ export const sv = {
   'canvas.fit': 'Anpassa',
   'canvas.clock': 't = {t} s',
   'canvas.heatmap': 'Värmekarta',
+  'canvas.trail': 'Spår',
+  'canvas.overlays': 'Lager',
   
   'import.failed': '{n} fil(er) kunde inte importeras:',
   'import.dismiss': 'Stäng',

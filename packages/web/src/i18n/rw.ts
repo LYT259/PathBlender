@@ -152,6 +152,8 @@ export const rw = {
   'canvas.fit': "Huza",
   'canvas.clock': "t = {t} s",
   'canvas.heatmap': 'Heatmap',
+  'canvas.trail': 'Trail',
+  'canvas.overlays': 'Overlays',
   
   'import.failed': "Dosiye {n} ntizashoboye kuzanwa:",
   'import.dismiss': "Funga",
