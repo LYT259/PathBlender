@@ -106,6 +106,11 @@ describe('i18n dictionaries', () => {
     'prefs.mouse.onshape.wheel', 'prefs.mouse.solidworks.wheel',
     // 'Zoom' is the loanword in the Romance dictionaries (es/fr/pt-BR).
     'prefs.mouse.zoom',
+    // 'Drag' is the loanword in Filipino, whose own button labels use it.
+    'prefs.mouse.custom.plain',
+    // 'Ctrl/Alt/Shift + drag' coincide with English in the North-Germanic
+    // dictionaries (nb/nn/sv), whose button labels already use 'drag'.
+    'prefs.mouse.custom.ctrl', 'prefs.mouse.custom.alt', 'prefs.mouse.custom.shift',
     // Symbols and unit strings the field itself renders.
     'conflicts.pair', 'customField.ppm', 'timeline.speed', 'timeline.clock',
     'timeline.activity', 'timeline.band', 'canvas.clock', 'rail.png',
