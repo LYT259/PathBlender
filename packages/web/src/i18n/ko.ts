@@ -179,6 +179,8 @@ export const ko: Record<MessageKey, string> = {
   'robots.driveHolonomic': '전방향',
   'robots.driveDifferential': '차동',
   'robots.visible': '재생 및 충돌 검사에 표시',
+  'robots.reorderHandle': "{name} 표시 순서 변경 — {total}팀 중 {position}번째. 드래그하거나 위쪽 및 아래쪽 화살표 키를 누르세요.",
+  'robots.reorderMoved': "{name}이(가) {total}팀 중 {position}번째로 이동했습니다.",
 
   'vc.top': '상',
   'vc.bottom': '하',

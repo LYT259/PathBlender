@@ -6,10 +6,12 @@ import { Icon } from './Icon';
 import { RobotContextMenu } from './RobotContextMenu';
 import { formatLength, formatLengthNumber, useLengthUnit } from '../length-units';
 import './RobotList.css';
+import { useTeamOrderUI, type TeamOrderUI } from './TeamOrderUI';
 import { inspectorWarnings } from '../robot-profile-ui';
 import { robotIdentity, robotOriginalIdentity } from '../robot-identity';
 
 interface RobotListProps {
+  teamOrder?: TeamOrderUI;
   robots: SessionTrajectory[];
   conflicts: CollisionInterval[];
   selectedId: string | null;
@@ -100,7 +102,8 @@ function TeamNumberCell({ robot, onUpdate, editing, onStartEdit, onEndEdit, chil
 }
 
 /** Selection lives in the workspace so the list, field and inspector agree. */
-export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, onMirrorButtonClick, mirroredIds, renameSignal, header }: RobotListProps) {  const { t, n, lang } = useI18n();
+export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, onMirrorButtonClick, mirroredIds, renameSignal, header, teamOrder }: RobotListProps) {  const { t, n, lang } = useI18n();
+  const reorder = useTeamOrderUI(teamOrder);
   const settingsInput = useRef<HTMLInputElement>(null);
   const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const contextRobot = robots.find((robot) => robot.trajectory.id === contextMenu?.id);
@@ -130,6 +133,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
         </div>
       ) : (
         <ul className="robot-library-items">
+          {reorder.live}
           {robots.map((robot) => {
             const { trajectory } = robot;
             const needsSettings = (trajectory.source === 'pathplanner-path' || trajectory.source === 'pathplanner-auto') && trajectory.geometrySource !== 'file';
@@ -146,7 +150,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
               hit ? t('robots.collision') : '',
             ].filter(Boolean).join(', ');
             return (
-              <li key={trajectory.id} tabIndex={0} aria-label={selectionLabel}
+              <li {...reorder.row(trajectory.id)} key={trajectory.id} tabIndex={0} aria-label={selectionLabel}
                 onClick={(event) => { if (!(event.target as HTMLElement).closest('button, input, select, a, [role="menu"]')) onSelect(trajectory.id); }}
                 onContextMenu={(event) => {
                   if ((event.target as HTMLElement).closest('input, select')) return;
@@ -161,6 +165,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                     setContextMenu({ id: trajectory.id, x: rect.left + 12, y: rect.bottom });
                   }
                 }} className={`robot-library-row${needsSettings && onSelectSettings ? ' needs-settings' : ''}${selectedId === trajectory.id ? ' is-selected' : ''}${robot.visible ? '' : ' is-hidden'}`}>
+                {reorder.handle(trajectory.id, robotIdentity(trajectory))}
                 <TeamNumberCell robot={robot} onUpdate={onUpdate} editing={editingId === trajectory.id} onStartEdit={() => setEditingId(trajectory.id)} onEndEdit={() => setEditingId(null)}>{/* tabindex=-1: the row <li> is the card's single Tab stop; this button stays
                     the programmatic focus anchor (landing, Escape-restore), and its
                     focus ring is drawn on the whole card via :has() (2026-10-07). */}

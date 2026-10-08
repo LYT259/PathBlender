@@ -147,6 +147,8 @@ export const hy = {
   'robots.length': 'երկարություն',
   'robots.width': 'լայնություն',
   'robots.visible': 'տեսանելի վերարտադրման և բախման ստուգման մեջ',
+  'robots.reorderHandle': "Վերադասավորեք {name} թիմը. Դիրքը՝ {total}-ից {position}-րդ։ Քաշեք կամ սեղմեք վերև և ներքև ստեղները։",
+  'robots.reorderMoved': "{name} թիմն այժմ {total}-ից {position}-րդ դիրքում է։",
   
   'vc.top': 'Վ',
   'vc.bottom': 'Ն',

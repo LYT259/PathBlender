@@ -166,6 +166,8 @@ export const mr = {
   'robots.driveHolonomic': 'सर्वदिश',
   'robots.driveDifferential': 'विभेदक',
   'robots.visible': 'प्लेबॅक आणि टक्कर तपासणीत दृश्यमान',
+  'robots.reorderHandle': "{name} चा क्रम बदला — एकूण {total} पैकी स्थान {position}. ओढा, किंवा वर आणि खाली बाण कळा वापरा.",
+  'robots.reorderMoved': "{name} आता एकूण {total} पैकी स्थान {position} वर आहे.",
   
   'vc.top': 'व',
   'vc.bottom': 'ख',

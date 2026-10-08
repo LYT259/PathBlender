@@ -174,6 +174,8 @@ export const es: Record<MessageKey, string> = {
   'robots.driveHolonomic': 'Holonómico',
   'robots.driveDifferential': 'Diferencial',
   'robots.visible': 'visible en la reproducción y en la comprobación de colisiones',
+  'robots.reorderHandle': "Reordenar {name} — posición {position} de {total}. Arrastra, o usa las flechas arriba y abajo.",
+  'robots.reorderMoved': "{name} pasó a la posición {position} de {total}.",
 
   // View-cube initials: the Latin abbreviations collide (Inferior/Izquierda,
   // Dos/Derecho), so this dictionary keeps the English source letters while the

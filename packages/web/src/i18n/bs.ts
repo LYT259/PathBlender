@@ -146,6 +146,8 @@ export const bs = {
   'robots.length': "dužina",
   'robots.width': "širina",
   'robots.visible': "vidljiv u reprodukciji i provjeri sudara",
+  'robots.reorderHandle': "Preuredite {name} — pozicija {position} od {total}. Prevucite ili koristite strelice gore i dolje.",
+  'robots.reorderMoved': "{name} je sada na poziciji {position} od {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

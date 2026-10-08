@@ -138,6 +138,8 @@ export const en = {
   'robots.driveHolonomic': 'Holonomic',
   'robots.driveDifferential': 'Differential',
   'robots.visible': 'visible in playback & collision check',
+  'robots.reorderHandle': "Reorder {name} — position {position} of {total}. Drag, or press the up and down arrow keys.",
+  'robots.reorderMoved': "{name} moved to position {position} of {total}.",
 
   'vc.top': 'T',
   'vc.bottom': 'B',

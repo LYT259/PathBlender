@@ -169,6 +169,8 @@ export const zh: Record<MessageKey, string> = {
   'robots.driveHolonomic': '全向',
   'robots.driveDifferential': '差速',
   'robots.visible': '参与回放与碰撞检查',
+  'robots.reorderHandle': "调整 {name} 的显示顺序——第 {position} 位，共 {total} 位。拖动手柄，或按上、下方向键。",
+  'robots.reorderMoved': "{name} 已移至第 {position} 位（共 {total} 位）。",
 
   'vc.top': '上',
   'vc.bottom': '下',

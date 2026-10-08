@@ -166,6 +166,8 @@ export const fil = {
   'robots.driveHolonomic': 'Holonomiko',
   'robots.driveDifferential': 'Diferensyal',
   'robots.visible': 'nakikita sa playback at collision check',
+  'robots.reorderHandle': "Baguhin ang pagkakasunod ng {name} — posisyon {position} ng {total}. I-drag, o pindutin ang pataas at pababang arrow key.",
+  'robots.reorderMoved': "Nasa posisyong {position} na ng {total} ang {name}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

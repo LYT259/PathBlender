@@ -146,6 +146,8 @@ export const mk = {
   'robots.length': 'должина',
   'robots.width': 'ширина',
   'robots.visible': 'видлив во репродукцијата и проверката на судири',
+  'robots.reorderHandle': "Пререди {name} — позиција {position} од {total}. Влечете или користете ги стрелките нагоре и надолу.",
+  'robots.reorderMoved': "{name} сега е на позиција {position} од {total}.",
   
   'vc.top': 'Г',
   'vc.bottom': 'Д',
