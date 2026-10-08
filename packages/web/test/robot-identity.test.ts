@@ -15,14 +15,14 @@ describe('robot identity helpers', () => {
     expect(robotIdentity(traj({ displayName: '  甲队 Red One  ' }))).toBe('甲队 Red One');
   });
 
-  it('falls back to #teamNumber, then the route name', () => {
-    expect(robotIdentity(traj())).toBe('#8814');
+  it('falls back to the bare team number, then the route name', () => {
+    expect(robotIdentity(traj())).toBe('8814');
     expect(robotIdentity(traj({ teamNumber: '' }))).toBe('Route');
     expect(robotIdentity(traj({ teamNumber: '', displayName: '   ' }))).toBe('Route');
   });
 
-  it('keeps the original #teamNumber/name rule for the details panel', () => {
-    expect(robotOriginalIdentity(traj({ displayName: 'My Robot' }))).toBe('#8814');
+  it('keeps the original teamNumber/name rule for the details panel', () => {
+    expect(robotOriginalIdentity(traj({ displayName: 'My Robot' }))).toBe('8814');
     expect(robotOriginalIdentity(traj({ teamNumber: '', displayName: 'My Robot' }))).toBe('Route');
   });
 

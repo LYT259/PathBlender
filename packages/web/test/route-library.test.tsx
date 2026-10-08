@@ -57,7 +57,7 @@ describe('team folder workflow', () => {
     await waitFor(() => expect(rows()).toHaveLength(1));
     // The composer is the route surface: its library lists the whole folder in
     // natural order and the placed clip is the first one (L1).
-    await openComposer('#254');
+    await openComposer('254');
     expect(sourceLabels()).toEqual(['L1', 'L2', 'L10']);
     expect(composerClips()[0]!.getAttribute('aria-label')).toMatch(/^L1,/);
     closeComposer();
@@ -73,15 +73,15 @@ describe('team folder workflow', () => {
     await waitFor(() => expect(rows()).toHaveLength(1));
     importFolder([folderFile('choreo/L5.traj'), folderFile('choreo/L2.traj')]);
     await waitFor(() => expect(rows()).toHaveLength(2));
-    await openComposer('#AAAAAA');
+    await openComposer('AAAAAA');
     expect(sourceLabels()).toEqual(['L1', 'L3']);
     closeComposer();
-    await openComposer('#BBBBBB');
+    await openComposer('BBBBBB');
     expect(sourceLabels()).toEqual(['L2', 'L5']);
     // Switching the second team's route leaves the first team untouched.
     replaceOnlyClip('L5');
     closeComposer();
-    await openComposer('#AAAAAA');
+    await openComposer('AAAAAA');
     expect(composerClips()[0]!.getAttribute('aria-label')).toMatch(/^L1,/);
   });
 
@@ -125,16 +125,16 @@ describe('team folder workflow', () => {
   it('does not erase a placeholder when the editor is opened and left unchanged', async () => {
     render(<App />);
     importFolder([folderFile('choreo/L1.traj')]);
-    await screen.findByText('#AAAAAA', { selector: '.robot-name' });
+    await screen.findByText('AAAAAA', { selector: '.robot-name' });
     fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
     fireEvent.blur(screen.getByRole('textbox', { name: 'Edit display name' }));
-    expect(screen.getByText('#AAAAAA', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('AAAAAA', { selector: '.robot-name' })).toBeInTheDocument();
   });
 
   it('clearing the display name restores the original placeholder identity everywhere', async () => {
     render(<App />);
     importFolder([folderFile('choreo/L1.traj')]);
-    await screen.findByText('#AAAAAA', { selector: '.robot-name' });
+    await screen.findByText('AAAAAA', { selector: '.robot-name' });
     fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
     const input = screen.getByRole('textbox', { name: 'Edit display name' });
     fireEvent.change(input, { target: { value: 'Choreo 主力' } });
@@ -143,16 +143,16 @@ describe('team folder workflow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Edit display name' }), { target: { value: '' } });
     fireEvent.keyDown(screen.getByRole('textbox', { name: 'Edit display name' }), { key: 'Enter' });
-    expect(screen.getByText('#AAAAAA', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('AAAAAA', { selector: '.robot-name' })).toBeInTheDocument();
   });
 
   it('keeps each team\'s configuration choices separate', async () => {
     render(<App />);
     importFolder([folderFile('254/straight.ghostauto', GHOST), folderFile('254/settings.json', SETTINGS)]);
-    await screen.findByText('#254', { selector: '.robot-name' });
+    await screen.findByText('254', { selector: '.robot-name' });
     importFolder([folderFile('1678/L1.traj'), folderFile('1678/settings.json', SETTINGS)]);
-    await screen.findByText('#1678', { selector: '.robot-name' });
-    fireEvent.click(screen.getByText('#254', { selector: '.robot-name' }));
+    await screen.findByText('1678', { selector: '.robot-name' });
+    fireEvent.click(screen.getByText('254', { selector: '.robot-name' }));
     const profileSelect = await screen.findByRole('combobox', { name: 'Robot profile' });
     expect(choices(profileSelect)).toHaveLength(2); // prompt + this team's configuration
     expect(choices(profileSelect)[1]).toHaveTextContent('254');
@@ -164,16 +164,16 @@ describe('team folder workflow', () => {
     render(<App />);
     importFolder([new File([TRAJ], 'L1.traj'), new File([TRAJ], 'L2.traj')]);
     await waitFor(() => expect(rows()).toHaveLength(2));
-    expect(screen.getByText('#AAAAAA', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('#BBBBBB', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('AAAAAA', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('BBBBBB', { selector: '.robot-name' })).toBeInTheDocument();
   });
 
   it('still reports malformed route files while using the valid routes', async () => {
     render(<App />);
     importFolder([folderFile('choreo/broken.traj', '{}'), folderFile('choreo/L1.traj')]);
-    await screen.findByText('#AAAAAA', { selector: '.robot-name' });
+    await screen.findByText('AAAAAA', { selector: '.robot-name' });
     expect(document.querySelector('.import-banner')).toHaveTextContent('broken.traj');
-    await openComposer('#AAAAAA');
+    await openComposer('AAAAAA');
     expect(sourceButtons()).toHaveLength(1);
   });
 
@@ -181,14 +181,14 @@ describe('team folder workflow', () => {
     const app = render(<App />);
     importFolder([folderFile('choreo/L1.traj'), folderFile('choreo/L3.traj')]);
     await waitFor(() => expect(rows()).toHaveLength(1));
-    await openComposer('#AAAAAA');
+    await openComposer('AAAAAA');
     replaceOnlyClip('L3');
     closeComposer();
     await waitFor(() => expect(JSON.parse(localStorage.getItem('pb.autosave.v1')!).robots[0].sequence).toBeDefined());
     app.unmount();
     render(<App />);
     await waitFor(() => expect(rows()).toHaveLength(1));
-    await openComposer('#AAAAAA');
+    await openComposer('AAAAAA');
     expect(composerClips()[0]!.getAttribute('aria-label')).toMatch(/^L3,/);
     replaceOnlyClip('L1');
     expect(composerClips()[0]!.getAttribute('aria-label')).toMatch(/^L1,/);
@@ -198,7 +198,7 @@ describe('team folder workflow', () => {
     render(<App />);
     importFolder([folderFile('choreo/left/L1.traj'), folderFile('choreo/right/L1.traj')]);
     await waitFor(() => expect(rows()).toHaveLength(1));
-    await openComposer('#AAAAAA');
+    await openComposer('AAAAAA');
     expect(sourceLabels()).toEqual(['left/L1.traj', 'right/L1.traj']);
   });
 
@@ -213,10 +213,10 @@ describe('team folder workflow', () => {
     importFolder([folderFile('alpha/paths/Pickup.path', original), folderFile('alpha/autos/Run.auto', auto),
       folderFile('beta/paths/Pickup.path', JSON.stringify(shifted)), folderFile('beta/autos/Run.auto', auto)]);
     await waitFor(() => expect(rows()).toHaveLength(2));
-    await openComposer('#AAAAAA');
+    await openComposer('AAAAAA');
     replaceOnlyClip('Run');
     closeComposer();
-    await openComposer('#BBBBBB');
+    await openComposer('BBBBBB');
     replaceOnlyClip('Run');
     closeComposer();
     // Save moved to the File menu (2026-10-06): trigger the same handler via ⌘S.
@@ -233,11 +233,11 @@ describe('team folder workflow', () => {
     render(<App />);
     importFolder([folderFile('254/L1.traj'), folderFile('254/L3.traj'), folderFile('254/settings.json', SETTINGS)]);
     await waitFor(() => expect(rows()).toHaveLength(1));
-    fireEvent.click(screen.getByText('#254', { selector: '.robot-name' }));
+    fireEvent.click(screen.getByText('254', { selector: '.robot-name' }));
     const profiles = screen.getByRole('combobox', { name: 'Robot profile' });
     fireEvent.change(profiles, { target: { value: choices(profiles)[1]!.value } });
     expect(await screen.findByText('1.05 m')).toBeInTheDocument();
-    await openComposer('#254');
+    await openComposer('254');
     replaceOnlyClip('L3');
     closeComposer();
     expect(screen.getByText('1.05 m')).toBeInTheDocument();
@@ -255,12 +255,12 @@ describe('team folder workflow', () => {
     importFolder([new File([project], 'choreo.chor')]);
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('1 robot profile'));
     importFolder([folderFile('folder/L1.traj')]);
-    await screen.findByText('#AAAAAA', { selector: '.robot-name' });
-    fireEvent.click(screen.getByText('#AAAAAA', { selector: '.robot-name' }));
+    await screen.findByText('AAAAAA', { selector: '.robot-name' });
+    fireEvent.click(screen.getByText('AAAAAA', { selector: '.robot-name' }));
     expect(screen.queryByRole('combobox', { name: 'Robot profile' })).not.toBeInTheDocument();
     importFolder([new File([TRAJ], 'L2.traj')]);
-    await screen.findByText('#BBBBBB', { selector: '.robot-name' });
-    fireEvent.click(screen.getByText('#BBBBBB', { selector: '.robot-name' }));
+    await screen.findByText('BBBBBB', { selector: '.robot-name' });
+    fireEvent.click(screen.getByText('BBBBBB', { selector: '.robot-name' }));
     expect(choices(screen.getByRole('combobox', { name: 'Robot profile' }))).toHaveLength(2);
   });
 

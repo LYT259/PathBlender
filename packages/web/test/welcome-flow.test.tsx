@@ -19,8 +19,8 @@ function sessionInput() {
 
 async function openExample() {
   fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-  await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
-  expect(screen.getByText('#8814', { selector: '.robot-name' })).toBeInTheDocument();
+  await screen.findByText('11019', { selector: '.robot-name' }, { timeout: 10000 });
+  expect(screen.getByText('8814', { selector: '.robot-name' })).toBeInTheDocument();
   expect(screen.getByText('11019 Champs', { selector: '.robot-name' })).toBeInTheDocument();
 }
 
@@ -96,9 +96,9 @@ describe('welcome flow', () => {
     // Legacy pre-rename extension: files already on disk must keep opening.
     const saved = new File([serializeSession([robot], 'chargedup-2023')], 'previous.ghpb.json', { type: 'application/json' });
     fireEvent.change(sessionInput(), { target: { files: [saved] } });
-    await screen.findByText('#0001', { selector: '.robot-name' });
+    await screen.findByText('0001', { selector: '.robot-name' });
     expect(screen.getByRole('combobox', { name: 'Game season' })).toHaveValue('chargedup-2023');
-    fireEvent.click(screen.getByText('#0001', { selector: '.robot-name' }));
+    fireEvent.click(screen.getByText('0001', { selector: '.robot-name' }));
     expect(screen.getByRole('region', { name: 'Straight Run', exact: true })).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
     fireEvent.click(screen.getByRole('button', { name: /^Straight Run, 1\.25–/ }));
@@ -129,7 +129,7 @@ describe('welcome flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pause', exact: true }));
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('#11019 × 11019 Champs', { selector: '.conflict-pair' }).closest('button')!);
+    fireEvent.click(screen.getByText('11019 × 11019 Champs', { selector: '.conflict-pair' }).closest('button')!);
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
     expect(Number((screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement).value)).toBeCloseTo(0);
     expect(screen.queryByText(checkHint)).not.toBeInTheDocument();
@@ -164,7 +164,7 @@ describe('welcome flow', () => {
     await openExample();
     const target = document.querySelector('.robot-library-select');
     await waitFor(() => expect(document.activeElement).toBe(target));
-    expect(target).toHaveAccessibleName(/#11019/);
+    expect(target).toHaveAccessibleName(/11019/);
     expect(target?.className).toContain('focus-silent');
     fireEvent.keyDown(document, { key: 'Tab' });
     expect(target?.className).not.toContain('focus-silent');
@@ -186,12 +186,12 @@ describe('welcome flow', () => {
     localStorage.setItem('pb.autosave.v1', serializeSession(stale, 'rebuilt-2026'));
 
     render(<App />);
-    await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
-    expect(screen.getByText('#8814', { selector: '.robot-name' })).toBeInTheDocument();
+    await screen.findByText('11019', { selector: '.robot-name' }, { timeout: 10000 });
+    expect(screen.getByText('8814', { selector: '.robot-name' })).toBeInTheDocument();
     // Two stale demo slots refresh into the first two fresh robots — the
     // third (Champs) never appears.
     expect(screen.queryByText('11019 Champs', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('0001', { selector: '.robot-name' })).not.toBeInTheDocument();
     // The refreshed example does not auto-play either.
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeInTheDocument();
   });
@@ -204,26 +204,26 @@ describe('welcome flow', () => {
     localStorage.setItem('pb.autosave.v1', serializeSession([example, mine], 'rebuilt-2026'));
 
     render(<App />);
-    await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
-    expect(screen.getByText('#1234', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.queryByText('#8814', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
+    await screen.findByText('11019', { selector: '.robot-name' }, { timeout: 10000 });
+    expect(screen.getByText('1234', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.queryByText('8814', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('0001', { selector: '.robot-name' })).not.toBeInTheDocument();
   });
 
   it('ending the example always returns to the welcome page, even with an imported robot present', async () => {
     render(<App />);
     await openExample();
     fireEvent.drop(window, { dataTransfer: { files: [new File([sampleText], 'straight_run.ghostauto')] } });
-    await screen.findByText('#0001', { selector: '.robot-name' });
+    await screen.findByText('0001', { selector: '.robot-name' });
     // User 2026-10-04: the old behavior re-shown the imported robot here,
     // which read as "exiting into another workspace" instead of going home.
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
     expect(screen.getByRole('region', { name: 'Import paths to get started' })).toBeInTheDocument();
     expect(document.querySelectorAll('.robot-library-row')).toHaveLength(0);
-    expect(screen.queryByText('#8814', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(screen.queryByText('#11019', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('8814', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('11019', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.queryByText('11019 Champs', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('0001', { selector: '.robot-name' })).not.toBeInTheDocument();
     expect(screen.queryByText('Real 2026 routes from three real FRC robots: 11019, 8814 and 11019 Champs.')).not.toBeInTheDocument();
   });
 
@@ -258,7 +258,7 @@ describe('welcome flow', () => {
     expect(sources().filter((b) => b.getAttribute('aria-label')?.startsWith('L1: '))).toHaveLength(1);
     expect(placedLabel()).toMatch(/^L1,/);
     // Switch to the second demo robot inside the composer.
-    fireEvent.click([...document.querySelectorAll('.sequence-track-name')].find((b) => b.textContent?.includes('#8814'))!);
+    fireEvent.click([...document.querySelectorAll('.sequence-track-name')].find((b) => b.textContent?.includes('8814'))!);
     expect(sources()).toHaveLength(13);
     expect(sources().filter((b) => b.getAttribute('aria-label')?.startsWith('FCeSt: '))).toHaveLength(1);
     expect(placedLabel()).toMatch(/^FCeSt,/);
@@ -272,26 +272,26 @@ describe('welcome flow', () => {
     // BOUNDS_TOLERANCE_M (2026-10-04), so no out-of-bounds entries at all.
     expect(screen.getByText('3', { selector: '.conflict-count' })).toBeInTheDocument();
     expect(document.querySelector('.bounds-count')).not.toBeInTheDocument();
-    expect(screen.getByText('#11019 × #8814', { selector: '.conflict-pair' })).toBeInTheDocument();
-    expect(screen.getByText('#11019 × 11019 Champs', { selector: '.conflict-pair' })).toBeInTheDocument();
-    expect(screen.getByText('#8814 × 11019 Champs', { selector: '.conflict-pair' })).toBeInTheDocument();
+    expect(screen.getByText('11019 × 8814', { selector: '.conflict-pair' })).toBeInTheDocument();
+    expect(screen.getByText('11019 × 11019 Champs', { selector: '.conflict-pair' })).toBeInTheDocument();
+    expect(screen.getByText('8814 × 11019 Champs', { selector: '.conflict-pair' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Hide #8814 on field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide 8814 on field' }));
     // Hiding a robot removes its pairs; only the two-11019 pair survives.
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
-    expect(screen.queryByText('#11019 × #8814', { selector: '.conflict-pair' })).not.toBeInTheDocument();
-    expect(screen.queryByText('#8814 × 11019 Champs', { selector: '.conflict-pair' })).not.toBeInTheDocument();
+    expect(screen.queryByText('11019 × 8814', { selector: '.conflict-pair' })).not.toBeInTheDocument();
+    expect(screen.queryByText('8814 × 11019 Champs', { selector: '.conflict-pair' })).not.toBeInTheDocument();
     expect(document.querySelector('.bounds-count')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Hide #11019 on field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide 11019 on field' }));
     expect(screen.getByText('0', { selector: '.conflict-count' })).toBeInTheDocument();
     expect(document.querySelector('.bounds-count')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Show #8814 on field' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Show #11019 on field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show 8814 on field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show 11019 on field' }));
     expect(screen.getByText('3', { selector: '.conflict-count' })).toBeInTheDocument();
     expect(document.querySelector('.bounds-count')).not.toBeInTheDocument();
-    expect(screen.getByText('#8814 × 11019 Champs', { selector: '.conflict-pair' })).toBeInTheDocument();
+    expect(screen.getByText('8814 × 11019 Champs', { selector: '.conflict-pair' })).toBeInTheDocument();
   });
 
   it('adding a folder team while the example is open, then ending, lands on the welcome page', async () => {
@@ -300,10 +300,10 @@ describe('welcome flow', () => {
     const route = new File([sampleText], 'straight_run.ghostauto');
     Object.defineProperty(route, 'webkitRelativePath', { value: 'routes/straight_run.ghostauto' });
     fireEvent.drop(window, { dataTransfer: { files: [route] } });
-    await screen.findByText('#0001', { selector: '.robot-name' });
+    await screen.findByText('0001', { selector: '.robot-name' });
     expect(document.querySelectorAll('.robot-library-row')).toHaveLength(4);
-    expect(screen.getByText('#8814', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('#11019', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('8814', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('11019', { selector: '.robot-name' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'End example' }));
     expect(screen.getByRole('region', { name: 'Import paths to get started' })).toBeInTheDocument();
     expect(document.querySelectorAll('.robot-library-row')).toHaveLength(0);
@@ -316,8 +316,8 @@ describe('welcome flow', () => {
     await openExample();
     fireEvent.change(sessionInput(), { target: { files: [new File(['{"app":"not-a-session"}'], 'broken.pb')] } });
     await waitFor(() => expect(document.querySelector('.import-banner')).toHaveTextContent('broken.pb'));
-    expect(screen.getByText('#8814', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('#11019', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('8814', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('11019', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'End example' })).toBeInTheDocument();
   });
 

@@ -111,7 +111,7 @@ describe('per-team left/right mirror', () => {
     // The second slot's data survives untouched — only the session slot goes.
     expect(fieldRobots()[0]!.trajectory.id).toBe(before[1]!.trajectory.id);
     // The inspector no longer offers removal; the context menu was the path.
-    fireEvent.click(within(rows()[0]!).getByRole('button', { name: /#0001, Ghost/ }));
+    fireEvent.click(within(rows()[0]!).getByRole('button', { name: /0001, Ghost/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Robot', exact: true }));
     expect(screen.queryByRole('button', { name: 'Remove from session' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Robot actions' })).not.toBeInTheDocument();
@@ -189,13 +189,13 @@ describe('always-visible mirror button (2026-10-05)', () => {
     render(<App />);
     drop([new File([raw], 'A.ghostauto'), new File([raw], 'B.ghostauto')]);
     await waitFor(() => expect(fieldRobots()).toHaveLength(2));
-    fireEvent.click(within(rows()[0]!).getByRole('button', { name: /#0001, Ghost/ }));
+    fireEvent.click(within(rows()[0]!).getByRole('button', { name: /0001, Ghost/ }));
     // The button targets its own team: the selection stays on team 0001 and
     // no composer opens for the mirrored team.
     fireEvent.click(mirrorButton(rows()[1]!));
     await waitFor(() => expect(mirrorButton(rows()[1]!)).toHaveAttribute('aria-pressed', 'true'));
-    expect(within(rows()[0]!).getByRole('button', { name: /#0001, Ghost/ })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(rows()[1]!).getByRole('button', { name: /#0001, Ghost/ })).toHaveAttribute('aria-pressed', 'false');
+    expect(within(rows()[0]!).getByRole('button', { name: /0001, Ghost/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(rows()[1]!).getByRole('button', { name: /0001, Ghost/ })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.queryByRole('button', { name: 'Back to playback' })).not.toBeInTheDocument();
   });
 
@@ -233,7 +233,7 @@ describe('always-visible mirror button (2026-10-05)', () => {
     const b = sessionRobot('robot-b', '0002', 1, 6);
     localStorage.setItem('pb.autosave.v1', JSON.stringify(JSON.parse(serializeSession([a, b], 'rebuilt-2026'))));
     render(<App />);
-    await screen.findByRole('button', { name: /#0002, Choreo/ });
+    await screen.findByRole('button', { name: /0002, Choreo/ });
     expect(mirrorButton(rows()[0]!)).toHaveAttribute('aria-pressed', 'true');
     expect(mirrorButton(rows()[1]!)).toHaveAttribute('aria-pressed', 'false');
     // The restored flag drives the same derivation: the pose is reflected.
