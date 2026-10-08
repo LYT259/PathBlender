@@ -69,7 +69,7 @@ export const rw = {
   'welcome.exampleNameA': "Inzira y’urugero A",
   'welcome.exampleNameB': "Inzira y’urugero B",
   'welcome.exampleBadge': "Urugero",
-  'welcome.exampleNotice': "Inzira nyazo z’icyiciro cya 2026 z’amakipe FRC 8814 na 11019.",
+  'welcome.exampleNotice': "Inzira nyazo z’icyiciro cya 2026 za robots eshatu nyazo za FRC: 11019, 8814 na 11019 Champs.",
   'welcome.exitExample': "Rangiza urugero",
   'onboarding.play': "Kanda Gukina kugira ngo urebe inzira, cyangwa ukurure umurongo w’ibihe.",
   'onboarding.check': "Hitamo ikibazo munsi kugira ngo uhite uge ku cyo gihe — hanyuma gereranya ubundi buryo: hindura inzira cyangwa uhindure itangira",

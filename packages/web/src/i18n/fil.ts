@@ -69,7 +69,7 @@ export const fil = {
   'welcome.exampleNameA': 'Halimbawang path A',
   'welcome.exampleNameB': 'Halimbawang path B',
   'welcome.exampleBadge': 'Halimbawa',
-  'welcome.exampleNotice': 'Totoong mga ruta ng 2026 season mula sa mga koponan ng FRC na 8814 at 11019.',
+  'welcome.exampleNotice': 'Totoong mga ruta ng 2026 season mula sa tatlong totoong robot ng FRC: 11019, 8814 at 11019 Champs.',
   'welcome.exitExample': 'Tapusin ang halimbawa',
   'onboarding.play': 'Pindutin ang I-play para makita ang mga path, o i-scrub ang timeline.',
   'onboarding.check': "Pumili ng isang isyu sa ibaba para tumalon sa sandaling iyon — pagkatapos ay ihambing ang mga alternatibo: magpalit ng ruta o igalaw ang simula",

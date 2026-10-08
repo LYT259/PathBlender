@@ -70,7 +70,7 @@ export const uk = {
   'welcome.exampleNameA': 'Приклад маршруту A',
   'welcome.exampleNameB': 'Приклад маршруту B',
   'welcome.exampleBadge': 'Приклад',
-  'welcome.exampleNotice': 'Реальні маршрути сезону 2026 команд FRC 8814 і 11019.',
+  'welcome.exampleNotice': 'Реальні маршрути сезону 2026 трьох реальних роботів FRC: 11019, 8814 і 11019 Champs.',
   'welcome.exitExample': 'Завершити приклад',
 
   'onboarding.import': "Імпортовано — спершу перевірте основне: сезон і поле, розмір бамперів, червона/синя",

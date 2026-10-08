@@ -18,7 +18,7 @@ beforeEach(() => localStorage.clear());
 
 async function openExample() {
   fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-  await screen.findByText('#8814', { selector: '.robot-name' }, { timeout: 10000 });
+  await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
 }
 
 function tourCard() {

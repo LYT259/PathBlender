@@ -69,7 +69,7 @@ export const ms = {
   'welcome.exampleNameA': 'Laluan contoh A',
   'welcome.exampleNameB': 'Laluan contoh B',
   'welcome.exampleBadge': 'Contoh',
-  'welcome.exampleNotice': 'Laluan sebenar musim 2026 daripada pasukan FRC 8814 dan 11019.',
+  'welcome.exampleNotice': 'Laluan sebenar musim 2026 daripada tiga robot FRC sebenar: 11019, 8814 dan 11019 Champs.',
   'welcome.exitExample': 'Tamatkan contoh',
   'onboarding.play': 'Tekan Main untuk melihat laluan, atau seret garis masa.',
   'onboarding.check': "Pilih isu di bawah untuk melompat ke saat itu — kemudian bandingkan alternatif: tukar laluan atau anjakkan masa mula",

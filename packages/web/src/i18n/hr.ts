@@ -69,7 +69,7 @@ export const hr = {
   'welcome.exampleNameA': 'Primjer rute A',
   'welcome.exampleNameB': 'Primjer rute B',
   'welcome.exampleBadge': 'Primjer',
-  'welcome.exampleNotice': 'Stvarne rute sezone 2026 ekipa FRC 8814 i 11019.',
+  'welcome.exampleNotice': 'Stvarne rute sezone 2026 triju stvarnih FRC robota: 11019, 8814 i 11019 Champs.',
   'welcome.exitExample': 'Završi primjer',
   'onboarding.play': 'Pritisnite Reproduciraj da vidite rute ili povlačite vremensku crtu.',
   'onboarding.check': "Odaberite problem ispod da biste skočili na taj trenutak — zatim usporedite alternative: promijenite rutu ili pomaknite početak",

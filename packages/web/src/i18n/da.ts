@@ -69,7 +69,7 @@ export const da = {
   'welcome.exampleNameA': 'Eksempelrute A',
   'welcome.exampleNameB': 'Eksempelrute B',
   'welcome.exampleBadge': 'Eksempel',
-  'welcome.exampleNotice': 'Rigtige ruter fra sæsonen 2026 fra FRC-holdene 8814 og 11019.',
+  'welcome.exampleNotice': 'Rigtige ruter fra sæsonen 2026 fra tre rigtige FRC-robotter: 11019, 8814 og 11019 Champs.',
   'welcome.exitExample': 'Afslut eksempel',
   'onboarding.play': 'Tryk Afspil for at se ruterne, eller træk i tidslinjen.',
   'onboarding.check': "Vælg et problem nedenfor for at springe til det tidspunkt — og sammenlign så alternativer: skift en rute eller flyt en start",

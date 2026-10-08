@@ -11,7 +11,7 @@ import { App } from '../src/App';
 
 async function openExample() {
   fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-  await screen.findByText('#8814', { selector: '.robot-name' }, { timeout: 10000 });
+  await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
 }
 
 const stored = () => JSON.parse(localStorage.getItem('pb.autosave.v1')!) as {
@@ -28,14 +28,14 @@ describe('autosave flush on unload', () => {
     localStorage.removeItem('pb.autosave.v1');
 
     fireEvent(window, new Event('beforeunload'));
-    expect(stored().robots).toHaveLength(2);
+    expect(stored().robots).toHaveLength(3);
   });
 
   it('writes the state as of the flush, not as of mount', async () => {
     render(<App />);
     await openExample();
     // Select the second robot, then close without waiting for the debounce.
-    fireEvent.click(screen.getAllByText('#11019', { selector: '.robot-name' })[0]!);
+    fireEvent.click(screen.getAllByText('#8814', { selector: '.robot-name' })[0]!);
     const selectedId = stored().robots[1]!.id;
     localStorage.removeItem('pb.autosave.v1');
 

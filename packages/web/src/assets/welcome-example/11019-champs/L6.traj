@@ -264,5 +264,10 @@
     {"t":4.55963, "x":3.07586, "y":5.57192, "heading":2.47562, "vx":0.0, "vy":0.0, "omega":0.0, "ax":0.0, "ay":0.0, "alpha":0.0, "fx":[0.0,0.0,0.0,0.0], "fy":[0.0,0.0,0.0,0.0]}],
   "splits":[0]
  },
- "events":[]
+ "events":[
+  {"name":"intake", "from":{"target":0, "targetTimestamp":0.0, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
+  {"name":"deploy_extension", "from":{"target":0, "targetTimestamp":0.0, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
+  {"name":"pre_aim", "from":{"target":0, "targetTimestamp":0.0, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
+  {"name":"stop_intake", "from":{"target":7, "targetTimestamp":4.55963, "offset":{"exp":"0 s", "val":0.0}}, "event":null}
+ ]
 }
