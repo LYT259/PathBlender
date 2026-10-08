@@ -102,6 +102,28 @@ describe('composer hover preview in the real app', () => {
     // marked as the empty one.
     expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2);
   });
+
+  it('unhides a robot when the user switches to it — selection is the intent to look', async () => {
+    // User 2026-10-08: with every robot hidden, selecting one from the
+    // list must bring it back (the click used to appear to do nothing).
+    render(<App />);
+    const files = ['team/A', 'other/B'].map((name) => {
+      const file = new File([raw], `${name.split('/')[1]}.ghostauto`, { type: 'application/json' });
+      Object.defineProperty(file, 'webkitRelativePath', { value: `${name}.ghostauto` }); return file;
+    });
+    fireEvent.drop(window, { dataTransfer: { files } });
+    await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
+    expect(field().robots).toHaveLength(2);
+    // Both imports carry no team digits, so both rows read #0001 — select
+    // structurally: the second row's eye, then the second row's card.
+    const rows = () => [...document.querySelectorAll('.robot-library-row')];
+    const rowButtons = (row: Element) => [...row.querySelectorAll('button')] as HTMLButtonElement[];
+    fireEvent.click(rowButtons(rows()[1]!).find((b) => (b.getAttribute('aria-label') ?? '').startsWith('Hide'))!);
+    await waitFor(() => expect(field().robots).toHaveLength(1));
+    // Selecting B unhides it again.
+    fireEvent.click(rowButtons(rows()[1]!).find((b) => b.getAttribute('aria-pressed') !== null)!);
+    await waitFor(() => expect(field().robots).toHaveLength(2));
+  });
   it('closes the more menu on an outside pointer or Escape', async () => {
     render(<App />);
     fireEvent.drop(window, { dataTransfer: { files: [new File([raw], 'A.ghostauto')] } });

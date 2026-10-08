@@ -663,8 +663,12 @@ function AppBody() {
 
   const selectRobot = useCallback((id: string) => {
     setSelectedId(id);
+    // Switching to a robot IS the intent to look at it (user 2026-10-08):
+    // if it was hidden, the selection itself unhides it — otherwise the
+    // click seems to do nothing and the user must find the eye toggle.
+    updateRobot(id, { visible: true });
     setInspectorMode('robot');
-  }, []);
+  }, [updateRobot]);
   // Double-clicking a team's timeline row enters that team's arrangement
   // editing directly; leaving is a click anywhere outside the surface.
   // Entering is a view change and must not stop the transport (user
