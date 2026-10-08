@@ -44,7 +44,6 @@ export const zhTw: Record<MessageKey, string> = {
   'prefs.appIcon': "應用圖示",
   'welcome.title': '從匯入路徑開始',
 
-  'welcome.tagline': "比賽前，把聯盟各隊的自動路徑放到同一塊場地上，同時播放，提前發現機器人之間的碰撞風險。",
   'tour.title': "入門引導",
   'tour.progress': "{n}/{m}",
   'tour.collapse': "收起清單",
@@ -61,7 +60,6 @@ export const zhTw: Record<MessageKey, string> = {
   'tour.task.mirror.title': "左右鏡像一台機器人",
   'tour.task.mirror.hint': "點 8814 列內的「左右鏡像」——只有這台機器人連同路徑庫翻過中線。再看一眼檢查面板。",
   'tour.finished': "核心檢查流程已經走完。點上方「結束示例」退出，匯入你們聯盟自己的路徑——說明選單隨時能重新開啟這份清單。",
-  'welcome.audience': "適合聯盟策略組與程式組：檔案都在本機解析、絕不上傳；PathBlender 只做分析，修改回 Choreo / PathPlanner 完成。",
   'welcome.description': '一起回放路徑，查看機器人之間是否有干涉。',
   'welcome.folderAdvice': '建議匯入整個路徑資料夾，發現干涉時可以快速切換路線。',
   'welcome.importFile': '匯入路徑檔案',

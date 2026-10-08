@@ -32,12 +32,11 @@ describe('welcome flow', () => {
     const welcome = screen.getByRole('region', { name: 'Import paths to get started' });
     expect(within(welcome).getAllByRole('button')).toHaveLength(5);
     expect(within(welcome).getByRole('heading', { name: 'PathBlender' })).toBeInTheDocument();
-    // The purpose pitch (2026-10-07 onboarding plan) sits between the brand
-    // and the buttons; the quick-guide link closes the column.
+    // Brand, then straight to the buttons (the 2026-10-07 purpose pitch was
+    // removed on user request — the welcome screen stays copy-light);
+    // the quick-guide link closes the column.
     expect(welcome.textContent).toBe([
       'PathBlender',
-      en['welcome.tagline'],
-      en['welcome.audience'],
       'Import path files', 'Import folder', 'Open saved session', 'Try an example',
       en['menu.userGuide'],
     ].join(''));

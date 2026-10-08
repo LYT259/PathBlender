@@ -50,7 +50,6 @@ export const ko: Record<MessageKey, string> = {
   'welcome.title': '경로를 가져와 시작하세요',
   'welcome.description': '경로를 함께 재생하고 간섭을 확인합니다.',
 
-  'welcome.tagline': "경기 전에 얼라이언스 각 팀의 자율 경로를 같은 필드에 올려 함께 재생하고, 로봇 간 충돌 위험을 미리 발견하세요.",
   'tour.title': "시작하기",
   'tour.progress': "{n}/{m}",
   'tour.collapse': "체크리스트 접기",
@@ -67,7 +66,6 @@ export const ko: Record<MessageKey, string> = {
   'tour.task.mirror.title': "로봇 한 대 좌우 미러",
   'tour.task.mirror.hint': "8814 행의 좌우 반전을(를) 누르세요 — 그 로봇만이 경로 라이브러리째 중앙선을 넘어 뒤집힙니다. 검사 패널을 다시 보세요.",
   'tour.finished': "핵심 검사 흐름을 완료했습니다. 위의 '예제 종료'로 나가서 얼라이언스의 실제 경로를 가져오세요 — 도움말 메뉴에서 언제든 이 목록을 다시 열 수 있습니다.",
-  'welcome.audience': "얼라이언스 전략 팀과 프로그래밍 팀을 위한 도구입니다. 파일은 모두 내 기기에서만 해석되며 업로드되지 않습니다. PathBlender는 분석만 하고, 수정은 Choreo 또는 PathPlanner에서 이루어집니다.",
   'welcome.folderAdvice': '폴더 전체를 가져오면 충돌이 나타났을 때 경로를 전환할 수 있습니다.',
   'welcome.importFile': '경로 파일 가져오기',
   'welcome.importFileHint': 'Choreo 또는 PathPlanner에서 내보낸 경로를 선택합니다',

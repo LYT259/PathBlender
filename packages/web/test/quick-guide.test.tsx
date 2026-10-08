@@ -33,16 +33,7 @@ function menuCtx(overrides: Partial<MenuContext> = {}): MenuContext {
   };
 }
 
-describe('welcome screen states the purpose and links the guide', () => {
-  it('shows the tagline and audience copy above the import cards', () => {
-    localStorage.setItem('pb.lang', 'en');
-    render(<ThemeProvider><I18nProvider>
-      <WelcomeScreen onImport={() => {}} onOpenSession={() => {}} onTryExample={() => {}} />
-    </I18nProvider></ThemeProvider>);
-    expect(screen.getByText(en['welcome.tagline'])).toBeInTheDocument();
-    expect(screen.getByText(en['welcome.audience'])).toBeInTheDocument();
-  });
-
+describe('welcome screen links the guide', () => {
   it('the guide link fires onOpenGuide, and stays absent without a handler', () => {
     localStorage.setItem('pb.lang', 'en');
     const onOpenGuide = vi.fn();
