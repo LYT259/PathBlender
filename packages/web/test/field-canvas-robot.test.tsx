@@ -446,35 +446,40 @@ describe('current-action callout', () => {
     expect(calls.filter((c) => c.name === 'roundRect')).toHaveLength(1);
   });
 
+  it('draws nothing at t=0 — the enable instant — even with t=0 markers', () => {
+    paint([annotatedRobot([{ name: 'intake', t: 0 }])], { currentT: 0 });
+    expect(calls.filter((c) => c.name === 'arc')).toHaveLength(1); // number dot only
+  });
+
   it('draws nothing before the first marker fires', () => {
     paint([annotatedRobot([{ name: 'intake', t: 0.5 }])], { currentT: 0.49 });
     expect(calls.filter((c) => c.name === 'arc')).toHaveLength(1);
   });
 
-  it('badges the fired action down-left, mirrored from the number badge', () => {
+  it('badges the fired action down-left with its countdown', () => {
     // Same scene math as the number test: robot at screen (100,120), reach
     // 25.1433 px, 45° offset (reach+20)/√2 ≈ 31.9221. Number goes up-right;
-    // the action badge takes the opposite diagonal — down-left, leader to
-    // the badge's right edge. Mock metrics: 'intake' = 6×8 px + 12 padding
-    // → labelW 60, so bx = 100−31.9221−60 = 8.078 → snapped 8; by = 120 +
-    // 31.9221−11 → snapped 141; glyphs at (14, 152).
+    // the action badge takes the opposite diagonal — down-left. Open-ended
+    // intake counts down to the route end (1 s fixture) at t=0.5 →
+    // 'intake 0.5s' = 11×8 px + 12 padding → labelW 100, clamped to the
+    // margin; by = 120 + 31.9221 − 11 → snapped 141; glyphs at (12, 152).
     paint([annotatedRobot([{ name: 'intake', t: 0.5 }])], { currentT: 0.5 });
     const ai = actionArcIndex();
     expectArgs(calls[ai]!, [100, 120, 3, 0, Math.PI * 2]);
     expect(calls[ai + 2]!.style.fillStyle).toBe('#00E5FF'); // session color
     // Shared anchor dot draws first, then the leader: (100,120) → badge
-    // right edge (68,152).
+    // right edge (106,152).
     const li = actionLeaderIndex();
     expect(li).toBeGreaterThan(ai);
     expectArgs(calls[li]!, [100, 120]);
-    expectArgs(calls[li + 1]!, [68, 152]);
+    expectArgs(calls[li + 1]!, [106, 152]);
     // Badge plate: second roundRect, mono text in the session color.
     const rects = calls.filter((c) => c.name === 'roundRect');
     expect(rects).toHaveLength(2);
-    expectArgs(rects[1]!, [8, 141, 60, 22, 5]);
-    const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === 'intake');
+    expectArgs(rects[1]!, [6, 141, 100, 22, 5]);
+    const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === 'intake 0.5s');
     expect(texts).toHaveLength(1);
-    expect(texts[0]!.args[1]).toBe(14);
+    expect(texts[0]!.args[1]).toBe(12);
     expect(texts[0]!.args[2]).toBe(152);
     expect(texts[0]!.style.fillStyle).toBe('#00E5FF');
   });
@@ -484,11 +489,11 @@ describe('current-action callout', () => {
     const ui = render(makeScene([robot0], 0.4));
     sizeWrap();
     runFrames();
-    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'pre_aim')).toBe(true);
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'pre_aim 0.3s')).toBe(true);
     calls = [];
     ui.rerender(makeScene([robot0], 0.8));
     runFrames();
-    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'shoot')).toBe(true);
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'shoot 0.2s')).toBe(true);
     expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'pre_aim')).toBe(false);
   });
 
@@ -498,13 +503,15 @@ describe('current-action callout', () => {
     // NOT a single joined label. Mock metrics 8 px/char + 12 padding:
     // intake 60 / pass 44 / align 52 wide, stacked 22+4 apart from y 141;
     // every right edge lands at x 68 (= 100 − 31.92 − w + w).
-    paint([annotatedRobot([{ name: 'intake', t: 0 }, { name: 'pass', t: 0 }, { name: 'align', t: 0 }])], { currentT: 2 });
+    paint([annotatedRobot([{ name: 'intake', t: 0 }, { name: 'pass', t: 0 }, { name: 'align', t: 0 }])], { currentT: 0.5 });
     const rects = calls.filter((c) => c.name === 'roundRect');
     expect(rects).toHaveLength(4); // number + three action badges
-    expectArgs(rects[1]!, [8, 141, 60, 22, 5]);
-    expectArgs(rects[2]!, [24, 167, 44, 22, 5]);
-    expectArgs(rects[3]!, [16, 193, 52, 22, 5]);
-    for (const [name, x, y] of [['intake', 14, 152], ['pass', 30, 178], ['align', 22, 204]] as const) {
+    // 'intake 0.5s' 100 / 'pass 0.5s' 84 / 'align 0.5s' 92 wide — all clamp
+    // to the 6 px margin at dir −1 (100 − 31.92 − w < 0 for every w).
+    expectArgs(rects[1]!, [6, 141, 100, 22, 5]);
+    expectArgs(rects[2]!, [6, 167, 84, 22, 5]);
+    expectArgs(rects[3]!, [6, 193, 92, 22, 5]);
+    for (const [name, x, y] of [['intake 0.5s', 12, 152], ['pass 0.5s', 12, 178], ['align 0.5s', 12, 204]] as const) {
       const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === name);
       expect(texts, name).toHaveLength(1);
       expect(texts[0]!.args[1]).toBe(x);
@@ -516,8 +523,8 @@ describe('current-action callout', () => {
     const leaders = calls.flatMap((c, i) =>
       c.name === 'moveTo' && calls[i + 1]?.name === 'lineTo' && calls[i + 2]?.name === 'stroke' ? [i] : []);
     expect(leaders).toHaveLength(4); // number leader + three action leaders
-    const fanEnds = calls.filter((c) => c.name === 'lineTo' && c.args[1] === 152 || c.name === 'lineTo' && c.args[1] === 178 || c.name === 'lineTo' && c.args[1] === 204);
-    expect(fanEnds.map((c) => c.args)).toEqual([[68, 152], [68, 178], [68, 204]]);
+    const fanEnds = calls.filter((c) => c.name === 'lineTo' && [152, 178, 204].includes(c.args[1] as number));
+    expect(fanEnds.map((c) => c.args)).toEqual([[106, 152], [90, 178], [98, 204]]);
   });
 
   it('mirrors to down-right when the number badge flipped up-left', () => {
@@ -526,11 +533,11 @@ describe('current-action callout', () => {
     paint([annotatedRobot([{ name: 'shoot', t: 0 }], 9)], { currentT: 0.5 });
     const rects = calls.filter((c) => c.name === 'roundRect');
     expectArgs(rects[0]!, [294, 76, 54, 24, 6]); // number, up-left
-    // 'shoot' = 5×8 px + 12 → labelW 52; dir = +1 → target 411.92 clamps
-    // inside the 6 px margin to 440−6−52 = 382.
-    expectArgs(rects[1]!, [382, 141, 52, 22, 5]);
-    const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === 'shoot');
-    expect(texts[0]!.args[1]).toBe(388);
+    // 'shoot 0.5s' = 10×8 px + 12 → labelW 92; dir = +1 → target 411.92
+    // clamps inside the 6 px margin to 440−6−92 = 342.
+    expectArgs(rects[1]!, [342, 141, 92, 22, 5]);
+    const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === 'shoot 0.5s');
+    expect(texts[0]!.args[1]).toBe(348);
     expect(texts[0]!.args[2]).toBe(152);
   });
 
@@ -538,7 +545,7 @@ describe('current-action callout', () => {
     const anon = annotatedRobot([{ name: 'pass', t: 0 }]);
     anon.trajectory.teamNumber = '';
     paint([anon], { currentT: 0.5 });
-    expect(calls.filter((c) => c.name === 'fillText' && c.args[0] === 'pass')).toHaveLength(1);
+    expect(calls.filter((c) => c.name === 'fillText' && c.args[0] === 'pass 0.5s')).toHaveLength(1);
     expect(calls.filter((c) => c.name === 'arc')).toHaveLength(1);
   });
 });
