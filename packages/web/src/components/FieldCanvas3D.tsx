@@ -11,7 +11,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
-import {
+import { sequenceEventAt,
+  currentActionName,
   chassisModules,
   robotVisualGeometry,
   samplePoseAt,
@@ -104,6 +105,11 @@ interface Scene3D {
      *  itself for the old GLB / procedural fallback. */
     turrets: THREE.Group[];
     modules: { x: number; y: number }[];
+    /** The "what is it doing now" callout (user request 2026-10-08): a
+     *  billboard sprite above the robot + a short leader line, driven per
+     *  frame from the robot's own annotated events. Hidden entirely when
+     *  the user never annotated (or nothing has happened yet). */
+    action: { sprite: THREE.Sprite; line: THREE.Line; current?: string } | undefined;
   }[];
   /** Render-on-demand: a frame is drawn only when something changed. */
   dirty: () => void;
@@ -208,6 +214,74 @@ function faceTexture(label: string): THREE.CanvasTexture {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
   return tex;
+}
+
+/** The "what is it doing now" callout above a robot (user request
+ *  2026-10-08): a billboard sprite + a short vertical leader, the same
+ *  plate/badge language as the 2D callout. Textures are cached per
+ *  (color, name) — playback revisits the same names every loop. */
+const ACTION_SPRITE_W_M = 0.56;
+const ACTION_SPRITE_H_M = 0.17;
+const actionTextureCache = new Map<string, THREE.CanvasTexture>();
+function actionTexture(name: string, color: string): THREE.CanvasTexture {
+  const key = `${color}::${name}`;
+  const hit = actionTextureCache.get(key);
+  if (hit) return hit;
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 78;
+  const g = c.getContext('2d')!;
+  g.beginPath();
+  g.roundRect(4, 4, 248, 70, 14);
+  g.fillStyle = cssToken('--bg-panel', '#ffffff');
+  g.fill();
+  g.strokeStyle = cssToken('--border', 'rgba(0, 0, 0, 0.10)');
+  g.lineWidth = 3;
+  g.stroke();
+  g.fillStyle = color;
+  g.font = '600 34px -apple-system, "Segoe UI", sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  // Single-line ellipsis — annotations are short verbs ("intake", "shoot").
+  const maxW = 224;
+  g.fillText(g.measureText(name).width > maxW ? `${name.slice(0, Math.max(1, Math.floor(maxW / g.measureText(name).width * name.length)))}…` : name, 128, 41);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  actionTextureCache.set(key, tex);
+  return tex;
+}
+function createActionCallout(color: string, offsetX = 0, offsetZ = 0): { sprite: THREE.Sprite; line: THREE.Line; current?: string } {
+  const material = new THREE.SpriteMaterial({ transparent: true, depthWrite: false });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(ACTION_SPRITE_W_M, ACTION_SPRITE_H_M, 1);
+  sprite.position.set(offsetX, 0.72, offsetZ);
+  sprite.visible = false;
+  sprite.renderOrder = 10;
+  const geo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(offsetX, 0.5, offsetZ),
+    new THREE.Vector3(offsetX, 0.64, offsetZ),
+  ]);
+  const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color, transparent: true, depthWrite: false }));
+  line.visible = false;
+  return { sprite, line };
+}
+function setActionCallout(
+  callout: { sprite: THREE.Sprite; line: THREE.Line; current?: string } | undefined,
+  name: string | undefined,
+) {
+  if (!callout || callout.current === name) return;
+  callout.current = name;
+  if (!name) {
+    callout.sprite.visible = false;
+    callout.line.visible = false;
+    return;
+  }
+  const color = (callout.line.material as THREE.LineBasicMaterial).color;
+  callout.sprite.material.map = actionTexture(name, `#${color.getHexString()}`);
+  callout.sprite.material.needsUpdate = true;
+  callout.sprite.visible = true;
+  callout.line.visible = true;
 }
 
 /**
@@ -1544,12 +1618,18 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       const frameSize: FrameSize = field.year === 2026 ? '27' : '30';
       const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, robotAnnotation(r.trajectory) || undefined, frameTemplates[frameSize] ?? null, st.renderer.capabilities.getMaxAnisotropy());
       st.dynamic.add(chassis.group);
+      // The callout rides the chassis group (inside it, at the footprint
+      // offset) so it follows the rig's per-frame pose.
+      const action = createActionCallout(bumperColor(r.trajectory.alliance), vis.outer.offsetX, vis.outer.offsetY);
+      chassis.group.add(action.sprite);
+      chassis.group.add(action.line);
       st.rigs.push({
         root: chassis.group,
         robot: r,
         pods: chassis.pods,
         turrets: chassis.turrets,
         modules,
+        action,
       });
       st.invalidateShadows();
     }
@@ -1589,6 +1669,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // The render frame reflects X, so the heading reflects with it —
       // leaving it raw would have every robot drive sideways.
       rig.root.rotation.y = headingToRender(pose.heading);
+      setActionCallout(rig.action, sequenceEventAt(rig.robot, currentT)?.name);
       st.invalidateShadows();
     }
     // `moduleTemplate` matters here too: when the CAD template resolves it
