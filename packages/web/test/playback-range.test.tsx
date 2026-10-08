@@ -38,7 +38,7 @@ describe('playback range', () => {
     // drop the path-only loop end to 3 s. Full timeline keeps the whole
     // session extent, and collision checks are unaffected (they always run
     // on the visible set independently).
-    const long = scene(); // 8 s, #254
+    const long = scene(); // 8 s, 254
     const shortRobot = { ...scene().trajectory, id: 'short-one', name: 'Short one', teamNumber: '2265', durationS: 3, samples: [0, 3].map((t) => ({ t, x: 1 + t, y: 1, heading: 0, vx: 1, vy: 0, omega: 0 })) };
     const short = { ...scene(), trajectory: shortRobot };
     localStorage.setItem('pb.autosave.v1', serializeSession([long, short], 'rebuilt-2026'));
@@ -47,18 +47,18 @@ describe('playback range', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Playback range' }), { target: { value: 'paths' } });
     expect(slider).toHaveAttribute('aria-valuetext', '0.00 / 8.00 s');
     // Hide the longest robot: the loop end follows the longest VISIBLE one.
-    fireEvent.click(screen.getByRole('button', { name: 'Hide #254 on field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide 254 on field' }));
     expect(slider).toHaveAttribute('aria-valuetext', '0.00 / 3.00 s');
     expect(slider).toHaveValue('0'); // the playhead stays put, only the end moves
     // The clock display follows; the option label names the visible set
     // without a duration (2026-10-05): "All visible paths".
     expect(screen.getByRole('option', { name: 'All visible paths' })).toBeInTheDocument();
     // Show it again mid-session: the end comes back.
-    fireEvent.click(screen.getByRole('button', { name: 'Show #254 on field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show 254 on field' }));
     expect(slider).toHaveAttribute('aria-valuetext', '0.00 / 8.00 s');
     // Hide everything: playback is safely idle (end 0, transport disabled).
-    fireEvent.click(screen.getByRole('button', { name: 'Hide #254 on field' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Hide #2265 on field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide 254 on field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide 2265 on field' }));
     expect(slider).toHaveAttribute('aria-valuetext', '0.00 / 0.00 s');
     expect(screen.getByRole('button', { name: 'Play', exact: true })).toBeDisabled();
     app.unmount();

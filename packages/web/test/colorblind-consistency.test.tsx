@@ -91,7 +91,7 @@ describe('colorblind palette across session entry points', () => {
     // The example is a lazy chunk that parses ~1.6 MB of route text; on a
     // loaded machine that outlasts waitFor's 1 s default (seen at load 100+).
     // The beforeAll preload below removes the transform from the timing, and
-    // the generous timeout stays as belt-and-braces (PR #265 raised it for
+    // the generous timeout stays as belt-and-braces (PR 265 raised it for
     // the same root cause).
     await waitFor(() => expect(document.querySelector('.band-dot')).not.toBeNull(), { timeout: 20000 });
     expect(firstDotColor()).toMatch(/#0072b2|rgb\(0, 114, 178\)/);

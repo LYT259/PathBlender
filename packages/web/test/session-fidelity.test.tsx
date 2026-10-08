@@ -49,10 +49,10 @@ describe('session fidelity across relaunch', () => {
     seedAutosave([a, b], { selectedId: 'robot-b', t: 2.5, playbackRange: 'paths' });
 
     render(<App />);
-    await screen.findByRole('button', { name: /#0002, Choreo/ });
+    await screen.findByRole('button', { name: /0002, Choreo/ });
     // Selection: robot-b's card is the pressed one.
-    expect(screen.getByRole('button', { name: /#0002, Choreo/ })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: /#0001, Choreo/ })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: /0002, Choreo/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /0001, Choreo/ })).toHaveAttribute('aria-pressed', 'false');
     // Playback range and playhead (paths range → duration = path length 8 s).
     expect(screen.getByRole('combobox', { name: 'Playback range' })).toHaveValue('paths');
     const slider = screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement;
@@ -64,8 +64,8 @@ describe('session fidelity across relaunch', () => {
     seedAutosave([robot('robot-a', '0001', 0), robot('robot-b', '0002', 1, 6)]);
 
     render(<App />);
-    await screen.findByRole('button', { name: /#0002, Choreo/ });
-    expect(screen.getByRole('button', { name: /#0001, Choreo/ })).toHaveAttribute('aria-pressed', 'true');
+    await screen.findByRole('button', { name: /0002, Choreo/ });
+    expect(screen.getByRole('button', { name: /0001, Choreo/ })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('combobox', { name: 'Playback range' })).toHaveValue('full');
     const slider = screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement;
     expect(Number(slider.value)).toBeCloseTo(0);
@@ -77,16 +77,16 @@ describe('session fidelity across relaunch', () => {
     seedAutosave([a, b], { selectedId: 'robot-b', t: 1.25 });
 
     const first = render(<App />);
-    await screen.findByRole('button', { name: /#0002, Choreo/ });
+    await screen.findByRole('button', { name: /0002, Choreo/ });
     // Change something and quit immediately — the 600 ms debounce never
     // fires, so only the beforeunload flush can save this.
-    fireEvent.click(screen.getByRole('button', { name: /#0001, Choreo/ }));
+    fireEvent.click(screen.getByRole('button', { name: /0001, Choreo/ }));
     fireEvent(window, new Event('beforeunload'));
     first.unmount();
 
     render(<App />);
-    await screen.findByRole('button', { name: /#0002, Choreo/ });
-    expect(screen.getByRole('button', { name: /#0001, Choreo/ })).toHaveAttribute('aria-pressed', 'true');
+    await screen.findByRole('button', { name: /0002, Choreo/ });
+    expect(screen.getByRole('button', { name: /0001, Choreo/ })).toHaveAttribute('aria-pressed', 'true');
     const slider = screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement;
     expect(Number(slider.value)).toBeCloseTo(1.25);
   });
@@ -94,13 +94,13 @@ describe('session fidelity across relaunch', () => {
   it('keeps an adopted example route (M5) across relaunch — never refreshed', async () => {
     const first = render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-    await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
+    await screen.findByText('11019', { selector: '.robot-name' }, { timeout: 10000 });
 
-    // Adopt #11019 by replacing its route with M5 in the composer draft and
+    // Adopt 11019 by replacing its route with M5 in the composer draft and
     // saving (routeId follows the first segment), then quit at once.
     fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
     fireEvent.click([...document.querySelectorAll('.sequence-track-name')]
-      .find((b) => b.textContent?.includes('#11019'))!);
+      .find((b) => b.textContent?.includes('11019'))!);
     const lane = document.querySelector('.sequence-track.is-editing .sequence-track-lane') as HTMLElement;
     fireEvent.click(lane.querySelector('.sequence-clip')!);
     fireEvent.keyDown(lane.querySelector('.sequence-clip')!, { key: 'Backspace' });
@@ -112,16 +112,16 @@ describe('session fidelity across relaunch', () => {
     first.unmount();
 
     render(<App />);
-    await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
+    await screen.findByText('11019', { selector: '.robot-name' }, { timeout: 10000 });
     // Still adopted, still on M5 — the example refresh must not touch it.
     fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
     fireEvent.click([...document.querySelectorAll('.sequence-track-name')]
-      .find((b) => b.textContent?.includes('#11019'))!);
+      .find((b) => b.textContent?.includes('11019'))!);
     expect(document.querySelector('.sequence-track.is-editing .sequence-clip')!.getAttribute('aria-label'))
       .toMatch(/^M5/);
-    // The untouched example robot (#8814) still refreshes to the current demo.
+    // The untouched example robot (8814) still refreshes to the current demo.
     fireEvent.click([...document.querySelectorAll('.sequence-track-name')]
-      .find((b) => b.textContent?.includes('#8814'))!);
+      .find((b) => b.textContent?.includes('8814'))!);
     expect(document.querySelector('.sequence-track.is-editing .sequence-clip')!.getAttribute('aria-label'))
       .toMatch(/^FCeSt/);
   });
@@ -134,8 +134,8 @@ describe('session fidelity across relaunch', () => {
     seedAutosave([stale, robot('robot-b', '0002', 1, 6)], { selectedId: 'stale-example' });
 
     render(<App />);
-    await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
-    expect(screen.getByRole('button', { name: /#11019, Choreo/ })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: /#0002, Choreo/ })).toHaveAttribute('aria-pressed', 'false');
+    await screen.findByText('11019', { selector: '.robot-name' }, { timeout: 10000 });
+    expect(screen.getByRole('button', { name: /11019, Choreo/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /0002, Choreo/ })).toHaveAttribute('aria-pressed', 'false');
   });
 });

@@ -45,11 +45,11 @@ describe('robot workspace controls', () => {
     const onUpdate = vi.fn();
     render(<I18nProvider><RobotList robots={[sample]} conflicts={[]} selectedId={sample.trajectory.id} onSelect={onSelect} onImport={vi.fn()} onUpdate={onUpdate} onPickRoute={vi.fn()} /></I18nProvider>);
 
-    const select = screen.getByRole('button', { name: '#0001, Ghost, 8.30 s' });
+    const select = screen.getByRole('button', { name: '0001, Ghost, 8.30 s' });
     expect(select).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Remove from session' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Hide #0001 on field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide 0001 on field' }));
     expect(onUpdate).toHaveBeenCalledWith(sample.trajectory.id, { visible: false });
     expect(onSelect).not.toHaveBeenCalled();
     fireEvent.click(select);
@@ -109,8 +109,8 @@ describe('robot workspace controls', () => {
     sample.trajectory.displayName = 'My Robot';
     render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
     // Display names label the list, playback bar and field; the details
-    // panel sticks to the imported #teamNumber/name rule.
-    expect(screen.getByRole('heading', { name: '#0001' })).toBeInTheDocument();
+    // panel sticks to the imported teamNumber/name rule.
+    expect(screen.getByRole('heading', { name: '0001' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'My Robot' })).not.toBeInTheDocument();
   });
 
