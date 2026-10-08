@@ -7,6 +7,7 @@
  */
 
 import type { AutoSequenceSegment, SessionRouteOption, SessionTrajectory } from '@pathblender/core';
+import { segmentDurationS } from '@pathblender/core';
 import { displayName, sameRouteTrajectory } from './route-library';
 
 export type { AutoSequenceSegment };
@@ -34,7 +35,10 @@ export function sequenceRows(
     const route = routes.find((option) => option.id === segment.routeId);
     if (!route) return [];
     const startS = endS + segment.waitBeforeS;
-    endS = startS + route.trajectory.durationS;
+    // Partial-execution segments (playS, user 2026-10-08) end early — the
+    // same effective duration the sampler resolves, so the timeline block
+    // and the replay can't disagree.
+    endS = startS + segmentDurationS(segment, route.trajectory);
     return [{ ...segment, route, startS, endS }];
   });
 }
@@ -88,6 +92,9 @@ export function applySequenceSegments(
   const sanitized = segments.map((segment) => ({
     ...segment,
     waitBeforeS: Number.isFinite(segment.waitBeforeS) ? Math.max(0, segment.waitBeforeS) : 0,
+    playS: segment.playS !== undefined && Number.isFinite(segment.playS) && segment.playS > 0
+      ? segment.playS
+      : undefined,
   }));
   return {
     ...robot,

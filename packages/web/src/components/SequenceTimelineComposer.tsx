@@ -171,12 +171,21 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   }
   function append(routeId: string, durationS: number) {
     const startS = finish(activeClips);
+    const remaining = autoPeriodS - startS;
+    if (remaining <= 1e-9) { setError(limitMessage); return; }
+    // Partial execution (user 2026-10-08): a leg appended where less auto
+    // time remains than the route needs plays "as far as it can" — the
+    // first `playS` seconds — instead of being refused.
+    const clip: TimelineClip = { id: crypto.randomUUID(), routeId, startS, durationS };
+    const fitted = remaining < durationS
+      ? { ...clip, durationS: remaining, playS: remaining }
+      : clip;
     // The playhead IS the insertion point: once the appended route lands,
     // advance it to the new end so the library (gated by playhead occupancy
     // and continuity) immediately answers "what can come next" — chaining
     // several routes needs no scrub between appends.
-    if (commit({ id: crypto.randomUUID(), routeId, startS, durationS })) {
-      playback?.setT(Math.min(autoPeriodS, startS + durationS));
+    if (commit(fitted)) {
+      playback?.setT(Math.min(autoPeriodS, startS + fitted.durationS));
     }
   }
   function remove(clipId: string) {
@@ -242,9 +251,21 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     const clip = drag.clip!;
     const raw = drag.kind === 'add' ? (event.clientX - rect.left) / rect.width * axis
       : clip.startS + (event.clientX - drag.x) / rect.width * axis;
-    const startS = boundedClipStart(raw, activeClips, clip, 8 / rect.width * axis, autoPeriodS);
-    drag.candidate = { ...clip, startS };
-    setGhost({ robotId: activeId!, clip: drag.candidate });
+    // A new drop lands where the pointer is — no whole-route reservation.
+    // Partial execution (user 2026-10-08): when less auto time remains than
+    // the route needs, the candidate is cut to the remaining seconds
+    // (playS); a placed leg being MOVED still keeps its full length and
+    // slides instead, as before.
+    const startS = drag.kind === 'add'
+      ? Math.min(axis, Math.max(0, raw))
+      : boundedClipStart(raw, activeClips, clip, 8 / rect.width * axis, autoPeriodS);
+    const candidate: TimelineClip = drag.kind === 'add'
+      ? autoPeriodS - startS < clip.durationS
+        ? { ...clip, startS, durationS: autoPeriodS - startS, playS: autoPeriodS - startS }
+        : { ...clip, startS }
+      : { ...clip, startS };
+    drag.candidate = candidate;
+    setGhost({ robotId: activeId!, clip: candidate });
   }
   function cancelDrag() { dragRef.current = null; setGhost(null); setDragPoint(null); onPreviewRoute?.(null); }
   function switchRobot(id: string) { cancelDrag(); setMenu(null); setError(null); onSelect(id); }

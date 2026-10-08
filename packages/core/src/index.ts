@@ -112,6 +112,8 @@ export {
   resolveSequence,
   routeConnectsAfter,
   sampleSequenceState,
+  sequenceEventAt,
+  segmentDurationS,
   sequenceEventTimes,
 } from './auto-sequence';
 export type {

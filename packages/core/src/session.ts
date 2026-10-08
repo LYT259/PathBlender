@@ -382,11 +382,15 @@ function readSequence(value: AutoSequence | undefined): AutoSequence | undefined
     throw new Error('invalid auto sequence');
   }
   // Numeric damage self-heals: non-finite or negative waits clamp to zero
-  // instead of bricking the whole session file.
+  // instead of bricking the whole session file. A damaged playS (partial
+  // execution, 2026-10-08) drops back to playing the route whole.
   return {
     segments: segments.map((segment) => ({
       ...segment,
       waitBeforeS: Number.isFinite(segment.waitBeforeS) ? Math.max(0, segment.waitBeforeS) : 0,
+      playS: segment.playS !== undefined && Number.isFinite(segment.playS) && segment.playS > 0
+        ? segment.playS
+        : undefined,
     })),
   };
 }

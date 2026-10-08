@@ -78,17 +78,19 @@ describe('timeline placement helpers', () => {
     const next = { id: 'b', routeId: 'b', startS: 10, durationS: 3 };
     expect(snapClipStart(6.15, [first], next, .1)).toBe(6.123456);
   });
-  it('semantic layout equality ignores ids and segment order but sees route and start changes', () => {
-    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1 }, { id: 'y', routeId: 'b', startS: 5 }], [{ id: 'p', routeId: 'b', startS: 5 }, { id: 'q', routeId: 'a', startS: 1 }])).toBe(true);
-    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1 }], [{ id: 'q', routeId: 'b', startS: 1 }])).toBe(false);
-    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1 }], [{ id: 'q', routeId: 'a', startS: 1.000001 }])).toBe(true);
-    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1 }], [{ id: 'q', routeId: 'a', startS: 1.1 }])).toBe(false);
+  it('semantic layout equality ignores ids and segment order but sees route, start and cut changes', () => {
+    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1, durationS: 4 }, { id: 'y', routeId: 'b', startS: 5, durationS: 3 }], [{ id: 'p', routeId: 'b', startS: 5, durationS: 3 }, { id: 'q', routeId: 'a', startS: 1, durationS: 4 }])).toBe(true);
+    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1, durationS: 4 }], [{ id: 'q', routeId: 'b', startS: 1, durationS: 4 }])).toBe(false);
+    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1, durationS: 4 }], [{ id: 'q', routeId: 'a', startS: 1.000001, durationS: 4 }])).toBe(true);
+    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1, durationS: 4 }], [{ id: 'q', routeId: 'a', startS: 1.1, durationS: 4 }])).toBe(false);
+    // A partial-execution cut is a real arrangement change (user 2026-10-08).
+    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1, durationS: 4 }], [{ id: 'q', routeId: 'a', startS: 1, durationS: 2 }])).toBe(false);
   });
   it('round-trips segments through clips without rounding waits or durations', () => {
     const robot = fixture('rt', 4.753697);
     const segments: AutoSequenceSegment[] = [
       { id: 's1', routeId: 'a', waitBeforeS: 1.5 },
-      { id: 's2', routeId: 'b', waitBeforeS: 0.5000001 },
+      { id: 's2', routeId: 'b', waitBeforeS: 0.5000001, playS: 2 },
     ];
     const view = sequenceViewFor(applySequenceSegments(robot, segments));
     const roundTripped = segmentsFromClips(clipsFor(view.segments, view.routes));
@@ -97,7 +99,9 @@ describe('timeline placement helpers', () => {
     // last digit, imported durations stay bit-exact.
     expect(roundTripped[0]!.waitBeforeS).toBeCloseTo(1.5, 12);
     expect(roundTripped[1]!.waitBeforeS).toBeCloseTo(0.5000001, 12);
-    expect(clipsFor(view.segments, view.routes).map((c) => c.durationS)).toEqual([4.753697, 3]);
+    // A partial-execution cut rides the round trip (user 2026-10-08).
+    expect(roundTripped[1]!.playS).toBe(2);
+    expect(clipsFor(view.segments, view.routes).map((c) => c.durationS)).toEqual([4.753697, 2]);
   });
 });
 
@@ -133,13 +137,24 @@ describe('live arrangement editing', () => {
     expect(activeEndT(commit.mock.calls[0]![0])).toBe(limit);
     expect(document.querySelector('.sequence-timing-warning')).toBeNull();
   });
-  it('rejects an append that cannot fit, a numeric overrun, and overlap', () => {
+  it('truncates an append that cannot fit to the remaining auto time', () => {
     const commit = vi.fn(); render(<LiveHarness autoPeriodS={6} onCommit={commit} />);
-    addB(); expect(commit).not.toHaveBeenCalled();
+    addB(); // B (3 s) appended at 4 s with 2 s left — plays its first 2 s
+    expect(commit).toHaveBeenCalledTimes(1);
+    expect(clips()).toHaveLength(2);
+    expect(activeEndT(commit.mock.calls[0]![0])).toBe(6);
+    expect(clips()[1]!.querySelector('small')).toHaveTextContent('2.00s');
     fireEvent.click(clips()[0]!);
     const input = screen.getByRole('spinbutton', { name: 'Start' });
     fireEvent.change(input, { target: { value: '5' } }); fireEvent.blur(input);
-    expect(commit).not.toHaveBeenCalled();
+    expect(commit).toHaveBeenCalledTimes(1); // numeric overrun still refused
+  });
+  it('drops an over-long route cut to what fits below the season boundary', () => {
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
+    // Pointer at t=19.1: B (3 s) is cut to 0.9 s and lands 19.1–20.
+    drag(screen.getByRole('button', { name: 'B: 3.00 s' }), 20, 955, 30);
+    expect(commit).toHaveBeenCalledTimes(1);
+    expect(activeEndT(commit.mock.calls[0]![0])).toBe(20);
   });
   it('shows both gaps while dragging, updates before release and commits only once', () => {
     const robot = applySequenceSegments(fixture(), [

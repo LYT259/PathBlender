@@ -53,12 +53,12 @@ function robotWithSequence(segments: Parameters<typeof makeSequence>[0]): Sessio
   const st = makeSession(segments[0]!.trajectory);
   st.routeId = segments[0]!.routeId;
   st.routeOptions = options;
-  st.sequence = { segments: segments.map((s) => ({ id: s.id, routeId: s.routeId, waitBeforeS: s.waitBeforeS })) };
+  st.sequence = { segments: segments.map((s) => ({ id: s.id, routeId: s.routeId, waitBeforeS: s.waitBeforeS, ...(s.playS !== undefined ? { playS: s.playS } : {}) })) };
   st.startDelayS = segments[0]!.waitBeforeS;
   return st;
 }
 
-function makeSequence(segments: { id: string; routeId: string; waitBeforeS: number; trajectory: Trajectory }[]) {
+function makeSequence(segments: { id: string; routeId: string; waitBeforeS: number; playS?: number; trajectory: Trajectory }[]) {
   return segments;
 }
 
@@ -376,5 +376,77 @@ describe('explicitly empty arrangements', () => {
     const restored = deserializeSession(serializeSession([robot], 'blue')).robots[0]!;
     expect(restored.sequence).toEqual({ segments: [] });
     expect(sampleStateAt(restored, 10)).toMatchObject({ x: 0, vx: 0 });
+  });
+});
+
+describe('partial execution (playS): a leg longer than the remaining auto plays as far as it can', () => {
+  // 8-second drive 0→8 m; only the first 2 seconds fit the arrangement.
+  const cut = () => {
+    const st = robotWithSequence(makeSequence([
+      { id: 's1', routeId: 'a', waitBeforeS: 0, trajectory: route({ id: 'a', durationS: 8, samples: [
+        { t: 0, x: 0, y: 0, heading: 0, vx: 1, vy: 0, omega: 0 },
+        { t: 8, x: 8, y: 0, heading: 0, vx: 1, vy: 0, omega: 0 },
+      ] }) },
+    ]));
+    st.sequence!.segments[0]!.playS = 2;
+    return st;
+  };
+
+  it('ends the segment at the cut and samples the route only that far', () => {
+    const st = cut();
+    expect(resolveSequence(st)![0]!.endS).toBe(2);
+    expect(activeEndT(st)).toBe(2);
+    expect(sessionDuration([st])).toBe(2);
+    expect(sampleStateAt(st, 1)!.x).toBeCloseTo(1, 9);
+  });
+
+  it('parks at the cut pose with zero velocity once the allotment is spent', () => {
+    const s = sampleStateAt(cut(), 5)!;
+    expect(s.x).toBeCloseTo(2, 9);
+    expect(s.vx).toBe(0);
+    expect(s.vy).toBe(0);
+  });
+
+  it('excludes events past the cut', () => {
+    const st = cut();
+    st.routeOptions![0]!.trajectory.events = [{ name: 'early', t: 1 }, { name: 'late', t: 5 }];
+    expect(sequenceEventTimes(st)).toEqual([{ name: 'early', t: 1 }]);
+  });
+
+  it('grades a seam after the cut from the cut pose, not the route end', () => {
+    const st = robotWithSequence(makeSequence([
+      { id: 's1', routeId: 'a', waitBeforeS: 0, trajectory: route({ id: 'a', durationS: 8, samples: [
+        { t: 0, x: 0, y: 0, heading: 0, vx: 0, vy: 0, omega: 0 },
+        { t: 8, x: 8, y: 0, heading: 0, vx: 0, vy: 0, omega: 0 },
+      ] }) },
+      { id: 's2', routeId: 'b', waitBeforeS: 0, trajectory: route({ id: 'b', durationS: 2, samples: [
+        { t: 0, x: 3, y: 0, heading: 0, vx: 0, vy: 0, omega: 0 },
+        { t: 2, x: 4, y: 0, heading: 0, vx: 0, vy: 0, omega: 0 },
+      ] }) },
+    ]));
+    st.sequence!.segments[0]!.playS = 2;
+    const issues = checkSequenceJoins(st);
+    expect(issues.some((issue) => issue.kind === 'position' && issue.delta === 1 && issue.seamT === 2)).toBe(true);
+  });
+
+  it('round-trips playS through the session file and heals damaged values', () => {
+    const st = cut();
+    const restored = deserializeSession(serializeSession([st], 'blue')).robots[0]!;
+    expect(restored.sequence!.segments[0]!.playS).toBe(2);
+    expect(activeEndT(restored)).toBe(2);
+    const text = serializeSession([st], 'blue');
+    const damaged = JSON.parse(text) as { robots: Array<{ sequence?: { segments: Array<Record<string, unknown>> } }> };
+    damaged.robots[0]!.sequence!.segments[0]!.playS = Number.NaN;
+    const healed = deserializeSession(JSON.stringify(damaged)).robots[0]!;
+    expect(healed.sequence!.segments[0]!.playS).toBeUndefined();
+    expect(activeEndT(healed)).toBe(8);
+  });
+
+  it('ignores playS that reaches or exceeds the route', () => {
+    const st = cut();
+    st.sequence!.segments[0]!.playS = 8;
+    expect(resolveSequence(st)![0]!.endS).toBe(8);
+    st.sequence!.segments[0]!.playS = 99;
+    expect(resolveSequence(st)![0]!.endS).toBe(8);
   });
 });
