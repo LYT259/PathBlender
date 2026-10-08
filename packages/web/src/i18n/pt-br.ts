@@ -142,6 +142,7 @@ export const ptBR: Record<MessageKey, string> = {
   'timeline.rewind': 'Voltar ao início',
   'timeline.stepBack': 'Voltar 0,5 segundo',
   'timeline.stepForward': 'Avançar 0,5 segundo',
+  'timeline.jumpEnd': 'Ir para o final das trajetórias visíveis',
   'timeline.play': 'Reproduzir',
   'timeline.pause': 'Pausar',
   'timeline.position': 'Posição da reprodução',

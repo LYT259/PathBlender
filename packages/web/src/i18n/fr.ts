@@ -139,6 +139,7 @@ export const fr: Record<MessageKey, string> = {
   "timeline.rewind": "Retour au début",
   "timeline.stepBack": "Reculer de 0,5 seconde",
   "timeline.stepForward": "Avancer de 0,5 seconde",
+  "timeline.jumpEnd": "Aller à la fin des parcours visibles",
   "timeline.play": "Lecture",
   "timeline.pause": "Pause",
   "timeline.position": "Position de lecture",

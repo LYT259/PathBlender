@@ -146,6 +146,7 @@ export const he: Record<MessageKey, string> = {
   'timeline.rewind': 'חזרה להתחלה',
   'timeline.stepBack': 'חצי שנייה אחורה',
   'timeline.stepForward': 'חצי שנייה קדימה',
+  'timeline.jumpEnd': 'קפצו לסוף המסלולים הגלויים',
   'timeline.play': 'נגן',
   'timeline.pause': 'השהה',
   'timeline.position': 'מיקום ההשמעה',

@@ -115,6 +115,7 @@ export const bg = {
   'timeline.rewind': "Върни се в началото",
   'timeline.stepBack': "Назад 0,5 секунди",
   'timeline.stepForward': "Напред 0,5 секунди",
+  'timeline.jumpEnd': 'Отиди в края на видимите маршрути',
   'timeline.play': "Възпроизведи",
   'timeline.pause': "Пауза",
   'timeline.position': "Позиция на възпроизвеждането",

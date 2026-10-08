@@ -117,6 +117,7 @@ export const nn = {
   'timeline.rewind': "Gå til byrjinga",
   'timeline.stepBack': "0,5 sekund tilbake",
   'timeline.stepForward': "0,5 sekund frametter",
+  'timeline.jumpEnd': 'Hopp til slutten av dei synlege rutene',
   'timeline.play': "Spel",
   'timeline.pause': "Pause",
   'timeline.position': "Avspelingsposisjon",

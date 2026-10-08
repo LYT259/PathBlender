@@ -115,6 +115,7 @@ export const mk = {
   'timeline.rewind': "Врати се на почеток",
   'timeline.stepBack': "Назад 0,5 секунди",
   'timeline.stepForward': "Напред 0,5 секунди",
+  'timeline.jumpEnd': 'Оди на крајот од видливите рути',
   'timeline.play': "Репродуцирај",
   'timeline.pause': "Пауза",
   'timeline.position': "Позиција на репродукцијата",

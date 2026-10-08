@@ -141,6 +141,7 @@ export const cs: Record<MessageKey, string> = {
   "timeline.rewind": "Zpět na začátek",
   "timeline.stepBack": "Zpět o 0,5 sekundy",
   "timeline.stepForward": "Vpřed o 0,5 sekundy",
+  "timeline.jumpEnd": "Přejít na konec viditelných tras",
   "timeline.play": "Přehrát",
   "timeline.pause": "Pozastavit",
   "timeline.position": "Pozice přehrávání",

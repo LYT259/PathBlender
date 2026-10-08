@@ -115,6 +115,7 @@ export const da = {
   'timeline.rewind': "Tilbage til start",
   'timeline.stepBack': "0,5 sekunder tilbage",
   'timeline.stepForward': "0,5 sekunder frem",
+  'timeline.jumpEnd': 'Hop til slutningen af de synlige ruter',
   'timeline.play': "Afspil",
   'timeline.pause': "Pause",
   'timeline.position': "Afspilningsposition",

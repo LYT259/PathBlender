@@ -136,6 +136,7 @@ export const tr: Record<MessageKey, string> = {
   "timeline.rewind": "Başa dön",
   "timeline.stepBack": "0,5 saniye geri",
   "timeline.stepForward": "0,5 saniye ileri",
+  "timeline.jumpEnd": "Görünür yolların sonuna atla",
   "timeline.play": "Oynat",
   "timeline.pause": "Duraklat",
   "timeline.position": "Oynatma konumu",

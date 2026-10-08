@@ -115,6 +115,7 @@ export const sv = {
   'timeline.rewind': "Återgå till start",
   'timeline.stepBack': "Bakåt 0,5 sekunder",
   'timeline.stepForward': "Framåt 0,5 sekunder",
+  'timeline.jumpEnd': 'Hoppa till slutet av de synliga rutterna',
   'timeline.play': "Spela",
   'timeline.pause': "Pausa",
   'timeline.position': "Uppspelningsposition",

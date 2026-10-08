@@ -115,6 +115,7 @@ export const hr = {
   'timeline.rewind': "Povratak na početak",
   'timeline.stepBack': "Natrag 0,5 sekundi",
   'timeline.stepForward': "Naprijed 0,5 sekundi",
+  'timeline.jumpEnd': 'Idi na kraj vidljivih ruta',
   'timeline.play': "Reproduciraj",
   'timeline.pause': "Pauza",
   'timeline.position': "Položaj reprodukcije",

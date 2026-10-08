@@ -50,14 +50,24 @@ describe('playback clock bounds and keyboard ownership', () => {
     expect(result.current.t).toBe(17);
     fireEvent.keyDown(window, { key: 'End', code: 'End' });
     expect(result.current.t).toBe(13);
-    // Playing from a parked position is allowed — replay wraps at the range
-    // end (frame-driven, covered by the loop tests below).
-    act(() => result.current.setT(15));
-    act(() => result.current.setPlaying(true));
-    expect(result.current.playing).toBe(true);
     // Closing the composer shrinks the scrub max — the playhead comes back.
     rerender({ duration: 13, scrubMax: 13 });
     expect(result.current.t).toBe(13);
+    // Playing from a parked position STARTS AT 0 (user 2026-10-08): the
+    // parked playhead gates the library; Play means run the arrangement,
+    // which begins at the beginning. (Re-open the axis first — closed, the
+    // scrub max itself clamps the park.)
+    rerender({ duration: 13, scrubMax: 20 });
+    act(() => result.current.setT(15));
+    act(() => result.current.setPlaying(true));
+    expect(result.current.playing).toBe(true);
+    expect(result.current.t).toBe(0);
+    // A duration shrinking under a RUNNING clock clamps in place — it does
+    // not restart the arrangement (no new play transition fires).
+    act(() => result.current.setT(10));
+    rerender({ duration: 6.22, scrubMax: 6.22 });
+    expect(result.current.t).toBe(6.22);
+    expect(result.current.playing).toBe(true);
   });
 
   it('leaves Space to the focused button, scrubs from button focus, and dialogs block all', () => {

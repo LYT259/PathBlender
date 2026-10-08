@@ -132,6 +132,7 @@ export const zh: Record<MessageKey, string> = {
   "timeline.rewind": "回到开头",
   "timeline.stepBack": "后退 0.5 秒",
   "timeline.stepForward": "前进 0.5 秒",
+  "timeline.jumpEnd": "跳到可见路径的结尾",
   "timeline.play": "播放",
   "timeline.pause": "暂停",
   "timeline.position": "回放位置",

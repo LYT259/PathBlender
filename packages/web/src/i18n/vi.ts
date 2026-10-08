@@ -130,6 +130,7 @@ export const vi = {
   'timeline.rewind': "Về đầu",
   'timeline.stepBack': "Lùi 0,5 giây",
   'timeline.stepForward': "Tiến 0,5 giây",
+  'timeline.jumpEnd': 'Nhảy đến cuối các đường đi hiển thị',
   'timeline.play': "Phát",
   'timeline.pause': "Tạm dừng",
   'timeline.position': "Vị trí phát lại",

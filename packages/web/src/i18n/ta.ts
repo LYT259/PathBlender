@@ -130,6 +130,7 @@ export const ta = {
   'timeline.rewind': "தொடக்கத்திற்குத் திரும்பு",
   'timeline.stepBack': "0.5 வினாடிகள் பின்னோக்கி",
   'timeline.stepForward': "0.5 வினாடிகள் முன்னோக்கி",
+  'timeline.jumpEnd': 'தெரியும் பாதைகளின் முடிவிற்கு செல்லுங்கள்',
   'timeline.play': "இயக்கு",
   'timeline.pause': "இடைநிறுத்து",
   'timeline.position': "மீண்டும் இயக்க நிலை",

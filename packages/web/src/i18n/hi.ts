@@ -130,6 +130,7 @@ export const hi = {
   'timeline.rewind': "शुरुआत पर लौटें",
   'timeline.stepBack': "0.5 सेकंड पीछे",
   'timeline.stepForward': "0.5 सेकंड आगे",
+  'timeline.jumpEnd': 'दृश्यमान पथों के अंत तक जाएँ',
   'timeline.play': "चलाएं",
   'timeline.pause': "रोकें",
   'timeline.position': "प्लेबैक स्थिति",

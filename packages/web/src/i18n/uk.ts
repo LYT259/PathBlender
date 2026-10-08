@@ -117,6 +117,7 @@ export const uk = {
   'timeline.rewind': "Повернутися на початок",
   'timeline.stepBack': "Назад на 0,5 секунди",
   'timeline.stepForward': "Уперед на 0,5 секунди",
+  'timeline.jumpEnd': 'Перейти в кінець видимих маршрутів',
   'timeline.play': "Відтворити",
   'timeline.pause': "Пауза",
   'timeline.position': "Позиція відтворення",

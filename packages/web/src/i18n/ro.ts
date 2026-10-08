@@ -116,6 +116,7 @@ export const ro = {
   'timeline.rewind': "Revenire la început",
   'timeline.stepBack': "Înapoi 0,5 secunde",
   'timeline.stepForward': "Înainte 0,5 secunde",
+  'timeline.jumpEnd': 'Sari la sfârșitul rutelor vizibile',
   'timeline.play': "Redă",
   'timeline.pause': "Pauză",
   'timeline.position': "Poziția de redare",

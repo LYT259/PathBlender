@@ -115,6 +115,7 @@ export const hu = {
   'timeline.rewind': "Vissza az elejére",
   'timeline.stepBack': "0,5 másodperc vissza",
   'timeline.stepForward': "0,5 másodperc előre",
+  'timeline.jumpEnd': 'Ugrás a látható útvonalak végére',
   'timeline.play': "Lejátszás",
   'timeline.pause': "Szünet",
   'timeline.position': "Lejátszási pozíció",

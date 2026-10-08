@@ -115,6 +115,7 @@ export const bs = {
   'timeline.rewind': "Nazad na početak",
   'timeline.stepBack': "0,5 sekundi nazad",
   'timeline.stepForward': "0,5 sekundi naprijed",
+  'timeline.jumpEnd': 'Idi na kraj vidljivih ruta',
   'timeline.play': "Reproduciraj",
   'timeline.pause': "Pauza",
   'timeline.position': "Pozicija reprodukcije",

@@ -115,6 +115,7 @@ export const rw = {
   'timeline.rewind': "Subira mu ntangiriro",
   'timeline.stepBack': "Subira inyuma amasegonda 0,5",
   'timeline.stepForward': "Komeza imbere amasegonda 0,5",
+  'timeline.jumpEnd': 'Simbuka ku mpera y’inzira zigaragara',
   'timeline.play': "Gukina",
   'timeline.pause': "Hagarara",
   'timeline.position': "Aho gukina bigeze",

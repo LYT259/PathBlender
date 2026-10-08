@@ -34,6 +34,18 @@ export function usePlayback(durationS: number, suspended = false, scrubMaxS = du
     if (duration === 0) setWantsPlayback(false);
   }, [duration, scrubMax]);
 
+  // Playing starts from the beginning when the playhead is parked beyond the
+  // transport end (user 2026-10-08): the playhead may sit in the empty
+  // future stretch to gate the composer's route library, but pressing Play
+  // means "run the arrangement" — which begins at 0 s, not mid-air. Only the
+  // start transition: a duration that shrinks under a RUNNING clock clamps
+  // in place (the effect above) and playback simply continues.
+  const wasPlaying = useRef(false);
+  useEffect(() => {
+    if (playing && !wasPlaying.current && rawT > duration) setT(0);
+    wasPlaying.current = playing;
+  }, [playing, rawT, duration, setT]);
+
   useEffect(() => {
     if (!playing || suspended) return;
     let raf = 0;

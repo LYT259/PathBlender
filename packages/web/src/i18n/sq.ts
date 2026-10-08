@@ -116,6 +116,7 @@ export const sq = {
   'timeline.rewind': "Kthehuni në fillim",
   'timeline.stepBack': "0,5 sekonda prapa",
   'timeline.stepForward': "0,5 sekonda përpara",
+  'timeline.jumpEnd': 'Kalo në fundin e rrugëve të dukshme',
   'timeline.play': "Luaj",
   'timeline.pause': "Pauzë",
   'timeline.position': "Pozicioni i riprodhimit",

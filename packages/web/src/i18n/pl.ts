@@ -141,6 +141,7 @@ export const pl: Record<MessageKey, string> = {
   'timeline.rewind': 'Wróć na początek',
   'timeline.stepBack': 'Wstecz o 0,5 s',
   'timeline.stepForward': 'Do przodu o 0,5 s',
+  'timeline.jumpEnd': 'Przejdź na koniec widocznych tras',
   'timeline.play': 'Odtwórz',
   'timeline.pause': 'Wstrzymaj',
   'timeline.position': 'Pozycja odtwarzania',

@@ -142,6 +142,7 @@ export const ko: Record<MessageKey, string> = {
   'timeline.rewind': '처음으로 돌아가기',
   'timeline.stepBack': '0.5초 뒤로',
   'timeline.stepForward': '0.5초 앞으로',
+  'timeline.jumpEnd': '표시된 경로의 끝으로 이동',
   'timeline.play': '재생',
   'timeline.pause': '일시 정지',
   'timeline.position': '재생 위치',

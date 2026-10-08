@@ -142,6 +142,7 @@ export const ja: Record<MessageKey, string> = {
   "timeline.rewind": "先頭に戻る",
   "timeline.stepBack": "0.5 秒戻る",
   "timeline.stepForward": "0.5 秒進む",
+  "timeline.jumpEnd": "表示中のパスの末尾へ移動",
   "timeline.play": "再生",
   "timeline.pause": "一時停止",
   "timeline.position": "再生位置",

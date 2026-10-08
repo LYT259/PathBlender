@@ -137,6 +137,7 @@ export const zhTw: Record<MessageKey, string> = {
   "timeline.rewind": "回到開頭",
   "timeline.stepBack": "後退 0.5 秒",
   "timeline.stepForward": "前進 0.5 秒",
+  "timeline.jumpEnd": "跳到可見路徑的結尾",
   "timeline.play": "播放",
   "timeline.pause": "暫停",
   "timeline.position": "回放位置",

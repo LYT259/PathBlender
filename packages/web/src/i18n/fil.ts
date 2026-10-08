@@ -130,6 +130,7 @@ export const fil = {
   'timeline.rewind': "Bumalik sa simula",
   'timeline.stepBack': "Bumalik ng 0.5 segundo",
   'timeline.stepForward': "Pasulong ng 0.5 segundo",
+  'timeline.jumpEnd': 'Tumalon sa dulo ng mga nakikitang path',
   'timeline.play': "I-play",
   'timeline.pause': "I-pause",
   'timeline.position': "Posisyon ng playback",

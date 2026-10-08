@@ -115,6 +115,7 @@ export const az = {
   'timeline.rewind': "Əvvələ qayıt",
   'timeline.stepBack': "0,5 saniyə geri",
   'timeline.stepForward': "0,5 saniyə irəli",
+  'timeline.jumpEnd': 'Görünən marşrutların sonuna keç',
   'timeline.play': "Oynat",
   'timeline.pause': "Pauza",
   'timeline.position': "Oynatma mövqeyi",

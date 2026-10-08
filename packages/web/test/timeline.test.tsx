@@ -92,6 +92,11 @@ describe('unified timeline', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Return to start' }));
     expect(state.setPlaying).toHaveBeenLastCalledWith(false);
     expect(state.setT).toHaveBeenLastCalledWith(0);
+    // One click to the last moment of the visible paths (user 2026-10-08) —
+    // the mirrored twin of the rewind button, for parking on the end seam.
+    fireEvent.click(screen.getByRole('button', { name: 'Jump to the end of the visible paths' }));
+    expect(state.setPlaying).toHaveBeenLastCalledWith(false);
+    expect(state.setT).toHaveBeenLastCalledWith(8);
   });
 
   it('hands the event global time to the workspace jump handler, and hidden robots still show their lane', () => {

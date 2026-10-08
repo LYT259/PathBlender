@@ -130,6 +130,7 @@ export const id = {
   'timeline.rewind': "Kembali ke awal",
   'timeline.stepBack': "Mundur 0,5 detik",
   'timeline.stepForward': "Maju 0,5 detik",
+  'timeline.jumpEnd': 'Lompat ke akhir jalur yang terlihat',
   'timeline.play': "Putar",
   'timeline.pause': "Jeda",
   'timeline.position': "Posisi pemutaran",

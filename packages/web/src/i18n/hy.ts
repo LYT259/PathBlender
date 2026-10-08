@@ -116,6 +116,7 @@ export const hy = {
   'timeline.rewind': "Վերադառնալ սկզբին",
   'timeline.stepBack': "0,5 վայրկյան ետ",
   'timeline.stepForward': "0,5 վայրկյան առաջ",
+  'timeline.jumpEnd': 'Անցնել տեսանելի երթուղիների վերջը',
   'timeline.play': "Վերարտադրել",
   'timeline.pause': "Դադար",
   'timeline.position': "Վերարտադրման դիրք",

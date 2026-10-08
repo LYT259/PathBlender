@@ -130,6 +130,7 @@ export const de = {
   'timeline.rewind': "Zum Anfang zurückkehren",
   'timeline.stepBack': "0,5 Sekunden zurück",
   'timeline.stepForward': "0,5 Sekunden vorwärts",
+  'timeline.jumpEnd': 'Zum Ende der sichtbaren Pfade springen',
   'timeline.play': "Abspielen",
   'timeline.pause': "Pausieren",
   'timeline.position': "Wiedergabeposition",

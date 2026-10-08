@@ -100,6 +100,7 @@ export const en = {
   "timeline.rewind": "Return to start",
   "timeline.stepBack": "Back 0.5 seconds",
   "timeline.stepForward": "Forward 0.5 seconds",
+  "timeline.jumpEnd": "Jump to the end of the visible paths",
   "timeline.play": "Play",
   "timeline.pause": "Pause",
   "timeline.position": "Playback position",

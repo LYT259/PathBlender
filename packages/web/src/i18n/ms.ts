@@ -130,6 +130,7 @@ export const ms = {
   'timeline.rewind': "Kembali ke permulaan",
   'timeline.stepBack': "Undur 0.5 saat",
   'timeline.stepForward': "Maju 0.5 saat",
+  'timeline.jumpEnd': 'Lompat ke hujung laluan yang kelihatan',
   'timeline.play': "Main",
   'timeline.pause': "Jeda",
   'timeline.position': "Kedudukan main semula",

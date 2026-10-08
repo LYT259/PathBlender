@@ -130,6 +130,7 @@ export const mr = {
   'timeline.rewind': "सुरुवातीला परत",
   'timeline.stepBack': "0.5 सेकंद मागे",
   'timeline.stepForward': "0.5 सेकंद पुढे",
+  'timeline.jumpEnd': 'दिसणाऱ्या मार्गांच्या शेवटी जा',
   'timeline.play': "प्ले",
   'timeline.pause': "विराम",
   'timeline.position': "प्लेबॅक स्थिती",

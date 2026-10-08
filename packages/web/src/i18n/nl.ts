@@ -141,6 +141,7 @@ export const nl: Record<MessageKey, string> = {
   "timeline.rewind": "Terug naar begin",
   "timeline.stepBack": "0,5 seconde terug",
   "timeline.stepForward": "0,5 seconde vooruit",
+  "timeline.jumpEnd": "Spring naar het einde van de zichtbare routes",
   "timeline.play": "Afspelen",
   "timeline.pause": "Pauzeren",
   "timeline.position": "Afspeelpositie",

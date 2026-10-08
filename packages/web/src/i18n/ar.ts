@@ -130,6 +130,7 @@ export const ar = {
   'timeline.rewind': "العودة إلى البداية",
   'timeline.stepBack': "للخلف 0.5 ثانية",
   'timeline.stepForward': "للأمام 0.5 ثانية",
+  'timeline.jumpEnd': 'انتقل إلى نهاية المسارات المرئية',
   'timeline.play': "تشغيل",
   'timeline.pause': "إيقاف مؤقت",
   'timeline.position': "موضع التشغيل",

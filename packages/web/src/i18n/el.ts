@@ -115,6 +115,7 @@ export const el = {
   'timeline.rewind': "Επιστροφή στην αρχή",
   'timeline.stepBack': "Πίσω 0,5 δευτερόλεπτα",
   'timeline.stepForward': "Μπροστά 0,5 δευτερόλεπτα",
+  'timeline.jumpEnd': 'Μετάβαση στο τέλος των ορατών διαδρομών',
   'timeline.play': "Αναπαραγωγή",
   'timeline.pause': "Παύση",
   'timeline.position': "Θέση αναπαραγωγής",
