@@ -105,6 +105,7 @@ export {
 export type { SessionFileV1, SessionTrajectory, SessionRouteOption, SessionProfileOption, SessionSerializeOptions } from './session';
 
 export {
+  LIBRARY_CHAIN_TOLERANCES,
   SEQUENCE_JOIN_TOLERANCES,
   checkSequenceJoins,
   checkSequenceTiming,

@@ -216,14 +216,30 @@ export interface RouteContinuity {
 }
 
 /**
+ * Library gating answers "can the robot physically drive there", not "is the
+ * seam flawless" — the seam badges grade that separately at the strict
+ * SEQUENCE_JOIN_TOLERANCES. Real Choreo hand-chained legs leave cm-scale
+ * gaps: across both bundled example libraries every genuinely chained pair
+ * measures 0.003–0.077 m at ≤1°, while same-spot-different-direction starts
+ * (the teleports worth refusing) sit at ≥0.16 m or ≥90°. 0.5 m and 15°
+ * admit every drivable chain (user report 2026-10-08: an 0.077 m leg was
+ * refused by the 0.01 m gate) and still refuse every measured teleport.
+ */
+export const LIBRARY_CHAIN_TOLERANCES = {
+  positionTolM: 0.5,
+  headingTolDeg: 15,
+} as const;
+
+/**
  * Pose continuity for the composer's route library: can `next` physically
  * follow `prev` — does its first sample sit where `prev`'s last sample left
- * the robot? Same position/heading tolerances as the seam grading, so a
- * route the library accepts produces a seam the timeline badges as
- * continuous. The speed jump is deliberately NOT part of the verdict: a
- * wait parks the robot at zero velocity, so a speed difference is honest to
- * report on the seam but not a reason to refuse the route. Trajectories
- * without samples carry no measurable pose and are never gated.
+ * the robot? Callers gate the library with LIBRARY_CHAIN_TOLERANCES (drive-
+ * able, above) and grade the seam itself at SEQUENCE_JOIN_TOLERANCES
+ * (flawless); a route the library accepts may still seam with a reported
+ * gap. The speed jump is deliberately NOT part of the verdict: a wait parks
+ * the robot at zero velocity, so a speed difference is honest to report on
+ * the seam but not a reason to refuse the route. Trajectories without
+ * samples carry no measurable pose and are never gated.
  */
 export function routeConnectsAfter(
   prev: Trajectory,

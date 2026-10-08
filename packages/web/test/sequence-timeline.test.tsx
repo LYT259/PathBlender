@@ -228,6 +228,30 @@ describe('playhead-gated route library', () => {
     expect(commit).not.toHaveBeenCalled();
     expect(document.querySelector('.sequence-ghost')).toBeNull();
   });
+  it('admits cm-scale chain gaps like real Choreo legs leave — the strict seam grade stays on the badges', () => {
+    // Real hand-chained legs seam at 0.003–0.077 m / ≤1° (both example
+    // libraries); the library gate refuses only teleports (user 2026-10-08:
+    // an 0.077 m leg was refused by the 0.01 m gate).
+    const base = fixture();
+    const shift = (o: (typeof base.routeOptions)[number]) => ({
+      ...o,
+      trajectory: {
+        ...o.trajectory,
+        samples: o.trajectory.samples.map((s) => ({ ...s, x: s.x + 0.077, y: s.y - 0.02, heading: s.heading + Math.PI / 180 })),
+      },
+    });
+    const gapped = { ...base, routeOptions: base.routeOptions.map((o) => o.id === 'b' ? shift(o) : o) };
+    localStorage.setItem('pb.lengthUnit', 'm');
+    render(<LiveHarness robot={gapped} t={5} />);
+    const [b, a] = sources();
+    // B now seams 0.08 m / 1° off A's end — drivable, so still offered.
+    expect(labels()).toEqual(['B', 'A', 'C']);
+    expect(b).not.toHaveAttribute('aria-disabled');
+    expect(b!.getAttribute('aria-label')).not.toContain('position gap');
+    // True teleports stay refused with their measured gap.
+    expect(a).toHaveAttribute('aria-disabled', 'true');
+    expect(a!.getAttribute('aria-label')).toContain('position gap 9.96 m');
+  });
   it('keeps every route available before the first segment starts', () => {
     const robot = applySequenceSegments(fixture(), [{ id: 'late', routeId: 'a', waitBeforeS: 2 }]);
     render(<LiveHarness robot={robot} t={1} />);

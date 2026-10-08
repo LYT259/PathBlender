@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import type { RouteContinuity, SequenceJoinIssue, SessionRouteOption, SessionTrajectory } from '@pathblender/core';
-import { routeConnectsAfter } from '@pathblender/core';
+import { routeConnectsAfter, LIBRARY_CHAIN_TOLERANCES, type RouteContinuity, type SequenceJoinIssue, type SessionRouteOption, type SessionTrajectory } from '@pathblender/core';
 import { sequenceViewFor, type AutoSequenceSegment } from '../auto-sequence-state';
 import { boundedClipStart, canPlaceClip, clipGaps, clipsFor, placeClip, segmentsFromClips, type TimelineClip } from '../sequence-timeline-clips';
 import { robotIdentity } from '../robot-identity';
@@ -104,7 +103,10 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   const library: { route: SessionRouteOption; blocked: boolean; continuity?: RouteContinuity }[] = [];
   for (const route of active?.routes ?? []) {
     const overAuto = route.trajectory.durationS > autoPeriodS;
-    const continuity = anchorRoute ? routeConnectsAfter(anchorRoute.trajectory, route.trajectory) : undefined;
+    // Driveable-chain gate (user 2026-10-08): LIBRARY_CHAIN_TOLERANCES
+    // answers "can the robot drive there"; the seam badges still grade the
+    // join itself at the strict SEQUENCE_JOIN_TOLERANCES.
+    const continuity = anchorRoute ? routeConnectsAfter(anchorRoute.trajectory, route.trajectory, LIBRARY_CHAIN_TOLERANCES) : undefined;
     library.push({
       route,
       blocked: occupied || route.trajectory.durationS <= 0 || overAuto || (continuity ? !continuity.connects : false),
