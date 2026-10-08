@@ -6,6 +6,7 @@ import {
   detectCollisions,
   detectFieldBounds,
   samplePoseAt,
+  sequenceEventTimes,
   serializeSession,
   sessionDuration,
 } from '@pathblender/core';
@@ -14,44 +15,64 @@ import { isExampleRobot } from '../src/example-robot';
 import { routeName, sameRouteTrajectory } from '../src/route-library';
 
 // The bundled Choreo exports, in natural filename order (see
-// assets/welcome-example/<team>/). L16 and Test1 exist only on the 8814 side.
-const ROUTES_8814 = [
-  'L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9',
-  'L10', 'L11', 'L12', 'L13', 'L14', 'L15', 'L16',
-  'M1', 'M2', 'M3', 'M4', 'M5', 'Test1',
-];
+// assets/welcome-example/<dir>/). The three robots are the team's real
+// 2026 machines: the season-long 11019, the post-season 8814, and the
+// Houston-built 11019 Champs (now dismantled) — every route annotated
+// with that machine's own event vocabulary.
 const ROUTES_11019 = [
   'L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9',
   'L10', 'L11', 'L12', 'L13', 'L14', 'L15',
   'M1', 'M2', 'M3', 'M4', 'M5',
 ];
+const ROUTES_8814 = [
+  'FCeSt', 'LCeP', 'LCeS', 'LCP', 'LCS', 'LCsS',
+  'MSm', 'PCeP', 'PCeR', 'SCsS', 'SmR', 'SR', 'StR',
+];
+const ROUTES_CHAMPS = [
+  'L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8', 'L9',
+  'L10', 'L11', 'L12', 'L13', 'M1', 'M2', 'M3', 'M4', 'M5',
+];
 
 describe('welcome example', () => {
-  it('is two real FRC teams: 8814 with its 22 routes and 11019 with its 20', () => {
+  it('is the team’s three real robots, in display order, all on the blue alliance', () => {
     const { robots } = createWelcomeExample();
-    expect(robots).toHaveLength(2);
-    expect(robots.map((r) => r.trajectory.teamNumber)).toEqual(['8814', '11019']);
-    expect(robots.map((r) => r.routeOptions?.length)).toEqual([22, 20]);
+    expect(robots).toHaveLength(3);
+    expect(robots.map((r) => r.trajectory.teamNumber)).toEqual(['11019', '8814', '11019']);
+    // You only ever hold path data for your own side — no red robots here.
+    expect(robots.every((r) => r.trajectory.alliance === 'blue')).toBe(true);
+    expect(robots.map((r) => r.routeOptions?.length)).toEqual([20, 13, 18]);
+    expect(robots.map((r) => r.trajectory.displayName)).toEqual([undefined, undefined, '11019 Champs']);
     // Route names mirror the bundled file names one to one, naturally sorted.
-    expect(robots[0]!.routeOptions!.map(routeName)).toEqual(ROUTES_8814);
-    expect(robots[1]!.routeOptions!.map(routeName)).toEqual(ROUTES_11019);
-    expect(ROUTES_11019).not.toContain('L16');
-    expect(ROUTES_11019).not.toContain('Test1');
+    expect(robots[0]!.routeOptions!.map(routeName)).toEqual(ROUTES_11019);
+    expect(robots[1]!.routeOptions!.map(routeName)).toEqual(ROUTES_8814);
+    expect(robots[2]!.routeOptions!.map(routeName)).toEqual(ROUTES_CHAMPS);
   });
 
   it('keeps the demo-robot contract: stable welcome-example ids and no routeId', () => {
     const { robots } = createWelcomeExample();
-    expect(robots.map((r) => r.trajectory.id)).toEqual(['welcome-example-a', 'welcome-example-b']);
+    expect(robots.map((r) => r.trajectory.id)).toEqual(['welcome-example-a', 'welcome-example-b', 'welcome-example-c']);
     expect(robots.every((r) => r.routeId === undefined)).toBe(true);
     expect(robots.every(isExampleRobot)).toBe(true);
   });
 
-  it('opens each team on its first naturally sorted route, like a folder import', () => {
+  it('opens each robot on its first naturally sorted route, like a folder import', () => {
     const { robots } = createWelcomeExample();
-    expect(robots.map((r) => r.trajectory.name)).toEqual(['L1', 'L1']);
+    expect(robots.map((r) => r.trajectory.name)).toEqual(['L1', 'FCeSt', 'L1']);
     for (const robot of robots) {
       expect(robot.trajectory.samples).toEqual(robot.routeOptions![0]!.trajectory.samples);
     }
+  });
+
+  it('carries the Champs display name on every library route, so switches never drop it', () => {
+    const { robots } = createWelcomeExample();
+    const champs = robots[2]!;
+    expect(champs.trajectory.displayName).toBe('11019 Champs');
+    for (const option of champs.routeOptions!) {
+      expect(option.trajectory.displayName).toBe('11019 Champs');
+    }
+    // The other two robots badge their bare team numbers.
+    expect(robots[0]!.trajectory.displayName).toBeUndefined();
+    expect(robots[1]!.trajectory.displayName).toBeUndefined();
   });
 
   it('parses every bundled route cleanly: ordered finite samples, file geometry, no warnings', () => {
@@ -65,6 +86,7 @@ describe('welcome example', () => {
         expect(traj.geometrySource).toBe('file');
         expect(traj.geometry.lengthM).toBeGreaterThan(0);
         expect(traj.geometry.widthM).toBeGreaterThan(0);
+        // Folder names carry the team number (11019-champs derives 11019).
         expect(traj.teamNumber).toBe(robot.trajectory.teamNumber);
         for (let i = 0; i < traj.samples.length; i++) {
           const sample = traj.samples[i]!;
@@ -75,17 +97,40 @@ describe('welcome example', () => {
     }
   });
 
-  it('shows one genuine collision: both teams open their L1 from the same start pose', () => {
+  it('lights up event annotations on every route except the confirmed action-free ones', () => {
+    const { robots } = createWelcomeExample();
+    const zeroAction = new Set(['8814/SmR', '11019/L15']);
+    for (const robot of robots) {
+      for (const option of robot.routeOptions!) {
+        const key = `${robot.trajectory.teamNumber === '11019' && robot.trajectory.displayName ? 'champs' : robot.trajectory.teamNumber === '8814' ? '8814' : '11019'}/${routeName(option)}`;
+        const events = option.trajectory.events;
+        if (zeroAction.has(key)) {
+          expect(events, `${key} should carry no annotations`).toEqual([]);
+        } else {
+          expect(events.length, `${key} should be annotated`).toBeGreaterThan(0);
+          for (const event of events) {
+            expect(event.name).toMatch(/^[a-z][a-z_]*$/); // the frozen vocabulary form
+          }
+        }
+      }
+    }
+    // Opening routes demonstrate all three vocabularies from t=0.
+    expect(sequenceEventTimes(robots[0]!).map((e) => e.name)).toEqual(['intake', 'pass', 'align']);
+    expect(sequenceEventTimes(robots[1]!).map((e) => e.name)).toEqual(['intake', 'close_blocker', 'half_open_blocker', 'shoot']);
+    expect(sequenceEventTimes(robots[2]!).map((e) => e.name)).toEqual(['intake', 'deploy_extension', 'pre_aim']);
+  });
+
+  it('shows three genuine collisions: every pair opens from the same start pose', () => {
     const { robots } = createWelcomeExample();
     const conflicts = detectCollisions(robots);
-    expect(conflicts).toHaveLength(1);
-    expect(conflicts[0]!.startT).toBe(0);
-    // No start delay untangles two robots parked on the same spot — the
+    expect(conflicts).toHaveLength(3);
+    expect(conflicts.every((c) => c.startT === 0)).toBe(true);
+    // No start delay untangles robots parked on the same spot — the
     // example teaches moving a start, not delaying it.
-    expect(detectCollisions(autoResolveConflicts(robots))).toHaveLength(1);
-    // Both autos begin with a bumper hair over the line (real Choreo data,
-    // millimetre-level) — inside BOUNDS_TOLERANCE_M (2026-10-04), so the
-    // boundary check forgives the wall-kiss start and reports nothing.
+    expect(detectCollisions(autoResolveConflicts(robots))).toHaveLength(3);
+    // All three opening routes begin with a bumper hair over the line (real
+    // Choreo data, millimetre-level) — inside BOUNDS_TOLERANCE_M
+    // (2026-10-04), so the boundary check reports nothing.
     expect(detectFieldBounds(robots, REBUILT_2026)).toHaveLength(0);
   });
 
@@ -99,14 +144,15 @@ describe('welcome example', () => {
     expect(second).toEqual(createWelcomeExample());
   });
 
-  it('round-trips through the saved-session format with routes, ids and the same collision', () => {
+  it('round-trips through the saved-session format with routes, ids, names and collisions', () => {
     const example = createWelcomeExample();
     const restored = deserializeSession(serializeSession(example.robots, 'rebuilt-2026'));
-    expect(restored.robots).toHaveLength(2);
-    expect(restored.robots.map((r) => r.trajectory.id)).toEqual(['welcome-example-a', 'welcome-example-b']);
-    expect(restored.robots.map((r) => r.routeOptions?.length)).toEqual([22, 20]);
+    expect(restored.robots).toHaveLength(3);
+    expect(restored.robots.map((r) => r.trajectory.id)).toEqual(['welcome-example-a', 'welcome-example-b', 'welcome-example-c']);
+    expect(restored.robots.map((r) => r.routeOptions?.length)).toEqual([20, 13, 18]);
+    expect(restored.robots.map((r) => r.trajectory.displayName)).toEqual([undefined, undefined, '11019 Champs']);
     expect(restored.robots.every(isExampleRobot)).toBe(true);
-    expect(detectCollisions(restored.robots)).toHaveLength(1);
+    expect(detectCollisions(restored.robots)).toHaveLength(3);
     // Save/load breaks shared object references; the picker's current-route
     // match still recognizes each robot's route among its options.
     for (const robot of restored.robots) {

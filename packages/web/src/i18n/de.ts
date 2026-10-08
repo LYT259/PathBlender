@@ -69,7 +69,7 @@ export const de = {
   'welcome.exampleNameA': 'Beispielpfad A',
   'welcome.exampleNameB': 'Beispielpfad B',
   'welcome.exampleBadge': 'Beispiel',
-  'welcome.exampleNotice': 'Echte Routen der Saison 2026 von den FRC-Teams 8814 und 11019.',
+  'welcome.exampleNotice': 'Echte Routen der Saison 2026 von drei echten FRC-Robotern: 11019, 8814 und 11019 Champs.',
   'welcome.exitExample': 'Beispiel beenden',
   'onboarding.play': 'Drücken Sie Abspielen, um die Pfade zu sehen, oder ziehen Sie die Zeitleiste.',
   'onboarding.check': "Wähle unten ein Problem, um zu dem Moment zu springen — vergleiche dann Alternativen: andere Route oder verschobener Start",

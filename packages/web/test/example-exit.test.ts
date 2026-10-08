@@ -6,7 +6,7 @@ import { isExampleRobot, refreshExampleRobots } from '../src/example-robot';
 describe('isExampleRobot (End-example affordance)', () => {
   it('recognizes fresh demo robots', () => {
     const { robots } = createWelcomeExample();
-    expect(robots).toHaveLength(2);
+    expect(robots).toHaveLength(3);
     expect(robots.every(isExampleRobot)).toBe(true);
   });
 
@@ -58,8 +58,8 @@ describe('refreshExampleRobots (stale-example swap on restore, 2026-10-04)', () 
       trajectory: { ...r.trajectory, teamNumber: `000${i + 1}` },
     }));
     const out = refreshExampleRobots(stale, createWelcomeExample().robots);
-    expect(out.map((r) => r.trajectory.teamNumber)).toEqual(['8814', '11019']);
-    expect(out.map((r) => r.routeOptions?.length)).toEqual([22, 20]);
+    expect(out.map((r) => r.trajectory.teamNumber)).toEqual(['11019', '8814', '11019']);
+    expect(out.map((r) => r.routeOptions?.length)).toEqual([20, 13, 18]);
     expect(out.every(isExampleRobot)).toBe(true);
   });
 
@@ -78,11 +78,11 @@ describe('refreshExampleRobots (stale-example swap on restore, 2026-10-04)', () 
     }));
     const out = refreshExampleRobots(edited, createWelcomeExample().robots);
     // Demo payload refreshed...
-    expect(out.map((r) => r.trajectory.teamNumber)).toEqual(['8814', '11019']);
-    expect(out.map((r) => r.routeOptions?.length)).toEqual([22, 20]);
+    expect(out.map((r) => r.trajectory.teamNumber)).toEqual(['11019', '8814', '11019']);
+    expect(out.map((r) => r.routeOptions?.length)).toEqual([20, 13, 18]);
     // ...the user's own state carried over (user report 2026-10-06: a hidden
     // example robot came back visible after a relaunch).
-    expect(out.map((r) => r.visible)).toEqual([false, true]);
+    expect(out.map((r) => r.visible)).toEqual([false, true, true]);
     expect(out.every((r) => r.color === '#123456')).toBe(true);
     expect(out.every((r) => r.startDelayS === 2.5)).toBe(true);
     expect(out.every((r) => r.mirrored === true)).toBe(true);
@@ -100,8 +100,8 @@ describe('refreshExampleRobots (stale-example swap on restore, 2026-10-04)', () 
       },
     }));
     const out = refreshExampleRobots(legacy, createWelcomeExample().robots);
-    expect(out.map((r) => r.trajectory.teamNumber)).toEqual(['8814', '11019']);
-    expect(out.map((r) => r.routeOptions?.length)).toEqual([22, 20]);
+    expect(out.map((r) => r.trajectory.teamNumber)).toEqual(['11019', '8814', '11019']);
+    expect(out.map((r) => r.routeOptions?.length)).toEqual([20, 13, 18]);
     expect(out.every(isExampleRobot)).toBe(true);
   });
 
@@ -119,7 +119,7 @@ describe('refreshExampleRobots (stale-example swap on restore, 2026-10-04)', () 
     };
     const out = refreshExampleRobots([legacyExample, mine], createWelcomeExample().robots);
     expect(out).toHaveLength(2);
-    expect(out[0]!.trajectory.teamNumber).toBe('8814');
+    expect(out[0]!.trajectory.teamNumber).toBe('11019');
     expect(out[1]).toBe(mine);
   });
 
@@ -130,7 +130,7 @@ describe('refreshExampleRobots (stale-example swap on restore, 2026-10-04)', () 
       trajectory: { ...robots[0]!.trajectory, id: crypto.randomUUID(), name: 'Example path B', teamNumber: '0003' },
     };
     const out = refreshExampleRobots([...robots, third], createWelcomeExample().robots);
-    expect(out).toHaveLength(3);
-    expect(out[2]).toBe(third);
+    expect(out).toHaveLength(4);
+    expect(out[3]).toBe(third);
   });
 });

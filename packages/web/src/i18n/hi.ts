@@ -69,7 +69,7 @@ export const hi = {
   'welcome.exampleNameA': 'उदाहरण पथ A',
   'welcome.exampleNameB': 'उदाहरण पथ B',
   'welcome.exampleBadge': 'उदाहरण',
-  'welcome.exampleNotice': 'FRC टीमों 8814 और 11019 के 2026 सीज़न के वास्तविक मार्ग।',
+  'welcome.exampleNotice': 'तीन वास्तविक FRC रोबोट के 2026 सीज़न के वास्तविक मार्ग: 11019, 8814 और 11019 Champs।',
   'welcome.exitExample': 'उदाहरण समाप्त करें',
   'onboarding.play': 'पथ देखने के लिए चलाएं बटन दबाएं, या टाइमलाइन स्क्रब करें।',
   'onboarding.check': "नीचे किसी समस्या को चुनकर उस क्षण पर जाएँ — फिर विकल्पों की तुलना करें: मार्ग बदलें या शुरुआत का समय खिसकाएँ",

@@ -69,7 +69,7 @@ export const it = {
   'welcome.exampleNameA': 'Percorso esempio A',
   'welcome.exampleNameB': 'Percorso esempio B',
   'welcome.exampleBadge': 'Esempio',
-  'welcome.exampleNotice': 'Percorsi reali della stagione 2026 dei team FRC 8814 e 11019.',
+  'welcome.exampleNotice': 'Percorsi reali della stagione 2026 di tre veri robot FRC: 11019, 8814 e 11019 Champs.',
   'welcome.exitExample': 'Termina esempio',
   'onboarding.play': 'Premi Riproduci per vedere i percorsi, o trascina la sequenza temporale.',
   'onboarding.check': "Seleziona un problema qui sotto per saltare a quel momento — poi confronta le alternative: cambia un percorso o sposta una partenza",

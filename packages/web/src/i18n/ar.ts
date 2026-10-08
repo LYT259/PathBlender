@@ -69,7 +69,7 @@ export const ar = {
   'welcome.exampleNameA': 'مسار المثال أ',
   'welcome.exampleNameB': 'مسار المثال ب',
   'welcome.exampleBadge': 'مثال',
-  'welcome.exampleNotice': 'مسارات حقيقية لموسم 2026 من فريقَي FRC 8814 و11019.',
+  'welcome.exampleNotice': 'مسارات حقيقية لموسم 2026 من ثلاثة روبوتات FRC حقيقية: 11019 و8814 و11019 Champs.',
   'welcome.exitExample': 'إنهاء المثال',
   'onboarding.play': 'اضغط تشغيل لرؤية المسارات، أو اسحب الخط الزمني.',
   'onboarding.check': "اختر مشكلة أدناه للانتقال إلى تلك اللحظة — ثم قارن البدائل: غيّر مسارًا أو أزح وقت بدء",

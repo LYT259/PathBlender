@@ -70,7 +70,7 @@ export const nn = {
   'welcome.exampleNameA': 'Dømerute A',
   'welcome.exampleNameB': 'Dømerute B',
   'welcome.exampleBadge': 'Døme',
-  'welcome.exampleNotice': 'Verkelege ruter frå 2026-sesongen til FRC-laga 8814 og 11019.',
+  'welcome.exampleNotice': 'Verkelege ruter frå 2026-sesongen til tre verkelege FRC-robotar: 11019, 8814 og 11019 Champs.',
   'welcome.exitExample': 'Avslutt døme',
   'onboarding.play': 'Trykk Spel for å sjå rutene, eller dra i tidslinja.',
 

@@ -91,7 +91,7 @@ describe('whole-session alliance control', () => {
     Object.defineProperty(file, 'webkitRelativePath', { value: 'autos/straight_run.ghostauto' });
     drop([file]);
     await screen.findByText('#0001', { selector: '.robot-name' });
-    expect(fieldRobots()).toHaveLength(3);
+    expect(fieldRobots()).toHaveLength(4);
     const mine = () => fieldRobots().find((r) => r.trajectory.teamNumber === '0001')!;
     expect(mine().trajectory.alliance).toBe('red');
     expect(mine().trajectory.samples[0]!.x).toBeCloseTo(REBUILT_2026.lengthM - 2, 10);

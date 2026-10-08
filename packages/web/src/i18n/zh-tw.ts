@@ -76,7 +76,7 @@ export const zhTw: Record<MessageKey, string> = {
   'welcome.exampleNameA': '範例路徑 A',
   'welcome.exampleNameB': '範例路徑 B',
   'welcome.exampleBadge': '範例',
-  'welcome.exampleNotice': '真實隊伍 8814 與 11019 的 2026 賽季路線。',
+  'welcome.exampleNotice': '三台真實 FRC 機器人的 2026 賽季路線：11019、8814 與 11019 Champs。',
   'welcome.exitExample': '結束範例',
   'onboarding.play': '點選播放查看路徑，也可以拖曳時間軸。',
   'onboarding.check': "點下面的問題直達那個時刻——再換一條路徑或調整起步時間，對比備選方案",
