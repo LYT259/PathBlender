@@ -252,6 +252,32 @@ describe('playhead-gated route library', () => {
     expect(a).toHaveAttribute('aria-disabled', 'true');
     expect(a!.getAttribute('aria-label')).toContain('position gap 9.96 m');
   });
+  it('pins the 6 in / 5° drivable-chain gate — different-spot starts stay refused', () => {
+    // User decision 2026-10-08: 0.1524 m / 5°. Both refusals below mirror
+    // real library pairs a 0.5 m / 15° gate would have admitted: L2→L12
+    // seams 0.459 m at 0.2°, L13→M2 seams 0.266 m at 11.3°.
+    const shift = (o: ReturnType<typeof fixture>['routeOptions'][number], dx: number, dh: number) => ({
+      ...o,
+      trajectory: {
+        ...o.trajectory,
+        samples: o.trajectory.samples.map((s) => ({ ...s, x: s.x + dx, heading: s.heading + dh })),
+      },
+    });
+    localStorage.setItem('pb.lengthUnit', 'm');
+    const gapped = (dx: number, dh: number) => ({ ...fixture(), routeOptions: fixture().routeOptions.map((o) => o.id === 'b' ? shift(o, dx, dh) : o) });
+    let view = render(<LiveHarness robot={gapped(0.459, 0)} t={5} />);
+    const bOf = () => sources().find((s) => s.getAttribute('aria-label')!.startsWith('B: '))!;
+    expect(bOf()).toHaveAttribute('aria-disabled', 'true');
+    expect(bOf().getAttribute('aria-label')).toContain('position gap 0.46 m');
+    view.unmount();
+    view = render(<LiveHarness robot={gapped(0.03, 11.3 * Math.PI / 180)} t={5} />);
+    expect(bOf()).toHaveAttribute('aria-disabled', 'true');
+    expect(bOf().getAttribute('aria-label')).toContain('heading gap 11.3°');
+    view.unmount();
+    // Just inside the gate (0.15 m < 6 in) the route stays drivable.
+    view = render(<LiveHarness robot={gapped(0.15, 0)} t={5} />);
+    expect(bOf()).not.toHaveAttribute('aria-disabled');
+  });
   it('keeps every route available before the first segment starts', () => {
     const robot = applySequenceSegments(fixture(), [{ id: 'late', routeId: 'a', waitBeforeS: 2 }]);
     render(<LiveHarness robot={robot} t={1} />);
