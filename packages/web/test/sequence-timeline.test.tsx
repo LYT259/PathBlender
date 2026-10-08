@@ -441,6 +441,19 @@ describe('grayed routes still preview; entering edit never pauses; range follows
     expect(document.querySelectorAll('.sequence-clip')).toHaveLength(1);
   });
 
+  it('previews another team\'s placed leg through that team\'s own library', () => {
+    // Editing team one; hovering team two's lane still identifies the route
+    // (user 2026-10-08) — App resolves it through team two's library.
+    const preview = vi.fn();
+    render(<I18nProvider><SequenceTimelineComposer robots={[fixture('one'), fixture('two')]} selectedId="one" onSelect={vi.fn()}
+      autoPeriodS={20} open onClose={vi.fn()} onChange={vi.fn()} onPreviewRoute={preview} onJump={vi.fn()} /></I18nProvider>);
+    const refClip = document.querySelector('.sequence-track:not(.is-editing) .sequence-clip') as HTMLElement;
+    fireEvent.pointerEnter(refClip);
+    expect(preview).toHaveBeenLastCalledWith(expect.any(String), 'two');
+    fireEvent.pointerLeave(refClip);
+    expect(preview).toHaveBeenLastCalledWith(null);
+  });
+
   it('shows the playback-range selector, wired to the shared state', () => {
     const change = vi.fn();
     render(<I18nProvider><SequenceTimelineComposer robots={[fixture()]} selectedId={undefined} onSelect={vi.fn()}

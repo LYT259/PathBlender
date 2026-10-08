@@ -67,10 +67,13 @@ describe('composer hover preview in the real app', () => {
     expect(field().robots).toHaveLength(1);
     fireEvent.blur(clip);
     expect(field()).toEqual(before);
-    // A clip on a reference track (another robot) never previews — the
-    // preview resolves through the selected robot's own library.
+    // A clip on a reference track (another robot) previews through THAT
+    // team's own library (user 2026-10-08) and restores on leave.
     const referenceClip = document.querySelector('.sequence-track:not(.is-editing) .sequence-clip')!;
     fireEvent.pointerEnter(referenceClip);
+    expect(field().robots).toHaveLength(1);
+    expect(field().robots[0].sequence).toBeUndefined();
+    fireEvent.pointerLeave(referenceClip);
     expect(field()).toEqual(before);
   });
   it('closes the more menu on an outside pointer or Escape', async () => {

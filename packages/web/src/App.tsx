@@ -156,6 +156,10 @@ function AppBody() {
   const [initialFieldPref] = useState(loadFieldPref);
   const { robots: sourceRobots, alliance, setRobots, setScene, setComposerOpen, change, composerOpen, fieldId, fieldVariant, fieldStyle, customField, customImageUrl, undo, redo, canUndo, canRedo } = useSessionHistory(initialFieldPref);
   const [previewRouteId, setPreviewRouteId] = useState<string | null>(null);
+  // Which robot's library a hovered route resolves through (user 2026-10-08):
+  // while editing one team, hovering another team's placed leg previews that
+  // team's route. Undefined = the robot being edited (library hover/keys).
+  const [previewRobotId, setPreviewRobotId] = useState<string | undefined>(undefined);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Bumped by Edit ▸ Rename Selected Team — RobotList opens the inline editor.
   const [renameSignal, setRenameSignal] = useState(0);
@@ -330,13 +334,15 @@ function AppBody() {
   const visibleDuration = sessionDuration(visible);
   const [playbackRange, setPlaybackRange] = usePlaybackRange();
   const previewSource = useMemo(() => composerOpen && previewRouteId
-    ? previewRouteFor(sourceRobots.find((robot) => robot.trajectory.id === selectedId) ?? sourceRobots[0], previewRouteId)
-    : undefined, [composerOpen, previewRouteId, sourceRobots, selectedId]);
+    ? previewRouteFor(previewRobotId
+        ? sourceRobots.find((robot) => robot.trajectory.id === previewRobotId)
+        : sourceRobots.find((robot) => robot.trajectory.id === selectedId) ?? sourceRobots[0], previewRouteId)
+    : undefined, [composerOpen, previewRouteId, previewRobotId, sourceRobots, selectedId]);
   const previewTime = useRoutePreviewClock(previewSource);
   const previewRobots = useMemo(() => previewSource
     ? robotsForAlliance([previewSource], alliance, field).map((robot) => withSeasonGeometry(robot, field.year))
     : undefined, [previewSource, alliance, field]);
-  useEffect(() => { setPreviewRouteId(null); }, [composerOpen, selectedId]);
+  useEffect(() => { setPreviewRouteId(null); setPreviewRobotId(undefined); }, [composerOpen, selectedId]);
   // One transport end for BOTH modes (user 2026-10-07): editing used to
   // force the full auto period; the playback-range choice now governs
   // inside the composer too, with a synced selector in its control bar.
@@ -1530,7 +1536,7 @@ function AppBody() {
         </main>
         {/* Playback spans the full workspace, below both side panels. */}
         {hasRobots && !composerOpen && <footer className="app-footer"><Timeline teamOrder={teamOrder} composeAction={<button ref={composeButtonRef} className="btn small" aria-keyshortcuts="e" onClick={() => { const id = (selectedRobot ?? robots[0])?.trajectory.id; if (id) openSequenceFor(id); }}>{tr('sequence.arrange')}</button>} robots={robots} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
-        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={setPreviewRouteId} joins={sequenceJoins} playback={playback} playbackEndS={playbackEndS} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} onJump={jumpToSeam} />}
+        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} startZone={field.startZone} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={(routeId, robotId) => { setPreviewRouteId(routeId); setPreviewRobotId(routeId ? robotId : undefined); }} joins={sequenceJoins} playback={playback} playbackEndS={playbackEndS} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} onJump={jumpToSeam} />}
 
       {cfOpen && <CustomFieldPanel
         open

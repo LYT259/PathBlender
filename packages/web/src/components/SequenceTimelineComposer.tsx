@@ -21,7 +21,9 @@ interface Props {
   onClose: () => void;
   /** Each completed edit commits to the same store used by playback and autosave. */
   onChange: (segments: AutoSequenceSegment[]) => void;
-  onPreviewRoute?: (routeId: string | null) => void;
+  /** Hover/focus route preview: `routeId` resolves through the robot being
+   * edited unless `robotId` names another track's team (2026-10-08). */
+  onPreviewRoute?: (routeId: string | null, robotId?: string) => void;
   joins?: SequenceJoinIssue[];
   playback?: Playback;
   /** Transport end honoring the playback-range choice — shared with the
@@ -370,12 +372,13 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
                   title={`${label}\n${n(clip.startS, 2)}–${n(clip.startS + clip.durationS, 2)} s`}
                   // Hovering a placed leg previews that route on the field
                   // exactly like the library buttons (user 2026-10-07) —
-                  // editing lane only: the preview resolves through the
-                  // selected robot's own library. Keyboard parity via focus.
-                  onPointerEnter={editing ? () => { if (!dragRef.current) onPreviewRoute?.(clip.routeId); } : undefined}
-                  onPointerLeave={editing ? () => { if (!dragRef.current) onPreviewRoute?.(null); } : undefined}
-                  onFocus={editing ? () => { if (!dragRef.current) onPreviewRoute?.(clip.routeId); } : undefined}
-                  onBlur={editing ? () => { if (!dragRef.current) onPreviewRoute?.(null); } : undefined}
+                  // in ANY lane (user 2026-10-08): another team's leg
+                  // resolves through that team's own library. Keyboard
+                  // parity via focus.
+                  onPointerEnter={() => { if (!dragRef.current) onPreviewRoute?.(clip.routeId, id); }}
+                  onPointerLeave={() => { if (!dragRef.current) onPreviewRoute?.(null); }}
+                  onFocus={() => { if (!dragRef.current) onPreviewRoute?.(clip.routeId, id); }}
+                  onBlur={() => { if (!dragRef.current) onPreviewRoute?.(null); }}
                   onClick={(event) => { if (event.detail !== 0 && suppressClick.current) return; if (!editing) switchRobot(id); setSelected({ robotId: id, clipId: clip.id }); setError(null); }}
                   onPointerDown={editing ? (event) => begin(event, 'move', clip) : () => { suppressClick.current = false; }}
                   onContextMenu={editing ? (event) => { event.preventDefault(); setSelected({ robotId: id, clipId: clip.id }); setMenu({ robotId: id, clipId: clip.id, x: event.clientX, y: event.clientY }); } : undefined}
