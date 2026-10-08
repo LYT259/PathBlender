@@ -114,6 +114,27 @@ describe('activeActionsAt — other teams\' vocabularies', () => {
     expect(names(st, 9)).toEqual(['banana', 'wingus']); // both open; slots keep first-open order
   });
 
+  it('counts down to each ending: pair-exact, successor-exact, route end, flash window', () => {
+    const pair = makeSession(route([{ name: 'intake', t: 1 }, { name: 'stop_intake', t: 4.5 }]));
+    expect(activeActionsAt(pair, 2)[0]!.endsAt).toBe(4.5);
+    const successor = makeSession(route([{ name: 'pre_aim', t: 0 }, { name: 'shoot', t: 4.56 }]));
+    expect(activeActionsAt(successor, 1)[0]!.endsAt).toBe(4.56);
+    // Nothing ever closes it — the route's own end (10 s fixture) is the bound.
+    const open = makeSession(route([{ name: 'intake', t: 0 }]));
+    expect(activeActionsAt(open, 2)[0]!.endsAt).toBe(10);
+    const flash = makeSession(route([{ name: 'close_blocker', t: 0 }]));
+    expect(activeActionsAt(flash, 1)[0]!.endsAt).toBe(2);
+    // Unknown words follow the same rule: next same word, else route end.
+    const alien = makeSession(route([{ name: 'banana', t: 0 }, { name: 'banana', t: 6 }]));
+    expect(activeActionsAt(alien, 2)[0]!.endsAt).toBe(6);
+  });
+
+  it('shows nothing at t=0 — the enable instant — even for t=0 markers', () => {
+    const st = makeSession(route([{ name: 'intake', t: 0 }, { name: 'align', t: 0 }]));
+    expect(activeActionsAt(st, 0)).toEqual([]);
+    expect(names(st, 0.001)).toEqual(['intake', 'align']);
+  });
+
   it('returns nothing for unannotated routes at any time', () => {
     const st = makeSession(route([]));
     expect(activeActionsAt(st, 0)).toEqual([]);

@@ -230,7 +230,12 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
     // mechanism groups still open plus one-shot moves inside their flash
     // window (action-words.ts). Empty before anything fires and for
     // unannotated routes — the callout then draws nothing.
-    const actions = activeActionsAt(r, currentT).map((a) => a.name);
+    // Badge text = name + seconds remaining until that action ends
+    // (plan A, 2026-10-08): pairs and successors are exact, open-ended
+    // actions count down to the end of the route, flashes to their window.
+    const actions = activeActionsAt(r, currentT).map(
+      (a) => `${a.name} ${Math.max(0, a.endsAt - currentT).toFixed(1)}s`,
+    );
     const action = actions.length ? actions : null;
     drawRobot(
       ctx,
