@@ -111,7 +111,6 @@ export {
   resolveSequence,
   routeConnectsAfter,
   sampleSequenceState,
-  sequenceEventAt,
   sequenceEventTimes,
 } from './auto-sequence';
 export type {
@@ -134,3 +133,5 @@ export {
   withSeasonGeometry,
 } from './robot-geometry';
 export type { MotionState, RobotVisualGeometry, SeasonRobotProfile } from './robot-geometry';
+export { activeActionsAt, normalizeActionWord } from './action-words';
+export type { ActionWord, ActionKind } from './action-words';

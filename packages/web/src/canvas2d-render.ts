@@ -26,7 +26,7 @@ import {
   robotVisualGeometry,
   samplePoseAt,
   sampleStateAt,
-  sequenceEventAt,
+  activeActionsAt,
 } from '@pathblender/core';
 import { TRAIL_WIDTH_M } from './ground-trail';
 import { bumperColor, heatmapColor, robotAnnotation } from './robot-identity';
@@ -226,10 +226,11 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
       : samplePoseAt(r, currentT);
     const vis = robotVisualGeometry(r.trajectory, field.year);
     const modules = chassisModules(r.trajectory, vis.chassis);
-    // The action this robot is performing right now (latest event at or
-    // before currentT); null before the first marker and for unannotated
-    // routes — the callout then draws nothing.
-    const action = sequenceEventAt(r, currentT);
+    // The actions this robot is performing right now, as a set: sustained
+    // mechanism groups still open plus one-shot moves inside their flash
+    // window (action-words.ts). Empty before anything fires and for
+    // unannotated routes — the callout then draws nothing.
+    const action = activeActionsAt(r, currentT).map((a) => a.name).join(' · ') || null;
     drawRobot(
       ctx,
       sx,
@@ -242,7 +243,7 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
       view.scale,
       inCollisionNow.has(r.trajectory.id),
       outOfBoundsNow.has(r.trajectory.id),
-      action ? action.name : null,
+      action,
       w,
       h,
     );
@@ -467,12 +468,13 @@ function drawRobot(
   }
 
   // Current-action callout (user request 2026-10-08): the same leader-line
-  // language on the diagonal opposite the team number, showing the latest
-  // event marker at or before currentT — per the marker semantics the
-  // timeline dots share, a fired command stays in effect until the next.
-  // Unannotated routes and pre-first-marker times draw nothing at all. The
-  // name renders verbatim in mono (it is the annotation's own identifier,
-  // not UI copy) and in the robot's session color, which distinguishes it
+  // language on the diagonal opposite the team number, showing every action
+  // currently in effect — sustained mechanism groups joined with dots, per
+  // the vocabulary table in core/action-words.ts (pairs resolve to exact
+  // intervals; same-mechanism events replace; one-shot moves flash and
+  // fade). Unannotated routes and pre-first-marker times draw nothing. The
+  // names render verbatim in mono (the annotations' own identifiers, not
+  // UI copy) and in the robot's session color, which distinguishes them
   // from the alliance-colored number badge above.
   if (action) {
     const cos = Math.cos(pose.heading);
