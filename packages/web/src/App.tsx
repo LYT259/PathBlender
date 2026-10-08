@@ -1429,7 +1429,7 @@ function AppBody() {
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
         <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
           {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={openSequenceFor} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} header={
-            hasExample && !tour.dismissed ? <OnboardingTasks done={tour.done} onDismiss={tour.dismiss} /> : !hasExample && hasRobots && showImportTip ? <div className="tour-card tour-import-tip"><UsageTip text={tr('onboarding.import')} onDismiss={dismissImportTip} /></div> : undefined
+            hasExample && !tour.dismissed ? <OnboardingTasks done={tour.done} expanded={tour.expanded} onToggle={tour.toggle} onDismiss={tour.dismiss} /> : !hasExample && hasRobots && showImportTip ? <div className="tour-card tour-import-tip"><UsageTip text={tr('onboarding.import')} onDismiss={dismissImportTip} /></div> : undefined
           } />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
             {hasExample && <div className="example-notice"><strong>{tr('welcome.exampleBadge')}</strong><span>{tr('welcome.exampleNotice')}</span><button className="btn small" onClick={exitExample}>{tr('welcome.exitExample')}</button></div>}

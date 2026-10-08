@@ -12,11 +12,14 @@ import './OnboardingTasks.css';
  * (mirroring #8814 clears its conflict; the alliance switch moves the whole
  * session and changes no verdicts).
  *
- * Progress and dismissal live in localStorage only (plan §3: local, no
- * accounts, no telemetry) and survive reloads; the Help menu can reopen a
- * dismissed card. Completion detection is fed by the app (each action
- * marks its task while the example session is active) — this component
- * never inspects the workspace itself.
+ * Progress, dismissal and the expand choice live in localStorage only
+ * (plan §3: local, no accounts, no telemetry) and survive reloads; the
+ * Help menu can reopen a dismissed card. The card starts collapsed
+ * (user decision 2026-10-08: the example view belongs to the field, the
+ * checklist opens on demand) and a click either way is remembered across
+ * launches. Completion detection is fed by the app (each action marks its
+ * task while the example session is active) — this component never
+ * inspects the workspace itself.
  */
 
 export type TourTaskId = 'play' | 'issue' | 'plan' | 'alliance' | 'mirror';
@@ -29,6 +32,8 @@ const STORE_KEY = 'pb.tour.v1';
 interface TourState {
   dismissed: boolean;
   done: TourDone;
+  /** User's expand choice; false (collapsed) until they open the card. */
+  expanded: boolean;
 }
 
 const emptyDone = (): TourDone => ({ play: false, issue: false, plan: false, alliance: false, mirror: false });
@@ -36,14 +41,15 @@ const emptyDone = (): TourDone => ({ play: false, issue: false, plan: false, all
 function loadTour(): TourState {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (!raw) return { dismissed: false, done: emptyDone() };
+    if (!raw) return { dismissed: false, done: emptyDone(), expanded: false };
     const parsed = JSON.parse(raw) as Partial<TourState>;
     return {
       dismissed: parsed.dismissed === true,
       done: { ...emptyDone(), ...(parsed.done ?? {}) },
+      expanded: parsed.expanded === true,
     };
   } catch {
-    return { dismissed: false, done: emptyDone() };
+    return { dismissed: false, done: emptyDone(), expanded: false };
   }
 }
 
@@ -65,21 +71,31 @@ export function useTourProgress() {
       return next;
     });
   }, []);
-  /** Help-menu reopen: brings a dismissed card back, progress intact. */
+  /** Help-menu reopen: brings a dismissed card back, progress intact — and
+   *  expands it: choosing “reopen the checklist” from a menu is a read-me
+   *  request, not a mere un-hide. */
   const reopen = useCallback(() => {
     setState((prev) => {
-      if (!prev.dismissed) return prev;
-      const next = { ...prev, dismissed: false };
+      if (!prev.dismissed && prev.expanded) return prev;
+      const next = { ...prev, dismissed: false, expanded: true };
       try { localStorage.setItem(STORE_KEY, JSON.stringify(next)); } catch { /* session-only */ }
       return next;
     });
   }, []);
-  return { done: state.done, dismissed: state.dismissed, mark, dismiss, reopen };
+  /** Expand/collapse toggle; the choice persists like the rest of the state. */
+  const toggle = useCallback(() => {
+    setState((prev) => {
+      const next = { ...prev, expanded: !prev.expanded };
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(next)); } catch { /* session-only */ }
+      return next;
+    });
+  }, []);
+  return { done: state.done, dismissed: state.dismissed, expanded: state.expanded, mark, dismiss, reopen, toggle };
 }
 
-export function OnboardingTasks({ done, onDismiss }: { done: TourDone; onDismiss: () => void }) {
+export function OnboardingTasks({ done, expanded, onToggle, onDismiss }: { done: TourDone; expanded: boolean; onToggle: () => void; onDismiss: () => void }) {
   const { t } = useI18n();
-  const [collapsed, setCollapsed] = useState(false);
+  const collapsed = !expanded;
   const completed = TOUR_TASK_IDS.filter((id) => done[id]).length;
   const allDone = completed === TOUR_TASK_IDS.length;
   return <aside className="tour-card" aria-label={t('tour.title')}>
@@ -87,7 +103,7 @@ export function OnboardingTasks({ done, onDismiss }: { done: TourDone; onDismiss
       <span className="tour-name">{t('tour.title')}</span>
       <span className="tour-progress" role="status">{t('tour.progress', { n: completed, m: TOUR_TASK_IDS.length })}</span>
       <button type="button" className="tour-toggle" aria-expanded={!collapsed}
-        aria-label={t(collapsed ? 'tour.expand' : 'tour.collapse')} onClick={() => setCollapsed((v) => !v)}>
+        aria-label={t(collapsed ? 'tour.expand' : 'tour.collapse')} onClick={onToggle}>
         <Icon name="back" size={14} />
       </button>
       <button type="button" className="tour-close" aria-label={t('tour.hide')} title={t('tour.hide')} onClick={onDismiss}>
