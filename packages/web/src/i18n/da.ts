@@ -72,7 +72,6 @@ export const da = {
   'welcome.exitExample': 'Afslut eksempel',
   'onboarding.play': 'Tryk Afspil for at se ruterne, eller træk i tidslinjen.',
   'onboarding.check': "Vælg et problem nedenfor for at springe til det tidspunkt — og sammenlign så alternativer: skift en rute eller flyt en start",
-  'onboarding.import': "Importeret — tjek først det grundlæggende: sæson & bane, kofangerstørrelse, rød/blå",
   'onboarding.dismiss': 'Luk tip',
   "workspace.loading3d": "Indlæser 3D-visning…",
   "workspace.paths": "Ruter",

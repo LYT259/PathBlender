@@ -72,7 +72,6 @@ export const az = {
   'welcome.exitExample': 'Nümunəni bitir',
   'onboarding.play': 'Marşrutları görmək üçün Oynat düyməsinə basın və ya zaman xəttini sürüşdürün.',
   'onboarding.check': "Aşağıdakı problemlərdən birini seçərək həmin ana keçin — sonra alternativləri müqayisə edin: marşrutu dəyişin və ya başlanğıcı sürüşdürün",
-  'onboarding.import': "İdxal edildi — əvvəlcə əsasları yoxlayın: mövsüm və meydan, tənzimləyici ölçüsü, qırmızı/mavi",
   'onboarding.dismiss': 'İpucunu bağla',
   "workspace.loading3d": "3D görünüş yüklənir…",
   "workspace.paths": "Marşrutlar",

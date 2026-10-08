@@ -72,7 +72,6 @@ export const ms = {
   'welcome.exitExample': 'Tamatkan contoh',
   'onboarding.play': 'Tekan Main untuk melihat laluan, atau seret garis masa.',
   'onboarding.check': "Pilih isu di bawah untuk melompat ke saat itu — kemudian bandingkan alternatif: tukar laluan atau anjakkan masa mula",
-  'onboarding.import': "Diimport — semak dahulu asasnya: musim & padang, saiz bumper, merah/biru",
   'onboarding.dismiss': 'Tutup petua',
   "workspace.loading3d": "Memuatkan paparan 3D…",
   "workspace.paths": "Laluan",

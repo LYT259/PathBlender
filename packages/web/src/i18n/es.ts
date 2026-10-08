@@ -79,7 +79,6 @@ export const es: Record<MessageKey, string> = {
   'welcome.exitExample': 'Terminar ejemplo',
   'onboarding.play': 'Pulsa Reproducir para ver las rutas o desplázate por la línea de tiempo.',
   'onboarding.check': "Selecciona un problema para saltar a ese momento — y luego compara alternativas: cambia una ruta o desplaza una salida",
-  'onboarding.import': "Importado — comprueba lo básico: temporada y campo, tamaño del parachoques, rojo/azul",
   'onboarding.dismiss': 'No volver a mostrar',
   "workspace.loading3d": "Cargando vista 3D…",
   "workspace.paths": "Rutas",

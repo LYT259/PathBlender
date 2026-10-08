@@ -72,7 +72,6 @@ export const sr = {
   'welcome.exitExample': 'Završi primer',
   'onboarding.play': 'Pritisnite Reprodukuj da vidite rute ili prevucite vremensku liniju.',
   'onboarding.check': "Izaberite problem ispod da biste skočili na taj trenutak — zatim uporedite alternative: promenite rutu ili pomerite početak",
-  'onboarding.import': "Uvezeno — prvo proverite osnove: sezona i teren, veličina odbojnika, crveno/plavo",
   'onboarding.dismiss': 'Odbaci savet',
   "workspace.loading3d": "Učitavanje 3D prikaza…",
   "workspace.paths": "Rute",

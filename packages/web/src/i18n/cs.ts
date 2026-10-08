@@ -83,7 +83,6 @@ export const cs: Record<MessageKey, string> = {
   'welcome.exitExample': 'Ukončit ukázku',
   'onboarding.play': 'Stiskněte Přehrát pro zobrazení tras, nebo táhněte časovou osu.',
   'onboarding.check': "Vyberte níže problém a přeskočte na ten okamžik — pak porovnejte alternativy: vyměňte trasu nebo posuňte start",
-  'onboarding.import': "Importováno — nejprve zkontrolujte základy: sezónu a hřiště, rozměr nárazníků, červenou/modrou",
   'onboarding.dismiss': 'Zavřít tip',
   "workspace.loading3d": "Načítání 3D zobrazení…",
   "workspace.paths": "Trasy",

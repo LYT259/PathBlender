@@ -79,7 +79,6 @@ export const zhTw: Record<MessageKey, string> = {
   'welcome.exitExample': '結束範例',
   'onboarding.play': '點選播放查看路徑，也可以拖曳時間軸。',
   'onboarding.check': "點下面的問題直達那個時刻——再換一條路徑或調整起步時間，對比備選方案",
-  'onboarding.import': "已匯入——先核對基本設定：賽季與場地、保險桿尺寸、紅/藍聯盟",
   'onboarding.dismiss': '不再提示',
   "workspace.loading3d": "正在載入 3D 檢視…",
   "workspace.paths": "路徑",

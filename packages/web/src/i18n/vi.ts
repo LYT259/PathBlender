@@ -72,7 +72,6 @@ export const vi = {
   'welcome.exitExample': 'Kết thúc ví dụ',
   'onboarding.play': 'Nhấn Phát để xem đường đi, hoặc kéo dòng thời gian.',
   'onboarding.check': "Chọn một vấn đề bên dưới để nhảy đến thời điểm đó — rồi so sánh phương án: đổi một tuyến hoặc dịch một thời điểm xuất phát",
-  'onboarding.import': "Đã nhập — trước hết kiểm tra những điều cơ bản: mùa giải và sân, kích thước chắn, đỏ/xanh",
   'onboarding.dismiss': 'Đóng gợi ý',
   "workspace.loading3d": "Đang tải chế độ xem 3D…",
   "workspace.paths": "Đường đi",

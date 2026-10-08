@@ -74,7 +74,6 @@ export const zh: Record<MessageKey, string> = {
   'welcome.exitExample': '结束示例',
   'onboarding.play': '点击播放查看路径，也可以拖动时间轴。',
   'onboarding.check': "点下面的问题直达那个时刻——再换一条路线或调整起步时间，对比备选方案",
-  'onboarding.import': "已导入——先核对基础设置：赛季与场地、保险杠尺寸、红/蓝联盟",
   'onboarding.dismiss': '不再提示',
   "workspace.loading3d": "正在加载 3D 视图…",
   "workspace.paths": "路径",

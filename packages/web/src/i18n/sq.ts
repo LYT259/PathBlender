@@ -72,7 +72,6 @@ export const sq = {
   'welcome.exitExample': 'Përfundoni shembullin',
   'onboarding.play': 'Shtypni Luaj për të parë rrugët ose tërhiqni vijën kohore.',
 
-  'onboarding.import': "Importuar — kontrollo së pari bazat: sezoni dhe fusha, madhësia e paraqitësve, kuq/blu",
   'onboarding.check': 'Zgjidhni një problem më poshtë për të kaluar në atë moment — pastaj krahasoni alternativat: ndërroni një rrugë ose zhvendosni një kohë nisjeje.',
   'onboarding.dismiss': 'Mbyllni këshillën',
   "workspace.loading3d": "Po ngarkohet pamja 3D…",

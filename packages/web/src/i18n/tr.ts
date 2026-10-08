@@ -78,7 +78,6 @@ export const tr: Record<MessageKey, string> = {
   'welcome.exitExample': 'Örneği bitir',
   'onboarding.play': 'Yolları görmek için Oynat’a basın veya zaman çizelgesinde ilerleyin.',
   'onboarding.check': "Aşağıdan bir soru seçerek o ana atlayın — sonra alternatifleri karşılaştırın: bir rotayı değiştirin veya bir başlangıcı kaydırın",
-  'onboarding.import': "İçe aktarıldı — önce temelleri kontrol edin: sezon ve saha, tampon boyutu, kırmızı/mavi",
   'onboarding.dismiss': 'Bir daha gösterme',
   "workspace.loading3d": "3B görünüm yükleniyor…",
   "workspace.paths": "Yollar",

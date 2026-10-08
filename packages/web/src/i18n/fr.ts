@@ -80,7 +80,6 @@ export const fr: Record<MessageKey, string> = {
   'welcome.exitExample': 'Terminer l’exemple',
   'onboarding.play': 'Lancez la lecture pour voir les parcours ou déplacez le curseur sur la frise chronologique.',
   'onboarding.check': "Sélectionnez un problème ci-dessous pour sauter à ce moment — puis comparez des alternatives : changez de parcours ou décalez un départ",
-  'onboarding.import': "Importé — vérifiez d’abord les bases : saison et terrain, taille des pare-chocs, rouge/bleu",
   'onboarding.dismiss': 'Ne plus afficher',
   "workspace.loading3d": "Chargement de la vue 3D…",
   "workspace.paths": "Parcours",

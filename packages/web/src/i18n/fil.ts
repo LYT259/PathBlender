@@ -72,7 +72,6 @@ export const fil = {
   'welcome.exitExample': 'Tapusin ang halimbawa',
   'onboarding.play': 'Pindutin ang I-play para makita ang mga path, o i-scrub ang timeline.',
   'onboarding.check': "Pumili ng isang isyu sa ibaba para tumalon sa sandaling iyon — pagkatapos ay ihambing ang mga alternatibo: magpalit ng ruta o igalaw ang simula",
-  'onboarding.import': "Na-import na — tingnan muna ang mga pangunahin: season at field, laki ng bumper, pula/asul",
   'onboarding.dismiss': 'Isara ang tip',
   "workspace.loading3d": "Kine-load ang 3D view…",
   "workspace.paths": "Mga path",

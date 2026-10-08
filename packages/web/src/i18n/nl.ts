@@ -83,7 +83,6 @@ export const nl: Record<MessageKey, string> = {
   'welcome.exitExample': 'Voorbeeld beëindigen',
   'onboarding.play': 'Druk op Afspelen om de routes te zien, of sleep over de tijdlijn.',
   'onboarding.check': "Kies hieronder een probleem om naar dat moment te springen — en vergelijk daarna alternatieven: wissel een route of verschuif een start",
-  'onboarding.import': "Geïmporteerd — controleer eerst de basis: seizoen & veld, bumpermaat, rood/blauw",
   'onboarding.dismiss': 'Tip sluiten',
   "workspace.loading3d": "3D-weergave laden…",
   "workspace.paths": "Routes",

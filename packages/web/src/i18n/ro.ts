@@ -72,7 +72,6 @@ export const ro = {
   'welcome.exitExample': 'Termină exemplul',
   'onboarding.play': 'Apasă Redă pentru a vedea rutele sau trage linia de timp.',
 
-  'onboarding.import': "Importat — verifică întâi elementele de bază: sezonul și terenul, dimensiunea barelor, roșu/albastru",
   'onboarding.check': 'Selectează o problemă de mai jos pentru a sări la acel moment — apoi compară alternative: schimbă o rută sau mută un timp de start.',
   'onboarding.dismiss': 'Ascunde indiciul',
   "workspace.loading3d": "Se încarcă vizualizarea 3D…",

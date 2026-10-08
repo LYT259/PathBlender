@@ -72,7 +72,6 @@ export const nb = {
   'welcome.exitExample': 'Avslutt eksempel',
   'onboarding.play': 'Trykk Spill for å se rutene, eller dra i tidslinjen.',
   'onboarding.check': "Velg et problem nedenfor for å hoppe til det øyeblikket — og sammenlign så alternativer: bytt en rute eller flytt en start",
-  'onboarding.import': "Importert — sjekk det grunnleggende først: sesong og bane, kollisjonsbeskytters størrelse, rød/blå",
   'onboarding.dismiss': 'Lukk tips',
   "workspace.loading3d": "Laster 3D-visning…",
   "workspace.paths": "Ruter",

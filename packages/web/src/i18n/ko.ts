@@ -84,7 +84,6 @@ export const ko: Record<MessageKey, string> = {
   'welcome.exitExample': '예제 종료',
   'onboarding.play': '재생을 눌러 경로를 보거나 타임라인을 드래그하세요.',
   'onboarding.check': "아래 문제를 클릭하면 그 순간으로 이동합니다 — 이후 다른 경로나 시작 시각을 바꿔 대안을 비교해 보세요",
-  'onboarding.import': "가져왔습니다 — 먼저 기본 설정을 확인하세요: 시즌과 필드, 범퍼 크기, 레드/블루",
   'onboarding.dismiss': '팁 닫기',
   'workspace.loading3d': '3D 뷰 로드 중…',
   'workspace.paths': '경로',

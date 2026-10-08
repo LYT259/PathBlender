@@ -72,7 +72,6 @@ export const sv = {
   'welcome.exitExample': 'Avsluta exempel',
   'onboarding.play': 'Tryck Spela för att se rutterna, eller dra i tidslinjen.',
   'onboarding.check': "Välj ett problem nedan för att hoppa till det ögonblicket — jämför sedan alternativ: byt en ruta eller förskjut en start",
-  'onboarding.import': "Importerat — kontrollera grunderna först: säsong & plan, stötfångarstorlek, röd/blå",
   'onboarding.dismiss': 'Stäng tipset',
   "workspace.loading3d": "Laddar 3D-vy…",
   "workspace.paths": "Rutter",

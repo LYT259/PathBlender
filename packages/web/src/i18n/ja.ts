@@ -84,7 +84,6 @@ export const ja: Record<MessageKey, string> = {
   'welcome.exitExample': 'サンプルを終了',
   'onboarding.play': '「再生」を押してパスを見るか、タイムラインをスクラブしてください。',
   'onboarding.check': "下の問題をクリックするとその瞬間へジャンプ——その後、別のルートや開始時刻を変えて代替案を比べてみましょう",
-  'onboarding.import': "インポート完了——まず基本設定を確認：シーズンとフィールド、バンパーサイズ、レッド/ブルー",
   'onboarding.dismiss': 'ヒントを閉じる',
   "workspace.loading3d": "3D ビューを読み込んでいます…",
   "workspace.paths": "パス",

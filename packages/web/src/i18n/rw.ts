@@ -72,7 +72,6 @@ export const rw = {
   'welcome.exitExample': "Rangiza urugero",
   'onboarding.play': "Kanda Gukina kugira ngo urebe inzira, cyangwa ukurure umurongo w’ibihe.",
   'onboarding.check': "Hitamo ikibazo munsi kugira ngo uhite uge ku cyo gihe — hanyuma gereranya ubundi buryo: hindura inzira cyangwa uhindure itangira",
-  'onboarding.import': "Byinjijijwe — rebaho iby’ibanze mbere: igihembwe n’umurima, ingano ya bumper, umutuku/ubururu",
   'onboarding.dismiss': "Funga inama",
   "workspace.loading3d": "Umiza ukureba kwa 3D…",
   "workspace.paths": "Inzira",

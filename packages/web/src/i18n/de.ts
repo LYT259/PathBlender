@@ -72,7 +72,6 @@ export const de = {
   'welcome.exitExample': 'Beispiel beenden',
   'onboarding.play': 'Drücken Sie Abspielen, um die Pfade zu sehen, oder ziehen Sie die Zeitleiste.',
   'onboarding.check': "Wähle unten ein Problem, um zu dem Moment zu springen — vergleiche dann Alternativen: andere Route oder verschobener Start",
-  'onboarding.import': "Importiert — prüfe zuerst die Grundlagen: Saison & Feld, Stoßstangengröße, Rot/Blau",
   'onboarding.dismiss': 'Hinweis schließen',
   "workspace.loading3d": "3D-Ansicht wird geladen…",
   "workspace.paths": "Pfade",

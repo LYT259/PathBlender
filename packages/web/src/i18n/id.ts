@@ -72,7 +72,6 @@ export const id = {
   'welcome.exitExample': 'Akhiri contoh',
   'onboarding.play': 'Tekan Putar untuk melihat jalur, atau geser linimasa.',
   'onboarding.check': "Pilih masalah di bawah untuk melompat ke saat itu — lalu bandingkan alternatif: ganti rute atau geser waktu mulai",
-  'onboarding.import': "Terimpor — periksa dulu dasarnya: musim & lapangan, ukuran bumper, merah/biru",
   'onboarding.dismiss': 'Tutup tip',
   "workspace.loading3d": "Memuat tampilan 3D…",
   "workspace.paths": "Jalur",

@@ -88,7 +88,6 @@ export const he: Record<MessageKey, string> = {
   'welcome.exitExample': 'סיום הדוגמה',
   'onboarding.play': 'לחצו על נגן כדי לראות את המסלולים, או גררו את ציר הזמן.',
   'onboarding.check': "בחרו בעיה למטה כדי לקפוץ לרגע הזה — ואז השוו חלופות: החליפו מסלול או הזיזו זמן התחלה",
-  'onboarding.import': "יובא — בדקו קודם את הבסיס: עונה ומגרש, גודל פגושים, אדום/כחול",
   'onboarding.dismiss': 'סגירת הטיפ',
   'workspace.loading3d': 'טוען תצוגת 3D…',
   'workspace.paths': 'מסלולים',

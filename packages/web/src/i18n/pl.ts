@@ -83,7 +83,6 @@ export const pl: Record<MessageKey, string> = {
   'welcome.exitExample': 'Zakończ przykład',
   'onboarding.play': 'Naciśnij Odtwórz, aby zobaczyć trasy, albo przeciągnij po osi czasu.',
   'onboarding.check': "Wybierz problem poniżej, aby przeskoczyć do tego momentu — a potem porównaj alternatywy: zmień trasę lub przesuń start",
-  'onboarding.import': "Zaimportowano — sprawdź najpierw podstawy: sezon i boisko, rozmiar zderzaków, czerwień/niebieski",
   'onboarding.dismiss': 'Ukryj wskazówkę',
   'workspace.loading3d': 'Wczytywanie widoku 3D…',
   'workspace.paths': 'Trasy',

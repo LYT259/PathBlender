@@ -72,7 +72,6 @@ export const it = {
   'welcome.exitExample': 'Termina esempio',
   'onboarding.play': 'Premi Riproduci per vedere i percorsi, o trascina la sequenza temporale.',
   'onboarding.check': "Seleziona un problema qui sotto per saltare a quel momento — poi confronta le alternative: cambia un percorso o sposta una partenza",
-  'onboarding.import': "Importato — controlla prima le basi: stagione e campo, dimensione del paraurti, rosso/blu",
   'onboarding.dismiss': 'Chiudi suggerimento',
   "workspace.loading3d": "Caricamento vista 3D…",
   "workspace.paths": "Percorsi",

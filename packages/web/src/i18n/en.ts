@@ -42,7 +42,6 @@ export const en = {
   'welcome.exitExample': 'End example',
   'onboarding.play': 'Press Play to see the paths, or scrub the timeline.',
   'onboarding.check': "Select an issue below to jump to that moment — then compare alternatives: swap a route or shift a start time",
-  'onboarding.import': "Imported — check the basics first: season & field, bumper size, red/blue alliance",
   'onboarding.dismiss': 'Dismiss tip',
   "workspace.loading3d": "Loading 3D view…",
   "workspace.paths": "Paths",

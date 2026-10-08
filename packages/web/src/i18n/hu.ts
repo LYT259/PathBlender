@@ -72,7 +72,6 @@ export const hu = {
   'welcome.exitExample': 'Példa befejezése',
   'onboarding.play': 'Nyomd meg a Lejátszás gombot az útvonalak megtekintéséhez, vagy húzd az idővonalat.',
   'onboarding.check': "Válassz az alábbi problémák közül, hogy odaugorj arra a pillanatra — majd hasonlítsd össze a alternatívákat: cserélj útvonalat vagy tolj el egy kezdetet",
-  'onboarding.import': "Importálva — ellenőrizd először az alapokat: szezon és pálya, lökhárító mérete, piros/kék",
   'onboarding.dismiss': 'Tipp elvetése',
   "workspace.loading3d": "3D nézet betöltése…",
   "workspace.paths": "Útvonalak",
