@@ -416,3 +416,100 @@ describe('2D robot bumper and team-number callout', () => {
     expect(canvas.height).toBe(480);
   });
 });
+
+describe('current-action callout', () => {
+  /** robot() + trajectory event markers, so the fixture stays one source. */
+  function annotatedRobot(events: { name: string; t: number }[], x = 2): SessionTrajectory {
+    const r = robot(x);
+    r.trajectory.events = events;
+    return r;
+  }
+
+  /** The action badge is the SECOND leader/dot/badge of the frame — the
+   *  team number draws first, so take the second pattern match. */
+  function actionLeaderIndex() {
+    const idxs = calls.flatMap((c, i) =>
+      c.name === 'moveTo' && calls[i + 1]?.name === 'lineTo' && calls[i + 2]?.name === 'stroke' ? [i] : []);
+    expect(idxs.length).toBeGreaterThanOrEqual(2);
+    return idxs[1]!;
+  }
+
+  function actionArcIndex() {
+    const arcs = calls.map((c, i) => ({ c, i })).filter(({ c }) => c.name === 'arc');
+    expect(arcs.length).toBeGreaterThanOrEqual(2);
+    return arcs[1]!.i;
+  }
+
+  it('draws nothing for robots without annotations', () => {
+    paint([robot(2)], { currentT: 1 });
+    expect(calls.filter((c) => c.name === 'arc')).toHaveLength(1); // number dot only
+    expect(calls.filter((c) => c.name === 'roundRect')).toHaveLength(1);
+  });
+
+  it('draws nothing before the first marker fires', () => {
+    paint([annotatedRobot([{ name: 'intake', t: 0.5 }])], { currentT: 0.49 });
+    expect(calls.filter((c) => c.name === 'arc')).toHaveLength(1);
+  });
+
+  it('badges the fired action down-left, mirrored from the number badge', () => {
+    // Same scene math as the number test: robot at screen (100,120), reach
+    // 25.1433 px, 45° offset (reach+20)/√2 ≈ 31.9221. Number goes up-right;
+    // the action badge takes the opposite diagonal — down-left, leader to
+    // the badge's right edge. Mock metrics: 'intake' = 6×8 px + 12 padding
+    // → labelW 60, so bx = 100−31.9221−60 = 8.078 → snapped 8; by = 120 +
+    // 31.9221−11 → snapped 141; glyphs at (14, 152).
+    paint([annotatedRobot([{ name: 'intake', t: 0.5 }])], { currentT: 0.5 });
+    const ai = actionArcIndex();
+    expectArgs(calls[ai]!, [100, 120, 3, 0, Math.PI * 2]);
+    expect(calls[ai + 2]!.style.fillStyle).toBe('#00E5FF'); // session color
+    // Leader: (100,120) → badge right edge (68,152).
+    const li = actionLeaderIndex();
+    expect(li).toBeLessThan(ai);
+    expectArgs(calls[li]!, [100, 120]);
+    expectArgs(calls[li + 1]!, [68, 152]);
+    // Badge plate: second roundRect, mono text in the session color.
+    const rects = calls.filter((c) => c.name === 'roundRect');
+    expect(rects).toHaveLength(2);
+    expectArgs(rects[1]!, [8, 141, 60, 22, 5]);
+    const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === 'intake');
+    expect(texts).toHaveLength(1);
+    expect(texts[0]!.args[1]).toBe(14);
+    expect(texts[0]!.args[2]).toBe(152);
+    expect(texts[0]!.style.fillStyle).toBe('#00E5FF');
+  });
+
+  it('follows the latest fired marker as playback advances', () => {
+    const robot0 = annotatedRobot([{ name: 'intake', t: 0.3 }, { name: 'shoot', t: 0.7 }]);
+    const ui = render(makeScene([robot0], 0.4));
+    sizeWrap();
+    runFrames();
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'intake')).toBe(true);
+    calls = [];
+    ui.rerender(makeScene([robot0], 0.8));
+    runFrames();
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'shoot')).toBe(true);
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'intake')).toBe(false);
+  });
+
+  it('mirrors to down-right when the number badge flipped up-left', () => {
+    // Robot near the right edge: the number takes up-left, so the action
+    // badge takes the down-right diagonal (cx = 380, same offset).
+    paint([annotatedRobot([{ name: 'shoot', t: 0 }], 9)], { currentT: 0.5 });
+    const rects = calls.filter((c) => c.name === 'roundRect');
+    expectArgs(rects[0]!, [294, 76, 54, 24, 6]); // number, up-left
+    // 'shoot' = 5×8 px + 12 → labelW 52; dir = +1 → target 411.92 clamps
+    // inside the 6 px margin to 440−6−52 = 382.
+    expectArgs(rects[1]!, [382, 141, 52, 22, 5]);
+    const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === 'shoot');
+    expect(texts[0]!.args[1]).toBe(388);
+    expect(texts[0]!.args[2]).toBe(152);
+  });
+
+  it('shows the action even when the robot has no team number', () => {
+    const anon = annotatedRobot([{ name: 'pass', t: 0 }]);
+    anon.trajectory.teamNumber = '';
+    paint([anon], { currentT: 0.5 });
+    expect(calls.filter((c) => c.name === 'fillText' && c.args[0] === 'pass')).toHaveLength(1);
+    expect(calls.filter((c) => c.name === 'arc')).toHaveLength(1);
+  });
+});
