@@ -33,12 +33,6 @@ export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryEx
           <img className="start-brand-icon" src={resolved === 'dark' ? nightIcon : dayIcon} alt="" width="136" height="136" draggable={false} />
           <h1>PathBlender</h1>
         </header>
-        {/* What this is for, before the buttons (onboarding plan §1): a first-time
-            visitor should be able to tell what the app does without importing. */}
-        <div className="start-pitch">
-          <p className="start-tagline">{t('welcome.tagline')}</p>
-          <p className="start-audience">{t('welcome.audience')}</p>
-        </div>
         <div className="start-imports">
           <button type="button" className="start-action start-action-primary welcome-import" onClick={onImport} aria-label={t('welcome.importFile')} aria-description={t('welcome.importFileHint')}>
             <WelcomeIcon name="file" />

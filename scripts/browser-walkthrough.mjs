@@ -92,13 +92,10 @@ check(
   (await page.locator('.workspace-empty .welcome-import').count()) === 1 &&
     (await page.locator('.workspace-empty .welcome-folder-import').count()) === 1,
 );
-// --- Quick guide (2026-10-07 onboarding plan): the welcome screen states the
-// purpose and offers the in-app guide; opening it shows the topic body and
-// Escape closes it back to the welcome screen. ---
-check(
-  'welcome states what the app is for',
-  (await page.locator('.start-tagline').count()) === 1 && (await page.locator('.start-tagline').textContent() ?? '').length > 10,
-);
+// --- Quick guide (2026-10-07 onboarding plan): the welcome screen offers the
+// in-app guide; opening it shows the topic body and Escape closes it back to
+// the welcome screen. (The purpose pitch that used to sit here was removed on
+// user request — the welcome screen stays copy-light.) ---
 await page.locator('.start-guide-link').click();
 await page.waitForSelector('.guide-dialog');
 check(
