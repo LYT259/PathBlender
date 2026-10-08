@@ -462,9 +462,10 @@ describe('current-action callout', () => {
     const ai = actionArcIndex();
     expectArgs(calls[ai]!, [100, 120, 3, 0, Math.PI * 2]);
     expect(calls[ai + 2]!.style.fillStyle).toBe('#00E5FF'); // session color
-    // Leader: (100,120) → badge right edge (68,152).
+    // Shared anchor dot draws first, then the leader: (100,120) → badge
+    // right edge (68,152).
     const li = actionLeaderIndex();
-    expect(li).toBeLessThan(ai);
+    expect(li).toBeGreaterThan(ai);
     expectArgs(calls[li]!, [100, 120]);
     expectArgs(calls[li + 1]!, [68, 152]);
     // Badge plate: second roundRect, mono text in the session color.
@@ -491,17 +492,32 @@ describe('current-action callout', () => {
     expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'pre_aim')).toBe(false);
   });
 
-  it('joins simultaneous actions from different mechanisms on one badge', () => {
-    // Machine-2 L1 shape: intake + pass + align all fire at t=0 and coexist.
-    // Mock metrics: 'intake · pass · align' = 21 chars × 8 px + 12 padding →
-    // labelW 180, clamped to the 6 px margin at dir −1.
+  it('draws one stacked badge per simultaneous action, each on its own leader', () => {
+    // Machine-2 L1 shape: intake + pass + align all fire at t=0 and coexist
+    // — user layout (2026-10-08): separate boxes fanning from one anchor,
+    // NOT a single joined label. Mock metrics 8 px/char + 12 padding:
+    // intake 60 / pass 44 / align 52 wide, stacked 22+4 apart from y 141;
+    // every right edge lands at x 68 (= 100 − 31.92 − w + w).
     paint([annotatedRobot([{ name: 'intake', t: 0 }, { name: 'pass', t: 0 }, { name: 'align', t: 0 }])], { currentT: 2 });
-    const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === 'intake · pass · align');
-    expect(texts).toHaveLength(1);
-    expect(texts[0]!.style.fillStyle).toBe('#00E5FF');
     const rects = calls.filter((c) => c.name === 'roundRect');
-    expect(rects).toHaveLength(2);
-    expectArgs(rects[1]!, [6, 141, 180, 22, 5]);
+    expect(rects).toHaveLength(4); // number + three action badges
+    expectArgs(rects[1]!, [8, 141, 60, 22, 5]);
+    expectArgs(rects[2]!, [24, 167, 44, 22, 5]);
+    expectArgs(rects[3]!, [16, 193, 52, 22, 5]);
+    for (const [name, x, y] of [['intake', 14, 152], ['pass', 30, 178], ['align', 22, 204]] as const) {
+      const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === name);
+      expect(texts, name).toHaveLength(1);
+      expect(texts[0]!.args[1]).toBe(x);
+      expect(texts[0]!.args[2]).toBe(y);
+      expect(texts[0]!.style.fillStyle).toBe('#00E5FF');
+    }
+    // Three leaders fan from the shared anchor (100,120) to each badge's
+    // right-edge middle — one per action, never crossing a badge above.
+    const leaders = calls.flatMap((c, i) =>
+      c.name === 'moveTo' && calls[i + 1]?.name === 'lineTo' && calls[i + 2]?.name === 'stroke' ? [i] : []);
+    expect(leaders).toHaveLength(4); // number leader + three action leaders
+    const fanEnds = calls.filter((c) => c.name === 'lineTo' && c.args[1] === 152 || c.name === 'lineTo' && c.args[1] === 178 || c.name === 'lineTo' && c.args[1] === 204);
+    expect(fanEnds.map((c) => c.args)).toEqual([[68, 152], [68, 178], [68, 204]]);
   });
 
   it('mirrors to down-right when the number badge flipped up-left', () => {
