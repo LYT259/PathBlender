@@ -46,6 +46,7 @@ import { uk } from './uk';
 import { vi } from './vi';
 import { zh } from './zh';
 import { zhHk } from './zh-hk';
+import { zhTw } from './zh-tw';
 
 export type Lang =
   | 'en' | 'ar' | 'az' | 'bg' | 'bs' | 'cs' | 'da' | 'de' | 'el' | 'es'
@@ -155,6 +156,18 @@ export const LANGUAGES: readonly LangChoice[] = [
     return ka < kb ? -1 : ka > kb ? 1 : 0;
   }),
 ];
+
+/**
+ * Every localized "Follow system" label plus the bare word "system" — the
+ * searchable aliases for the pinned mode row (language-search.ts). Both
+ * scripts of Chinese are in here via their own dictionaries (跟随系统,
+ * 跟隨系統), so either matches.
+ */
+export const SYSTEM_LABELS: readonly string[] = [...new Set([
+  ...Object.values(DICTS).map((dict) => dict['prefs.langSystem']),
+  zhTw['prefs.langSystem'],
+  'system',
+])];
 
 /**
  * Browser tags → app language, first tag that matches any supported language

@@ -285,7 +285,13 @@ describe('shared desktop preferences', () => {
   it('retains appearance drafts across sections and applies only on Save', async () => {
     await renderPreferences();
     fireEvent.click(within(screen.getByRole('group', { name: 'Theme', exact: true })).getByRole('radio', { name: 'Dark', exact: true }));
-    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'zh' } });
+    // Language drafts through the searchable picker: open, narrow to the one
+    // row, pick it — the choice is a draft until Save like every setting.
+    fireEvent.click(screen.getByRole('button', { name: /Language/ }));
+    const search = await screen.findByRole('combobox', { name: 'Search languages' });
+    fireEvent.change(search, { target: { value: '简体中文' } });
+    const row = await screen.findByRole('option', { name: /简体中文/ });
+    fireEvent.click(row);
     const general = screen.getByRole('tab', { name: 'General' });
     general.focus();
     fireEvent.keyDown(general, { key: 'End' });
@@ -294,7 +300,7 @@ describe('shared desktop preferences', () => {
     expect(localStorage.getItem('pb.theme')).toBeNull();
     fireEvent.keyDown(screen.getByRole('tab', { name: 'About' }), { key: 'Home' });
     expect(within(screen.getByRole('group', { name: 'Theme', exact: true })).getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
-    expect(screen.getByRole('combobox', { name: 'Language' })).toHaveValue('zh');
+    expect(screen.getByRole('button', { name: /Language/ })).toHaveTextContent('简体中文');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(localStorage.getItem('pb.theme')).toBe('dark'));
     expect(localStorage.getItem('pb.lang')).toBe('zh');
