@@ -23,7 +23,7 @@
  * and stopIntake all behave identically.
  */
 
-import type { SessionTrajectory } from './session';
+import { activeEndT, type SessionTrajectory } from './session';
 import { sequenceEventTimes } from './auto-sequence';
 
 /** Display lifetime of a marker name. */
@@ -76,13 +76,31 @@ export function normalizeActionWord(name: string): string {
 
 const FLOOR_FLASH_S = 1;
 
+export interface ActiveAction {
+  name: string;
+  /** Global-clock time the action fired. */
+  t: number;
+  /**
+   * Global-clock time the action ends: the next same-group event (an
+   * end-word or a replacement — exact, from the file), the end of the
+   * route for actions nothing ever closes (plan A, 2026-10-08: the auto's
+   * own end is the honest bound), or the flash window for one-shot moves.
+   */
+  endsAt: number;
+}
+
 /**
  * The actions this robot is performing at global time t, as a set: every
  * sustained group still open (started at or before t, not yet ended or
- * replaced) plus one-shot moves still inside their flash window. Names
- * come back verbatim from the markers; empty before anything fires.
+ * replaced) plus one-shot moves still inside their flash window, each with
+ * the seconds it has left. Names come back verbatim from the markers;
+ * empty before anything fires.
  */
-export function activeActionsAt(st: SessionTrajectory, t: number): { name: string; t: number }[] {
+export function activeActionsAt(st: SessionTrajectory, t: number): ActiveAction[] {
+  // t=0 is the enable instant — nothing can have happened yet, so the
+  // callout stays empty there even for t=0 markers (user request
+  // 2026-10-08); they appear the moment playback moves past zero.
+  if (t <= 0) return [];
   const events = [...sequenceEventTimes(st)].sort((a, b) => a.t - b.t);
   const groups = new Map<string, { name: string; t: number }>();
   const flashes: { name: string; t: number; until: number }[] = [];
@@ -102,11 +120,26 @@ export function activeActionsAt(st: SessionTrajectory, t: number): { name: strin
       flashes.push({ name: event.name, t: event.t, until: event.t + Math.max(word.flashS ?? FLOOR_FLASH_S, FLOOR_FLASH_S) });
     }
   }
+  // When does each open group end? The first same-group event still in
+  // the future (an end-word or a replacement — both carry the group), or
+  // the end of the route when nothing ever closes it.
+  const endsByKey = new Map<string, number>();
+  for (const event of events) {
+    if (event.t <= t + 1e-9) continue;
+    const word = ACTION_WORDS[normalizeActionWord(event.name)];
+    const key = word ? word.group : `word:${normalizeActionWord(event.name)}`;
+    if (!endsByKey.has(key)) endsByKey.set(key, event.t);
+  }
+  const routeEnd = activeEndT(st);
   // Slot order = first-open order (a replacing event keeps its group's
   // slot), flashes append in fire order — the badge never reorders mid-play.
-  const out = [...groups.values()];
+  const out: ActiveAction[] = [...groups.entries()].map(([key, event]) => ({
+    name: event.name,
+    t: event.t,
+    endsAt: endsByKey.get(key) ?? routeEnd,
+  }));
   for (const flash of flashes) {
-    if (t <= flash.until + 1e-9) out.push({ name: flash.name, t: flash.t });
+    if (t <= flash.until + 1e-9) out.push({ name: flash.name, t: flash.t, endsAt: flash.until });
   }
   return out;
 }
