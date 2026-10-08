@@ -222,6 +222,38 @@ describe('bounded timing and live gap arithmetic', () => {
 describe('playhead-gated route library', () => {
   const sources = () => [...document.querySelectorAll('.sequence-route-source')] as HTMLButtonElement[];
   const labels = () => sources().map((b) => b.getAttribute('aria-label')!.split(':')[0]);
+  it('gates the FIRST leg by the ALLIANCE ZONE when the season defines one', () => {
+    // Empty arrangement + 2026 zone (4.0284 m from the wall): A starts at
+    // x=2 (inside), B/C start at the far end of the translated chain —
+    // gray, with the zone reason, and un-addable (user 2026-10-08).
+    const empty = applySequenceSegments(fixture(), []);
+    localStorage.setItem('pb.lengthUnit', 'm');
+    render(<I18nProvider><SequenceTimelineComposer robots={[empty]} selectedId={empty.trajectory.id} onSelect={vi.fn()}
+      autoPeriodS={20} allianceStartZoneM={4.0284} fieldLengthM={16.54} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
+    expect(labels()).toEqual(['A', 'B', 'C']);
+    const [a, b] = sources();
+    expect(a).not.toHaveAttribute('aria-disabled');
+    expect(b).toHaveAttribute('aria-disabled', 'true');
+    expect(b!.getAttribute('aria-label')).toContain('Alliance Zone');
+    const commit = vi.fn();
+    // The grayed route refuses both gestures (drag: nothing lands).
+    drag(b!, 20, 500, 30);
+    expect(commit).not.toHaveBeenCalled();
+    expect(document.querySelectorAll('.sequence-clip')).toHaveLength(0);
+  });
+  it('hands the first-leg gate back to continuity once a leg exists', () => {
+    // Same zone, but A is placed (0–4 s) and the playhead sits past it:
+    // B (chained to A) is offered again — the zone only governs leg #1.
+    const placed = applySequenceSegments(fixture(), [{ id: 's1', routeId: 'a', waitBeforeS: 0 }]);
+    localStorage.setItem('pb.lengthUnit', 'm');
+    render(<I18nProvider><SequenceTimelineComposer robots={[placed]} selectedId={placed.trajectory.id} onSelect={vi.fn()}
+      autoPeriodS={20} allianceStartZoneM={4.0284} fieldLengthM={16.54} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()}
+      playback={{ t: 5, setT: vi.fn(), playing: false, setPlaying: vi.fn(), speed: 1, setSpeed: vi.fn() }} /></I18nProvider>);
+    const [b, a] = sources();
+    expect(labels()).toEqual(['B', 'A', 'C']);
+    expect(b).not.toHaveAttribute('aria-disabled');
+    expect(a).toHaveAttribute('aria-disabled', 'true');
+  });
   it('grays, disables and demotes routes that do not continue the playhead segment', () => {
     // Playhead past A (0–4 s): B starts at A's end and stays draggable; A
     // itself (and anything starting elsewhere) is disabled, explains its

@@ -89,6 +89,17 @@ export interface FieldPackage {
   /** AndyMark-built-field tag layout, when it differs from the default
    *  (welded) set — the 2D overlay and 3D beacons follow the selection. */
   aprilTagsAndyMark?: AprilTag[];
+  /** Depth of each ALLIANCE ZONE from its alliance wall, meters, full field
+   *  width — the season's legal auto starting region, when the game defines
+   *  one. 2026 REBUILT (composer grays first legs starting elsewhere, user
+   *  request 2026-10-08): the game manual (§5 FIELD definitions, p. 21)
+   *  sizes the zone 158.6 in deep × 317.7 in long (~4.03 m × 8.07 m = full
+   *  field width), bounded by and including the ROBOT STARTING LINE.
+   *  Cross-checked against the WPILib tag layout: blue wall tags sit at
+   *  x≈0.008, the line lands at x=4.0284 in front of the trench tags
+   *  (x≈4.59–4.66), and the red trench mirrors blue exactly
+   *  (16.541−11.953 = 4.588). Undefined = the season defines no such zone. */
+  allianceStartZoneM?: number;
 }
 
 // Official AprilTag layouts per season (WPILib blue-origin frame, meters),
@@ -251,6 +262,7 @@ export const REBUILT_2026: FieldPackage = {
     autoPeriodS: 20,
   lengthM: 16.54,
   widthM: 8.07,
+  allianceStartZoneM: 4.0284,
   image: { pixelWidth: 3508, pixelHeight: 1814, ppm: 200, marginM: 0.5 },
   // Official 2026 welded-field AprilTag layout (WPILib blue-origin frame),
   // from allwpilib's apriltag resources (BSD-3-Clause); field facts, used
@@ -493,6 +505,27 @@ export function flipPoseToBlue(pose: Pose2d, field: FieldPackage): Pose2d {
     y: field.widthM - pose.y,
     heading: wrapAngle(pose.heading + Math.PI),
   };
+}
+
+/**
+ * Whether a trajectory's first sample starts inside the given alliance's
+ * ALLIANCE ZONE — the season's legal auto starting region
+ * (FieldPackage.allianceStartZoneM). Samples are stored blue-frame, so the
+ * red zone is the mirrored span at the far wall. The starting line is part
+ * of the zone ("bounded by and includes the ROBOT STARTING LINE", 2026
+ * manual p. 21); no samples means nothing to gate.
+ */
+export function startsInAllianceZone(
+  trajectory: Trajectory,
+  alliance: Alliance,
+  fieldLengthM: number,
+  zoneDepthM: number,
+): boolean {
+  const first = trajectory.samples[0];
+  if (!first) return true;
+  return alliance === 'red'
+    ? first.x >= fieldLengthM - zoneDepthM - 1e-9
+    : first.x <= zoneDepthM + 1e-9;
 }
 
 /**

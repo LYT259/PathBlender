@@ -21,6 +21,7 @@ export const fr: Record<MessageKey, string> = {
   'sequence.joinVelocity': 'saut de vitesse {d} m/s',
   'sequence.libraryBlocked': 'Le départ ne prolonge pas la fin de {name} (écart de position {p}, écart de cap {h})',
   'sequence.libraryOccupied': 'La tête de lecture est sur une zone occupée — déplacez-la d’abord vers un espace libre',
+  'sequence.libraryStartZone': 'Le départ n’est pas dans la zone d’alliance',
   'sequence.joinFix': 'Corrigez la jonction dans PathPlanner ou Choreo, puis réimportez le parcours.',
   'sequence.overAuto': 'Se termine à {t} s, après la période autonome de {auto} s.',
   'sequence.invalid': 'Saisissez un temps de début fini et non négatif.',

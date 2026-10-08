@@ -24,6 +24,7 @@ export const ptBR: Record<MessageKey, string> = {
   'sequence.joinVelocity': 'salto de velocidade {d} m/s',
   'sequence.libraryBlocked': 'O início não continua o fim de {name} (diferença de posição {p}, diferença de orientação {h})',
   'sequence.libraryOccupied': 'O cursor de reprodução está sobre um trecho ocupado — arraste-o primeiro para um espaço livre',
+  'sequence.libraryStartZone': 'Não começa dentro da zona de aliança',
   'sequence.joinFix': 'Corrija a emenda no PathPlanner ou no Choreo e importe a rota novamente.',
   'sequence.overAuto': 'Termina em {t} s, após o período autônomo de {auto} s.',
   'sequence.invalid': 'Insira um tempo de início finito e não negativo.',

@@ -13,6 +13,7 @@ export const de = {
   'sequence.joinVelocity': 'Geschwindigkeitssprung {d} m/s',
   'sequence.libraryBlocked': 'Start setzt das Ende von {name} nicht fort (Positionsabweichung {p}, Richtungsabweichung {h})',
   'sequence.libraryOccupied': 'Der Abspielkopf liegt auf einem belegten Abschnitt — zuerst in eine Lücke ziehen',
+  'sequence.libraryStartZone': 'Start liegt nicht in der Allianz-Zone',
   'sequence.joinFix': 'Korrigieren Sie den Übergang in PathPlanner oder Choreo und importieren Sie die Route erneut.',
   'sequence.overAuto': 'Endet bei {t} s, nach der {auto} s langen autonomen Phase.',
   'sequence.invalid': 'Geben Sie eine endliche, nicht negative Startzeit ein.',

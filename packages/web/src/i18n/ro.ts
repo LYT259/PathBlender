@@ -13,6 +13,7 @@ export const ro = {
   'sequence.joinVelocity': 'salt de viteză {d} m/s',
   'sequence.libraryBlocked': 'Începutul nu continuă sfârșitul lui {name} (diferență de poziție {p}, diferență de orientare {h})',
   'sequence.libraryOccupied': 'Cursorul de redare este pe un segment ocupat — trage-l mai întâi într-un spațiu liber',
+  'sequence.libraryStartZone': 'Pornirea nu se află în zona alianței',
   'sequence.joinFix': 'Corectează îmbinarea în PathPlanner sau Choreo și reimportă ruta.',
   'sequence.overAuto': 'Se termină la {t} s, după perioada autonomă de {auto} s.',
   'sequence.invalid': 'Introdu un timp de start finit și nenegativ.',

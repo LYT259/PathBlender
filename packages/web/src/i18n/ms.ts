@@ -13,6 +13,7 @@ export const ms = {
   'sequence.joinVelocity': 'lonjakan laju {d} m/s',
   'sequence.libraryBlocked': 'Permulaan tidak menyambung hujung {name} (beza kedudukan {p}, beza arah {h})',
   'sequence.libraryOccupied': 'Kepala main berada di bahagian yang terisi — seret dahulu ke ruang kosong',
+  'sequence.libraryStartZone': 'Mula tidak berada dalam Zon Pakatan',
   'sequence.joinFix': 'Betulkan sambungan dalam PathPlanner atau Choreo dan import semula laluan.',
   'sequence.overAuto': 'Tamat pada {t} s, melepasi tempoh autonomi {auto} s.',
   'sequence.invalid': 'Masukkan masa mula yang terhingga dan bukan negatif.',

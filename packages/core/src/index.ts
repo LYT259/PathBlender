@@ -24,6 +24,7 @@ export {
   flipPoseToBlue,
   makeCustomField,
   mirrorAcrossLongAxis,
+  startsInAllianceZone,
   withFieldVariant,
 } from './field';
 export type { FieldArtStyle, FieldImageCalibration, FieldPackage } from './field';

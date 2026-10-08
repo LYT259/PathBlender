@@ -13,6 +13,7 @@ export const it = {
   'sequence.joinVelocity': 'salto di velocità {d} m/s',
   "sequence.libraryBlocked": "L’inizio non prosegue la fine di {name} (scarto di posizione {p}, scarto di direzione {h})",
   "sequence.libraryOccupied": "La testa di riproduzione è su un tratto occupato — trascinala prima in uno spazio libero",
+  "sequence.libraryStartZone": "Non inizia all’interno della zona di alleanza",
   'sequence.joinFix': 'Correggi la giunzione in PathPlanner o Choreo e reimporta il percorso.',
   'sequence.overAuto': 'Termina a {t} s, oltre il periodo autonomo di {auto} s.',
   'sequence.invalid': 'Inserisci un tempo di inizio finito e non negativo.',

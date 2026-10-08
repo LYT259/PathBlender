@@ -19,6 +19,7 @@ export const tr: Record<MessageKey, string> = {
   'sequence.joinVelocity': 'hız sıçraması {d} m/s',
   'sequence.libraryBlocked': 'Başlangıç, {name} sonunu sürdürmüyor (konum farkı {p}, yön farkı {h})',
   'sequence.libraryOccupied': 'Oynatma kafası dolu bir bölümde — önce boş bir aralığa sürükleyin',
+  'sequence.libraryStartZone': 'Başlangıç İttifak Bölgesi’nin içinde değil',
   'sequence.joinFix': 'Birleşimi PathPlanner veya Choreo’da düzeltin ve rotayı yeniden içe aktarın.',
   'sequence.overAuto': '{auto} sn’lik otonom sürenin sonrasında, {t} sn’de biter.',
   'sequence.invalid': 'Sonlu, negatif olmayan bir başlangıç zamanı girin.',

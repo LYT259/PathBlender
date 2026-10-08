@@ -13,6 +13,7 @@ export const mk = {
   'sequence.joinVelocity': 'скок на брзината {d} м/с',
   'sequence.libraryBlocked': 'Почетокот не го продолжува крајот на {name} (разлика во положбата {p}, разлика во насоката {h})',
   'sequence.libraryOccupied': 'Главата за репродукција е на зафатен дел — прво превлечете ја на празно место',
+  'sequence.libraryStartZone': 'Стартот не е во зоната на сојузот',
   'sequence.joinFix': 'Поправете го спојот во PathPlanner или Choreo и повторно увезете ја рутата.',
   'sequence.overAuto': 'Завршува на {t} с, по автономниот период од {auto} с.',
   'sequence.invalid': 'Внесете конечно, ненегативно време на почеток.',

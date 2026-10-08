@@ -13,6 +13,7 @@ export const bs = {
   'sequence.joinVelocity': 'skok brzine {d} m/s',
   'sequence.libraryBlocked': 'Početak ne nastavlja kraj {name} (razlika pozicije {p}, razlika smjera {h})',
   'sequence.libraryOccupied': 'Glava za reprodukciju je na zauzetom dijelu — prvo je povucite na prazan prostor',
+  'sequence.libraryStartZone': 'Start nije unutar zone saveza',
   'sequence.joinFix': 'Ispravite spoj u PathPlanneru ili Choreu i ponovo uvezite rutu.',
   'sequence.overAuto': 'Završava na {t} s, nakon autonomnog perioda od {auto} s.',
   'sequence.invalid': 'Unesite konačno, nenegativno vrijeme početka.',

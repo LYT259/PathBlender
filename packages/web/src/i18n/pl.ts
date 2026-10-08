@@ -24,6 +24,7 @@ export const pl: Record<MessageKey, string> = {
   'sequence.joinVelocity': 'skok prędkości {d} m/s',
   'sequence.libraryBlocked': 'Początek nie kontynuuje końca {name} (różnica pozycji {p}, różnica kierunku {h})',
   'sequence.libraryOccupied': 'Głowica odtwarzania jest na zajętym odcinku — najpierw przeciągnij ją na wolne miejsce',
+  'sequence.libraryStartZone': 'Start nie znajduje się w strefie sojuszu',
   'sequence.joinFix': 'Popraw połączenie w PathPlanner lub Choreo i zaimportuj trasę ponownie.',
   'sequence.overAuto': 'Kończy się w {t} s, po {auto}-sekundowym okresie autonomicznym.',
   'sequence.invalid': 'Wprowadź skończony, nieujemny czas startu.',

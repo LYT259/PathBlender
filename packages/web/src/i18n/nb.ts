@@ -13,6 +13,7 @@ export const nb = {
   'sequence.joinVelocity': 'hastighetssprang {d} m/s',
   'sequence.libraryBlocked': 'Starten fortsetter ikke slutten på {name} (posisjonsavvik {p}, retningsavvik {h})',
   'sequence.libraryOccupied': 'Avspillingshodet står på en opptatt strekning — dra det først til et tomt mellomrom',
+  'sequence.libraryStartZone': 'Starten er ikke innenfor alliansesonen',
   'sequence.joinFix': 'Rett opp skjøten i PathPlanner eller Choreo, og importer ruten på nytt.',
   'sequence.overAuto': 'Ferdig ved {t} s, etter den {auto} s lange autonome perioden.',
   'sequence.invalid': 'Skriv inn en endelig, ikke-negativ starttid.',

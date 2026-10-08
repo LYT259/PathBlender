@@ -13,6 +13,7 @@ export const hi = {
   'sequence.joinVelocity': 'गति उछाल {d} मी/से',
   'sequence.libraryBlocked': 'शुरुआत {name} के अंत को जारी नहीं रखती (स्थिति अंतर {p}, दिशा अंतर {h})',
   'sequence.libraryOccupied': 'प्लेहेड एक भरे हुए हिस्से पर है — पहले इसे खाली जगह पर खींचें',
+  'sequence.libraryStartZone': 'शुरुआत अलायंस ज़ोन के भीतर नहीं है',
   'sequence.joinFix': 'PathPlanner या Choreo में जोड़ ठीक करें और मार्ग फिर से आयात करें।',
   'sequence.overAuto': '{auto} सेकंड की ऑटोनॉमस अवधि के बाद, {t} सेकंड पर समाप्त होता है।',
   'sequence.invalid': 'एक परिमित, गैर-ऋणात्मक आरंभ समय दर्ज करें।',

@@ -15,6 +15,7 @@ export const zh: Record<MessageKey, string> = {
   'sequence.joinVelocity': '速度跳变 {d} m/s',
   'sequence.libraryBlocked': '起点与 {name} 的终点不连续（位置差 {p}，朝向差 {h}）',
   'sequence.libraryOccupied': '播放头停在已被路线占用的区段——先拖到空白处',
+  'sequence.libraryStartZone': '起点不在联盟区内',
   'sequence.joinFix': '请在 PathPlanner 或 Choreo 中修好接缝后重新导入路线。',
   'sequence.overAuto': '完成于 {t} 秒，超出 {auto} 秒的自动阶段。',
   'sequence.invalid': '请输入有效且不小于 0 的开始时间。',
