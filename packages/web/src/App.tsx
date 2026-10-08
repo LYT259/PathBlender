@@ -341,7 +341,10 @@ function AppBody() {
   // force the full auto period; the playback-range choice now governs
   // inside the composer too, with a synced selector in its control bar.
   const playbackEndS = playbackEnd(playbackRange === 'paths' ? visibleDuration : duration, field.autoPeriodS, playbackRange);
-  const playback = usePlayback(playbackEndS, !!previewSource);
+  // While editing, the playhead may park beyond the composed end — anywhere
+  // on the auto axis — because it doubles as the route-library insertion
+  // point (user 2026-10-08). Replay still loops at the range end.
+  const playback = usePlayback(playbackEndS, !!previewSource, composerOpen ? field.autoPeriodS : playbackEndS);
   const { t, setT } = playback;
   useEffect(() => {
     if ((playback.playing || t > 0) && showPlayTip) dismissPlayTip();

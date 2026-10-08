@@ -4,29 +4,35 @@ import { PLAYBACK_SPEEDS } from './components/PlaybackControls';
 /** Unified autonomous clock: play / pause / speed / scrub, looping.
  * Keyboard: Space toggles play, ←/→ scrub ±0.5 s (±2 s with Shift),
  * Home rewinds to 0. Interactive controls and dialogs own their keys.
- */
-export function usePlayback(durationS: number, suspended = false) {
+ *
+ * `durationS` is the transport end — where playing loops and End jumps.
+ * `scrubMaxS` (default: the duration) is how far the playhead may be
+ * PLACED: the composer opens it to the whole auto axis so the playhead can
+ * park in empty future time and gate the route library there (user
+ * 2026-10-08), while replay stays confined to the chosen playback range. */
+export function usePlayback(durationS: number, suspended = false, scrubMaxS = durationS) {
   const duration = Number.isFinite(durationS) ? Math.max(0, durationS) : 0;
+  const scrubMax = Number.isFinite(scrubMaxS) ? Math.max(duration, scrubMaxS) : duration;
   const [rawT, setRawT] = useState(0);
   const [wantsPlayback, setWantsPlayback] = useState(false);
   const [speed, setSpeed] = useState(1);
   const lastRef = useRef<number | null>(null);
-  const t = Math.min(rawT, duration);
+  const t = Math.min(rawT, scrubMax);
   const playing = wantsPlayback && duration > 0;
   const setT = useCallback((value: SetStateAction<number>) => {
     setRawT((previous) => {
-      const next = typeof value === 'function' ? value(Math.min(previous, duration)) : value;
-      return Number.isFinite(next) ? Math.min(duration, Math.max(0, next)) : 0;
+      const next = typeof value === 'function' ? value(Math.min(previous, scrubMax)) : value;
+      return Number.isFinite(next) ? Math.min(scrubMax, Math.max(0, next)) : 0;
     });
-  }, [duration]);
+  }, [scrubMax]);
   const setPlaying = useCallback((value: SetStateAction<boolean>) => {
     setWantsPlayback((previous) => duration > 0 && (typeof value === 'function' ? value(previous) : value));
   }, [duration]);
 
   useEffect(() => {
-    setRawT((previous) => Math.min(previous, duration));
+    setRawT((previous) => Math.min(previous, scrubMax));
     if (duration === 0) setWantsPlayback(false);
-  }, [duration]);
+  }, [duration, scrubMax]);
 
   useEffect(() => {
     if (!playing || suspended) return;
