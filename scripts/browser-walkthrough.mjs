@@ -108,12 +108,17 @@ check('quick guide closes on Escape', true);
 await page.screenshot({ path: `${SHOTS}/01-empty.png` });
 
 // --- Onboarding tour (2026-10-07 plan §3): the example session carries a
-// five-task checklist; a real mirror click completes its task, dismissing
+// five-task checklist; it starts collapsed (2026-10-08 user decision) and a
+// click expands it, a real mirror click completes its task, dismissing
 // hides the card, and the example exits cleanly back to the welcome page. ---
 await page.locator('.welcome-try-example').click();
 await page.waitForSelector('.robot-library-row', { timeout: 10000 });
 await page.waitForSelector('.tour-card');
 check('tour card appears with the example at 0/5', (await page.locator('.tour-card .tour-progress').textContent()) === '0/5');
+check('tour card starts collapsed', (await page.locator('.tour-card .tour-toggle').first().getAttribute('aria-expanded')) === 'false' && (await page.locator('.tour-card .tour-tasks').count()) === 0);
+await page.locator('.tour-card .tour-toggle').click();
+await page.waitForSelector('.tour-card .tour-tasks');
+check('expand click reveals the five tasks', (await page.locator('.tour-card .tour-tasks li').count()) === 5);
 await page.locator('.robot-library-row').first()
   .getByRole('button', { name: /mirror/i }).first().click();
 await page.waitForFunction(() => document.querySelector('.tour-card .tour-progress')?.textContent === '1/5');

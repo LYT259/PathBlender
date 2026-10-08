@@ -26,14 +26,38 @@ function tourCard() {
 }
 
 describe('onboarding tour', () => {
-  it('appears with the example listing five tasks at 0/5', async () => {
+  it('appears with the example collapsed at 0/5; a click expands the five tasks', async () => {
     render(<App />);
     expect(screen.queryByRole('complementary', { name: en['tour.title'] })).toBeNull();
     await openExample();
     const card = tourCard();
     expect(within(card).getByText('0/5')).toBeInTheDocument();
+    // Default is collapsed (user decision 2026-10-08): the header carries the
+    // progress, the task list waits for a click.
+    expect(within(card).queryByRole('listitem')).toBeNull();
+    const toggle = within(card).getByRole('button', { name: en['tour.expand'] });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(toggle);
     expect(within(card).getAllByRole('listitem')).toHaveLength(5);
     expect(within(card).getByText(en['tour.task.mirror.title'])).toBeInTheDocument();
+  });
+
+  it('remembers the expanded choice across remounts', async () => {
+    const first = render(<App />);
+    await openExample();
+    fireEvent.click(within(tourCard()).getByRole('button', { name: en['tour.expand'] }));
+    expect(within(tourCard()).getAllByRole('listitem')).toHaveLength(5);
+    expect(JSON.parse(localStorage.getItem('pb.tour.v1')!).expanded).toBe(true);
+    first.unmount();
+
+    render(<App />);
+    await openExample();
+    // Still expanded after the “restart”…
+    expect(within(tourCard()).getAllByRole('listitem')).toHaveLength(5);
+    // …and collapsing is remembered the same way.
+    fireEvent.click(within(tourCard()).getByRole('button', { name: en['tour.collapse'] }));
+    expect(within(tourCard()).queryByRole('listitem')).toBeNull();
+    expect(JSON.parse(localStorage.getItem('pb.tour.v1')!).expanded).toBe(false);
   });
 
   it('marks the play task when playback starts, and remembers across remounts', async () => {
@@ -81,14 +105,17 @@ describe('onboarding tour', () => {
     fireEvent.click(within(document.querySelector('.menu-bar')!).getByText('Help'));
     fireEvent.click(within(document.querySelector('.menu-bar')!).getByText(en['tour.title']));
     await waitFor(() => expect(screen.queryByRole('complementary', { name: en['tour.title'] })).not.toBeNull());
-    // Progress from the dismissed card survives the reopen.
+    // Progress from the dismissed card survives the reopen, and the menu
+    // choice is a read-me request: the card comes back expanded.
     expect(within(tourCard()).getByText('1/5')).toBeInTheDocument();
+    expect(within(tourCard()).getAllByRole('listitem')).toHaveLength(5);
   });
 
   it('shows the finished note once every task is done', async () => {
     localStorage.setItem('pb.tour.v1', JSON.stringify({
       dismissed: false,
       done: { play: true, issue: true, plan: true, alliance: true, mirror: true },
+      expanded: true,
     }));
     render(<App />);
     await openExample();
