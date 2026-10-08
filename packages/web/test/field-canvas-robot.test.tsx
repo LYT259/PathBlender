@@ -478,17 +478,30 @@ describe('current-action callout', () => {
     expect(texts[0]!.style.fillStyle).toBe('#00E5FF');
   });
 
-  it('follows the latest fired marker as playback advances', () => {
-    const robot0 = annotatedRobot([{ name: 'intake', t: 0.3 }, { name: 'shoot', t: 0.7 }]);
+  it('shows same-mechanism takeover: shoot replaces pre_aim, intake keeps running', () => {
+    const robot0 = annotatedRobot([{ name: 'pre_aim', t: 0.3 }, { name: 'shoot', t: 0.7 }]);
     const ui = render(makeScene([robot0], 0.4));
     sizeWrap();
     runFrames();
-    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'intake')).toBe(true);
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'pre_aim')).toBe(true);
     calls = [];
     ui.rerender(makeScene([robot0], 0.8));
     runFrames();
     expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'shoot')).toBe(true);
-    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'intake')).toBe(false);
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'pre_aim')).toBe(false);
+  });
+
+  it('joins simultaneous actions from different mechanisms on one badge', () => {
+    // Machine-2 L1 shape: intake + pass + align all fire at t=0 and coexist.
+    // Mock metrics: 'intake · pass · align' = 21 chars × 8 px + 12 padding →
+    // labelW 180, clamped to the 6 px margin at dir −1.
+    paint([annotatedRobot([{ name: 'intake', t: 0 }, { name: 'pass', t: 0 }, { name: 'align', t: 0 }])], { currentT: 2 });
+    const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === 'intake · pass · align');
+    expect(texts).toHaveLength(1);
+    expect(texts[0]!.style.fillStyle).toBe('#00E5FF');
+    const rects = calls.filter((c) => c.name === 'roundRect');
+    expect(rects).toHaveLength(2);
+    expectArgs(rects[1]!, [6, 141, 180, 22, 5]);
   });
 
   it('mirrors to down-right when the number badge flipped up-left', () => {

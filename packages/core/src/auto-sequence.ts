@@ -154,21 +154,6 @@ export function sequenceEventTimes(st: SessionTrajectory): { name: string; t: nu
   );
 }
 
-/**
- * The action this robot is performing at global time t: the latest event at
- * or before t, per the marker semantics the timeline dots share — a marker
- * fires at its instant and its command stays in effect until the next one
- * (a lone intake at t=0 reads "intaking from the start onward"). Null when
- * nothing has fired yet, including before the robot's start delay and for
- * trajectories with no annotations at all.
- */
-export function sequenceEventAt(st: SessionTrajectory, t: number): { name: string; t: number } | null {
-  let current: { name: string; t: number } | null = null;
-  for (const event of sequenceEventTimes(st)) {
-    if (event.t <= t + 1e-9 && (!current || event.t >= current.t - 1e-9)) current = event;
-  }
-  return current;
-}
 
 export interface SequenceJoinIssue {
   /** 0-based index of the segment before the seam. */
