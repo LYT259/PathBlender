@@ -10,6 +10,7 @@ import {
   samplePoseAt,
   sampleSequenceState,
   sampleStateAt,
+  sequenceEventAt,
   sequenceEventTimes,
   serializeSession,
   sessionDuration,
@@ -287,6 +288,39 @@ describe('sequenceEventTimes', () => {
     const legacy = makeSession(route({ events: [{ name: 'E', t: 1 }] }));
     legacy.startDelayS = 0.25;
     expect(sequenceEventTimes(legacy)).toEqual([{ name: 'E', t: 1.25 }]);
+  });
+});
+
+describe('sequenceEventAt', () => {
+  const legacy = makeSession(route({ events: [{ name: 'intake', t: 1 }, { name: 'shoot', t: 3 }] }));
+
+  it('returns null before the first event, including before the start delay', () => {
+    expect(sequenceEventAt(legacy, 0.99)).toBeNull();
+    const delayed = makeSession(route({ events: [{ name: 'intake', t: 0.5 }] }));
+    delayed.startDelayS = 2;
+    expect(sequenceEventAt(delayed, 1.99)).toBeNull();
+  });
+
+  it('holds the latest fired event until the next one, inclusive at the boundary', () => {
+    expect(sequenceEventAt(legacy, 1)).toEqual({ name: 'intake', t: 1 });
+    expect(sequenceEventAt(legacy, 2.5)).toEqual({ name: 'intake', t: 1 });
+    expect(sequenceEventAt(legacy, 3)).toEqual({ name: 'shoot', t: 3 });
+    // The last marker stays current past the route — its command's effect
+    // persists (the lone-intake-at-t0 semantics, mirrored at the tail).
+    expect(sequenceEventAt(legacy, 99)).toEqual({ name: 'shoot', t: 3 });
+  });
+
+  it('returns null for trajectories with no annotations', () => {
+    expect(sequenceEventAt(makeSession(route()), 1)).toBeNull();
+  });
+
+  it('picks the latest by time across composed segments, not array order', () => {
+    const st = robotWithSequence(makeSequence([
+      { id: 's1', routeId: 'a', waitBeforeS: 1, trajectory: route({ id: 'a', durationS: 2, events: [{ name: 'A1', t: 1 }] }) },
+      { id: 's2', routeId: 'b', waitBeforeS: 0.5, trajectory: route({ id: 'b', durationS: 2, events: [{ name: 'B1', t: 0.5 }] }) },
+    ]));
+    expect(sequenceEventAt(st, 2)).toEqual({ name: 'A1', t: 2 });
+    expect(sequenceEventAt(st, 4)).toEqual({ name: 'B1', t: 4 });
   });
 });
 
