@@ -146,6 +146,8 @@ export const rw = {
   'robots.length': "uburebure",
   'robots.width': "ubugari",
   'robots.visible': "kugaragara mu gukina no mu kugenzura kugongana",
+  'robots.reorderHandle': "Hindura umwanya wa {name} — {position} kuri {total}. Kurura, cyangwa koresha buto zerekeza hejuru no hasi.",
+  'robots.reorderMoved': "{name} none ari ku mwanya wa {position} kuri {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

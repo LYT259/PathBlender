@@ -146,6 +146,8 @@ export const hr = {
   'robots.length': 'duljina',
   'robots.width': 'širina',
   'robots.visible': 'vidljiv u reprodukciji i provjeri sudara',
+  'robots.reorderHandle': "Preraspodijelite {name} — pozicija {position} od {total}. Povucite ili koristite strelice gore i dolje.",
+  'robots.reorderMoved': "{name} je sada na poziciji {position} od {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

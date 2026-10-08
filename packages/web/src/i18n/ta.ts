@@ -166,6 +166,8 @@ export const ta = {
   'robots.driveHolonomic': 'அனைத்துதிசை',
   'robots.driveDifferential': 'வேறுபாட்டு',
   'robots.visible': 'மீண்டும் இயக்கம் & மோதல் சரிபார்ப்பில் தெரியும்',
+  'robots.reorderHandle': "{name} வரிசையை மாற்றவும் — மொத்தம் {total} இல் {position} வது இடம். இழுக்கவும், அல்லது மேலும் கீழும் அம்புக் குறிகளை அழுத்தவும்.",
+  'robots.reorderMoved': "{name} இப்போது மொத்தம் {total} இல் {position} வது இடத்தில் உள்ளது.",
   
   'vc.top': 'மே',
   'vc.bottom': 'கீ',

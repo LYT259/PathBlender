@@ -166,6 +166,8 @@ export const hi = {
   'robots.driveHolonomic': 'सर्वदिशात्मक',
   'robots.driveDifferential': 'विभेदक',
   'robots.visible': 'प्लेबैक और टकराव जाँच में दिखता है',
+  'robots.reorderHandle': "{name} का क्रम बदलें — कुल {total} में से स्थान {position}. खींचें, या ऊपर और नीचे तीर कुंजियाँ दबाएँ।",
+  'robots.reorderMoved': "{name} अब कुल {total} में से स्थान {position} पर है।",
   
   'vc.top': 'ऊ',
   'vc.bottom': 'नी',

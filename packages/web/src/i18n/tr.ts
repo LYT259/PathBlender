@@ -173,6 +173,8 @@ export const tr: Record<MessageKey, string> = {
   'robots.driveHolonomic': 'Holonomik',
   'robots.driveDifferential': 'Diferansiyel',
   'robots.visible': 'oynatmada ve çarpışma denetiminde görünür',
+  'robots.reorderHandle': "{name} öğesini yeniden sırala — {total} takım içinde {position}. sıra. Sürükleyin veya yukarı ve aşağı ok tuşlarını kullanın.",
+  'robots.reorderMoved': "{name} artık {total} takım içinde {position}. sırada.",
 
   // View-cube initials: the Latin abbreviations collide (Alt/Arka), so this
   // dictionary keeps the English source letters while the CJK dictionaries use

@@ -166,6 +166,8 @@ export const it = {
   'robots.driveHolonomic': 'Olonomico',
   'robots.driveDifferential': 'Differenziale',
   'robots.visible': 'visibile in riproduzione e controllo collisioni',
+  'robots.reorderHandle': "Riordina {name} — posizione {position} di {total}. Trascina, oppure usa le frecce su e giù.",
+  'robots.reorderMoved': "{name} si trova ora alla posizione {position} di {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

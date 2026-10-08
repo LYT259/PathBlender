@@ -146,6 +146,8 @@ export const sv = {
   'robots.length': 'längd',
   'robots.width': 'bredd',
   'robots.visible': 'synlig i uppspelning och kollisionskontroll',
+  'robots.reorderHandle': "Ändra ordningen för {name} — position {position} av {total}. Dra, eller använd upp- och nedpiltangenterna.",
+  'robots.reorderMoved': "{name} är nu på position {position} av {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

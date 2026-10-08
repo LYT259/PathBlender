@@ -166,6 +166,8 @@ export const ms = {
   'robots.driveHolonomic': 'Holonomik',
   'robots.driveDifferential': 'Diferensial',
   'robots.visible': 'kelihatan dalam main semula & semakan perlanggaran',
+  'robots.reorderHandle': "Susun semula {name} — kedudukan {position} daripada {total}. Seret, atau gunakan kekunci anak panah atas dan bawah.",
+  'robots.reorderMoved': "{name} kini di kedudukan {position} daripada {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

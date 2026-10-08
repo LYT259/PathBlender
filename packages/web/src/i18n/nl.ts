@@ -178,6 +178,8 @@ export const nl: Record<MessageKey, string> = {
   'robots.driveHolonomic': 'Holonomisch',
   'robots.driveDifferential': 'Differentieel',
   'robots.visible': 'zichtbaar tijdens afspelen en botsingscontrole',
+  'robots.reorderHandle': "{name} herschikken — positie {position} van {total}. Sleep, of gebruik de pijltjestoetsen omhoog en omlaag.",
+  'robots.reorderMoved': "{name} staat nu op positie {position} van {total}.",
 
   'vc.top': 'T',
   'vc.bottom': 'B',

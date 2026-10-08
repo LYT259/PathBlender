@@ -146,6 +146,8 @@ export const nb = {
   'robots.length': "lengde",
   'robots.width': "bredde",
   'robots.visible': "synlig i avspilling og kollisjonskontroll",
+  'robots.reorderHandle': "Endre rekkefølgen for {name} — plass {position} av {total}. Dra, eller bruk piltastene opp og ned.",
+  'robots.reorderMoved': "{name} er nå på plass {position} av {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

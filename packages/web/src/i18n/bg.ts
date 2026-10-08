@@ -146,6 +146,8 @@ export const bg = {
   'robots.length': 'дължина',
   'robots.width': 'ширина',
   'robots.visible': 'видим във възпроизвеждането и проверката на сблъсъка',
+  'robots.reorderHandle': "Пренареждане на {name} — позиция {position} от {total}. Влачете или използвайте стрелките нагоре и надолу.",
+  'robots.reorderMoved': "{name} вече е на позиция {position} от {total}.",
   
   'vc.top': 'Г',
   'vc.bottom': 'До',

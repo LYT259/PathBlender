@@ -179,6 +179,8 @@ export const ptBR: Record<MessageKey, string> = {
   'robots.driveHolonomic': 'Holonômico',
   'robots.driveDifferential': 'Diferencial',
   'robots.visible': 'visível na reprodução e na verificação de colisão',
+  'robots.reorderHandle': "Reordenar {name} — posição {position} de {total}. Arraste, ou use as setas para cima e para baixo.",
+  'robots.reorderMoved': "{name} passou para a posição {position} de {total}.",
 
   'vc.top': 'T',
   'vc.bottom': 'B',

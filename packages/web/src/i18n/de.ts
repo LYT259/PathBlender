@@ -166,6 +166,8 @@ export const de = {
   'robots.driveHolonomic': 'Holonom',
   'robots.driveDifferential': 'Differenziell',
   'robots.visible': 'Sichtbar in Wiedergabe & Kollisionsprüfung',
+  'robots.reorderHandle': "{name} neu anordnen — Platz {position} von {total}. Ziehen oder mit den Pfeiltasten nach oben und unten verschieben.",
+  'robots.reorderMoved': "{name} steht jetzt auf Platz {position} von {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

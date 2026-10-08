@@ -174,6 +174,8 @@ export const zhTw: Record<MessageKey, string> = {
   'robots.driveHolonomic': '全向',
   'robots.driveDifferential': '差速',
   'robots.visible': '參與播放與碰撞檢查',
+  'robots.reorderHandle': "調整 {name} 的顯示順序——第 {position} 位，共 {total} 位。拖曳把手，或按上、下方向鍵。",
+  'robots.reorderMoved': "{name} 已移至第 {position} 位（共 {total} 位）。",
 
   'vc.top': '上',
   'vc.bottom': '下',

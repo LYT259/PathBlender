@@ -146,6 +146,8 @@ export const da = {
   'robots.length': "længde",
   'robots.width': "bredde",
   'robots.visible': "synlig i afspilning og kollisionskontrol",
+  'robots.reorderHandle': "Omordne {name} — plads {position} af {total}. Træk, eller brug piletasterne op og ned.",
+  'robots.reorderMoved': "{name} er nu på plads {position} af {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

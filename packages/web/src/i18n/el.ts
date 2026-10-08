@@ -146,6 +146,8 @@ export const el = {
   'robots.length': 'μήκος',
   'robots.width': 'πλάτος',
   'robots.visible': 'ορατό στην αναπαραγωγή και τον έλεγχο σύγκρουσης',
+  'robots.reorderHandle': "Αναδιάταξη {name} — θέση {position} από {total}. Σύρετε ή χρησιμοποιήστε τα βέλη πάνω και κάτω.",
+  'robots.reorderMoved': "Το {name} βρίσκεται τώρα στη θέση {position} από {total}.",
   
   'vc.top': 'Πα',
   'vc.bottom': 'Κά',

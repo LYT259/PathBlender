@@ -3,6 +3,7 @@ import type { SessionTrajectory } from '@pathblender/core';
 import { activeEndT, activeStartT, sequenceEventTimes } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import './Timeline.css';
+import { useTeamOrderUI, type TeamOrderUI } from './TeamOrderUI';
 import { robotIdentity } from '../robot-identity';
 import { playbackEnd, timelineScale, type PlaybackRange } from '../playback-range';
 
@@ -10,6 +11,7 @@ import { PlaybackControls, type Playback } from './PlaybackControls';
 
 
 interface Props {
+  teamOrder?: TeamOrderUI;
   robots: SessionTrajectory[];
   /** Current season's Autonomous Period (FieldPackage.autoPeriodS) — the
    *  ruler's floor so an empty/short session still spans the whole auto. */
@@ -37,7 +39,8 @@ interface Props {
 }
 
 
-export function Timeline({ robots, autoPeriodS, duration, visibleDuration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onEditTeam, onJump, guide, composeAction }: Props) {
+export function Timeline({ robots, autoPeriodS, duration, visibleDuration, playback, playbackRange = 'full', onPlaybackRangeChange, selectedId, onSelect, onEditTeam, onJump, guide, composeAction, teamOrder }: Props) {
+  const reorder = useTeamOrderUI(teamOrder);
   const { t: tr, n } = useI18n();
   const { t, setT, setPlaying } = playback;
   const rangeDuration = playbackRange === 'paths' && visibleDuration !== undefined ? visibleDuration : duration;
@@ -88,6 +91,7 @@ export function Timeline({ robots, autoPeriodS, duration, visibleDuration, playb
         <div className="timeline-scroller">
           <div className="timeline-surface">
             <div className="timeline-rows">
+              {reorder.live}
               {robots.map((robot) => {
                 const { trajectory } = robot;
                 const activityLabel = tr('timeline.activity', {
@@ -97,10 +101,13 @@ export function Timeline({ robots, autoPeriodS, duration, visibleDuration, playb
                 });
                 return (
                   <div
+                    {...reorder.row(trajectory.id)}
                     className={`timeline-row${selectedId === trajectory.id ? ' is-selected' : ''}`}
                     key={trajectory.id}
                     onDoubleClick={onEditTeam ? () => onEditTeam(trajectory.id) : undefined}
                   >
+                    <div className="timeline-team-identity">
+                    {reorder.handle(trajectory.id, robotIdentity(trajectory))}
                     <button
                       type="button"
                       className="timeline-robot"
@@ -112,6 +119,7 @@ export function Timeline({ robots, autoPeriodS, duration, visibleDuration, playb
                       <span className="timeline-robot-dot" style={{ background: robot.color }} />
                       <span>{robotIdentity(trajectory)}</span>
                     </button>
+                    </div>
                     <div className="timeline-lane">
                       <div
                         className="timeline-activity"

@@ -1,3 +1,4 @@
+import { moveTeamOrder } from './team-order';
 import { previewRouteFor, useRoutePreviewClock } from './route-preview';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSessionHistory } from './session-history';
@@ -7,6 +8,7 @@ import { EXAMPLE_RELOADING, consumeExampleRetryFlag, loadWelcomeExample, prefetc
 import { compareScenarios, remapColorblind } from '@pathblender/core';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
+import type { TeamOrderUI } from './components/TeamOrderUI';
 import { GuideDialog } from './components/GuideDialog';
 import { PreferencesPanel } from './components/PreferencesPanel';
 import { WelcomeScreen } from './components/WelcomeScreen';
@@ -631,6 +633,19 @@ function AppBody() {
         : r.trajectory }
       : r)));
   }, []);
+
+  // Team display order (2026-10-08): one reshuffled robots array is the
+  // single truth both the robot list and the timeline read; the move rides
+  // the session history (undo/redo, autosave, .pb round trip all follow),
+  // and moveTeamOrder itself is the only reordering code. Playback, colors,
+  // selection and every timing field are untouched — slots move by identity.
+  const moveTeam = useCallback((id: string, targetId: string, edge: 'before' | 'after') => {
+    setRobots((prev) => moveTeamOrder(prev, id, targetId, edge));
+  }, [setRobots]);
+  const teamOrder: TeamOrderUI = useMemo(() => ({
+    ids: robots.map((robot) => robot.trajectory.id),
+    onMove: moveTeam,
+  }), [robots, moveTeam]);
 
   const selectRobot = useCallback((id: string) => {
     setSelectedId(id);
@@ -1428,7 +1443,7 @@ function AppBody() {
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
         <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
-          {leftOpen && <RobotList robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={openSequenceFor} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} header={
+          {leftOpen && <RobotList teamOrder={teamOrder} robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={openSequenceFor} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} header={
             hasExample && !tour.dismissed ? <OnboardingTasks done={tour.done} expanded={tour.expanded} onToggle={tour.toggle} onDismiss={tour.dismiss} /> : !hasExample && hasRobots && showImportTip ? <div className="tour-card tour-import-tip"><UsageTip text={tr('onboarding.import')} onDismiss={dismissImportTip} /></div> : undefined
           } />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
@@ -1511,7 +1526,7 @@ function AppBody() {
           </aside>
         </main>
         {/* Playback spans the full workspace, below both side panels. */}
-        {hasRobots && !composerOpen && <footer className="app-footer"><Timeline composeAction={<button ref={composeButtonRef} className="btn small" aria-keyshortcuts="e" onClick={() => { const id = (selectedRobot ?? robots[0])?.trajectory.id; if (id) openSequenceFor(id); }}>{tr('sequence.arrange')}</button>} robots={robots} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
+        {hasRobots && !composerOpen && <footer className="app-footer"><Timeline teamOrder={teamOrder} composeAction={<button ref={composeButtonRef} className="btn small" aria-keyshortcuts="e" onClick={() => { const id = (selectedRobot ?? robots[0])?.trajectory.id; if (id) openSequenceFor(id); }}>{tr('sequence.arrange')}</button>} robots={robots} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
         {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={setPreviewRouteId} joins={sequenceJoins} playback={playback} playbackEndS={playbackEndS} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} onJump={jumpToSeam} />}
 
       {cfOpen && <CustomFieldPanel

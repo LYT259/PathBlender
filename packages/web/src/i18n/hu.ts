@@ -146,6 +146,8 @@ export const hu = {
   'robots.length': 'hossz',
   'robots.width': 'szélesség',
   'robots.visible': 'látható a lejátszásban és az ütközésellenőrzésben',
+  'robots.reorderHandle': "{name} átrendezése — {position}. hely a {total} közül. Húzza el, vagy használja a felfelé és lefelé nyílbillentyűket.",
+  'robots.reorderMoved': "{name} most a {position}. helyen áll a {total} közül.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

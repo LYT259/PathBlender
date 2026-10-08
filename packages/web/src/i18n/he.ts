@@ -183,6 +183,8 @@ export const he: Record<MessageKey, string> = {
   'robots.driveHolonomic': 'הולונומי',
   'robots.driveDifferential': 'דיפרנציאלי',
   'robots.visible': 'נראה בהשמעה ובבדיקת התנגשות',
+  'robots.reorderHandle': "שינוי סדר התצוגה של {name} — מקום {position} מתוך {total}. לגרור, או להשתמש במקשי החצים למעלה ולמטה.",
+  'robots.reorderMoved': "{name} עבר למקום {position} מתוך {total}.",
 
   'vc.top': 'ע',
   'vc.bottom': 'ת',
