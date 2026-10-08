@@ -156,6 +156,18 @@ export function sessionDuration(sts: readonly SessionTrajectory[]): number {
   return sts.reduce((m, st) => Math.max(m, activeEndT(st)), 0);
 }
 
+/**
+ * An explicitly EMPTY arrangement — the user removed every leg (or opened
+ * the composer and committed nothing). Such a robot has nothing to show and
+ * no honest position on the field: it is not "parked at its route's start",
+ * it is not running an auto at all. Renderers and the collision check skip
+ * it; the robot list keeps the row so the arrangement stays editable.
+ * A legacy robot (no `sequence`) is NOT empty — it plays its own route.
+ */
+export function hasEmptyArrangement(st: SessionTrajectory): boolean {
+  return st.sequence !== undefined && st.sequence.segments.length === 0;
+}
+
 export function sessionGeometry(st: SessionTrajectory): RobotGeometry {
   return st.trajectory.geometry;
 }

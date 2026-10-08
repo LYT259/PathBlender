@@ -28,6 +28,7 @@ import {
   REBUILT_2026,
   serializeSession,
   sessionDuration,
+  hasEmptyArrangement,
   withFieldVariant,
   type FieldArtStyle,
   withSeasonGeometry,
@@ -324,7 +325,11 @@ function AppBody() {
   // Field/variant memory is written ONLY from the user's own selects —
   // session-file restores must not overwrite it.
 
-  const visible = useMemo(() => seasonRobots.filter((r) => r.visible), [seasonRobots]);
+  // An explicitly EMPTY arrangement keeps its sidebar row but leaves the
+  // stage: no honest pose to draw (the robot is not "parked", it is not
+  // running an auto) and a phantom 0 s collision otherwise (user report
+  // 2026-10-08, with screenshot).
+  const visible = useMemo(() => seasonRobots.filter((r) => r.visible && !hasEmptyArrangement(r)), [seasonRobots]);
   const duration = sessionDuration(robots);
   // Bug report 2026-10-05: with playback range 'Current paths', hiding the
   // longest robot must shorten the loop to the longest VISIBLE one —

@@ -4,6 +4,7 @@ import {
   checkSequenceTiming,
   deserializeSession,
   detectCollisions,
+  hasEmptyArrangement,
   makeSession,
   resolveSequence,
   routeConnectsAfter,
@@ -376,6 +377,17 @@ describe('explicitly empty arrangements', () => {
     const restored = deserializeSession(serializeSession([robot], 'blue')).robots[0]!;
     expect(restored.sequence).toEqual({ segments: [] });
     expect(sampleStateAt(restored, 10)).toMatchObject({ x: 0, vx: 0 });
+  });
+
+  it('is recognizable as empty — legacy robots are not', () => {
+    // The renderer and the collision check skip an empty arrangement (user
+    // 2026-10-08: a removed robot must not sit on the field as a phantom).
+    const robot = makeSession(route());
+    expect(hasEmptyArrangement(robot)).toBe(false); // legacy: plays its route
+    robot.sequence = { segments: [] };
+    expect(hasEmptyArrangement(robot)).toBe(true);
+    robot.sequence = { segments: [{ id: 's1', routeId: 'a', waitBeforeS: 0 }] };
+    expect(hasEmptyArrangement(robot)).toBe(false);
   });
 });
 

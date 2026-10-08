@@ -102,6 +102,7 @@ export {
   sampleStateAt,
   serializeSession,
   sessionDuration,
+  hasEmptyArrangement,
 } from './session';
 export type { SessionFileV1, SessionTrajectory, SessionRouteOption, SessionProfileOption, SessionSerializeOptions } from './session';
 

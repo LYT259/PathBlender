@@ -508,24 +508,20 @@ export function flipPoseToBlue(pose: Pose2d, field: FieldPackage): Pose2d {
 }
 
 /**
- * Whether a trajectory's first sample starts inside the given alliance's
+ * Whether a trajectory's first sample starts inside the robot's own
  * ALLIANCE ZONE — the season's legal auto starting region
- * (FieldPackage.allianceStartZoneM). Samples are stored blue-frame, so the
- * red zone is the mirrored span at the far wall. The starting line is part
- * of the zone ("bounded by and includes the ROBOT STARTING LINE", 2026
- * manual p. 21); no samples means nothing to gate.
+ * (FieldPackage.allianceStartZoneM). The trajectory is the blue-frame
+ * SOURCE sample (sourceRobots stay blue; `robotsForAlliance` derives the
+ * red view), and the red view's zone is the mirror of the blue one — so
+ * on the source frame the predicate is the same for both alliances and
+ * the alliance never enters it. The starting line is part of the zone
+ * ("bounded by and includes the ROBOT STARTING LINE", 2026 manual p. 21);
+ * no samples means nothing to gate.
  */
-export function startsInAllianceZone(
-  trajectory: Trajectory,
-  alliance: Alliance,
-  fieldLengthM: number,
-  zoneDepthM: number,
-): boolean {
+export function startsInAllianceZone(trajectory: Trajectory, zoneDepthM: number): boolean {
   const first = trajectory.samples[0];
   if (!first) return true;
-  return alliance === 'red'
-    ? first.x >= fieldLengthM - zoneDepthM - 1e-9
-    : first.x <= zoneDepthM + 1e-9;
+  return first.x >= -1e-9 && first.x <= zoneDepthM + 1e-9;
 }
 
 /**

@@ -17,12 +17,11 @@ interface Props {
   selectedId?: string;
   onSelect: (id: string) => void;
   autoPeriodS: number;
-  /** The season's ALLIANCE ZONE depth and the field length (user 2026-10-08):
-   * with nothing placed yet, only routes starting inside the robot's own
-   * zone are addable — every later leg is pose-gated instead. Undefined =
-   * the season defines no zone and the first route stays ungated. */
+  /** The season's ALLIANCE ZONE depth (user 2026-10-08): with nothing
+   * placed yet, only routes starting inside the robot's own zone are
+   * addable — every later leg is pose-gated instead. Undefined = the
+   * season defines no zone and the first route stays ungated. */
   allianceStartZoneM?: number;
-  fieldLengthM?: number;
   open: boolean;
   onClose: () => void;
   /** Each completed edit commits to the same store used by playback and autosave. */
@@ -55,7 +54,7 @@ const clampToAxis = (t: number, axisS: number) => Math.min(axisS, Math.max(0, t)
 
 /** Pointer capture works across WebKit and mouse/touch/pen, without relying
  * on custom HTML drag payloads. A gesture is one undoable operation. */
-export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, allianceStartZoneM, fieldLengthM, open, onClose, onChange, onPreviewRoute, joins = [], playback, playbackEndS, playbackRange = 'full', onPlaybackRangeChange, onJump }: Props) {
+export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, allianceStartZoneM, open, onClose, onChange, onPreviewRoute, joins = [], playback, playbackEndS, playbackRange = 'full', onPlaybackRangeChange, onJump }: Props) {
   const { t, n, lang } = useI18n();
   const [unit] = useLengthUnit();
   const [selected, setSelected] = useState<{ robotId: string; clipId: string } | null>(null);
@@ -111,16 +110,17 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   const library: { route: SessionRouteOption; blocked: boolean; outOfZone?: boolean; continuity?: RouteContinuity }[] = [];
   // First-leg zoning (user 2026-10-08): with nothing placed yet the route
   // library answers "what may legally START the auto" — only routes whose
-  // first sample sits in this robot's own ALLIANCE ZONE are addable. Once a
+  // first sample sits in the robot's own ALLIANCE ZONE are addable. The
+  // source robots stay blue-frame and the red view's zone is the mirror of
+  // the blue one, so on the source frame the predicate is one-sided. Once a
   // first leg exists, pose continuity takes the gate over.
-  const startZone = allianceStartZoneM !== undefined && fieldLengthM !== undefined
-    ? { depthM: allianceStartZoneM, lengthM: fieldLengthM,
-        alliance: activeClips.length === 0 ? active?.robot.trajectory.alliance : undefined }
+  const startZone = allianceStartZoneM !== undefined && activeClips.length === 0
+    ? allianceStartZoneM
     : undefined;
   for (const route of active?.routes ?? []) {
     const overAuto = route.trajectory.durationS > autoPeriodS;
-    const outOfZone = startZone?.alliance !== undefined
-      && !startsInAllianceZone(route.trajectory, startZone.alliance, startZone.lengthM, startZone.depthM);
+    const outOfZone = startZone !== undefined
+      && !startsInAllianceZone(route.trajectory, startZone);
     // Driveable-chain gate (user 2026-10-08): LIBRARY_CHAIN_TOLERANCES
     // answers "can the robot drive there"; the seam badges still grade the
     // join itself at the strict SEQUENCE_JOIN_TOLERANCES.

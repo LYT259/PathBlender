@@ -5,6 +5,7 @@
  * schematic as the primary artwork plus an AS render (see field.ts comments).
  */
 import { describe, expect, it } from 'vitest';
+import type { Trajectory } from '../src';
 import { FIELDS, REBUILT_2026, fieldById, fieldImageWorldRect, makeCustomField, startsInAllianceZone, withFieldVariant } from '../src';
 
 describe('FIELDS registry', () => {
@@ -146,26 +147,23 @@ describe('withFieldVariant', () => {
 });
 
 describe('alliance start zone (2026 ALLIANCE ZONE, first-leg gate)', () => {
-  const traj = (x: number) => ({ samples: [{ t: 0, x, y: 4, heading: 0, vx: 0, vy: 0, omega: 0 }] }) as Parameters<typeof startsInAllianceZone>[0];
+  const traj = (x: number) => ({ samples: [{ t: 0, x, y: 4, heading: 0, vx: 0, vy: 0, omega: 0 }] }) as unknown as Trajectory;
   it('2026 carries the manual zone depth; no earlier season defines one', () => {
     for (const f of FIELDS) {
       expect(f.allianceStartZoneM).toBe(f.year === 2026 ? 4.0284 : undefined);
     }
   });
-  it('gates by the robot\'s own alliance; the starting line is inside', () => {
-    const L = REBUILT_2026.lengthM;
+  it('tests the blue-frame source: both alliances mirror to the same predicate', () => {
     const z = REBUILT_2026.allianceStartZoneM!;
-    // Blue zone [0, 4.0284]; red zone the mirrored span [12.51, 16.54].
-    expect(startsInAllianceZone(traj(1.0), 'blue', L, z)).toBe(true);
-    expect(startsInAllianceZone(traj(z), 'blue', L, z)).toBe(true);   // the line itself
-    expect(startsInAllianceZone(traj(z + 0.001), 'blue', L, z)).toBe(false);
-    expect(startsInAllianceZone(traj(5.0), 'blue', L, z)).toBe(false);
-    expect(startsInAllianceZone(traj(15.0), 'red', L, z)).toBe(true);
-    expect(startsInAllianceZone(traj(L - z), 'red', L, z)).toBe(true);
-    expect(startsInAllianceZone(traj(L - z - 0.001), 'red', L, z)).toBe(false);
-    expect(startsInAllianceZone(traj(1.0), 'red', L, z)).toBe(false);
+    expect(startsInAllianceZone(traj(0), z)).toBe(true);
+    expect(startsInAllianceZone(traj(1.0), z)).toBe(true);
+    expect(startsInAllianceZone(traj(z), z)).toBe(true); // the line itself
+    expect(startsInAllianceZone(traj(z + 0.001), z)).toBe(false);
+    expect(startsInAllianceZone(traj(5.0), z)).toBe(false);
+    // Slightly behind the wall is not a start either.
+    expect(startsInAllianceZone(traj(-0.01), z)).toBe(false);
   });
   it('never gates a trajectory without samples', () => {
-    expect(startsInAllianceZone({ samples: [] } as unknown as Parameters<typeof startsInAllianceZone>[0], 'blue', 16.54, 4.0284)).toBe(true);
+    expect(startsInAllianceZone({ samples: [] } as unknown as Trajectory, 4.0284)).toBe(true);
   });
 });

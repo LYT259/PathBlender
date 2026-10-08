@@ -66,7 +66,10 @@ describe('whole-session alliance control', () => {
     const lane = document.querySelector('.sequence-track.is-editing .sequence-track-lane') as HTMLElement;
     fireEvent.click(within(lane).getAllByRole('button', { name: /, \d+\.\d+–/ })[0]!);
     fireEvent.keyDown(lane.querySelector('.sequence-clip')!, { key: 'Backspace' });
-    fireEvent.click([...document.querySelectorAll('.sequence-route-source')][1]!);
+    // Index 0, not 1: with the 2026 first-leg zone gate (user 2026-10-08)
+    // Side (starts x=13.5, the far wall) is refused as a FIRST leg —
+    // Straight (x=2.0) is the zone-legal replacement.
+    fireEvent.click([...document.querySelectorAll('.sequence-route-source')][0]!);
     fireEvent.click(screen.getByRole('button', { name: 'Back to playback' }));
     expect(fieldRobots()).toHaveLength(3);
     expect(fieldRobots().every((r) => r.trajectory.alliance === 'red')).toBe(true);
