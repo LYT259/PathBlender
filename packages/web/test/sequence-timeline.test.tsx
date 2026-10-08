@@ -270,20 +270,27 @@ describe('lane scrub, chosen-delete, drag badge and occupancy gating', () => {
     expect(activeEndT(commit.mock.calls[0]![0])).toBe(0);
   });
 
-  it('shows a follow-along badge naming the dragged route, in the lane and out of it', () => {
+  it('hands the drag over to the lane ghost: badge rides only outside the lane', () => {
     const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
     const source = screen.getByRole('button', { name: 'B: 3.00 s' });
     fireEvent.pointerDown(source, { button: 0, clientX: 20, clientY: 30 });
-    // Below the lane: no ghost yet, but the badge already identifies the drag.
+    // Below the lane: no ghost yet, the badge identifies the drag.
     fireEvent.pointerMove(source, { clientX: 300, clientY: 250 });
     expect(document.querySelector('.sequence-ghost')).toBeNull();
     const badge = document.querySelector('.sequence-drag-badge')!;
     expect(badge.textContent).toContain('B');
     expect(badge.textContent).toContain('3.00s');
-    // Inside the lane the ghost appears and the badge keeps riding the pointer.
+    // Inside the lane the ghost takes over and the badge disappears —
+    // ghost + badge together read as two copies of the same path (user
+    // 2026-10-08).
     fireEvent.pointerMove(source, { clientX: 500, clientY: 130 });
     expect(document.querySelector('.sequence-ghost')).not.toBeNull();
+    expect(document.querySelector('.sequence-drag-badge')).toBeNull();
+    // Back outside, the badge returns at the pointer.
+    fireEvent.pointerMove(source, { clientX: 300, clientY: 250 });
+    expect(document.querySelector('.sequence-ghost')).toBeNull();
     expect(document.querySelector('.sequence-drag-badge')).not.toBeNull();
+    fireEvent.pointerMove(source, { clientX: 500, clientY: 130 });
     fireEvent.pointerUp(source, { clientX: 500, clientY: 130 });
     expect(commit).toHaveBeenCalledTimes(1);
     expect(document.querySelector('.sequence-drag-badge')).toBeNull();

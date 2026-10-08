@@ -56,7 +56,8 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   const [error, setError] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ robotId: string; clipId: string; x: number; y: number } | null>(null);
   // Screen point of a running library drag — drives the follow-along badge
-  // so the dragged route stays identified even outside the lane.
+  // so the dragged route stays identified wherever the pointer is. Over the
+  // lane the in-lane ghost takes over (user 2026-10-08) and the badge yields.
   const [dragPoint, setDragPoint] = useState<{ x: number; y: number } | null>(null);
   const laneRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLElement>(null);
@@ -420,11 +421,13 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       <button type="button" role="menuitem" onClick={() => remove(menu.clipId)}><Icon name="trash" size={14} />{t('sequence.removeRoute')}</button>
     </div>}
     <div className="sequence-composer-footnote"><span role="status" className="sequence-error">{error ?? ''}</span></div>
-    {dragPoint && dragRef.current?.kind === 'add' && dragRef.current.clip && (() => {
-      // Follow-along copy of the dragged library route (user 2026-10-07):
-      // visible inside the lane and out of it, so the gesture always says
-      // WHICH route is being carried. Dropping in the lane records it;
-      // dropping elsewhere discards it.
+    {dragPoint && dragRef.current?.kind === 'add' && dragRef.current.clip && !activeGhost && (() => {
+      // Follow-along copy of the dragged library route — outside the lane
+      // only (user 2026-10-08): inside it the in-lane ghost already names
+      // the route and its drop slot, and showing both read as two copies of
+      // the same path. dragPoint keeps updating so the badge sits at the
+      // pointer the moment the drag leaves the lane again. Dropping in the
+      // lane records it; dropping elsewhere discards it.
       const source = active.routes.find((route) => route.id === dragRef.current!.clip!.routeId);
       return <div className="sequence-drag-badge" aria-hidden="true" style={{ left: dragPoint.x, top: dragPoint.y }}>
         <span>{source ? routeLabel(source, active.routes) : dragRef.current.clip.routeId}</span><small>{source ? `${n(source.trajectory.durationS, 2)}s` : ''}</small>
