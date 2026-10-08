@@ -69,7 +69,7 @@ export const nb = {
   'welcome.exampleNameA': 'Eksempelrute A',
   'welcome.exampleNameB': 'Eksempelrute B',
   'welcome.exampleBadge': 'Eksempel',
-  'welcome.exampleNotice': 'Ekte ruter fra 2026-sesongen til FRC-lagene 8814 og 11019.',
+  'welcome.exampleNotice': 'Ekte ruter fra 2026-sesongen til tre ekte FRC-roboter: 11019, 8814 og 11019 Champs.',
   'welcome.exitExample': 'Avslutt eksempel',
   'onboarding.play': 'Trykk Spill for å se rutene, eller dra i tidslinjen.',
   'onboarding.check': "Velg et problem nedenfor for å hoppe til det øyeblikket — og sammenlign så alternativer: bytt en rute eller flytt en start",

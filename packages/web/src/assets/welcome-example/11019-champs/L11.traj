@@ -192,5 +192,12 @@
     {"t":4.05242, "x":0.47564, "y":4.95851, "heading":-1.5708, "vx":0.0, "vy":0.0, "omega":0.0, "ax":0.0, "ay":0.0, "alpha":0.0, "fx":[0.0,0.0,0.0,0.0], "fy":[0.0,0.0,0.0,0.0]}],
   "splits":[0]
  },
- "events":[]
+ "events":[
+  {"name":"shoot", "from":{"target":0, "targetTimestamp":0.0, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
+  {"name":"feed", "from":{"target":0, "targetTimestamp":0.0, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
+  {"name":"stow_intake", "from":{"target":0, "targetTimestamp":0.0, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
+  {"name":"feed_extension", "from":{"target":0, "targetTimestamp":0.0, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
+  {"name":"pre_aim", "from":{"target":4, "targetTimestamp":4.05242, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
+  {"name":"stop_feed", "from":{"target":4, "targetTimestamp":4.05242, "offset":{"exp":"0 s", "val":0.0}}, "event":null}
+ ]
 }

@@ -85,7 +85,7 @@ export const he: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'מסלול לדוגמה א׳',
   'welcome.exampleNameB': 'מסלול לדוגמה ב׳',
   'welcome.exampleBadge': 'דוגמה',
-  'welcome.exampleNotice': 'מסלולים אמיתיים מעונת 2026 של קבוצות FRC 8814 ו־11019.',
+  'welcome.exampleNotice': 'מסלולים אמיתיים מעונת 2026 של שלושה רובוטי FRC אמיתיים: 11019, 8814 ו־11019 Champs.',
   'welcome.exitExample': 'סיום הדוגמה',
   'onboarding.play': 'לחצו על נגן כדי לראות את המסלולים, או גררו את ציר הזמן.',
   'onboarding.check': "בחרו בעיה למטה כדי לקפוץ לרגע הזה — ואז השוו חלופות: החליפו מסלול או הזיזו זמן התחלה",

@@ -69,7 +69,7 @@ export const az = {
   'welcome.exampleNameA': 'Nümunə marşrut A',
   'welcome.exampleNameB': 'Nümunə marşrut B',
   'welcome.exampleBadge': 'Nümunə',
-  'welcome.exampleNotice': 'FRC 8814 və 11019 komandalarının real 2026 marşrutları.',
+  'welcome.exampleNotice': 'Üç real FRC robotunun real 2026 marşrutları: 11019, 8814 və 11019 Champs.',
   'welcome.exitExample': 'Nümunəni bitir',
   'onboarding.play': 'Marşrutları görmək üçün Oynat düyməsinə basın və ya zaman xəttini sürüşdürün.',
   'onboarding.check': "Aşağıdakı problemlərdən birini seçərək həmin ana keçin — sonra alternativləri müqayisə edin: marşrutu dəyişin və ya başlanğıcı sürüşdürün",

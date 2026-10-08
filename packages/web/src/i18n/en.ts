@@ -40,7 +40,7 @@ export const en = {
   'welcome.exampleNameA': 'Example path A',
   'welcome.exampleNameB': 'Example path B',
   'welcome.exampleBadge': 'Example',
-  'welcome.exampleNotice': 'Real 2026 routes from FRC teams 8814 and 11019.',
+  'welcome.exampleNotice': 'Real 2026 routes from three real FRC robots: 11019, 8814 and 11019 Champs.',
   'welcome.exitExample': 'End example',
   'onboarding.play': 'Press Play to see the paths, or scrub the timeline.',
   'onboarding.check': "Select an issue below to jump to that moment — then compare alternatives: swap a route or shift a start time",

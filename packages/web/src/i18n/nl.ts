@@ -80,7 +80,7 @@ export const nl: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'Voorbeeldroute A',
   'welcome.exampleNameB': 'Voorbeeldroute B',
   'welcome.exampleBadge': 'Voorbeeld',
-  'welcome.exampleNotice': 'Echte routes uit het seizoen 2026 van FRC-teams 8814 en 11019.',
+  'welcome.exampleNotice': 'Echte routes uit het seizoen 2026 van drie echte FRC-robots: 11019, 8814 en 11019 Champs.',
   'welcome.exitExample': 'Voorbeeld beëindigen',
   'onboarding.play': 'Druk op Afspelen om de routes te zien, of sleep over de tijdlijn.',
   'onboarding.check': "Kies hieronder een probleem om naar dat moment te springen — en vergelijk daarna alternatieven: wissel een route of verschuif een start",

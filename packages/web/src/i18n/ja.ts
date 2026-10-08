@@ -81,7 +81,7 @@ export const ja: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'サンプルパス A',
   'welcome.exampleNameB': 'サンプルパス B',
   'welcome.exampleBadge': 'サンプル',
-  'welcome.exampleNotice': 'FRC チーム 8814・11019 の 2026 シーズンの実際のルート。',
+  'welcome.exampleNotice': '3 台の実際の FRC ロボット（11019・8814・11019 Champs）による 2026 シーズンの実際のルート。',
   'welcome.exitExample': 'サンプルを終了',
   'onboarding.play': '「再生」を押してパスを見るか、タイムラインをスクラブしてください。',
   'onboarding.check': "下の問題をクリックするとその瞬間へジャンプ——その後、別のルートや開始時刻を変えて代替案を比べてみましょう",

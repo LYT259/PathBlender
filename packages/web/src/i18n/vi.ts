@@ -69,7 +69,7 @@ export const vi = {
   'welcome.exampleNameA': 'Đường đi ví dụ A',
   'welcome.exampleNameB': 'Đường đi ví dụ B',
   'welcome.exampleBadge': 'Ví dụ',
-  'welcome.exampleNotice': 'Tuyến thật mùa 2026 từ các đội FRC 8814 và 11019.',
+  'welcome.exampleNotice': 'Tuyến thật mùa 2026 từ ba robot FRC thật: 11019, 8814 và 11019 Champs.',
   'welcome.exitExample': 'Kết thúc ví dụ',
   'onboarding.play': 'Nhấn Phát để xem đường đi, hoặc kéo dòng thời gian.',
   'onboarding.check': "Chọn một vấn đề bên dưới để nhảy đến thời điểm đó — rồi so sánh phương án: đổi một tuyến hoặc dịch một thời điểm xuất phát",

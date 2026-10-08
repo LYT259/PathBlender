@@ -77,7 +77,7 @@ export const fr: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'Parcours d’exemple A',
   'welcome.exampleNameB': 'Parcours d’exemple B',
   'welcome.exampleBadge': 'Exemple',
-  'welcome.exampleNotice': 'Parcours réels de la saison 2026 des équipes FRC 8814 et 11019.',
+  'welcome.exampleNotice': 'Parcours réels de la saison 2026 de trois vrais robots FRC : 11019, 8814 et 11019 Champs.',
   'welcome.exitExample': 'Terminer l’exemple',
   'onboarding.play': 'Lancez la lecture pour voir les parcours ou déplacez le curseur sur la frise chronologique.',
   'onboarding.check': "Sélectionnez un problème ci-dessous pour sauter à ce moment — puis comparez des alternatives : changez de parcours ou décalez un départ",

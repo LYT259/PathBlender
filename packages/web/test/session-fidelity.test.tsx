@@ -123,7 +123,7 @@ describe('session fidelity across relaunch', () => {
     fireEvent.click([...document.querySelectorAll('.sequence-track-name')]
       .find((b) => b.textContent?.includes('#8814'))!);
     expect(document.querySelector('.sequence-track.is-editing .sequence-clip')!.getAttribute('aria-label'))
-      .toMatch(/^L1,/);
+      .toMatch(/^FCeSt/);
   });
 
   it('falls back to the first robot when the saved selection no longer exists', async () => {
@@ -134,8 +134,8 @@ describe('session fidelity across relaunch', () => {
     seedAutosave([stale, robot('robot-b', '0002', 1, 6)], { selectedId: 'stale-example' });
 
     render(<App />);
-    await screen.findByText('#8814', { selector: '.robot-name' }, { timeout: 10000 });
-    expect(screen.getByRole('button', { name: /#8814, Choreo/ })).toHaveAttribute('aria-pressed', 'true');
+    await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
+    expect(screen.getByRole('button', { name: /#11019, Choreo/ })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: /#0002, Choreo/ })).toHaveAttribute('aria-pressed', 'false');
   });
 });

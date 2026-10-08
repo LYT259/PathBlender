@@ -81,7 +81,7 @@ export const ko: Record<MessageKey, string> = {
   'welcome.exampleNameA': '예제 경로 A',
   'welcome.exampleNameB': '예제 경로 B',
   'welcome.exampleBadge': '예제',
-  'welcome.exampleNotice': 'FRC 팀 8814와 11019의 실제 2026 시즌 경로입니다.',
+  'welcome.exampleNotice': '세 대의 실제 FRC 로봇(11019, 8814, 11019 Champs)의 실제 2026 시즌 경로입니다.',
   'welcome.exitExample': '예제 종료',
   'onboarding.play': '재생을 눌러 경로를 보거나 타임라인을 드래그하세요.',
   'onboarding.check': "아래 문제를 클릭하면 그 순간으로 이동합니다 — 이후 다른 경로나 시작 시각을 바꿔 대안을 비교해 보세요",

@@ -69,7 +69,7 @@ export const mr = {
   'welcome.exampleNameA': 'उदाहरण मार्ग A',
   'welcome.exampleNameB': 'उदाहरण मार्ग B',
   'welcome.exampleBadge': 'उदाहरण',
-  'welcome.exampleNotice': 'FRC संघ 8814 आणि 11019 यांचे 2026 हंगामातील खरे मार्ग.',
+  'welcome.exampleNotice': 'तीन खऱ्या FRC रोबॉट्सचे 2026 हंगामातील खरे मार्ग: 11019, 8814 आणि 11019 Champs.',
   'welcome.exitExample': 'उदाहरण संपवा',
   'onboarding.play': 'मार्ग पाहण्यासाठी प्ले दाबा किंवा टाइमलाइन स्क्रब करा.',
   'onboarding.check': "खालील समस्या निवडा आणि त्या क्षणी जा — नंतर पर्यायांची तुलना करा: मार्ग बदला किंवा सुरुवातीची वेळ हलवा",

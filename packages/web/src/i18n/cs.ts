@@ -80,7 +80,7 @@ export const cs: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'Ukázková trasa A',
   'welcome.exampleNameB': 'Ukázková trasa B',
   'welcome.exampleBadge': 'Ukázka',
-  'welcome.exampleNotice': 'Skutečné trasy sezóny 2026 týmů FRC 8814 a 11019.',
+  'welcome.exampleNotice': 'Skutečné trasy sezóny 2026 tří skutečných robotů FRC: 11019, 8814 a 11019 Champs.',
   'welcome.exitExample': 'Ukončit ukázku',
   'onboarding.play': 'Stiskněte Přehrát pro zobrazení tras, nebo táhněte časovou osu.',
   'onboarding.check': "Vyberte níže problém a přeskočte na ten okamžik — pak porovnejte alternativy: vyměňte trasu nebo posuňte start",

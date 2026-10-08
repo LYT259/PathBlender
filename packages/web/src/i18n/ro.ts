@@ -69,7 +69,7 @@ export const ro = {
   'welcome.exampleNameA': 'Ruta de exemplu A',
   'welcome.exampleNameB': 'Ruta de exemplu B',
   'welcome.exampleBadge': 'Exemplu',
-  'welcome.exampleNotice': 'Rute reale din sezonul 2026 ale echipelor FRC 8814 și 11019.',
+  'welcome.exampleNotice': 'Rute reale din sezonul 2026 a trei roboți FRC reali: 11019, 8814 și 11019 Champs.',
   'welcome.exitExample': 'Termină exemplul',
   'onboarding.play': 'Apasă Redă pentru a vedea rutele sau trage linia de timp.',
 

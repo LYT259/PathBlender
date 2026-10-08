@@ -75,7 +75,7 @@ export const tr: Record<MessageKey, string> = {
   'welcome.exampleNameA': 'Örnek yol A',
   'welcome.exampleNameB': 'Örnek yol B',
   'welcome.exampleBadge': 'Örnek',
-  'welcome.exampleNotice': "FRC takımları 8814 ve 11019’un gerçek 2026 sezonu yolları.",
+  'welcome.exampleNotice': "Üç gerçek FRC robotunun gerçek 2026 sezon yolları: 11019, 8814 ve 11019 Champs.",
   'welcome.exitExample': 'Örneği bitir',
   'onboarding.play': 'Yolları görmek için Oynat’a basın veya zaman çizelgesinde ilerleyin.',
   'onboarding.check': "Aşağıdan bir soru seçerek o ana atlayın — sonra alternatifleri karşılaştırın: bir rotayı değiştirin veya bir başlangıcı kaydırın",
