@@ -26,6 +26,7 @@ import {
   robotVisualGeometry,
   samplePoseAt,
   sampleStateAt,
+  sequenceEventAt,
 } from '@pathblender/core';
 import { TRAIL_WIDTH_M } from './ground-trail';
 import { bumperColor, heatmapColor, robotAnnotation } from './robot-identity';
@@ -225,6 +226,10 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
       : samplePoseAt(r, currentT);
     const vis = robotVisualGeometry(r.trajectory, field.year);
     const modules = chassisModules(r.trajectory, vis.chassis);
+    // The action this robot is performing right now (latest event at or
+    // before currentT); null before the first marker and for unannotated
+    // routes — the callout then draws nothing.
+    const action = sequenceEventAt(r, currentT);
     drawRobot(
       ctx,
       sx,
@@ -237,6 +242,7 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
       view.scale,
       inCollisionNow.has(r.trajectory.id),
       outOfBoundsNow.has(r.trajectory.id),
+      action ? action.name : null,
       w,
       h,
     );
@@ -272,6 +278,7 @@ function drawRobot(
   scale: number,
   collided: boolean,
   outOfBounds: boolean,
+  action: string | null,
   canvasW: number,
   canvasH: number,
 ) {
@@ -380,6 +387,9 @@ function drawRobot(
   // number itself at the leader tip. Screen-space throughout: the
   // number stays upright and constant-size at any heading and zoom.
   const num = robotAnnotation(r.trajectory);
+  // Horizontal side the number badge took (1 right, -1 left, 1 when it
+  // never drew) — the action badge mirrors onto the other side.
+  let numDir = 1;
   if (num) {
     // The visible footprint can be offset from the trajectory origin.
     // Rotate that local offset exactly as the bumper/chassis above.
@@ -405,6 +415,7 @@ function drawRobot(
     const leader = 20;
     const offset = Math.SQRT1_2 * (reach + leader);
     const dir = cx + offset + labelW + margin <= canvasW ? 1 : -1;
+    numDir = dir;
     // Keep the badge inside the viewport and align its text to backing
     // pixels. Font size remains in CSS pixels; the existing DPR transform
     // rasterizes it directly at display resolution, independent of zoom.
@@ -452,6 +463,75 @@ function drawRobot(
     ctx.textBaseline = 'middle';
     ctx.fillStyle = color;
     ctx.fillText(num, snap(bx + pad), snap(ly));
+    ctx.restore();
+  }
+
+  // Current-action callout (user request 2026-10-08): the same leader-line
+  // language on the diagonal opposite the team number, showing the latest
+  // event marker at or before currentT — per the marker semantics the
+  // timeline dots share, a fired command stays in effect until the next.
+  // Unannotated routes and pre-first-marker times draw nothing at all. The
+  // name renders verbatim in mono (it is the annotation's own identifier,
+  // not UI copy) and in the robot's session color, which distinguishes it
+  // from the alliance-colored number badge above.
+  if (action) {
+    const cos = Math.cos(pose.heading);
+    const sin = Math.sin(pose.heading);
+    const cx = sx(pose.x + outer.offsetX * cos - outer.offsetY * sin);
+    const cy = sy(pose.y + outer.offsetX * sin + outer.offsetY * cos);
+    const reach = Math.hypot(L, W) / 2;
+    ctx.save();
+    ctx.font = '12px ui-monospace, monospace';
+    const tw = ctx.measureText(action).width;
+    const color = r.color;
+    const plate = cssVar('--bg-panel', '#ffffff');
+    const pad = 6;
+    const labelW = tw + pad * 2;
+    const labelH = 22;
+    const margin = 6;
+    const leader = 20;
+    const offset = Math.SQRT1_2 * (reach + leader);
+    const dir = -numDir;
+    const dpr = window.devicePixelRatio || 1;
+    const snap = (value: number) => Math.round(value * dpr) / dpr;
+    const bx = snap(Math.max(margin, Math.min(
+      cx + dir * offset - (dir < 0 ? labelW : 0),
+      canvasW - margin - labelW,
+    )));
+    const by = snap(Math.max(margin, Math.min(
+      cy + offset - labelH / 2,
+      canvasH - margin - labelH,
+    )));
+    const lx = dir > 0 ? bx : bx + labelW;
+    const ly = by + labelH / 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(lx, ly);
+    ctx.strokeStyle = plate;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+    ctx.strokeStyle = plate;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(bx, by, labelW, labelH, 5);
+    ctx.fillStyle = plate;
+    ctx.fill();
+    ctx.strokeStyle = cssVar('--border', 'rgba(0, 0, 0, 0.10)');
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color;
+    ctx.fillText(action, snap(bx + pad), snap(ly));
     ctx.restore();
   }
 }
