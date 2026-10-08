@@ -230,7 +230,8 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
     // mechanism groups still open plus one-shot moves inside their flash
     // window (action-words.ts). Empty before anything fires and for
     // unannotated routes — the callout then draws nothing.
-    const action = activeActionsAt(r, currentT).map((a) => a.name).join(' · ') || null;
+    const actions = activeActionsAt(r, currentT).map((a) => a.name);
+    const action = actions.length ? actions : null;
     drawRobot(
       ctx,
       sx,
@@ -243,7 +244,7 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
       view.scale,
       inCollisionNow.has(r.trajectory.id),
       outOfBoundsNow.has(r.trajectory.id),
-      action,
+      action as string[] | null,
       w,
       h,
     );
@@ -279,7 +280,7 @@ function drawRobot(
   scale: number,
   collided: boolean,
   outOfBounds: boolean,
-  action: string | null,
+  actions: string[] | null,
   canvasW: number,
   canvasH: number,
 ) {
@@ -467,16 +468,18 @@ function drawRobot(
     ctx.restore();
   }
 
-  // Current-action callout (user request 2026-10-08): the same leader-line
-  // language on the diagonal opposite the team number, showing every action
-  // currently in effect — sustained mechanism groups joined with dots, per
-  // the vocabulary table in core/action-words.ts (pairs resolve to exact
-  // intervals; same-mechanism events replace; one-shot moves flash and
-  // fade). Unannotated routes and pre-first-marker times draw nothing. The
-  // names render verbatim in mono (the annotations' own identifiers, not
-  // UI copy) and in the robot's session color, which distinguishes them
-  // from the alliance-colored number badge above.
-  if (action) {
+  // Current-action callout (user request 2026-10-08, stacked per action the
+  // same day): the same leader-line language on the diagonal opposite the
+  // team number — ONE badge per active action, each on its own line fanning
+  // from a shared anchor dot, stacked downward (user: "两个动作就是两条线
+  // 拉出来两个框，要分开的"). The active set comes from the vocabulary table
+  // in core/action-words.ts (pairs resolve to exact intervals;
+  // same-mechanism events replace; one-shot moves flash and fade) — empty
+  // before anything fires and for unannotated routes, drawing nothing.
+  // Names render verbatim in mono (the annotations' own identifiers, not
+  // UI copy) in the robot's session color, distinct from the
+  // alliance-colored number badge above.
+  if (actions) {
     const cos = Math.cos(pose.heading);
     const sin = Math.sin(pose.heading);
     const cx = sx(pose.x + outer.offsetX * cos - outer.offsetY * sin);
@@ -484,38 +487,24 @@ function drawRobot(
     const reach = Math.hypot(L, W) / 2;
     ctx.save();
     ctx.font = '12px ui-monospace, monospace';
-    const tw = ctx.measureText(action).width;
     const color = r.color;
     const plate = cssVar('--bg-panel', '#ffffff');
     const pad = 6;
-    const labelW = tw + pad * 2;
     const labelH = 22;
+    const gap = 4;
     const margin = 6;
     const leader = 20;
     const offset = Math.SQRT1_2 * (reach + leader);
     const dir = -numDir;
     const dpr = window.devicePixelRatio || 1;
     const snap = (value: number) => Math.round(value * dpr) / dpr;
-    const bx = snap(Math.max(margin, Math.min(
-      cx + dir * offset - (dir < 0 ? labelW : 0),
-      canvasW - margin - labelW,
-    )));
-    const by = snap(Math.max(margin, Math.min(
+    const stackH = actions.length * labelH + (actions.length - 1) * gap;
+    const y0 = snap(Math.max(margin, Math.min(
       cy + offset - labelH / 2,
-      canvasH - margin - labelH,
+      canvasH - margin - stackH,
     )));
-    const lx = dir > 0 ? bx : bx + labelW;
-    const ly = by + labelH / 2;
     ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(lx, ly);
-    ctx.strokeStyle = plate;
-    ctx.lineWidth = 3;
-    ctx.stroke();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    // Shared anchor dot at the footprint center, robot-colored.
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(cx, cy, 3, 0, Math.PI * 2);
@@ -523,17 +512,39 @@ function drawRobot(
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.fill();
-    ctx.beginPath();
-    ctx.roundRect(bx, by, labelW, labelH, 5);
-    ctx.fillStyle = plate;
-    ctx.fill();
-    ctx.strokeStyle = cssVar('--border', 'rgba(0, 0, 0, 0.10)');
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = color;
-    ctx.fillText(action, snap(bx + pad), snap(ly));
+    actions.forEach((action, i) => {
+      const tw = ctx.measureText(action).width;
+      const labelW = tw + pad * 2;
+      const bx = snap(Math.max(margin, Math.min(
+        cx + dir * offset - (dir < 0 ? labelW : 0),
+        canvasW - margin - labelW,
+      )));
+      const by = y0 + i * (labelH + gap);
+      const ly = by + labelH / 2;
+      const lx = dir > 0 ? bx : bx + labelW;
+      // Leader from the anchor to this badge's robot-facing edge — the
+      // stack fans out without any line crossing a badge above it.
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(lx, ly);
+      ctx.strokeStyle = plate;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.roundRect(bx, by, labelW, labelH, 5);
+      ctx.fillStyle = plate;
+      ctx.fill();
+      ctx.strokeStyle = cssVar('--border', 'rgba(0, 0, 0, 0.10)');
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = color;
+      ctx.fillText(action, snap(bx + pad), snap(ly));
+    });
     ctx.restore();
   }
 }
