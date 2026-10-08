@@ -14,7 +14,6 @@ import {
   sequenceEventTimes,
   serializeSession,
   sessionDuration,
-  currentActionName,
   activeEndT,
   activeStartT,
   type SessionTrajectory,
@@ -461,29 +460,5 @@ describe('partial execution (playS): a leg longer than the remaining auto plays 
     expect(resolveSequence(st)![0]!.endS).toBe(8);
     st.sequence!.segments[0]!.playS = 99;
     expect(resolveSequence(st)![0]!.endS).toBe(8);
-  });
-});
-
-describe('currentActionName — the robot\'s current action per user annotations', () => {
-  it('returns the latest annotated event at or before t (legacy single route)', () => {
-    const st = makeSession(route({ events: [{ name: 'intake', t: 1 }, { name: 'shoot', t: 4 }] }));
-    expect(currentActionName(st, 0.5)).toBeUndefined();
-    expect(currentActionName(st, 1)).toBe('intake');
-    expect(currentActionName(st, 3.99)).toBe('intake');
-    expect(currentActionName(st, 4)).toBe('shoot');
-  });
-
-  it('never reports Choreo default Marker or empty names — unlabeled shows nothing', () => {
-    const st = makeSession(route({ events: [{ name: 'Marker', t: 1 }, { name: '', t: 2 }, { name: '  ', t: 2.5 }] }));
-    expect(currentActionName(st, 9)).toBeUndefined();
-  });
-
-  it('maps events onto the composed clock', () => {
-    const st = robotWithSequence(makeSequence([
-      { id: 's1', routeId: 'a', waitBeforeS: 1, trajectory: route({ id: 'a', durationS: 2, events: [{ name: 'intake', t: 0.5 }] }) },
-    ]));
-    expect(currentActionName(st, 1.4)).toBeUndefined();
-    expect(currentActionName(st, 1.5)).toBe('intake');
-    expect(currentActionName(st, 30)).toBe('intake');
   });
 });

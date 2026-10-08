@@ -11,8 +11,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
-import { sequenceEventAt,
-  currentActionName,
+import {
+  sequenceEventAt,
   chassisModules,
   robotVisualGeometry,
   samplePoseAt,
