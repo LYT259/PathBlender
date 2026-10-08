@@ -1,5 +1,5 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
-import { LANGUAGES, langLabel, useI18n, type LangChoice } from '../i18n';
+import { useI18n, type LangChoice } from '../i18n';
 import { useTheme, type ThemeMode } from '../theme';
 import { useAppIcon, type IconAppearanceMode } from '../app-icon';
 import { readColorblind, writeColorblind } from '../pref-sync';
@@ -26,6 +26,7 @@ import nightIcon from '../assets/app-icon-night.png';
 import { BUILD_VERSION } from '../build-version';
 import { copyText } from '../download';
 import { Icon } from './Icon';
+import { LanguagePicker } from './LanguagePicker';
 import { MouseControlsDiagram } from './MouseControlsDiagram';
 import { IconAppearancePicker } from './IconAppearancePicker';
 import './PreferencesPanel.css';
@@ -194,12 +195,12 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
         key={section} id={`${id}-${section}-panel`} aria-labelledby={`${id}-${section}-tab`}>
         <header className="preferences-heading"><h2>{t(`prefs.section.${section}`)}</h2></header>
         {section === 'general' && <>
-          <div className="preferences-group"><label className="preferences-setting">
-            <span>{t('prefs.language')}</span>
-            <select value={language} onChange={(event) => setLanguageDraft(event.target.value as LangChoice)}>
-              {LANGUAGES.map((choice) => <option key={choice} value={choice}>{choice === 'system' ? t('prefs.langSystem') : langLabel(choice)}</option>)}
-            </select>
-          </label></div>
+          <div className="preferences-group preferences-language-group">
+            <div className="preferences-setting">
+              <span id={`${id}-language-label`}>{t('prefs.language')}</span>
+              <LanguagePicker value={language} onChange={setLanguageDraft} labelledBy={`${id}-language-label`} />
+            </div>
+          </div>
           <fieldset className="preferences-appearance"><legend>{t('prefs.theme')}</legend>
             <div className="preferences-theme-options">
               {(['system', 'light', 'dark'] as const).map((choice) => <label key={choice} className="preferences-theme-choice">
