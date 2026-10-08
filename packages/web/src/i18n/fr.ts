@@ -175,6 +175,8 @@ export const fr: Record<MessageKey, string> = {
   'robots.driveHolonomic': 'Holonomique',
   'robots.driveDifferential': 'Différentiel',
   'robots.visible': 'visible à la lecture et dans la vérification des collisions',
+  'robots.reorderHandle': "Réordonner {name} — position {position} sur {total}. Faites glisser, ou utilisez les flèches haut et bas.",
+  'robots.reorderMoved': "{name} est maintenant en position {position} sur {total}.",
 
   // View-cube initials: the Latin abbreviations collide (Bas/Droite, Dos/Droit),
   // so this dictionary keeps the English source letters while the CJK

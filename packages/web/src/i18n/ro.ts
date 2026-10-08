@@ -147,6 +147,8 @@ export const ro = {
   'robots.length': 'lungime',
   'robots.width': 'lățime',
   'robots.visible': 'vizibil în redare și verificarea de coliziune',
+  'robots.reorderHandle': "Reordonați {name} — poziția {position} din {total}. Trageți sau folosiți tastele cu săgeți sus și jos.",
+  'robots.reorderMoved': "{name} este acum pe poziția {position} din {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

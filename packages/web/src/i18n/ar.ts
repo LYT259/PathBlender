@@ -166,6 +166,8 @@ export const ar = {
   'robots.driveHolonomic': 'شامل الاتجاهات',
   'robots.driveDifferential': 'تفاضلي',
   'robots.visible': 'مرئي في التشغيل وفحص التصادم',
+  'robots.reorderHandle': "إعادة ترتيب {name} — الموضع {position} من {total}. اسحب، أو استخدم مفتاحي السهمين لأعلى ولأسفل.",
+  'robots.reorderMoved': "{name} أصبح الآن في الموضع {position} من {total}.",
   
   'vc.top': 'أع',
   'vc.bottom': 'أس',

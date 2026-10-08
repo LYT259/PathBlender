@@ -179,6 +179,8 @@ export const ja: Record<MessageKey, string> = {
   'robots.driveHolonomic': '全方向',
   'robots.driveDifferential': '差動',
   'robots.visible': '再生と衝突チェックで表示',
+  'robots.reorderHandle': "{name} の表示順序を変更します。現在 {total} チーム中の第 {position} 位。ドラッグするか、上下の矢印キーで移動できます。",
+  'robots.reorderMoved': "{name} は {total} チーム中の第 {position} 位に移動しました。",
 
   // View-cube initials: CJK dictionaries use one ideograph each (zh precedent);
   // Latin-script dictionaries keep the English source letters.

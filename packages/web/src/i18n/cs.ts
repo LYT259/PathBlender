@@ -178,6 +178,8 @@ export const cs: Record<MessageKey, string> = {
   'robots.driveHolonomic': 'Omnidirekční',
   'robots.driveDifferential': 'Diferenciální',
   'robots.visible': 'viditelný při přehrávání a kontrole kolizí',
+  'robots.reorderHandle': "Změnit pořadí družstva {name} — pozice {position} z {total}. Přetáhněte, nebo použijte klávesy šipky nahoru a dolů.",
+  'robots.reorderMoved': "Družstvo {name} je nyní na pozici {position} z {total}.",
 
   'vc.top': 'T',
   'vc.bottom': 'B',

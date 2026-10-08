@@ -147,6 +147,8 @@ export const sq = {
   'robots.length': 'gjatësi',
   'robots.width': 'gjerësi',
   'robots.visible': 'dukshëm në riprodhim dhe kontrollin e përplasjeve',
+  'robots.reorderHandle': "Rirregullo {name} — pozicioni {position} nga {total}. Tërhiqe, ose përdor tastet e shigjetave lart e poshtë.",
+  'robots.reorderMoved': "{name} tani është në pozicionin {position} nga {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

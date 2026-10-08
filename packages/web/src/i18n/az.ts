@@ -146,6 +146,8 @@ export const az = {
   'robots.length': 'uzunluq',
   'robots.width': 'en',
   'robots.visible': 'oynatma və toqquşma yoxlamasında görünən',
+  'robots.reorderHandle': "{name} komandasını yenidən sıralayın — {total} komandadan {position}. sıra. Sürüşdürün və ya yuxarı və aşağı ox düymələrindən istifadə edin.",
+  'robots.reorderMoved': "{name} artıq {total} komandadan {position}. sıradadır.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

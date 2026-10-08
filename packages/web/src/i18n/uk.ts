@@ -148,6 +148,8 @@ export const uk = {
   'robots.length': "довжина",
   'robots.width': "ширина",
   'robots.visible': "видимий під час відтворення та перевірки зіткнень",
+  'robots.reorderHandle': "Змінити порядок {name} — позиція {position} із {total}. Перетягніть або використовуйте стрілки вгору та вниз.",
+  'robots.reorderMoved': "{name} тепер на позиції {position} із {total}.",
   
   'vc.top': 'Г',
   'vc.bottom': 'Н',

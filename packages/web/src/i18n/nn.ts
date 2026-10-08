@@ -148,6 +148,8 @@ export const nn = {
   'robots.length': "lengd",
   'robots.width': "breidd",
   'robots.visible': "synleg i avspeling og kollisjonssjekk",
+  'robots.reorderHandle': "Endre rekkjefølgja for {name} — plass {position} av {total}. Dra, eller bruk piltastane opp og ned.",
+  'robots.reorderMoved': "{name} er no på plass {position} av {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

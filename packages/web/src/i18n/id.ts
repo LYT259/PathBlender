@@ -166,6 +166,8 @@ export const id = {
   'robots.driveHolonomic': 'Holonomik',
   'robots.driveDifferential': 'Diferensial',
   'robots.visible': 'terlihat dalam pemutaran & pemeriksaan tabrakan',
+  'robots.reorderHandle': "Atur ulang {name} — posisi {position} dari {total}. Seret, atau gunakan tombol panah atas dan bawah.",
+  'robots.reorderMoved': "{name} kini di posisi {position} dari {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

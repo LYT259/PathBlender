@@ -166,6 +166,8 @@ export const vi = {
   'robots.driveHolonomic': 'Đa hướng',
   'robots.driveDifferential': 'Vi sai',
   'robots.visible': 'hiện trong phát lại và kiểm tra va chạm',
+  'robots.reorderHandle': "Sắp xếp lại {name} — vị trí {position} trên {total}. Kéo, hoặc dùng phím mũi tên lên và xuống.",
+  'robots.reorderMoved': "{name} hiện ở vị trí {position} trên {total}.",
   
   'vc.top': 'T',
   'vc.bottom': 'B',

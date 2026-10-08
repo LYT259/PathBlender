@@ -178,6 +178,8 @@ export const pl: Record<MessageKey, string> = {
   'robots.driveHolonomic': 'Omnikierunkowy',
   'robots.driveDifferential': 'Różnicowy',
   'robots.visible': 'widoczny podczas odtwarzania i sprawdzania kolizji',
+  'robots.reorderHandle': "Zmień kolejność drużyny {name} — pozycja {position} z {total}. Przeciągnij lub użyj strzałek w górę i w dół.",
+  'robots.reorderMoved': "Drużyna {name} jest teraz na pozycji {position} z {total}.",
 
   // View-cube initials: the Polish abbreviations collide (Przód/Prawo both P),
   // so this dictionary keeps the English source letters while the CJK
