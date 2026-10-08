@@ -666,9 +666,13 @@ function AppBody() {
     // Switching to a robot IS the intent to look at it (user 2026-10-08):
     // if it was hidden, the selection itself unhides it — otherwise the
     // click seems to do nothing and the user must find the eye toggle.
-    updateRobot(id, { visible: true });
+    // An already-visible robot touches NOTHING: setRobots is the session
+    // history's setter, and a no-op rewrite would spend an undo step.
+    setRobots((prev) => prev.some((r) => r.trajectory.id === id && !r.visible)
+      ? prev.map((r) => (r.trajectory.id === id ? { ...r, visible: true } : r))
+      : prev);
     setInspectorMode('robot');
-  }, [updateRobot]);
+  }, []);
   // Double-clicking a team's timeline row enters that team's arrangement
   // editing directly; leaving is a click anywhere outside the surface.
   // Entering is a view change and must not stop the transport (user
