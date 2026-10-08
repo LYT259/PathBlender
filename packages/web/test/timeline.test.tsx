@@ -24,7 +24,7 @@ describe('unified timeline', () => {
   it('uses the edited team number without changing the imported route name', () => {
     const robot = { ...delayedRobot, trajectory: { ...delayedRobot.trajectory, teamNumber: '2910' } };
     render(<I18nProvider><Timeline robots={[robot]} autoPeriodS={20} duration={8} playback={playback()} /></I18nProvider>);
-    expect(screen.getByText('#2910')).toBeInTheDocument();
+    expect(screen.getByText('2910')).toBeInTheDocument();
     expect(screen.queryByText('Robot A')).not.toBeInTheDocument();
     expect(robot.trajectory.name).toBe('Robot A');
   });
@@ -33,7 +33,7 @@ describe('unified timeline', () => {
     const robot = { ...delayedRobot, trajectory: { ...delayedRobot.trajectory, teamNumber: '2910', displayName: '红队射手' } };
     render(<I18nProvider><Timeline robots={[robot]} autoPeriodS={20} duration={8} playback={playback()} /></I18nProvider>);
     expect(screen.getByText('红队射手')).toBeInTheDocument();
-    expect(screen.queryByText('#2910')).not.toBeInTheDocument();
+    expect(screen.queryByText('2910')).not.toBeInTheDocument();
     expect(robot.trajectory.teamNumber).toBe('2910');
   });
 

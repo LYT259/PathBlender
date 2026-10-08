@@ -33,7 +33,7 @@ const sample = readFileSync(resolve(__dirname, '../../../samples/ghostauto/strai
 async function loadRobot() {
   render(<App />);
   fireEvent.drop(window, { dataTransfer: { files: [new File([sample], 'straight_run.ghostauto')] } });
-  await screen.findByText('#0001', { selector: '.robot-name' });
+  await screen.findByText('0001', { selector: '.robot-name' });
 }
 
 beforeEach(() => {
@@ -57,7 +57,7 @@ describe('viewer build session gate', () => {
     // save door is closed.
     fireEvent.keyDown(window, { key: 's', ctrlKey: true });
     fireEvent.keyDown(window, { key: 's', metaKey: true });
-    await waitFor(() => expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('0001', { selector: '.robot-name' })).toBeInTheDocument());
     expect(saveText).not.toHaveBeenCalled();
     // Only the write door closed: the site shares every import channel with
     // the app, whole-folder import included (2026-10-06).

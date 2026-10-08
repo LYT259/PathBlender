@@ -60,7 +60,7 @@ describe('whole-session alliance control', () => {
     await waitFor(() => expect(fieldRobots()).toHaveLength(3));
     // Route replacement now lives in the composer; the alliance must survive it.
     const folderRow = [...document.querySelectorAll('.robot-library-row')]
-      .find((r) => r.textContent?.includes('#AAAAAA'))!;
+      .find((r) => r.textContent?.includes('AAAAAA'))!;
     fireEvent.click(within(folderRow).getByRole('button', { name: 'Arrange timeline' }));
     await screen.findByRole('region', { name: 'Arrange timeline' });
     const lane = document.querySelector('.sequence-track.is-editing .sequence-track-lane') as HTMLElement;
@@ -90,7 +90,7 @@ describe('whole-session alliance control', () => {
     const file = pathFile('straight_run.ghostauto');
     Object.defineProperty(file, 'webkitRelativePath', { value: 'autos/straight_run.ghostauto' });
     drop([file]);
-    await screen.findByText('#0001', { selector: '.robot-name' });
+    await screen.findByText('0001', { selector: '.robot-name' });
     expect(fieldRobots()).toHaveLength(4);
     const mine = () => fieldRobots().find((r) => r.trajectory.teamNumber === '0001')!;
     expect(mine().trajectory.alliance).toBe('red');

@@ -16,7 +16,7 @@ beforeEach(() => localStorage.clear());
 
 async function importOne() {
   fireEvent.drop(window, { dataTransfer: { files: [new File([sampleText], 'straight_run.ghostauto')] } });
-  await screen.findByText('#0001', { selector: '.robot-name' }, { timeout: 10000 });
+  await screen.findByText('0001', { selector: '.robot-name' }, { timeout: 10000 });
 }
 
 describe('feature discovery at the point of use', () => {
@@ -44,7 +44,7 @@ describe('feature discovery at the point of use', () => {
   it('the example session never shows the import tip', async () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-    await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
+    await screen.findByText('11019', { selector: '.robot-name' }, { timeout: 10000 });
     expect(screen.queryByText(en['onboarding.import'])).toBeNull();
   });
 });

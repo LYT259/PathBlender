@@ -51,7 +51,7 @@ describe('open-with channel', () => {
     );
 
     await waitFor(() => expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument());
-    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('0001', { selector: '.robot-name' })).toBeInTheDocument();
     // The stash is consumed by the handler, not left on the window.
     expect((window as unknown as Record<string, unknown>).__pbOpenPayload).toBeUndefined();
   });
@@ -64,7 +64,7 @@ describe('open-with channel', () => {
     renderApp();
 
     await waitFor(() => expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument());
-    expect(screen.getByText('#0003', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('0003', { selector: '.robot-name' })).toBeInTheDocument();
     expect((window as unknown as Record<string, unknown>).__pbOpenPayload).toBeUndefined();
   });
 
@@ -83,6 +83,6 @@ describe('open-with channel', () => {
       }),
     );
     await waitFor(() => expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument());
-    expect(screen.getByText('#0002', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('0002', { selector: '.robot-name' })).toBeInTheDocument();
   });
 });

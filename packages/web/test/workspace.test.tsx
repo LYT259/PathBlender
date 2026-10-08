@@ -19,7 +19,7 @@ async function importSamples(...paths: string[]) {
 }
 
 function selectRobot(name: string) {
-  fireEvent.click(screen.getByText(({ 'Straight Run': '#0001', 'Stop And Score': '#0002', 'Side Lane': '#0003' } as Record<string, string>)[name] ?? name, { selector: '.robot-name' }));
+  fireEvent.click(screen.getByText(({ 'Straight Run': '0001', 'Stop And Score': '0002', 'Side Lane': '0003' } as Record<string, string>)[name] ?? name, { selector: '.robot-name' }));
   return within(screen.getByRole('region', { name, exact: true }));
 }
 
@@ -27,7 +27,7 @@ function openChecks() {
   fireEvent.click(screen.getByRole('button', { name: /^Checks/i }));
 }
 
-const conflictPair = () => screen.getByText('#0001 × #0002', { selector: '.conflict-pair' });
+const conflictPair = () => screen.getByText('0001 × 0002', { selector: '.conflict-pair' });
 
 beforeEach(() => localStorage.clear());
 
@@ -88,15 +88,15 @@ describe('workspace workflow', () => {
     expect(conflictPair()).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /hide.*#0001/i }));
-    expect(screen.getByRole('button', { name: /show.*#0001/i })).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(screen.getByRole('button', { name: /hide.*0001/i }));
+    expect(screen.getByRole('button', { name: /show.*0001/i })).toHaveAttribute('aria-pressed', 'false');
     // Hidden means absent for checks too (user request 2026-10-04): the
     // conflict pair and its count leave with the robot…
-    expect(screen.queryByText('#0001 × #0002', { selector: '.conflict-pair' })).not.toBeInTheDocument();
+    expect(screen.queryByText('0001 × 0002', { selector: '.conflict-pair' })).not.toBeInTheDocument();
     expect(screen.getByText('0', { selector: '.conflict-count' })).toBeInTheDocument();
 
     // …and come back when it does.
-    fireEvent.click(screen.getByRole('button', { name: /show.*#0001/i }));
+    fireEvent.click(screen.getByRole('button', { name: /show.*0001/i }));
     expect(conflictPair()).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
 
@@ -127,7 +127,7 @@ describe('workspace workflow', () => {
     expect(season).toHaveValue('rebuilt-2026');
     fireEvent.change(season, { target: { value: 'reefscape-2025' } });
     expect(season).toHaveValue('reefscape-2025');
-    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('0001', { selector: '.robot-name' })).toBeInTheDocument();
 
     // Restore a different saved session, including its field and timing.
     const savedRobot = makeSession(parsePathFile(
@@ -141,9 +141,9 @@ describe('workspace workflow', () => {
       { type: 'application/json' },
     );
     fireEvent.drop(window, { dataTransfer: { files: [savedSession] } });
-    await screen.findByText('#0002', { selector: '.robot-name' });
+    await screen.findByText('0002', { selector: '.robot-name' });
     expect(season).toHaveValue('chargedup-2023');
-    expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
+    expect(screen.queryByText('0001', { selector: '.robot-name' })).not.toBeInTheDocument();
     // The restored start delay surfaces in the bottom arrangement surface.
     fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
     fireEvent.click(screen.getByRole('button', { name: /^Stop And Score, 1\.25–/ }));
@@ -177,7 +177,7 @@ describe('workspace workflow', () => {
     // so re-query rather than reuse the pre-clear references.
     fireEvent.keyDown(window, { key: 'z', metaKey: true });
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
-    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('0001', { selector: '.robot-name' })).toBeInTheDocument();
     const redoBtnAgain = screen.getByRole('button', { name: 'Redo' });
     expect(redoBtnAgain).toBeEnabled();
 

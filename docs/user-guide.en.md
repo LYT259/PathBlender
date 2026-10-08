@@ -122,8 +122,8 @@ things:
 ![Mirror before/after](screenshots/mirror-before-after.en.png)
 
 The built-in example is the quickest way to feel it (Help → Getting started
-walks you through a five-task checklist): mirroring #8814 clears its conflict
-with #11019 on the spot, and one more click restores it — the mirror only
+walks you through a five-task checklist): mirroring 8814 clears its conflict
+with 11019 on the spot, and one more click restores it — the mirror only
 flips that one robot's analysis view across the centreline.
 
 Three shared boundaries worth stating up front when demoing:

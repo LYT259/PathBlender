@@ -18,7 +18,7 @@ beforeEach(() => localStorage.clear());
 
 async function openExample() {
   fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-  await screen.findByText('#11019', { selector: '.robot-name' }, { timeout: 10000 });
+  await screen.findByText('11019', { selector: '.robot-name' }, { timeout: 10000 });
 }
 
 function tourCard() {
@@ -100,7 +100,7 @@ describe('onboarding tour', () => {
     const robot = makeSession(parsePathFile(sampleText, 'straight_run.ghostauto'), 0);
     localStorage.setItem('pb.autosave.v1', serializeSession([robot], 'rebuilt-2026'));
     render(<App />);
-    await screen.findByText('#0001', { selector: '.robot-name' }, { timeout: 10000 });
+    await screen.findByText('0001', { selector: '.robot-name' }, { timeout: 10000 });
     // The workspace actions exist and run…
     fireEvent.click(screen.getByRole('button', { name: 'Play', exact: true }));
     await screen.findByRole('button', { name: 'Pause', exact: true });

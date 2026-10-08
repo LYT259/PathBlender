@@ -3,15 +3,18 @@ import type { Trajectory } from '@pathblender/core';
 /** Presentation only: imported route names remain intact in session data. */
 export function robotIdentity(trajectory: Pick<Trajectory, 'teamNumber' | 'name' | 'displayName'>): string {
   if (trajectory.displayName?.trim()) return trajectory.displayName.trim();
-  return trajectory.teamNumber ? `#${trajectory.teamNumber}` : trajectory.name;
+  return trajectory.teamNumber || trajectory.name;
 }
 
 /**
  * The details panel keeps the original identity rule (team number, else
  * route name) — display names never replace imported team metadata there.
+ * The # prefix was dropped everywhere (user request 2026-10-08): it read
+ * as a chat handle, could not be typed away when renaming, and made
+ * display-name robots look inconsistent next to numbered ones.
  */
 export function robotOriginalIdentity(trajectory: Pick<Trajectory, 'teamNumber' | 'name'>): string {
-  return trajectory.teamNumber ? `#${trajectory.teamNumber}` : trajectory.name;
+  return trajectory.teamNumber || trajectory.name;
 }
 
 /** Bumper identity follows the session alliance; path colors stay distinct. */
