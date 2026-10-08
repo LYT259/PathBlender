@@ -38,7 +38,6 @@ export const nn = {
   'prefs.appIcon': "Appikon",
   'welcome.title': 'Importer ruter for å kome i gang',
 
-  'welcome.tagline': "Før kampen: legg automatiske programma til alle allierte på same bane, spel dei av saman, og fang risikoen for kollisjonar mellom robotar i tide.",
   'tour.title': "Kom i gang",
   'tour.progress': "{n}/{m}",
   'tour.collapse': "Slå saman lista",
@@ -55,7 +54,6 @@ export const nn = {
   'tour.task.mirror.title': "Spegl éin robot",
   'tour.task.mirror.hint': "Trykk Spegelvend venstre/høgre på 8814-rada — berre den roboten, med heile rutebiblioteket sitt, speglast over midtlinja. Sjå deretter på sjekkpanelet igjen.",
   'tour.finished': "Det er den grunnleggjande sjekkflyten. Forlat eksempelet med «Avslutt eksempel» og importer alliansen sine ruter — Hjelp-menyen opnar denne lista når som helst.",
-  'welcome.audience': "For alliansen sine strategi- og programmeringsgrupper. Filene vert analyserte på maskina di og vert aldri lasta opp — PathBlender analyserer; endringar skjer i Choreo eller PathPlanner.",
   'welcome.description': 'Spele av rutene saman og sjå etter forstyrringar.',
   'welcome.folderAdvice': 'Importer heile mapper slik at du kan byte rute når det oppstår ein konflikt.',
   'welcome.importFile': 'Importer rutefiler',
