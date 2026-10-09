@@ -161,7 +161,7 @@ export function LanguagePicker({ value, onChange, labelledBy }: {
       {results.length ? <div className="language-picker-results" role="listbox" ref={listbox}
         id={`${id}-listbox`} aria-labelledby={labelledBy}>
         {results.map((choice, index) => <button type="button" role="option" tabIndex={-1} key={choice}
-          id={`${id}-opt-${index}`}
+          id={`${id}-opt-${index}`} data-value={choice}
           className={`language-picker-option${choice === 'system' ? ' language-picker-system' : ''}${index === active ? ' language-picker-active' : ''}`}
           aria-selected={choice === value} onClick={() => { onChange(choice); close(); }}>
           <span className="language-picker-names"><span dir="auto">{label(choice)}</span>
