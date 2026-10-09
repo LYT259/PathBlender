@@ -154,11 +154,30 @@ function Workspace({ initial }: { initial: SessionTrajectory[] }) {
   return { playback, delays };
 }
 
-const MIME = 'application/x-pathblender-team-order';
-const dataTransfer = () => ({
-  types: [MIME], files: [] as unknown[], dropEffect: 'move', effectAllowed: 'move',
-  setData: () => {}, setDragImage: () => {}, getData: () => '',
-});
+/** jsdom has no layout at all — elementFromPoint isn't even defined, so the
+ * stub assigns it outright and reports the target row for every probe. Its
+ * zero-height box resolves to the 'after' edge, exactly like the native-DnD
+ * tests before this one. */
+function withElementFromPoint<T>(row: HTMLElement, run: () => T): T {
+  const doc = document as Document & { elementFromPoint?: (x: number, y: number) => Element | null };
+  const had = typeof doc.elementFromPoint === 'function';
+  const original = doc.elementFromPoint;
+  doc.elementFromPoint = () => row;
+  try {
+    return run();
+  } finally {
+    if (had) doc.elementFromPoint = original;
+    else delete doc.elementFromPoint;
+  }
+}
+
+function pointerDrag(fromHandle: HTMLElement, toRow: HTMLElement, clientY = 40) {
+  withElementFromPoint(toRow, () => {
+    fireEvent.pointerDown(fromHandle, { button: 0, isPrimary: true, pointerId: 1, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(window, { pointerId: 1, clientX: 60, clientY });
+    fireEvent.pointerUp(window, { pointerId: 1, clientX: 60, clientY });
+  });
+}
 
 const listIds = () =>
   [...document.querySelectorAll('.robot-library-row')].map((row) => (row as HTMLElement).dataset.teamOrderId);
@@ -176,10 +195,7 @@ const handleOf = (id: string, list: 'cards' | 'rows') =>
 describe('the robot list and timeline share one order', () => {
   it('dragging a card handle reorders both panels and changes no timing or playback state', () => {
     const w = Workspace({ initial: [team('a', '10'), team('b', '20'), team('c', '30')] });
-    fireEvent.dragStart(handleOf('a', 'cards'), { dataTransfer: dataTransfer() });
-    // jsdom boxes have zero height, so the drop resolves to the 'after' edge.
-    fireEvent.dragOver(rowOf('c', 'cards'), { dataTransfer: dataTransfer(), clientY: 0 });
-    fireEvent.drop(rowOf('c', 'cards'), { dataTransfer: dataTransfer() });
+    pointerDrag(handleOf('a', 'cards'), rowOf('c', 'cards'));
     expect(listIds()).toEqual(['b', 'c', 'a']);
     expect(timelineIds()).toEqual(['b', 'c', 'a']);
     // Slots kept their own timing through the move…
@@ -192,12 +208,49 @@ describe('the robot list and timeline share one order', () => {
 
   it('dragging a timeline handle reorders both panels the same way', () => {
     Workspace({ initial: [team('a', '10'), team('b', '20'), team('c', '30')] });
-    fireEvent.dragStart(handleOf('c', 'rows'), { dataTransfer: dataTransfer() });
-    fireEvent.dragOver(rowOf('a', 'rows'), { dataTransfer: dataTransfer(), clientY: 0 });
-    fireEvent.drop(rowOf('a', 'rows'), { dataTransfer: dataTransfer() });
+    pointerDrag(handleOf('c', 'rows'), rowOf('a', 'rows'));
     // 'after' a (zero-height box) puts c second.
     expect(listIds()).toEqual(['a', 'c', 'b']);
     expect(timelineIds()).toEqual(['a', 'c', 'b']);
+  });
+
+  it('shows the edge indicator and ghost during the drag, then cleans both up', () => {
+    Workspace({ initial: [team('a', '10'), team('b', '20')] });
+    withElementFromPoint(rowOf('b', 'rows'), () => {
+      fireEvent.pointerDown(handleOf('a', 'rows'), { button: 0, isPrimary: true, pointerId: 1, clientX: 10, clientY: 10 });
+      fireEvent.pointerMove(window, { pointerId: 1, clientX: 60, clientY: 40 });
+      expect(rowOf('b', 'rows').getAttribute('data-order-edge')).toBe('after');
+      expect(document.querySelector('.team-order-ghost')).toBeTruthy();
+      expect(rowOf('a', 'rows').hasAttribute('data-order-dragging')).toBe(true);
+      fireEvent.pointerUp(window, { pointerId: 1, clientX: 60, clientY: 40 });
+    });
+    expect(document.querySelector('.team-order-ghost')).toBeNull();
+    expect(rowOf('a', 'rows').hasAttribute('data-order-dragging')).toBe(false);
+    expect(rowOf('b', 'rows').hasAttribute('data-order-edge')).toBe(false);
+  });
+
+  it('travel under the hysteresis stays a click: no ghost, no move', () => {
+    Workspace({ initial: [team('a', '10'), team('b', '20')] });
+    withElementFromPoint(rowOf('b', 'rows'), () => {
+      fireEvent.pointerDown(handleOf('a', 'cards'), { button: 0, isPrimary: true, pointerId: 1, clientX: 10, clientY: 10 });
+      fireEvent.pointerMove(window, { pointerId: 1, clientX: 12, clientY: 12 });
+      fireEvent.pointerUp(window, { pointerId: 1, clientX: 12, clientY: 12 });
+    });
+    expect(document.querySelector('.team-order-ghost')).toBeNull();
+    expect(listIds()).toEqual(['a', 'b']);
+  });
+
+  it('Escape cancels the drag and commits nothing', () => {
+    Workspace({ initial: [team('a', '10'), team('b', '20')] });
+    withElementFromPoint(rowOf('b', 'rows'), () => {
+      fireEvent.pointerDown(handleOf('a', 'cards'), { button: 0, isPrimary: true, pointerId: 1, clientX: 10, clientY: 10 });
+      fireEvent.pointerMove(window, { pointerId: 1, clientX: 60, clientY: 40 });
+      expect(document.querySelector('.team-order-ghost')).toBeTruthy();
+      fireEvent.keyDown(window, { key: 'Escape' });
+      expect(document.querySelector('.team-order-ghost')).toBeNull();
+      fireEvent.pointerUp(window, { pointerId: 1, clientX: 60, clientY: 40 });
+    });
+    expect(listIds()).toEqual(['a', 'b']);
   });
 
   it('ignores a drop that never started as a team drag (file drop isolation)', () => {
@@ -232,9 +285,7 @@ describe('the robot list and timeline share one order', () => {
     Workspace({ initial: [team('a', '10'), hidden] });
     const row = rowOf('h', 'cards');
     expect(row.classList.contains('is-hidden')).toBe(true);
-    fireEvent.dragStart(handleOf('h', 'cards'), { dataTransfer: dataTransfer() });
-    fireEvent.dragOver(rowOf('a', 'cards'), { dataTransfer: dataTransfer(), clientY: 0 });
-    fireEvent.drop(rowOf('a', 'cards'), { dataTransfer: dataTransfer() });
+    pointerDrag(handleOf('h', 'cards'), rowOf('a', 'cards'));
     expect(listIds()).toEqual(['a', 'h']);
     expect(timelineIds()).toEqual(['a', 'h']);
   });
