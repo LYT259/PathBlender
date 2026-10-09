@@ -8,7 +8,7 @@ import { sequenceRows, type AutoSequenceSegment } from './auto-sequence-state';
  * boundaries — never rounded, never stretched. Presentation arithmetic only;
  * the production sequence state lives on the robot and is owned by App.
  */
-export interface TimelineClip { id: string; routeId: string; startS: number; durationS: number }
+export interface TimelineClip { id: string; routeId: string; startS: number; durationS: number; /** Present when the clip plays only the first seconds of its route (partial execution, user 2026-10-08). */ playS?: number }
 
 /** The composer's view of a composition: one clip per resolvable segment, on the global clock. */
 export function clipsFor(segments: AutoSequenceSegment[], routes: SessionRouteOption[]): TimelineClip[] {
@@ -16,7 +16,8 @@ export function clipsFor(segments: AutoSequenceSegment[], routes: SessionRouteOp
     id: row.id,
     routeId: row.routeId,
     startS: row.startS,
-    durationS: row.route.trajectory.durationS,
+    durationS: row.endS - row.startS,
+    playS: row.playS,
   }));
 }
 
@@ -25,13 +26,14 @@ export function clipsFor(segments: AutoSequenceSegment[], routes: SessionRouteOp
  * delay; every later wait is the exact gap to the previous block's end.
  * Clips are already non-overlapping (canPlaceClip), so waits are ≥ 0 and
  * the arithmetic is exact — imported durations and seam times are preserved
- * bit-for-bit rather than rounded.
+ * bit-for-bit rather than rounded. A truncated clip keeps its playS.
  */
 export function segmentsFromClips(clips: readonly TimelineClip[]): AutoSequenceSegment[] {
   const sorted = [...clips].sort((a, b) => a.startS - b.startS);
   let previousEndS = 0;
   return sorted.map((clip) => {
-    const segment = { id: clip.id, routeId: clip.routeId, waitBeforeS: clip.startS - previousEndS };
+    const segment: AutoSequenceSegment = { id: clip.id, routeId: clip.routeId, waitBeforeS: clip.startS - previousEndS };
+    if (clip.playS !== undefined) segment.playS = clip.playS;
     previousEndS = clip.startS + clip.durationS;
     return segment;
   });
@@ -49,7 +51,8 @@ export function placeClip(clips: TimelineClip[], clip: TimelineClip, limitS = In
 
 /**
  * Semantic equality of two arrangements: the same routes at the same absolute
- * start times, compared on the timeline (order-independent — segment arrays
+ * start times and the same effective durations (a partial-execution cut is a
+ * real change), compared on the timeline (order-independent — segment arrays
  * that sort to the same placement play identically). Durations ride the route
  * reference, so (routeId, startS) within a microsecond is the whole story —
  * far below the 0.1 s pointer grid, far above double representation noise;
@@ -61,7 +64,9 @@ export function sameClipLayout(a: readonly TimelineClip[], b: readonly TimelineC
   const byStart = (clips: readonly TimelineClip[]) => [...clips].sort((x, y) => x.startS - y.startS || x.routeId.localeCompare(y.routeId));
   const sa = byStart(a);
   const sb = byStart(b);
-  return sa.every((clip, i) => clip.routeId === sb[i]!.routeId && Math.abs(clip.startS - sb[i]!.startS) <= 1e-6);
+  return sa.every((clip, i) => clip.routeId === sb[i]!.routeId
+    && Math.abs(clip.startS - sb[i]!.startS) <= 1e-6
+    && Math.abs(clip.durationS - sb[i]!.durationS) <= 1e-6);
 }
 
 /** Snap to exact neighbouring boundaries before the 0.1 s pointer grid.

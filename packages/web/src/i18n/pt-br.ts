@@ -24,6 +24,7 @@ export const ptBR: Record<MessageKey, string> = {
   'sequence.joinVelocity': 'salto de velocidade {d} m/s',
   'sequence.libraryBlocked': 'O início não continua o fim de {name} (diferença de posição {p}, diferença de orientação {h})',
   'sequence.libraryOccupied': 'O cursor de reprodução está sobre um trecho ocupado — arraste-o primeiro para um espaço livre',
+  'sequence.libraryStartZone': 'Não começa na área de partida permitida',
   'sequence.joinFix': 'Corrija a emenda no PathPlanner ou no Choreo e importe a rota novamente.',
   'sequence.overAuto': 'Termina em {t} s, após o período autônomo de {auto} s.',
   'sequence.invalid': 'Insira um tempo de início finito e não negativo.',
@@ -82,7 +83,6 @@ export const ptBR: Record<MessageKey, string> = {
   'welcome.exitExample': 'Encerrar exemplo',
   'onboarding.play': 'Pressione Reproduzir para ver as trajetórias, ou arraste a linha do tempo.',
 
-  'onboarding.import': "Importado — confira o básico primeiro: temporada e campo, tamanho do para-choque, vermelho/azul",
   'onboarding.check': 'Selecione um problema abaixo para pular para aquele momento — depois compare alternativas: troque uma rota ou desloque um horário de início.',
   'onboarding.dismiss': 'Dispensar dica',
   'workspace.loading3d': 'Carregando visualização 3D…',
@@ -142,6 +142,7 @@ export const ptBR: Record<MessageKey, string> = {
   'timeline.rewind': 'Voltar ao início',
   'timeline.stepBack': 'Voltar 0,5 segundo',
   'timeline.stepForward': 'Avançar 0,5 segundo',
+  'timeline.jumpEnd': 'Ir para o final das trajetórias visíveis',
   'timeline.play': 'Reproduzir',
   'timeline.pause': 'Pausar',
   'timeline.position': 'Posição da reprodução',

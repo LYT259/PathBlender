@@ -89,6 +89,59 @@ export interface FieldPackage {
   /** AndyMark-built-field tag layout, when it differs from the default
    *  (welded) set — the 2D overlay and 3D beacons follow the selection. */
   aprilTagsAndyMark?: AprilTag[];
+  /** The season's legal auto starting region as a union of rectangles, in
+   *  the blue SOURCE frame (sourceRobots stay blue; the red view derives by
+   *  mirroring, so the same rects serve both alliances). The composer grays
+   *  first legs starting outside it (user request 2026-10-08). Per-season
+   *  derivations, all from the seasons' own game manuals (§5/§6/§7) with
+   *  AprilTag-layout cross-checks — see START_ZONE comments at each field:
+   *
+   *  · 2026 REBUILT — the ALLIANCE ZONE: one rect, wall to 4.0284 m, full
+   *    width (manual p. 21: 158.6 in deep × 317.7 in long; starting line
+   *    included; tags: blue wall x≈0.008, red trench mirrors blue).
+   *  · 2025 REEFSCAPE — BUMPERS must overlap the ROBOT STARTING LINE
+   *    (G303-D), 7 ft 4 in from the REEF (glossary). The line is 2.2352 m
+   *    from the reef CENTER (x=4.4895 across the face tags 17–22) — the
+   *    face reading (7.56 m) would land inside the blue BARGE ZONE
+   *    (x∈[6.99, 8.16]), which the line "between each REEF and the BARGE"
+   *    excludes. Modeled as a ±0.5 m band around x=6.7247 (a ~0.9 m
+   *    robot's bumpers overlap a 2 in line within that center span).
+   *  · 2024 CRESCENDO — the ROBOT STARTING ZONE (manual p. 24): 6 ft 4⅛ in
+   *    deep × 23 ft 8⅛ in along the wall, bounded by the AMP ZONE (y-max
+   *    side: 1 ft 5¾ in = 0.4509 m strip) and the opponent's SOURCE ZONE
+   *    (y-min side; the tag layout puts the blue source wall diagonal at
+   *    y≈0, tags 9/10, and the amp at y≈8.2, tag 6): y ∈ [0.5474, 7.7601]
+   *    (0.5474 + 7.2127 + 0.4509 = 8.211 = field width).
+   *  · 2023 CHARGED UP — the COMMUNITY (manual p. 21 + H309-D): 18 ft
+   *    (5.4864 m) wide centered, y ∈ [1.3619, 6.8483], with a two-rect
+   *    depth — 11 ft ⅜ in (3.3623 m) across the community and 16 ft 1¼ in
+   *    (4.9086 m) in front of the CHARGE STATION (its 8 ft / 2.4384 m
+   *    pivoting frame, centered in the community width).
+   *  · 2022 RAPID REACT — the two TARMACs (12 ft 9 in × 7 ft ¾ in, manual
+   *    p. 24; start rule H309/G303: BUMPERS fully inside one) are octagonal
+   *    pads sitting DIAGONALLY against the mid-field HUB — not wall strips.
+   *    The official placement sheet is unrecoverable (FE-2022 package 404;
+   *    the marking diagram's dimension chain does not close numerically; the
+   *    official STEP CAD models no tape), so the region is fit from REAL
+   *    match starts of three public team repos (Team3128/3128-robot-2022,
+   *    1757WestwoodRobotics/2022-RapidReact — whose autos are literally
+   *    named '5bR'/'4bL' Right/Left tarmac — and gwhs/RobotV1 'Tarmac-A'):
+   *    9 true-start anchors cluster at x 4.94–8.20 m, mirrored about the
+   *    width centreline, hugging the hub (gwhs's start at 8.20 pins the
+   *    near-hub edge). Extending by a half-robot (2022 frame cap 36.5 in +
+   *    tape half) gives the union rect below; the independent 45°-pad
+   *    projection ((153+84.75)/√2 = 4.27 m) matches the fitted x span
+   *    (4.18 m) within 9 cm. Precision class: ±10 cm, sample-derived.
+   *  Undefined = the season has no (established) starting region → ungated. */
+  startZone?: StartZoneRect[];
+}
+
+/** One rectangle of a season's legal auto starting region (blue source frame). */
+export interface StartZoneRect {
+  xMinM: number;
+  xMaxM: number;
+  yMinM: number;
+  yMaxM: number;
 }
 
 // Official AprilTag layouts per season (WPILib blue-origin frame, meters),
@@ -251,6 +304,7 @@ export const REBUILT_2026: FieldPackage = {
     autoPeriodS: 20,
   lengthM: 16.54,
   widthM: 8.07,
+  startZone: [{ xMinM: 0, xMaxM: 4.0284, yMinM: 0, yMaxM: 8.069 }],
   image: { pixelWidth: 3508, pixelHeight: 1814, ppm: 200, marginM: 0.5 },
   // Official 2026 welded-field AprilTag layout (WPILib blue-origin frame),
   // from allwpilib's apriltag resources (BSD-3-Clause); field facts, used
@@ -326,6 +380,11 @@ export const FIELDS: readonly FieldPackage[] = [
     // four hangar-ring decals scatter ±33 px (≈ 10 cm, drawn loose).
     imageRendered: { pixelWidth: 7045, pixelHeight: 2934, ppm: 320.55, ppmY: 320.55, marginM: 0, originPx: { x: 884, y: 148 } },
     aprilTags: TAGS_2022,
+    // START_ZONE 2022 — the hub-flanking TARMAC pair, sample-fit union rect
+    // (derivation in the FieldPackage.startZone comment): three teams' real
+    // match starts + half-robot margin; x 4.47..8.65 hugs the hub (8.23),
+    // y mirror-symmetric about the 4.115 centreline.
+    startZone: [{ xMinM: 4.47, xMaxM: 8.65, yMinM: 1.01, yMaxM: 7.22 }],
   },
   {
     id: 'chargedup-2023',
@@ -345,6 +404,14 @@ export const FIELDS: readonly FieldPackage[] = [
     // looseness, no global bias.
     imageRendered: { pixelWidth: 3608, pixelHeight: 1462, ppm: 159.85, ppmY: 160.16, marginM: 0, originPx: { x: 482, y: 89 } },
     aprilTags: TAGS_2023,
+    // START_ZONE 2023 — the COMMUNITY (H309-D): 18 ft wide, centered; 11 ft ⅜ in
+    // deep across the community, 16 ft 1¼ in deep in front of the 8 ft CHARGE
+    // STATION frame (centered in the community width). Widths in THIS frame
+    // (the PP playfield canvas, 8.0163 m — not the manual's 8.2102 enclosure).
+    startZone: [
+      { xMinM: 0, xMaxM: 3.3623, yMinM: 1.2649, yMaxM: 6.7513 },
+      { xMinM: 0, xMaxM: 4.9085, yMinM: 2.7889, yMaxM: 5.2273 },
+    ],
   },
   {
     id: 'crescendo-2024',
@@ -362,6 +429,11 @@ export const FIELDS: readonly FieldPackage[] = [
     // looseness, no consistent global bias.
     imageRendered: { pixelWidth: 3840, pixelHeight: 1554, ppm: 158.96, ppmY: 159.42, marginM: 0, originPx: { x: 513, y: 79 } },
     aprilTags: TAGS_2024,
+    // START_ZONE 2024 — the ROBOT STARTING ZONE: 6 ft 4⅛ in deep × 23 ft 8⅛ in
+    // along the wall, between the AMP ZONE strip (1 ft 5¾ in, y-max side —
+    // tag 6 sits at y=8.204) and the opponent's SOURCE ZONE diagonal (y-min
+    // side — tags 9/10). y bounds from 8.2093 − 0.4508 − 7.2168 = 0.5417.
+    startZone: [{ xMinM: 0, xMaxM: 1.9336, yMinM: 0.5417, yMaxM: 7.7584 }],
   },
   {
     id: 'reefscape-2025',
@@ -412,6 +484,13 @@ export const FIELDS: readonly FieldPackage[] = [
     imageRenderedAndyMark: { pixelWidth: 3773, pixelHeight: 1528, ppm: 167.08, ppmY: 171.49, marginM: 0, originPx: { x: 420, y: 74 } },
     aprilTags: TAGS_2025_WELDED,
     aprilTagsAndyMark: TAGS_2025_ANDYMARK,
+    // START_ZONE 2025 — BUMPERS overlap the ROBOT STARTING LINE (G303-D), a
+    // full-width black line 7 ft 4 in from the REEF center (x=4.4895 across
+    // face tags 17–22 → line x=6.7247; the from-the-face reading, 7.56, is
+    // excluded — it lands inside the blue BARGE ZONE [6.99, 8.16], which the
+    // line "between each REEF and the BARGE" cannot). ±0.5 m band: a ~0.9 m
+    // robot's bumpers overlap the 2 in line within that center span.
+    startZone: [{ xMinM: 6.2247, xMaxM: 7.2247, yMinM: 0, yMaxM: 8.052 }],
   },
   REBUILT_2026,
 ];
@@ -493,6 +572,24 @@ export function flipPoseToBlue(pose: Pose2d, field: FieldPackage): Pose2d {
     y: field.widthM - pose.y,
     heading: wrapAngle(pose.heading + Math.PI),
   };
+}
+
+/**
+ * Whether a trajectory's first sample starts inside the season's legal auto
+ * starting region (FieldPackage.startZone, a union of rectangles). The
+ * trajectory is the blue-frame SOURCE sample (sourceRobots stay blue;
+ * `robotsForAlliance` derives the red view), and the red view's region is
+ * the mirror of the blue one — so on the source frame the predicate is the
+ * same for both alliances and the alliance never enters it. Zone boundaries
+ * are inclusive (tape belongs to the zone); no samples means nothing to
+ * gate.
+ */
+export function startsInAllianceZone(trajectory: Trajectory, zone: readonly StartZoneRect[]): boolean {
+  const first = trajectory.samples[0];
+  if (!first) return true;
+  return zone.some((r) =>
+    first.x >= r.xMinM - 1e-9 && first.x <= r.xMaxM + 1e-9 &&
+    first.y >= r.yMinM - 1e-9 && first.y <= r.yMaxM + 1e-9);
 }
 
 /**

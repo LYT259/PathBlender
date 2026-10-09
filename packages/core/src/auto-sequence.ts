@@ -21,6 +21,15 @@ export interface AutoSequenceSegment {
   routeId: string;
   /** Wait before this segment starts — seconds after the previous segment ends. */
   waitBeforeS: number;
+  /**
+   * Movement seconds actually played from the route (user 2026-10-08):
+   * a leg dropped where less auto time remained than the route needs runs
+   * "as far as it can" — the first `playS` seconds — and the robot then
+   * parks at that mid-route state. Absent or ≥ the route duration means
+   * the whole route plays. Optional, so existing sessions and files
+   * (which always play routes whole) read unchanged.
+   */
+  playS?: number;
 }
 
 /** Present on a SessionTrajectory once the user arranges a composition. */
@@ -40,6 +49,39 @@ export interface ResolvedSequenceSegment {
 }
 
 const RAD_TO_DEG = 180 / Math.PI;
+
+/**
+ * Effective movement seconds for a segment: `playS` when it genuinely
+ * truncates the route (finite, > 0, shorter than the route), else the whole
+ * route duration. Single source for both the resolver and the editor's
+ * presentation arithmetic, so the timeline and the sampler can't disagree.
+ */
+export function segmentDurationS(segment: { playS?: number }, trajectory: Trajectory): number {
+  return segment.playS !== undefined && Number.isFinite(segment.playS) && segment.playS > 0
+    ? Math.min(segment.playS, trajectory.durationS)
+    : trajectory.durationS;
+}
+
+/**
+ * The first `playS` seconds of a trajectory as a standalone view: samples
+ * up to the cut (an exact interpolated boundary sample appended so the cut
+ * pose/velocity is bit-honest), events that happen within it, and a matching
+ * duration. Sampling, seam grading and parked poses downstream all read the
+ * truncated view — nothing invents motion past the cut.
+ */
+function truncateTrajectory(trajectory: Trajectory, playS: number): Trajectory {
+  const within = trajectory.samples.filter((sample) => sample.t <= playS);
+  const boundary = sampleTrajectory(trajectory.samples, playS);
+  const samples = boundary && (!within.length || within.at(-1)!.t < playS)
+    ? [...within, { ...boundary, t: playS }]
+    : within;
+  return {
+    ...trajectory,
+    samples,
+    durationS: playS,
+    events: trajectory.events.filter((event) => event.t <= playS),
+  };
+}
 
 /**
  * Join-grading tolerances. These grade the DISPLAY of a seam ("continuous"
@@ -82,7 +124,12 @@ export function resolveSequence(st: SessionTrajectory): ResolvedSequenceSegment[
     const wait = Number.isFinite(segment.waitBeforeS) ? Math.max(0, segment.waitBeforeS) : 0;
     const startS = endS + wait;
     const option = options.find((candidate) => candidate.id === segment.routeId);
-    const trajectory = option?.trajectory ?? st.trajectory;
+    const whole = option?.trajectory ?? st.trajectory;
+    const playS = segmentDurationS(segment, whole);
+    // A truncated segment resolves to the first `playS` seconds as its own
+    // trajectory, so every consumer (sampler, seam grading, parked pose,
+    // event mapping) sees the same honest cut without re-implementing it.
+    const trajectory = playS < whole.durationS ? truncateTrajectory(whole, playS) : whole;
     endS = startS + trajectory.durationS;
     resolved.push({ ...segment, waitBeforeS: wait, trajectory, startS, endS });
   }
@@ -216,14 +263,31 @@ export interface RouteContinuity {
 }
 
 /**
+ * Library gating answers "can the robot physically drive there", not "is the
+ * seam flawless" — the seam badges grade that separately at the strict
+ * SEQUENCE_JOIN_TOLERANCES. Real Choreo hand-chained legs leave cm-scale
+ * gaps: across both bundled example libraries every genuinely chained pair
+ * measures 0.003–0.077 m at ≤1°, while different-spot starts begin at
+ * 0.164 m (L14→L3) / 11.3° (L13→M2) — and an 18-in same-heading pair
+ * (L2→L12, 0.459 m at 0.2°) would slip through a 0.5 m gate. 6 in / 5°
+ * (user decision 2026-10-08) admits every measured chain with ~2× headroom
+ * and refuses every measured different-spot pair on at least one axis.
+ */
+export const LIBRARY_CHAIN_TOLERANCES = {
+  positionTolM: 0.1524,
+  headingTolDeg: 5,
+} as const;
+
+/**
  * Pose continuity for the composer's route library: can `next` physically
  * follow `prev` — does its first sample sit where `prev`'s last sample left
- * the robot? Same position/heading tolerances as the seam grading, so a
- * route the library accepts produces a seam the timeline badges as
- * continuous. The speed jump is deliberately NOT part of the verdict: a
- * wait parks the robot at zero velocity, so a speed difference is honest to
- * report on the seam but not a reason to refuse the route. Trajectories
- * without samples carry no measurable pose and are never gated.
+ * the robot? Callers gate the library with LIBRARY_CHAIN_TOLERANCES (drive-
+ * able, above) and grade the seam itself at SEQUENCE_JOIN_TOLERANCES
+ * (flawless); a route the library accepts may still seam with a reported
+ * gap. The speed jump is deliberately NOT part of the verdict: a wait parks
+ * the robot at zero velocity, so a speed difference is honest to report on
+ * the seam but not a reason to refuse the route. Trajectories without
+ * samples carry no measurable pose and are never gated.
  */
 export function routeConnectsAfter(
   prev: Trajectory,

@@ -13,6 +13,7 @@ export const nn = {
   'sequence.joinVelocity': 'fartshopp {d} m/s',
   'sequence.libraryBlocked': 'Starten held ikkje fram slutten på {name} (posisjonsavvik {p}, retningsavvik {h})',
   'sequence.libraryOccupied': 'Avspelingshodet står på ein oppteken strekning — dra det først til eit tomt mellomrom',
+  'sequence.libraryStartZone': 'Starten er ikkje i det tillatne startområdet',
   'sequence.joinFix': 'Rett opp skøyten i PathPlanner eller Choreo, og importer ruta på nytt.',
   'sequence.overAuto': 'Ferdig ved {t} s, etter den {auto} s lange autonome perioden.',
   'sequence.invalid': 'Skriv inn ei endeleg, ikkje-negativ starttid.',
@@ -72,7 +73,6 @@ export const nn = {
   'welcome.exitExample': 'Avslutt døme',
   'onboarding.play': 'Trykk Spel for å sjå rutene, eller dra i tidslinja.',
 
-  'onboarding.import': "Importert — sjekk det grunnleggjande fyrst: sesong og bane, støtfangarstørrelse, raud/blå",
   'onboarding.check': 'Vel eit problem under for å hoppa til det augneblikket — jamfør alternativ: byt ei rute eller forskuv ei starttid.',
   'onboarding.dismiss': 'Lukk råd',
   "workspace.loading3d": "Lastar 3D-vising…",
@@ -117,6 +117,7 @@ export const nn = {
   'timeline.rewind': "Gå til byrjinga",
   'timeline.stepBack': "0,5 sekund tilbake",
   'timeline.stepForward': "0,5 sekund frametter",
+  'timeline.jumpEnd': 'Hopp til slutten av dei synlege rutene',
   'timeline.play': "Spel",
   'timeline.pause': "Pause",
   'timeline.position': "Avspelingsposisjon",

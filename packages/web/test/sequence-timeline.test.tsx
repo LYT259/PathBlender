@@ -78,17 +78,19 @@ describe('timeline placement helpers', () => {
     const next = { id: 'b', routeId: 'b', startS: 10, durationS: 3 };
     expect(snapClipStart(6.15, [first], next, .1)).toBe(6.123456);
   });
-  it('semantic layout equality ignores ids and segment order but sees route and start changes', () => {
-    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1 }, { id: 'y', routeId: 'b', startS: 5 }], [{ id: 'p', routeId: 'b', startS: 5 }, { id: 'q', routeId: 'a', startS: 1 }])).toBe(true);
-    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1 }], [{ id: 'q', routeId: 'b', startS: 1 }])).toBe(false);
-    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1 }], [{ id: 'q', routeId: 'a', startS: 1.000001 }])).toBe(true);
-    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1 }], [{ id: 'q', routeId: 'a', startS: 1.1 }])).toBe(false);
+  it('semantic layout equality ignores ids and segment order but sees route, start and cut changes', () => {
+    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1, durationS: 4 }, { id: 'y', routeId: 'b', startS: 5, durationS: 3 }], [{ id: 'p', routeId: 'b', startS: 5, durationS: 3 }, { id: 'q', routeId: 'a', startS: 1, durationS: 4 }])).toBe(true);
+    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1, durationS: 4 }], [{ id: 'q', routeId: 'b', startS: 1, durationS: 4 }])).toBe(false);
+    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1, durationS: 4 }], [{ id: 'q', routeId: 'a', startS: 1.000001, durationS: 4 }])).toBe(true);
+    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1, durationS: 4 }], [{ id: 'q', routeId: 'a', startS: 1.1, durationS: 4 }])).toBe(false);
+    // A partial-execution cut is a real arrangement change (user 2026-10-08).
+    expect(sameClipLayout([{ id: 'x', routeId: 'a', startS: 1, durationS: 4 }], [{ id: 'q', routeId: 'a', startS: 1, durationS: 2 }])).toBe(false);
   });
   it('round-trips segments through clips without rounding waits or durations', () => {
     const robot = fixture('rt', 4.753697);
     const segments: AutoSequenceSegment[] = [
       { id: 's1', routeId: 'a', waitBeforeS: 1.5 },
-      { id: 's2', routeId: 'b', waitBeforeS: 0.5000001 },
+      { id: 's2', routeId: 'b', waitBeforeS: 0.5000001, playS: 2 },
     ];
     const view = sequenceViewFor(applySequenceSegments(robot, segments));
     const roundTripped = segmentsFromClips(clipsFor(view.segments, view.routes));
@@ -97,7 +99,9 @@ describe('timeline placement helpers', () => {
     // last digit, imported durations stay bit-exact.
     expect(roundTripped[0]!.waitBeforeS).toBeCloseTo(1.5, 12);
     expect(roundTripped[1]!.waitBeforeS).toBeCloseTo(0.5000001, 12);
-    expect(clipsFor(view.segments, view.routes).map((c) => c.durationS)).toEqual([4.753697, 3]);
+    // A partial-execution cut rides the round trip (user 2026-10-08).
+    expect(roundTripped[1]!.playS).toBe(2);
+    expect(clipsFor(view.segments, view.routes).map((c) => c.durationS)).toEqual([4.753697, 2]);
   });
 });
 
@@ -133,13 +137,24 @@ describe('live arrangement editing', () => {
     expect(activeEndT(commit.mock.calls[0]![0])).toBe(limit);
     expect(document.querySelector('.sequence-timing-warning')).toBeNull();
   });
-  it('rejects an append that cannot fit, a numeric overrun, and overlap', () => {
+  it('truncates an append that cannot fit to the remaining auto time', () => {
     const commit = vi.fn(); render(<LiveHarness autoPeriodS={6} onCommit={commit} />);
-    addB(); expect(commit).not.toHaveBeenCalled();
+    addB(); // B (3 s) appended at 4 s with 2 s left — plays its first 2 s
+    expect(commit).toHaveBeenCalledTimes(1);
+    expect(clips()).toHaveLength(2);
+    expect(activeEndT(commit.mock.calls[0]![0])).toBe(6);
+    expect(clips()[1]!.querySelector('small')).toHaveTextContent('2.00s');
     fireEvent.click(clips()[0]!);
     const input = screen.getByRole('spinbutton', { name: 'Start' });
     fireEvent.change(input, { target: { value: '5' } }); fireEvent.blur(input);
-    expect(commit).not.toHaveBeenCalled();
+    expect(commit).toHaveBeenCalledTimes(1); // numeric overrun still refused
+  });
+  it('drops an over-long route cut to what fits below the season boundary', () => {
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
+    // Pointer at t=19.1: B (3 s) is cut to 0.9 s and lands 19.1–20.
+    drag(screen.getByRole('button', { name: 'B: 3.00 s' }), 20, 955, 30);
+    expect(commit).toHaveBeenCalledTimes(1);
+    expect(activeEndT(commit.mock.calls[0]![0])).toBe(20);
   });
   it('shows both gaps while dragging, updates before release and commits only once', () => {
     const robot = applySequenceSegments(fixture(), [
@@ -207,6 +222,38 @@ describe('bounded timing and live gap arithmetic', () => {
 describe('playhead-gated route library', () => {
   const sources = () => [...document.querySelectorAll('.sequence-route-source')] as HTMLButtonElement[];
   const labels = () => sources().map((b) => b.getAttribute('aria-label')!.split(':')[0]);
+  it('gates the FIRST leg by the ALLIANCE ZONE when the season defines one', () => {
+    // Empty arrangement + 2026 zone (4.0284 m from the wall): A starts at
+    // x=2 (inside), B/C start at the far end of the translated chain —
+    // gray, with the zone reason, and un-addable (user 2026-10-08).
+    const empty = applySequenceSegments(fixture(), []);
+    localStorage.setItem('pb.lengthUnit', 'm');
+    render(<I18nProvider><SequenceTimelineComposer robots={[empty]} selectedId={empty.trajectory.id} onSelect={vi.fn()}
+      autoPeriodS={20} startZone={[{ xMinM: 0, xMaxM: 4.0284, yMinM: 0, yMaxM: 8.07 }]} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
+    expect(labels()).toEqual(['A', 'B', 'C']);
+    const [a, b] = sources();
+    expect(a).not.toHaveAttribute('aria-disabled');
+    expect(b).toHaveAttribute('aria-disabled', 'true');
+    expect(b!.getAttribute('aria-label')).toContain('legal starting area');
+    const commit = vi.fn();
+    // The grayed route refuses both gestures (drag: nothing lands).
+    drag(b!, 20, 500, 30);
+    expect(commit).not.toHaveBeenCalled();
+    expect(document.querySelectorAll('.sequence-clip')).toHaveLength(0);
+  });
+  it('hands the first-leg gate back to continuity once a leg exists', () => {
+    // Same zone, but A is placed (0–4 s) and the playhead sits past it:
+    // B (chained to A) is offered again — the zone only governs leg #1.
+    const placed = applySequenceSegments(fixture(), [{ id: 's1', routeId: 'a', waitBeforeS: 0 }]);
+    localStorage.setItem('pb.lengthUnit', 'm');
+    render(<I18nProvider><SequenceTimelineComposer robots={[placed]} selectedId={placed.trajectory.id} onSelect={vi.fn()}
+      autoPeriodS={20} startZone={[{ xMinM: 0, xMaxM: 4.0284, yMinM: 0, yMaxM: 8.07 }]} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()}
+      playback={{ t: 5, setT: vi.fn(), playing: false, setPlaying: vi.fn(), speed: 1, setSpeed: vi.fn() }} /></I18nProvider>);
+    const [b, a] = sources();
+    expect(labels()).toEqual(['B', 'A', 'C']);
+    expect(b).not.toHaveAttribute('aria-disabled');
+    expect(a).toHaveAttribute('aria-disabled', 'true');
+  });
   it('grays, disables and demotes routes that do not continue the playhead segment', () => {
     // Playhead past A (0–4 s): B starts at A's end and stays draggable; A
     // itself (and anything starting elsewhere) is disabled, explains its
@@ -227,6 +274,56 @@ describe('playhead-gated route library', () => {
     drag(a, 20, 500, 30);
     expect(commit).not.toHaveBeenCalled();
     expect(document.querySelector('.sequence-ghost')).toBeNull();
+  });
+  it('admits cm-scale chain gaps like real Choreo legs leave — the strict seam grade stays on the badges', () => {
+    // Real hand-chained legs seam at 0.003–0.077 m / ≤1° (both example
+    // libraries); the library gate refuses only teleports (user 2026-10-08:
+    // an 0.077 m leg was refused by the 0.01 m gate).
+    const base = fixture();
+    const shift = (o: (typeof base.routeOptions)[number]) => ({
+      ...o,
+      trajectory: {
+        ...o.trajectory,
+        samples: o.trajectory.samples.map((s) => ({ ...s, x: s.x + 0.077, y: s.y - 0.02, heading: s.heading + Math.PI / 180 })),
+      },
+    });
+    const gapped = { ...base, routeOptions: base.routeOptions.map((o) => o.id === 'b' ? shift(o) : o) };
+    localStorage.setItem('pb.lengthUnit', 'm');
+    render(<LiveHarness robot={gapped} t={5} />);
+    const [b, a] = sources();
+    // B now seams 0.08 m / 1° off A's end — drivable, so still offered.
+    expect(labels()).toEqual(['B', 'A', 'C']);
+    expect(b).not.toHaveAttribute('aria-disabled');
+    expect(b!.getAttribute('aria-label')).not.toContain('position gap');
+    // True teleports stay refused with their measured gap.
+    expect(a).toHaveAttribute('aria-disabled', 'true');
+    expect(a!.getAttribute('aria-label')).toContain('position gap 9.96 m');
+  });
+  it('pins the 6 in / 5° drivable-chain gate — different-spot starts stay refused', () => {
+    // User decision 2026-10-08: 0.1524 m / 5°. Both refusals below mirror
+    // real library pairs a 0.5 m / 15° gate would have admitted: L2→L12
+    // seams 0.459 m at 0.2°, L13→M2 seams 0.266 m at 11.3°.
+    const shift = (o: ReturnType<typeof fixture>['routeOptions'][number], dx: number, dh: number) => ({
+      ...o,
+      trajectory: {
+        ...o.trajectory,
+        samples: o.trajectory.samples.map((s) => ({ ...s, x: s.x + dx, heading: s.heading + dh })),
+      },
+    });
+    localStorage.setItem('pb.lengthUnit', 'm');
+    const gapped = (dx: number, dh: number) => ({ ...fixture(), routeOptions: fixture().routeOptions.map((o) => o.id === 'b' ? shift(o, dx, dh) : o) });
+    let view = render(<LiveHarness robot={gapped(0.459, 0)} t={5} />);
+    const bOf = () => sources().find((s) => s.getAttribute('aria-label')!.startsWith('B: '))!;
+    expect(bOf()).toHaveAttribute('aria-disabled', 'true');
+    expect(bOf().getAttribute('aria-label')).toContain('position gap 0.46 m');
+    view.unmount();
+    view = render(<LiveHarness robot={gapped(0.03, 11.3 * Math.PI / 180)} t={5} />);
+    expect(bOf()).toHaveAttribute('aria-disabled', 'true');
+    expect(bOf().getAttribute('aria-label')).toContain('heading gap 11.3°');
+    view.unmount();
+    // Just inside the gate (0.15 m < 6 in) the route stays drivable.
+    view = render(<LiveHarness robot={gapped(0.15, 0)} t={5} />);
+    expect(bOf()).not.toHaveAttribute('aria-disabled');
   });
   it('keeps every route available before the first segment starts', () => {
     const robot = applySequenceSegments(fixture(), [{ id: 'late', routeId: 'a', waitBeforeS: 2 }]);
@@ -270,20 +367,27 @@ describe('lane scrub, chosen-delete, drag badge and occupancy gating', () => {
     expect(activeEndT(commit.mock.calls[0]![0])).toBe(0);
   });
 
-  it('shows a follow-along badge naming the dragged route, in the lane and out of it', () => {
+  it('hands the drag over to the lane ghost: badge rides only outside the lane', () => {
     const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
     const source = screen.getByRole('button', { name: 'B: 3.00 s' });
     fireEvent.pointerDown(source, { button: 0, clientX: 20, clientY: 30 });
-    // Below the lane: no ghost yet, but the badge already identifies the drag.
+    // Below the lane: no ghost yet, the badge identifies the drag.
     fireEvent.pointerMove(source, { clientX: 300, clientY: 250 });
     expect(document.querySelector('.sequence-ghost')).toBeNull();
     const badge = document.querySelector('.sequence-drag-badge')!;
     expect(badge.textContent).toContain('B');
     expect(badge.textContent).toContain('3.00s');
-    // Inside the lane the ghost appears and the badge keeps riding the pointer.
+    // Inside the lane the ghost takes over and the badge disappears —
+    // ghost + badge together read as two copies of the same path (user
+    // 2026-10-08).
     fireEvent.pointerMove(source, { clientX: 500, clientY: 130 });
     expect(document.querySelector('.sequence-ghost')).not.toBeNull();
+    expect(document.querySelector('.sequence-drag-badge')).toBeNull();
+    // Back outside, the badge returns at the pointer.
+    fireEvent.pointerMove(source, { clientX: 300, clientY: 250 });
+    expect(document.querySelector('.sequence-ghost')).toBeNull();
     expect(document.querySelector('.sequence-drag-badge')).not.toBeNull();
+    fireEvent.pointerMove(source, { clientX: 500, clientY: 130 });
     fireEvent.pointerUp(source, { clientX: 500, clientY: 130 });
     expect(commit).toHaveBeenCalledTimes(1);
     expect(document.querySelector('.sequence-drag-badge')).toBeNull();
@@ -367,6 +471,19 @@ describe('grayed routes still preview; entering edit never pauses; range follows
     // Grayed stays un-addable by keyboard and pointer.
     fireEvent.click(grayed);
     expect(document.querySelectorAll('.sequence-clip')).toHaveLength(1);
+  });
+
+  it('previews another team\'s placed leg through that team\'s own library', () => {
+    // Editing team one; hovering team two's lane still identifies the route
+    // (user 2026-10-08) — App resolves it through team two's library.
+    const preview = vi.fn();
+    render(<I18nProvider><SequenceTimelineComposer robots={[fixture('one'), fixture('two')]} selectedId="one" onSelect={vi.fn()}
+      autoPeriodS={20} open onClose={vi.fn()} onChange={vi.fn()} onPreviewRoute={preview} onJump={vi.fn()} /></I18nProvider>);
+    const refClip = document.querySelector('.sequence-track:not(.is-editing) .sequence-clip') as HTMLElement;
+    fireEvent.pointerEnter(refClip);
+    expect(preview).toHaveBeenLastCalledWith(expect.any(String), 'two');
+    fireEvent.pointerLeave(refClip);
+    expect(preview).toHaveBeenLastCalledWith(null);
   });
 
   it('shows the playback-range selector, wired to the shared state', () => {

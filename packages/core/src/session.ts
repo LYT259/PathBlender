@@ -156,6 +156,18 @@ export function sessionDuration(sts: readonly SessionTrajectory[]): number {
   return sts.reduce((m, st) => Math.max(m, activeEndT(st)), 0);
 }
 
+/**
+ * An explicitly EMPTY arrangement — the user removed every leg (or opened
+ * the composer and committed nothing). Such a robot has nothing to show and
+ * no honest position on the field: it is not "parked at its route's start",
+ * it is not running an auto at all. Renderers and the collision check skip
+ * it; the robot list keeps the row so the arrangement stays editable.
+ * A legacy robot (no `sequence`) is NOT empty — it plays its own route.
+ */
+export function hasEmptyArrangement(st: SessionTrajectory): boolean {
+  return st.sequence !== undefined && st.sequence.segments.length === 0;
+}
+
 export function sessionGeometry(st: SessionTrajectory): RobotGeometry {
   return st.trajectory.geometry;
 }
@@ -382,11 +394,15 @@ function readSequence(value: AutoSequence | undefined): AutoSequence | undefined
     throw new Error('invalid auto sequence');
   }
   // Numeric damage self-heals: non-finite or negative waits clamp to zero
-  // instead of bricking the whole session file.
+  // instead of bricking the whole session file. A damaged playS (partial
+  // execution, 2026-10-08) drops back to playing the route whole.
   return {
     segments: segments.map((segment) => ({
       ...segment,
       waitBeforeS: Number.isFinite(segment.waitBeforeS) ? Math.max(0, segment.waitBeforeS) : 0,
+      playS: segment.playS !== undefined && Number.isFinite(segment.playS) && segment.playS > 0
+        ? segment.playS
+        : undefined,
     })),
   };
 }
