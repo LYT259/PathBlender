@@ -14,6 +14,7 @@
 import type { Pose2d, Trajectory, TrajectorySample } from './types';
 import { sampleTrajectory, wrapAngle } from './math';
 import type { SessionTrajectory } from './session';
+import { startsInAllianceZone, type StartZoneRect } from './field';
 
 export interface AutoSequenceSegment {
   id: string;
@@ -326,4 +327,22 @@ export function checkSequenceTiming(
   if (!resolved || resolved.length === 0) return undefined;
   const finishS = resolved[resolved.length - 1]!.endS;
   return finishS > autoPeriodS + 1e-6 ? { finishS, autoPeriodS } : undefined;
+}
+
+/**
+ * Whether the robot's driven path STARTS inside the season's legal starting
+ * region — the field-view twin of the composer's first-leg gate (user
+ * 2026-10-09: a path that starts outside the zone renders gray on the
+ * field). For a composed robot only the FIRST segment's first sample
+ * decides: later legs start wherever the previous one ended, which is
+ * continuation, not an illegal start. A legacy robot is its single route.
+ * Undefined zone = the season has no established starting region → ungated.
+ */
+export function sessionStartsInZone(
+  st: SessionTrajectory,
+  zone: readonly StartZoneRect[] | undefined,
+): boolean {
+  if (!zone) return true;
+  const first = resolveSequence(st)?.[0]?.trajectory ?? st.trajectory;
+  return startsInAllianceZone(first, zone);
 }

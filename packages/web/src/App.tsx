@@ -1,6 +1,7 @@
 import { SelectControl } from './components/SelectControl';
 import { moveTeamOrder } from './team-order';
 import { previewRouteFor, useRoutePreviewClock } from './route-preview';
+import { dimmedPathRobotIds, previewDimsPath } from './start-zone-view';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSessionHistory } from './session-history';
 import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
@@ -347,6 +348,24 @@ function AppBody() {
   const previewRobots = useMemo(() => previewSource
     ? robotsForAlliance([previewSource], alliance, field).map((robot) => withSeasonGeometry(robot, field.year))
     : undefined, [previewSource, alliance, field]);
+  // Field-gray for illegal starts (user 2026-10-09): a path whose first
+  // driven leg starts outside the season's legal starting region renders
+  // gray instead of the team color — the field-side twin of the composer's
+  // first-leg gate, applied to paths that are already on the field
+  // (imported files, restored sessions). A route preview grays only while
+  // the picker would gate it too (target arrangement empty), so the field
+  // never disagrees with the row being hovered.
+  const dimPathIds = useMemo(() => {
+    if (previewSource) {
+      const target = previewRobotId
+        ? sourceRobots.find((robot) => robot.trajectory.id === previewRobotId)
+        : sourceRobots.find((robot) => robot.trajectory.id === selectedId) ?? sourceRobots[0];
+      return previewDimsPath(target, previewSource, field.startZone)
+        ? new Set([previewSource.trajectory.id])
+        : new Set<string>();
+    }
+    return dimmedPathRobotIds(visible, field.startZone);
+  }, [previewSource, previewRobotId, sourceRobots, selectedId, visible, field]);
   useEffect(() => { setPreviewRouteId(null); setPreviewRobotId(undefined); }, [composerOpen, selectedId]);
   // One transport end for BOTH modes (user 2026-10-07): editing used to
   // force the full auto period; the playback-range choice now governs
@@ -1529,10 +1548,10 @@ function AppBody() {
                     loading fallback. */}
                 {(ever3D || prewarm3D) && field3dAvailable && <div className="canvas-3d-keep" hidden={!view3D}>
                   <Suspense fallback={<div className="view-loading" role="status">{tr('workspace.loading3d')}</div>}>
-                    <FieldCanvas3D active={view3D} showTrail={showTrail} showHeatmap={showHeatmap} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} />
+                    <FieldCanvas3D active={view3D} showTrail={showTrail} showHeatmap={showHeatmap} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} dimPathIds={dimPathIds} />
                   </Suspense>
                 </div>}
-                {!view3D && <FieldCanvas ref={canvasRef} showTrail={showTrail} showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} />}
+                {!view3D && <FieldCanvas ref={canvasRef} showTrail={showTrail} showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} dimPathIds={dimPathIds} />}
               </>}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span>{/* A pure indicator, not a control — no ring, no click (user 2026-10-07). */}

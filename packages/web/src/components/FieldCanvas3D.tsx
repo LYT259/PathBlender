@@ -70,6 +70,9 @@ interface Props {
   field: FieldPackage;
   fieldImageUrl?: string;
   robots: SessionTrajectory[];
+  /** Robot (trajectory) ids whose path renders gray — illegal start zone
+   * verdicts (user 2026-10-09). */
+  dimPathIds?: ReadonlySet<string>;
   currentT: number;
   showTrail?: boolean;
   /** Occupancy heatmap over every robot's full timeline (§7.3-3). */
@@ -466,7 +469,7 @@ function loadProcessedModel(dir: string): Promise<THREE.Group | null> {
 }
 
 export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function FieldCanvas3D(
-  { field, fieldImageUrl, robots, currentT, showTrail = true, showHeatmap = false, variant = 'welded', active = true },
+  { field, fieldImageUrl, robots, currentT, showTrail = true, showHeatmap = false, variant = 'welded', active = true, dimPathIds },
   ref,
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -1600,7 +1603,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     st.trails = [];
     st.heatmaps = [];
     for (const r of robots) {
-      const trail = createGroundTrail(r, st.cx, st.cy);
+      const trail = createGroundTrail(r, st.cx, st.cy,
+        dimPathIds?.has(r.trajectory.id) ? cssToken('--fg-dim', '#9a9aa0') : undefined);
       st.dynamic.add(trail.mesh);
       st.trails.push(trail);
       // Occupancy heatmap — one merged footprint-stain mesh per robot.
@@ -1636,7 +1640,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // Parked canvas: bake the fresh rigs/trails while hidden — covers the
     // initial prewarm and later CAD-template upgrades alike.
     st.warmup();
-  }, [robots, field, moduleTemplate, frameTemplates]);
+  }, [robots, field, moduleTemplate, frameTemplates, dimPathIds]);
 
   useEffect(() => {
     const st = sceneRef.current;
