@@ -67,10 +67,16 @@ describe('field boundary detection', () => {
     expect(detectFieldBounds([parked(BOUNDS_TOLERANCE_M - 0.001)], REBUILT_2026)).toHaveLength(0);
     const over = detectFieldBounds([parked(BOUNDS_TOLERANCE_M + 0.001)], REBUILT_2026);
     expect(over).toHaveLength(1);
-    // The 2026-10-07 user rule in real units: a 0.9 in wall brush (the
-    // #8814 example case) stays silent; at exactly 1 in it starts reporting.
+    // The 2026-10-09 user rule in real units: the #8814 0.9 in wall brush
+    // and an even 1 in overlap (the previous 2026-10-07 threshold) both
+    // stay silent, as does 2 in — the "few inches" wall hugs of real
+    // imports that triggered this change; at exactly 3 in it reports.
+    // (0.0762 spelled out, not 3*0.0254: that product sits 1 ULP below the
+    // threshold and would silently flip this to "forgiven".)
     expect(detectFieldBounds([parked(0.9 * 0.0254)], REBUILT_2026)).toHaveLength(0);
-    expect(detectFieldBounds([parked(0.0254)], REBUILT_2026)).toHaveLength(1);
+    expect(detectFieldBounds([parked(0.0254)], REBUILT_2026)).toHaveLength(0);
+    expect(detectFieldBounds([parked(2 * 0.0254)], REBUILT_2026)).toHaveLength(0);
+    expect(detectFieldBounds([parked(0.0762)], REBUILT_2026)).toHaveLength(1);
     // A real crossing (10 cm) is still flagged with its penetration depth.
     const real = detectFieldBounds([parked(0.1)], REBUILT_2026);
     expect(real).toHaveLength(1);
