@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeSession, parsePathFile, serializeSession } from '@pathblender/core';
 import { App } from '../src/App';
 import { en } from '../src/i18n/en';
+import { expectComboboxValue } from './combobox';
 
 const checkHint = en['onboarding.check'];
 
@@ -96,7 +97,7 @@ describe('welcome flow', () => {
     const saved = new File([serializeSession([robot], 'chargedup-2023')], 'previous.ghpb.json', { type: 'application/json' });
     fireEvent.change(sessionInput(), { target: { files: [saved] } });
     await screen.findByText('0001', { selector: '.robot-name' });
-    expect(screen.getByRole('combobox', { name: 'Game season' })).toHaveValue('chargedup-2023');
+    expectComboboxValue(screen.getByRole('combobox', { name: 'Game season' }), 'chargedup-2023');
     fireEvent.click(screen.getByText('0001', { selector: '.robot-name' }));
     expect(screen.getByRole('region', { name: 'Straight Run', exact: true })).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);

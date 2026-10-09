@@ -97,14 +97,14 @@ describe('workspace shortcuts', () => {
     const more = menu.querySelector('summary')!;
     fireEvent.click(more);
     // A select inside the workspace (timeline range) owns its keys.
-    const range = screen.getByRole('combobox', { name: 'Playback range' }) as HTMLSelectElement;
+    const range = screen.getByRole('combobox', { name: 'Playback range' });
     range.focus();
-    const value = range.value;
+    const label = range.textContent;
     press(range, { key: 'e' });
     press(range, { key: 'h' });
     press(range, { key: 'm' });
     press(range, { code: 'Comma', key: ',' });
-    expect(range.value).toBe(value);
+    expect(range.textContent).toBe(label);
     expect(composerOpen()).toBe(false);
     expect((document.querySelector('.robot-library-visibility') as HTMLButtonElement).getAttribute('aria-pressed')).toBe('true');
   });

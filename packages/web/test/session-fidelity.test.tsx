@@ -8,6 +8,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_GEOMETRY, makeSession, serializeSession, type SessionTrajectory } from '@pathblender/core';
 import { App } from '../src/App';
+import { expectComboboxValue } from './combobox';
 
 const robot = (id: string, teamNumber: string, colorIndex: number, y = 2): SessionTrajectory =>
   makeSession({
@@ -54,7 +55,7 @@ describe('session fidelity across relaunch', () => {
     expect(screen.getByRole('button', { name: /0002, Choreo/ })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: /0001, Choreo/ })).toHaveAttribute('aria-pressed', 'false');
     // Playback range and playhead (paths range → duration = path length 8 s).
-    expect(screen.getByRole('combobox', { name: 'Playback range' })).toHaveValue('paths');
+    expectComboboxValue(screen.getByRole('combobox', { name: 'Playback range' }), 'paths');
     const slider = screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement;
     expect(Number(slider.value)).toBeCloseTo(2.5);
     expect(slider).toHaveAttribute('aria-valuetext', '2.50 / 8.00 s');
@@ -66,7 +67,7 @@ describe('session fidelity across relaunch', () => {
     render(<App />);
     await screen.findByRole('button', { name: /0002, Choreo/ });
     expect(screen.getByRole('button', { name: /0001, Choreo/ })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('combobox', { name: 'Playback range' })).toHaveValue('full');
+    expectComboboxValue(screen.getByRole('combobox', { name: 'Playback range' }), 'full');
     const slider = screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement;
     expect(Number(slider.value)).toBeCloseTo(0);
   });

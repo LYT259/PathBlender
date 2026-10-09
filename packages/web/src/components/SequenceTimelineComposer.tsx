@@ -1,3 +1,4 @@
+import { SelectControl } from './SelectControl';
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
 import { routeConnectsAfter, LIBRARY_CHAIN_TOLERANCES, startsInAllianceZone, type RouteContinuity, type SequenceJoinIssue, type SessionRouteOption, type SessionTrajectory, type StartZoneRect } from '@pathblender/core';
 import { sequenceViewFor, type AutoSequenceSegment } from '../auto-sequence-state';
@@ -322,11 +323,11 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       }
     }}>
     <SequenceComposerToolbar name={robotIdentity(active.robot.trajectory)} color={active.robot.color} onBack={onClose}
-      trailing={onPlaybackRangeChange && <select className="timeline-range" aria-label={t('timeline.range')} value={playbackRange}
-        onChange={(event) => onPlaybackRangeChange(event.target.value as PlaybackRange)}>
+      trailing={onPlaybackRangeChange && <SelectControl className="timeline-range" aria-label={t('timeline.range')} value={playbackRange}
+        onValueChange={(value) => onPlaybackRangeChange(value as PlaybackRange)}>
         <option value="full">{t('timeline.rangeFull')}</option>
         <option value="paths">{t('timeline.rangePaths')}</option>
-      </select>} />
+      </SelectControl>} />
     <div className="sequence-route-library"><div className="sequence-route-options">
       {library.map(({ route, blocked, outOfZone, continuity }) => {
         // Gray-reason precedence: occupancy (nowhere to drop at all) over
