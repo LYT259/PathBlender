@@ -117,17 +117,21 @@ export interface FieldPackage {
    *    depth — 11 ft ⅜ in (3.3623 m) across the community and 16 ft 1¼ in
    *    (4.9086 m) in front of the CHARGE STATION (its 8 ft / 2.4384 m
    *    pivoting frame, centered in the community width).
-   *  · 2022 RAPID REACT — deliberately undefined after a full forensics pass
-   *    (2026-10-09): the TARMACs are 12 ft 9 in × 7 ft ¾ in (manual p. 24)
-   *    but are OCTAGONAL pads around the mid-field HUB (the marking
-   *    diagram's DETAIL A dims them from the hub center at angles, and
-   *    community models agree), not rectangles at the alliance wall. Their
-   *    exact placement is not recoverable from reachable official sources
-   *    (the FE-2022 drawing package URL is gone, the marking sheet's
-   *    dimension chain does not close numerically, the AS render's tape is
-   *    too low-contrast) — a guessed region would gray legal starts, which
-   *    is worse than no gate. Revisit with the original drawings or a clear
-   *    field photo.
+   *  · 2022 RAPID REACT — the two TARMACs (12 ft 9 in × 7 ft ¾ in, manual
+   *    p. 24; start rule H309/G303: BUMPERS fully inside one) are octagonal
+   *    pads sitting DIAGONALLY against the mid-field HUB — not wall strips.
+   *    The official placement sheet is unrecoverable (FE-2022 package 404;
+   *    the marking diagram's dimension chain does not close numerically; the
+   *    official STEP CAD models no tape), so the region is fit from REAL
+   *    match starts of three public team repos (Team3128/3128-robot-2022,
+   *    1757WestwoodRobotics/2022-RapidReact — whose autos are literally
+   *    named '5bR'/'4bL' Right/Left tarmac — and gwhs/RobotV1 'Tarmac-A'):
+   *    9 true-start anchors cluster at x 4.94–8.20 m, mirrored about the
+   *    width centreline, hugging the hub (gwhs's start at 8.20 pins the
+   *    near-hub edge). Extending by a half-robot (2022 frame cap 36.5 in +
+   *    tape half) gives the union rect below; the independent 45°-pad
+   *    projection ((153+84.75)/√2 = 4.27 m) matches the fitted x span
+   *    (4.18 m) within 9 cm. Precision class: ±10 cm, sample-derived.
    *  Undefined = the season has no (established) starting region → ungated. */
   startZone?: StartZoneRect[];
 }
@@ -376,6 +380,11 @@ export const FIELDS: readonly FieldPackage[] = [
     // four hangar-ring decals scatter ±33 px (≈ 10 cm, drawn loose).
     imageRendered: { pixelWidth: 7045, pixelHeight: 2934, ppm: 320.55, ppmY: 320.55, marginM: 0, originPx: { x: 884, y: 148 } },
     aprilTags: TAGS_2022,
+    // START_ZONE 2022 — the hub-flanking TARMAC pair, sample-fit union rect
+    // (derivation in the FieldPackage.startZone comment): three teams' real
+    // match starts + half-robot margin; x 4.47..8.65 hugs the hub (8.23),
+    // y mirror-symmetric about the 4.115 centreline.
+    startZone: [{ xMinM: 4.47, xMaxM: 8.65, yMinM: 1.01, yMaxM: 7.22 }],
   },
   {
     id: 'chargedup-2023',

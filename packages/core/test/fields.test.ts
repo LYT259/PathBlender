@@ -151,13 +151,27 @@ describe('legal starting regions per season (first-leg gate, user 2026-10-08)', 
     ({ samples: [{ t: 0, x, y, heading: 0, vx: 0, vy: 0, omega: 0 }] }) as unknown as Trajectory;
   const zoneOf = (id: string) => fieldById(id)!.startZone!;
 
-  it('carries zones for 2023–2026; 2022 stays ungated (octagonal tarmacs, unverifiable placement)', () => {
+  it('carries zones for every season 2022–2026', () => {
     const byYear = new Map(FIELDS.map((f) => [f.year, f.startZone !== undefined]));
-    expect(byYear.get(2022)).toBe(false);
+    expect(byYear.get(2022)).toBe(true);
     expect(byYear.get(2023)).toBe(true);
     expect(byYear.get(2024)).toBe(true);
     expect(byYear.get(2025)).toBe(true);
     expect(byYear.get(2026)).toBe(true);
+  });
+
+  it('2022: the hub-flanking TARMAC band — mid-field, NOT the wall strip', () => {
+    const z = zoneOf('rapidreact-2022');
+    // Real sampled starts land inside (Team3128 (7.64,1.48), 1757 (6.12,5.15),
+    // gwhs Tarmac-A (8.20,1.85)).
+    for (const [x, y] of [[7.64, 1.48], [6.12, 5.15], [8.20, 1.85], [4.94, 1.96], [6.80, 6.27]] as [number, number][]) {
+      expect(startsInAllianceZone(traj(x, y), z)).toBe(true);
+    }
+    // Against the alliance wall, deep past the hub, or high on the walls: out.
+    expect(startsInAllianceZone(traj(1.0, 4.0), z)).toBe(false);
+    expect(startsInAllianceZone(traj(10.0, 4.0), z)).toBe(false);
+    expect(startsInAllianceZone(traj(6.0, 0.5), z)).toBe(false);
+    expect(startsInAllianceZone(traj(6.0, 7.8), z)).toBe(false);
   });
 
   it('2026: wall to 4.0284 m, full width — the manual zone, line included', () => {
