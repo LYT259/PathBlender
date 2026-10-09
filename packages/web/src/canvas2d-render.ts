@@ -26,7 +26,7 @@ import {
   robotVisualGeometry,
   samplePoseAt,
   sampleStateAt,
-  activeActionsAt,
+  groupedActionsAt,
 } from '@pathblender/core';
 import { TRAIL_WIDTH_M } from './ground-trail';
 import { bumperColor, heatmapColor, robotAnnotation } from './robot-identity';
@@ -230,13 +230,12 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
     // mechanism groups still open plus one-shot moves inside their flash
     // window (action-words.ts). Empty before anything fires and for
     // unannotated routes — the callout then draws nothing.
-    // Badge text = name + seconds remaining until that action ends
-    // (plan A, 2026-10-08): pairs and successors are exact, open-ended
-    // actions count down to the end of the route, flashes to their window.
-    const actions = activeActionsAt(r, currentT).map(
-      (a) => `${a.name} ${Math.max(0, a.endsAt - currentT).toFixed(1)}s`,
-    );
-    const action = actions.length ? actions : null;
+    // One box per distinct ending time (user layout 2026-10-08): same
+    // enders share a box, boxes stack soonest-ending first, the box's one
+    // countdown counts to their shared end — pairs and successors exact,
+    // open-ended to the route end, flashes to their window.
+    const actionGroups = groupedActionsAt(r, currentT);
+    const action = actionGroups.length ? actionGroups : null;
     drawRobot(
       ctx,
       sx,
@@ -249,7 +248,8 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
       view.scale,
       inCollisionNow.has(r.trajectory.id),
       outOfBoundsNow.has(r.trajectory.id),
-      action as string[] | null,
+      action,
+      currentT,
       w,
       h,
     );
@@ -285,7 +285,8 @@ function drawRobot(
   scale: number,
   collided: boolean,
   outOfBounds: boolean,
-  actions: string[] | null,
+  actions: import('@pathblender/core').ActionGroup[] | null,
+  currentT: number,
   canvasW: number,
   canvasH: number,
 ) {
@@ -495,17 +496,28 @@ function drawRobot(
     const color = r.color;
     const plate = cssVar('--bg-panel', '#ffffff');
     const pad = 6;
-    const labelH = 22;
-    const gap = 4;
+    const lineH = 16;
+    const colGap = 8;
     const margin = 6;
+    const gap = 4;
     const leader = 20;
     const offset = Math.SQRT1_2 * (reach + leader);
     const dir = -numDir;
     const dpr = window.devicePixelRatio || 1;
     const snap = (value: number) => Math.round(value * dpr) / dpr;
-    const stackH = actions.length * labelH + (actions.length - 1) * gap;
+    // Pre-measure every box: names stack left, the one countdown sits
+    // right-aligned at the box's vertical middle.
+    const boxes = actions.map((group) => {
+      const sec = `${Math.max(0, group.endsAt - currentT).toFixed(1)}s`;
+      const nameW = Math.max(...group.actions.map((a) => ctx.measureText(a.name).width));
+      const secW = ctx.measureText(sec).width;
+      const h = 22 + (group.actions.length - 1) * lineH;
+      const w = pad + nameW + colGap + secW + pad;
+      return { group, sec, secW, h, w };
+    });
+    const stackH = boxes.reduce((m, b) => m + b.h, 0) + (boxes.length - 1) * gap;
     const y0 = snap(Math.max(margin, Math.min(
-      cy + offset - labelH / 2,
+      cy + offset - 11,
       canvasH - margin - stackH,
     )));
     ctx.lineCap = 'round';
@@ -517,16 +529,14 @@ function drawRobot(
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.fill();
-    actions.forEach((action, i) => {
-      const tw = ctx.measureText(action).width;
-      const labelW = tw + pad * 2;
+    let byCursor = y0;
+    for (const box of boxes) {
       const bx = snap(Math.max(margin, Math.min(
-        cx + dir * offset - (dir < 0 ? labelW : 0),
-        canvasW - margin - labelW,
+        cx + dir * offset - (dir < 0 ? box.w : 0),
+        canvasW - margin - box.w,
       )));
-      const by = y0 + i * (labelH + gap);
-      const ly = by + labelH / 2;
-      const lx = dir > 0 ? bx : bx + labelW;
+      const ly = byCursor + box.h / 2;
+      const lx = dir > 0 ? bx : bx + box.w;
       // Leader from the anchor to this badge's robot-facing edge — the
       // stack fans out without any line crossing a badge above it.
       ctx.beginPath();
@@ -539,7 +549,7 @@ function drawRobot(
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.beginPath();
-      ctx.roundRect(bx, by, labelW, labelH, 5);
+      ctx.roundRect(bx, byCursor, box.w, box.h, 5);
       ctx.fillStyle = plate;
       ctx.fill();
       ctx.strokeStyle = cssVar('--border', 'rgba(0, 0, 0, 0.10)');
@@ -548,8 +558,15 @@ function drawRobot(
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = color;
-      ctx.fillText(action, snap(bx + pad), snap(ly));
-    });
+      box.group.actions.forEach((a, i) => {
+        ctx.fillText(a.name, snap(bx + pad), snap(byCursor + 11 + i * lineH));
+      });
+      // The box's single countdown, right-aligned mid-box.
+      ctx.textAlign = 'right';
+      ctx.fillText(box.sec, snap(bx + box.w - pad), snap(ly));
+      ctx.textAlign = 'left';
+      byCursor += box.h + gap;
+    }
     ctx.restore();
   }
 }
