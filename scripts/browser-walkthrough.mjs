@@ -59,6 +59,22 @@ page.on('response', (r) => { if (r.url().includes('fields3d/') && r.url().endsWi
 const rows = () => page.locator('.robot-library-row');
 const fileInput = () => page.locator('input[type="file"][multiple]').first();
 
+// The unified single-select dropdowns (#303) are trigger buttons with a
+// body-level listbox portal — the native <select> calls the old steps used
+// do not exist. Both helpers speak value codes, matching SelectControl's
+// data-value options and the LanguagePicker's data-value options alike.
+const pickCombobox = async (trigger, value) => {
+  await trigger.click();
+  await page.locator('[role="option"][data-value="' + value + '"]').first().click();
+};
+const readCombobox = async (trigger) => {
+  await trigger.click();
+  const picked = await page.locator('[role="option"][aria-selected="true"]').first().getAttribute('data-value');
+  await trigger.focus();
+  await page.keyboard.press('Escape');
+  return picked;
+};
+
 // The gear's aria-label follows the UI language — match every locale we ship.
 const gearLocator = page.locator(
   ['.tool-btn[aria-label="Preferences"]', '.tool-btn[aria-label="Preferencias"]',
@@ -149,7 +165,7 @@ check('starts in 2D (toggle pressed)', (await page.locator('.view-toggle button'
 // First-run defaults (fresh profile): current season, welded construction,
 // schematic artwork, 2D view.
 {
-  const season = await page.locator('.field-select').first().inputValue();
+  const season = await readCombobox(page.locator('.field-select').first());
   // The variant control is now a segmented toggle (buttons), not a select.
   const welded = (await page.locator('.field-variant-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'Welded';
   const schematic = (await page.locator('.field-style-toggle button[aria-pressed=true]').first().textContent())?.trim() === '示意图' || (await page.locator('.field-style-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'Schematic';
@@ -166,6 +182,23 @@ await page.waitForFunction(
 );
 check('collision detected (straight × stop)', true);
 await page.screenshot({ path: `${SHOTS}/02-collision.png` });
+
+// --- Team display order (#300): the timeline rows reorder through the real
+// HTML5 drag path. The desktop build rides the same events (tauri
+// dragDropEnabled:false, 2026-10-09) — when that flag flips back, this still
+// passes in Chrome while every drag in the macOS app dies silently. ---
+{
+  const rowIds = () => page.$$eval('.timeline-row[data-team-order-id]', rows => rows.map(r => r.dataset.teamOrderId));
+  const before = await rowIds();
+  const handle = page.locator('.timeline-row[data-team-order-id]').first().locator('.team-order-handle');
+  const lastRow = page.locator('.timeline-row[data-team-order-id]').last();
+  await handle.dragTo(lastRow, { targetPosition: { x: 200, y: (await lastRow.boundingBox()).height - 4 } });
+  const after = await rowIds();
+  check('timeline rows reorder by drag (first row lands below last)',
+    after.length === before.length && after[after.length - 1] === before[0],
+    `${JSON.stringify(before)} -> ${JSON.stringify(after)}`);
+}
+
 
 // --- folder import: one robot per team, carrying its whole route library ---
 // The per-row route <select> retired with the composer redesign (route choice
@@ -278,7 +311,7 @@ await page.screenshot({ path: `${SHOTS}/04-playing.png` });
 // radios, About as a section carrying .preferences-product + copy status.
 const saveBtn = page.locator('.preferences-footer .btn.accent');
 const cancelBtn = page.locator('.preferences-footer .btn:not(.accent)');
-const langSelect = page.locator('.preferences-panel select').first();
+const langSelect = page.locator('.preferences-panel .language-picker-trigger').first();
 await (await prefsGear()).click();
 await langSelect.waitFor({ state: 'visible', timeout: 8000 });
 // About block: natural-facing version ("0.1.4 · Beta N"), the full number,
@@ -303,19 +336,28 @@ await page.locator('.preferences-nav [role=tab]', { hasText: /^About$/ }).click(
   check('version copy reports success', copyStatus.length > 0, `status="${copyStatus}"`);
 }
 await page.locator('.preferences-nav [role=tab]', { hasText: /^General$/ }).click();
-const optionCount = await langSelect.locator('option').count();
+// The searchable picker (#299/#303): open it once, count its rows from the
+// listbox, and pick by data-value code from here on.
+await langSelect.click();
+const pickerOptions = page.locator('.language-picker-popover [role="option"]');
+const optionCount = await pickerOptions.count();
 // The picker must offer every selectable dictionary — counted from the
 // i18n folder so the harness grows with the language set instead of rotting
-// against a frozen number (it read "15" for two expansion rounds). One file
-// in the folder is not a selectable row: zh-tw.ts ships as the base the
+// against a frozen number (it read "15" for two expansion rounds).
+// Dictionaries are language-code-shaped filenames (ar.ts, pt-br.ts, even
+// three-letter fil.ts); helper modules (language-names.ts,
+// language-search.ts) never match the shape, so a new dictionary file still
+// grows the count alone.
+// One shaped file is not a selectable row: zh-tw.ts ships as the base the
 // zh-hk override table spreads over, without a picker entry since the
 // 2026-10-07 withdrawal (fifth batch pending).
 const NOT_SELECTABLE = 1;
-const dictionaries = readdir(resolve(process.cwd(), 'packages/web/src/i18n'))
-  .filter((f) => f.endsWith('.ts')).length - NOT_SELECTABLE;
+const shaped = readdir(resolve(process.cwd(), 'packages/web/src/i18n'))
+  .filter((f) => /^[a-z]{2,3}(-[a-z]+)*\.ts$/.test(f));
+const dictionaries = shaped.length - NOT_SELECTABLE;
 check('language list offers every selectable dictionary', optionCount === dictionaries + 1, `options=${optionCount} selectable dictionaries=${dictionaries}`);
-check('follow-system sits first', /Follow system|跟随系统|跟隨系統/i.test((await langSelect.locator('option').first().textContent()) ?? ''));
-await langSelect.selectOption('zh');
+check('follow-system sits first', /Follow system|跟随系统|跟隨系統/i.test((await pickerOptions.first().textContent()) ?? ''));
+await page.locator('.language-picker-popover [role="option"][data-value="zh"]').click();
 await page.waitForTimeout(150);
 check('save/cancel are always present in the footer', (await saveBtn.count()) === 1 && (await cancelBtn.count()) === 1);
 // Cancel closes the modal AND discards the staged choice (v1.23 semantics).
@@ -328,7 +370,7 @@ check(
   `modal=${await page.locator('.prefs-modal').count()} heading=${headingAfterCancel}`,
 );
 await (await prefsGear()).click();
-await page.locator('.preferences-panel select').first().selectOption('zh');
+await pickCombobox(langSelect, 'zh');
 await saveBtn.click();
 await page.waitForTimeout(300);
 // Since PR #65 Save keeps the window open (drafts apply in place); closing
@@ -342,7 +384,7 @@ await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 })
 await page.waitForTimeout(200);
 // fr as a representative of the P1 batch (es/fr/tr)
 await (await prefsGear()).click();
-await page.locator('.preferences-panel select').first().selectOption('fr');
+await pickCombobox(langSelect, 'fr');
 await saveBtn.click();
 await page.waitForTimeout(300);
 const frText = await page.locator('.robot-library-heading h2').first().textContent();
@@ -354,7 +396,7 @@ await page.waitForTimeout(200);
 // he — the app's first RTL language (first batch, PR #114): the document
 // flips to rtl while the field and timeline keep their physical directions.
 await (await prefsGear()).click();
-await page.locator('.preferences-panel select').first().selectOption('he');
+await pickCombobox(langSelect, 'he');
 await saveBtn.click();
 await page.waitForTimeout(300);
 check(
@@ -370,7 +412,7 @@ await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 })
 await page.waitForTimeout(200);
 // pt-BR — the second first-batch language, and a return trip to LTR.
 await (await prefsGear()).click();
-await page.locator('.preferences-panel select').first().selectOption('pt-BR');
+await pickCombobox(langSelect, 'pt-BR');
 await saveBtn.click();
 await page.waitForTimeout(300);
 check(
@@ -387,7 +429,7 @@ await page.waitForTimeout(200);
 // ja — second-batch language (nl/pl/ja/ko/cs, red book §语言扩展规划): a CJK
 // round that must stay LTR, exercising a non-Latin font path end to end.
 await (await prefsGear()).click();
-await page.locator('.preferences-panel select').first().selectOption('ja');
+await pickCombobox(langSelect, 'ja');
 await saveBtn.click();
 await page.waitForTimeout(300);
 check(
@@ -402,7 +444,7 @@ await cancelBtn.click();
 await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
 await page.waitForTimeout(200);
 await (await prefsGear()).click();
-await page.locator('.preferences-panel select').first().selectOption('en');
+await pickCombobox(langSelect, 'en');
 await saveBtn.click();
 await page.waitForTimeout(300);
 await cancelBtn.click();
@@ -444,7 +486,7 @@ await page.screenshot({ path: `${SHOTS}/08-bounds.png` });
 
 // --- season switch + AndyMark variant survive reload ---
 const seasonSelect = page.locator('.field-select').first();
-await seasonSelect.selectOption('reefscape-2025');
+await pickCombobox(seasonSelect, 'reefscape-2025');
 await page.waitForTimeout(700);
 await page.locator('.field-variant-toggle button', { hasText: 'AndyMark' }).click();
 await page.waitForTimeout(400);
@@ -459,7 +501,7 @@ await fileInput().setInputFiles([
 ]);
 await page.waitForSelector('.robot-library-row', { timeout: 10000 });
 await page.waitForSelector('.field-canvas');
-const fieldAfterReload = await seasonSelect.inputValue();
+const fieldAfterReload = await readCombobox(seasonSelect);
 const amPressed = (await page.locator('.field-variant-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'AndyMark';
 check('field + AndyMark variant survive reload', fieldAfterReload === 'reefscape-2025' && amPressed, `field=${fieldAfterReload} andymark=${amPressed}`);
 await page.screenshot({ path: `${SHOTS}/09-reefscape.png` });
@@ -495,7 +537,7 @@ check('season switch', true);
 // gone — custom fields remain the one 3D-less surface, covered below.
 
 // --- custom field panel opens, takes an image, cancels ---
-await seasonSelect.selectOption('custom');
+await pickCombobox(seasonSelect, 'custom');
 await page.waitForTimeout(300);
 check('custom-field panel opens', (await page.locator('.cf-panel').count()) === 1);
 await page.setInputFiles('.cf-panel input[type="file"]', `${process.cwd()}/assets/fields/rebuilt2026.png`);
@@ -503,7 +545,7 @@ await page.waitForTimeout(400);
 check('custom-field image loads', (await page.locator('.cf-panel').count()) === 1 && errors.length === 0);
 await page.screenshot({ path: `${SHOTS}/10-custom-field.png` });
 await page.locator('.cf-panel .btn.small').last().click();
-await seasonSelect.selectOption('rebuilt-2026');
+await pickCombobox(seasonSelect, 'rebuilt-2026');
 await page.waitForTimeout(300);
 
 // --- inspector: read-only everywhere (2026-09-30 pivot) ---
@@ -858,7 +900,7 @@ await page.screenshot({ path: `${SHOTS}/14-3d.png` });
 }
 const dynBefore = await page.evaluate(() => window.__pb3d.scene.getObjectByName('pb-dynamic')?.children.length ?? -1);
 const camBefore = await page.evaluate(() => window.__pb3d.camera.position.toArray().map((v) => +v.toFixed(3)));
-await page.locator('.field-select').first().selectOption('reefscape-2025');
+await pickCombobox(page.locator('.field-select').first(), 'reefscape-2025');
 await page.waitForFunction(
   () => document.querySelectorAll('.robot-library-row').length >= 1,
   undefined,
@@ -891,7 +933,7 @@ check('season switch with 3D open keeps robots', true);
 }
 // Back to the first season: the parsed model comes from the module cache —
 // tags return instantly, the camera STILL holds, and the cache is warm.
-await page.locator('.field-select').first().selectOption('rebuilt-2026');
+await pickCombobox(page.locator('.field-select').first(), 'rebuilt-2026');
 await page.waitForFunction(() => {
   let n = 0;
   window.__pb3d.scene.traverse((o) => { if (o.name.startsWith('apriltag-')) n++; });
@@ -937,7 +979,7 @@ await page.waitForSelector('.robot-library-row', { timeout: 10000 });
 await page.waitForTimeout(800);
 const rowsAfterReload = await page.locator('.robot-library-row').count();
 check('last session restored on reload (no re-import)', rowsAfterReload > 0, `rows=${rowsAfterReload}`);
-const restoredField = await page.locator('.field-select').first().inputValue();
+const restoredField = await readCombobox(page.locator('.field-select').first());
 check('field selection remembered across reload', restoredField === 'rebuilt-2026', restoredField);
 const amPressed2 = (await page.locator('.field-variant-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'AndyMark';
 check('explicit AndyMark choice survives reload', amPressed2 === true);

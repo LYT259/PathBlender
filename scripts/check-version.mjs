@@ -56,3 +56,20 @@ if (distinct.length > 1) {
   process.exit(1);
 }
 console.log(`version:check — all ${found.length} manifests agree at ${distinct[0]}`);
+
+// Desktop drag contract (2026-10-09): every drag in the product — timeline
+// row reorder, robot-list reorder, window file import — is HTML5 DnD. Tauri's
+// dragDropEnabled defaults to true, which routes the native drag session to
+// Tauri's own handler and the webview never delivers dragover/drop (the drag
+// ghost moves, release does nothing). Nothing in the shell listens to Tauri
+// drag events, so the flag must stay off. If this trips, someone re-enabled
+// it — fix the drag symptom by restoring false, not by rewriting the UI.
+const tauriConf = JSON.parse(readFileSync(resolve(ROOT, 'packages/desktop/src-tauri/tauri.conf.json'), 'utf8'));
+const mainWindow = tauriConf.app?.windows?.find((w) => w.label === 'main');
+if (mainWindow?.dragDropEnabled !== false) {
+  console.error('desktop drag contract broken: the main window must set "dragDropEnabled": false —');
+  console.error('with it true, WKWebView/WebView2 swallow HTML5 dragover/drop and row reorder + file import die silently.');
+  process.exit(1);
+}
+console.log('desktop drag contract — main window dragDropEnabled is false (HTML5 DnD live)');
+
