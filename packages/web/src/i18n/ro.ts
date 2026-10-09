@@ -13,6 +13,7 @@ export const ro = {
   'sequence.joinVelocity': 'salt de viteză {d} m/s',
   'sequence.libraryBlocked': 'Începutul nu continuă sfârșitul lui {name} (diferență de poziție {p}, diferență de orientare {h})',
   'sequence.libraryOccupied': 'Cursorul de redare este pe un segment ocupat — trage-l mai întâi într-un spațiu liber',
+  'sequence.libraryStartZone': 'Pornirea nu se află în zona de start permisă',
   'sequence.joinFix': 'Corectează îmbinarea în PathPlanner sau Choreo și reimportă ruta.',
   'sequence.overAuto': 'Se termină la {t} s, după perioada autonomă de {auto} s.',
   'sequence.invalid': 'Introdu un timp de start finit și nenegativ.',
@@ -71,7 +72,6 @@ export const ro = {
   'welcome.exitExample': 'Termină exemplul',
   'onboarding.play': 'Apasă Redă pentru a vedea rutele sau trage linia de timp.',
 
-  'onboarding.import': "Importat — verifică întâi elementele de bază: sezonul și terenul, dimensiunea barelor, roșu/albastru",
   'onboarding.check': 'Selectează o problemă de mai jos pentru a sări la acel moment — apoi compară alternative: schimbă o rută sau mută un timp de start.',
   'onboarding.dismiss': 'Ascunde indiciul',
   "workspace.loading3d": "Se încarcă vizualizarea 3D…",
@@ -116,6 +116,7 @@ export const ro = {
   'timeline.rewind': "Revenire la început",
   'timeline.stepBack': "Înapoi 0,5 secunde",
   'timeline.stepForward': "Înainte 0,5 secunde",
+  'timeline.jumpEnd': 'Sari la sfârșitul rutelor vizibile',
   'timeline.play': "Redă",
   'timeline.pause': "Pauză",
   'timeline.position': "Poziția de redare",

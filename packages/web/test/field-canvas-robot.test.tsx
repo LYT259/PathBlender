@@ -290,6 +290,7 @@ describe('2D robot bumper and team-number callout', () => {
     expect(texts[0]!.style.fillStyle).toBe('#2264cf');
   });
 
+
   it('draws one callout per robot when several share the field', () => {
     paint([robot(2), robot(6, '2468')]);
     expect(calls.filter((c) => c.name === 'fillText' && c.args[0] === '11019')).toHaveLength(1);

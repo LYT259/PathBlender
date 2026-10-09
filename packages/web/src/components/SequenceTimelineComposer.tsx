@@ -1,7 +1,6 @@
 import { SelectControl } from './SelectControl';
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import type { RouteContinuity, SequenceJoinIssue, SessionRouteOption, SessionTrajectory } from '@pathblender/core';
-import { routeConnectsAfter } from '@pathblender/core';
+import { routeConnectsAfter, LIBRARY_CHAIN_TOLERANCES, startsInAllianceZone, type RouteContinuity, type SequenceJoinIssue, type SessionRouteOption, type SessionTrajectory, type StartZoneRect } from '@pathblender/core';
 import { sequenceViewFor, type AutoSequenceSegment } from '../auto-sequence-state';
 import { boundedClipStart, canPlaceClip, clipGaps, clipsFor, placeClip, segmentsFromClips, type TimelineClip } from '../sequence-timeline-clips';
 import { robotIdentity } from '../robot-identity';
@@ -19,11 +18,18 @@ interface Props {
   selectedId?: string;
   onSelect: (id: string) => void;
   autoPeriodS: number;
+  /** The season's legal starting region (user 2026-10-08): with nothing
+   * placed yet, only routes starting inside it are addable — every later
+   * leg is pose-gated instead. Undefined = the season defines no region
+   * and the first route stays ungated (2022 today). */
+  startZone?: StartZoneRect[];
   open: boolean;
   onClose: () => void;
   /** Each completed edit commits to the same store used by playback and autosave. */
   onChange: (segments: AutoSequenceSegment[]) => void;
-  onPreviewRoute?: (routeId: string | null) => void;
+  /** Hover/focus route preview: `routeId` resolves through the robot being
+   * edited unless `robotId` names another track's team (2026-10-08). */
+  onPreviewRoute?: (routeId: string | null, robotId?: string) => void;
   joins?: SequenceJoinIssue[];
   playback?: Playback;
   /** Transport end honoring the playback-range choice — shared with the
@@ -49,7 +55,7 @@ const clampToAxis = (t: number, axisS: number) => Math.min(axisS, Math.max(0, t)
 
 /** Pointer capture works across WebKit and mouse/touch/pen, without relying
  * on custom HTML drag payloads. A gesture is one undoable operation. */
-export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, open, onClose, onChange, onPreviewRoute, joins = [], playback, playbackEndS, playbackRange = 'full', onPlaybackRangeChange, onJump }: Props) {
+export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, startZone, open, onClose, onChange, onPreviewRoute, joins = [], playback, playbackEndS, playbackRange = 'full', onPlaybackRangeChange, onJump }: Props) {
   const { t, n, lang } = useI18n();
   const [unit] = useLengthUnit();
   const [selected, setSelected] = useState<{ robotId: string; clipId: string } | null>(null);
@@ -57,7 +63,8 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   const [error, setError] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ robotId: string; clipId: string; x: number; y: number } | null>(null);
   // Screen point of a running library drag — drives the follow-along badge
-  // so the dragged route stays identified even outside the lane.
+  // so the dragged route stays identified wherever the pointer is. Over the
+  // lane the in-lane ghost takes over (user 2026-10-08) and the badge yields.
   const [dragPoint, setDragPoint] = useState<{ x: number; y: number } | null>(null);
   const laneRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLElement>(null);
@@ -101,13 +108,28 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     : [...activeClips].sort((a, b) => a.startS - b.startS).filter((clip) => clip.startS <= playheadT).at(-1);
   const anchorRoute = anchorClip ? active?.routes.find((route) => route.id === anchorClip.routeId) : undefined;
   const anchorLabel = anchorRoute && active ? routeLabel(anchorRoute, active.routes) : '';
-  const library: { route: SessionRouteOption; blocked: boolean; continuity?: RouteContinuity }[] = [];
+  const library: { route: SessionRouteOption; blocked: boolean; outOfZone?: boolean; continuity?: RouteContinuity }[] = [];
+  // First-leg zoning (user 2026-10-08): with nothing placed yet the route
+  // library answers "what may legally START the auto" — only routes whose
+  // first sample sits in the season's legal starting region are addable.
+  // The source robots stay blue-frame and the red view's region mirrors the
+  // blue one, so the same rects serve both alliances. Once a first leg
+  // exists, pose continuity takes the gate over.
+  const zone = startZone !== undefined && activeClips.length === 0
+    ? startZone
+    : undefined;
   for (const route of active?.routes ?? []) {
     const overAuto = route.trajectory.durationS > autoPeriodS;
-    const continuity = anchorRoute ? routeConnectsAfter(anchorRoute.trajectory, route.trajectory) : undefined;
+    const outOfZone = zone !== undefined
+      && !startsInAllianceZone(route.trajectory, zone);
+    // Driveable-chain gate (user 2026-10-08): LIBRARY_CHAIN_TOLERANCES
+    // answers "can the robot drive there"; the seam badges still grade the
+    // join itself at the strict SEQUENCE_JOIN_TOLERANCES.
+    const continuity = anchorRoute ? routeConnectsAfter(anchorRoute.trajectory, route.trajectory, LIBRARY_CHAIN_TOLERANCES) : undefined;
     library.push({
       route,
-      blocked: occupied || route.trajectory.durationS <= 0 || overAuto || (continuity ? !continuity.connects : false),
+      blocked: occupied || route.trajectory.durationS <= 0 || overAuto || outOfZone || (continuity ? !continuity.connects : false),
+      outOfZone: outOfZone || undefined,
       continuity,
     });
   }
@@ -169,12 +191,21 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   }
   function append(routeId: string, durationS: number) {
     const startS = finish(activeClips);
+    const remaining = autoPeriodS - startS;
+    if (remaining <= 1e-9) { setError(limitMessage); return; }
+    // Partial execution (user 2026-10-08): a leg appended where less auto
+    // time remains than the route needs plays "as far as it can" — the
+    // first `playS` seconds — instead of being refused.
+    const clip: TimelineClip = { id: crypto.randomUUID(), routeId, startS, durationS };
+    const fitted = remaining < durationS
+      ? { ...clip, durationS: remaining, playS: remaining }
+      : clip;
     // The playhead IS the insertion point: once the appended route lands,
     // advance it to the new end so the library (gated by playhead occupancy
     // and continuity) immediately answers "what can come next" — chaining
     // several routes needs no scrub between appends.
-    if (commit({ id: crypto.randomUUID(), routeId, startS, durationS })) {
-      playback?.setT(Math.min(autoPeriodS, startS + durationS));
+    if (commit(fitted)) {
+      playback?.setT(Math.min(autoPeriodS, startS + fitted.durationS));
     }
   }
   function remove(clipId: string) {
@@ -240,9 +271,21 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     const clip = drag.clip!;
     const raw = drag.kind === 'add' ? (event.clientX - rect.left) / rect.width * axis
       : clip.startS + (event.clientX - drag.x) / rect.width * axis;
-    const startS = boundedClipStart(raw, activeClips, clip, 8 / rect.width * axis, autoPeriodS);
-    drag.candidate = { ...clip, startS };
-    setGhost({ robotId: activeId!, clip: drag.candidate });
+    // A new drop lands where the pointer is — no whole-route reservation.
+    // Partial execution (user 2026-10-08): when less auto time remains than
+    // the route needs, the candidate is cut to the remaining seconds
+    // (playS); a placed leg being MOVED still keeps its full length and
+    // slides instead, as before.
+    const startS = drag.kind === 'add'
+      ? Math.min(axis, Math.max(0, raw))
+      : boundedClipStart(raw, activeClips, clip, 8 / rect.width * axis, autoPeriodS);
+    const candidate: TimelineClip = drag.kind === 'add'
+      ? autoPeriodS - startS < clip.durationS
+        ? { ...clip, startS, durationS: autoPeriodS - startS, playS: autoPeriodS - startS }
+        : { ...clip, startS }
+      : { ...clip, startS };
+    drag.candidate = candidate;
+    setGhost({ robotId: activeId!, clip: candidate });
   }
   function cancelDrag() { dragRef.current = null; setGhost(null); setDragPoint(null); onPreviewRoute?.(null); }
   function switchRobot(id: string) { cancelDrag(); setMenu(null); setError(null); onSelect(id); }
@@ -286,12 +329,14 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         <option value="paths">{t('timeline.rangePaths')}</option>
       </SelectControl>} />
     <div className="sequence-route-library"><div className="sequence-route-options">
-      {library.map(({ route, blocked, continuity }) => {
+      {library.map(({ route, blocked, outOfZone, continuity }) => {
         // Gray-reason precedence: occupancy (nowhere to drop at all) over
-        // the auto-period limit over the pose mismatch.
+        // the auto-period limit over a start outside the ALLIANCE ZONE over
+        // the pose mismatch.
         const reason = !blocked ? null
           : occupied ? t('sequence.libraryOccupied')
           : route.trajectory.durationS > autoPeriodS ? limitMessage
+          : outOfZone ? t('sequence.libraryStartZone')
           : continuity ? t('sequence.libraryBlocked', {
             name: anchorLabel,
             p: formatLength(continuity.positionGapM, unit, lang),
@@ -347,12 +392,13 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
                   title={`${label}\n${n(clip.startS, 2)}–${n(clip.startS + clip.durationS, 2)} s`}
                   // Hovering a placed leg previews that route on the field
                   // exactly like the library buttons (user 2026-10-07) —
-                  // editing lane only: the preview resolves through the
-                  // selected robot's own library. Keyboard parity via focus.
-                  onPointerEnter={editing ? () => { if (!dragRef.current) onPreviewRoute?.(clip.routeId); } : undefined}
-                  onPointerLeave={editing ? () => { if (!dragRef.current) onPreviewRoute?.(null); } : undefined}
-                  onFocus={editing ? () => { if (!dragRef.current) onPreviewRoute?.(clip.routeId); } : undefined}
-                  onBlur={editing ? () => { if (!dragRef.current) onPreviewRoute?.(null); } : undefined}
+                  // in ANY lane (user 2026-10-08): another team's leg
+                  // resolves through that team's own library. Keyboard
+                  // parity via focus.
+                  onPointerEnter={() => { if (!dragRef.current) onPreviewRoute?.(clip.routeId, id); }}
+                  onPointerLeave={() => { if (!dragRef.current) onPreviewRoute?.(null); }}
+                  onFocus={() => { if (!dragRef.current) onPreviewRoute?.(clip.routeId, id); }}
+                  onBlur={() => { if (!dragRef.current) onPreviewRoute?.(null); }}
                   onClick={(event) => { if (event.detail !== 0 && suppressClick.current) return; if (!editing) switchRobot(id); setSelected({ robotId: id, clipId: clip.id }); setError(null); }}
                   onPointerDown={editing ? (event) => begin(event, 'move', clip) : () => { suppressClick.current = false; }}
                   onContextMenu={editing ? (event) => { event.preventDefault(); setSelected({ robotId: id, clipId: clip.id }); setMenu({ robotId: id, clipId: clip.id, x: event.clientX, y: event.clientY }); } : undefined}
@@ -421,11 +467,13 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       <button type="button" role="menuitem" onClick={() => remove(menu.clipId)}><Icon name="trash" size={14} />{t('sequence.removeRoute')}</button>
     </div>}
     <div className="sequence-composer-footnote"><span role="status" className="sequence-error">{error ?? ''}</span></div>
-    {dragPoint && dragRef.current?.kind === 'add' && dragRef.current.clip && (() => {
-      // Follow-along copy of the dragged library route (user 2026-10-07):
-      // visible inside the lane and out of it, so the gesture always says
-      // WHICH route is being carried. Dropping in the lane records it;
-      // dropping elsewhere discards it.
+    {dragPoint && dragRef.current?.kind === 'add' && dragRef.current.clip && !activeGhost && (() => {
+      // Follow-along copy of the dragged library route — outside the lane
+      // only (user 2026-10-08): inside it the in-lane ghost already names
+      // the route and its drop slot, and showing both read as two copies of
+      // the same path. dragPoint keeps updating so the badge sits at the
+      // pointer the moment the drag leaves the lane again. Dropping in the
+      // lane records it; dropping elsewhere discards it.
       const source = active.routes.find((route) => route.id === dragRef.current!.clip!.routeId);
       return <div className="sequence-drag-badge" aria-hidden="true" style={{ left: dragPoint.x, top: dragPoint.y }}>
         <span>{source ? routeLabel(source, active.routes) : dragRef.current.clip.routeId}</span><small>{source ? `${n(source.trajectory.durationS, 2)}s` : ''}</small>

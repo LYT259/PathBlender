@@ -4,7 +4,7 @@ import { Icon } from './Icon';
 import './UsageTip.css';
 
 /** Remember completion locally; unavailable storage must not block the app. */
-export function useUsageTip(topic: 'play' | 'checks' | 'import') {
+export function useUsageTip(topic: 'play' | 'checks') {
   const key = `pb.tip.${topic}.v1`;
   const [visible, setVisible] = useState(() => {
     try { return localStorage.getItem(key) !== 'done'; } catch { return true; }
