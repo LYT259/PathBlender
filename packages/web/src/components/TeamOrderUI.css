@@ -19,4 +19,9 @@
    body class kills text selection and flashes the grabbing cursor, the ghost
    is a fixed-position clone of the dragged row riding the cursor. */
 body.team-order-drag-active { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+/* The ruler's scrubber spans the strip right under the last row — the prime
+   "drop past the end" landing zone. While a row drag is live it must not
+   hit-test (WebKit range inputs can race the drag's pointerup), so the drop
+   falls through to the axis and the nearest-row edge. */
+body.team-order-drag-active .timeline-scrubber { pointer-events: none; }
 .team-order-ghost { position: fixed; left: 0; top: 0; z-index: 60; pointer-events: none; overflow: hidden; border-radius: 6px; opacity: .96; box-shadow: 0 10px 28px #0009; will-change: transform; }
