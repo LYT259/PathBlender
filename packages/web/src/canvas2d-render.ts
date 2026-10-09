@@ -54,6 +54,37 @@ function pathSegments(r: SessionTrajectory): PathPoint[] {
   return pathSegmentsOf(r).flat();
 }
 
+export interface ToleranceGhost {
+  robot: SessionTrajectory;
+  pose: { x: number; y: number; heading: number };
+  /** Relative clock shift (seconds) the pose is sampled under. */
+  offsetS: number;
+}
+
+/**
+ * Slip-scenario ghosts: while the playhead sits inside a tolerance-kind
+ * conflict window, the shifted robot's pose at its slipped clock (the scan's
+ * own frame — a at t, b at t − offsetS). The paper plan alone can't show this
+ * collision; the ghost overlays where the worst-case start slip would put the
+ * robot, so the overlap reads directly on the field.
+ */
+export function toleranceGhostsAt(
+  conflicts: readonly CollisionInterval[],
+  robots: readonly SessionTrajectory[],
+  currentT: number,
+): ToleranceGhost[] {
+  const byId = new Map(robots.map((r) => [r.trajectory.id, r]));
+  const ghosts: ToleranceGhost[] = [];
+  for (const c of conflicts) {
+    if (c.kind !== 'tolerance') continue;
+    if (currentT < c.startT - 1e-9 || currentT > c.endT + 1e-9) continue;
+    const b = byId.get(c.bId);
+    if (!b) continue;
+    ghosts.push({ robot: b, pose: samplePoseAt(b, currentT - c.offsetS), offsetS: c.offsetS });
+  }
+  return ghosts;
+}
+
 /** Full-field fit view — the same math the workspace canvas uses on open. */
 export function fitViewFor(field: FieldPackage, w: number, h: number): RenderView {
   if (w === 0 || h === 0) return { scale: 40, cx: field.lengthM / 2, cy: field.widthM / 2 };
@@ -203,9 +234,13 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
     ctx.fill();
   }
 
-  // Which robots are in collision at the current time.
+  // Which robots are in collision at the current time. Tolerance-kind
+  // windows are hypothetical (a slipped start — drawn as the faded ghost
+  // above), so they don't paint the solid robots red: a red bumper means
+  // a real, on-paper overlap.
   const inCollisionNow = new Set<string>();
   for (const c of conflicts) {
+    if (c.kind === 'tolerance') continue;
     if (currentT >= c.startT - 1e-9 && currentT <= c.endT + 1e-9) {
       inCollisionNow.add(c.aId);
       inCollisionNow.add(c.bId);
@@ -216,6 +251,18 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
     if (currentT >= b.startT - 1e-9 && currentT <= b.endT + 1e-9) {
       outOfBoundsNow.add(b.robotId);
     }
+  }
+
+  // Tolerance-conflict ghosts: the slipped robot drawn faded (dashed bumper
+  // edge) at its worst-case clock pose, under the solid robots — the plan
+  // stays ground truth, the hypothetical collision reads on the field.
+  for (const g of toleranceGhostsAt(conflicts, robots, currentT)) {
+    const vis = robotVisualGeometry(g.robot.trajectory, field.year);
+    const modules = chassisModules(g.robot.trajectory, vis.chassis);
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    drawRobot(ctx, sx, sy, g.pose, g.robot, vis, modules, p.sprite, view.scale, false, false, null, currentT, w, h, true);
+    ctx.restore();
   }
 
   // Robots at currentT.
@@ -289,6 +336,7 @@ function drawRobot(
   currentT: number,
   canvasW: number,
   canvasH: number,
+  ghost = false,
 ) {
   const { outer, chassis } = vis;
   ctx.save();
@@ -314,6 +362,9 @@ function drawRobot(
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
   ctx.rect(ox - L / 2 + bd, -oy - W / 2 + bd, L - 2 * bd, W - 2 * bd);
   ctx.fill('evenodd');
+  // Ghost edge (tolerance slip scenario): dashed reads "hypothetical" —
+  // set inside the transform save/restore so solid robots keep solid edges.
+  ctx.setLineDash(ghost ? [5, 4] : []);
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
   ctx.stroke();
