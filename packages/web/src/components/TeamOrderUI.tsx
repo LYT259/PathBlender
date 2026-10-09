@@ -42,6 +42,7 @@ export function useTeamOrderUI(order?: TeamOrderUI) {
     const startX = event.clientX;
     const startY = event.clientY;
     const rowEl = event.currentTarget.closest<HTMLElement>('[data-team-order-id]');
+    const listEl = rowEl?.parentElement ?? null;
     let active = false;
     let ghost: HTMLElement | null = null;
     let current: { id: string; edge: 'before' | 'after' } | null = null;
@@ -56,6 +57,8 @@ export function useTeamOrderUI(order?: TeamOrderUI) {
       if (row && targetId && targetId !== id) {
         const rect = row.getBoundingClientRect();
         next = { id: targetId, edge: y < rect.top + rect.height / 2 ? 'before' : 'after' };
+      } else if (!row && listEl) {
+        next = nearestRow(listEl, id, x, y);
       }
       if (next?.id !== current?.id || next?.edge !== current?.edge) {
         current = next;
@@ -168,3 +171,29 @@ const landing = (ids: string[], id: string, targetId: string, edge: 'before' | '
   // up by one before the insert.
   return (from < to ? to - 1 : to) + (edge === 'after' ? 1 : 0);
 };
+
+/** Pointer outside every row — below the last row (the timeline's ruler
+ * strip), above the first, or in a gap between the sidebar cards: the
+ * vertical position still names an insertion point. Dragged under the whole
+ * list the user plainly means "put me last" (user 2026-10-09), so the row
+ * nearest the pointer vertically, within the list's horizontal span, carries
+ * the indicator; moveTeamOrder's same-reference check absorbs the no-ops
+ * (e.g. the last row dropped below itself). */
+function nearestRow(list: HTMLElement, draggedId: string, x: number, y: number): { id: string; edge: 'before' | 'after' } | null {
+  const scope = list.getBoundingClientRect();
+  if (x < scope.left || x > scope.right) return null;
+  let best: { id: string; edge: 'before' | 'after' } | null = null;
+  let bestDistance = Infinity;
+  for (const row of Array.from(list.querySelectorAll<HTMLElement>('[data-team-order-id]'))) {
+    const rowId = row.dataset.teamOrderId;
+    if (!rowId || rowId === draggedId) continue;
+    const rect = row.getBoundingClientRect();
+    const edge = y < rect.top + rect.height / 2 ? 'before' : 'after';
+    const distance = edge === 'before' ? rect.top - y : y - rect.bottom;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = { id: rowId, edge };
+    }
+  }
+  return best;
+}
