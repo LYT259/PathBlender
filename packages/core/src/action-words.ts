@@ -99,8 +99,10 @@ export interface ActiveAction {
 export function activeActionsAt(st: SessionTrajectory, t: number): ActiveAction[] {
   // t=0 is the enable instant — nothing can have happened yet, so the
   // callout stays empty there even for t=0 markers (user request
-  // 2026-10-08); they appear the moment playback moves past zero.
-  if (t <= 0) return [];
+  // 2026-10-08). The threshold is the clock's display resolution: any
+  // t the timeline prints as "0.00 s" shows no actions, so the badge can
+  // never contradict the clock the user is reading.
+  if (t < 0.005) return [];
   const events = [...sequenceEventTimes(st)].sort((a, b) => a.t - b.t);
   const groups = new Map<string, { name: string; t: number }>();
   const flashes: { name: string; t: number; until: number }[] = [];
@@ -142,4 +144,31 @@ export function activeActionsAt(st: SessionTrajectory, t: number): ActiveAction[
     if (t <= flash.until + 1e-9) out.push({ name: flash.name, t: flash.t, endsAt: flash.until });
   }
   return out;
+}
+
+export interface ActionGroup {
+  /** Exact global-clock time every action in this box ends. */
+  endsAt: number;
+  /** The box's lines: earlier-fired first; identical fire times keep file order. */
+  actions: { name: string; t: number }[];
+}
+
+/**
+ * The active actions grouped for the callout (user layout 2026-10-08):
+ * actions that end at the exact same moment share one box; boxes stack by
+ * ending time — soonest on top, so the stack reads as urgency and, every
+ * endsAt being constant, never reorders mid-playback. Inside a box the
+ * earlier-fired action sits higher, and simultaneous markers keep the
+ * order their author wrote them in (stable sort).
+ */
+export function groupedActionsAt(st: SessionTrajectory, t: number): ActionGroup[] {
+  const byEnd = new Map<number, { name: string; t: number }[]>();
+  for (const action of activeActionsAt(st, t)) {
+    const list = byEnd.get(action.endsAt);
+    if (list) list.push({ name: action.name, t: action.t });
+    else byEnd.set(action.endsAt, [{ name: action.name, t: action.t }]);
+  }
+  return [...byEnd.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([endsAt, actions]) => ({ endsAt, actions: actions.sort((a, b) => a.t - b.t) }));
 }

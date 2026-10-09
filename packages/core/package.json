@@ -1,6 +1,6 @@
 {
   "name": "@pathblender/core",
-  "version": "0.1.8-beta.102",
+  "version": "0.1.8-beta.103",
   "description": "Pure-function core: path file parsers, unified trajectory model, fusion & OBB-SAT collision detection. Zero DOM.",
   "license": "Apache-2.0",
   "type": "module",

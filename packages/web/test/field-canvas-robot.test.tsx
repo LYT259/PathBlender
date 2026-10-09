@@ -473,15 +473,19 @@ describe('current-action callout', () => {
     expect(li).toBeGreaterThan(ai);
     expectArgs(calls[li]!, [100, 120]);
     expectArgs(calls[li + 1]!, [106, 152]);
-    // Badge plate: second roundRect, mono text in the session color.
+    // Badge plate: second roundRect, two columns — name left, countdown
+    // right-aligned ('intake' 48 + gap 8 + '0.5s' 32 + padding 12 → 100).
     const rects = calls.filter((c) => c.name === 'roundRect');
     expect(rects).toHaveLength(2);
     expectArgs(rects[1]!, [6, 141, 100, 22, 5]);
-    const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === 'intake 0.5s');
-    expect(texts).toHaveLength(1);
-    expect(texts[0]!.args[1]).toBe(12);
-    expect(texts[0]!.args[2]).toBe(152);
-    expect(texts[0]!.style.fillStyle).toBe('#00E5FF');
+    const name = calls.find((c) => c.name === 'fillText' && c.args[0] === 'intake')!;
+    expect(name.args[1]).toBe(12);
+    expect(name.args[2]).toBe(152);
+    expect(name.style.fillStyle).toBe('#00E5FF');
+    const sec = calls.find((c) => c.name === 'fillText' && c.args[0] === '0.5s')!;
+    expect(sec.args[1]).toBe(100);
+    expect(sec.args[2]).toBe(152);
+    expect(sec.style.textAlign).toBe('right');
   });
 
   it('shows same-mechanism takeover: shoot replaces pre_aim, intake keeps running', () => {
@@ -489,42 +493,57 @@ describe('current-action callout', () => {
     const ui = render(makeScene([robot0], 0.4));
     sizeWrap();
     runFrames();
-    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'pre_aim 0.3s')).toBe(true);
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'pre_aim')).toBe(true);
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === '0.3s')).toBe(true);
     calls = [];
     ui.rerender(makeScene([robot0], 0.8));
     runFrames();
-    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'shoot 0.2s')).toBe(true);
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'shoot')).toBe(true);
+    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === '0.2s')).toBe(true);
     expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'pre_aim')).toBe(false);
   });
 
-  it('draws one stacked badge per simultaneous action, each on its own leader', () => {
-    // Machine-2 L1 shape: intake + pass + align all fire at t=0 and coexist
-    // — user layout (2026-10-08): separate boxes fanning from one anchor,
-    // NOT a single joined label. Mock metrics 8 px/char + 12 padding:
-    // intake 60 / pass 44 / align 52 wide, stacked 22+4 apart from y 141;
-    // every right edge lands at x 68 (= 100 − 31.92 − w + w).
+  it('packs same-ending actions into one multi-line box with a single countdown', () => {
+    // Machine-2 L1 shape: intake + pass + align all fire at t=0 and all
+    // run to the route end — one shared ending, so one box (user layout
+    // 2026-10-08): three stacked lines, one right-aligned countdown. Mock
+    // metrics: widest name 'intake' 48 + gap 8 + '0.5s' 32 + padding 12 →
+    // box 100×54 (22 + 2×16), leader to its right-edge middle.
     paint([annotatedRobot([{ name: 'intake', t: 0 }, { name: 'pass', t: 0 }, { name: 'align', t: 0 }])], { currentT: 0.5 });
     const rects = calls.filter((c) => c.name === 'roundRect');
-    expect(rects).toHaveLength(4); // number + three action badges
-    // 'intake 0.5s' 100 / 'pass 0.5s' 84 / 'align 0.5s' 92 wide — all clamp
-    // to the 6 px margin at dir −1 (100 − 31.92 − w < 0 for every w).
-    expectArgs(rects[1]!, [6, 141, 100, 22, 5]);
-    expectArgs(rects[2]!, [6, 167, 84, 22, 5]);
-    expectArgs(rects[3]!, [6, 193, 92, 22, 5]);
-    for (const [name, x, y] of [['intake 0.5s', 12, 152], ['pass 0.5s', 12, 178], ['align 0.5s', 12, 204]] as const) {
-      const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === name);
-      expect(texts, name).toHaveLength(1);
-      expect(texts[0]!.args[1]).toBe(x);
-      expect(texts[0]!.args[2]).toBe(y);
-      expect(texts[0]!.style.fillStyle).toBe('#00E5FF');
+    expect(rects).toHaveLength(2); // number badge + ONE grouped action box
+    expectArgs(rects[1]!, [6, 141, 100, 54, 5]);
+    for (const [name, y] of [['intake', 152], ['pass', 168], ['align', 184]] as const) {
+      const text = calls.find((c) => c.name === 'fillText' && c.args[0] === name)!;
+      expect(text.args[1], name).toBe(12);
+      expect(text.args[2], name).toBe(y);
     }
-    // Three leaders fan from the shared anchor (100,120) to each badge's
-    // right-edge middle — one per action, never crossing a badge above.
+    // The box's single countdown, right-aligned at its vertical middle.
+    const sec = calls.find((c) => c.name === 'fillText' && c.args[0] === '0.5s')!;
+    expect(sec.args[1]).toBe(100);
+    expect(sec.args[2]).toBe(168);
+    expect(sec.style.textAlign).toBe('right');
     const leaders = calls.flatMap((c, i) =>
       c.name === 'moveTo' && calls[i + 1]?.name === 'lineTo' && calls[i + 2]?.name === 'stroke' ? [i] : []);
-    expect(leaders).toHaveLength(4); // number leader + three action leaders
-    const fanEnds = calls.filter((c) => c.name === 'lineTo' && [152, 178, 204].includes(c.args[1] as number));
-    expect(fanEnds.map((c) => c.args)).toEqual([[106, 152], [90, 178], [98, 204]]);
+    expect(leaders).toHaveLength(2); // number leader + the one box leader
+    expectArgs(calls[leaders[1]! + 1]!, [106, 168]);
+  });
+
+  it('stacks one box per distinct ending, soonest first', () => {
+    // intake runs to the route end (1 s); close_blocker flashes until 2 s —
+    // two distinct endings, two boxes, the sooner-ending one on top.
+    paint([annotatedRobot([{ name: 'intake', t: 0 }, { name: 'close_blocker', t: 0 }])], { currentT: 0.5 });
+    const rects = calls.filter((c) => c.name === 'roundRect');
+    expect(rects).toHaveLength(3); // number + two action boxes
+    expectArgs(rects[1]!, [6, 141, 100, 22, 5]); // intake | 0.5s
+    expectArgs(rects[2]!, [6, 167, 156, 22, 5]); // close_blocker | 1.5s
+    const sec1 = calls.find((c) => c.name === 'fillText' && c.args[0] === '0.5s')!;
+    expect(sec1.args[1]).toBe(100);
+    const sec2 = calls.find((c) => c.name === 'fillText' && c.args[0] === '1.5s')!;
+    expect(sec2.args[1]).toBe(156);
+    expect(sec2.args[2]).toBe(178);
+    const fanEnds = calls.filter((c) => c.name === 'lineTo' && [152, 178].includes(c.args[1] as number));
+    expect(fanEnds.map((c) => c.args)).toEqual([[106, 152], [162, 178]]);
   });
 
   it('mirrors to down-right when the number badge flipped up-left', () => {
@@ -533,19 +552,21 @@ describe('current-action callout', () => {
     paint([annotatedRobot([{ name: 'shoot', t: 0 }], 9)], { currentT: 0.5 });
     const rects = calls.filter((c) => c.name === 'roundRect');
     expectArgs(rects[0]!, [294, 76, 54, 24, 6]); // number, up-left
-    // 'shoot 0.5s' = 10×8 px + 12 → labelW 92; dir = +1 → target 411.92
-    // clamps inside the 6 px margin to 440−6−92 = 342.
+    // 'shoot' 40 + gap 8 + '0.5s' 32 + padding 12 → box 92; dir = +1 →
+    // target 411.92 clamps inside the 6 px margin to 440−6−92 = 342.
     expectArgs(rects[1]!, [342, 141, 92, 22, 5]);
-    const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === 'shoot 0.5s');
-    expect(texts[0]!.args[1]).toBe(348);
-    expect(texts[0]!.args[2]).toBe(152);
+    const name = calls.find((c) => c.name === 'fillText' && c.args[0] === 'shoot')!;
+    expect(name.args[1]).toBe(348);
+    expect(name.args[2]).toBe(152);
+    const sec = calls.find((c) => c.name === 'fillText' && c.args[0] === '0.5s')!;
+    expect(sec.args[1]).toBe(428);
   });
 
   it('shows the action even when the robot has no team number', () => {
     const anon = annotatedRobot([{ name: 'pass', t: 0 }]);
     anon.trajectory.teamNumber = '';
     paint([anon], { currentT: 0.5 });
-    expect(calls.filter((c) => c.name === 'fillText' && c.args[0] === 'pass 0.5s')).toHaveLength(1);
+    expect(calls.filter((c) => c.name === 'fillText' && c.args[0] === 'pass')).toHaveLength(1);
     expect(calls.filter((c) => c.name === 'arc')).toHaveLength(1);
   });
 });
