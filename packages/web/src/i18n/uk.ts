@@ -13,6 +13,7 @@ export const uk = {
   'sequence.joinVelocity': 'стрибок швидкості {d} м/с',
   'sequence.libraryBlocked': 'Початок не продовжує кінець {name} (різниця позицій {p}, різниця напрямку {h})',
   'sequence.libraryOccupied': 'Головка відтворення на зайнятій ділянці — спершу перетягніть її на вільне місце',
+  'sequence.libraryStartZone': 'Старт не у дозволеній зоні старту',
   'sequence.joinFix': 'Виправте стик у PathPlanner або Choreo та імпортуйте маршрут знову.',
   'sequence.overAuto': 'Завершує на {t} с, після автономного періоду в {auto} с.',
   'sequence.invalid': 'Введіть скінченний, невід’ємний час старту.',
@@ -71,7 +72,6 @@ export const uk = {
   'welcome.exampleNotice': 'Реальні маршрути сезону 2026 трьох реальних роботів FRC: 11019, 8814 і 11019 Champs.',
   'welcome.exitExample': 'Завершити приклад',
 
-  'onboarding.import': "Імпортовано — спершу перевірте основне: сезон і поле, розмір бамперів, червона/синя",
   'onboarding.play': 'Натисніть «відтворити», щоб побачити маршрути, або перетягніть шкалу часу.',
   'onboarding.check': 'Виберіть проблему нижче, щоб перейти до цього моменту — потім порівняйте варіанти: поміняйте маршрут або зсуньте час старту.',
   'onboarding.dismiss': 'Сховати підказку',
@@ -117,6 +117,7 @@ export const uk = {
   'timeline.rewind': "Повернутися на початок",
   'timeline.stepBack': "Назад на 0,5 секунди",
   'timeline.stepForward': "Уперед на 0,5 секунди",
+  'timeline.jumpEnd': 'Перейти в кінець видимих маршрутів',
   'timeline.play': "Відтворити",
   'timeline.pause': "Пауза",
   'timeline.position': "Позиція відтворення",

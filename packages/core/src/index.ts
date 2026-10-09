@@ -24,9 +24,10 @@ export {
   flipPoseToBlue,
   makeCustomField,
   mirrorAcrossLongAxis,
+  startsInAllianceZone,
   withFieldVariant,
 } from './field';
-export type { FieldArtStyle, FieldImageCalibration, FieldPackage } from './field';
+export type { FieldArtStyle, FieldImageCalibration, FieldPackage, StartZoneRect } from './field';
 export { fieldImageWorldRect } from './field';
 
 export { lerpAngle, sampleTrajectory, wrapAngle } from './math';
@@ -101,16 +102,19 @@ export {
   sampleStateAt,
   serializeSession,
   sessionDuration,
+  hasEmptyArrangement,
 } from './session';
 export type { SessionFileV1, SessionTrajectory, SessionRouteOption, SessionProfileOption, SessionSerializeOptions } from './session';
 
 export {
+  LIBRARY_CHAIN_TOLERANCES,
   SEQUENCE_JOIN_TOLERANCES,
   checkSequenceJoins,
   checkSequenceTiming,
   resolveSequence,
   routeConnectsAfter,
   sampleSequenceState,
+  segmentDurationS,
   sequenceEventTimes,
 } from './auto-sequence';
 export type {

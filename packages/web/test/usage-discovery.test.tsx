@@ -1,9 +1,10 @@
 /**
  * Feature discovery at the point of use (2026-10-07 plan §4.4): the mirror
- * button states its scope where it lives; a first real import surfaces the
- * check-your-basics tip; the example never shows it (curated settings).
+ * button states its scope where it lives. The check-your-basics import tip
+ * was removed at the user's decision (2026-10-08) — these tests pin its
+ * absence so it does not drift back.
  */
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -27,24 +28,22 @@ describe('feature discovery at the point of use', () => {
     expect(mirror).toHaveAccessibleDescription(/original files stay unchanged/i);
   });
 
-  it('a first real import surfaces the basics tip; dismissing is remembered', async () => {
+  it('the check-your-basics import tip stays gone (removed 2026-10-08)', async () => {
     const first = render(<App />);
     await importOne();
-    const tip = screen.getByText(en['onboarding.import']);
-    fireEvent.click(within(tip.closest('[role="note"]')!).getByRole('button', { name: 'Dismiss tip' }));
-    await waitFor(() => expect(screen.queryByText(en['onboarding.import'])).toBeNull());
-    expect(localStorage.getItem('pb.tip.import.v1')).toBe('done');
+    expect(screen.queryByText('Imported — check the basics first')).toBeNull();
+    expect(localStorage.getItem('pb.tip.import.v1')).toBeNull();
     first.unmount();
 
     render(<App />);
     await importOne();
-    expect(screen.queryByText(en['onboarding.import'])).toBeNull();
+    expect(screen.queryByText('Imported — check the basics first')).toBeNull();
   });
 
   it('the example session never shows the import tip', async () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Try an example' }));
     await screen.findByText('11019', { selector: '.robot-name' }, { timeout: 10000 });
-    expect(screen.queryByText(en['onboarding.import'])).toBeNull();
+    expect(screen.queryByText('Imported — check the basics first')).toBeNull();
   });
 });

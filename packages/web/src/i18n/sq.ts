@@ -13,6 +13,7 @@ export const sq = {
   'sequence.joinVelocity': 'ndryshim i menjëhershëm shpejtësie {d} m/s',
   'sequence.libraryBlocked': 'Fillimi nuk vazhdon fundin e {name} (diferencë pozicioni {p}, diferencë drejtimi {h})',
   'sequence.libraryOccupied': 'Koka e riprodhimit është në një pjesë të zënë — tërhiqeni fillimisht në një hapësirë të lirë',
+  'sequence.libraryStartZone': 'Nuk nis në zonën e lejuar të nisjes',
   'sequence.joinFix': 'Rregulloni lidhjen në PathPlanner ose Choreo dhe riimportoni rrugën.',
   'sequence.overAuto': 'Përfundon në {t} s, pas periudhës autonome prej {auto} s.',
   'sequence.invalid': 'Shkruani një kohë fillimi të fundme dhe jo negative.',
@@ -71,7 +72,6 @@ export const sq = {
   'welcome.exitExample': 'Përfundoni shembullin',
   'onboarding.play': 'Shtypni Luaj për të parë rrugët ose tërhiqni vijën kohore.',
 
-  'onboarding.import': "Importuar — kontrollo së pari bazat: sezoni dhe fusha, madhësia e paraqitësve, kuq/blu",
   'onboarding.check': 'Zgjidhni një problem më poshtë për të kaluar në atë moment — pastaj krahasoni alternativat: ndërroni një rrugë ose zhvendosni një kohë nisjeje.',
   'onboarding.dismiss': 'Mbyllni këshillën',
   "workspace.loading3d": "Po ngarkohet pamja 3D…",
@@ -116,6 +116,7 @@ export const sq = {
   'timeline.rewind': "Kthehuni në fillim",
   'timeline.stepBack': "0,5 sekonda prapa",
   'timeline.stepForward': "0,5 sekonda përpara",
+  'timeline.jumpEnd': 'Kalo në fundin e rrugëve të dukshme',
   'timeline.play': "Luaj",
   'timeline.pause': "Pauzë",
   'timeline.position': "Pozicioni i riprodhimit",
