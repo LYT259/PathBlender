@@ -46,6 +46,9 @@ interface Props {
   showTrail?: boolean;
   /** Occupancy heatmap over every robot's full timeline (§7.3-3). */
   showHeatmap?: boolean;
+  /** Robot (trajectory) ids whose path renders gray — illegal start zone
+   * verdicts (user 2026-10-09). */
+  dimPathIds?: ReadonlySet<string>;
 }
 
 /** Season artwork decoded once and reused across switches. */
@@ -61,6 +64,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     bounds,
     showTrail = true,
     showHeatmap = false,
+    dimPathIds,
   },
   ref,
 ) {
@@ -389,11 +393,12 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         bounds,
         showTrail,
         showHeatmap,
+        dimPathIds,
         clockLabel: t('canvas.clock', { t: n(effT, 2) }),
       });
     };
     requestDraw();
-  }, [field, robots, currentT, conflicts, bounds, showTrail, showHeatmap, imgReady, spriteReady, theme, t, requestDraw]);
+  }, [field, robots, currentT, conflicts, bounds, showTrail, showHeatmap, dimPathIds, imgReady, spriteReady, theme, t, requestDraw]);
 
   useImperativeHandle(ref, () => ({
     exportGif: (onDone?: (ok: boolean) => void) => {

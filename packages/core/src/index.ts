@@ -116,6 +116,7 @@ export {
   sampleSequenceState,
   segmentDurationS,
   sequenceEventTimes,
+  sessionStartsInZone,
 } from './auto-sequence';
 export type {
   AutoSequence,
