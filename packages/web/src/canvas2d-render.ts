@@ -110,6 +110,9 @@ export interface FieldFrameParams {
   bounds: OutOfBoundsInterval[];
   showTrail?: boolean;
   showHeatmap?: boolean;
+  /** Robot (trajectory) ids whose path tape renders gray instead of the
+   * team color — illegal start zone verdicts (user 2026-10-09). */
+  dimPathIds?: ReadonlySet<string>;
   /** Clock overlay text; undefined draws the standard t-label, null draws none. */
   clockLabel?: string | null;
 }
@@ -207,7 +210,9 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
     ctx.lineWidth = TRAIL_WIDTH_M * view.scale;
     for (const r of robots) {
       const segments = pathSegmentsOf(r);
-      ctx.strokeStyle = r.color;
+      ctx.strokeStyle = p.dimPathIds?.has(r.trajectory.id)
+        ? cssVar('--fg-dim', '#a1a1aa')
+        : r.color;
       for (const samples of segments) {
         if (samples.length < 2) continue;
         ctx.beginPath();

@@ -12,6 +12,7 @@ import {
   sampleSequenceState,
   sampleStateAt,
   sequenceEventTimes,
+  sessionStartsInZone,
   serializeSession,
   sessionDuration,
   activeEndT,
@@ -460,5 +461,41 @@ describe('partial execution (playS): a leg longer than the remaining auto plays 
     expect(resolveSequence(st)![0]!.endS).toBe(8);
     st.sequence!.segments[0]!.playS = 99;
     expect(resolveSequence(st)![0]!.endS).toBe(8);
+  });
+});
+
+describe('sessionStartsInZone', () => {
+  // A 1×1 m pocket at the origin — the whole story is which first sample
+  // lands inside it.
+  const zone = [{ xMinM: 0, xMaxM: 1, yMinM: 0, yMaxM: 1 }];
+  const at = (x: number, y: number): Trajectory['samples'] => [
+    { t: 0, x, y, heading: 0, vx: 0, vy: 0, omega: 0 },
+    { t: 1, x: x + 1, y, heading: 0, vx: 0, vy: 0, omega: 0 },
+  ];
+
+  it('is ungated when the season has no starting region', () => {
+    const st = makeSession(route({ samples: at(9, 9) }));
+    expect(sessionStartsInZone(st, undefined)).toBe(true);
+  });
+
+  it('grades a legacy robot by its single route start', () => {
+    expect(sessionStartsInZone(makeSession(route({ samples: at(0.5, 0.5) })), zone)).toBe(true);
+    expect(sessionStartsInZone(makeSession(route({ samples: at(9, 9) })), zone)).toBe(false);
+  });
+
+  it('judges a composition by its first segment only', () => {
+    const inZone = route({ id: 'a', durationS: 2, samples: at(0.2, 0.2) });
+    const farAway = route({ id: 'b', durationS: 2, samples: at(9, 9) });
+    // Second leg starts far outside — continuation, not an illegal start.
+    const ok = robotWithSequence(makeSequence([
+      { id: 's1', routeId: 'a', waitBeforeS: 0, trajectory: inZone },
+      { id: 's2', routeId: 'b', waitBeforeS: 0.5, trajectory: farAway },
+    ]));
+    expect(sessionStartsInZone(ok, zone)).toBe(true);
+    const bad = robotWithSequence(makeSequence([
+      { id: 's1', routeId: 'b', waitBeforeS: 0, trajectory: farAway },
+      { id: 's2', routeId: 'a', waitBeforeS: 0.5, trajectory: inZone },
+    ]));
+    expect(sessionStartsInZone(bad, zone)).toBe(false);
   });
 });

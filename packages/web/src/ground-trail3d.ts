@@ -4,7 +4,7 @@ import { groundTrailData, TRAIL_HEIGHT_M } from './ground-trail';
 import { worldToRenderVec3 } from './field3d-frame';
 import { heatmapColor } from './robot-identity';
 
-export function createGroundTrail(robot: SessionTrajectory, cx: number, cy: number) {
+export function createGroundTrail(robot: SessionTrajectory, cx: number, cy: number, colorOverride?: string) {
   // Composed robots tape every segment on the global clock, each as its own
   // quad run — groundTrailData never bridges two sample lists, so a wait
   // stays an honest gap instead of a fake connecting line.
@@ -33,7 +33,7 @@ export function createGroundTrail(robot: SessionTrajectory, cx: number, cy: numb
   const material = new THREE.ShaderMaterial({
     // Full route from the start: nothing is ever past the cutoff (user
       // request 2026-10-04 — the tape no longer grows with the clock).
-      uniforms: { cutoff: { value: Infinity }, tapeColor: { value: new THREE.Color(robot.color) } },
+      uniforms: { cutoff: { value: Infinity }, tapeColor: { value: new THREE.Color(colorOverride ?? robot.color) } },
     vertexShader: `attribute float trailTime; varying float vTime;
       void main() { vTime = trailTime; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `uniform float cutoff; uniform vec3 tapeColor; varying float vTime;
