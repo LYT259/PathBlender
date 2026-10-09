@@ -12,7 +12,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import {
-  sequenceEventAt,
+  activeActionsAt,
   chassisModules,
   robotVisualGeometry,
   samplePoseAt,
@@ -1669,7 +1669,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // The render frame reflects X, so the heading reflects with it —
       // leaving it raw would have every robot drive sideways.
       rig.root.rotation.y = headingToRender(pose.heading);
-      setActionCallout(rig.action, sequenceEventAt(rig.robot, currentT)?.name);
+      setActionCallout(rig.action, activeActionsAt(rig.robot, currentT).map((a) => a.name).join(' · ') || undefined);
       st.invalidateShadows();
     }
     // `moduleTemplate` matters here too: when the CAD template resolves it

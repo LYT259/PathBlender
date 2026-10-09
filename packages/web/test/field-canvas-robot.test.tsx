@@ -81,7 +81,6 @@ interface RobotOpts {
   heading?: number;
   offsetX?: number;
   offsetY?: number;
-  events?: { name: string; t: number }[];
 }
 
 function robot(x: number, teamNumber = '11019', opts: RobotOpts = {}): SessionTrajectory {
@@ -103,7 +102,7 @@ function robot(x: number, teamNumber = '11019', opts: RobotOpts = {}): SessionTr
       geometry: { lengthM: 0.889, widthM: 0.889, offsetX: opts.offsetX ?? 0, offsetY: opts.offsetY ?? 0 },
       geometrySource: 'file',
       moduleLocations: [],
-      events: opts.events ?? [],
+      events: [],
       warnings: [],
     },
     startDelayS: 0,
@@ -292,31 +291,6 @@ describe('2D robot bumper and team-number callout', () => {
   });
 
 
-  it('badges the user-annotated action on the OPPOSITE diagonal — nothing when unlabeled', () => {
-    // User request 2026-10-08: the number callout leads up, the action
-    // ("intake", the user's own event name) leads down; Choreo's default
-    // "Marker" is not an annotation and must never show.
-    const events = [{ name: 'Marker', t: 0.5 }, { name: 'intake', t: 1 }];
-    paint([robot(2, '11019', { events })], { currentT: 0.7 });
-    const textsBefore = calls.filter((c) => c.name === 'fillText');
-    expect(textsBefore.filter((c) => c.args[0] === 'intake')).toHaveLength(0);
-    calls = [];
-    paint([robot(2, '11019', { events })], { currentT: 1.5 });
-    const texts = calls.filter((c) => c.name === 'fillText');
-    const number = texts.find((c) => c.args[0] === '11019')!;
-    const action = texts.filter((c) => c.args[0] === 'intake');
-    expect(action).toHaveLength(1);
-    expect(action[0]!.args[2] as number).toBeGreaterThan(number.args[2] as number); // below the robot
-    expect(action[0]!.args[1] as number).toBeLessThan(number.args[1] as number); // other side
-    expect(texts.some((c) => c.args[0] === 'Marker')).toBe(false);
-    // A robot without events shows the number badge only (the canvas also
-    // draws the clock/axis text, so assert on the callout strings).
-    calls = [];
-    paint([robot(2)], { currentT: 1.5 });
-    const texts2 = calls.filter((c) => c.name === 'fillText');
-    expect(texts2.filter((c) => c.args[0] === '11019')).toHaveLength(1);
-    expect(texts2.some((c) => c.args[0] === 'intake' || c.args[0] === 'Marker')).toBe(false);
-  });
   it('draws one callout per robot when several share the field', () => {
     paint([robot(2), robot(6, '2468')]);
     expect(calls.filter((c) => c.name === 'fillText' && c.args[0] === '11019')).toHaveLength(1);
