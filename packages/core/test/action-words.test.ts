@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { makeSession, activeActionsAt, normalizeActionWord, type Trajectory } from '../src';
+import { makeSession, activeActionsAt, groupedActionsAt, normalizeActionWord, type Trajectory } from '../src';
 
 function route(events: { name: string; t: number }[], overrides: Partial<Trajectory> = {}): Trajectory {
   return {
@@ -132,12 +132,56 @@ describe('activeActionsAt — other teams\' vocabularies', () => {
   it('shows nothing at t=0 — the enable instant — even for t=0 markers', () => {
     const st = makeSession(route([{ name: 'intake', t: 0 }, { name: 'align', t: 0 }]));
     expect(activeActionsAt(st, 0)).toEqual([]);
-    expect(names(st, 0.001)).toEqual(['intake', 'align']);
+    // The threshold is the clock's resolution: anything it prints as
+    // 0.00 s stays empty (0.004 rounds down), 0.006 prints 0.01 and shows.
+    expect(names(st, 0.004)).toEqual([]);
+    expect(names(st, 0.006)).toEqual(['intake', 'align']);
   });
 
   it('returns nothing for unannotated routes at any time', () => {
     const st = makeSession(route([]));
     expect(activeActionsAt(st, 0)).toEqual([]);
     expect(activeActionsAt(st, 9)).toEqual([]);
+  });
+});
+
+describe('groupedActionsAt — same-ender boxes (user layout 2026-10-08)', () => {
+  const grouped = (events: { name: string; t: number }[], t: number) =>
+    groupedActionsAt(makeSession(route(events)), t);
+
+  it('groups exact-same enders into one box, boxes stack soonest-ending first', () => {
+    // Machine-2 L6 shape: pre_aim ends when shoot fires; intake and align
+    // both run to the route end (10 s) and share the bottom box.
+    const out = grouped([{ name: 'intake', t: 0 }, { name: 'pre_aim', t: 0 }, { name: 'align', t: 0 }, { name: 'shoot', t: 4.56 }], 1);
+    expect(out).toEqual([
+      { endsAt: 4.56, actions: [{ name: 'pre_aim', t: 0 }] },
+      { endsAt: 10, actions: [{ name: 'intake', t: 0 }, { name: 'align', t: 0 }] },
+    ]);
+  });
+
+  it('sorts inside a box by fire time; identical fires keep file order', () => {
+    const out = grouped([
+      { name: 'align', t: 2 }, { name: 'intake', t: 0 }, { name: 'pass', t: 0 },
+    ], 3);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.actions.map((a) => a.name)).toEqual(['intake', 'pass', 'align']);
+  });
+
+  it('the machine-1 shooting burst reads as three boxes', () => {
+    // champs L11 at t=0.5: flash window 1, shoot+feed both end at 4.05,
+    // stow_intake runs to the route end.
+    const out = grouped([
+      { name: 'shoot', t: 0 }, { name: 'feed', t: 0 }, { name: 'stow_intake', t: 0 },
+      { name: 'feed_extension', t: 0 }, { name: 'pre_aim', t: 4.05 }, { name: 'stop_feed', t: 4.05 },
+    ], 0.5);
+    expect(out.map((g) => [g.endsAt, g.actions.map((a) => a.name)])).toEqual([
+      [1, ['feed_extension']],
+      [4.05, ['shoot', 'feed']],
+      [10, ['stow_intake']],
+    ]);
+  });
+
+  it('stays empty below the clock threshold', () => {
+    expect(grouped([{ name: 'intake', t: 0 }], 0.004)).toEqual([]);
   });
 });
