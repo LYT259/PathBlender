@@ -1,3 +1,4 @@
+import { SelectControl } from './SelectControl';
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useI18n, type LangChoice } from '../i18n';
 import { useTheme, type ThemeMode } from '../theme';
@@ -219,17 +220,17 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
         {section === 'controls' && <>
           <div className="preferences-group preferences-units-group">
             <label className="preferences-setting"><span>{t('prefs.units')}</span>
-              <select value={unit} onChange={(event) => setUnitDraft(event.target.value as LengthUnit)}>
+              <SelectControl aria-label={t('prefs.units')} value={unit} onValueChange={(value) => setUnitDraft(value as LengthUnit)}>
                 {lengthUnit === 'ftin' && <option value="ftin" hidden disabled>{t('prefs.unit.ftin')}</option>}
                 {LENGTH_UNITS.map((choice) => <option key={choice} value={choice}>{t(`prefs.unit.${choice}`)}</option>)}
-              </select>
+              </SelectControl>
             </label>
           </div>
           <div className="preferences-group preferences-mouse-group">
             <label className="preferences-setting"><span>{t('prefs.mouseControls')}</span>
-              <select value={mouse} onChange={(event) => setMouseDraft(event.target.value as MouseControlsScheme)}>
+              <SelectControl aria-label={t('prefs.mouseControls')} value={mouse} onValueChange={(value) => setMouseDraft(value as MouseControlsScheme)}>
                 {MOUSE_SCHEMES.map((choice) => <option key={choice} value={choice}>{t(`prefs.mouse.${choice}`)}</option>)}
-              </select>
+              </SelectControl>
             </label>
             <MouseControlsDiagram scheme={mouse} iconMode={icon} constrained={constrained} custom={customEffective} />
             {mouse === 'custom'
@@ -282,9 +283,9 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
         </>}
         {section === 'updates' && <div className="preferences-group">
           <label className="preferences-setting"><span>{t('prefs.channel')}</span>
-            <select value={updateChannel} onChange={(event) => setChannelDraft(event.target.value as UpdateChannel)}>
+            <SelectControl aria-label={t('prefs.channel')} value={updateChannel} onValueChange={(value) => setChannelDraft(value as UpdateChannel)}>
               <option value="stable">{t('prefs.channel.stable')}</option><option value="beta">{t('prefs.channel.beta')}</option>
-            </select>
+            </SelectControl>
           </label>
           <div className="preferences-update-check">
             <div className="update-actions">
@@ -347,11 +348,11 @@ function CustomMouseEditor({ map, onChange, onReset }: {
     <div className="preferences-mouse-custom-grid" role="group" aria-label={caption}>
       {CUSTOM_MOUSE_BUTTONS.map((button) => <div key={button} className="preferences-mouse-custom-row">
         <span>{t(`prefs.mouse.btn.${button}`)}</span>
-        <select className="preferences-mouse-custom-select" value={map[button]}
+        <SelectControl className="preferences-mouse-custom-select" value={map[button]}
           aria-label={t('prefs.mouse.custom.buttonAria', { button: t(`prefs.mouse.btn.${button}`) })}
-          onChange={(event) => onChange(button, event.target.value as CustomMouseAction)}>
+          onValueChange={(value) => onChange(button, value as CustomMouseAction)}>
           {CUSTOM_ACTIONS.map((action) => <option key={action} value={action}>{t(`prefs.mouse.${action}`)}</option>)}
-        </select>
+        </SelectControl>
       </div>)}
     </div>
     <p className="preferences-setting-description">{t('prefs.mouse.custom.derived')}</p>

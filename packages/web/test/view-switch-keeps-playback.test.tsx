@@ -12,6 +12,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionTrajectory } from '@pathblender/core';
 import { App } from '../src/App';
+import { pickComboboxValue } from './combobox';
 
 vi.mock('../src/components/FieldCanvas', async () => {
   const { forwardRef } = await import('react');
@@ -86,10 +87,10 @@ const cases: Array<[string, () => void]> = [
     expect(keep3D()).toHaveAttribute('hidden');
   }],
   ['another season', () => {
-    fireEvent.change(screen.getByRole('combobox', { name: 'Game season' }), { target: { value: 'chargedup-2023' } });
+    pickComboboxValue(screen.getByRole('combobox', { name: 'Game season' }), 'chargedup-2023');
   }],
   ['an older season', () => {
-    fireEvent.change(screen.getByRole('combobox', { name: 'Game season' }), { target: { value: 'rapidreact-2022' } });
+    pickComboboxValue(screen.getByRole('combobox', { name: 'Game season' }), 'rapidreact-2022');
   }],
   ['schematic → rendered artwork', () => {
     fireEvent.click(within(screen.getByRole('group', { name: 'Field artwork style (schematic vs rendered)' })).getByRole('button', { name: 'Rendered' }));

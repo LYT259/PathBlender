@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_GEOMETRY, serializeSession, makeSession } from '@pathblender/core';
 import { playbackEnd, timelineScale, usePlaybackRange } from '../src/playback-range';
 import { App } from '../src/App';
+import { expectComboboxValue, openCombobox, pickComboboxValue } from './combobox';
 
 beforeEach(() => localStorage.clear());
 const scene = () => makeSession({ id: 'range-test', name: 'Eight seconds', teamName: '', teamNumber: '254', source: 'choreo-traj', alliance: 'blue', durationS: 8,
@@ -44,7 +45,7 @@ describe('playback range', () => {
     localStorage.setItem('pb.autosave.v1', serializeSession([long, short], 'rebuilt-2026'));
     const app = render(<App />);
     const slider = screen.getByRole('slider', { name: 'Playback position' });
-    fireEvent.change(screen.getByRole('combobox', { name: 'Playback range' }), { target: { value: 'paths' } });
+    pickComboboxValue(screen.getByRole('combobox', { name: 'Playback range' }), 'paths');
     expect(slider).toHaveAttribute('aria-valuetext', '0.00 / 8.00 s');
     // Hide the longest robot: the loop end follows the longest VISIBLE one.
     fireEvent.click(screen.getByRole('button', { name: 'Hide 254 on field' }));
@@ -52,7 +53,10 @@ describe('playback range', () => {
     expect(slider).toHaveValue('0'); // the playhead stays put, only the end moves
     // The clock display follows; the option label names the visible set
     // without a duration (2026-10-05): "All visible paths".
-    expect(screen.getByRole('option', { name: 'All visible paths' })).toBeInTheDocument();
+    const rangeButton = screen.getByRole('combobox', { name: 'Playback range' });
+    const rangeList = openCombobox(rangeButton);
+    expect(within(rangeList).getByRole('option', { name: 'All visible paths' })).toBeInTheDocument();
+    fireEvent.keyDown(rangeButton, { key: 'Escape' });
     // Show it again mid-session: the end comes back.
     fireEvent.click(screen.getByRole('button', { name: 'Show 254 on field' }));
     expect(slider).toHaveAttribute('aria-valuetext', '0.00 / 8.00 s');
@@ -69,10 +73,11 @@ describe('playback range', () => {
     const app = render(<App />);
     const range = screen.getByRole('combobox', { name: 'Playback range' });
     const slider = screen.getByRole('slider', { name: 'Playback position' });
-    expect(range).toHaveValue('full');
+    expectComboboxValue(range, 'full');
     // 'Full timeline' carries no seconds suffix (user request 2026-10-04);
     // the path-only option names the visible set, also without one.
-    const labels = within(range).getAllByRole('option').map((o) => o.textContent);
+    const labels = within(openCombobox(range)).getAllByRole('option').map((o) => o.textContent);
+    fireEvent.keyDown(range, { key: 'Escape' });
     expect(labels[0]).toBe('Full timeline');
     expect(labels[1]).toBe('All visible paths');
     fireEvent.change(slider, { target: { value: 14 } });
@@ -80,11 +85,11 @@ describe('playback range', () => {
     expect(slider).toHaveAttribute('aria-valuetext', '14.00 / 20.00 s');
     fireEvent.keyDown(slider, { key: 'End' });
     expect(slider).toHaveValue('20');
-    fireEvent.change(range, { target: { value: 'paths' } });
+    pickComboboxValue(range, 'paths');
     expect(slider).toHaveValue('8');
     expect(slider).toHaveAttribute('aria-valuetext', '8.00 / 8.00 s');
     app.unmount();
     render(<App />);
-    expect(screen.getByRole('combobox', { name: 'Playback range' })).toHaveValue('paths');
+    expectComboboxValue(screen.getByRole('combobox', { name: 'Playback range' }), 'paths');
   });
 });
