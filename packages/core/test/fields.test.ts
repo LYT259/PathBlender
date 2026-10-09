@@ -151,7 +151,7 @@ describe('legal starting regions per season (first-leg gate, user 2026-10-08)', 
     ({ samples: [{ t: 0, x, y, heading: 0, vx: 0, vy: 0, omega: 0 }] }) as unknown as Trajectory;
   const zoneOf = (id: string) => fieldById(id)!.startZone!;
 
-  it('carries zones for 2023–2026; 2022 stays ungated (unverifiable layout)', () => {
+  it('carries zones for 2023–2026; 2022 stays ungated (octagonal tarmacs, unverifiable placement)', () => {
     const byYear = new Map(FIELDS.map((f) => [f.year, f.startZone !== undefined]));
     expect(byYear.get(2022)).toBe(false);
     expect(byYear.get(2023)).toBe(true);

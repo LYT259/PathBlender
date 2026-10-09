@@ -117,12 +117,17 @@ export interface FieldPackage {
    *    depth — 11 ft ⅜ in (3.3623 m) across the community and 16 ft 1¼ in
    *    (4.9086 m) in front of the CHARGE STATION (its 8 ft / 2.4384 m
    *    pivoting frame, centered in the community width).
-   *  · 2022 RAPID REACT — deliberately undefined: the two TARMACs (12 ft 9 in
-   *    × 7 ft ¾ in, manual p. 24) flank an asymmetric corner HANGAR whose
-   *    positions the manual text does not dimension, and the layout sheet
-   *    is marked DO NOT SCALE; a guessed rectangle would gate wrongly
-   *    rather than help. Add it from the official FE-2022 drawings if ever
-   *    needed.
+   *  · 2022 RAPID REACT — deliberately undefined after a full forensics pass
+   *    (2026-10-09): the TARMACs are 12 ft 9 in × 7 ft ¾ in (manual p. 24)
+   *    but are OCTAGONAL pads around the mid-field HUB (the marking
+   *    diagram's DETAIL A dims them from the hub center at angles, and
+   *    community models agree), not rectangles at the alliance wall. Their
+   *    exact placement is not recoverable from reachable official sources
+   *    (the FE-2022 drawing package URL is gone, the marking sheet's
+   *    dimension chain does not close numerically, the AS render's tape is
+   *    too low-contrast) — a guessed region would gray legal starts, which
+   *    is worse than no gate. Revisit with the original drawings or a clear
+   *    field photo.
    *  Undefined = the season has no (established) starting region → ungated. */
   startZone?: StartZoneRect[];
 }
