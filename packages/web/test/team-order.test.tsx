@@ -157,8 +157,9 @@ function Workspace({ initial }: { initial: SessionTrajectory[] }) {
 /** jsdom has no layout at all — elementFromPoint isn't even defined, so the
  * stub assigns it outright and reports the target row for every probe. Its
  * zero-height box resolves to the 'after' edge, exactly like the native-DnD
- * tests before this one. */
-function withElementFromPoint<T>(row: HTMLElement, run: () => T): T {
+ * tests before this one. Pass null to simulate the pointer over a non-row
+ * (the timeline's ruler strip, a gap between cards). */
+function withElementFromPoint<T>(row: HTMLElement | null, run: () => T): T {
   const doc = document as Document & { elementFromPoint?: (x: number, y: number) => Element | null };
   const had = typeof doc.elementFromPoint === 'function';
   const original = doc.elementFromPoint;
@@ -177,6 +178,21 @@ function pointerDrag(fromHandle: HTMLElement, toRow: HTMLElement, clientY = 40) 
     fireEvent.pointerMove(window, { pointerId: 1, clientX: 60, clientY });
     fireEvent.pointerUp(window, { pointerId: 1, clientX: 60, clientY });
   });
+}
+
+/** Give the timeline rows and their container real-shaped boxes so the
+ * past-the-end fallback has geometry to reason about (jsdom defaults every
+ * rect to zero). */
+const mockRect = (top: number, height: number, left = 0, width = 800) => () => ({
+  x: left, y: top, width, height, top, bottom: top + height, left, right: left + width,
+  toJSON: () => ({}),
+}) as DOMRect;
+
+function mockTimelineLayout() {
+  const rows = [...document.querySelectorAll('.timeline-row')] as HTMLElement[];
+  const tops = [100, 133, 166];
+  rows.forEach((row, i) => { row.getBoundingClientRect = mockRect(tops[i] ?? 100, 33); });
+  (rows[0]?.parentElement as HTMLElement).getBoundingClientRect = mockRect(100, 99);
 }
 
 const listIds = () =>
@@ -212,6 +228,45 @@ describe('the robot list and timeline share one order', () => {
     // 'after' a (zero-height box) puts c second.
     expect(listIds()).toEqual(['a', 'c', 'b']);
     expect(timelineIds()).toEqual(['a', 'c', 'b']);
+  });
+
+  it('dropping below the last row lands the team at the end (user 2026-10-09)', () => {
+    Workspace({ initial: [team('a', '10'), team('b', '20'), team('c', '30')] });
+    mockTimelineLayout();
+    withElementFromPoint(null, () => {
+      fireEvent.pointerDown(handleOf('a', 'rows'), { button: 0, isPrimary: true, pointerId: 1, clientX: 10, clientY: 10 });
+      // 240 sits under every row — the ruler strip below the timeline rows.
+      fireEvent.pointerMove(window, { pointerId: 1, clientX: 60, clientY: 240 });
+      expect(rowOf('c', 'rows').getAttribute('data-order-edge')).toBe('after');
+      fireEvent.pointerUp(window, { pointerId: 1, clientX: 60, clientY: 240 });
+    });
+    expect(listIds()).toEqual(['b', 'c', 'a']);
+    expect(timelineIds()).toEqual(['b', 'c', 'a']);
+  });
+
+  it('dropping above the first row lands the team at the front', () => {
+    Workspace({ initial: [team('a', '10'), team('b', '20'), team('c', '30')] });
+    mockTimelineLayout();
+    withElementFromPoint(null, () => {
+      fireEvent.pointerDown(handleOf('c', 'rows'), { button: 0, isPrimary: true, pointerId: 1, clientX: 10, clientY: 10 });
+      fireEvent.pointerMove(window, { pointerId: 1, clientX: 60, clientY: 60 });
+      expect(rowOf('a', 'rows').getAttribute('data-order-edge')).toBe('before');
+      fireEvent.pointerUp(window, { pointerId: 1, clientX: 60, clientY: 60 });
+    });
+    expect(listIds()).toEqual(['c', 'a', 'b']);
+    expect(timelineIds()).toEqual(['c', 'a', 'b']);
+  });
+
+  it('a drop far outside the list commits nothing', () => {
+    Workspace({ initial: [team('a', '10'), team('b', '20'), team('c', '30')] });
+    mockTimelineLayout();
+    withElementFromPoint(null, () => {
+      fireEvent.pointerDown(handleOf('a', 'rows'), { button: 0, isPrimary: true, pointerId: 1, clientX: 10, clientY: 10 });
+      // x=2000 is past the container's right edge: no insertion point.
+      fireEvent.pointerMove(window, { pointerId: 1, clientX: 2000, clientY: 240 });
+      fireEvent.pointerUp(window, { pointerId: 1, clientX: 2000, clientY: 240 });
+    });
+    expect(listIds()).toEqual(['a', 'b', 'c']);
   });
 
   it('shows the edge indicator and ghost during the drag, then cleans both up', () => {

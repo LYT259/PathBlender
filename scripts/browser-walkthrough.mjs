@@ -184,7 +184,7 @@ check('collision detected (straight × stop)', true);
 await page.screenshot({ path: `${SHOTS}/02-collision.png` });
 
 // --- Team display order (#300): the timeline rows reorder through the real
-// HTML5 drag path. The desktop build rides the same events (tauri
+// pointer-drag path (#308). The desktop build rides the same events (tauri
 // dragDropEnabled:false, 2026-10-09) — when that flag flips back, this still
 // passes in Chrome while every drag in the macOS app dies silently. ---
 {
@@ -197,6 +197,17 @@ await page.screenshot({ path: `${SHOTS}/02-collision.png` });
   check('timeline rows reorder by drag (first row lands below last)',
     after.length === before.length && after[after.length - 1] === before[0],
     `${JSON.stringify(before)} -> ${JSON.stringify(after)}`);
+  // Dropping PAST the rows (the ruler strip under the last row) is still an
+  // unambiguous "put me last" (user 2026-10-09) — the nearest row carries
+  // the edge even though no row is under the pointer.
+  const beforeAxis = await rowIds();
+  const axis = page.locator('.timeline-axis');
+  await page.locator('.timeline-row[data-team-order-id]').first().locator('.team-order-handle')
+    .dragTo(axis, { targetPosition: { x: 260, y: (await axis.boundingBox()).height / 2 } });
+  const afterAxis = await rowIds();
+  check('drop below the rows (on the ruler) lands the team last',
+    afterAxis.length === beforeAxis.length && afterAxis[afterAxis.length - 1] === beforeAxis[0],
+    `${JSON.stringify(beforeAxis)} -> ${JSON.stringify(afterAxis)}`);
 }
 
 
