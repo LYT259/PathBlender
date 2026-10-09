@@ -13,7 +13,7 @@ export const sv = {
   'sequence.joinVelocity': 'hastighetshopp {d} m/s',
   'sequence.libraryBlocked': 'Starten fortsätter inte slutet på {name} (positionsskillnad {p}, riktningsskillnad {h})',
   'sequence.libraryOccupied': 'Uppspelningshuvudet står på ett upptaget avsnitt — dra det först till en tom lucka',
-  'sequence.libraryStartZone': 'Starten är inte inom allianszonen',
+  'sequence.libraryStartZone': 'Starten är inte inom tillåtet startområde',
   'sequence.joinFix': 'Åtgärda skarven i PathPlanner eller Choreo och importera rutten igen.',
   'sequence.overAuto': 'Klar vid {t} s, efter den {auto} s långa autonoma perioden.',
   'sequence.invalid': 'Ange en ändlig, icke-negativ starttid.',

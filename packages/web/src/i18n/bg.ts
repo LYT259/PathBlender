@@ -13,7 +13,7 @@ export const bg = {
   'sequence.joinVelocity': 'скок на скоростта {d} м/с',
   'sequence.libraryBlocked': 'Началото не продължава края на {name} (разлика в позицията {p}, разлика в посоката {h})',
   'sequence.libraryOccupied': 'Главата за възпроизвеждане е върху зает участък — първо я завлачете към свободно място',
-  'sequence.libraryStartZone': 'Стартът не е в съюзната зона',
+  'sequence.libraryStartZone': 'Стартът не е в разрешената зона за старт',
   'sequence.joinFix': 'Поправете връзката в PathPlanner или Choreo и импортирайте маршрута отново.',
   'sequence.overAuto': 'Завършва на {t} с, след автономния период от {auto} с.',
   'sequence.invalid': 'Въведете крайно, неотрицателно начално време.',

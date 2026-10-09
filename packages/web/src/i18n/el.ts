@@ -13,7 +13,7 @@ export const el = {
   'sequence.joinVelocity': 'άλμα ταχύτητας {d} m/s',
   'sequence.libraryBlocked': 'Η αρχή δεν συνεχίζει το τέλος του {name} (διαφορά θέσης {p}, διαφορά κατεύθυνσης {h})',
   'sequence.libraryOccupied': 'Η κεφαλή αναπαραγωγής βρίσκεται σε κατειλημμένο τμήμα — σύρετέ την πρώτα σε κενό διάστημα',
-  'sequence.libraryStartZone': 'Η εκκίνηση δεν βρίσκεται μέσα στη ζώνη συμμαχίας',
+  'sequence.libraryStartZone': 'Η εκκίνηση δεν βρίσκεται στην επιτρεπόμενη ζώνη εκκίνησης',
   'sequence.joinFix': 'Διορθώστε την ένωση στο PathPlanner ή το Choreo και εισαγάγετε ξανά τη διαδρομή.',
   'sequence.overAuto': 'Ολοκληρώνεται στα {t} s, μετά την αυτόνομη περίοδο των {auto} s.',
   'sequence.invalid': 'Εισαγάγετε πεπερασμένο, μη αρνητικό χρόνο έναρξης.',

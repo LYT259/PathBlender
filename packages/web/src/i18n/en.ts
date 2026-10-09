@@ -329,7 +329,7 @@ export const en = {
   'sequence.joinVelocity': 'speed jump {d} m/s',
   'sequence.libraryBlocked': 'Start does not continue the end of {name} (position gap {p}, heading gap {h})',
   'sequence.libraryOccupied': 'The playhead is on an occupied stretch — drag it to an empty gap first',
-  'sequence.libraryStartZone': 'Start is not inside the Alliance Zone',
+  'sequence.libraryStartZone': 'Start is not in the legal starting area',
   'sequence.joinFix': 'Fix the join in PathPlanner or Choreo and re-import the route.',
   'sequence.overAuto': 'Finishes at {t} s, after the {auto} s autonomous period.',
   'sequence.invalid': 'Enter a finite, non-negative start time.',

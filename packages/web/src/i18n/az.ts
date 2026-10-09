@@ -13,7 +13,7 @@ export const az = {
   'sequence.joinVelocity': 'sürət sıçrayışı {d} m/s',
   'sequence.libraryBlocked': 'Başlanğıc {name} sonunu davam etdirmir (mövqe fərqi {p}, istiqamət fərqi {h})',
   'sequence.libraryOccupied': 'Oynatma başı dolu hissənin üstündədir — əvvəl onu boş yerə sürükləyin',
-  'sequence.libraryStartZone': 'Başlanğıc İttifaq Zonasının daxilində deyil',
+  'sequence.libraryStartZone': 'Başlanğıc icazə verilən başlanğıc zonasında deyil',
   'sequence.joinFix': 'Birləşməni PathPlanner və ya Choreo-da düzəldin və marşrutu yenidən idxal edin.',
   'sequence.overAuto': '{auto} saniyəlik avto dövründən sonra, {t} saniyədə bitir.',
   'sequence.invalid': 'Sonlu, mənfi olmayan başlanğıc vaxtı daxil edin.',

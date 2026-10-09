@@ -13,7 +13,7 @@ export const fil = {
   'sequence.joinVelocity': 'agwat ng bilis {d} m/s',
   'sequence.libraryBlocked': 'Hindi pinagpapatuloy ng simula ang dulo ng {name} (agwat ng posisyon {p}, agwat ng direksiyon {h})',
   'sequence.libraryOccupied': 'Nasa okupadong bahagi ang playback head — unahing i-drag ito sa bakanteng espasyo',
-  'sequence.libraryStartZone': 'Hindi nagsisimula sa loob ng Alliance Zone',
+  'sequence.libraryStartZone': 'Hindi nagsisimula sa pinapayagang starting area',
   'sequence.joinFix': 'Ayusin ang dugtungan sa PathPlanner o Choreo at muling i-import ang ruta.',
   'sequence.overAuto': 'Matatapos sa {t} s, lampas sa {auto} s na autonomous period.',
   'sequence.invalid': 'Maglagay ng finite at hindi negatibong oras ng simula.',

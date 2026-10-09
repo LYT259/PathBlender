@@ -146,24 +146,69 @@ describe('withFieldVariant', () => {
   });
 });
 
-describe('alliance start zone (2026 ALLIANCE ZONE, first-leg gate)', () => {
-  const traj = (x: number) => ({ samples: [{ t: 0, x, y: 4, heading: 0, vx: 0, vy: 0, omega: 0 }] }) as unknown as Trajectory;
-  it('2026 carries the manual zone depth; no earlier season defines one', () => {
-    for (const f of FIELDS) {
-      expect(f.allianceStartZoneM).toBe(f.year === 2026 ? 4.0284 : undefined);
-    }
+describe('legal starting regions per season (first-leg gate, user 2026-10-08)', () => {
+  const traj = (x: number, y = 4) =>
+    ({ samples: [{ t: 0, x, y, heading: 0, vx: 0, vy: 0, omega: 0 }] }) as unknown as Trajectory;
+  const zoneOf = (id: string) => fieldById(id)!.startZone!;
+
+  it('carries zones for 2023–2026; 2022 stays ungated (unverifiable layout)', () => {
+    const byYear = new Map(FIELDS.map((f) => [f.year, f.startZone !== undefined]));
+    expect(byYear.get(2022)).toBe(false);
+    expect(byYear.get(2023)).toBe(true);
+    expect(byYear.get(2024)).toBe(true);
+    expect(byYear.get(2025)).toBe(true);
+    expect(byYear.get(2026)).toBe(true);
   });
-  it('tests the blue-frame source: both alliances mirror to the same predicate', () => {
-    const z = REBUILT_2026.allianceStartZoneM!;
+
+  it('2026: wall to 4.0284 m, full width — the manual zone, line included', () => {
+    const z = zoneOf('rebuilt-2026');
     expect(startsInAllianceZone(traj(0), z)).toBe(true);
-    expect(startsInAllianceZone(traj(1.0), z)).toBe(true);
-    expect(startsInAllianceZone(traj(z), z)).toBe(true); // the line itself
-    expect(startsInAllianceZone(traj(z + 0.001), z)).toBe(false);
-    expect(startsInAllianceZone(traj(5.0), z)).toBe(false);
-    // Slightly behind the wall is not a start either.
+    expect(startsInAllianceZone(traj(1, 0.1), z)).toBe(true);
+    expect(startsInAllianceZone(traj(4.0284, 8.069), z)).toBe(true); // the line itself
+    expect(startsInAllianceZone(traj(4.0285), z)).toBe(false);
     expect(startsInAllianceZone(traj(-0.01), z)).toBe(false);
   });
+
+  it('2025: the ROBOT STARTING LINE band at x≈6.72 — not the wall strip', () => {
+    const z = zoneOf('reefscape-2025');
+    expect(startsInAllianceZone(traj(1.0), z)).toBe(false); // against the wall: illegal
+    expect(startsInAllianceZone(traj(6.5), z)).toBe(true);  // on the line
+    expect(startsInAllianceZone(traj(7.1), z)).toBe(true);
+    expect(startsInAllianceZone(traj(8.3), z)).toBe(false); // inside the barge zone
+    // The band is full width; a hair beyond either edge is out.
+    expect(startsInAllianceZone(traj(6.7, 0), z)).toBe(true);
+    expect(startsInAllianceZone(traj(6.7, 8.052), z)).toBe(true);
+    expect(startsInAllianceZone(traj(6.7, 8.2), z)).toBe(false);
+  });
+
+  it('2024: the ROBOT STARTING ZONE — shallow strip between the corner zones', () => {
+    const z = zoneOf('crescendo-2024');
+    expect(startsInAllianceZone(traj(1.0, 4.0), z)).toBe(true);
+    expect(startsInAllianceZone(traj(1.9336, 4.0), z)).toBe(true);  // tape edge in
+    expect(startsInAllianceZone(traj(2.0, 4.0), z)).toBe(false);    // past the zone line
+    expect(startsInAllianceZone(traj(1.0, 0.542), z)).toBe(true);   // just inside the source-side tape
+    expect(startsInAllianceZone(traj(1.0, 0.5), z)).toBe(false);    // source corner
+    expect(startsInAllianceZone(traj(1.0, 7.7584), z)).toBe(true);  // amp-side tape edge
+    expect(startsInAllianceZone(traj(1.0, 7.9), z)).toBe(false);    // amp corner
+  });
+
+  it('2023: the COMMUNITY — centered, deeper in front of the charge station', () => {
+    const z = zoneOf('chargedup-2023');
+    expect(startsInAllianceZone(traj(3.0, 4.0), z)).toBe(true);   // side depth 3.36 m
+    expect(startsInAllianceZone(traj(4.0, 4.0), z)).toBe(true);   // center deep strip
+    expect(startsInAllianceZone(traj(5.0, 4.0), z)).toBe(false);  // past even the deep boundary
+    expect(startsInAllianceZone(traj(3.0, 1.2649), z)).toBe(true);   // community y-edge, shallow depth
+    expect(startsInAllianceZone(traj(3.0, 1.2), z)).toBe(false);     // loading zone corner
+    expect(startsInAllianceZone(traj(3.0, 6.7513), z)).toBe(true);
+    expect(startsInAllianceZone(traj(3.0, 6.9), z)).toBe(false);
+    expect(startsInAllianceZone(traj(3.5, 2.0), z)).toBe(false);  // deep only in the CS strip
+    expect(startsInAllianceZone(traj(4.5, 2.79), z)).toBe(true);  // CS strip lower edge
+    expect(startsInAllianceZone(traj(4.5, 2.7), z)).toBe(false);
+  });
+
   it('never gates a trajectory without samples', () => {
-    expect(startsInAllianceZone({ samples: [] } as unknown as Trajectory, 4.0284)).toBe(true);
+    for (const id of ['rebuilt-2026', 'reefscape-2025']) {
+      expect(startsInAllianceZone({ samples: [] } as unknown as Trajectory, zoneOf(id))).toBe(true);
+    }
   });
 });

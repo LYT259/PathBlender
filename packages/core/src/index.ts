@@ -27,7 +27,7 @@ export {
   startsInAllianceZone,
   withFieldVariant,
 } from './field';
-export type { FieldArtStyle, FieldImageCalibration, FieldPackage } from './field';
+export type { FieldArtStyle, FieldImageCalibration, FieldPackage, StartZoneRect } from './field';
 export { fieldImageWorldRect } from './field';
 
 export { lerpAngle, sampleTrajectory, wrapAngle } from './math';

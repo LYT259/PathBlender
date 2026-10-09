@@ -20,7 +20,7 @@ export const es: Record<MessageKey, string> = {
   'sequence.joinVelocity': 'salto de velocidad {d} m/s',
   'sequence.libraryBlocked': 'El inicio no continúa el final de {name} (desfase de posición {p}, desfase de orientación {h})',
   'sequence.libraryOccupied': 'El cabezal de reproducción está sobre un tramo ocupado — arrástralo primero a un hueco libre',
-  'sequence.libraryStartZone': 'No comienza dentro de la zona de alianza',
+  'sequence.libraryStartZone': 'No comienza en la zona de salida permitida',
   'sequence.joinFix': 'Corrige la unión en PathPlanner o Choreo y vuelve a importar la ruta.',
   'sequence.overAuto': 'Termina a los {t} s, después del periodo autónomo de {auto} s.',
   'sequence.invalid': 'Introduce un tiempo de inicio finito y no negativo.',

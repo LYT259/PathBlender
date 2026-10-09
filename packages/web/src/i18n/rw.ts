@@ -13,7 +13,7 @@ export const rw = {
   "sequence.joinVelocity": "gusimbuka kw’umuvuduko {d} m/s",
   "sequence.libraryBlocked": "Itangiriro ntirikomeza impera ya {name} (itandukaniro ryaho {p}, itandukaniro ry’icyerekezo {h})",
   "sequence.libraryOccupied": "Ibihe biri ku gice cyuzuye — mbere uritere ku mwanya uwubahwe",
-  "sequence.libraryStartZone": "Intangiriro ntiri mu Umwanya w’Ubumwe",
+  "sequence.libraryStartZone": "Intangiriro ntiri mu tandukaniro ryemewe",
   "sequence.joinFix": "Kosora aho bihuriye muri PathPlanner cyangwa Choreo, hanyuma wongere kwinjiza inzira.",
   "sequence.overAuto": "Isoza kuri {t} s, nyuma y’igihe cya {auto} s cya auto.",
   "sequence.invalid": "Andika igihe cyo gutangira gifite impera kandi kitari munsi ya zeru.",

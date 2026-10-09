@@ -13,7 +13,7 @@ export const vi = {
   'sequence.joinVelocity': 'lệch tốc độ {d} m/s',
   'sequence.libraryBlocked': 'Điểm đầu không nối tiếp điểm cuối của {name} (lệch vị trí {p}, lệch hướng {h})',
   'sequence.libraryOccupied': 'Đầu phát đang ở đoạn đã bị chiếm — trước tiên hãy kéo nó tới khoảng trống',
-  'sequence.libraryStartZone': 'Không xuất phát bên trong Khu liên minh',
+  'sequence.libraryStartZone': 'Không xuất phát trong khu vực khởi hành được phép',
   'sequence.joinFix': 'Sửa mối nối trong PathPlanner hoặc Choreo rồi nhập lại tuyến.',
   'sequence.overAuto': 'Kết thúc ở {t} s, sau thời gian tự động {auto} s.',
   'sequence.invalid': 'Nhập thời gian bắt đầu hữu hạn và không âm.',

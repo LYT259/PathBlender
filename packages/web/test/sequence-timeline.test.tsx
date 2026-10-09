@@ -229,12 +229,12 @@ describe('playhead-gated route library', () => {
     const empty = applySequenceSegments(fixture(), []);
     localStorage.setItem('pb.lengthUnit', 'm');
     render(<I18nProvider><SequenceTimelineComposer robots={[empty]} selectedId={empty.trajectory.id} onSelect={vi.fn()}
-      autoPeriodS={20} allianceStartZoneM={4.0284} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
+      autoPeriodS={20} startZone={[{ xMinM: 0, xMaxM: 4.0284, yMinM: 0, yMaxM: 8.07 }]} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
     expect(labels()).toEqual(['A', 'B', 'C']);
     const [a, b] = sources();
     expect(a).not.toHaveAttribute('aria-disabled');
     expect(b).toHaveAttribute('aria-disabled', 'true');
-    expect(b!.getAttribute('aria-label')).toContain('Alliance Zone');
+    expect(b!.getAttribute('aria-label')).toContain('legal starting area');
     const commit = vi.fn();
     // The grayed route refuses both gestures (drag: nothing lands).
     drag(b!, 20, 500, 30);
@@ -247,7 +247,7 @@ describe('playhead-gated route library', () => {
     const placed = applySequenceSegments(fixture(), [{ id: 's1', routeId: 'a', waitBeforeS: 0 }]);
     localStorage.setItem('pb.lengthUnit', 'm');
     render(<I18nProvider><SequenceTimelineComposer robots={[placed]} selectedId={placed.trajectory.id} onSelect={vi.fn()}
-      autoPeriodS={20} allianceStartZoneM={4.0284} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()}
+      autoPeriodS={20} startZone={[{ xMinM: 0, xMaxM: 4.0284, yMinM: 0, yMaxM: 8.07 }]} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()}
       playback={{ t: 5, setT: vi.fn(), playing: false, setPlaying: vi.fn(), speed: 1, setSpeed: vi.fn() }} /></I18nProvider>);
     const [b, a] = sources();
     expect(labels()).toEqual(['B', 'A', 'C']);

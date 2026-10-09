@@ -13,7 +13,7 @@ export const sq = {
   'sequence.joinVelocity': 'ndryshim i menjëhershëm shpejtësie {d} m/s',
   'sequence.libraryBlocked': 'Fillimi nuk vazhdon fundin e {name} (diferencë pozicioni {p}, diferencë drejtimi {h})',
   'sequence.libraryOccupied': 'Koka e riprodhimit është në një pjesë të zënë — tërhiqeni fillimisht në një hapësirë të lirë',
-  'sequence.libraryStartZone': 'Nuk nis brenda Zonës së Aleancës',
+  'sequence.libraryStartZone': 'Nuk nis në zonën e lejuar të nisjes',
   'sequence.joinFix': 'Rregulloni lidhjen në PathPlanner ose Choreo dhe riimportoni rrugën.',
   'sequence.overAuto': 'Përfundon në {t} s, pas periudhës autonome prej {auto} s.',
   'sequence.invalid': 'Shkruani një kohë fillimi të fundme dhe jo negative.',

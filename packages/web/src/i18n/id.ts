@@ -13,7 +13,7 @@ export const id = {
   'sequence.joinVelocity': 'lonjakan kecepatan {d} m/s',
   'sequence.libraryBlocked': 'Awal tidak meneruskan akhir {name} (selisih posisi {p}, selisih arah {h})',
   'sequence.libraryOccupied': 'Kepala pemutaran berada di bagian yang terisi — geser dulu ke ruang kosong',
-  'sequence.libraryStartZone': 'Mulai tidak berada di dalam Zona Aliansi',
+  'sequence.libraryStartZone': 'Mulai tidak berada di area awal yang diizinkan',
   'sequence.joinFix': 'Perbaiki sambungan di PathPlanner atau Choreo, lalu impor ulang rutenya.',
   'sequence.overAuto': 'Selesai pada {t} dtk, melewati periode otonom {auto} dtk.',
   'sequence.invalid': 'Masukkan waktu mulai yang terhingga dan tidak negatif.',
