@@ -17,6 +17,7 @@
         "minWidth": 1024,
         "minHeight": 680,
         "transparent": false,
+        "dragDropEnabled": false,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
         "trafficLightPosition": {
