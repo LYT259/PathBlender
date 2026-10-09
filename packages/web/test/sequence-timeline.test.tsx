@@ -8,6 +8,7 @@ import { I18nProvider } from '../src/i18n';
 import { SequenceTimelineComposer } from '../src/components/SequenceTimelineComposer';
 import { applySequenceSegments, sequenceViewFor, type AutoSequenceSegment } from '../src/auto-sequence-state';
 import { canPlaceClip, clipsFor, sameClipLayout, segmentsFromClips, snapClipStart, boundedClipStart, clipGaps } from '../src/sequence-timeline-clips';
+import { expectComboboxValue, pickComboboxValue } from './combobox';
 
 const raw = readFileSync(resolve(__dirname, '../../../samples/ghostauto/straight_run.ghostauto'), 'utf8');
 /** Samples of the base route translated `times` legs down the chain: the
@@ -375,8 +376,8 @@ describe('grayed routes still preview; entering edit never pauses; range follows
       autoPeriodS={20} open onClose={vi.fn()} onChange={vi.fn()} playbackRange="paths" onPlaybackRangeChange={change} onJump={vi.fn()}
       playback={{ t: 0, setT: vi.fn(), playing: false, setPlaying: vi.fn(), speed: 1, setSpeed: vi.fn() }} playbackEndS={7} /></I18nProvider>);
     const select = screen.getByRole('combobox', { name: 'Playback range' });
-    expect(select).toHaveValue('paths');
-    fireEvent.change(select, { target: { value: 'full' } });
+    expectComboboxValue(select, 'paths');
+    pickComboboxValue(select, 'full');
     expect(change).toHaveBeenCalledWith('full');
   });
 });

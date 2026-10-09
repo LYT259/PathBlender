@@ -5,6 +5,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App';
 import { saveText } from '../src/download';
+import { comboboxValues, openCombobox, pickComboboxValue } from './combobox';
 
 vi.mock('../src/download', () => ({ saveText: vi.fn(async () => true) }));
 const samples = resolve(__dirname, '../../../samples');
@@ -18,7 +19,6 @@ function folderFile(relPath: string, text = TRAJ) {
 function importFolder(files: File[]) { fireEvent.drop(window, { dataTransfer: { files } }); }
 const rows = () => [...document.querySelectorAll('.robot-library-row')] as HTMLElement[];
 const rowFor = (label: string) => rows().find((r) => r.textContent?.includes(label))!;
-const choices = (picker: HTMLElement) => within(picker).getAllByRole('option') as HTMLOptionElement[];
 /** The composer is the one route-selection surface since the left picker left. */
 async function openComposer(label: string) {
   await waitFor(() => expect(rows().some((r) => r.textContent?.includes(label))).toBe(true));
@@ -154,9 +154,12 @@ describe('team folder workflow', () => {
     await screen.findByText('1678', { selector: '.robot-name' });
     fireEvent.click(screen.getByText('254', { selector: '.robot-name' }));
     const profileSelect = await screen.findByRole('combobox', { name: 'Robot profile' });
-    expect(choices(profileSelect)).toHaveLength(2); // prompt + this team's configuration
-    expect(choices(profileSelect)[1]).toHaveTextContent('254');
-    fireEvent.change(profileSelect, { target: { value: choices(profileSelect)[1]!.value } });
+    const profileList = openCombobox(profileSelect);
+    const profileRows = within(profileList).getAllByRole('option');
+    expect(profileRows).toHaveLength(2); // prompt + this team's configuration
+    const profileRow = profileRows.find((o) => o.getAttribute('data-value') !== '')!;
+    expect(profileRow).toHaveTextContent('254');
+    fireEvent.click(profileRow);
     expect(await screen.findByText('1.05 m')).toBeInTheDocument();
   });
 
@@ -235,7 +238,7 @@ describe('team folder workflow', () => {
     await waitFor(() => expect(rows()).toHaveLength(1));
     fireEvent.click(screen.getByText('254', { selector: '.robot-name' }));
     const profiles = screen.getByRole('combobox', { name: 'Robot profile' });
-    fireEvent.change(profiles, { target: { value: choices(profiles)[1]!.value } });
+    pickComboboxValue(profiles, comboboxValues(profiles)[1]!);
     expect(await screen.findByText('1.05 m')).toBeInTheDocument();
     await openComposer('254');
     replaceOnlyClip('L3');
@@ -261,7 +264,7 @@ describe('team folder workflow', () => {
     importFolder([new File([TRAJ], 'L2.traj')]);
     await screen.findByText('BBBBBB', { selector: '.robot-name' });
     fireEvent.click(screen.getByText('BBBBBB', { selector: '.robot-name' }));
-    expect(choices(screen.getByRole('combobox', { name: 'Robot profile' }))).toHaveLength(2);
+    expect(comboboxValues(screen.getByRole('combobox', { name: 'Robot profile' }))).toHaveLength(2);
   });
 
 });

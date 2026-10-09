@@ -5,6 +5,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeSession, parsePathFile, serializeSession } from '@pathblender/core';
 import { App } from '../src/App';
+import { expectComboboxValue, pickComboboxValue } from './combobox';
 
 const samples = resolve(__dirname, '../../../samples');
 
@@ -124,9 +125,9 @@ describe('workspace workflow', () => {
     render(<App />);
     await importSamples('ghostauto/straight_run.ghostauto');
     const season = screen.getByRole('combobox', { name: 'Game season' });
-    expect(season).toHaveValue('rebuilt-2026');
-    fireEvent.change(season, { target: { value: 'reefscape-2025' } });
-    expect(season).toHaveValue('reefscape-2025');
+    expectComboboxValue(season, 'rebuilt-2026');
+    pickComboboxValue(season, 'reefscape-2025');
+    expectComboboxValue(season, 'reefscape-2025');
     expect(screen.getByText('0001', { selector: '.robot-name' })).toBeInTheDocument();
 
     // Restore a different saved session, including its field and timing.
@@ -142,7 +143,7 @@ describe('workspace workflow', () => {
     );
     fireEvent.drop(window, { dataTransfer: { files: [savedSession] } });
     await screen.findByText('0002', { selector: '.robot-name' });
-    expect(season).toHaveValue('chargedup-2023');
+    expectComboboxValue(season, 'chargedup-2023');
     expect(screen.queryByText('0001', { selector: '.robot-name' })).not.toBeInTheDocument();
     // The restored start delay surfaces in the bottom arrangement surface.
     fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);

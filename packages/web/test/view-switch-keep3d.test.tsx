@@ -20,6 +20,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { SessionTrajectory } from '@pathblender/core';
 import { App } from '../src/App';
 import { CAM_HOME, CAM_HOME_R } from '../src/field3d-models';
+import { pickComboboxValue } from './combobox';
 
 let mount3D = 0;
 vi.mock('../src/components/FieldCanvas', async () => {
@@ -85,7 +86,7 @@ describe('parked + prewarmed 3D canvas across 2D/3D switches', () => {
     // Every season shipped in the picker (2022–2026) has an official model,
     // so only the custom field can take field3dAvailable away; its picker
     // entry opens the custom-field panel instead of switching the scene.
-    fireEvent.change(screen.getByRole('combobox', { name: 'Game season' }), { target: { value: 'custom' } });
+    pickComboboxValue(screen.getByRole('combobox', { name: 'Game season' }), 'custom');
     expect(keep3D()).not.toBeNull(); // picker change only opened the panel
     expect(mount3D).toBe(1);
   });

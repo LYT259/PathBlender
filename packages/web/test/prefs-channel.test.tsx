@@ -26,6 +26,7 @@
  */
 import { act, fireEvent, render, screen, waitFor, cleanup, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { expectComboboxValue, pickComboboxValue } from './combobox';
 
 const native = vi.hoisted(() => ({ invoke: vi.fn((_command: string, ..._args: unknown[]) => Promise.resolve()), close: vi.fn(() => Promise.resolve()) }));
 const emit = vi.hoisted(() => ({ checks: [] as string[] }));
@@ -231,6 +232,20 @@ describe('shared desktop preferences', () => {
     expect(prefsCheck.install).not.toHaveBeenCalled();
   });
 
+  it('Escape layers: an open dropdown consumes it before the window closes', async () => {
+    await renderPreferences();
+    const channel = openUpdates();
+    fireEvent.click(channel);
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    fireEvent.keyDown(channel, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(native.close).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    // The second Escape, with the dropdown closed, belongs to the window.
+    fireEvent.keyDown(channel, { key: 'Escape' });
+    await waitFor(() => expect(native.close).toHaveBeenCalledOnce());
+  });
+
   it('ignores extra clicks while a check is in flight — one native request', async () => {
     await renderPreferences();
     openUpdates();
@@ -244,7 +259,7 @@ describe('shared desktop preferences', () => {
 
   it('checks use the SAVED channel, not the draft — and says so next to the button', async () => {
     await renderPreferences();
-    fireEvent.change(openUpdates(), { target: { value: 'beta' } });
+    pickComboboxValue(openUpdates(), 'beta');
     expect(await screen.findByText('Update checks use the saved channel: Stable.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Check for updates' }));
     expect(prefsCheck.calls).toEqual(['stable']);
@@ -262,7 +277,7 @@ describe('shared desktop preferences', () => {
 
   it('stages the channel: Save applies, Cancel discards', async () => {
     const first = await renderPreferences();
-    fireEvent.change(openUpdates(), { target: { value: 'beta' } });
+    pickComboboxValue(openUpdates(), 'beta');
     expect(localStorage.getItem('pb.updateChannel')).toBeNull();
     expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -271,9 +286,9 @@ describe('shared desktop preferences', () => {
     expect(localStorage.getItem('pb.updateChannel')).toBeNull();
 
     await renderPreferences();
-    expect(openUpdates()).toHaveValue('stable');
+    expectComboboxValue(openUpdates(), 'stable');
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
-    fireEvent.change(screen.getByRole('combobox', { name: 'Update channel' }), { target: { value: 'beta' } });
+    pickComboboxValue(screen.getByRole('combobox', { name: 'Update channel' }), 'beta');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     // Save applies but KEEPS the window open (user request 2026-10-02):
     // still only the one close from the Cancel above.

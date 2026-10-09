@@ -1,3 +1,4 @@
+import { SelectControl } from './components/SelectControl';
 import { moveTeamOrder } from './team-order';
 import { previewRouteFor, useRoutePreviewClock } from './route-preview';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1454,10 +1455,10 @@ function AppBody() {
                   something on the field, so the bar appears with the robots. */}
               {hasRobots && <div className="canvas-bar workspace-canvas-bar">
                 <div className="field-options">
-                  <select className="field-select" aria-label={tr('workspace.season')} value={fieldId} onChange={(e) => selectSeason(e.target.value)}>
+                  <SelectControl className="field-select" aria-label={tr('workspace.season')} value={fieldId} onValueChange={selectSeason}>
                     {FIELDS.map((f) => <option key={f.id} value={f.id}>{f.name} {f.year}</option>)}
                     <option value={CUSTOM_FIELD_ID}>{tr('customField.title')}</option>
-                  </select>
+                  </SelectControl>
                   {field.aprilTagsAndyMark && <div className="seg field-variant-toggle" role="group" aria-label={tr('field.variant')}>
                     {(['welded', 'andymark'] as const).map((variant) => <button key={variant} type="button" aria-pressed={fieldVariant === variant} className={fieldVariant === variant ? 'on' : ''} onClick={() => selectVariant(variant)}>{variant === 'andymark' ? 'AndyMark' : 'Welded'}</button>)}
                   </div>}

@@ -1,3 +1,4 @@
+import { SelectControl } from './SelectControl';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { activeEndT, activeStartT, type CollisionInterval, type RobotGeometry, type SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
@@ -246,13 +247,12 @@ export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: Robot
         {libraryProfiles.length > 0 && (
           <label className="robot-inspector-row robot-inspector-profile">
             <span>{t('robots.applyProfile')}</span>
-            <select
+            <SelectControl
               aria-label={t('robots.applyProfile')}
               value=""
               title={t('robots.applyProfileHint')}
-              onChange={(event) => {
-                if (event.target.value) onApplyProfile(id, event.target.value);
-                event.target.value = '';
+              onValueChange={(value) => {
+                if (value) onApplyProfile(id, value);
               }}
             >
               <option value="">{t('robots.profilePick')}</option>
@@ -261,7 +261,7 @@ export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: Robot
                   {entry.profile.name} · {formatLengthNumber(entry.profile.geometry.lengthM, unit, lang)}×{formatLengthNumber(entry.profile.geometry.widthM, unit, lang)} {unit}
                 </option>
               ))}
-            </select>
+            </SelectControl>
           </label>
         )}
         {warnings.length > 0 && (

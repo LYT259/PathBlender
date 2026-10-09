@@ -19,6 +19,7 @@ import {
 import { I18nProvider } from '../src/i18n';
 import { ThemeProvider } from '../src/theme';
 import { UpdateChannelProvider } from '../src/update-channel';
+import { comboboxValues, expectComboboxValue, pickComboboxValue } from './combobox';
 
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);
@@ -40,11 +41,11 @@ function panel() {
 }
 
 function schemeSelect() {
-  return screen.getByLabelText(/mouse controls/i, { selector: 'select' }) as HTMLSelectElement;
+  return screen.getByRole('combobox', { name: /mouse controls/i });
 }
 
 function buttonSelect(button: string) {
-  return screen.getByLabelText(`Action for ${button}`, { selector: 'select' }) as HTMLSelectElement;
+  return screen.getByRole('combobox', { name: `Action for ${button}` });
 }
 
 describe('custom scheme routing (resolveMouseAction)', () => {
@@ -112,17 +113,17 @@ describe('custom scheme routing (resolveMouseAction)', () => {
 describe('custom scheme in the settings panel', () => {
   it('lists Custom as the third scheme, below SOLIDWORKS', () => {
     panel();
-    expect(Array.from(schemeSelect().options).map((o) => o.value)).toEqual(['onshape', 'solidworks', 'custom']);
+    expect(comboboxValues(schemeSelect())).toEqual(['onshape', 'solidworks', 'custom']);
   });
 
   it('shows three assignment rows with preset defaults and the fixed-combo sentences', () => {
     panel();
-    fireEvent.change(schemeSelect(), { target: { value: 'custom' } });
-    expect(buttonSelect('Left drag').value).toBe('none');
-    expect(buttonSelect('Middle drag').value).toBe('pan');
-    expect(buttonSelect('Right drag').value).toBe('rotate');
+    pickComboboxValue(schemeSelect(), 'custom');
+    expectComboboxValue(buttonSelect('Left drag'), 'none');
+    expectComboboxValue(buttonSelect('Middle drag'), 'pan');
+    expectComboboxValue(buttonSelect('Right drag'), 'rotate');
     // Six actions per row, same order as the presets' tables.
-    expect(Array.from(buttonSelect('Right drag').options).map((o) => o.value))
+    expect(comboboxValues(buttonSelect('Right drag')))
       .toEqual(['rotate', 'constrained', 'pan', 'zoom', 'roll', 'none']);
     // Combos are stated, not edited — no per-modifier cells anywhere.
     expect(screen.getByText(/Ctrl \+ drag always pans/i)).toBeInTheDocument();
@@ -137,23 +138,23 @@ describe('custom scheme in the settings panel', () => {
 
   it('updates the diagram callouts from the staged button edits', () => {
     const { container } = panel();
-    fireEvent.change(schemeSelect(), { target: { value: 'custom' } });
+    pickComboboxValue(schemeSelect(), 'custom');
     expect(container.querySelector('.mouse-callout-right strong')).toHaveTextContent('Rotate');
-    fireEvent.change(buttonSelect('Right drag'), { target: { value: 'pan' } });
+    pickComboboxValue(buttonSelect('Right drag'), 'pan');
     expect(container.querySelector('.mouse-callout-right strong')).toHaveTextContent('Pan');
-    fireEvent.change(buttonSelect('Right drag'), { target: { value: 'none' } });
+    pickComboboxValue(buttonSelect('Right drag'), 'none');
     expect(container.querySelector('.mouse-callout-right')).toBeNull();
     // Assigning the idle left button draws its callout too.
-    fireEvent.change(buttonSelect('Left drag'), { target: { value: 'roll' } });
+    pickComboboxValue(buttonSelect('Left drag'), 'roll');
     expect(container.querySelector('.mouse-callout-left strong')).toHaveTextContent('Roll view');
   });
 
   it('stages button drafts and persists the map on Save', () => {
     panel();
-    fireEvent.change(schemeSelect(), { target: { value: 'custom' } });
+    pickComboboxValue(schemeSelect(), 'custom');
     const save = screen.getByRole('button', { name: /save/i }) as HTMLButtonElement;
     expect(save.disabled).toBe(false); // the scheme switch itself is a staged change
-    fireEvent.change(buttonSelect('Middle drag'), { target: { value: 'zoom' } });
+    pickComboboxValue(buttonSelect('Middle drag'), 'zoom');
     // Draft only — nothing persisted before Save.
     expect(localStorage.getItem('pb.customMouseControls')).toBeNull();
     fireEvent.click(save);
@@ -169,8 +170,8 @@ describe('custom scheme in the settings panel', () => {
     localStorage.setItem('pb.mouseControls', 'custom');
     localStorage.setItem('pb.customMouseControls', JSON.stringify({ ...DEFAULT_CUSTOM_MOUSE_MAP, right: 'roll' }));
     panel();
-    expect(schemeSelect().value).toBe('custom');
-    expect(buttonSelect('Right drag').value).toBe('roll');
+    expectComboboxValue(schemeSelect(), 'custom');
+    expectComboboxValue(buttonSelect('Right drag'), 'roll');
   });
 
   it('reads a legacy 12-slot map through the plain slots', () => {
@@ -181,10 +182,10 @@ describe('custom scheme in the settings panel', () => {
       right: 'pan', 'right.ctrl': 'pan', 'right.alt': 'constrained', 'right.shift': 'none',
     }));
     panel();
-    expect(buttonSelect('Middle drag').value).toBe('rotate');
-    expect(buttonSelect('Right drag').value).toBe('pan');
+    expectComboboxValue(buttonSelect('Middle drag'), 'rotate');
+    expectComboboxValue(buttonSelect('Right drag'), 'pan');
     // Re-saving writes the compact per-button format.
-    fireEvent.change(buttonSelect('Left drag'), { target: { value: 'zoom' } });
+    pickComboboxValue(buttonSelect('Left drag'), 'zoom');
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(JSON.parse(localStorage.getItem('pb.customMouseControls')!))
       .toEqual({ left: 'zoom', middle: 'rotate', right: 'pan' });
@@ -193,25 +194,25 @@ describe('custom scheme in the settings panel', () => {
   it('seeds the editor with defaults when the scheme is custom but no map was saved', () => {
     localStorage.setItem('pb.mouseControls', 'custom');
     panel();
-    expect(buttonSelect('Right drag').value).toBe('rotate');
+    expectComboboxValue(buttonSelect('Right drag'), 'rotate');
   });
 
   it('discards an unsaved button edit when the panel is closed and reopened', () => {
     localStorage.setItem('pb.mouseControls', 'custom');
     const first = panel();
-    fireEvent.change(buttonSelect('Right drag'), { target: { value: 'pan' } });
+    pickComboboxValue(buttonSelect('Right drag'), 'pan');
     first.unmount();
     panel();
-    expect(buttonSelect('Right drag').value).toBe('rotate');
+    expectComboboxValue(buttonSelect('Right drag'), 'rotate');
   });
 
   it('resets edited buttons back to the preset copy', () => {
     localStorage.setItem('pb.mouseControls', 'custom');
     localStorage.setItem('pb.customMouseControls', JSON.stringify({ ...DEFAULT_CUSTOM_MOUSE_MAP, right: 'roll' }));
     panel();
-    expect(buttonSelect('Right drag').value).toBe('roll');
+    expectComboboxValue(buttonSelect('Right drag'), 'roll');
     fireEvent.click(screen.getByRole('button', { name: 'Reset to defaults' }));
-    expect(buttonSelect('Right drag').value).toBe('rotate');
+    expectComboboxValue(buttonSelect('Right drag'), 'rotate');
     // The stored map still holds the old assignment, so the reset itself
     // is an unsaved change until Save lands it.
     expect((screen.getByRole('button', { name: /save/i }) as HTMLButtonElement).disabled).toBe(false);

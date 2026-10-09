@@ -1,3 +1,4 @@
+import { SelectControl } from './SelectControl';
 import type { CSSProperties, ReactNode } from 'react';
 import type { SessionTrajectory } from '@pathblender/core';
 import { activeEndT, activeStartT, sequenceEventTimes } from '@pathblender/core';
@@ -68,15 +69,15 @@ export function Timeline({ robots, autoPeriodS, duration, visibleDuration, playb
   return (
     <section className="timeline timeline-workspace" aria-label={tr('timeline.title')}>
       <div className="timeline-toolbar">
-        {onPlaybackRangeChange && <select
+        {onPlaybackRangeChange && <SelectControl
           className="timeline-range"
           aria-label={tr('timeline.range')}
           value={playbackRange}
-          onChange={(event) => onPlaybackRangeChange(event.target.value as PlaybackRange)}
+          onValueChange={(value) => onPlaybackRangeChange(value as PlaybackRange)}
         >
           <option value="full">{tr('timeline.rangeFull')}</option>
           <option value="paths">{tr('timeline.rangePaths')}</option>
-        </select>}
+        </SelectControl>}
         {composeAction}
         {robots.length > 0 && (
           <div className="timeline-legend">
