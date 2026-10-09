@@ -1,4 +1,4 @@
-import { useState, type DragEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useI18n } from '../i18n';
 import './TeamOrderUI.css';
 
@@ -9,27 +9,111 @@ export interface TeamOrderUI {
   ids: string[];
   onMove: (id: string, targetId: string, edge: 'before' | 'after') => void;
 }
-const MIME = 'application/x-pathblender-team-order';
+
+/** Pointer travel before a press becomes a drag, mirroring the native DnD
+ * hysteresis so plain clicks never flicker a ghost. */
+const DRAG_THRESHOLD_PX = 6;
+/** The ghost rides the cursor at the same offset the native drag image used
+ * (setDragImage(row, 12, 12): image point (12,12) sat under the pointer). */
+const GHOST_OFFSET = 12;
 
 export function useTeamOrderUI(order?: TeamOrderUI) {
   const { t } = useI18n();
   const [dragging, setDragging] = useState<string | null>(null);
   const [over, setOver] = useState<{ id: string; edge: 'before' | 'after' } | null>(null);
   const [announcement, setAnnouncement] = useState('');
-  const clear = () => { setDragging(null); setOver(null); };
-  /** The 0-based index a keyboard move lands at, or null when the move is a
-   * no-op (already on that edge of the target) — mirrors moveTeamOrder's
-   * same-reference suppression so the screen reader never announces a move
-   * that did not happen. */
-  const landing = (ids: string[], id: string, targetId: string, edge: 'before' | 'after'): number | null => {
-    const from = ids.indexOf(id);
-    const to = ids.indexOf(targetId);
-    if (from < 0 || to < 0) return null;
-    if (edge === 'before' ? from === to - 1 : from === to + 1) return null;
-    // The moved slot vacates its own index first; a target below it shifts
-    // up by one before the insert.
-    return (from < to ? to - 1 : to) + (edge === 'after' ? 1 : 0);
+  /** Tears down an in-flight pointer drag (listeners + ghost + body class);
+   * swapped in on each drag start and re-run on unmount so a drag can never
+   * outlive the component that started it. */
+  const teardownRef = useRef<() => void>(() => {});
+  useEffect(() => () => teardownRef.current(), []);
+  const clear = () => { setDragging(null); setOver(null); teardownRef.current(); };
+
+  /** Pointer-driven row drag. A native HTML5 drag session is exactly what
+   * macOS decorated with a meaningless "0 items" count badge (the page
+   * registers no drag items), and it sits in the WKWebView layer that broke
+   * row reorder in #306 — so the reorder never starts a system drag at all:
+   * after a small hysteresis the row clones into a fixed-position ghost that
+   * follows the pointer, a window-level move tracks the row under the pointer
+   * for the edge indicator, and pointer-up commits the same onMove call the
+   * old drop handler did. */
+  const beginPointerDrag = (id: string) => (event: ReactPointerEvent<HTMLElement>) => {
+    if (!order || order.ids.length < 2 || !event.isPrimary || event.button !== 0) return;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const rowEl = event.currentTarget.closest<HTMLElement>('[data-team-order-id]');
+    let active = false;
+    let ghost: HTMLElement | null = null;
+    let current: { id: string; edge: 'before' | 'after' } | null = null;
+
+    const positionGhost = (x: number, y: number) => {
+      ghost?.style.setProperty('transform', `translate3d(${x - GHOST_OFFSET}px, ${y - GHOST_OFFSET}px, 0)`);
+    };
+    const updateOver = (x: number, y: number) => {
+      const row = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-team-order-id]') ?? null;
+      const targetId = row?.dataset.teamOrderId ?? null;
+      let next: { id: string; edge: 'before' | 'after' } | null = null;
+      if (row && targetId && targetId !== id) {
+        const rect = row.getBoundingClientRect();
+        next = { id: targetId, edge: y < rect.top + rect.height / 2 ? 'before' : 'after' };
+      }
+      if (next?.id !== current?.id || next?.edge !== current?.edge) {
+        current = next;
+        setOver(next);
+      }
+    };
+    const start = () => {
+      active = true;
+      setDragging(id);
+      document.body.classList.add('team-order-drag-active');
+      if (rowEl) {
+        ghost = document.createElement('div');
+        ghost.className = 'team-order-ghost';
+        ghost.setAttribute('aria-hidden', 'true');
+        ghost.style.width = `${rowEl.offsetWidth}px`;
+        ghost.appendChild(rowEl.cloneNode(true));
+        document.body.appendChild(ghost);
+        positionGhost(startX, startY);
+      }
+    };
+    const finish = (commit: boolean) => {
+      if (active && commit && current && current.id !== id) order.onMove(id, current.id, current.edge);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+      window.removeEventListener('keydown', onKey, true);
+      document.body.classList.remove('team-order-drag-active');
+      ghost?.remove();
+      ghost = null;
+      current = null;
+      setDragging(null);
+      setOver(null);
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!active) {
+        if (Math.hypot(e.clientX - startX, e.clientY - startY) < DRAG_THRESHOLD_PX) return;
+        start();
+      } else {
+        e.preventDefault();
+      }
+      positionGhost(e.clientX, e.clientY);
+      updateOver(e.clientX, e.clientY);
+    };
+    const onUp = () => finish(true);
+    const onCancel = () => finish(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        finish(false);
+      }
+    };
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+    window.addEventListener('keydown', onKey, true);
+    teardownRef.current = () => finish(false);
   };
+
   return {
     /** Rendered once per list: the polite channel a keyboard move speaks its
      * new position into. Only the list whose handle was pressed carries text,
@@ -39,36 +123,14 @@ export function useTeamOrderUI(order?: TeamOrderUI) {
       'data-team-order-id': id,
       'data-order-dragging': dragging === id || undefined,
       'data-order-edge': over?.id === id && dragging !== id ? over.edge : undefined,
-      onDragOver: (event: DragEvent<HTMLElement>) => {
-        // Only our own custom MIME participates; file drags fall through to
-        // the window import handler untouched.
-        if (!dragging || !event.dataTransfer.types.includes(MIME)) return;
-        event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = 'move';
-        const rect = event.currentTarget.getBoundingClientRect();
-        setOver({ id, edge: event.clientY < rect.top + rect.height / 2 ? 'before' : 'after' });
-      },
-      onDragLeave: (event: DragEvent<HTMLElement>) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(null);
-      },
-      onDrop: (event: DragEvent<HTMLElement>) => {
-        if (!dragging) return;
-        event.preventDefault(); event.stopPropagation();
-        if (over && dragging !== id) order.onMove(dragging, id, over.edge);
-        clear();
-      },
     } : {},
     handle: (id: string, name: string) => order && <button type="button" className="team-order-handle"
-      draggable={order.ids.length > 1} disabled={order.ids.length < 2}
+      disabled={order.ids.length < 2}
       title={t('robots.reorderHandle', { name, position: order.ids.indexOf(id) + 1, total: order.ids.length })}
       aria-label={t('robots.reorderHandle', { name, position: order.ids.indexOf(id) + 1, total: order.ids.length })}
       aria-keyshortcuts="ArrowUp ArrowDown"
       onClick={event => event.stopPropagation()} onDoubleClick={event => event.stopPropagation()}
-      onDragStart={event => {
-        event.stopPropagation(); event.dataTransfer.setData(MIME, id); event.dataTransfer.effectAllowed = 'move';
-        const row = event.currentTarget.closest('[data-team-order-id]');
-        if (row) event.dataTransfer.setDragImage(row, 12, 12);
-        setDragging(id);
-      }} onDragEnd={clear}
+      onPointerDown={beginPointerDrag(id)}
       onKeyDown={event => {
         if (event.key === 'Escape') { clear(); return; }
         if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
@@ -92,3 +154,17 @@ export function useTeamOrderUI(order?: TeamOrderUI) {
     </button>,
   };
 }
+
+/** The 0-based index a keyboard move lands at, or null when the move is a
+ * no-op (already on that edge of the target) — mirrors moveTeamOrder's
+ * same-reference suppression so the screen reader never announces a move
+ * that did not happen. */
+const landing = (ids: string[], id: string, targetId: string, edge: 'before' | 'after'): number | null => {
+  const from = ids.indexOf(id);
+  const to = ids.indexOf(targetId);
+  if (from < 0 || to < 0) return null;
+  if (edge === 'before' ? from === to - 1 : from === to + 1) return null;
+  // The moved slot vacates its own index first; a target below it shifts
+  // up by one before the insert.
+  return (from < to ? to - 1 : to) + (edge === 'after' ? 1 : 0);
+};
