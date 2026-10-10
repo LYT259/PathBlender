@@ -5,8 +5,8 @@
  * family (zh-Hans / zh-Hant / English for everything else), and the footer
  * links the matching online full guide.
  */
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../src/i18n';
 import { ThemeProvider } from '../src/theme';
 import { WelcomeScreen } from '../src/components/WelcomeScreen';
@@ -15,6 +15,7 @@ import { buildMenuSpec, type MenuContext } from '../src/menu-spec';
 import { en } from '../src/i18n/en';
 
 beforeEach(() => localStorage.clear());
+afterEach(cleanup);
 
 function t(key: keyof typeof en, params?: Record<string, string | number>): string {
   let text: string = en[key];
@@ -79,10 +80,15 @@ describe('guide dialog body follows the script family', () => {
   });
 
   it('Traditional Chinese reads the zh-Hant body', () => {
-    localStorage.setItem('pb.lang', 'zh-tw');
-    mount();
-    expect(screen.getByText('聯盟切換與左右鏡像')).toBeInTheDocument();
-    expect(screen.getByText(/左右鏡像（單台機器人）/)).toBeInTheDocument();
+    // zh-tw is the pre-withdrawal choice (migrates to zh-hant on load);
+    // zh-hant is the selectable generic row — both must read the Hant body.
+    for (const code of ['zh-tw', 'zh-hant', 'zh-hk']) {
+      localStorage.setItem('pb.lang', code);
+      mount();
+      expect(screen.getByText('聯盟切換與左右鏡像'), code).toBeInTheDocument();
+      expect(screen.getByText(/左右鏡像（單台機器人）/), code).toBeInTheDocument();
+      cleanup();
+    }
   });
 
   it('every other language reads the English body', () => {

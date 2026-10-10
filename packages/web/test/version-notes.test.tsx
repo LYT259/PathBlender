@@ -55,6 +55,11 @@ describe('noteText fallback chain', () => {
     expect(noteText(note, 'zh-hk')).toBe('ZT');
   });
 
+  it('the generic Traditional row reads its own zh-hant entry', () => {
+    const note = { en: 'EN', zh: 'ZH', 'zh-tw': 'ZT', 'zh-hant': 'ZHANT' };
+    expect(noteText(note, 'zh-hant')).toBe('ZHANT');
+  });
+
   it('a missing language falls back to Simplified Chinese, then English', () => {
     const note = { en: 'EN', zh: 'ZH' };
     expect(noteText(note, 'fr')).toBe('ZH');

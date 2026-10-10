@@ -45,9 +45,12 @@ const OUT_TS = resolve(ROOT, 'packages/web/src/i18n/language-names.ts');
  * - rw/zh-hk "Igishinwa (HK)": CLDR rw composes "zh (HK)" when the base name
  *   is missing; recomposed from the attested base with CLDR's own
  *   "name (REGION)" pattern.
+ * - rw/zh-hant "Igishinwa (Hant)": same composition, script subtag instead of
+ *   a region — CLDR rw composes "zh (Hant)" here, so the fill keeps CLDR's
+ *   own parenthetical on the attested base.
  */
 const CURATED = {
-  rw: { zh: 'Igishinwa', nb: 'Ikinoruveji', 'zh-hk': 'Igishinwa (HK)' },
+  rw: { zh: 'Igishinwa', nb: 'Ikinoruveji', 'zh-hk': 'Igishinwa (HK)', 'zh-hant': 'Igishinwa (Hant)' },
 };
 
 async function registryCodes() {
