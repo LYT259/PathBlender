@@ -19,7 +19,7 @@ export const bg = {
   'sequence.orderStart': 'Групирано по старт',
   'sequence.startGroupTrench': 'Окоп',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Други стартове',
+  'sequence.startGroupOther': 'Други',
   'sequence.joinFix': 'Поправете връзката в PathPlanner или Choreo и импортирайте маршрута отново.',
   'sequence.overAuto': 'Завършва на {t} с, след автономния период от {auto} с.',
   'sequence.invalid': 'Въведете крайно, неотрицателно начално време.',

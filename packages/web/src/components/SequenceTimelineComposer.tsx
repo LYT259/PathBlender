@@ -142,7 +142,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       blocked: occupied || route.trajectory.durationS <= 0 || overAuto || outOfZone || (continuity ? !continuity.connects : false),
       outOfZone: outOfZone || undefined,
       continuity,
-      region: zone !== undefined && !outOfZone
+      region: startZone !== undefined && startsInAllianceZone(route.trajectory, startZone)
         ? routeStartRegion(route.trajectory, startRegions) || undefined
         : undefined,
     });
@@ -163,8 +163,14 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   // stays primary so gating never hides behind cosmetics.
   const groupOrder = startRegions ? [...new Set(startRegions.map((region) => region.id))] : [];
   const [routeOrder, setRouteOrder] = useRouteOrder();
+  // The grouping answers "where may the auto START", so it lives exactly
+  // while the insertion point is still the start — the playhead precedes
+  // every placed leg (or none exist). Once the playhead reaches the first
+  // route, continuity owns the library and the grouping (and its toggle)
+  // step aside (user refinement 2026-10-10: a placed leg with the playhead
+  // still before it keeps the grouping).
   const grouped = routeOrder === 'start' && startRegions !== undefined && startRegions.length > 0
-    && activeClips.length === 0;
+    && anchorClip === undefined;
   const groupRank = (region: string | undefined) => {
     const index = groupOrder.indexOf(region ?? '');
     return index === -1 ? groupOrder.length : index; // unmatched bucket last
@@ -176,6 +182,15 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     const key = region !== undefined ? START_GROUP_KEYS[region] : undefined;
     return key !== undefined ? t(key) : t('sequence.startGroupOther');
   };
+  // One caption per group across the WHOLE list (user 2026-10-10: the
+  // Other caption must not print twice when the blocked partition re-opens
+  // the same bucket) — first appearance only, recomputed every render.
+  const captionedGroups = new Set<string | undefined>();
+  const captionFlags = library.map(({ region }) => {
+    const first = !captionedGroups.has(region);
+    captionedGroups.add(region);
+    return first;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -369,7 +384,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         <option value="paths">{t('timeline.rangePaths')}</option>
       </SelectControl>} />
     <div className="sequence-route-library">
-      {startRegions !== undefined && startRegions.length > 0 && activeClips.length === 0 && <SelectControl className="timeline-range sequence-order" aria-label={t('sequence.orderLabel')} value={routeOrder}
+      {startRegions !== undefined && startRegions.length > 0 && anchorClip === undefined && <SelectControl className="timeline-range sequence-order" aria-label={t('sequence.orderLabel')} value={routeOrder}
         onValueChange={(value) => setRouteOrder(value as RouteOrder)}>
         <option value="name">{t('sequence.orderName')}</option>
         <option value="start">{t('sequence.orderStart')}</option>
@@ -380,8 +395,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         // bucket) — only in "group by start" order, and only where the
         // group actually changes, so the flat alphabetical look stays
         // byte-identical for users who never switch.
-        const groupChanged = grouped && (index === 0 || library[index - 1]?.region !== region
-          || library[index - 1]?.blocked !== blocked);
+        const groupChanged = grouped && captionFlags[index];
         // Gray-reason precedence: occupancy (nowhere to drop at all) over
         // the auto-period limit over a start outside the ALLIANCE ZONE over
         // the pose mismatch.

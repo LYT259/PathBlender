@@ -19,7 +19,7 @@ export const id = {
   'sequence.orderStart': 'Dikelompokkan berdasarkan awalan',
   'sequence.startGroupTrench': 'Parit',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Awalan lain',
+  'sequence.startGroupOther': 'Lainnya',
   'sequence.joinFix': 'Perbaiki sambungan di PathPlanner atau Choreo, lalu impor ulang rutenya.',
   'sequence.overAuto': 'Selesai pada {t} dtk, melewati periode otonom {auto} dtk.',
   'sequence.invalid': 'Masukkan waktu mulai yang terhingga dan tidak negatif.',

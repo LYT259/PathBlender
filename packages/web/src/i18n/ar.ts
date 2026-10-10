@@ -19,7 +19,7 @@ export const ar = {
   'sequence.orderStart': 'تجميع حسب نقطة البداية',
   'sequence.startGroupTrench': 'الخندق',
   'sequence.startGroupHub': 'هب',
-  'sequence.startGroupOther': 'بدايات أخرى',
+  'sequence.startGroupOther': 'أخرى',
   'sequence.joinFix': 'أصلح الوصلة في PathPlanner أو Choreo ثم أعد استيراد المسار.',
   'sequence.overAuto': 'ينتهي عند {t} ثانية، بعد فترة التشغيل الذاتي البالغة {auto} ثانية.',
   'sequence.invalid': 'أدخل وقت بداية منتهيًا وغير سالب.',

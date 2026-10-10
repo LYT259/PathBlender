@@ -542,7 +542,7 @@ describe('route library "group by start" order (user 2026-10-09)', () => {
     render(<I18nProvider><SequenceTimelineComposer robots={[robot]} selectedId={robot.trajectory.id} onSelect={vi.fn()}
       autoPeriodS={20} startZone={zone} startRegions={regions} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
     expect(labels()).toEqual(['A-trench', 'Z-trench', 'A-hub', 'Z-hub', 'A-other', 'Z-other']);
-    expect(captions()).toEqual(['Trench', 'Hub', 'Other starts']);
+    expect(captions()).toEqual(['Trench', 'Hub', 'Other']);
   });
 
   it('stays plain alphabetical (no captions, no toggle) by default and without regions', () => {
@@ -577,19 +577,35 @@ describe('route library "group by start" order (user 2026-10-09)', () => {
       autoPeriodS={20} startZone={zone} startRegions={regions} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
     // Captions never name Trench/Hub for the illegal pair — they land in
     // the Other bucket across both partitions.
-    expect(captions().filter((c) => c === 'Trench' || c === 'Hub')).toEqual(['Trench', 'Hub']);
+    expect(captions()).toEqual(['Trench', 'Hub', 'Other']);
     expect(labels().filter((l) => l.startsWith('L1-underarm') || l.startsWith('L10-farside'))).toHaveLength(2);
   });
 
-  it('drops the grouping (and the toggle) once a first leg exists — continuity owns the library', () => {
+  it('drops the grouping (and the toggle) once the playhead reaches the first leg — continuity owns the library', () => {
     localStorage.setItem('pb.routeOrder', 'start');
     localStorage.setItem('pb.lengthUnit', 'm');
     const placed = applySequenceSegments(groupedFixture(), [{ id: 's1', routeId: 'a-hub', waitBeforeS: 0 }]);
     render(<I18nProvider><SequenceTimelineComposer robots={[placed]} selectedId={placed.trajectory.id} onSelect={vi.fn()}
-      autoPeriodS={20} startZone={zone} startRegions={regions} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
+      autoPeriodS={20} startZone={zone} startRegions={regions} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()}
+      playback={{ t: 5, setT: vi.fn(), playing: false, setPlaying: vi.fn(), speed: 1, setSpeed: vi.fn() }} /></I18nProvider>);
     expect(captions()).toEqual([]);
     expect(document.querySelector('.sequence-order')).toBeNull();
     expect(labels()).toEqual(['A-hub', 'A-other', 'A-trench', 'Z-hub', 'Z-other', 'Z-trench']);
+  });
+
+  it('still groups with a leg placed while the playhead is before it (user screenshot 2026-10-10)', () => {
+    // 11019-with-L3-at-1.04 s state: the playhead (0.59 s) precedes the
+    // first route, so the picker is still answering "where does the auto
+    // start" — grouping and captions stay, and each group captions once.
+    localStorage.setItem('pb.routeOrder', 'start');
+    localStorage.setItem('pb.lengthUnit', 'm');
+    const placed = applySequenceSegments(groupedFixture(), [{ id: 's1', routeId: 'a-hub', waitBeforeS: 1.04 }]);
+    render(<I18nProvider><SequenceTimelineComposer robots={[placed]} selectedId={placed.trajectory.id} onSelect={vi.fn()}
+      autoPeriodS={20} startZone={zone} startRegions={regions} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()}
+      playback={{ t: 0.59, setT: vi.fn(), playing: false, setPlaying: vi.fn(), speed: 1, setSpeed: vi.fn() }} /></I18nProvider>);
+    expect(captions()).toEqual(['Trench', 'Hub', 'Other']);
+    expect(labels()).toEqual(['A-trench', 'Z-trench', 'A-hub', 'Z-hub', 'A-other', 'Z-other']);
+    expect(document.querySelector('.sequence-order')).not.toBeNull();
   });
 
   it('persists the user\u2019s order choice across launches', () => {

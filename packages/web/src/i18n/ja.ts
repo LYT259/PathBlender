@@ -31,7 +31,7 @@ export const ja: Record<MessageKey, string> = {
   'sequence.orderStart': '出発地点ごとにグループ化',
   'sequence.startGroupTrench': 'トレンチ',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'その他の出発地点',
+  'sequence.startGroupOther': 'その他',
   'sequence.joinFix': 'PathPlanner または Choreo で接続を修正し、ルートを再インポートしてください。',
   'sequence.overAuto': '{auto} 秒の自動期間を超えて、{t} 秒で終了します。',
   'sequence.invalid': '有限で負でない開始時間を入力してください。',

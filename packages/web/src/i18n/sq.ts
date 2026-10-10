@@ -19,7 +19,7 @@ export const sq = {
   'sequence.orderStart': 'Të grupuara sipas nisjes',
   'sequence.startGroupTrench': 'Hendeku',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Nisje të tjera',
+  'sequence.startGroupOther': 'Tjetër',
   'sequence.joinFix': 'Rregulloni lidhjen në PathPlanner ose Choreo dhe riimportoni rrugën.',
   'sequence.overAuto': 'Përfundon në {t} s, pas periudhës autonome prej {auto} s.',
   'sequence.invalid': 'Shkruani një kohë fillimi të fundme dhe jo negative.',
