@@ -221,24 +221,6 @@ function AppBody() {
   }, []);
   const importInputRef = useRef<HTMLInputElement>(null);
   const sessionInputRef = useRef<HTMLInputElement>(null);
-  const workspaceMenuRef = useRef<HTMLDetailsElement>(null);
-  useEffect(() => {
-    const outside = (event: PointerEvent) => {
-      if (workspaceMenuRef.current && !workspaceMenuRef.current.contains(event.target as Node)) workspaceMenuRef.current.open = false;
-    };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && workspaceMenuRef.current?.open) {
-        // The open menu is the topmost layer — consume the key so the
-        // composer (or any other Escape owner below) does not also fire.
-        event.stopPropagation();
-        workspaceMenuRef.current.open = false;
-        workspaceMenuRef.current.querySelector('summary')?.focus();
-      }
-    };
-    document.addEventListener('pointerdown', outside);
-    document.addEventListener('keydown', escape);
-    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape); };
-  }, []);
   const canvasRef = useRef<FieldCanvasHandle>(null);
   const canvas3DRef = useRef<FieldCanvas3DHandle>(null);
   const baseField = fieldId === CUSTOM_FIELD_ID && customField ? customField : fieldById(fieldId);
@@ -418,7 +400,10 @@ function AppBody() {
   const [showTrail, setShowTrail] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(true);
   // A-B compare: first click snapshots the scenario, second reports deltas.
+  // abArmed mirrors the ref for the toolbar button's lit state — the ref
+  // holds the data, the state drives the render between the two clicks.
   const abBaselineRef = useRef<SessionTrajectory[] | null>(null);
+  const [abArmed, setAbArmed] = useState(false);
   // Hidden robots are absent for checks too (user request 2026-10-04):
   // their conflict rings, bounds notes and panel entries disappear with
   // the robot and come back when it does — detection and display both
@@ -473,6 +458,8 @@ function AppBody() {
           pendingProfilesRef.current = [];
           importedFileStoreRef.current.clear();
           settingsFilesRef.current.clear();
+          abBaselineRef.current = null;
+          setAbArmed(false);
           setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(withColorblindPalette(restored.robots, colorblindRef.current)) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
           const ids = new Set(restored.robots.map((r) => r.trajectory.id));
           setSelectedId(
@@ -988,11 +975,13 @@ function AppBody() {
   const abToggle = useCallback(() => {
     if (abBaselineRef.current === null) {
       abBaselineRef.current = robots;
+      setAbArmed(true);
       flash(tr('checks.abBaselineSet'));
       return;
     }
     const result = compareScenarios(abBaselineRef.current, robots);
     abBaselineRef.current = null;
+    setAbArmed(false);
     if (result.pairs.length === 0) {
       flash(tr('checks.abNoPairs'));
       return;
@@ -1042,6 +1031,10 @@ function AppBody() {
   const clearAll = useCallback(() => {
     exampleRequest.current += 1;
     setExampleLoading(false);
+    // A whole-scene reset voids any armed A-B baseline — the lit button
+    // must not outlive the scenario it snapshotted.
+    abBaselineRef.current = null;
+    setAbArmed(false);
     setRobots([]);
     pathTextsRef.current.clear();
     pendingProfilesRef.current = [];
@@ -1475,13 +1468,14 @@ function AppBody() {
         {/* Save moved to the File menu (2026-10-06): the menu bar is the
             complete entry point, so the workspace keeps only controls that
             benefit from sitting next to the field. */}
-        {hasRobots && <details ref={workspaceMenuRef} className="workspace-menu">
-          <summary className="tool-btn square" aria-label={tr('workspace.more')} title={tr('workspace.more')}><Icon name="more" /></summary>
-          <div className="workspace-menu-items" onClick={(e) => e.currentTarget.closest('details')?.removeAttribute('open')}>
-            {hasRobots && <button onClick={abToggle}>{tr('actions.abCompare')}</button>}
-            <button onClick={() => setShowHelp(true)} aria-keyshortcuts="?">{tr('help.title')}</button>
-          </div>
-        </details>}
+        {/* A-B compare sits on the toolbar itself, not inside a menu (user
+            request 2026-10-10): one click arms the baseline — the button
+            stays lit and the tooltip says so — the next click reports. */}
+        {hasRobots && <button className={`tool-btn ab-action${abArmed ? ' on' : ''}`} aria-pressed={abArmed} title={abArmed ? tr('checks.abBaselineSet') : tr('actions.abCompare')} onClick={abToggle}>{tr('actions.abCompare')}</button>}
+        {/* The ? help entry is back (removed with 0cef73b, restored
+            2026-10-10): it opens the quick guide, whose footer carries the
+            keyboard-shortcuts list — the old ⋯ menu item moved in there. */}
+        <button className="tool-btn square" aria-label={tr('menu.userGuide')} title={tr('menu.userGuide')} onClick={() => setShowGuide(true)}><Icon name="help" /></button>
         <button className="tool-btn square" aria-label={tr('prefs.title')} title={tr('prefs.title')} onClick={openPreferences}><Icon name="settings" /></button>
       </header>
       <div className="app-col">

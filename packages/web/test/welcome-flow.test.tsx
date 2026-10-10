@@ -50,7 +50,9 @@ describe('welcome flow', () => {
     expect(within(welcome).queryByText('You can also drop files or a folder into this window')).not.toBeInTheDocument();
 
     const toolbar = within(document.querySelector<HTMLElement>('.toolbar')!);
-    expect(toolbar.getAllByRole('button').map((button) => button.getAttribute('aria-label') || button.textContent)).toEqual(['Preferences']);
+    // The restored ? help entry (2026-10-10) sits beside Preferences; on the
+    // welcome screen the A-B compare button stays hidden (needs robots).
+    expect(toolbar.getAllByRole('button').map((button) => button.getAttribute('aria-label') || button.textContent)).toEqual(['Quick guide', 'Preferences']);
     expect(toolbar.queryByText('PathBlender', { exact: true })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'How to use PathBlender' })).not.toBeInTheDocument();
   });
