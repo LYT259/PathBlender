@@ -1522,8 +1522,8 @@ function AppBody() {
                     separately, or not at all. It sits LEFT of the 2D/3D
                     switch on purpose — it is not part of that group. */}
                 <div className="seg overlay-toggle" role="group" aria-label={tr('canvas.overlays')}>
-                  <button type="button" aria-pressed={showTrail} className={showTrail ? 'on' : ''} onClick={() => setShowTrail((v) => !v)}>{tr('canvas.trail')}</button>
-                  <button type="button" aria-pressed={showHeatmap} className={showHeatmap ? 'on' : ''} onClick={() => setShowHeatmap((v) => !v)}>{tr('canvas.heatmap')}</button>
+                  <button type="button" aria-pressed={showTrail} className={showTrail ? 'on' : ''} title={tr('canvas.trailHint')} onClick={() => setShowTrail((v) => !v)}>{tr('canvas.trail')}</button>
+                  <button type="button" aria-pressed={showHeatmap} className={showHeatmap ? 'on' : ''} title={tr('canvas.heatmapHint')} onClick={() => setShowHeatmap((v) => !v)}>{tr('canvas.heatmap')}</button>
                 </div>
                 {field3dAvailable && (
                   <div className="seg view-toggle" role="group" aria-label={tr('canvas.view')}>

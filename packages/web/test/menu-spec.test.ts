@@ -120,7 +120,7 @@ describe('menu spec', () => {
   it('labels follow the state: Play/Pause, Show/Hide team, heatmap', () => {
     const spec = buildMenuSpec(ctx({ playing: false, showHeatmap: true }));
     expect(find(spec, 'Playback')!.items[0]?.label).toBe('Play');
-    expect(find(spec, 'View')!.items.find((e) => e.id === 'heatmap')?.label).toBe('Hide heatmap');
+    expect(find(spec, 'View')!.items.find((e) => e.id === 'heatmap')?.label).toBe('Hide occupancy zones');
     const hidden = buildMenuSpec(ctx({ selectedVisible: false }));
     expect(find(hidden, 'Edit')!.items.find((e) => e.id === 'visibility-selected')?.label).toBe('Show Selected Team');
   });
