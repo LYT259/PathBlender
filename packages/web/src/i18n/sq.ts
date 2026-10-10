@@ -3,6 +3,8 @@ export const sq = {
   "canvas.webglUnavailable": "WebGL nuk është i disponueshëm",
   'sequence.start': 'Fillimi',
   'sequence.end': 'Fundi',
+  'sequence.afterPrev': 'Pas të mëparshmes',
+  'sequence.beforeNext': 'Para të ardhmes',
   'sequence.seconds': 's',
   'sequence.count': '{n} segmente',
   'sequence.delay': 'Vonesë fillimi',

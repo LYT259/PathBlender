@@ -3,6 +3,8 @@ export const rw = {
   "canvas.webglUnavailable": "WebGL ntiboneka",
   "sequence.start": "Itangiriro",
   "sequence.end": "Isoza",
+  'sequence.afterPrev': "Nyuma y’ibanza",
+  'sequence.beforeNext': "Mbere y’ikurikira",
   "sequence.seconds": "s",
   "sequence.count": "{n} ibice",
   "sequence.delay": "Gutinda gutangira",

@@ -3,6 +3,8 @@ export const vi = {
   "canvas.webglUnavailable": "WebGL không khả dụng",
   'sequence.start': 'Bắt đầu',
   'sequence.end': 'Kết thúc',
+  'sequence.afterPrev': 'Sau tuyến trước',
+  'sequence.beforeNext': 'Trước tuyến sau',
   'sequence.seconds': 's',
   'sequence.count': '{n} đoạn',
   'sequence.delay': 'Độ trễ bắt đầu',

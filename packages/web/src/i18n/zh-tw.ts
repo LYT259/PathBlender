@@ -9,6 +9,8 @@ export const zhTw: Record<MessageKey, string> = {
   "canvas.webglUnavailable": "WebGL 無法使用",
   'sequence.start': "開始",
   'sequence.end': "結束",
+  'sequence.afterPrev': '距上一條',
+  'sequence.beforeNext': '距下一條',
   'sequence.seconds': "秒",
   'sequence.count': "{n} 段",
   'sequence.delay': "起步延遲",

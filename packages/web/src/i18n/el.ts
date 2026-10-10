@@ -3,6 +3,8 @@ export const el = {
   "canvas.webglUnavailable": "Το WebGL δεν είναι διαθέσιμο",
   'sequence.start': 'Έναρξη',
   'sequence.end': 'Τέλος',
+  'sequence.afterPrev': 'Μετά την προηγούμενη',
+  'sequence.beforeNext': 'Πριν από την επόμενη',
   'sequence.seconds': 's',
   'sequence.count': '{n} τμήματα',
   'sequence.delay': 'Αρχική καθυστέρηση',

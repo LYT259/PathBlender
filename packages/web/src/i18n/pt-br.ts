@@ -14,6 +14,8 @@ export const ptBR: Record<MessageKey, string> = {
   "canvas.webglUnavailable": "WebGL indisponível",
   'sequence.start': 'Início',
   'sequence.end': 'Fim',
+  'sequence.afterPrev': 'Após a anterior',
+  'sequence.beforeNext': 'Antes da próxima',
   'sequence.seconds': 's',
   'sequence.count': '{n} segmentos',
   'sequence.delay': 'Atraso inicial',

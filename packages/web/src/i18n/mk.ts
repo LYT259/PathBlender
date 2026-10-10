@@ -3,6 +3,8 @@ export const mk = {
   "canvas.webglUnavailable": "WebGL не е достапен",
   'sequence.start': 'Почеток',
   'sequence.end': 'Крај',
+  'sequence.afterPrev': 'По претходната',
+  'sequence.beforeNext': 'Пред следната',
   'sequence.seconds': 'с',
   'sequence.count': '{n} сегменти',
   'sequence.delay': 'Почетно доцнење',

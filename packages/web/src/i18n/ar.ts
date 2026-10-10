@@ -3,6 +3,8 @@ export const ar = {
   "canvas.webglUnavailable": "WebGL غير متاح",
   'sequence.start': 'البداية',
   'sequence.end': 'النهاية',
+  'sequence.afterPrev': 'بعد السابقة',
+  'sequence.beforeNext': 'قبل التالية',
   'sequence.seconds': 'ث',
   'sequence.count': '{n} مقاطع',
   'sequence.delay': 'تأخير البدء',

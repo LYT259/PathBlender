@@ -19,6 +19,8 @@ export const he: Record<MessageKey, string> = {
   "canvas.webglUnavailable": "WebGL אינו זמין",
   'sequence.start': 'התחלה',
   'sequence.end': 'סוף',
+  'sequence.afterPrev': 'אחרי הקודם',
+  'sequence.beforeNext': 'לפני הבא',
   'sequence.seconds': 'ש׳',
   'sequence.count': '{n} מקטעים',
   'sequence.delay': 'עיכוב התחלה',
