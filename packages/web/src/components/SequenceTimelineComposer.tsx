@@ -320,13 +320,13 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     // The follow-along badge rides the pointer for library drags — the user
     // must see WHICH route is being dragged, inside the lane or out of it.
     if (drag.kind === 'add') setDragPoint({ x: event.clientX, y: event.clientY });
-    // Height is irrelevant (user 2026-10-10): the drag carries the EDITING
-    // robot's own library, so the drop target is never in question — only
-    // the horizontal position sets the start time, clamped to the lane's
-    // left edge when the pointer overshoots it ("as early as possible", the
-    // same clamp a placed clip already gets from boundedClipStart). Only
-    // past the right edge, where no legal start time exists at all, does a
-    // drop still carry nothing.
+    // Free flight, snap on release (user 2026-10-10): the drag carries the
+    // EDITING robot's own library, so the drop target is never in question.
+    // Off the lane the dragged route flies under the pointer — both axes
+    // free — and releasing snaps it into the editing lane at the pointer's
+    // time; a left overshoot clamps to 0 s, the same clamp a placed clip
+    // gets from boundedClipStart. Only past the right edge, where no legal
+    // start time exists at all, does a drop still carry nothing.
     if (drag.kind === 'add' && event.clientX > rect.right) {
       drag.candidate = undefined; setGhost(null); return;
     }
@@ -347,6 +347,12 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         : { ...clip, startS }
       : { ...clip, startS };
     drag.candidate = candidate;
+    // Off the lane's row the ghost steps aside and the flying badge becomes
+    // the drag UI — the route visibly follows the pointer, up and down at
+    // will, until the release snaps it back into the lane.
+    if (drag.kind === 'add' && (event.clientY < rect.top || event.clientY > rect.bottom)) {
+      setGhost(null); return;
+    }
     setGhost({ robotId: activeId!, clip: candidate });
   }
   function cancelDrag() { dragRef.current = null; setGhost(null); setDragPoint(null); onPreviewRoute?.(null); }
@@ -543,12 +549,13 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     </div>}
     <div className="sequence-composer-footnote"><span role="status" className="sequence-error">{error ?? ''}</span></div>
     {dragPoint && dragRef.current?.kind === 'add' && dragRef.current.clip && !activeGhost && (() => {
-      // Follow-along copy of the dragged library route — shown only while
-      // the in-lane ghost cannot (user 2026-10-08; 2026-10-10 the ghost
-      // follows the pointer's TIME at any height, so the badge now surfaces
-      // just past the right edge, where no drop exists). dragPoint keeps
-      // updating so the badge sits at the pointer the moment the ghost
-      // steps aside. Dropping lands at the pointer's time wherever it is.
+      // Follow-along copy of the dragged library route — the free-flight
+      // drag UI (user 2026-10-10): off the lane the route rides the pointer
+      // itself, both axes free, and releasing snaps it into the editing
+      // robot's lane at the pointer's time. Inside the lane the ghost takes
+      // over and the badge hides — ghost + badge together would read as two
+      // copies of the same path (user 2026-10-08). Past the right edge no
+      // legal start exists and the drop carries nothing.
       const source = active.routes.find((route) => route.id === dragRef.current!.clip!.routeId);
       return <div className="sequence-drag-badge" aria-hidden="true" style={{ left: dragPoint.x, top: dragPoint.y }}>
         <span>{source ? routeLabel(source, active.routes) : dragRef.current.clip.routeId}</span><small>{source ? `${n(source.trajectory.durationS, 2)}s` : ''}</small>

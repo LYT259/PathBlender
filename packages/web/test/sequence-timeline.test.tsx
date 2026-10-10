@@ -127,11 +127,11 @@ describe('live arrangement editing', () => {
     expect(screen.getByRole('button', { name: 'B, 10.00–13.00 s' })).toBeInTheDocument();
     expect(commit).toHaveBeenCalledTimes(1);
   });
-  it('lands a library drop below every lane at the pointer time — height is irrelevant (user 2026-10-10)', () => {
+  it('snaps a library drop released below every lane into the editing lane at the pointer time (user 2026-10-10)', () => {
     const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
     // The screenshot case: the pointer released below the whole timeline —
-    // the drag carries the EDITING robot's own library, so the drop target
-    // is never in question and the horizontal position alone sets the time.
+    // the drag carries the EDITING robot's own library, so the release
+    // snaps the route back into that lane at the pointer's time.
     drag(screen.getByRole('button', { name: 'B: 3.00 s' }), 20, 500, 30, 300);
     expect(screen.getByRole('button', { name: 'B, 10.00–13.00 s' })).toBeInTheDocument();
     expect(commit).toHaveBeenCalledTimes(1);
@@ -393,29 +393,35 @@ describe('lane scrub, chosen-delete, drag badge and occupancy gating', () => {
     expect(activeEndT(commit.mock.calls[0]![0])).toBe(0);
   });
 
-  it('hands the drag over to the lane ghost: time follows any height, the badge rides only past the right edge', () => {
+  it('flies the badge off the lane and snaps the release back into the editing lane (user 2026-10-10)', () => {
     const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
     const source = screen.getByRole('button', { name: 'B: 3.00 s' });
     fireEvent.pointerDown(source, { button: 0, clientX: 20, clientY: 30 });
-    // Below every lane the ghost still marks the pointer's TIME (user
-    // 2026-10-10): the drag carries the editing robot's own library, so the
-    // slot is never in question — the badge never appears.
+    // Off the lane the drag stays FREE: the route rides the pointer as the
+    // badge — up and down at will — and no in-lane ghost pins it.
     fireEvent.pointerMove(source, { clientX: 300, clientY: 250 });
-    expect(document.querySelector('.sequence-ghost')).not.toBeNull();
-    expect(document.querySelector('.sequence-drag-badge')).toBeNull();
-    // Past the RIGHT edge no legal start exists: the ghost steps aside and
-    // the follow-along badge identifies the drag instead.
-    fireEvent.pointerMove(source, { clientX: 1100, clientY: 250 });
     expect(document.querySelector('.sequence-ghost')).toBeNull();
     const badge = document.querySelector('.sequence-drag-badge')!;
     expect(badge.textContent).toContain('B');
     expect(badge.textContent).toContain('3.00s');
-    // Back over the axis, the ghost returns.
-    fireEvent.pointerMove(source, { clientX: 300, clientY: 250 });
+    // Inside the lane the ghost takes over and the badge hides — ghost +
+    // badge together would read as two copies of the same path.
+    fireEvent.pointerMove(source, { clientX: 500, clientY: 130 });
     expect(document.querySelector('.sequence-ghost')).not.toBeNull();
     expect(document.querySelector('.sequence-drag-badge')).toBeNull();
-    fireEvent.pointerUp(source, { clientX: 300, clientY: 250 });
+    // Past the RIGHT edge no legal start exists: badge only, and a release
+    // there still discards.
+    fireEvent.pointerMove(source, { clientX: 1100, clientY: 130 });
+    expect(document.querySelector('.sequence-ghost')).toBeNull();
+    expect(document.querySelector('.sequence-drag-badge')).not.toBeNull();
+    fireEvent.pointerUp(source, { clientX: 1100, clientY: 130 });
+    expect(commit).not.toHaveBeenCalled();
+    // Releasing OFF the lane snaps the route back into it at the pointer's time.
+    fireEvent.pointerDown(source, { button: 0, clientX: 20, clientY: 30 });
+    fireEvent.pointerMove(source, { clientX: 500, clientY: 250 });
+    fireEvent.pointerUp(source, { clientX: 500, clientY: 250 });
     expect(commit).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'B, 10.00–13.00 s' })).toBeInTheDocument();
     expect(document.querySelector('.sequence-drag-badge')).toBeNull();
   });
 
