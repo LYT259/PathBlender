@@ -64,18 +64,13 @@ body.desktop.desktop-macos .workspace-toolbar { padding-left: 100px; }
 .btn.accent:active { opacity: .8; }
 /* Toolbar pair: both import buttons share .btn sizing so they line up. */
 .import-action, .import-folder-action { white-space: nowrap; }
+/* The standalone A-B compare button keeps its label on one line; its armed
+   state reuses .tool-btn.on (accent) plus the aria-pressed background. */
+.ab-action { flex: none; white-space: nowrap; }
 .seg { border-radius: 8px; padding: 3px; }
 .seg button { min-height: 26px; padding: 3px 10px; border-radius: 5px; }
 .switch .sw-track::after { transition: transform 120ms ease; left: 1.5px; }
 .switch input:checked + .sw-track::after { left: 1.5px; transform: translateX(11px); }
-.workspace-menu { position: relative; }
-.workspace-menu summary { list-style: none; cursor: pointer; }
-.workspace-menu summary::-webkit-details-marker { display: none; }
-.workspace-menu[open] summary { background: var(--hover); }
-.workspace-menu-items { position: absolute; z-index: 40; top: calc(100% + 8px); right: 0; width: 208px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 26px var(--shadow); padding: 5px; }
-.workspace-menu-items > * { display: block; width: 100%; border: 0; border-radius: 5px; background: none; color: var(--fg); text-decoration: none; padding: 9px 10px; text-align: left; font-size: 12px; }
-.workspace-menu-items > *:hover:not(:disabled) { background: var(--hover); }
-.workspace-menu-items > :disabled { opacity: .45; }
 .app-body.workspace-body { position: relative; grid-template-columns: minmax(0, 1fr); background: var(--bg); }
 .app-body.workspace-body.with-paths { grid-template-columns: 260px minmax(0, 1fr); }
 .app-body.workspace-body.with-inspector { grid-template-columns: minmax(0, 1fr) 292px; }
