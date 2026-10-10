@@ -559,6 +559,39 @@ describe('route library "group by start" order (user 2026-10-09)', () => {
     expect(document.querySelector('.sequence-order')).toBeNull();
   });
 
+  it('never gives a named class to an out-of-zone start — L1-style under-arm and L10-style far-side hub all read as Other', () => {
+    localStorage.setItem('pb.routeOrder', 'start');
+    localStorage.setItem('pb.lengthUnit', 'm');
+    const robot = applySequenceSegments(groupedFixture(), []);
+    // Two real out-of-zone starts: under the upper trench arm (11019 L1)
+    // and past the hub on the neutral side (11019 L10). Both classify
+    // geometrically, but neither may legally start the auto.
+    robot.routeOptions = [...robot.routeOptions, {
+      id: 'l1', relPath: 'L1-underarm.ghostauto',
+      trajectory: { ...bare(), id: 'l1', name: 'L1-underarm', durationS: 2, samples: samplesFrom(4.42, 7.62) },
+    }, {
+      id: 'l10', relPath: 'L10-farside.ghostauto',
+      trajectory: { ...bare(), id: 'l10', name: 'L10-farside', durationS: 2, samples: samplesFrom(5.8, 4.65) },
+    }].sort((a, b) => a.relPath.localeCompare(b.relPath));
+    render(<I18nProvider><SequenceTimelineComposer robots={[robot]} selectedId={robot.trajectory.id} onSelect={vi.fn()}
+      autoPeriodS={20} startZone={zone} startRegions={regions} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
+    // Captions never name Trench/Hub for the illegal pair — they land in
+    // the Other bucket across both partitions.
+    expect(captions().filter((c) => c === 'Trench' || c === 'Hub')).toEqual(['Trench', 'Hub']);
+    expect(labels().filter((l) => l.startsWith('L1-underarm') || l.startsWith('L10-farside'))).toHaveLength(2);
+  });
+
+  it('drops the grouping (and the toggle) once a first leg exists — continuity owns the library', () => {
+    localStorage.setItem('pb.routeOrder', 'start');
+    localStorage.setItem('pb.lengthUnit', 'm');
+    const placed = applySequenceSegments(groupedFixture(), [{ id: 's1', routeId: 'a-hub', waitBeforeS: 0 }]);
+    render(<I18nProvider><SequenceTimelineComposer robots={[placed]} selectedId={placed.trajectory.id} onSelect={vi.fn()}
+      autoPeriodS={20} startZone={zone} startRegions={regions} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
+    expect(captions()).toEqual([]);
+    expect(document.querySelector('.sequence-order')).toBeNull();
+    expect(labels()).toEqual(['A-hub', 'A-other', 'A-trench', 'Z-hub', 'Z-other', 'Z-trench']);
+  });
+
   it('persists the user\u2019s order choice across launches', () => {
     localStorage.removeItem('pb.routeOrder');
     localStorage.setItem('pb.lengthUnit', 'm');
