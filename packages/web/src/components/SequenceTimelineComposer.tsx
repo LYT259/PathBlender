@@ -320,11 +320,16 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     // The follow-along badge rides the pointer for library drags — the user
     // must see WHICH route is being dragged, inside the lane or out of it.
     if (drag.kind === 'add') setDragPoint({ x: event.clientX, y: event.clientY });
-    if (drag.kind === 'add' && (event.clientY < rect.top || event.clientY > rect.bottom || event.clientX < rect.left || event.clientX > rect.right)) {
+    // Row-band drop with a left clamp (user 2026-10-10): overshooting the
+    // lane's LEFT edge inside the row means "as early as possible" — the
+    // same clamp a placed clip already gets from boundedClipStart — not a
+    // discarded drop. Outside the row band, or past the right edge where no
+    // legal start time exists at all, the drop still carries nothing.
+    if (drag.kind === 'add' && (event.clientY < rect.top || event.clientY > rect.bottom || event.clientX > rect.right)) {
       drag.candidate = undefined; setGhost(null); return;
     }
     const clip = drag.clip!;
-    const raw = drag.kind === 'add' ? (event.clientX - rect.left) / rect.width * axis
+    const raw = drag.kind === 'add' ? (Math.max(rect.left, event.clientX) - rect.left) / rect.width * axis
       : clip.startS + (event.clientX - drag.x) / rect.width * axis;
     // A new drop lands where the pointer is — no whole-route reservation.
     // Partial execution (user 2026-10-08): when less auto time remains than
