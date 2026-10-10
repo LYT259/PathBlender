@@ -132,6 +132,27 @@ describe('live arrangement editing', () => {
     drag(screen.getByRole('button', { name: 'B: 3.00 s' }), 20, 500, 30, 300);
     expect(commit).not.toHaveBeenCalled(); expect(clips()).toHaveLength(1);
   });
+  it('clamps a library drop past the lane left edge to a 0 s start (user 2026-10-10)', () => {
+    const commit = vi.fn(); render(<LiveHarness robot={applySequenceSegments(fixture(), [])} onCommit={commit} />); geometry();
+    const source = screen.getByRole('button', { name: 'B: 3.00 s' });
+    fireEvent.pointerDown(source, { button: 0, clientX: 20, clientY: 30 });
+    // 44 px left of the lane's left edge, inside the row band: the ghost
+    // already sits at 0 s while the pointer is still outside the lane.
+    fireEvent.pointerMove(source, { clientX: -44, clientY: 130 });
+    const ghost = document.querySelector('.sequence-ghost');
+    expect(ghost).not.toBeNull();
+    expect(ghost).toHaveTextContent('B');
+    fireEvent.pointerUp(source, { clientX: -44, clientY: 130 });
+    expect(screen.getByRole('button', { name: 'B, 0.00–3.00 s' })).toBeInTheDocument();
+    expect(commit).toHaveBeenCalledTimes(1);
+    // Starts AT the match beginning: the first wait is exactly zero.
+    expect(sequenceViewFor(commit.mock.calls[0]![0]).segments[0]!.waitBeforeS).toBe(0);
+  });
+  it('still discards a library drop past the lane right edge — no legal start exists there', () => {
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
+    drag(screen.getByRole('button', { name: 'B: 3.00 s' }), 20, 1100, 30);
+    expect(commit).not.toHaveBeenCalled(); expect(clips()).toHaveLength(1);
+  });
   it.each([15, 20])('clamps a moved route to the %s-second season boundary', (limit) => {
     const commit = vi.fn(); render(<LiveHarness autoPeriodS={limit} onCommit={commit} />); geometry();
     drag(clips()[0]!, 0, 2000);
