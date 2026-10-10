@@ -1,13 +1,21 @@
 import { SelectControl } from './SelectControl';
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
-import { routeConnectsAfter, LIBRARY_CHAIN_TOLERANCES, startsInAllianceZone, type RouteContinuity, type SequenceJoinIssue, type SessionRouteOption, type SessionTrajectory, type StartZoneRect } from '@pathblender/core';
+import { Fragment, useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import { routeConnectsAfter, routeStartRegion, LIBRARY_CHAIN_TOLERANCES, startsInAllianceZone, type RouteContinuity, type SequenceJoinIssue, type SessionRouteOption, type SessionTrajectory, type StartRegionClass, type StartZoneRect } from '@pathblender/core';
 import { sequenceViewFor, type AutoSequenceSegment } from '../auto-sequence-state';
 import { boundedClipStart, canPlaceClip, clipGaps, clipsFor, placeClip, segmentsFromClips, type TimelineClip } from '../sequence-timeline-clips';
 import { robotIdentity } from '../robot-identity';
 import { routeLabel } from '../route-library';
 import { formatLength, useLengthUnit } from '../length-units';
 import type { PlaybackRange } from '../playback-range';
+import { useRouteOrder, type RouteOrder } from '../route-order';
 import { useI18n } from '../i18n';
+import type { MessageKey } from '../i18n/en';
+/** Start-class id → caption key. Every FieldPackage.startRegions id must
+ *  register here (the type system keeps new keys honest). */
+const START_GROUP_KEYS: Record<string, MessageKey> = {
+  trench: 'sequence.startGroupTrench',
+  hub: 'sequence.startGroupHub',
+};
 import { Icon } from './Icon';
 import { SequenceComposerToolbar } from './SequenceComposerToolbar';
 import { PlaybackControls, type Playback } from './PlaybackControls';
@@ -23,6 +31,9 @@ interface Props {
    * leg is pose-gated instead. Undefined = the season defines no region
    * and the first route stays ungated (2022 today). */
   startZone?: StartZoneRect[];
+  /** Named start-position classes for the "group by start" library order;
+   *  seasons without them hide the toggle (always alphabetical). */
+  startRegions?: readonly StartRegionClass[];
   open: boolean;
   onClose: () => void;
   /** Each completed edit commits to the same store used by playback and autosave. */
@@ -55,7 +66,7 @@ const clampToAxis = (t: number, axisS: number) => Math.min(axisS, Math.max(0, t)
 
 /** Pointer capture works across WebKit and mouse/touch/pen, without relying
  * on custom HTML drag payloads. A gesture is one undoable operation. */
-export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, startZone, open, onClose, onChange, onPreviewRoute, joins = [], playback, playbackEndS, playbackRange = 'full', onPlaybackRangeChange, onJump }: Props) {
+export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, startZone, startRegions, open, onClose, onChange, onPreviewRoute, joins = [], playback, playbackEndS, playbackRange = 'full', onPlaybackRangeChange, onJump }: Props) {
   const { t, n, lang } = useI18n();
   const [unit] = useLengthUnit();
   const [selected, setSelected] = useState<{ robotId: string; clipId: string } | null>(null);
@@ -108,7 +119,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     : [...activeClips].sort((a, b) => a.startS - b.startS).filter((clip) => clip.startS <= playheadT).at(-1);
   const anchorRoute = anchorClip ? active?.routes.find((route) => route.id === anchorClip.routeId) : undefined;
   const anchorLabel = anchorRoute && active ? routeLabel(anchorRoute, active.routes) : '';
-  const library: { route: SessionRouteOption; blocked: boolean; outOfZone?: boolean; continuity?: RouteContinuity }[] = [];
+  const library: { route: SessionRouteOption; blocked: boolean; outOfZone?: boolean; continuity?: RouteContinuity; region?: string }[] = [];
   // First-leg zoning (user 2026-10-08): with nothing placed yet the route
   // library answers "what may legally START the auto" — only routes whose
   // first sample sits in the season's legal starting region are addable.
@@ -131,11 +142,32 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       blocked: occupied || route.trajectory.durationS <= 0 || overAuto || outOfZone || (continuity ? !continuity.connects : false),
       outOfZone: outOfZone || undefined,
       continuity,
+      region: routeStartRegion(route.trajectory, startRegions) || undefined,
     });
   }
   // Draggable first (stable within each group), grayed after — the picker
   // answers "what can follow the playhead" in one glance.
   library.sort((a, b) => Number(a.blocked) - Number(b.blocked));
+  // "Group by start" order (user 2026-10-09, persisted across launches):
+  // within the draggable/blocked partition, routes cluster under their
+  // start class — the declared classes first in declaration order, the
+  // unmatched bucket last — and stay in filename order inside each. The
+  // functional partition stays primary so gating never hides behind
+  // cosmetics.
+  const groupOrder = startRegions ? [...new Set(startRegions.map((region) => region.id))] : [];
+  const [routeOrder, setRouteOrder] = useRouteOrder();
+  const grouped = routeOrder === 'start' && startRegions !== undefined && startRegions.length > 0;
+  const groupRank = (region: string | undefined) => {
+    const index = groupOrder.indexOf(region ?? '');
+    return index === -1 ? groupOrder.length : index; // unmatched bucket last
+  };
+  if (grouped) {
+    library.sort((a, b) => groupRank(a.region) - groupRank(b.region));
+  }
+  const groupLabel = (region: string | undefined) => {
+    const key = region !== undefined ? START_GROUP_KEYS[region] : undefined;
+    return key !== undefined ? t(key) : t('sequence.startGroupOther');
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -328,8 +360,20 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         <option value="full">{t('timeline.rangeFull')}</option>
         <option value="paths">{t('timeline.rangePaths')}</option>
       </SelectControl>} />
-    <div className="sequence-route-library"><div className="sequence-route-options">
-      {library.map(({ route, blocked, outOfZone, continuity }) => {
+    <div className="sequence-route-library">
+      {startRegions !== undefined && startRegions.length > 0 && <SelectControl className="timeline-range sequence-order" aria-label={t('sequence.orderLabel')} value={routeOrder}
+        onValueChange={(value) => setRouteOrder(value as RouteOrder)}>
+        <option value="name">{t('sequence.orderName')}</option>
+        <option value="start">{t('sequence.orderStart')}</option>
+      </SelectControl>}
+      <div className="sequence-route-options">
+      {library.map(({ route, blocked, outOfZone, continuity, region }, index) => {
+        // A caption chip opens each start group (and the trailing unmatched
+        // bucket) — only in "group by start" order, and only where the
+        // group actually changes, so the flat alphabetical look stays
+        // byte-identical for users who never switch.
+        const groupChanged = grouped && (index === 0 || library[index - 1]?.region !== region
+          || library[index - 1]?.blocked !== blocked);
         // Gray-reason precedence: occupancy (nowhere to drop at all) over
         // the auto-period limit over a start outside the ALLIANCE ZONE over
         // the pose mismatch.
@@ -342,7 +386,9 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
             p: formatLength(continuity.positionGapM, unit, lang),
             h: `${n(continuity.headingGapDeg, 1)}°`,
           }) : null;
-        return <button type="button" key={route.id} className="sequence-route-source" draggable={false}
+        return <Fragment key={route.id}>
+        {groupChanged && <span aria-hidden="true" className="sequence-group-tag">{groupLabel(region)}</span>}
+        <button type="button" className="sequence-route-source" draggable={false}
         // aria-disabled, not the disabled attribute (user 2026-10-07): a
         // disabled button receives no pointer/focus events, so a grayed
         // route could never be hovered for its preview. The button stays
@@ -361,8 +407,8 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         onPointerDown={(event) => { if (blocked) return; begin(event, 'add', { id: crypto.randomUUID(), routeId: route.id, startS: 0, durationS: route.trajectory.durationS }); }}
         onClick={(event) => { if (blocked || (event.detail !== 0 && suppressClick.current)) return; append(route.id, route.trajectory.durationS); }}>
         <span aria-hidden="true" className="sequence-grip">⠿</span><span>{routeLabel(route, active.routes)}</span><small>{n(route.trajectory.durationS, 2)}s</small>
-      </button>; })}
-    </div></div>
+      </button></Fragment>; })}
+      </div></div>
     <div className="sequence-timeline-scroll" dir="ltr"><div className="sequence-timeline-surface">
       <div className="sequence-axis"><span>s</span><div onPointerDown={beginScrub}>{ticks.map((tick) => <span key={tick} style={{ left: percent(tick) }}>{tick}</span>)}</div></div>
       {tracks.map(({ robot, routes, clips }) => {

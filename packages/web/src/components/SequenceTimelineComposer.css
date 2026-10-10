@@ -114,3 +114,9 @@
 .sequence-drag-badge { position: fixed; z-index: 60; display: flex; align-items: center; gap: 7px; max-width: 260px; border: 1px solid var(--accent); border-radius: 6px; padding: 6px 10px; background: var(--bg-card); color: var(--fg); font: inherit; font-size: 12px; white-space: nowrap; pointer-events: none; transform: translate(10px, 14px); box-shadow: 0 4px 14px rgb(0 0 0 / .28); }
 .sequence-drag-badge > span:not(.sequence-grip) { overflow: hidden; text-overflow: ellipsis; }
 .sequence-drag-badge small { color: var(--fg-dim); }
+
+/* "Group by start" order (user 2026-10-09): the order toggle rides at the
+   head of the library row; caption chips separate the start groups inside
+   the horizontally scrolling options. */
+.sequence-route-library .sequence-order { flex: 0 0 auto; }
+.sequence-group-tag { flex: 0 0 auto; align-self: center; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; color: var(--fg-dim); font-size: 10px; white-space: nowrap; }
