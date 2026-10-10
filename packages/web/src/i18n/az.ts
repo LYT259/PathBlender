@@ -3,6 +3,8 @@ export const az = {
   "canvas.webglUnavailable": "WebGL əlçatan deyil",
   'sequence.start': 'Başlanğıc',
   'sequence.end': 'Son',
+  'sequence.afterPrev': 'Əvvəlkidən sonra',
+  'sequence.beforeNext': 'Növbətidən əvvəl',
   'sequence.seconds': 'san',
   'sequence.count': '{n} seqment',
   'sequence.delay': 'Başlanğıc gecikməsi',

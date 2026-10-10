@@ -3,6 +3,8 @@ export const nb = {
   "canvas.webglUnavailable": "WebGL er ikke tilgjengelig",
   'sequence.start': 'Start',
   'sequence.end': 'Slutt',
+  'sequence.afterPrev': 'Etter forrige',
+  'sequence.beforeNext': 'Før neste',
   'sequence.seconds': 's',
   'sequence.count': '{n} segmenter',
   'sequence.delay': 'Startforsinkelse',

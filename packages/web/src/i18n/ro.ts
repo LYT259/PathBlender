@@ -3,6 +3,8 @@ export const ro = {
   "canvas.webglUnavailable": "WebGL nu este disponibil",
   'sequence.start': 'Start',
   'sequence.end': 'Sfârșit',
+  'sequence.afterPrev': 'După precedenta',
+  'sequence.beforeNext': 'Înainte de următoarea',
   'sequence.seconds': 's',
   'sequence.count': '{n} segmente',
   'sequence.delay': 'Întârziere de start',

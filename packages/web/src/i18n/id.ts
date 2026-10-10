@@ -3,6 +3,8 @@ export const id = {
   "canvas.webglUnavailable": "WebGL tidak tersedia",
   'sequence.start': 'Mulai',
   'sequence.end': 'Selesai',
+  'sequence.afterPrev': 'Setelah sebelumnya',
+  'sequence.beforeNext': 'Sebelum berikutnya',
   'sequence.seconds': 'dtk',
   'sequence.count': '{n} segmen',
   'sequence.delay': 'Jeda awal',

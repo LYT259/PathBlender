@@ -3,6 +3,8 @@ export const ta = {
   "canvas.webglUnavailable": "WebGL கிடைக்கவில்லை",
   'sequence.start': 'தொடக்கம்',
   'sequence.end': 'முடிவு',
+  'sequence.afterPrev': 'முந்தியதற்குப் பிறகு',
+  'sequence.beforeNext': 'அடுத்ததற்கு முன்',
   'sequence.seconds': 'வி',
   'sequence.count': '{n} பகுதிகள்',
   'sequence.delay': 'தொடக்க தாமதம்',
