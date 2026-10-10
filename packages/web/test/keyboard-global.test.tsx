@@ -92,11 +92,9 @@ describe('workspace shortcuts', () => {
 
   it('every workspace key yields to a focused text field', async () => {
     await importTwo();
-    const menu = document.querySelector('.workspace-menu') as HTMLDetailsElement;
-    menu.open = true;
-    const more = menu.querySelector('summary')!;
-    fireEvent.click(more);
-    // A select inside the workspace (timeline range) owns its keys.
+    // A select inside the workspace (timeline range) owns its keys. (The
+    // ⋯ more-menu setup this test used to open here was removed with the
+    // menu itself, 2026-10-10 — A-B compare and help are toolbar buttons.)
     const range = screen.getByRole('combobox', { name: 'Playback range' });
     range.focus();
     const label = range.textContent;

@@ -124,12 +124,9 @@ describe('composer hover preview in the real app', () => {
     fireEvent.click(rowButtons(rows()[1]!).find((b) => b.getAttribute('aria-pressed') !== null)!);
     await waitFor(() => expect(field().robots).toHaveLength(2));
   });
-  it('closes the more menu on an outside pointer or Escape', async () => {
+  it('the ⋯ more menu is gone — A-B compare and help live on the toolbar (2026-10-10)', async () => {
     render(<App />);
     fireEvent.drop(window, { dataTransfer: { files: [new File([raw], 'A.ghostauto')] } });
-    await waitFor(() => expect(document.querySelector('.workspace-menu')).not.toBeNull());
-    const menu = document.querySelector('.workspace-menu') as HTMLDetailsElement;
-    menu.open = true; fireEvent.pointerDown(document.body); expect(menu.open).toBe(false);
-    menu.open = true; fireEvent.keyDown(document.body, { key: 'Escape' }); expect(menu.open).toBe(false);
+    await waitFor(() => expect(document.querySelector('.workspace-menu')).toBeNull());
   });
 });
