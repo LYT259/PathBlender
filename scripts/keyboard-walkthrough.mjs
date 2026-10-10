@@ -7,8 +7,15 @@
  * :4173 or WALK_BASE; system Chrome via channel, fallback bundled).
  */
 import { chromium } from 'playwright-core';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const BASE = process.env.WALK_BASE ?? 'http://localhost:4173/';
+/** Demo robot count, read from source: EXAMPLE_TEAMS rows in
+ * welcome-example.ts (#292 ships three annotated robots — the number must
+ * grow with the demo, never freeze here). */
+const EXAMPLE_ROBOTS = (readFileSync(resolve(process.cwd(), 'packages/web/src/welcome-example.ts'), 'utf8')
+  .match(/robotId: 'welcome-example-/g) ?? []).length;
 const results = [];
 const check = (name, ok, detail = '') => {
   results.push({ name, ok, detail });
@@ -53,7 +60,7 @@ check('welcome: Tab reaches the example button', reached, await active());
 await page.keyboard.press('Enter');
 await page.waitForSelector('.robot-library-row', { timeout: 15000 });
 const robotCount = await page.locator('.robot-library-row').count();
-check('welcome: Enter loads the example (keyboard only)', robotCount === 2, `${robotCount} robots`);
+check('welcome: Enter loads the example (keyboard only)', robotCount === EXAMPLE_ROBOTS, `${robotCount} robots`);
 // The button that loaded the example is gone by then — focus must land on a
 // real control (2026-10-06 keyboard pass), and it must land silently: a focus
 // ring painted on a freshly opened app reads as a stray box over the first team.
