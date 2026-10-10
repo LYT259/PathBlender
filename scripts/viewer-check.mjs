@@ -33,9 +33,14 @@ const BASE = process.env.VIEWER_BASE ?? 'http://localhost:4179/';
 const SAMPLES = resolve(process.cwd(), 'samples');
 const ORIGIN = new URL(BASE).origin;
 
-/** Counted from the dictionaries, never typed in: the old file said "4". */
-const LANG_CODES = readdirSync(resolve(process.cwd(), 'packages/web/src/i18n'))
-  .filter((f) => f.endsWith('.ts')).length;
+/** Counted from the dictionaries, never typed in: the old file said "4".
+ * Only language-code-shaped filenames are dictionaries (ar.ts, pt-br.ts);
+ * helpers (language-names.ts, language-search.ts) never match the shape. */
+const DICTIONARIES = readdirSync(resolve(process.cwd(), 'packages/web/src/i18n'))
+  .filter((f) => /^[a-z]{2,3}(-[a-z]+)?\.ts$/.test(f)).length;
+/** zh-tw.ts ships as the zh-hk override base and for saved prefs but has no
+ * picker row (f601437, beta.88) — every other dictionary is selectable. */
+const SELECTABLE_LANGS = DICTIONARIES - 1;
 /** Read from source: `const GITHUB_URL = '…'` in the app shell. */
 const GITHUB_URL = readFileSync(resolve(process.cwd(), 'packages/web/src/App.tsx'), 'utf8')
   .match(/const GITHUB_URL = '([^']+)'/)?.[1] ?? '';
@@ -164,28 +169,33 @@ async function openApp(options = {}) {
   // ------------------------------------------------------------- prefs -----
   await page.locator('button[aria-label="Preferences"]').click(); // locale pinned to en-US above
   await page.waitForSelector('.preferences-dialog');
-  const langOptions = page.locator('.preferences-dialog select').first().locator('option');
+  // #299/#303 replaced the native <select> with a searchable picker: trigger
+  // button plus a popover listbox whose rows carry data-value codes.
+  await page.locator('.preferences-panel .language-picker-trigger').first().click();
+  const langOptions = page.locator('.language-picker-popover [role="option"]');
   const count = await langOptions.count();
   const firstLabel = (await langOptions.first().textContent())?.trim() ?? '';
-  // f601437 (beta.88) withdrew the zh-tw picker row — the dictionary still
-  // ships for zh-hk to override and for saved prefs — so the picker offers
-  // one row fewer than the dictionary directory holds.
   check(`language picker lists every picker row plus “follow system”`,
-    count === LANG_CODES, `${count} options`);
+    count === SELECTABLE_LANGS + 1, `${count} options`);
   check('“follow system” is the first entry', /follow system/i.test(firstLabel), firstLabel);
-  check('no update-channel picker (the site never self-updates)',
-    await page.locator('.preferences-dialog select option[value="beta"]').count() === 0);
+  await page.keyboard.press('Escape'); // picker Escape closes only the popover
   // The site keeps no Updates tab at all (user request 2026-10-07): the
-  // website itself is the beta channel.
+  // website itself is the beta channel. PreferencesPanel renders the updates
+  // section — the only home of the self-update channel picker — on desktop
+  // only, so the website settings show exactly the three remaining tabs.
   check('no Updates tab in the website settings',
     await page.locator('.preferences-dialog [role="tab"]:has-text("Updates")').count() === 0);
+  check('website settings show exactly the three non-updates tabs',
+    await page.locator('.preferences-dialog .preferences-nav [role="tab"]').count() === 3);
 
-  // The preview-site cross links and banner are gone everywhere (2026-10-07):
-  // the ⋮ menu carries no off-site jump and no banner markup renders at all.
-  await page.keyboard.press('Escape'); // close prefs; the ⋮ menu still opens
-  await page.locator('.workspace-menu summary').click();
-  const menuLinks = await page.locator('.workspace-menu-items a').evaluateAll((nodes) => nodes.map((n) => n.getAttribute('href') ?? ''));
-  check('workspace ⋮ menu links nowhere off-site', menuLinks.length === 0, menuLinks.join(' | '));
+  // The preview-site cross links and banner are gone everywhere (2026-10-07),
+  // and #324 dropped the ⋮ overflow menu outright — so scan every anchor on
+  // the page: none may jump off-site except the deliberate GitHub toolbar
+  // entry, and no banner markup renders at all.
+  await page.keyboard.press('Escape'); // close prefs
+  const pageLinks = await page.locator('a[href]').evaluateAll((nodes) => nodes.map((n) => n.getAttribute('href') ?? ''));
+  const offSite = pageLinks.filter((h) => /^https?:/.test(h) && !h.startsWith(ORIGIN) && h !== GITHUB_URL);
+  check('no off-site links besides the GitHub toolbar entry', offSite.length === 0, offSite.join(' | ') || 'github only');
   check('no preview banner markup', await page.locator('.site-preview-banner').count() === 0);
 
   check('no page errors after the whole pass', errors.length === 0, errors.slice(0, 3).join(' | '));
