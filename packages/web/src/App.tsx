@@ -670,10 +670,13 @@ function AppBody() {
   // Team display order (2026-10-08): one reshuffled robots array is the
   // single truth both the robot list and the timeline read; the move rides
   // the session history (undo/redo, autosave, .pb round trip all follow),
-  // and moveTeamOrder itself is the only reordering code. Playback, colors,
+  // and moveTeamOrder itself is the only reordering code. Playback,
   // selection and every timing field are untouched — slots move by identity.
+  // Colors are the exception (2026-10-10): they are pinned to positions, so
+  // moveTeamOrder recolors palette slots after the reshuffle — the active
+  // palette flag rides along through colorblindRef.
   const moveTeam = useCallback((id: string, targetId: string, edge: 'before' | 'after') => {
-    setRobots((prev) => moveTeamOrder(prev, id, targetId, edge));
+    setRobots((prev) => moveTeamOrder(prev, id, targetId, edge, colorblindRef.current));
   }, [setRobots]);
   const teamOrder: TeamOrderUI = useMemo(() => ({
     ids: robots.map((robot) => robot.trajectory.id),
