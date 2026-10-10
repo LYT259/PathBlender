@@ -30,7 +30,7 @@ export const ptBR: Record<MessageKey, string> = {
   'sequence.orderStart': 'Agrupadas por partida',
   'sequence.startGroupTrench': 'Trincheira',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Outras partidas',
+  'sequence.startGroupOther': 'Outras',
   'sequence.joinFix': 'Corrija a emenda no PathPlanner ou no Choreo e importe a rota novamente.',
   'sequence.overAuto': 'Termina em {t} s, após o período autônomo de {auto} s.',
   'sequence.invalid': 'Insira um tempo de início finito e não negativo.',

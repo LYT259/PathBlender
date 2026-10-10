@@ -19,7 +19,7 @@ export const az = {
   'sequence.orderStart': 'Başlanğıca görə qrupla',
   'sequence.startGroupTrench': 'Xəndək',
   'sequence.startGroupHub': 'Hab',
-  'sequence.startGroupOther': 'Digər başlanğıclar',
+  'sequence.startGroupOther': 'Digər',
   'sequence.joinFix': 'Birləşməni PathPlanner və ya Choreo-da düzəldin və marşrutu yenidən idxal edin.',
   'sequence.overAuto': '{auto} saniyəlik avto dövründən sonra, {t} saniyədə bitir.',
   'sequence.invalid': 'Sonlu, mənfi olmayan başlanğıc vaxtı daxil edin.',

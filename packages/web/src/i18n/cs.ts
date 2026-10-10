@@ -30,7 +30,7 @@ export const cs: Record<MessageKey, string> = {
   'sequence.orderStart': 'Skupiny podle startu',
   'sequence.startGroupTrench': 'Žlab',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Ostatní starty',
+  'sequence.startGroupOther': 'Ostatní',
   'sequence.joinFix': 'Opravte napojení v PathPlanneru nebo Choreu a trasu znovu importujte.',
   'sequence.overAuto': 'Končí v {t} s, po {auto}sekundovém autonomním úseku.',
   'sequence.invalid': 'Zadejte konečný, nezáporný čas startu.',

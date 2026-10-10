@@ -19,7 +19,7 @@ export const uk = {
   'sequence.orderStart': 'Згруповано за стартом',
   'sequence.startGroupTrench': 'Окоп',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Інші старти',
+  'sequence.startGroupOther': 'Інші',
   'sequence.joinFix': 'Виправте стик у PathPlanner або Choreo та імпортуйте маршрут знову.',
   'sequence.overAuto': 'Завершує на {t} с, після автономного періоду в {auto} с.',
   'sequence.invalid': 'Введіть скінченний, невід’ємний час старту.',

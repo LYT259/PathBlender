@@ -19,7 +19,7 @@ export const da = {
   'sequence.orderStart': 'Grupperet efter start',
   'sequence.startGroupTrench': 'Grøft',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Andre starter',
+  'sequence.startGroupOther': 'Andre',
   'sequence.joinFix': 'Ret samlingen i PathPlanner eller Choreo, og importer ruten igen.',
   'sequence.overAuto': 'Slutter ved {t} s, efter den {auto} s lange autonome periode.',
   'sequence.invalid': 'Indtast et endeligt, ikke-negativt starttidspunkt.',

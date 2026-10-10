@@ -30,7 +30,7 @@ export const nl: Record<MessageKey, string> = {
   'sequence.orderStart': 'Gegroepeerd op start',
   'sequence.startGroupTrench': 'Trench',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Overige starts',
+  'sequence.startGroupOther': 'Overig',
   'sequence.joinFix': 'Herstel de overgang in PathPlanner of Choreo en importeer de route opnieuw.',
   'sequence.overAuto': 'Klaar op {t} s, na de autonome periode van {auto} s.',
   'sequence.invalid': 'Voer een eindige, niet-negatieve starttijd in.',

@@ -13,7 +13,7 @@ export const it = {
   'sequence.orderStart': 'Raggruppate per partenza',
   'sequence.startGroupTrench': 'Trincea',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Altre partenze',
+  'sequence.startGroupOther': 'Altre',
   'sequence.joinPosition': 'scarto di posizione {d}',
   'sequence.joinHeading': 'scarto di direzione {d}°',
   'sequence.joinVelocity': 'salto di velocità {d} m/s',

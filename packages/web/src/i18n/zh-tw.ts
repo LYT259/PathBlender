@@ -25,7 +25,7 @@ export const zhTw: Record<MessageKey, string> = {
   'sequence.orderStart': '按起點分組',
   'sequence.startGroupTrench': 'Trench',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': '其他起點',
+  'sequence.startGroupOther': '其他',
   'sequence.joinFix': "請在 PathPlanner 或 Choreo 中修好接縫後重新匯入路線。",
   'sequence.overAuto': "完成於 {t} 秒，超出 {auto} 秒的自動階段。",
   'sequence.invalid': "請輸入有效且不小於 0 的開始時間。",

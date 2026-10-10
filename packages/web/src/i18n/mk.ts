@@ -19,7 +19,7 @@ export const mk = {
   'sequence.orderStart': 'Групирано според старт',
   'sequence.startGroupTrench': 'Ров',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Други стартови',
+  'sequence.startGroupOther': 'Други',
   'sequence.joinFix': 'Поправете го спојот во PathPlanner или Choreo и повторно увезете ја рутата.',
   'sequence.overAuto': 'Завршува на {t} с, по автономниот период од {auto} с.',
   'sequence.invalid': 'Внесете конечно, ненегативно време на почеток.',

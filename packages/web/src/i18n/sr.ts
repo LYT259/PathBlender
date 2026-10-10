@@ -19,7 +19,7 @@ export const sr = {
   'sequence.orderStart': 'Grupisano po startu',
   'sequence.startGroupTrench': 'Rov',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Ostali startovi',
+  'sequence.startGroupOther': 'Ostalo',
   'sequence.joinFix': 'Ispravite spoj u PathPlanner-u ili Choreo-u i ponovo uvezite rutu.',
   'sequence.overAuto': 'Završava u {t} s, posle autonomnog perioda od {auto} s.',
   'sequence.invalid': 'Unesite konačno, nenegativno vreme početka.',

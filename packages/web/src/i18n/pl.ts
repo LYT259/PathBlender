@@ -30,7 +30,7 @@ export const pl: Record<MessageKey, string> = {
   'sequence.orderStart': 'Grupowanie wg startu',
   'sequence.startGroupTrench': 'Tryb',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Pozostałe starty',
+  'sequence.startGroupOther': 'Pozostałe',
   'sequence.joinFix': 'Popraw połączenie w PathPlanner lub Choreo i zaimportuj trasę ponownie.',
   'sequence.overAuto': 'Kończy się w {t} s, po {auto}-sekundowym okresie autonomicznym.',
   'sequence.invalid': 'Wprowadź skończony, nieujemny czas startu.',

@@ -19,7 +19,7 @@ export const ms = {
   'sequence.orderStart': 'Dikumpulkan mengikut permulaan',
   'sequence.startGroupTrench': 'Parit',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Permulaan lain',
+  'sequence.startGroupOther': 'Lain-lain',
   'sequence.joinFix': 'Betulkan sambungan dalam PathPlanner atau Choreo dan import semula laluan.',
   'sequence.overAuto': 'Tamat pada {t} s, melepasi tempoh autonomi {auto} s.',
   'sequence.invalid': 'Masukkan masa mula yang terhingga dan bukan negatif.',

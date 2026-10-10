@@ -19,7 +19,7 @@ export const hy = {
   'sequence.orderStart': 'Խմբավորում մեկնարկի համաձայն',
   'sequence.startGroupTrench': 'Խրամ',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Այլ մեկնարկներ',
+  'sequence.startGroupOther': 'Այլ',
   'sequence.joinFix': 'Ուղղեք միացումը PathPlanner-ում կամ Choreo-ում և նորից ներմուծեք երթուղին։',
   'sequence.overAuto': 'Ավարտվում է {t} վ-ում՝ {auto} վ տևողությամբ ավտո շրջանից հետո։',
   'sequence.invalid': 'Մուտքագրեք վերջավոր, ոչ բացասական մեկնարկի ժամանակ։',

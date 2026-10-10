@@ -19,7 +19,7 @@ export const hu = {
   'sequence.orderStart': 'Csoportosítás start szerint',
   'sequence.startGroupTrench': 'Árok',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Egyéb startok',
+  'sequence.startGroupOther': 'Egyéb',
   'sequence.joinFix': 'Javítsd ki az illesztést a PathPlannerben vagy a Choreóban, majd importáld újra az útvonalat.',
   'sequence.overAuto': 'A(z) {auto} mp-es autonóm szakasz után, {t} mp-nél ér véget.',
   'sequence.invalid': 'Adj meg véges, nem negatív kezdési időt.',

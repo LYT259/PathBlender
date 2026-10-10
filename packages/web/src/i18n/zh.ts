@@ -21,7 +21,7 @@ export const zh: Record<MessageKey, string> = {
   'sequence.orderStart': '按起点分组',
   'sequence.startGroupTrench': 'Trench',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': '其他起点',
+  'sequence.startGroupOther': '其他',
   'sequence.joinFix': '请在 PathPlanner 或 Choreo 中修好接缝后重新导入路线。',
   'sequence.overAuto': '完成于 {t} 秒，超出 {auto} 秒的自动阶段。',
   'sequence.invalid': '请输入有效且不小于 0 的开始时间。',

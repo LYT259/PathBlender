@@ -30,7 +30,7 @@ export const ko: Record<MessageKey, string> = {
   'sequence.orderStart': '출발 지점별 그룹화',
   'sequence.startGroupTrench': '트렌치',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': '기타 출발 지점',
+  'sequence.startGroupOther': '기타',
   'sequence.joinFix': 'PathPlanner 또는 Choreo에서 이음새를 고치고 경로를 다시 가져오세요.',
   'sequence.overAuto': '{auto}초 오토 시간을 넘어 {t}초에 끝납니다.',
   'sequence.invalid': '유한하고 0 이상인 시작 시간을 입력하세요.',

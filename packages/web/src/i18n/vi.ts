@@ -19,7 +19,7 @@ export const vi = {
   'sequence.orderStart': 'Nhóm theo điểm xuất phát',
   'sequence.startGroupTrench': 'Hào',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Điểm xuất phát khác',
+  'sequence.startGroupOther': 'Khác',
   'sequence.joinFix': 'Sửa mối nối trong PathPlanner hoặc Choreo rồi nhập lại tuyến.',
   'sequence.overAuto': 'Kết thúc ở {t} s, sau thời gian tự động {auto} s.',
   'sequence.invalid': 'Nhập thời gian bắt đầu hữu hạn và không âm.',

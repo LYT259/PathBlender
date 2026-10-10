@@ -19,7 +19,7 @@ export const mr = {
   'sequence.orderStart': 'सुरुवातीच्या जागीनुसार गट',
   'sequence.startGroupTrench': 'खंदक',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'इतर सुरुवाती',
+  'sequence.startGroupOther': 'इतर',
   'sequence.joinFix': 'PathPlanner किंवा Choreo मध्ये सांधा दुरुस्त करा आणि मार्ग पुन्हा आयात करा.',
   'sequence.overAuto': '{auto} सेकंदांच्या ऑटोनॉमस कालावधीनंतर {t} सेकंदांवर संपतो.',
   'sequence.invalid': 'मर्यादित, ऋण नसलेली सुरुवातीची वेळ प्रविष्ट करा.',
