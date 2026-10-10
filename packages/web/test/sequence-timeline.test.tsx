@@ -127,10 +127,14 @@ describe('live arrangement editing', () => {
     expect(screen.getByRole('button', { name: 'B, 10.00–13.00 s' })).toBeInTheDocument();
     expect(commit).toHaveBeenCalledTimes(1);
   });
-  it('cancels a source dragged outside the lane without adding a route', () => {
+  it('lands a library drop below every lane at the pointer time — height is irrelevant (user 2026-10-10)', () => {
     const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
+    // The screenshot case: the pointer released below the whole timeline —
+    // the drag carries the EDITING robot's own library, so the drop target
+    // is never in question and the horizontal position alone sets the time.
     drag(screen.getByRole('button', { name: 'B: 3.00 s' }), 20, 500, 30, 300);
-    expect(commit).not.toHaveBeenCalled(); expect(clips()).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'B, 10.00–13.00 s' })).toBeInTheDocument();
+    expect(commit).toHaveBeenCalledTimes(1);
   });
   it('clamps a library drop past the lane left edge to a 0 s start (user 2026-10-10)', () => {
     const commit = vi.fn(); render(<LiveHarness robot={applySequenceSegments(fixture(), [])} onCommit={commit} />); geometry();
@@ -389,28 +393,28 @@ describe('lane scrub, chosen-delete, drag badge and occupancy gating', () => {
     expect(activeEndT(commit.mock.calls[0]![0])).toBe(0);
   });
 
-  it('hands the drag over to the lane ghost: badge rides only outside the lane', () => {
+  it('hands the drag over to the lane ghost: time follows any height, the badge rides only past the right edge', () => {
     const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
     const source = screen.getByRole('button', { name: 'B: 3.00 s' });
     fireEvent.pointerDown(source, { button: 0, clientX: 20, clientY: 30 });
-    // Below the lane: no ghost yet, the badge identifies the drag.
+    // Below every lane the ghost still marks the pointer's TIME (user
+    // 2026-10-10): the drag carries the editing robot's own library, so the
+    // slot is never in question — the badge never appears.
     fireEvent.pointerMove(source, { clientX: 300, clientY: 250 });
+    expect(document.querySelector('.sequence-ghost')).not.toBeNull();
+    expect(document.querySelector('.sequence-drag-badge')).toBeNull();
+    // Past the RIGHT edge no legal start exists: the ghost steps aside and
+    // the follow-along badge identifies the drag instead.
+    fireEvent.pointerMove(source, { clientX: 1100, clientY: 250 });
     expect(document.querySelector('.sequence-ghost')).toBeNull();
     const badge = document.querySelector('.sequence-drag-badge')!;
     expect(badge.textContent).toContain('B');
     expect(badge.textContent).toContain('3.00s');
-    // Inside the lane the ghost takes over and the badge disappears —
-    // ghost + badge together read as two copies of the same path (user
-    // 2026-10-08).
-    fireEvent.pointerMove(source, { clientX: 500, clientY: 130 });
+    // Back over the axis, the ghost returns.
+    fireEvent.pointerMove(source, { clientX: 300, clientY: 250 });
     expect(document.querySelector('.sequence-ghost')).not.toBeNull();
     expect(document.querySelector('.sequence-drag-badge')).toBeNull();
-    // Back outside, the badge returns at the pointer.
-    fireEvent.pointerMove(source, { clientX: 300, clientY: 250 });
-    expect(document.querySelector('.sequence-ghost')).toBeNull();
-    expect(document.querySelector('.sequence-drag-badge')).not.toBeNull();
-    fireEvent.pointerMove(source, { clientX: 500, clientY: 130 });
-    fireEvent.pointerUp(source, { clientX: 500, clientY: 130 });
+    fireEvent.pointerUp(source, { clientX: 300, clientY: 250 });
     expect(commit).toHaveBeenCalledTimes(1);
     expect(document.querySelector('.sequence-drag-badge')).toBeNull();
   });

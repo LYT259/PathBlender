@@ -320,12 +320,14 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     // The follow-along badge rides the pointer for library drags — the user
     // must see WHICH route is being dragged, inside the lane or out of it.
     if (drag.kind === 'add') setDragPoint({ x: event.clientX, y: event.clientY });
-    // Row-band drop with a left clamp (user 2026-10-10): overshooting the
-    // lane's LEFT edge inside the row means "as early as possible" — the
-    // same clamp a placed clip already gets from boundedClipStart — not a
-    // discarded drop. Outside the row band, or past the right edge where no
-    // legal start time exists at all, the drop still carries nothing.
-    if (drag.kind === 'add' && (event.clientY < rect.top || event.clientY > rect.bottom || event.clientX > rect.right)) {
+    // Height is irrelevant (user 2026-10-10): the drag carries the EDITING
+    // robot's own library, so the drop target is never in question — only
+    // the horizontal position sets the start time, clamped to the lane's
+    // left edge when the pointer overshoots it ("as early as possible", the
+    // same clamp a placed clip already gets from boundedClipStart). Only
+    // past the right edge, where no legal start time exists at all, does a
+    // drop still carry nothing.
+    if (drag.kind === 'add' && event.clientX > rect.right) {
       drag.candidate = undefined; setGhost(null); return;
     }
     const clip = drag.clip!;
@@ -541,12 +543,12 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     </div>}
     <div className="sequence-composer-footnote"><span role="status" className="sequence-error">{error ?? ''}</span></div>
     {dragPoint && dragRef.current?.kind === 'add' && dragRef.current.clip && !activeGhost && (() => {
-      // Follow-along copy of the dragged library route — outside the lane
-      // only (user 2026-10-08): inside it the in-lane ghost already names
-      // the route and its drop slot, and showing both read as two copies of
-      // the same path. dragPoint keeps updating so the badge sits at the
-      // pointer the moment the drag leaves the lane again. Dropping in the
-      // lane records it; dropping elsewhere discards it.
+      // Follow-along copy of the dragged library route — shown only while
+      // the in-lane ghost cannot (user 2026-10-08; 2026-10-10 the ghost
+      // follows the pointer's TIME at any height, so the badge now surfaces
+      // just past the right edge, where no drop exists). dragPoint keeps
+      // updating so the badge sits at the pointer the moment the ghost
+      // steps aside. Dropping lands at the pointer's time wherever it is.
       const source = active.routes.find((route) => route.id === dragRef.current!.clip!.routeId);
       return <div className="sequence-drag-badge" aria-hidden="true" style={{ left: dragPoint.x, top: dragPoint.y }}>
         <span>{source ? routeLabel(source, active.routes) : dragRef.current.clip.routeId}</span><small>{source ? `${n(source.trajectory.durationS, 2)}s` : ''}</small>
