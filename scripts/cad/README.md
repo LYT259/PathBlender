@@ -15,19 +15,21 @@ SDS export does not — SDS never ships motors).
   It is a community re-creation, not SDS's own geometry; core
   dimensions match the official layout drawing (module height
   6.16–6.17 in both; 18 named parts incl. 2× Kraken X60, turret,
-  molded wheel, L plate, fasteners). **License UNVERIFIED — blocks any
-  public release** (release checklist item):
-  the correct domain is **frcdesign.org** (the old note's
-  `frcdesigns.com` was wrong). Research 2026-10-05: the site is a
-  community open-source CAD course, but the active GitHub repos
-  (`frcdesign/FRCDesign.org`, `frcdesign/FRCDesignApp`) carry **no
-  LICENSE file** (default = all rights reserved); the archived repos
-  (`FRCDesign-MKDocs`, `design-challenges-bot`) are GPL-3.0; no public
-  statement grants redistribution/embedding rights for the CAD models.
-  Resolution paths before any release: (a) written permission from the
-  FRC Design team (Chief Delphi / GitHub), or (b) replace the module
-  geometry (official SDS export has no motors; procedural fallback
-  exists in `chassis3d.ts`).
+  molded wheel, L plate, fasteners). **License: MIT — verified
+  2026-10-09** (release checklist item resolved): the frcdesign team
+  responded to the license request (frcdesign/FRCDesignApp#61, filed
+  2026-10-05) by adding a standard MIT license to FRCDesignApp
+  ("MIT License, Copyright (c) 2026 FRCDesign.org",
+  commit 2026-10-09T15:06Z) and closing the issue as COMPLETED.
+  Attribution: keep the MIT notice + FRCDesign.org credit with the
+  asset. Caveats on record (not refusals, just not textually confirmed):
+  ① the source geometry lives in an Onshape document, not in the GitHub
+  repo — MIT nominally covers the repo contents, and the team's action
+  (adding MIT + closing as completed) is taken as covering the requested
+  uses, which named that document; ② the Kraken X60 motor geometry's
+  provenance was asked about and received no textual answer. If either
+  is ever disputed, the fallback remains replacing the module geometry
+  (procedural fallback exists in `chassis3d.ts`).
 - **Reference geometry kept for audit** — the official SDS Parasolid
   `mk5i.x_t` (product page → "CAD Model" Google Drive link;
   `attachment; filename="MK5i.x_t"`), sha256
