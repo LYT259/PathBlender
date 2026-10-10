@@ -19,7 +19,7 @@ export const fil = {
   'sequence.orderStart': 'Nagrupo ayon sa simula',
   'sequence.startGroupTrench': 'Kanal',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Iba pang simula',
+  'sequence.startGroupOther': 'Iba',
   'sequence.joinFix': 'Ayusin ang dugtungan sa PathPlanner o Choreo at muling i-import ang ruta.',
   'sequence.overAuto': 'Matatapos sa {t} s, lampas sa {auto} s na autonomous period.',
   'sequence.invalid': 'Maglagay ng finite at hindi negatibong oras ng simula.',

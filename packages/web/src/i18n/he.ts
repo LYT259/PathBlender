@@ -35,7 +35,7 @@ export const he: Record<MessageKey, string> = {
   'sequence.orderStart': 'קיבוץ לפי נקודת זינוק',
   'sequence.startGroupTrench': 'תעלה',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'זינוקים אחרים',
+  'sequence.startGroupOther': 'אחרים',
   'sequence.joinFix': 'תקנו את החיבור ב־PathPlanner או ב־Choreo וייבאו את המסלול מחדש.',
   'sequence.overAuto': 'מסתיים ב־{t} ש׳, אחרי התקופה האוטונומית של {auto} ש׳.',
   'sequence.invalid': 'הזינו זמן התחלה סופי ולא שלילי.',

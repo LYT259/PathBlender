@@ -13,7 +13,7 @@ export const rw = {
   'sequence.orderStart': 'Kugabana n’aho intangira',
   'sequence.startGroupTrench': 'Trench',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Ibindi ntangira',
+  'sequence.startGroupOther': 'Ibindi',
   "sequence.joinPosition": "itandukaniro ryaho {d}",
   "sequence.joinHeading": "itandukaniro ry’icyerekezo {d}°",
   "sequence.joinVelocity": "gusimbuka kw’umuvuduko {d} m/s",

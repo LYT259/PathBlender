@@ -19,7 +19,7 @@ export const sv = {
   'sequence.orderStart': 'Grupperat efter start',
   'sequence.startGroupTrench': 'Gräv',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Övriga starter',
+  'sequence.startGroupOther': 'Övriga',
   'sequence.joinFix': 'Åtgärda skarven i PathPlanner eller Choreo och importera rutten igen.',
   'sequence.overAuto': 'Klar vid {t} s, efter den {auto} s långa autonoma perioden.',
   'sequence.invalid': 'Ange en ändlig, icke-negativ starttid.',

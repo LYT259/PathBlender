@@ -19,7 +19,7 @@ export const nb = {
   'sequence.orderStart': 'Gruppert etter start',
   'sequence.startGroupTrench': 'Grøft',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Andre starter',
+  'sequence.startGroupOther': 'Andre',
   'sequence.joinFix': 'Rett opp skjøten i PathPlanner eller Choreo, og importer ruten på nytt.',
   'sequence.overAuto': 'Ferdig ved {t} s, etter den {auto} s lange autonome perioden.',
   'sequence.invalid': 'Skriv inn en endelig, ikke-negativ starttid.',

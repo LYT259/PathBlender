@@ -19,7 +19,7 @@ export const ro = {
   'sequence.orderStart': 'Grupate după punctul de start',
   'sequence.startGroupTrench': 'Șanț',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Alte starturi',
+  'sequence.startGroupOther': 'Alte',
   'sequence.joinFix': 'Corectează îmbinarea în PathPlanner sau Choreo și reimportă ruta.',
   'sequence.overAuto': 'Se termină la {t} s, după perioada autonomă de {auto} s.',
   'sequence.invalid': 'Introdu un timp de start finit și nenegativ.',

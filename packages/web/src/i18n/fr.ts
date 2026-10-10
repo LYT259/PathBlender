@@ -27,7 +27,7 @@ export const fr: Record<MessageKey, string> = {
   'sequence.orderStart': 'Groupées par point de départ',
   'sequence.startGroupTrench': 'Trench',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Autres départs',
+  'sequence.startGroupOther': 'Autres',
   'sequence.joinFix': 'Corrigez la jonction dans PathPlanner ou Choreo, puis réimportez le parcours.',
   'sequence.overAuto': 'Se termine à {t} s, après la période autonome de {auto} s.',
   'sequence.invalid': 'Saisissez un temps de début fini et non négatif.',

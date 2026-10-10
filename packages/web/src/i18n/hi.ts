@@ -19,7 +19,7 @@ export const hi = {
   'sequence.orderStart': 'प्रारंभ बिंदु के अनुसार समूह',
   'sequence.startGroupTrench': 'खाई',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'अन्य प्रारंभ',
+  'sequence.startGroupOther': 'अन्य',
   'sequence.joinFix': 'PathPlanner या Choreo में जोड़ ठीक करें और मार्ग फिर से आयात करें।',
   'sequence.overAuto': '{auto} सेकंड की ऑटोनॉमस अवधि के बाद, {t} सेकंड पर समाप्त होता है।',
   'sequence.invalid': 'एक परिमित, गैर-ऋणात्मक आरंभ समय दर्ज करें।',

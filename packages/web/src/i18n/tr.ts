@@ -25,7 +25,7 @@ export const tr: Record<MessageKey, string> = {
   'sequence.orderStart': 'Başlangıca göre gruplu',
   'sequence.startGroupTrench': 'Trench',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Diğer başlangıçlar',
+  'sequence.startGroupOther': 'Diğer',
   'sequence.joinFix': 'Birleşimi PathPlanner veya Choreo’da düzeltin ve rotayı yeniden içe aktarın.',
   'sequence.overAuto': '{auto} sn’lik otonom sürenin sonrasında, {t} sn’de biter.',
   'sequence.invalid': 'Sonlu, negatif olmayan bir başlangıç zamanı girin.',

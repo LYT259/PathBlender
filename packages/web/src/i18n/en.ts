@@ -337,7 +337,7 @@ export const en = {
   'sequence.orderStart': 'Grouped by start',
   'sequence.startGroupTrench': 'Trench',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Other starts',
+  'sequence.startGroupOther': 'Other',
   'sequence.joinFix': 'Fix the join in PathPlanner or Choreo and re-import the route.',
   'sequence.overAuto': 'Finishes at {t} s, after the {auto} s autonomous period.',
   'sequence.invalid': 'Enter a finite, non-negative start time.',

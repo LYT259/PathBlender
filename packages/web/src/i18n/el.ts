@@ -19,7 +19,7 @@ export const el = {
   'sequence.orderStart': 'Ομαδοποίηση κατά εκκίνηση',
   'sequence.startGroupTrench': 'Τάφρος',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Άλλες εκκινήσεις',
+  'sequence.startGroupOther': 'Άλλες',
   'sequence.joinFix': 'Διορθώστε την ένωση στο PathPlanner ή το Choreo και εισαγάγετε ξανά τη διαδρομή.',
   'sequence.overAuto': 'Ολοκληρώνεται στα {t} s, μετά την αυτόνομη περίοδο των {auto} s.',
   'sequence.invalid': 'Εισαγάγετε πεπερασμένο, μη αρνητικό χρόνο έναρξης.',

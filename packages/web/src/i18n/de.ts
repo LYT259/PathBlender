@@ -19,7 +19,7 @@ export const de = {
   'sequence.orderStart': 'Nach Start gruppiert',
   'sequence.startGroupTrench': 'Trench',
   'sequence.startGroupHub': 'Hub',
-  'sequence.startGroupOther': 'Weitere Starts',
+  'sequence.startGroupOther': 'Weitere',
   'sequence.joinFix': 'Korrigieren Sie den Übergang in PathPlanner oder Choreo und importieren Sie die Route erneut.',
   'sequence.overAuto': 'Endet bei {t} s, nach der {auto} s langen autonomen Phase.',
   'sequence.invalid': 'Geben Sie eine endliche, nicht negative Startzeit ein.',
