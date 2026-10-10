@@ -20,8 +20,9 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`);
 };
 
-// The 40 selectable UI languages (zh-tw withdrew from the picker 2026-10-07).
-const LANGS = ['en','zh','zh-hk','ar','az','bg','bs','cs','da','de','el','es','fil','fr',
+// The 41 selectable UI languages (zh-tw withdrew from the picker 2026-10-07;
+// zh-hant joined as the region-neutral Traditional row 2026-10-10).
+const LANGS = ['en','zh','zh-hant','zh-hk','ar','az','bg','bs','cs','da','de','el','es','fil','fr',
   'he','hi','hr','hu','hy','id','it','ja','ko','mk','mr','ms','nb','nl','nn','pl','pt-BR','ro',
   'rw','sq','sr','sv','ta','tr','uk','vi'];
 /** comma-decimal languages where runtime numbers must use the comma. */

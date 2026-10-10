@@ -43,6 +43,7 @@ import { tr } from '../src/i18n/tr';
 import { uk } from '../src/i18n/uk';
 import { vi } from '../src/i18n/vi';
 import { zh } from '../src/i18n/zh';
+import { zhHant } from '../src/i18n/zh-hant';
 import { zhHk, zhHkOverrides } from '../src/i18n/zh-hk';
 import { zhTw } from '../src/i18n/zh-tw';
 import { I18nProvider, isRtl, LANGUAGES, LANG_META, langLabel, langFromTags, type Lang } from '../src/i18n';
@@ -60,7 +61,7 @@ import { I18nProvider, isRtl, LANGUAGES, LANG_META, langLabel, langFromTags, typ
 const DICTS: Record<string, Record<string, string>> = {
   en, ar, az, bg, bs, cs, da, de, el, es, fil, fr, he, hi, hr, hu, hy, id, it: itDict,
   ja, ko, mk, mr, ms, nb, nl, nn, pl, 'pt-BR': ptBR, ro, rw, sq, sr, sv, ta,
-  tr, uk, vi, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  tr, uk, vi, zh, 'zh-hant': zhHant, 'zh-hk': zhHk, 'zh-tw': zhTw,
 };
 const CODES = Object.keys(DICTS) as (keyof typeof DICTS)[];
 const KEYS = Object.keys(en);
@@ -179,7 +180,10 @@ describe('i18n dictionaries', () => {
     'zh': ['sequence.startGroupHub',
     'sequence.startGroupTrench'],
     'zh-hk': ["sequence.startGroupHub","sequence.startGroupTrench"],
-    // Ships as the zh-hk base, not as a picker row — see the DICTS comment.
+    // zh-hant is a snapshot of zh-tw (its own picker row since 2026-10-10);
+    // zh-tw ships as the zh-hk base, still without a picker row.
+    'zh-hant': ['sequence.startGroupHub',
+    'sequence.startGroupTrench'],
     'zh-tw': ['sequence.startGroupHub',
     'sequence.startGroupTrench'],
   } satisfies Record<Exclude<Lang, 'en'> | 'zh-tw', readonly MessageKey[]>;
@@ -232,7 +236,7 @@ describe('language picker', () => {
       // English-name sort of the shipped registry — the stable, engine-
       // independent order the picker promises (2026-10-04, batch 3+4;
       // 2026-10-07 dropped the zh-tw row).
-      'sq', 'ar', 'hy', 'az', 'bs', 'bg', 'zh', 'zh-hk', 'hr', 'cs',
+      'sq', 'ar', 'hy', 'az', 'bs', 'bg', 'zh', 'zh-hant', 'zh-hk', 'hr', 'cs',
       'da', 'nl', 'en', 'fil', 'fr', 'de', 'el', 'he', 'hi', 'hu', 'id', 'it',
       'ja', 'rw', 'ko', 'mk', 'ms', 'mr', 'nb', 'nn', 'pl', 'pt-BR', 'ro', 'sr',
       'es', 'sv', 'ta', 'tr', 'uk', 'vi',
@@ -247,7 +251,7 @@ describe('language picker', () => {
     // zh-tw still ships as the zh-hk base but must not be selectable
     // (withdrawn 2026-10-07, fifth batch pending).
     expect(LANGUAGES).not.toContain('zh-tw');
-    expect(LANGUAGES).toHaveLength(CODES.length); // 40 selectable + the 'system' mode
+    expect(LANGUAGES).toHaveLength(CODES.length); // 41 selectable + the 'system' mode
   });
 
 it('labels each language in its own language', () => {
@@ -396,20 +400,19 @@ describe('system language detection', () => {
     expect(langFromTags(['tl'])).toBe('fil');
   });
 
-  it('routes every Traditional Chinese reader to Hong Kong, Macau included', () => {
+  it('routes Traditional readers by region: HK/MO to Hong Kong, the rest to generic', () => {
     // Report §7.2 v1.23 routed TW and a bare `zh-Hant` to zh-tw; the Taiwan
     // picker row was withdrawn on 2026-10-07 (public-round decision, fifth
-    // batch pending), so every Traditional reader — HK, MO, TW and region-less
-    // Hant — now reads the Hong Kong dictionary. The zh-tw dictionary still
-    // ships underneath it (zh-hk is an override table), it just is not
-    // selectable.
+    // batch pending). Since 2026-10-10 the region-neutral zh-hant row ships,
+    // so HK/MO keep the Hong Kong dictionary while TW and region-less Hant
+    // read the generic Traditional dictionary (zh-tw wording, no HK pins).
     expect(langFromTags(['zh-HK'])).toBe('zh-hk');
     expect(langFromTags(['zh-Hant-HK'])).toBe('zh-hk');
     expect(langFromTags(['zh-MO'])).toBe('zh-hk');
     expect(langFromTags(['zh-Hant-MO'])).toBe('zh-hk');
-    expect(langFromTags(['zh-TW'])).toBe('zh-hk');
-    expect(langFromTags(['zh-Hant-TW'])).toBe('zh-hk');
-    expect(langFromTags(['zh-Hant'])).toBe('zh-hk');
+    expect(langFromTags(['zh-TW'])).toBe('zh-hant');
+    expect(langFromTags(['zh-Hant-TW'])).toBe('zh-hant');
+    expect(langFromTags(['zh-Hant'])).toBe('zh-hant');
     // Hans always wins over the region: a Simplified-Chrome install in Hong
     // Kong (`zh-Hans-HK`) must not open in Traditional.
     expect(langFromTags(['zh-Hans-HK'])).toBe('zh');
@@ -447,15 +450,17 @@ describe('RTL (Arabic and Hebrew)', () => {
     expect(document.documentElement.getAttribute('lang')).toBe('en');
   });
 
-  it('migrates a stored zh-tw choice to the Hong Kong dictionary, in place', () => {
+  it('migrates a stored zh-tw choice to the generic Traditional dictionary, in place', () => {
     // The Taiwan row was withdrawn (2026-10-07, fifth batch pending). A user
     // who had picked it must relaunch into Traditional Chinese — not a blank
     // dictionary, not English, and not a silent 'system' that starts
-    // following the OS language instead of the choice they made.
+    // following the OS language instead of the choice they made. Since the
+    // generic zh-hant row ships (2026-10-10) it is the migration target: it
+    // carries the same wording the Taiwan row had.
     localStorage.setItem('pb.lang', 'zh-tw');
     render(createElement(I18nProvider, null, createElement('div')));
-    expect(document.documentElement.getAttribute('lang')).toBe('zh-hk');
-    expect(localStorage.getItem('pb.lang')).toBe('zh-hk');
+    expect(document.documentElement.getAttribute('lang')).toBe('zh-hant');
+    expect(localStorage.getItem('pb.lang')).toBe('zh-hant');
     localStorage.clear();
   });
 });

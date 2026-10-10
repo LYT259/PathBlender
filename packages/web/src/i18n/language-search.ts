@@ -1,7 +1,7 @@
 /**
  * Offline language search behind the picker (LanguagePicker.tsx).
  *
- * The promise: type a target language's name in ANY of the 40 UI languages —
+ * The promise: type a target language's name in ANY of the 41 UI languages —
  * 德语, German, Deutsch, allemand, ドイツ語 — and it matches, whichever
  * language the interface itself happens to speak. The translated names come
  * from the committed CLDR matrix (language-names.ts); the registry's English
