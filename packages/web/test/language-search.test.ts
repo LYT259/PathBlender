@@ -55,7 +55,7 @@ describe('language search', () => {
   });
 
   it('results keep the picker order — never re-sorted per query', () => {
-    expect(searchLanguages('chinese')).toEqual(['zh', 'zh-hk']);
+    expect(searchLanguages('chinese')).toEqual(['zh', 'zh-hant', 'zh-hk']);
   });
 
   it('folding: case, accents, width, whitespace and partials all match', () => {
@@ -93,7 +93,7 @@ describe('language search', () => {
   });
 
   it('a language the app does not ship (Russian) finds nothing', () => {
-    // 40 languages ship; Russian is not one of them. Its names in every
+    // 41 languages ship; Russian is not one of them. Its names in every
     // script must surface no row — the list only offers real choices.
     expect(searchLanguages('Russian')).toEqual([]);
     expect(searchLanguages('русский')).toEqual([]);

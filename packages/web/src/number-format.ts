@@ -73,6 +73,7 @@ const TAGS: Record<Lang, string> = {
   uk: 'uk',
   vi: 'vi',
   zh: 'zh',
+  'zh-hant': 'zh-Hant',
   'zh-hk': 'zh-HK',
 };
 
