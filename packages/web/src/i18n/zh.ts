@@ -5,6 +5,8 @@ export const zh: Record<MessageKey, string> = {
   "canvas.webglUnavailable": "WebGL 不可用",
   'sequence.start': '开始',
   'sequence.end': '结束',
+  'sequence.afterPrev': '距上一条',
+  'sequence.beforeNext': '距下一条',
   'sequence.seconds': '秒',
   'sequence.count': '{n} 段',
   'sequence.delay': '起步延迟',

@@ -3,6 +3,8 @@ export const fil = {
   "canvas.webglUnavailable": "Hindi magagamit ang WebGL",
   'sequence.start': 'Simula',
   'sequence.end': 'Dulo',
+  'sequence.afterPrev': 'Pagkatapos ng nauna',
+  'sequence.beforeNext': 'Bago ang susunod',
   'sequence.seconds': 's',
   'sequence.count': '{n} na segment',
   'sequence.delay': 'Pagkaantala sa simula',

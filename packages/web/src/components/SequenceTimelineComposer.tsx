@@ -59,6 +59,10 @@ interface Drag {
   y: number;
   moved: boolean;
   candidate?: TimelineClip;
+  /** A 'move' drag currently flies OUTSIDE the lane (user 2026-10-10): no
+   *  in-lane candidate exists; releasing over the library removes the clip,
+   *  releasing anywhere else off-lane puts it back where it came from. */
+  offLane?: boolean;
 }
 const formatStart = (value: number) => Number.isInteger(value) ? value.toFixed(1) : String(value);
 const finish = (clips: TimelineClip[]) => Math.max(0, ...clips.map((clip) => clip.startS + clip.durationS));
@@ -78,6 +82,9 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   // lane the in-lane ghost takes over (user 2026-10-08) and the badge yields.
   const [dragPoint, setDragPoint] = useState<{ x: number; y: number } | null>(null);
   const laneRef = useRef<HTMLDivElement>(null);
+  // The route library is the delete target for drag-out (user 2026-10-10):
+  // releasing a flying placed clip over it removes the clip.
+  const libraryRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<Drag | null>(null);
@@ -320,6 +327,17 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     // The follow-along badge rides the pointer for library drags — the user
     // must see WHICH route is being dragged, inside the lane or out of it.
     if (drag.kind === 'add') setDragPoint({ x: event.clientX, y: event.clientY });
+    // Drag-OUT (user 2026-10-10): a placed clip dragged off its row band
+    // flies under the pointer as the SAME free-flight badge as dragging in —
+    // no in-lane candidate, no ghost. Releasing over the library removes the
+    // clip (handled on release); anywhere else off-lane puts it back where it
+    // came from. Re-entering the row resumes the normal sliding ghost.
+    if (drag.kind === 'move' && (event.clientY < rect.top || event.clientY > rect.bottom)) {
+      drag.offLane = true; drag.candidate = undefined;
+      setDragPoint({ x: event.clientX, y: event.clientY });
+      setGhost(null); return;
+    }
+    if (drag.kind === 'move') drag.offLane = false;
     const clip = drag.clip!;
     // Free flight, snap on release (user 2026-10-10): the drag carries the
     // EDITING robot's own library, so the drop target is never in question,
@@ -357,12 +375,35 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     setGhost({ robotId: activeId!, clip: candidate });
   }
   function cancelDrag() { dragRef.current = null; setGhost(null); setDragPoint(null); onPreviewRoute?.(null); }
+  /** Hit-test the route library — the "home" drop zone: a dragged-OUT clip
+   *  released there is removed, and a freshly dragged library route released
+   *  there cancels its add instead of placing anything (user 2026-10-10). */
+  function overLibrary(x: number, y: number): boolean {
+    const r = libraryRef.current?.getBoundingClientRect();
+    return !!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  }
   function switchRobot(id: string) { cancelDrag(); setMenu(null); setError(null); onSelect(id); }
   const ghostRoute = active.routes.find((route) => route.id === activeGhost?.routeId);
+  // Neighbour gaps for the selection bar (user 2026-10-10): how long this
+  // chosen leg waits after the previous one ends, and how long the next one
+  // waits after this ends. First/last legs show only the side that exists.
+  const chosenIndex = chosen ? activeClips.findIndex((clip) => clip.id === chosen.id) : -1;
+  const previousClip = chosenIndex > 0 ? activeClips[chosenIndex - 1] : undefined;
+  const nextClip = chosenIndex >= 0 && chosenIndex < activeClips.length - 1 ? activeClips[chosenIndex + 1] : undefined;
+  const gapBeforeS = chosen && previousClip ? chosen.startS - (previousClip.startS + previousClip.durationS) : undefined;
+  const gapAfterS = chosen && nextClip ? nextClip.startS - (chosen.startS + chosen.durationS) : undefined;
   return <section ref={rootRef} className="sequence-composer" aria-label={t('sequence.arrange')}
-    onPointerMove={move} onPointerUp={() => {
+    onPointerMove={move} onPointerUp={(event) => {
       const drag = dragRef.current;
-      if (drag?.moved && drag.robotId === activeId && drag.candidate) commit(drag.candidate);
+      if (drag?.moved && drag.robotId === activeId) {
+        // The library is "home": dropping a dragged-out placed clip there
+        // removes it, and dropping a freshly dragged library route back
+        // there cancels the add — nothing lands on the timeline (user
+        // 2026-10-10).
+        const home = overLibrary(event.clientX, event.clientY);
+        if (drag.kind === 'move' && drag.offLane && drag.clip && home) remove(drag.clip.id);
+        else if (drag.candidate && !(drag.kind === 'add' && home)) commit(drag.candidate);
+      }
       cancelDrag();
     }} onPointerCancel={cancelDrag} onLostPointerCapture={cancelDrag}
     onKeyDown={(event) => {
@@ -397,7 +438,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         <option value="full">{t('timeline.rangeFull')}</option>
         <option value="paths">{t('timeline.rangePaths')}</option>
       </SelectControl>} />
-    <div className="sequence-route-library">
+    <div className="sequence-route-library" ref={libraryRef}>
       {startRegions !== undefined && startRegions.length > 0 && anchorClip === undefined && <SelectControl className="timeline-range sequence-order" aria-label={t('sequence.orderLabel')} value={routeOrder}
         onValueChange={(value) => setRouteOrder(value as RouteOrder)}>
         <option value="name">{t('sequence.orderName')}</option>
@@ -524,7 +565,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       })}
     </div></div>
     {chosen && <div className="sequence-selection-bar">
-      <span className="sequence-selected-route">{active.routes.find((route) => route.id === chosen.routeId)?.relPath}</span>
+      <span className="sequence-selected-route">{active.routes.find((route) => route.id === chosen.routeId)?.relPath.split('/').at(-1)}</span>
       <label>{t('sequence.start')} <input key={`${activeId}:${chosen.id}:${chosen.startS}`} type="number" min="0" max={Math.max(0, autoPeriodS - chosen.durationS)} step="any" defaultValue={formatStart(chosen.startS)}
         aria-label={t('sequence.start')} onBlur={(event) => {
           const raw = event.currentTarget.value.trim(); const value = raw === '' ? NaN : Number(raw);
@@ -542,6 +583,8 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
           }
         }} /> s</label>
       <span>{t('sequence.end')} <b>{n(chosen.startS + chosen.durationS, 2)}s</b></span>
+      {gapBeforeS !== undefined && <span>{t('sequence.afterPrev')} <b>{n(gapBeforeS, 2)}s</b></span>}
+      {gapAfterS !== undefined && <span>{t('sequence.beforeNext')} <b>{n(gapAfterS, 2)}s</b></span>}
     </div>}
     {menu?.robotId === activeId && <div ref={menuRef} className="sequence-clip-menu" role="menu" aria-label={t('sequence.arrange')}
       style={{ left: Math.max(8, Math.min(menu.x, window.innerWidth - 188)), top: Math.max(8, Math.min(menu.y, window.innerHeight - 54)) }}
@@ -549,14 +592,16 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       <button type="button" role="menuitem" onClick={() => remove(menu.clipId)}><Icon name="trash" size={14} />{t('sequence.removeRoute')}</button>
     </div>}
     <div className="sequence-composer-footnote"><span role="status" className="sequence-error">{error ?? ''}</span></div>
-    {dragPoint && dragRef.current?.kind === 'add' && dragRef.current.clip && !activeGhost && (() => {
-      // Follow-along copy of the dragged library route — the free-flight
-      // drag UI (user 2026-10-10): off the lane the route rides the pointer
-      // itself, both axes free, and releasing snaps it into the editing
-      // robot's lane at the pointer's time — never a failed drop (edge
-      // overshoots snap to the nearer edge). Inside the lane the ghost
-      // takes over and the badge hides — ghost + badge together would read
-      // as two copies of the same path (user 2026-10-08).
+    {dragPoint && dragRef.current?.clip && !activeGhost && (() => {
+      // Follow-along copy of the dragged route — the free-flight drag UI
+      // (user 2026-10-10), shared by BOTH directions: a route dragged FROM
+      // the library and a placed clip dragged OUT of the lane. Off the lane
+      // the route rides the pointer itself, both axes free; releasing snaps
+      // a library route into the editing lane (never a failed drop — edge
+      // overshoots snap to the nearer edge) and removes a dragged-out clip
+      // when it lands back on the library. Inside the lane the ghost takes
+      // over and the badge hides — ghost + badge together would read as two
+      // copies of the same path (user 2026-10-08).
       const source = active.routes.find((route) => route.id === dragRef.current!.clip!.routeId);
       return <div className="sequence-drag-badge" aria-hidden="true" style={{ left: dragPoint.x, top: dragPoint.y }}>
         <span>{source ? routeLabel(source, active.routes) : dragRef.current.clip.routeId}</span><small>{source ? `${n(source.trajectory.durationS, 2)}s` : ''}</small>

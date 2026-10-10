@@ -9,6 +9,8 @@ export const tr: Record<MessageKey, string> = {
   "canvas.webglUnavailable": "WebGL kullanılamıyor",
   'sequence.start': 'Başlangıç',
   'sequence.end': 'Bitiş',
+  'sequence.afterPrev': 'Öncekinden sonra',
+  'sequence.beforeNext': 'Sonrakinden önce',
   'sequence.seconds': 'sn',
   'sequence.count': '{n} segment',
   'sequence.delay': 'Başlangıç gecikmesi',

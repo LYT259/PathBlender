@@ -3,6 +3,8 @@ export const sv = {
   "canvas.webglUnavailable": "WebGL är inte tillgängligt",
   'sequence.start': 'Start',
   'sequence.end': 'Slut',
+  'sequence.afterPrev': 'Efter föregående',
+  'sequence.beforeNext': 'Före nästa',
   'sequence.seconds': 's',
   'sequence.count': '{n} segment',
   'sequence.delay': 'Startfördröjning',
