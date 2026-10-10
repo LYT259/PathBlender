@@ -152,10 +152,19 @@ describe('live arrangement editing', () => {
     // Starts AT the match beginning: the first wait is exactly zero.
     expect(sequenceViewFor(commit.mock.calls[0]![0]).segments[0]!.waitBeforeS).toBe(0);
   });
-  it('still discards a library drop past the lane right edge — no legal start exists there', () => {
+  it('snaps a library drop past the right edge against the auto end — a drop never fails (user 2026-10-10)', () => {
     const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
+    // Nearest-edge snap: past the right edge the route butts against the
+    // auto end (B, 3 s → 17–20) — the same end clamp a placed clip gets.
     drag(screen.getByRole('button', { name: 'B: 3.00 s' }), 20, 1100, 30);
-    expect(commit).not.toHaveBeenCalled(); expect(clips()).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'B, 17.00–20.00 s' })).toBeInTheDocument();
+    expect(commit).toHaveBeenCalledTimes(1);
+  });
+  it('right-snaps an exact-fit route flush at 0 when the auto equals the route length', () => {
+    const commit = vi.fn(); render(<LiveHarness robot={applySequenceSegments(fixture(), [])} autoPeriodS={3} onCommit={commit} />); geometry();
+    drag(screen.getByRole('button', { name: 'B: 3.00 s' }), 20, 1200, 30);
+    expect(screen.getByRole('button', { name: 'B, 0.00–3.00 s' })).toBeInTheDocument();
+    expect(clips()[0]!.querySelector('small')).toHaveTextContent('3.00s'); // full length, no cut
   });
   it.each([15, 20])('clamps a moved route to the %s-second season boundary', (limit) => {
     const commit = vi.fn(); render(<LiveHarness autoPeriodS={limit} onCommit={commit} />); geometry();
@@ -409,18 +418,18 @@ describe('lane scrub, chosen-delete, drag badge and occupancy gating', () => {
     fireEvent.pointerMove(source, { clientX: 500, clientY: 130 });
     expect(document.querySelector('.sequence-ghost')).not.toBeNull();
     expect(document.querySelector('.sequence-drag-badge')).toBeNull();
-    // Past the RIGHT edge no legal start exists: badge only, and a release
-    // there still discards.
+    // Past the RIGHT edge the ghost shows the end-aligned slot: a drop never
+    // fails — releasing there butts the route against the auto end.
     fireEvent.pointerMove(source, { clientX: 1100, clientY: 130 });
-    expect(document.querySelector('.sequence-ghost')).toBeNull();
-    expect(document.querySelector('.sequence-drag-badge')).not.toBeNull();
+    expect(document.querySelector('.sequence-ghost')).not.toBeNull();
     fireEvent.pointerUp(source, { clientX: 1100, clientY: 130 });
-    expect(commit).not.toHaveBeenCalled();
+    expect(commit).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'B, 17.00–20.00 s' })).toBeInTheDocument();
     // Releasing OFF the lane snaps the route back into it at the pointer's time.
     fireEvent.pointerDown(source, { button: 0, clientX: 20, clientY: 30 });
     fireEvent.pointerMove(source, { clientX: 500, clientY: 250 });
     fireEvent.pointerUp(source, { clientX: 500, clientY: 250 });
-    expect(commit).toHaveBeenCalledTimes(1);
+    expect(commit).toHaveBeenCalledTimes(2);
     expect(screen.getByRole('button', { name: 'B, 10.00–13.00 s' })).toBeInTheDocument();
     expect(document.querySelector('.sequence-drag-badge')).toBeNull();
   });

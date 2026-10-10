@@ -320,26 +320,27 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     // The follow-along badge rides the pointer for library drags — the user
     // must see WHICH route is being dragged, inside the lane or out of it.
     if (drag.kind === 'add') setDragPoint({ x: event.clientX, y: event.clientY });
-    // Free flight, snap on release (user 2026-10-10): the drag carries the
-    // EDITING robot's own library, so the drop target is never in question.
-    // Off the lane the dragged route flies under the pointer — both axes
-    // free — and releasing snaps it into the editing lane at the pointer's
-    // time; a left overshoot clamps to 0 s, the same clamp a placed clip
-    // gets from boundedClipStart. Only past the right edge, where no legal
-    // start time exists at all, does a drop still carry nothing.
-    if (drag.kind === 'add' && event.clientX > rect.right) {
-      drag.candidate = undefined; setGhost(null); return;
-    }
     const clip = drag.clip!;
+    // Free flight, snap on release (user 2026-10-10): the drag carries the
+    // EDITING robot's own library, so the drop target is never in question,
+    // and a drop NEVER fails. Off the lane the dragged route flies under the
+    // pointer — both axes free. Overshooting an edge horizontally snaps to
+    // the NEARER one: left → the route starts at 0 s; right → it butts
+    // against the auto end (latest legal start) — the same clamps a placed
+    // clip gets from boundedClipStart, so both gestures now agree. Inside
+    // the lane the pointer time rules as before.
+    const snappedRight = drag.kind === 'add' && event.clientX > rect.right;
     const raw = drag.kind === 'add' ? (Math.max(rect.left, event.clientX) - rect.left) / rect.width * axis
       : clip.startS + (event.clientX - drag.x) / rect.width * axis;
     // A new drop lands where the pointer is — no whole-route reservation.
     // Partial execution (user 2026-10-08): when less auto time remains than
-    // the route needs, the candidate is cut to the remaining seconds
-    // (playS); a placed leg being MOVED still keeps its full length and
-    // slides instead, as before.
+    // the route needs (including a route longer than the whole auto, which
+    // a right snap parks at 0), the candidate is cut to the remaining
+    // seconds (playS); a placed leg being MOVED still keeps its full length
+    // and slides instead, as before.
     const startS = drag.kind === 'add'
-      ? Math.min(axis, Math.max(0, raw))
+      ? snappedRight ? Math.max(0, autoPeriodS - clip.durationS)
+        : Math.min(axis, Math.max(0, raw))
       : boundedClipStart(raw, activeClips, clip, 8 / rect.width * axis, autoPeriodS);
     const candidate: TimelineClip = drag.kind === 'add'
       ? autoPeriodS - startS < clip.durationS
@@ -552,10 +553,10 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       // Follow-along copy of the dragged library route — the free-flight
       // drag UI (user 2026-10-10): off the lane the route rides the pointer
       // itself, both axes free, and releasing snaps it into the editing
-      // robot's lane at the pointer's time. Inside the lane the ghost takes
-      // over and the badge hides — ghost + badge together would read as two
-      // copies of the same path (user 2026-10-08). Past the right edge no
-      // legal start exists and the drop carries nothing.
+      // robot's lane at the pointer's time — never a failed drop (edge
+      // overshoots snap to the nearer edge). Inside the lane the ghost
+      // takes over and the badge hides — ghost + badge together would read
+      // as two copies of the same path (user 2026-10-08).
       const source = active.routes.find((route) => route.id === dragRef.current!.clip!.routeId);
       return <div className="sequence-drag-badge" aria-hidden="true" style={{ left: dragPoint.x, top: dragPoint.y }}>
         <span>{source ? routeLabel(source, active.routes) : dragRef.current.clip.routeId}</span><small>{source ? `${n(source.trajectory.durationS, 2)}s` : ''}</small>
