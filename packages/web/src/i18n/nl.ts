@@ -14,6 +14,8 @@ export const nl: Record<MessageKey, string> = {
   "canvas.webglUnavailable": "WebGL is niet beschikbaar",
   'sequence.start': 'Start',
   'sequence.end': 'Einde',
+  'sequence.afterPrev': 'Na vorige',
+  'sequence.beforeNext': 'Voor volgende',
   'sequence.seconds': 's',
   'sequence.count': '{n} segmenten',
   'sequence.delay': 'Startvertraging',

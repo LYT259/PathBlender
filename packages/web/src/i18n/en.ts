@@ -321,6 +321,8 @@ export const en = {
   'sequence.reference': 'Click to switch',
   'sequence.start': 'Start',
   'sequence.end': 'End',
+  'sequence.afterPrev': 'After previous',
+  'sequence.beforeNext': 'Before next',
   'sequence.seconds': 's',
   'sequence.count': '{n} segments',
   'sequence.delay': 'Start delay',

@@ -3,6 +3,8 @@ export const hr = {
   "canvas.webglUnavailable": "WebGL nije dostupan",
   'sequence.start': 'Početak',
   'sequence.end': 'Kraj',
+  'sequence.afterPrev': 'Nakon prethodne',
+  'sequence.beforeNext': 'Prije sljedeće',
   'sequence.seconds': 's',
   'sequence.count': '{n} segmenata',
   'sequence.delay': 'Početno kašnjenje',

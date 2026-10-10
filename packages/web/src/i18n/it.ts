@@ -3,6 +3,8 @@ export const it = {
   "canvas.webglUnavailable": "WebGL non disponibile",
   'sequence.start': 'Inizio',
   'sequence.end': 'Fine',
+  'sequence.afterPrev': 'Dopo la precedente',
+  'sequence.beforeNext': 'Prima della successiva',
   'sequence.seconds': 's',
   'sequence.count': '{n} segmenti',
   'sequence.delay': 'Ritardo iniziale',

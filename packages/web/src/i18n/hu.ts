@@ -3,6 +3,8 @@ export const hu = {
   "canvas.webglUnavailable": "A WebGL nem érhető el",
   'sequence.start': 'Kezdés',
   'sequence.end': 'Vég',
+  'sequence.afterPrev': 'Az előző után',
+  'sequence.beforeNext': 'A következő előtt',
   'sequence.seconds': 'mp',
   'sequence.count': '{n} szakasz',
   'sequence.delay': 'Kezdési késleltetés',

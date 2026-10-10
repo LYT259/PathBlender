@@ -3,6 +3,8 @@ export const bg = {
   "canvas.webglUnavailable": "WebGL не е наличен",
   'sequence.start': 'Начало',
   'sequence.end': 'Край',
+  'sequence.afterPrev': 'След предишната',
+  'sequence.beforeNext': 'Пред следващата',
   'sequence.seconds': 'с',
   'sequence.count': '{n} сегмента',
   'sequence.delay': 'Начално закъснение',

@@ -3,6 +3,8 @@ export const hi = {
   "canvas.webglUnavailable": "WebGL उपलब्ध नहीं है",
   'sequence.start': 'शुरुआत',
   'sequence.end': 'समाप्ति',
+  'sequence.afterPrev': 'पिछले के बाद',
+  'sequence.beforeNext': 'अगले से पहले',
   'sequence.seconds': 'से',
   'sequence.count': '{n} खंड',
   'sequence.delay': 'शुरुआती विलंब',
