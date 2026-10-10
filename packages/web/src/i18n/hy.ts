@@ -3,6 +3,8 @@ export const hy = {
   "canvas.webglUnavailable": "WebGL-ը հասանելի չէ",
   'sequence.start': 'Սկիզբ',
   'sequence.end': 'Ավարտ',
+  'sequence.afterPrev': 'Նախորդից հետո',
+  'sequence.beforeNext': 'Հաջորդից առաջ',
   'sequence.seconds': 'վ',
   'sequence.count': '{n} հատված',
   'sequence.delay': 'Մեկնարկի ուշացում',

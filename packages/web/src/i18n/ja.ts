@@ -15,6 +15,8 @@ export const ja: Record<MessageKey, string> = {
   "canvas.webglUnavailable": "WebGL を利用できません",
   'sequence.start': '開始',
   'sequence.end': '終了',
+  'sequence.afterPrev': '前のルートから',
+  'sequence.beforeNext': '次のルートまで',
   'sequence.seconds': '秒',
   'sequence.count': '{n} セグメント',
   'sequence.delay': '開始遅延',

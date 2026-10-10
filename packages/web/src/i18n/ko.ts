@@ -14,6 +14,8 @@ export const ko: Record<MessageKey, string> = {
   "canvas.webglUnavailable": "WebGL을 사용할 수 없습니다",
   'sequence.start': '시작',
   'sequence.end': '종료',
+  'sequence.afterPrev': '이전 경로 뒤',
+  'sequence.beforeNext': '다음 경로 전',
   'sequence.seconds': '초',
   'sequence.count': '{n}개 구간',
   'sequence.delay': '시작 지연',

@@ -61,6 +61,12 @@ const addC = () => fireEvent.click(screen.getByRole('button', { name: /^C: \d+\.
 function geometry() {
   vi.spyOn(activeLane(), 'getBoundingClientRect').mockReturnValue({ left: 0, top: 100, right: 1000, bottom: 194, width: 1000, height: 94, x: 0, y: 100, toJSON: () => {} });
 }
+/** The route library sits above the lanes — the drop zone that deletes a
+ *  dragged-out clip (user 2026-10-10). */
+function libraryGeometry() {
+  vi.spyOn(document.querySelector('.sequence-route-library') as HTMLElement, 'getBoundingClientRect')
+    .mockReturnValue({ left: 0, top: 0, right: 1000, bottom: 90, width: 1000, height: 90, x: 0, y: 0, toJSON: () => {} });
+}
 function drag(element: HTMLElement, fromX: number, toX: number, sourceY = 130, targetY = 130) {
   fireEvent.pointerDown(element, { button: 0, clientX: fromX, clientY: sourceY });
   fireEvent.pointerMove(element, { clientX: toX, clientY: targetY });
@@ -190,6 +196,36 @@ describe('live arrangement editing', () => {
     drag(screen.getByRole('button', { name: 'B: 3.00 s' }), 20, 955, 30);
     expect(commit).toHaveBeenCalledTimes(1);
     expect(activeEndT(commit.mock.calls[0]![0])).toBe(20);
+  });
+  it('shows only the file name in the selected-route bar (user 2026-10-10)', () => {
+    const base = fixture();
+    const robot = { ...base, routeOptions: base.routeOptions.map((option) => option.id === 'b' ? { ...option, relPath: '8814/FCeSt.traj' } : option) };
+    const commit = vi.fn(); render(<LiveHarness robot={robot} onCommit={commit} />);
+    fireEvent.click(screen.getByRole('button', { name: 'FCeSt: 3.00 s' }));
+    fireEvent.click(clips()[1]!); // choose the placed FCeSt leg
+    const bar = document.querySelector('.sequence-selected-route')!;
+    expect(bar).toHaveTextContent('FCeSt.traj');
+    expect(bar).not.toHaveTextContent('8814');
+  });
+  it('shows the waits to the previous and next legs in the selection bar (user 2026-10-10)', () => {
+    const robot = applySequenceSegments(fixture(), [
+      { id: 'first', routeId: 'a', waitBeforeS: 0 },  // 0–4
+      { id: 'middle', routeId: 'b', waitBeforeS: 2 }, // 6–9
+      { id: 'last', routeId: 'a', waitBeforeS: 5 },   // 14–18
+    ]);
+    render(<LiveHarness robot={robot} />);
+    const bar = () => document.querySelector('.sequence-selection-bar')!;
+    fireEvent.click(clips()[1]!); // middle: waits 2 s after the first, 5 s before the last
+    expect(bar().textContent).toContain('After previous');
+    expect(bar().textContent).toContain('2.00s');
+    expect(bar().textContent).toContain('Before next');
+    expect(bar().textContent).toContain('5.00s');
+    fireEvent.click(clips()[0]!); // first leg: nothing before it
+    expect(bar().textContent).not.toContain('After previous');
+    expect(bar().textContent).toContain('Before next');
+    fireEvent.click(clips()[2]!); // last leg: nothing after it
+    expect(bar().textContent).toContain('After previous');
+    expect(bar().textContent).not.toContain('Before next');
   });
   it('shows both gaps while dragging, updates before release and commits only once', () => {
     const robot = applySequenceSegments(fixture(), [
@@ -432,6 +468,34 @@ describe('lane scrub, chosen-delete, drag badge and occupancy gating', () => {
     expect(commit).toHaveBeenCalledTimes(2);
     expect(screen.getByRole('button', { name: 'B, 10.00–13.00 s' })).toBeInTheDocument();
     expect(document.querySelector('.sequence-drag-badge')).toBeNull();
+  });
+  it('dragging a placed clip out onto the library removes it — same flying badge (user 2026-10-10)', () => {
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry(); libraryGeometry();
+    const clip = clips()[0]!;
+    fireEvent.pointerDown(clip, { button: 0, clientX: 300, clientY: 130 });
+    // Off the lane the SAME free-flight badge rides the pointer — no ghost.
+    fireEvent.pointerMove(clip, { clientX: 300, clientY: 40 });
+    expect(document.querySelector('.sequence-ghost')).toBeNull();
+    const badge = document.querySelector('.sequence-drag-badge')!;
+    expect(badge.textContent).toContain('A');
+    fireEvent.pointerUp(clip, { clientX: 300, clientY: 40 });
+    expect(commit).toHaveBeenCalledTimes(1);
+    expect(clips()).toHaveLength(0);
+  });
+  it('dragging a placed clip off the lane and releasing elsewhere puts it back unchanged', () => {
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry(); libraryGeometry();
+    const clip = clips()[0]!;
+    fireEvent.pointerDown(clip, { button: 0, clientX: 300, clientY: 130 });
+    fireEvent.pointerMove(clip, { clientX: 500, clientY: 300 });
+    expect(document.querySelector('.sequence-drag-badge')).not.toBeNull();
+    fireEvent.pointerUp(clip, { clientX: 500, clientY: 300 });
+    expect(commit).not.toHaveBeenCalled();
+    expect(clips()).toHaveLength(1);
+  });
+  it('releasing a freshly dragged library route back onto the library cancels the add', () => {
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry(); libraryGeometry();
+    drag(screen.getByRole('button', { name: 'B: 3.00 s' }), 20, 300, 30, 40);
+    expect(commit).not.toHaveBeenCalled(); expect(clips()).toHaveLength(1);
   });
 
   it('grays the whole library while the playhead sits on an occupied stretch, restoring at the seam', () => {

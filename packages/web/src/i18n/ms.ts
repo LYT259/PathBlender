@@ -3,6 +3,8 @@ export const ms = {
   "canvas.webglUnavailable": "WebGL tidak tersedia",
   'sequence.start': 'Mula',
   'sequence.end': 'Tamat',
+  'sequence.afterPrev': 'Selepas sebelumnya',
+  'sequence.beforeNext': 'Sebelum seterusnya',
   'sequence.seconds': 's',
   'sequence.count': '{n} segmen',
   'sequence.delay': 'Kelewatan mula',

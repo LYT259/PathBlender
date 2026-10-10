@@ -11,6 +11,8 @@ export const fr: Record<MessageKey, string> = {
   "canvas.webglUnavailable": "WebGL indisponible",
   'sequence.start': 'Début',
   'sequence.end': 'Fin',
+  'sequence.afterPrev': 'Après la précédente',
+  'sequence.beforeNext': 'Avant la suivante',
   'sequence.seconds': 's',
   'sequence.count': '{n} segments',
   'sequence.delay': 'Délai de départ',
