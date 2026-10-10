@@ -7,7 +7,7 @@ import { useSessionHistory } from './session-history';
 import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
 import { isExampleRobot, refreshExampleRobots } from './example-robot';
 import { EXAMPLE_RELOADING, consumeExampleRetryFlag, loadWelcomeExample, prefetchWelcomeExample } from './example-loader';
-import { compareScenarios, remapColorblind } from '@pathblender/core';
+import { remapColorblind } from '@pathblender/core';
 import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
 import type { TeamOrderUI } from './components/TeamOrderUI';
@@ -399,11 +399,6 @@ function AppBody() {
   // either mix are all valid (user request 2026-10-07).
   const [showTrail, setShowTrail] = useState(true);
   const [showHeatmap, setShowHeatmap] = useState(true);
-  // A-B compare: first click snapshots the scenario, second reports deltas.
-  // abArmed mirrors the ref for the toolbar button's lit state — the ref
-  // holds the data, the state drives the render between the two clicks.
-  const abBaselineRef = useRef<SessionTrajectory[] | null>(null);
-  const [abArmed, setAbArmed] = useState(false);
   // Hidden robots are absent for checks too (user request 2026-10-04):
   // their conflict rings, bounds notes and panel entries disappear with
   // the robot and come back when it does — detection and display both
@@ -458,8 +453,6 @@ function AppBody() {
           pendingProfilesRef.current = [];
           importedFileStoreRef.current.clear();
           settingsFilesRef.current.clear();
-          abBaselineRef.current = null;
-          setAbArmed(false);
           setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(withColorblindPalette(restored.robots, colorblindRef.current)) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
           const ids = new Set(restored.robots.map((r) => r.trajectory.id));
           setSelectedId(
@@ -972,27 +965,6 @@ function AppBody() {
     canvasRef.current?.exportGif((ok) => flash(tr(ok ? 'toast.gifSaved' : 'toast.gifFailed'), ok ? 'ok' : 'error'));
   }, [view3D, flash, tr]);
 
-  const abToggle = useCallback(() => {
-    if (abBaselineRef.current === null) {
-      abBaselineRef.current = robots;
-      setAbArmed(true);
-      flash(tr('checks.abBaselineSet'));
-      return;
-    }
-    const result = compareScenarios(abBaselineRef.current, robots);
-    abBaselineRef.current = null;
-    setAbArmed(false);
-    if (result.pairs.length === 0) {
-      flash(tr('checks.abNoPairs'));
-      return;
-    }
-    const tightest = result.pairs[0]!;
-    flash(tr('checks.abDelta', {
-      d: n(Math.abs(tightest.deltaM), 2),
-      dir: tightest.deltaM >= 0 ? tr('checks.abSafer') : tr('checks.abTighter'),
-    }));
-  }, [robots, flash, tr, n]);
-
   // Native "Check for Updates…" and channel switches. The Rust shell owns
   // the channel→feed mapping (check_update); feed unreachable (offline, or
   // no release assets yet) reports 'failed' → the honest toast, not a fake
@@ -1031,10 +1003,6 @@ function AppBody() {
   const clearAll = useCallback(() => {
     exampleRequest.current += 1;
     setExampleLoading(false);
-    // A whole-scene reset voids any armed A-B baseline — the lit button
-    // must not outlive the scenario it snapshotted.
-    abBaselineRef.current = null;
-    setAbArmed(false);
     setRobots([]);
     pathTextsRef.current.clear();
     pendingProfilesRef.current = [];
@@ -1347,7 +1315,6 @@ function AppBody() {
     'style-schematic': () => selectStyle('schematic'),
     'style-rendered': () => selectStyle('rendered'),
     heatmap: () => setShowHeatmap((v) => !v),
-    'ab-compare': abToggle,
     'play-pause': () => playback.setPlaying(!playback.playing),
     rewind: () => { playback.setPlaying(false); setT(0); },
     'step-back': () => { playback.setPlaying(false); setT((v) => v - 0.5); },
@@ -1468,10 +1435,6 @@ function AppBody() {
         {/* Save moved to the File menu (2026-10-06): the menu bar is the
             complete entry point, so the workspace keeps only controls that
             benefit from sitting next to the field. */}
-        {/* A-B compare sits on the toolbar itself, not inside a menu (user
-            request 2026-10-10): one click arms the baseline — the button
-            stays lit and the tooltip says so — the next click reports. */}
-        {hasRobots && <button className={`tool-btn ab-action${abArmed ? ' on' : ''}`} aria-pressed={abArmed} title={abArmed ? tr('checks.abBaselineSet') : tr('actions.abCompare')} onClick={abToggle}>{tr('actions.abCompare')}</button>}
         {/* The ? help entry is back (removed with 0cef73b, restored
             2026-10-10): it opens the quick guide, whose footer carries the
             keyboard-shortcuts list — the old ⋯ menu item moved in there. */}
