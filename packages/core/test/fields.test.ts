@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Trajectory } from '../src';
-import { FIELDS, REBUILT_2026, fieldById, fieldImageWorldRect, makeCustomField, startsInAllianceZone, withFieldVariant } from '../src';
+import { FIELDS, REBUILT_2026, fieldById, fieldImageWorldRect, makeCustomField, routeStartRegion, startsInAllianceZone, withFieldVariant } from '../src';
 
 describe('FIELDS registry', () => {
   it('covers 2022 through 2026', () => {
@@ -223,6 +223,48 @@ describe('legal starting regions per season (first-leg gate, user 2026-10-08)', 
   it('never gates a trajectory without samples', () => {
     for (const id of ['rebuilt-2026', 'reefscape-2025']) {
       expect(startsInAllianceZone({ samples: [] } as unknown as Trajectory, zoneOf(id))).toBe(true);
+    }
+  });
+});
+
+describe('routeStartRegion (2026 grouping)', () => {
+  const regions = REBUILT_2026.startRegions;
+  const traj = (x: number, y = 4) =>
+    ({ samples: [{ t: 0, x, y, heading: 0, vx: 0, vy: 0, omega: 0 }] }) as unknown as Trajectory;
+  const at = (x: number, y: number) => routeStartRegion(traj(x, y), regions);
+
+  it('classes real under-arm TRENCH starts (11019 L1 spot and the 8814 staging 0.26 m short)', () => {
+    expect(at(4.42, 7.62)).toBe('trench');   // 11019 L1/L4/L6/L8, 8814 LC*
+    expect(at(3.97, 7.42)).toBe('trench');   // 11019 L11
+    expect(at(3.53, 7.66)).toBe('trench');   // 8814 FCeSt — bumper at the opening
+    expect(at(3.52, 7.61)).toBe('trench');   // 11019 L12 — inside the 0.40 m approach grace
+    expect(at(4.62, 0.64)).toBe('trench');   // lower arm opening center (trench tags 17/28)
+  });
+
+  it('classes pushed-against-HUB starts and nothing near them', () => {
+    expect(at(3.55, 4.02)).toBe('hub');      // 11019 M1/M3
+    expect(at(3.63, 4.01)).toBe('hub');      // 8814 MSm
+    expect(at(3.08, 5.57)).toBeUndefined();  // 11019 L5 cluster — mid-area, 1.33 m from the hub
+    expect(at(2.43, 4.04)).toBeUndefined();  // M2 — centerline, 1.6 m back
+  });
+
+  it('keeps the approach grace honest — 1.18 m short of the arm is NOT trench', () => {
+    expect(at(2.61, 6.89)).toBeUndefined();  // 8814 SCsS stages well before the trench
+    expect(at(1.20, 5.56)).toBeUndefined();  // 8814 StR — open alliance area
+  });
+
+  it('returns undefined for seasons without classes and for empty routes', () => {
+    expect(routeStartRegion(traj(4.42, 7.62), undefined)).toBeUndefined();
+    expect(routeStartRegion(traj(4.42, 7.62), [])).toBeUndefined();
+    expect(routeStartRegion({ samples: [] } as unknown as Trajectory, regions)).toBeUndefined();
+  });
+
+  it('only 2026 defines grouping classes today; every id has the shape web i18n keys use', () => {
+    for (const f of FIELDS) {
+      if (f.id !== REBUILT_2026.id) expect(f.startRegions).toBeUndefined();
+    }
+    for (const region of REBUILT_2026.startRegions ?? []) {
+      expect(region.id).toMatch(/^[a-z][a-zA-Z]*$/);
     }
   });
 });

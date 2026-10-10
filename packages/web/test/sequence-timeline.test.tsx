@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { useState } from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { activeEndT, checkSequenceJoins, makeSession, parseGhostAuto, samplePoseAt, type SessionTrajectory, type Trajectory } from '@pathblender/core';
+import { REBUILT_2026, activeEndT, checkSequenceJoins, makeSession, parseGhostAuto, samplePoseAt, type SessionTrajectory, type Trajectory } from '@pathblender/core';
 import { I18nProvider } from '../src/i18n';
 import { SequenceTimelineComposer } from '../src/components/SequenceTimelineComposer';
 import { applySequenceSegments, sequenceViewFor, type AutoSequenceSegment } from '../src/auto-sequence-state';
@@ -496,5 +496,79 @@ describe('grayed routes still preview; entering edit never pauses; range follows
     expectComboboxValue(select, 'paths');
     pickComboboxValue(select, 'full');
     expect(change).toHaveBeenCalledWith('full');
+  });
+});
+
+describe('route library "group by start" order (user 2026-10-09)', () => {
+  // One route per 2026 start class, two per class to prove within-group
+  // filename order. All three starts are inside the 2026 alliance zone so
+  // they share the draggable partition; names deliberately anti-alphabetical
+  // (Z* sorts before A* by filename) so grouped order cannot pass by accident.
+  const regions = REBUILT_2026.startRegions;
+  const zone = [{ xMinM: 0, xMaxM: 4.0284, yMinM: 0, yMaxM: 8.07 }];
+  const samplesFrom = (x: number, y: number): Trajectory['samples'] => [
+    { t: 0, x, y, heading: 0, vx: 0, vy: 0, omega: 0 },
+    { t: 2, x: x + 0.5, y, heading: 0, vx: 0, vy: 0, omega: 0 },
+  ];
+  const bare = (): Trajectory => ({ ...parseGhostAuto(raw, 'base.ghostauto'), durationS: 2 });
+  function groupedFixture(): SessionTrajectory {
+    const defs = [
+      { id: 'z-trench', relPath: 'Z-trench.ghostauto', x: 3.9, y: 7.5 },   // in-zone slice of the upper arm
+      { id: 'a-trench', relPath: 'A-trench.ghostauto', x: 3.53, y: 7.66 },
+      { id: 'z-hub', relPath: 'Z-hub.ghostauto', x: 3.55, y: 4.02 },       // pushed against the hub face
+      { id: 'a-hub', relPath: 'A-hub.ghostauto', x: 3.63, y: 4.01 },
+      { id: 'z-other', relPath: 'Z-other.ghostauto', x: 2.2, y: 2.0 },
+      { id: 'a-other', relPath: 'A-other.ghostauto', x: 1.2, y: 5.6 },
+    ];
+    // The app's library arrives filename-sorted (sortRoutes); mirror that
+    // so within-group order reflects the real contract.
+    const options = [...defs].sort((a, b) => a.relPath.localeCompare(b.relPath)).map((d) => ({
+      id: d.id,
+      relPath: d.relPath,
+      trajectory: { ...bare(), id: d.id, name: d.relPath.replace('.ghostauto', ''), durationS: 2, samples: samplesFrom(d.x, d.y) },
+    }));
+    const st = makeSession(options[0]!.trajectory);
+    st.routeId = options[0]!.id;
+    st.routeOptions = options;
+    return st;
+  }
+  const captions = () => [...document.querySelectorAll('.sequence-group-tag')].map((n) => n.textContent);
+  const labels = () => [...document.querySelectorAll('.sequence-route-source')].map((b) => b.getAttribute('aria-label')!.split(':')[0]);
+
+  it('clusters routes under Trench / Hub / Other captions, filename order inside', () => {
+    localStorage.setItem('pb.routeOrder', 'start');
+    localStorage.setItem('pb.lengthUnit', 'm');
+    const robot = applySequenceSegments(groupedFixture(), []);
+    render(<I18nProvider><SequenceTimelineComposer robots={[robot]} selectedId={robot.trajectory.id} onSelect={vi.fn()}
+      autoPeriodS={20} startZone={zone} startRegions={regions} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
+    expect(labels()).toEqual(['A-trench', 'Z-trench', 'A-hub', 'Z-hub', 'A-other', 'Z-other']);
+    expect(captions()).toEqual(['Trench', 'Hub', 'Other starts']);
+  });
+
+  it('stays plain alphabetical (no captions, no toggle) by default and without regions', () => {
+    localStorage.removeItem('pb.routeOrder');
+    localStorage.setItem('pb.lengthUnit', 'm');
+    const robot = applySequenceSegments(groupedFixture(), []);
+    const { rerender } = render(<I18nProvider><SequenceTimelineComposer robots={[robot]} selectedId={robot.trajectory.id} onSelect={vi.fn()}
+      autoPeriodS={20} startZone={zone} startRegions={regions} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
+    expect(labels()).toEqual(['A-hub', 'A-other', 'A-trench', 'Z-hub', 'Z-other', 'Z-trench']);
+    expect(captions()).toEqual([]);
+    // The toggle only exists in seasons with start classes.
+    rerender(<I18nProvider><SequenceTimelineComposer robots={[robot]} selectedId={robot.trajectory.id} onSelect={vi.fn()}
+      autoPeriodS={20} startZone={zone} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
+    expect(document.querySelector('.sequence-order')).toBeNull();
+  });
+
+  it('persists the user\u2019s order choice across launches', () => {
+    localStorage.removeItem('pb.routeOrder');
+    localStorage.setItem('pb.lengthUnit', 'm');
+    const robot = applySequenceSegments(groupedFixture(), []);
+    render(<I18nProvider><SequenceTimelineComposer robots={[robot]} selectedId={robot.trajectory.id} onSelect={vi.fn()}
+      autoPeriodS={20} startZone={zone} startRegions={regions} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
+    const order = document.querySelector('.sequence-order')!;
+    expectComboboxValue(order, 'name');
+    pickComboboxValue(order, 'start');
+    expect(labels()).toEqual(['A-trench', 'Z-trench', 'A-hub', 'Z-hub', 'A-other', 'Z-other']);
+    expect(localStorage.getItem('pb.routeOrder')).toBe('start');
   });
 });

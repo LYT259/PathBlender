@@ -25,6 +25,9 @@ export const zhHkOverrides: Partial<Record<MessageKey, string>> = {
   'updates.failed': '更新檢查失敗，請檢查網絡後重試',
   // "details": HK UI convention is 詳細資料; TW Microsoft uses 詳細資訊.
   'robots.selectPrompt': '選擇一台機器人查看詳細資料。',
+  // Official 2026 structure names: TW keeps "Hub" verbatim; HK convention
+  // prefers a Chinese word here (see sequence.startGroupHub in zh-tw).
+  'sequence.startGroupHub': '中樞',
 };
 
 /** What `DICTS` consumes: the Taiwan dictionary with the HK rows applied. */
