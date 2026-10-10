@@ -352,6 +352,7 @@ export const hi = {
   "menu.file": "फ़ाइल",
   "menu.edit": "संपादन",
   "menu.view": "देखें",
+  "menu.window": "विंडो",
   "menu.playback": "प्लेबैक",
   "menu.help": "सहायता",
   'menu.userGuide': "त्वरित गाइड",

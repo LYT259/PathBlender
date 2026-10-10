@@ -371,6 +371,7 @@ export const ko: Record<MessageKey, string> = {
   "menu.file": "파일",
   "menu.edit": "편집",
   "menu.view": "보기",
+  "menu.window": "윈도우",
   "menu.playback": "재생",
   "menu.help": "도움말",
   'menu.userGuide': "빠른 안내",

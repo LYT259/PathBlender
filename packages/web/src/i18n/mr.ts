@@ -352,6 +352,7 @@ export const mr = {
   "menu.file": "फाईल",
   "menu.edit": "संपादन",
   "menu.view": "पहा",
+  "menu.window": "विंडो",
   "menu.playback": "प्लेबॅक",
   "menu.help": "मदत",
   'menu.userGuide': "जलद मार्गदर्शक",

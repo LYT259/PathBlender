@@ -369,6 +369,7 @@ export const cs: Record<MessageKey, string> = {
   "menu.file": "Soubor",
   "menu.edit": "Úpravy",
   "menu.view": "Zobrazit",
+  "menu.window": "Okno",
   "menu.playback": "Přehrávání",
   "menu.help": "Nápověda",
   'menu.userGuide': "Rychlá příručka",

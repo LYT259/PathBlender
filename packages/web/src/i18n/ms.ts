@@ -352,6 +352,7 @@ export const ms = {
   "menu.file": "Fail",
   "menu.edit": "Sunting",
   "menu.view": "Paparan",
+  "menu.window": "Tetingkap",
   "menu.playback": "Main semula",
   "menu.help": "Bantuan",
   'menu.userGuide': "Panduan pantas",

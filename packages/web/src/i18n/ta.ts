@@ -352,6 +352,7 @@ export const ta = {
   "menu.file": "கோப்பு",
   "menu.edit": "திருத்து",
   "menu.view": "காட்சி",
+  "menu.window": "சாளரம்",
   "menu.playback": "இயக்கம்",
   "menu.help": "உதவி",
   'menu.userGuide': "விரைவான வழிகாட்டி",

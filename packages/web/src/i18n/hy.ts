@@ -349,6 +349,7 @@ export const hy = {
   "menu.file": "Ֆայլ",
   "menu.edit": "Խմբագրել",
   "menu.view": "Տեսք",
+  "menu.window": "Պատուհան",
   "menu.playback": "Վերարտադրում",
   "menu.help": "Օգնություն",
   'menu.userGuide': "Արագ ուղեցույց",

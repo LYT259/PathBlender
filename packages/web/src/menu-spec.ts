@@ -213,7 +213,7 @@ export function buildMenuSpec(ctx: MenuContext): MenuSection[] {
   ];
 
   const windowMenu: MenuSection = {
-    label: 'Window',
+    label: t('menu.window'),
     macOnly: true,
     items: [
       role('minimize', t('menu.minimize')),

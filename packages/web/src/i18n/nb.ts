@@ -348,6 +348,7 @@ export const nb = {
   "menu.file": "Arkiv",
   "menu.edit": "Rediger",
   "menu.view": "Vis",
+  "menu.window": "Vindu",
   "menu.playback": "Avspilling",
   "menu.help": "Hjelp",
   'menu.userGuide': "Hurtigguide",

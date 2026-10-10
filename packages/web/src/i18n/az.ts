@@ -348,6 +348,7 @@ export const az = {
   "menu.file": "Fayl",
   "menu.edit": "Redaktə",
   "menu.view": "Görünüş",
+  "menu.window": "Pəncərə",
   "menu.playback": "Oynatma",
   "menu.help": "Yardım",
   'menu.userGuide': "Sürətli bələdçi",

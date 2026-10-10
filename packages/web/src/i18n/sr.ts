@@ -348,6 +348,7 @@ export const sr = {
   "menu.file": "Datoteka",
   "menu.edit": "Uređivanje",
   "menu.view": "Prikaz",
+  "menu.window": "Prozor",
   "menu.playback": "Reprodukcija",
   "menu.help": "Pomoć",
   'menu.userGuide': "Kratki vodič",

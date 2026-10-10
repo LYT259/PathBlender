@@ -364,6 +364,7 @@ export const zhTw: Record<MessageKey, string> = {
   "menu.file": "檔案",
   "menu.edit": "編輯",
   "menu.view": "顯示",
+  "menu.window": "視窗",
   "menu.playback": "回放",
   "menu.help": "說明",
   'menu.userGuide': "快速指南",
