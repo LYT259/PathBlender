@@ -107,7 +107,7 @@ const cases: Array<[string, () => void]> = [
   }],
   ['occupancy heatmap on and off', () => {
     const group = within(screen.getByRole('group', { name: 'Overlays' }));
-    const box = group.getByRole('button', { name: 'Heatmap' });
+    const box = group.getByRole('button', { name: 'Occupancy zones' });
     fireEvent.click(box);
     expect(box).toHaveAttribute('aria-pressed', 'false');
     fireEvent.click(box);
