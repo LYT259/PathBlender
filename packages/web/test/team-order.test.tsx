@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, renderHook, act } from '@testing-library/react';
 import { useCallback, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_GEOMETRY, deserializeSession, serializeSession, type SessionTrajectory } from '@pathblender/core';
+import { COLORBLIND_COLORS, DEFAULT_GEOMETRY, SESSION_COLORS, deserializeSession, serializeSession, type SessionTrajectory } from '@pathblender/core';
 import { moveTeamOrder } from '../src/team-order';
 import { useSessionHistory } from '../src/session-history';
 import { RobotList } from '../src/components/RobotList';
@@ -68,6 +68,61 @@ describe('moveTeamOrder', () => {
     const moved = moveTeamOrder(robots, 'y', 'x', 'before');
     expect(ids(moved)).toEqual(['y', 'x']);
     expect(moved.every((r) => r.trajectory.teamNumber === '2910')).toBe(true);
+  });
+});
+
+describe('slot colors pinned to positions (user 2026-10-10)', () => {
+  const [GOLD, VIOLET, SAGE] = SESSION_COLORS;
+  /** A team wearing its assigned palette color, the way imports arrive. */
+  const paletteTeam = (id: string, slot: number): SessionTrajectory =>
+    ({ ...team(id), color: SESSION_COLORS[slot % SESSION_COLORS.length]! });
+
+  it('keeps the gold/violet/sage order down the rows when teams swap', () => {
+    const robots = [paletteTeam('a', 0), paletteTeam('b', 1), paletteTeam('c', 2)];
+    const moved = moveTeamOrder(robots, 'c', 'a', 'before');
+    expect(ids(moved)).toEqual(['c', 'a', 'b']);
+    // Row colors never shuffle — the teams swap underneath them, so the
+    // third team takes over the first row's gold, not its sage along.
+    expect(moved.map((r) => r.color)).toEqual([GOLD, VIOLET, SAGE]);
+  });
+
+  it('passes custom colors through untouched (hand-edited session files)', () => {
+    const robots = [{ ...paletteTeam('a', 0), color: '#123456' }, paletteTeam('b', 1)];
+    const moved = moveTeamOrder(robots, 'b', 'a', 'before');
+    expect(ids(moved)).toEqual(['b', 'a']);
+    const color = new Map(moved.map((r) => [r.trajectory.id, r.color]));
+    expect(color.get('a')).toBe('#123456'); // custom never touched
+    expect(color.get('b')).toBe(GOLD); // palette slot follows its new row
+  });
+
+  it('reassigns in the colorblind palette when the flag rides along', () => {
+    const robots = [
+      { ...team('a'), color: COLORBLIND_COLORS[0]! },
+      { ...team('b'), color: COLORBLIND_COLORS[1]! },
+    ];
+    const moved = moveTeamOrder(robots, 'b', 'a', 'before', true);
+    expect(ids(moved)).toEqual(['b', 'a']);
+    expect(moved.map((r) => r.color)).toEqual([COLORBLIND_COLORS[0], COLORBLIND_COLORS[1]]);
+  });
+
+  it('wraps past the palette end exactly like makeSession', () => {
+    const robots = SESSION_COLORS.map((_, slot) => paletteTeam(`t${slot}`, slot));
+    const moved = moveTeamOrder(robots, 't0', `t${robots.length - 1}`, 'after');
+    expect(ids(moved)).toEqual([...ids(robots).slice(1), 't0']);
+    // Ten rows, ten colors: rotating the teams leaves the row colors as-is.
+    expect(moved.map((r) => r.color)).toEqual(SESSION_COLORS);
+  });
+
+  it('rides the same undo step as the move: undo restores both', () => {
+    const init = { id: 'rebuilt-2026', variant: 'welded' as const, style: 'schematic' as const };
+    const { result } = renderHook(() => useSessionHistory(init));
+    act(() => result.current.setRobots([paletteTeam('a', 0), paletteTeam('b', 1), paletteTeam('c', 2)]));
+    act(() => result.current.setRobots((prev) => moveTeamOrder(prev, 'c', 'a', 'before')));
+    expect(ids(result.current.robots)).toEqual(['c', 'a', 'b']);
+    expect(result.current.robots.map((r) => r.color)).toEqual([GOLD, VIOLET, SAGE]);
+    act(() => result.current.undo());
+    expect(ids(result.current.robots)).toEqual(['a', 'b', 'c']);
+    expect(result.current.robots.map((r) => r.color)).toEqual([GOLD, VIOLET, SAGE]);
   });
 });
 
@@ -220,6 +275,27 @@ describe('the robot list and timeline share one order', () => {
     expect(w.playback.setT).not.toHaveBeenCalled();
     expect(w.playback.setPlaying).not.toHaveBeenCalled();
     expect(w.playback.t).toBe(6);
+  });
+
+  it('keeps the color dots in row order across a drag (user 2026-10-10)', () => {
+    Workspace({ initial: [
+      { ...team('a', '10'), color: SESSION_COLORS[0]! },
+      { ...team('b', '20'), color: SESSION_COLORS[1]! },
+      { ...team('c', '30'), color: SESSION_COLORS[2]! },
+    ] });
+    pointerDrag(handleOf('a', 'cards'), rowOf('c', 'cards'));
+    expect(listIds()).toEqual(['b', 'c', 'a']);
+    // The dots down the rows still read gold, violet, sage — the teams
+    // swapped underneath a fixed color order. jsdom may serialize the
+    // inline background as hex or rgb, so accept either form.
+    const dots = [...document.querySelectorAll('.robot-library-row .band-dot')] as HTMLElement[];
+    const seen = dots.map((dot) => dot.style.background.replace(/\s+/g, '').toLowerCase());
+    const gold = ['rgb(197,161,106)', '#c5a16a'];
+    const violet = ['rgb(162,140,186)', '#a28cba'];
+    const sage = ['rgb(143,164,130)', '#8fa482'];
+    expect(seen[0] && gold.includes(seen[0])).toBe(true);
+    expect(seen[1] && violet.includes(seen[1])).toBe(true);
+    expect(seen[2] && sage.includes(seen[2])).toBe(true);
   });
 
   it('dragging a timeline handle reorders both panels the same way', () => {
