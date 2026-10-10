@@ -70,9 +70,12 @@ function readVersionNotes() {
   const re = /\{ version: '((?:\\.|[^'\\])*)', date: '((?:\\.|[^'\\])*)', note: \{\s*([\s\S]*?)\s*\} \}/g;
   for (const m of ts.matchAll(re)) {
     const unesc = (s) => s.replace(/\\'/g, "'").replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
-    const langVal = /(?:(?:'([a-z][a-z-]*)')|([a-z][a-z-]*))\s*:\s*(['"])((?:\\.|(?!\3)[^\\])*)\3/g;
+    // Keys appear in the registry in all three quotings: bare (bump-version.mjs),
+    // single-quoted ('zh-tw') and double-quoted ("zh" — the 2026-10-07 batch
+    // backfill wrote a few entries JSON-style; a stable release aggregates them).
+    const langVal = /(?:(?:'([a-z][a-z-]*)')|(?:"([a-z][a-z-]*)")|([a-z][a-z-]*))\s*:\s*(['"])((?:\\.|(?!\4)[^\\])*)\4/g;
     const note = {};
-    for (const lm of m[3].matchAll(langVal)) note[lm[1] ?? lm[2]] = unesc(lm[4]);
+    for (const lm of m[3].matchAll(langVal)) note[lm[1] ?? lm[2] ?? lm[3]] = unesc(lm[5]);
     entries.push({ version: unesc(m[1]), date: m[2], note });
   }
   if (entries.length === 0) throw new Error('no VERSION_NOTES entries parsed from version-info.ts');

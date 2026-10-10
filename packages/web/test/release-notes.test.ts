@@ -31,6 +31,7 @@ export interface VersionNote {
 
 export const VERSION_NOTES: VersionNote[] = [
   { version: '0.2.0', date: '2026.10.03', note: { en: 'Stable release with everything since 0.1.5', zh: '正式版：汇集 0.1.5 以来全部改进', es: 'Versión estable con todo desde 0.1.5', fr: 'Version stable avec tout depuis 0.1.5', tr: '0.1.5’ten beri her şeyi içeren kararlı sürüm', 'pt-br': 'Versão estável com tudo desde 0.1.5', he: 'גרסה יציבה עם הכל מאז 0.1.5' } },
+  { version: '0.2.0-beta.3', date: '2026.10.03', note: { "en": "Double-quoted keys entry", "zh": "双引号键名条目", "es": "Entrada con claves entre comillas dobles", "fr": "Entrée à clés entre guillemets doubles", "tr": "Çift tırnaklı anahtarlar girdisi", "pt-br": "Entrada com chaves entre aspas duplas", "he": "רשומה עם מפתחות במרכאות כפולות" } },
   { version: '0.2.0-beta.2', date: '2026.10.02', note: { en: "Fix 'quotes' in notes", zh: '引号转义', es: 'Corregir comillas en las notas', fr: 'Corriger les guillemets dans les notes', tr: 'Notlardaki tırnak işaretlerini düzelt', 'pt-br': 'Corrigir aspas nas notas', he: 'תיקון מרכאות בהערות' } },
   { version: '0.2.0-beta.1', date: '2026.10.01', note: { en: 'First beta', zh: '首个 beta', es: 'Primera beta', fr: 'Première bêta', tr: 'İlk beta', 'pt-br': 'Primeiro beta', he: 'בטא ראשונה' } },
   { version: '0.1.5', date: '2026.10.02', note: { en: '' } },
@@ -80,6 +81,10 @@ describe('release-notes-for.mjs', () => {
     expect(out.stdout).toContain('Stable release with everything since 0.1.5');
     expect(out.stdout).toContain('First beta');
     expect(out.stdout).toContain("Fix 'quotes' in notes");
+    // Entries written JSON-style with double-quoted keys (the 2026-10-07 batch
+    // backfill did this in the real registry) must parse like any other.
+    expect(out.stdout).toContain('Double-quoted keys entry');
+    expect(out.stdout).toContain('双引号键名条目');
     // 0.1.5 is the previous stable boundary — nothing from it or older may appear
     expect(out.stdout).not.toMatch(/- v0\.1\.5 /);
   });
