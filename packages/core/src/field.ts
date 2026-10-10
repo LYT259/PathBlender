@@ -134,7 +134,33 @@ export interface FieldPackage {
    *    (4.18 m) within 9 cm. Precision class: ±10 cm, sample-derived.
    *  Undefined = the season has no (established) starting region → ungated. */
   startZone?: StartZoneRect[];
+  /** Named starting-position groups for the route library's "group by start"
+   *  order (user request 2026-10-09): advisory display classes, not gates —
+   *  unlike startZone they never block or gray anything, they only sort
+   *  routes whose first sample falls inside one. In the blue SOURCE frame
+   *  (the red view mirrors onto the same geometry). Currently only 2026
+   *  REBUILT defines classes; seasons without them keep the plain filename
+   *  order and the picker hides the toggle. Every id must ship an i18n key
+   *  `sequence.startGroup<Id>` in the web app. */
+  startRegions?: readonly StartRegionClass[];
 }
+
+/** One named grouping region for route starts (blue source frame). */
+export interface StartRegionClass {
+  /** Grouping id ('trench', 'hub', …) — matches the i18n key suffix. */
+  id: string;
+  geometry: StartRegionGeometry;
+}
+
+/**
+ * Grouping geometry: an `aabb` is the class when the start sample lies in
+ * the box; a `nearRect` is the class when the start's distance to the box
+ * (0 inside) is within maxDistanceM — for "starts pushed against the
+ * structure" classes whose exact stand-off varies by robot length.
+ */
+export type StartRegionGeometry =
+  | { kind: 'aabb'; xMinM: number; xMaxM: number; yMinM: number; yMaxM: number }
+  | { kind: 'nearRect'; xMinM: number; xMaxM: number; yMinM: number; yMaxM: number; maxDistanceM: number };
 
 /** One rectangle of a season's legal auto starting region (blue source frame). */
 export interface StartZoneRect {
@@ -305,6 +331,31 @@ export const REBUILT_2026: FieldPackage = {
   lengthM: 16.54,
   widthM: 8.07,
   startZone: [{ xMinM: 0, xMaxM: 4.0284, yMinM: 0, yMaxM: 8.069 }],
+  // START REGIONS 2026 (user request 2026-10-09, route-library grouping) —
+  // all geometry from the 2026 Game Manual §5 (TU22), AprilTag assignment
+  // §5.x as pinned by the WPILib welded layout:
+  //  · HUB (§5.4): 47 in (1.1937 m) square prism, near face ON the robot
+  //    starting line 158.6 in (4.0284 m) from the alliance wall, centered
+  //    on the field midline → footprint x[4.0284, 5.2221], y[3.4376,
+  //    4.6316] (midline 4.0346 ± 0.597). Class = start within 0.8 m of the
+  //    footprint: real "pushed against the HUB" starts (M1/M3/MSm) measure
+  //    0.40–0.49 m; the nearest non-HUB real start (L5-style, mid-area) is
+  //    1.33 m — the 0.8 m band splits them with ≥0.3 m margin both ways.
+  //  · TRENCH (§5.6): 65.65 in (1.6682 m) wide × 47 in (1.1937 m) deep
+  //    drive-under arms running from each guardrail toward the BUMPS, just
+  //    past the starting line; the manual's tag assignment (trench tags 17/
+  //    22/23/28 at x 4.588–4.663, y 0.6445/7.4248 ≈ the opening centers)
+  //    pins the arms' centers at x≈4.62 → upper arm x[3.7859, 5.4541] ×
+  //    y[6.8763, 8.07], lower arm mirrored. Class = inside an arm footprint
+  //    with a 0.40 m approach grace in x (real under-arm starts L1/L11 read
+  //    x 3.97–4.43; 8814's FCeSt stages 0.26 m short of the arm with its
+  //    bumper at the opening) and 0.10 m in y; SCsS at 1.18 m short of the
+  //    arm stays unclassified.
+  startRegions: [
+    { id: 'trench', geometry: { kind: 'aabb', xMinM: 3.3859, xMaxM: 5.8541, yMinM: 6.7763, yMaxM: 8.17 } },
+    { id: 'trench', geometry: { kind: 'aabb', xMinM: 3.3859, xMaxM: 5.8541, yMinM: -0.1, yMaxM: 1.2937 } },
+    { id: 'hub', geometry: { kind: 'nearRect', xMinM: 4.0284, xMaxM: 5.2221, yMinM: 3.4376, yMaxM: 4.6316, maxDistanceM: 0.8 } },
+  ],
   image: { pixelWidth: 3508, pixelHeight: 1814, ppm: 200, marginM: 0.5 },
   // Official 2026 welded-field AprilTag layout (WPILib blue-origin frame),
   // from allwpilib's apriltag resources (BSD-3-Clause); field facts, used
@@ -590,6 +641,34 @@ export function startsInAllianceZone(trajectory: Trajectory, zone: readonly Star
   return zone.some((r) =>
     first.x >= r.xMinM - 1e-9 && first.x <= r.xMaxM + 1e-9 &&
     first.y >= r.yMinM - 1e-9 && first.y <= r.yMaxM + 1e-9);
+}
+
+/**
+ * The named start group a route's FIRST sample falls into — the route
+ * library's "group by start" key (user request 2026-10-09). Advisory only:
+ * unlike startsInAllianceZone this never gates anything, it just sorts.
+ * Returns undefined when the season defines no classes, the route has no
+ * samples, or the start matches none (the "other starts" bucket).
+ */
+export function routeStartRegion(
+  trajectory: Trajectory,
+  regions: readonly StartRegionClass[] | undefined,
+): string | undefined {
+  if (!regions || regions.length === 0) return undefined;
+  const first = trajectory.samples[0];
+  if (!first) return undefined;
+  for (const region of regions) {
+    const g = region.geometry;
+    if (g.kind === 'aabb') {
+      if (first.x >= g.xMinM - 1e-9 && first.x <= g.xMaxM + 1e-9
+        && first.y >= g.yMinM - 1e-9 && first.y <= g.yMaxM + 1e-9) return region.id;
+    } else {
+      const dx = Math.max(g.xMinM - first.x, 0, first.x - g.xMaxM);
+      const dy = Math.max(g.yMinM - first.y, 0, first.y - g.yMaxM);
+      if (Math.hypot(dx, dy) <= g.maxDistanceM + 1e-9) return region.id;
+    }
+  }
+  return undefined;
 }
 
 /**

@@ -24,10 +24,11 @@ export {
   flipPoseToBlue,
   makeCustomField,
   mirrorAcrossLongAxis,
+  routeStartRegion,
   startsInAllianceZone,
   withFieldVariant,
 } from './field';
-export type { FieldArtStyle, FieldImageCalibration, FieldPackage, StartZoneRect } from './field';
+export type { FieldArtStyle, FieldImageCalibration, FieldPackage, StartRegionClass, StartRegionGeometry, StartZoneRect } from './field';
 export { fieldImageWorldRect } from './field';
 
 export { lerpAngle, sampleTrajectory, wrapAngle } from './math';
