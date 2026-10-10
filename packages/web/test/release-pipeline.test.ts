@@ -19,7 +19,7 @@ const workflow = readFileSync(resolve(ROOT, '.github/workflows/release.yml'), 'u
 describe('dmg artifact path contract', () => {
   it('the packaging script writes the dmg into bundle/dmg — the path the workflow collects from', () => {
     expect(script).toContain('DMG_DIR="$(dirname "$(dirname "$APP")")/dmg"');
-    expect(script).toMatch(/DMG="\$DMG_DIR\/PathBlender_\$\{VERSION\}_aarch64\.dmg"/);
+    expect(script).toContain('DMG="$DMG_DIR/PathBlender_${VERSION}_${DMG_ARCH}.dmg"');
   });
 
   it('the tauri-era dmg directory is wiped before repackaging (no stale pre-seal image survives)', () => {
@@ -27,13 +27,29 @@ describe('dmg artifact path contract', () => {
   });
 
   it('the workflow stages the dmg without a failure-swallowing `|| true`', () => {
-    const line = workflow.split('\n').find((l) => l.includes('_aarch64.dmg release/'));
+    const line = workflow.split('\n').find((l) => l.includes('_universal.dmg" release/'));
     expect(line).toBeDefined();
     expect(line!).not.toContain('|| true');
   });
 });
 
 describe('shipped-artifact verification gates', () => {
+  it('builds and verifies Universal Mac binaries before collecting the version-matched image', () => {
+    expect(workflow).toContain('npx tauri build --target universal-apple-darwin --bundles app');
+    expect(workflow).toContain('target/universal-apple-darwin/release/bundle');
+    expect(script).toContain('lipo -verify_arch arm64 x86_64');
+    expect(script).toContain('verify_architectures "$MNT/PathBlender.app"');
+  });
+
+  it('keeps public deployment dormant while private and builds the viewer on beta pushes', () => {
+    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8');
+    expect(deploy).toContain('if: github.event.repository.private == false');
+    expect(deploy).toContain('branches: [beta]');
+    expect(deploy).toContain("VITE_VIEWER_ONLY: '1'");
+    expect(workflow).toContain('if: github.event.repository.private == false');
+    expect(workflow).toContain('needs: [build-macos, build-windows, build-linux]');
+    expect(workflow).toContain('node scripts/prepare-release-artifacts.mjs');
+  });
   it('the finished dmg is mounted and its content seal-checked before staging', () => {
     expect(script).toContain('hdiutil attach');
     expect(script).toMatch(/codesign --verify --deep --strict "\$MNT\/PathBlender\.app"/);

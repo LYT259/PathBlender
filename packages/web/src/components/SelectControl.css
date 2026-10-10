@@ -1,0 +1,16 @@
+/* The language picker owns the shared visual rules. Only placement and host
+   sizing differ here. */
+.select-control-trigger { inline-size: auto; max-inline-size: 100%; min-inline-size: 0; }
+.select-control-trigger > span { min-inline-size: 0; }
+.select-control-trigger:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.select-control-trigger:disabled { opacity: .5; cursor: default; }
+.select-control-popover.language-picker-popover { position: fixed; z-index: 10000; inset: auto; margin: 0; max-inline-size: none; display: flex; flex-direction: column; color: var(--fg); font: 13px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.select-control-popover .select-control-results { max-block-size: none; min-block-size: 0; flex: 1; }
+.select-control-popover .language-picker-option[aria-disabled='true'] { color: var(--fg-dim); opacity: .5; cursor: default; }
+.select-control-popover .language-picker-option[aria-disabled='true']:hover { background: transparent; }
+.select-control-popover .language-picker-option:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.preferences-setting .select-control-trigger { inline-size: 240px; max-inline-size: 100%; }
+.preferences-mouse-custom-row .select-control-trigger { inline-size: 100%; min-block-size: 30px; border-radius: 6px; }
+.select-control-trigger.timeline-range { min-block-size: 30px; block-size: 30px; border-radius: 6px; font-size: 11px; }
+.robot-inspector-profile .select-control-trigger { max-inline-size: 150px; min-block-size: 28px; block-size: 28px; font-size: 11px; padding: 3px 6px; }
+@media (max-width: 440px) { .preferences-setting .select-control-trigger { inline-size: 100%; } }

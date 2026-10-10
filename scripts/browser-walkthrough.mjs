@@ -1,14 +1,28 @@
 /**
- * Real-browser end-to-end walkthrough against the production preview build.
- * View-only edition (2026-09-30): import → collision → playback (0.5×) →
- * language switch (15 entries) → field bounds → season +
- * variant persistence → custom field → read-only inspector → route library →
- * PathPlanner batch → session save/restore → bulk stress → PNG export →
- * service worker → 3D. The app adjusts nothing: no editing, no delays, no
- * auto-resolve, no AI anywhere.
+ * WHO RUNS THIS: developers (and the AI sessions working on this repo). The
+ * app never ships it and no user ever sees it — it is a robot acceptance
+ * tester that drives the real production build in a real browser, the way a
+ * person would, and prints PASS/FAIL per step. Unit tests prove the logic;
+ * only this harness can prove the assembled product still behaves when files
+ * are dragged in, a session is saved to disk, the language flips, or 3D is
+ * entered. Run it after touching anything user-visible, and before a release.
  *
- * Screenshots land in /tmp/pb-shots. Usage: node scripts/browser-walkthrough.mjs
- * (expects `npm run preview` on :4173; system Chrome via channel, fallback bundled).
+ * COVERAGE (pointer + real file system): welcome state → two .ghostauto
+ * imports → collision jump → folder import and its route library in the
+ * composer → playback rates → all 40 languages + RTL round trips → theme
+ * staging → out-of-bounds panel → season + construction persistence across a
+ * reload → artwork repaint proofs → custom field → read-only inspector →
+ * robot removal through the context menu → PathPlanner batch → session
+ * save/restore round trip through a real file → bulk stress over every valid
+ * sample → GIF export → service worker → 3D (model, painted robots, sky tint,
+ * viewcube picks, damped orbit, tag counts per season, in-3D season switch) →
+ * session restore on reload. Keyboard-only flows live in
+ * scripts/keyboard-walkthrough.mjs; the two are complements, not duplicates.
+ *
+ * Usage: npm run build -w @pathblender/web && npm run preview -w @pathblender/web
+ *        node scripts/browser-walkthrough.mjs   (expects :4173, or set WALK_BASE)
+ * System Chrome is used through the channel (no 150 MB download); screenshots
+ * land in /tmp/pb-shots. Exits non-zero on any failed check.
  */
 import { chromium } from 'playwright-core';
 import { mkdirSync, readFileSync, readdirSync as readdir } from 'node:fs';
@@ -44,7 +58,22 @@ page.on('response', (r) => { if (r.url().includes('fields3d/') && r.url().endsWi
 
 const rows = () => page.locator('.robot-library-row');
 const fileInput = () => page.locator('input[type="file"][multiple]').first();
-const rowByName = (name) => rows().filter({ has: page.locator('.robot-name', { hasText: name }) });
+
+// The unified single-select dropdowns (#303) are trigger buttons with a
+// body-level listbox portal — the native <select> calls the old steps used
+// do not exist. Both helpers speak value codes, matching SelectControl's
+// data-value options and the LanguagePicker's data-value options alike.
+const pickCombobox = async (trigger, value) => {
+  await trigger.click();
+  await page.locator('[role="option"][data-value="' + value + '"]').first().click();
+};
+const readCombobox = async (trigger) => {
+  await trigger.click();
+  const picked = await page.locator('[role="option"][aria-selected="true"]').first().getAttribute('data-value');
+  await trigger.focus();
+  await page.keyboard.press('Escape');
+  return picked;
+};
 
 // The gear's aria-label follows the UI language — match every locale we ship.
 const gearLocator = page.locator(
@@ -79,7 +108,45 @@ check(
   (await page.locator('.workspace-empty .welcome-import').count()) === 1 &&
     (await page.locator('.workspace-empty .welcome-folder-import').count()) === 1,
 );
+// --- Quick guide (2026-10-07 onboarding plan): the welcome screen offers the
+// in-app guide; opening it shows the topic body and Escape closes it back to
+// the welcome screen. (The purpose pitch that used to sit here was removed on
+// user request — the welcome screen stays copy-light.) ---
+await page.locator('.start-guide-link').click();
+await page.waitForSelector('.guide-dialog');
+check(
+  'quick guide opens with the transforms topic',
+  (await page.locator('.guide-dialog').textContent()).includes('PathBlender'),
+);
+await page.keyboard.press('Escape');
+await page.waitForSelector('.guide-dialog', { state: 'detached' });
+check('quick guide closes on Escape', true);
 await page.screenshot({ path: `${SHOTS}/01-empty.png` });
+
+// --- Onboarding tour (2026-10-07 plan §3): the example session carries a
+// five-task checklist; it starts collapsed (2026-10-08 user decision) and a
+// click expands it, a real mirror click completes its task, dismissing
+// hides the card, and the example exits cleanly back to the welcome page. ---
+await page.locator('.welcome-try-example').click();
+await page.waitForSelector('.robot-library-row', { timeout: 10000 });
+await page.waitForSelector('.tour-card');
+check('tour card appears with the example at 0/5', (await page.locator('.tour-card .tour-progress').textContent()) === '0/5');
+check('tour card starts collapsed', (await page.locator('.tour-card .tour-toggle').first().getAttribute('aria-expanded')) === 'false' && (await page.locator('.tour-card .tour-tasks').count()) === 0);
+await page.locator('.tour-card .tour-toggle').click();
+await page.waitForSelector('.tour-card .tour-tasks');
+check('expand click reveals the five tasks', (await page.locator('.tour-card .tour-tasks li').count()) === 5);
+await page.locator('.robot-library-row').first()
+  .getByRole('button', { name: /mirror/i }).first().click();
+await page.waitForFunction(() => document.querySelector('.tour-card .tour-progress')?.textContent === '1/5');
+check('mirror click completes its tour task', true);
+await page.screenshot({ path: `${SHOTS}/02-tour-card.png` });
+await page.locator('.tour-card .tour-close').click();
+await page.waitForSelector('.tour-card', { state: 'detached' });
+check('tour card dismisses', true);
+await page.getByRole('button', { name: /end example/i }).click();
+await page.waitForSelector('.workspace-empty');
+check('example exits back to the welcome page', true);
+
 
 // --- AI retreat (2026-09-20): no assistant surface anywhere ---
 await (await prefsGear()).click();
@@ -98,7 +165,7 @@ check('starts in 2D (toggle pressed)', (await page.locator('.view-toggle button'
 // First-run defaults (fresh profile): current season, welded construction,
 // schematic artwork, 2D view.
 {
-  const season = await page.locator('.field-select').first().inputValue();
+  const season = await readCombobox(page.locator('.field-select').first());
   // The variant control is now a segmented toggle (buttons), not a select.
   const welded = (await page.locator('.field-variant-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'Welded';
   const schematic = (await page.locator('.field-style-toggle button[aria-pressed=true]').first().textContent())?.trim() === '示意图' || (await page.locator('.field-style-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'Schematic';
@@ -116,27 +183,102 @@ await page.waitForFunction(
 check('collision detected (straight × stop)', true);
 await page.screenshot({ path: `${SHOTS}/02-collision.png` });
 
-// --- route library: picker beside each robot switches the active route ---
-const picker = page.locator('select.route-picker').first();
-await picker.waitFor({ timeout: 5000 });
-const pickerOptions = await picker.locator('option').count();
-check('route picker lists every imported route', pickerOptions === 2, `options=${pickerOptions}`);
-const nameBefore = await page.locator('.robot-library-row .robot-name').first().textContent();
-await picker.selectOption({ index: 1 });
+// --- Team display order (#300): the timeline rows reorder through the real
+// pointer-drag path (#308). The desktop build rides the same events (tauri
+// dragDropEnabled:false, 2026-10-09) — when that flag flips back, this still
+// passes in Chrome while every drag in the macOS app dies silently. ---
+{
+  const rowIds = () => page.$$eval('.timeline-row[data-team-order-id]', rows => rows.map(r => r.dataset.teamOrderId));
+  const before = await rowIds();
+  const handle = page.locator('.timeline-row[data-team-order-id]').first().locator('.team-order-handle');
+  const lastRow = page.locator('.timeline-row[data-team-order-id]').last();
+  await handle.dragTo(lastRow, { targetPosition: { x: 200, y: (await lastRow.boundingBox()).height - 4 } });
+  const after = await rowIds();
+  check('timeline rows reorder by drag (first row lands below last)',
+    after.length === before.length && after[after.length - 1] === before[0],
+    `${JSON.stringify(before)} -> ${JSON.stringify(after)}`);
+  // Dropping PAST the rows (the ruler strip under the last row) is still an
+  // unambiguous "put me last" (user 2026-10-09) — the nearest row carries
+  // the edge even though no row is under the pointer.
+  const beforeAxis = await rowIds();
+  const axis = page.locator('.timeline-axis');
+  await page.locator('.timeline-row[data-team-order-id]').first().locator('.team-order-handle')
+    .dragTo(axis, { targetPosition: { x: 260, y: (await axis.boundingBox()).height / 2 } });
+  const afterAxis = await rowIds();
+  check('drop below the rows (on the ruler) lands the team last',
+    afterAxis.length === beforeAxis.length && afterAxis[afterAxis.length - 1] === beforeAxis[0],
+    `${JSON.stringify(beforeAxis)} -> ${JSON.stringify(afterAxis)}`);
+}
+
+
+// --- folder import: one robot per team, carrying its whole route library ---
+// The per-row route <select> retired with the composer redesign (route choice
+// lives in the arrange view), so the folder's routes are checked THERE — and
+// both pointer paths are exercised: click appends, drag places under the
+// cursor. Robot removal moved into the row's context menu (the inspector has
+// been read-only since the 2026-09-30 pivot).
+const routesInFolder = (await readdir(`${SAMPLES}/ghostauto`)).length;
+await page.locator('input[webkitdirectory]').first().setInputFiles(`${SAMPLES}/ghostauto`);
+await page.waitForFunction(() => document.querySelectorAll('.robot-library-row').length === 3, undefined, { timeout: 20000 });
+await rows().last().locator('.robot-arrange-button').click();
+await page.waitForSelector('.sequence-composer', { timeout: 8000 });
+const routeSource = page.locator('.sequence-route-source');
+const sourcesSeen = await routeSource.count();
+check('folder import carries every route into the composer', sourcesSeen === routesInFolder, `sources=${sourcesSeen} files=${routesInFolder}`);
+
+// These ghostauto routes run 8.3–11.5 s inside a 15 s auto period, so a lane
+// holds ONE of them at a time: clear the robot's own segment through the
+// clip's context menu, place a route by clicking it, then drag that segment —
+// the pointer paths the keyboard harness cannot cover.
+const editingClip = page.locator('.sequence-track.is-editing .sequence-clip');
+await editingClip.first().click({ button: 'right' });
+await page.waitForSelector('.sequence-clip-menu', { timeout: 5000 });
+await page.getByRole('menuitem', { name: 'Remove route' }).click();
 await page.waitForTimeout(400);
-const nameAfter = await page.locator('.robot-library-row .robot-name').first().textContent();
-check('switching the picker swaps the robot’s route', nameBefore !== nameAfter, `${nameBefore} → ${nameAfter}`);
-await picker.selectOption({ index: 0 });
-await page.waitForTimeout(300);
-check(
-  'undo restores the previous route',
-  (await page.locator('.robot-library-row .robot-name').first().textContent()) === nameBefore,
-);
-await page.locator('.route-library-add-btn').first().click();
+check('clip context menu removes the segment', (await editingClip.count()) === 0, `clips=${await editingClip.count()}`);
+
+const startOf = async () => Number(/,\s*([\d.]+)–/.exec(await editingClip.first().getAttribute('aria-label') ?? '')?.[1] ?? -1);
+const sources = await page.evaluate(() => [...document.querySelectorAll('.sequence-route-source')].map((b, i) => ({
+  i, disabled: b.disabled, seconds: Number(/: ([\d.]+) s$/.exec(b.getAttribute('aria-label') ?? '')?.[1] ?? Infinity),
+})));
+const shortest = sources.filter((s) => !s.disabled).sort((a, b) => a.seconds - b.seconds)[0];
+await routeSource.nth(shortest.i).click();
 await page.waitForTimeout(400);
-check('library + places a route as another robot', (await rows().count()) === 3, `rows=${await rows().count()}`);
-await page.locator('.robot-inspector-remove').click(); // remove it again via the auto-opened inspector
+check('clicking a route appends it as a clip', (await editingClip.count()) === 1, `chosen=${shortest.i} (${shortest.seconds}s)`);
+const placedStart = await startOf();
+
+const laneBox = await page.locator('.sequence-track.is-editing .sequence-track-lane').boundingBox();
+const clipBox = await editingClip.first().boundingBox();
+await page.mouse.move(clipBox.x + clipBox.width / 2, clipBox.y + clipBox.height / 2);
+await page.mouse.down();
+await page.mouse.move(laneBox.x + laneBox.width * 0.45, laneBox.y + laneBox.height / 2, { steps: 12 });
+await page.mouse.up();
+await page.waitForTimeout(500);
+const movedStart = await startOf();
+// An empty lane can only be entered at 0.00 by clicking a route; a dragged
+// segment has to end up wherever the cursor dropped (measured ≈4.9 s for a
+// drop at 45 % of the lane, grab offset included). Assert the displacement,
+// not the exact second, so lane width and DPR changes cannot fake a failure.
+check('dragging the segment follows the pointer',
+  (await editingClip.count()) === 1 && movedStart >= placedStart + 3,
+  `${placedStart} → ${movedStart}`);
+
+await page.locator('[data-session-history="undo"]').click();
 await page.waitForTimeout(300);
+check('toolbar undo returns the segment', (await startOf()) === placedStart, `${movedStart} → ${await startOf()}`);
+await page.locator('[data-session-history="redo"]').click();
+await page.waitForTimeout(300);
+check('toolbar redo moves it out again', (await startOf()) === movedStart, `placed=${placedStart} redo=${await startOf()}`);
+await page.getByRole('button', { name: 'Back to playback' }).click();
+await page.waitForSelector('.sequence-composer', { state: 'detached', timeout: 5000 });
+check('composer exits through its Back button', (await page.locator('.sequence-composer').count()) === 0);
+
+await rows().last().click({ button: 'right' });
+await page.waitForSelector('.robot-context-menu', { timeout: 5000 });
+check('row context menu offers remove', (await page.getByRole('menuitem', { name: /Remove from session/ }).count()) === 1);
+await page.getByRole('menuitem', { name: /Remove from session/ }).click();
+await page.waitForFunction(() => document.querySelectorAll('.robot-library-row').length === 2, undefined, { timeout: 8000 });
+check('context menu removes the folder robot again', (await rows().count()) === 2, `rows=${await rows().count()}`);
 
 // --- jump to the conflict via the panel (back on the Checks tab) ---
 await page.locator('.inspector-tabs button', { hasText: /^Checks|^检查/i }).click();
@@ -180,7 +322,7 @@ await page.screenshot({ path: `${SHOTS}/04-playing.png` });
 // radios, About as a section carrying .preferences-product + copy status.
 const saveBtn = page.locator('.preferences-footer .btn.accent');
 const cancelBtn = page.locator('.preferences-footer .btn:not(.accent)');
-const langSelect = page.locator('.preferences-panel select').first();
+const langSelect = page.locator('.preferences-panel .language-picker-trigger').first();
 await (await prefsGear()).click();
 await langSelect.waitFor({ state: 'visible', timeout: 8000 });
 // About block: natural-facing version ("0.1.4 · Beta N"), the full number,
@@ -189,11 +331,12 @@ await langSelect.waitFor({ state: 'visible', timeout: 8000 });
 await page.locator('.preferences-nav [role=tab]', { hasText: /^About$/ }).click();
 {
   // The About block shows one version line now (no separate <code> node —
-  // parallel UI rework removed it); the line carries the full semver.
+  // parallel UI rework removed it); it carries the full semver plus the build
+  // hash. The exact number drifts with every merge by design — shape, not value.
   const full = (await page.locator('.preferences-product .preferences-version').textContent())?.trim() ?? '';
   check(
     'About shows the version line',
-    /^Version \d+\.\d+\.\d+(-beta\.\d+)?$/.test(full),
+    /^Version \d+\.\d+\.\d+(-beta\.\d+)?( \([0-9a-f]{7,40}\))?$/.test(full),
     `version="${full}"`,
   );
   const copyBtn = page.locator('.preferences-product button');
@@ -204,10 +347,28 @@ await page.locator('.preferences-nav [role=tab]', { hasText: /^About$/ }).click(
   check('version copy reports success', copyStatus.length > 0, `status="${copyStatus}"`);
 }
 await page.locator('.preferences-nav [role=tab]', { hasText: /^General$/ }).click();
-const optionCount = await langSelect.locator('option').count();
-check('language list has all 15 choices', optionCount === 15, `options=${optionCount}`);
-check('follow-system sits first', /Follow system|跟随系统|跟隨系統/i.test((await langSelect.locator('option').first().textContent()) ?? ''));
-await langSelect.selectOption('zh');
+// The searchable picker (#299/#303): open it once, count its rows from the
+// listbox, and pick by data-value code from here on.
+await langSelect.click();
+const pickerOptions = page.locator('.language-picker-popover [role="option"]');
+const optionCount = await pickerOptions.count();
+// The picker must offer every selectable dictionary — counted from the
+// i18n folder so the harness grows with the language set instead of rotting
+// against a frozen number (it read "15" for two expansion rounds).
+// Dictionaries are language-code-shaped filenames (ar.ts, pt-br.ts, even
+// three-letter fil.ts); helper modules (language-names.ts,
+// language-search.ts) never match the shape, so a new dictionary file still
+// grows the count alone.
+// One shaped file is not a selectable row: zh-tw.ts ships as the base the
+// zh-hk override table spreads over, without a picker entry since the
+// 2026-10-07 withdrawal (fifth batch pending).
+const NOT_SELECTABLE = 1;
+const shaped = readdir(resolve(process.cwd(), 'packages/web/src/i18n'))
+  .filter((f) => /^[a-z]{2,3}(-[a-z]+)*\.ts$/.test(f));
+const dictionaries = shaped.length - NOT_SELECTABLE;
+check('language list offers every selectable dictionary', optionCount === dictionaries + 1, `options=${optionCount} selectable dictionaries=${dictionaries}`);
+check('follow-system sits first', /Follow system|跟随系统|跟隨系統/i.test((await pickerOptions.first().textContent()) ?? ''));
+await page.locator('.language-picker-popover [role="option"][data-value="zh"]').click();
 await page.waitForTimeout(150);
 check('save/cancel are always present in the footer', (await saveBtn.count()) === 1 && (await cancelBtn.count()) === 1);
 // Cancel closes the modal AND discards the staged choice (v1.23 semantics).
@@ -220,7 +381,7 @@ check(
   `modal=${await page.locator('.prefs-modal').count()} heading=${headingAfterCancel}`,
 );
 await (await prefsGear()).click();
-await page.locator('.preferences-panel select').first().selectOption('zh');
+await pickCombobox(langSelect, 'zh');
 await saveBtn.click();
 await page.waitForTimeout(300);
 // Since PR #65 Save keeps the window open (drafts apply in place); closing
@@ -234,7 +395,7 @@ await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 })
 await page.waitForTimeout(200);
 // fr as a representative of the P1 batch (es/fr/tr)
 await (await prefsGear()).click();
-await page.locator('.preferences-panel select').first().selectOption('fr');
+await pickCombobox(langSelect, 'fr');
 await saveBtn.click();
 await page.waitForTimeout(300);
 const frText = await page.locator('.robot-library-heading h2').first().textContent();
@@ -246,7 +407,7 @@ await page.waitForTimeout(200);
 // he — the app's first RTL language (first batch, PR #114): the document
 // flips to rtl while the field and timeline keep their physical directions.
 await (await prefsGear()).click();
-await page.locator('.preferences-panel select').first().selectOption('he');
+await pickCombobox(langSelect, 'he');
 await saveBtn.click();
 await page.waitForTimeout(300);
 check(
@@ -262,7 +423,7 @@ await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 })
 await page.waitForTimeout(200);
 // pt-BR — the second first-batch language, and a return trip to LTR.
 await (await prefsGear()).click();
-await page.locator('.preferences-panel select').first().selectOption('pt-BR');
+await pickCombobox(langSelect, 'pt-BR');
 await saveBtn.click();
 await page.waitForTimeout(300);
 check(
@@ -279,7 +440,7 @@ await page.waitForTimeout(200);
 // ja — second-batch language (nl/pl/ja/ko/cs, red book §语言扩展规划): a CJK
 // round that must stay LTR, exercising a non-Latin font path end to end.
 await (await prefsGear()).click();
-await page.locator('.preferences-panel select').first().selectOption('ja');
+await pickCombobox(langSelect, 'ja');
 await saveBtn.click();
 await page.waitForTimeout(300);
 check(
@@ -294,7 +455,7 @@ await cancelBtn.click();
 await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
 await page.waitForTimeout(200);
 await (await prefsGear()).click();
-await page.locator('.preferences-panel select').first().selectOption('en');
+await pickCombobox(langSelect, 'en');
 await saveBtn.click();
 await page.waitForTimeout(300);
 await cancelBtn.click();
@@ -336,7 +497,7 @@ await page.screenshot({ path: `${SHOTS}/08-bounds.png` });
 
 // --- season switch + AndyMark variant survive reload ---
 const seasonSelect = page.locator('.field-select').first();
-await seasonSelect.selectOption('reefscape-2025');
+await pickCombobox(seasonSelect, 'reefscape-2025');
 await page.waitForTimeout(700);
 await page.locator('.field-variant-toggle button', { hasText: 'AndyMark' }).click();
 await page.waitForTimeout(400);
@@ -351,7 +512,7 @@ await fileInput().setInputFiles([
 ]);
 await page.waitForSelector('.robot-library-row', { timeout: 10000 });
 await page.waitForSelector('.field-canvas');
-const fieldAfterReload = await seasonSelect.inputValue();
+const fieldAfterReload = await readCombobox(seasonSelect);
 const amPressed = (await page.locator('.field-variant-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'AndyMark';
 check('field + AndyMark variant survive reload', fieldAfterReload === 'reefscape-2025' && amPressed, `field=${fieldAfterReload} andymark=${amPressed}`);
 await page.screenshot({ path: `${SHOTS}/09-reefscape.png` });
@@ -387,7 +548,7 @@ check('season switch', true);
 // gone — custom fields remain the one 3D-less surface, covered below.
 
 // --- custom field panel opens, takes an image, cancels ---
-await seasonSelect.selectOption('custom');
+await pickCombobox(seasonSelect, 'custom');
 await page.waitForTimeout(300);
 check('custom-field panel opens', (await page.locator('.cf-panel').count()) === 1);
 await page.setInputFiles('.cf-panel input[type="file"]', `${process.cwd()}/assets/fields/rebuilt2026.png`);
@@ -395,7 +556,7 @@ await page.waitForTimeout(400);
 check('custom-field image loads', (await page.locator('.cf-panel').count()) === 1 && errors.length === 0);
 await page.screenshot({ path: `${SHOTS}/10-custom-field.png` });
 await page.locator('.cf-panel .btn.small').last().click();
-await seasonSelect.selectOption('rebuilt-2026');
+await pickCombobox(seasonSelect, 'rebuilt-2026');
 await page.waitForTimeout(300);
 
 // --- inspector: read-only everywhere (2026-09-30 pivot) ---
@@ -407,7 +568,11 @@ check(
   'inspector is fully read-only (no spinbuttons/textboxes/toggles)',
   (await inspector.locator('input, .seg button').count()) === 0,
 );
-check('file alliance shown as text', (await inspector.getByText(/blue|red/i, { exact: true }).count()) >= 1);
+// The inspector reports what the FILE carried (bumper dimensions in the
+// user's units). The per-file alliance line is gone — the canvas bar's
+// alliance toggle owns the view, so the inspector shows no controls at all.
+const inspectorText = (await inspector.innerText()).replace(/\s+/g, ' ');
+check('inspector lists the file-supplied robot data', /From file/.test(inspectorText) && /bumper/i.test(inspectorText), inspectorText.slice(0, 90));
 
 // --- keyboard: Home rewinds, Space plays/pauses ---
 await page.evaluate(() => document.activeElement?.blur());
@@ -431,18 +596,23 @@ await page.waitForFunction(
   undefined,
   { timeout: 20000 },
 );
-check('PathPlanner auto batch import', true, '6 rows total');
+// Rows carry team numbers, not file names, so the PathPlanner batch is
+// asserted by count; selecting the first robot just gives the session below
+// something of each origin to save.
+check('PathPlanner batch imports every file', (await rows().count()) === 6, `rows=${await rows().count()}`);
 await page.screenshot({ path: `${SHOTS}/11-pathplanner.png` });
 
-// --- waypoint editing on the canvas: enter, numeric edit, exports, leave ---
-await rowByName('Pickup').first().locator('.robot-library-select').click();
+await rows().first().locator('.robot-library-select').click();
 await page.waitForTimeout(300);
 // (No waypoint editing / adjusted exports anymore — the app is a viewer.)
 
 // --- session save → remove one robot → restore through the file input ---
+// PR #223 retired the toolbar save button; File ▸ Save session is the pointer
+// path (menu-dispatch.test asserts .save-action stays out of the DOM).
+await page.getByRole('button', { name: 'File', exact: true }).click();
 const [download] = await Promise.all([
   page.waitForEvent('download', { timeout: 10000 }).catch(() => undefined),
-  page.locator('.save-action').click(),
+  page.getByRole('menuitem', { name: 'Save session' }).click(),
 ]);
 check('session download triggers', download !== undefined);
 let restoredRows = 0;
@@ -450,7 +620,9 @@ if (download) {
   const buf = await download.path().then((p) => (p ? readFileSync(p) : undefined));
   if (buf) {
     const before = await rows().count();
-    await page.locator('.robot-inspector-remove').click();
+    await rows().last().click({ button: 'right' });
+    await page.waitForSelector('.robot-context-menu', { timeout: 5000 });
+    await page.getByRole('menuitem', { name: /Remove from session/ }).click();
     await page.waitForTimeout(300);
     const afterRemove = await rows().count();
     check('robot remove works', afterRemove === before - 1, `${before} → ${afterRemove}`);
@@ -489,21 +661,40 @@ check('bulk import all samples', stressRows >= 16 && stressErrors.length === 0, 
 await page3.screenshot({ path: `${SHOTS}/12-bulk-stress.png` });
 await ctx3.close();
 
-// --- PNG export via the more-menu; disabled in 3D ---
-await page.locator('.workspace-menu summary').click();
-const [pngDl] = await Promise.all([
-  page.waitForEvent('download', { timeout: 10000 }).catch(() => undefined),
-  page.locator('.workspace-menu button', { hasText: /PNG/i }).click(),
+// --- exports through the File menu ---
+// PNG export was removed for good (user decision 2026-10-05, deletion
+// ledger); GIF and the solution package stay, and both are menu commands
+// since PR #223. GIF renders frames, so the download gets a long leash.
+const openFileMenu = async () => {
+  await page.getByRole('button', { name: 'File', exact: true }).click();
+  await page.waitForSelector('.menu-panel', { timeout: 5000 });
+};
+await openFileMenu();
+const [zipDl] = await Promise.all([
+  page.waitForEvent('download', { timeout: 60000 }).catch(() => undefined),
+  page.getByRole('menuitem', { name: /Export Solution Package/ }).click(),
 ]);
-check('PNG export downloads', pngDl !== undefined, pngDl?.suggestedFilename());
+check('solution package export downloads', zipDl !== undefined, zipDl ? await zipDl.suggestedFilename() : 'no download');
+await openFileMenu();
+const [gifDl] = await Promise.all([
+  page.waitForEvent('download', { timeout: 60000 }).catch(() => undefined),
+  page.getByRole('menuitem', { name: /Export GIF/ }).click(),
+]);
+check('GIF export downloads', gifDl !== undefined, gifDl ? await gifDl.suggestedFilename() : 'no download');
+// In 3D the command is still offered but the app says out loud that replay
+// is 2D-only — the old silent no-op was the regression this guards. The toast
+// lives ~3 s, so read it BEFORE waiting out a download that must never come.
 await page.locator('.view-toggle button', { hasText: '3D' }).click();
-await page.waitForTimeout(600);
-await page.locator('.workspace-menu summary').click();
-check(
-  'PNG disabled in 3D (no silent no-op)',
-  (await page.locator('.workspace-menu button:disabled', { hasText: /PNG/i }).count()) === 1,
-);
+await page.waitForTimeout(800);
+await openFileMenu();
+await page.getByRole('menuitem', { name: /Export GIF/ }).click();
+const toastSeen = await page.locator('.toast', { hasText: '2D-only' })
+  .waitFor({ timeout: 3000 }).then(() => true).catch(() => false);
+const gifToast = (await page.locator('.toast').last().textContent().catch(() => null)) ?? '';
+const gif3d = await page.waitForEvent('download', { timeout: 1500 }).catch(() => undefined);
+check('GIF in 3D refuses with a toast, never a silent no-op', toastSeen && gif3d === undefined, `toast=${gifToast} download=${gif3d ? 'yes' : 'no'}`);
 await page.locator('.view-toggle button', { hasText: '2D' }).click();
+await page.waitForTimeout(400);
 
 // --- PWA service worker registered ---
 const swUrl = await page.evaluate(async () => {
@@ -596,21 +787,43 @@ check('viewcube present', (await page.locator('.viewcube canvas').count()) === 1
 
 // Face/edge/corner picks tween the camera to the picked feature direction
 // (asserted against the pick hook — headless rAF is sparse, so wait for the
-// value instead of a fixed delay).
+// value instead of a fixed delay). The cube's own home button retired with
+// the toolbar recenter (PR #202): one control resets 2D fit and 3D camera,
+// and the 3D home is the ViewCube top–front edge, az 0 / polar π/4.
+const atHome = async () => {
+  const ok = await page.waitForFunction(
+    () => {
+      const c = window.__pb3d?.controls;
+      if (!c) return false;
+      return Math.abs(c.getAzimuthalAngle()) < 0.05 && Math.abs(c.getPolarAngle() - Math.PI / 4) < 0.05;
+    },
+    undefined,
+    { timeout: 12000, polling: 100 },
+  ).then(() => true).catch(() => false);
+  if (!ok) {
+    const s = await page.evaluate(() => {
+      const c = window.__pb3d?.controls;
+      return c ? { az: +c.getAzimuthalAngle().toFixed(3), pol: +c.getPolarAngle().toFixed(3) } : 'no __pb3d';
+    });
+    console.log(`  [atHome miss] camera=${JSON.stringify(s)}`);
+  }
+  return ok;
+};
 const vcBox = await page.locator('.viewcube canvas').boundingBox();
 const clickCube = async (fx, fy) => {
-  await page.locator('.vc-home').click();
-  await atHome();
+  await page.locator('.canvas-recenter').click();
+  if (!(await atHome())) return null;
   // move+down+up split: mouse.click() batches the events and occasionally
   // drops the pointerdown under load (Playwright flake, not app logic).
   await page.mouse.move(vcBox.x + vcBox.width * fx, vcBox.y + vcBox.height * fy);
   await page.mouse.down();
   await page.mouse.up();
-  await page.waitForFunction(
+  const picked = await page.waitForFunction(
     () => (window.__pb3d.lastPick ? true : false),
     undefined,
     { timeout: 4000, polling: 100 },
-  );
+  ).then(() => true).catch(() => false);
+  if (!picked) return null; // the click landed off the cube — reported as a miss, not a crash
   const lp = await page.evaluate(() => {
     const p = window.__pb3d.lastPick;
     window.__pb3d.lastPick = undefined;
@@ -619,12 +832,14 @@ const clickCube = async (fx, fy) => {
   const reached = await page
     .waitForFunction(
       ([x, y, z]) => {
-        const az = window.__pb3d.controls.getAzimuthalAngle();
-        const pol = window.__pb3d.controls.getPolarAngle();
+        const c = window.__pb3d.controls;
         const n = Math.hypot(x, y, z); // pick dirs are unnormalized sign vectors
         const tAz = Math.atan2(x, z);
-        const tPol = Math.acos(Math.max(-1, Math.min(1, y / n)));
-        return Math.abs(az - tAz) < 0.1 && Math.abs(pol - tPol) < 0.1;
+        // Straight overhead / straight below are picks too, but the orbit
+        // clamps polar to [0.15, 2.6] rad — the app's own limit, so the
+        // expected viewpoint is the clamped one, not acos(y/n) itself.
+        const tPol = Math.min(2.6, Math.max(0.15, Math.acos(Math.max(-1, Math.min(1, y / n)))));
+        return Math.abs(c.getAzimuthalAngle() - tAz) < 0.1 && Math.abs(c.getPolarAngle() - tPol) < 0.1;
       },
       lp,
       { timeout: 6000, polling: 100 },
@@ -641,18 +856,34 @@ const clickCube = async (fx, fy) => {
   if (!reached) return null;
   return lp;
 };
-const cornerDir = await clickCube(0.28, 0.5);
-check(
-  'viewcube corner click tweens to trimetric',
-  Array.isArray(cornerDir) && cornerDir.filter((v) => Math.abs(v) > 0.4).length === 3,
-  JSON.stringify(cornerDir),
-);
-const edgeDir = await clickCube(0.5, 0.5);
-check(
-  'viewcube edge click tweens to two-axis view',
-  Array.isArray(edgeDir) && edgeDir.filter((v) => Math.abs(v) > 0.4).length === 2,
-  JSON.stringify(edgeDir),
-);
+// Which pixel is a face / edge / corner depends on the camera pose the cube is
+// drawing, so no fraction can be hard-coded here (guessing that mapping is
+// exactly what made these three checks fail). The harness sweeps the cube
+// instead: every pick must tween the camera onto the direction that was
+// picked, and the sweep has to cover all three kinds of feature.
+const sweep = [[0.2, 0.2], [0.5, 0.2], [0.8, 0.2], [0.2, 0.5], [0.8, 0.5], [0.2, 0.8], [0.5, 0.8], [0.8, 0.8]];
+const picks = [];
+for (const [fx, fy] of sweep) picks.push(await clickCube(fx, fy));
+const kinds = picks.filter(Boolean).map((p) => p.filter((v) => Math.abs(v) > 0.4).length);
+check('every viewcube pick tweens the camera onto the picked direction',
+  picks.every(Boolean), JSON.stringify(picks));
+check('viewcube sweep covers face, edge and corner picks',
+  [1, 2, 3].every((k) => kinds.includes(k)), `features=${JSON.stringify(kinds)}`);
+
+// Deliberate race (found by this sweep on 2026-10-06): a ViewCube click
+// tweens the camera for 300 ms, and a Fit pressed inside that window used to
+// be overwritten by the still-running tween — the camera stayed on the face
+// that was picked. Press Fit 50 ms after a pick and require it to win.
+{
+  const before = await page.evaluate(() => ({ az: window.__pb3d.controls.getAzimuthalAngle(), pol: window.__pb3d.controls.getPolarAngle() }));
+  await page.mouse.move(vcBox.x + vcBox.width * 0.5, vcBox.y + vcBox.height * 0.2);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(50);
+  await page.locator('.canvas-recenter').click();
+  const won = await atHome();
+  check('Fit pressed mid fly-to still returns the camera home', won, `picked-from az=${before.az.toFixed(2)} pol=${before.pol.toFixed(2)}`);
+}
 
 // Damped orbit settles after release (no endless drift).
 {
@@ -680,7 +911,7 @@ await page.screenshot({ path: `${SHOTS}/14-3d.png` });
 }
 const dynBefore = await page.evaluate(() => window.__pb3d.scene.getObjectByName('pb-dynamic')?.children.length ?? -1);
 const camBefore = await page.evaluate(() => window.__pb3d.camera.position.toArray().map((v) => +v.toFixed(3)));
-await page.locator('.field-select').first().selectOption('reefscape-2025');
+await pickCombobox(page.locator('.field-select').first(), 'reefscape-2025');
 await page.waitForFunction(
   () => document.querySelectorAll('.robot-library-row').length >= 1,
   undefined,
@@ -713,7 +944,7 @@ check('season switch with 3D open keeps robots', true);
 }
 // Back to the first season: the parsed model comes from the module cache —
 // tags return instantly, the camera STILL holds, and the cache is warm.
-await page.locator('.field-select').first().selectOption('rebuilt-2026');
+await pickCombobox(page.locator('.field-select').first(), 'rebuilt-2026');
 await page.waitForFunction(() => {
   let n = 0;
   window.__pb3d.scene.traverse((o) => { if (o.name.startsWith('apriltag-')) n++; });
@@ -759,7 +990,7 @@ await page.waitForSelector('.robot-library-row', { timeout: 10000 });
 await page.waitForTimeout(800);
 const rowsAfterReload = await page.locator('.robot-library-row').count();
 check('last session restored on reload (no re-import)', rowsAfterReload > 0, `rows=${rowsAfterReload}`);
-const restoredField = await page.locator('.field-select').first().inputValue();
+const restoredField = await readCombobox(page.locator('.field-select').first());
 check('field selection remembered across reload', restoredField === 'rebuilt-2026', restoredField);
 const amPressed2 = (await page.locator('.field-variant-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'AndyMark';
 check('explicit AndyMark choice survives reload', amPressed2 === true);

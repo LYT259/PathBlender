@@ -7,13 +7,14 @@
  *   node scripts/bump-version.mjs release                    # 0.1.4-beta.3 → 0.1.4
  *
  * Writes every copy the shipped product carries (four package.jsons,
- * tauri.conf.json, Cargo.toml + the Cargo.lock entry), and registers the
- * user-facing note in packages/web/src/version-info.ts (rendered in the
- * About block of the preferences dialog). `npm run version:check` guards
- * the six manifests; a build never re-bumps (the number lives in source,
- * so repeated builds keep it — only a merge does).
+ * tauri.conf.json, Cargo.toml + the Cargo.lock entry, plus the four workspace
+ * entries package-lock.json stamps), and registers the user-facing note in
+ * packages/web/src/version-info.ts (rendered in the About block of the
+ * preferences dialog). `npm run version:check` guards all eight copies; a
+ * build never re-bumps (the number lives in source, so repeated builds keep
+ * it — only a merge does).
  *
- * Concurrency rule (AGENTS.md): run this on the feature branch right
+ * Concurrency rule: run this on the feature branch right
  * before merging. If another merge reached beta in the meantime, rebase
  * first and run it again — the number is allocated by the branch state at
  * merge time, so two merges can never carry the same number.
@@ -33,6 +34,7 @@ const JSON_FILES = [
 ];
 const TOML = 'packages/desktop/src-tauri/Cargo.toml';
 const LOCK = 'packages/desktop/src-tauri/Cargo.lock';
+const NPM_LOCK = 'package-lock.json';
 const INFO = 'packages/web/src/version-info.ts';
 
 const read = (p) => readFileSync(resolve(ROOT, p), 'utf8');
@@ -69,7 +71,7 @@ if (!/^version\s*=\s*"/m.test(read(TOML)) || !read(TOML).includes(`version = "${
   process.exit(1);
 }
 
-// Update-note i18n discipline (AGENTS.md 2026-10-03): dates use the
+// Update-note i18n discipline (2026-10-03): dates use the
 // YYYY.MM.DD form, and a new note enters with the English text only —
 // fill the remaining languages in the same commit (version-notes.test.ts
 // refuses a newest entry that misses a language).
@@ -86,6 +88,23 @@ write(LOCK, read(LOCK).replace(
   new RegExp(`(name = "pathblender-desktop"\\nversion = )"${current}"`),
   `$1"${next}"`,
 ));
+// package-lock.json stamps the same number into every workspace entry, and
+// `npm install` rewrites those stamps — so a bump that skipped them left the
+// tree dirty for the next install in every other session (seen 2026-10-06:
+// the lock still read beta.47 after two bumps). Round-trip is byte-identical
+// for this file, verified before switching from text surgery to JSON.
+{
+  const npmLock = JSON.parse(read(NPM_LOCK));
+  const workspaceKeys = Object.entries(npmLock.packages ?? {})
+    .filter(([key, entry]) => (key === '' || key.startsWith('packages/')) && entry.version === current)
+    .map(([key]) => key);
+  if (workspaceKeys.length === 0) {
+    console.error(`version drift: ${NPM_LOCK} has no workspace entry stamped ${current} — run npm run version:check first`);
+    process.exit(1);
+  }
+  for (const key of workspaceKeys) npmLock.packages[key].version = next;
+  write(NPM_LOCK, JSON.stringify(npmLock, null, 2) + '\n');
+}
 
 // Regenerate version-info.ts from its own previous shape.
 const info = read(INFO);

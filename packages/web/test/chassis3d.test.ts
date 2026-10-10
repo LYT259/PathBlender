@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { buildChassis3D, validateModuleTemplate } from '../src/chassis3d';
+import { buildChassis3D, MK5I_TURRET_PREFIX, validateModuleTemplate } from '../src/chassis3d';
 import { moduleBaseYaw } from '@pathblender/core';
 import type { ModuleLocation, RobotVisualGeometry } from '@pathblender/core';
 
@@ -42,7 +42,7 @@ const VIS: RobotVisualGeometry = {
   bumperDepthM: 0.0826,
 };
 
-/** The 2026 default layout: pods at ±10.375 in. */
+/** The 2026 default layout: pods at ±10.876 in (0.27625 m). */
 const MODULES: ModuleLocation[] = [
   { x: 0.27625, y: 0.27625 },
   { x: 0.27625, y: -0.27625 },
@@ -50,34 +50,47 @@ const MODULES: ModuleLocation[] = [
   { x: -0.27625, y: -0.27625 },
 ];
 
-/** Split-GLB stand-in: one box node + one turret node. */
+/** Split-GLB stand-in mirroring the SHIPPED asset's real node names
+ *  (`mk5i-turret` / `mk5i-box`, no dash suffix — mk5i-module-glb.test.ts
+ *  pins the asset against the same prefix so the two cannot drift). */
 function splitTemplate(): THREE.Group {
   const g = new THREE.Group();
   const box = new THREE.Mesh(new THREE.BoxGeometry(0.2165, 0.1, 0.1843));
-  box.name = 'mk5i-box-a';
+  box.name = 'mk5i-box';
   box.position.y = 0.1;
   const turret = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, 0.12));
-  turret.name = 'mk5i-turret-a';
+  turret.name = 'mk5i-turret';
   turret.position.y = 0.05;
   g.add(box, turret);
   return g;
 }
 
 describe('buildChassis3D', () => {
-  it('splits mk5i-turret-* nodes into the steering pivot; the box stays frozen', () => {
+  it('splits mk5i-turret nodes into the steering pivot; the box stays frozen', () => {
     const c = buildChassis3D(VIS, MODULES, '#ff0000', splitTemplate());
     expect(c.turrets).toHaveLength(MODULES.length);
     for (let i = 0; i < MODULES.length; i++) {
       const pod = c.pods[i]!;
       const turret = c.turrets[i]!;
       expect(turret).not.toBe(pod);
-      expect(turret.children.some((n) => n.name.startsWith('mk5i-turret-'))).toBe(true);
+      expect(turret.children.some((n) => n.name.startsWith(MK5I_TURRET_PREFIX))).toBe(true);
       // Both park at the installed yaw; steering later drives only the turret.
       expect(turret.rotation.y).toBeCloseTo(-moduleBaseYaw(MODULES[i]!), 10);
       const box = pod.children.find((n) => n !== turret)!;
       expect(box.rotation.y).toBeCloseTo(-moduleBaseYaw(MODULES[i]!), 10);
-      expect(box.children.some((n) => n.name.startsWith('mk5i-box-'))).toBe(true);
-      expect(box.children.some((n) => n.name.startsWith('mk5i-turret-'))).toBe(false);
+      expect(box.children.some((n) => n.name === 'mk5i-box')).toBe(true);
+      expect(box.children.some((n) => n.name.startsWith(MK5I_TURRET_PREFIX))).toBe(false);
+    }
+  });
+
+  it('parks the four default modules at distinct per-corner installed yaws', () => {
+    const c = buildChassis3D(VIS, MODULES, '#ff0000', splitTemplate());
+    // The pinwheel installed pose: every corner differs (2026-10-04
+    // regression — the turret-name drift left all four at yaw 0).
+    const yaws = c.pods.map((pod) => pod.children.find((n) => n !== c.turrets[c.pods.indexOf(pod)])!.rotation.y);
+    expect(new Set(yaws.map((y) => y.toFixed(4))).size).toBe(4);
+    for (let i = 0; i < MODULES.length; i++) {
+      expect(yaws[i]).toBeCloseTo(-moduleBaseYaw(MODULES[i]!), 10);
     }
   });
 
@@ -87,6 +100,16 @@ describe('buildChassis3D', () => {
     for (const pod of c.pods) {
       expect(pod.getWorldPosition(new THREE.Vector3()).y).toBeCloseTo(0, 10);
     }
+  });
+
+  it('raises the frame assembly so the belly pan never sinks under the floor', () => {
+    const c = buildChassis3D(VIS, MODULES, '#ff0000', splitTemplate());
+    const frameAsm = c.group.getObjectByName('frame-assembly')!;
+    // MODULE_MOUNT_Y_M is negative (rail top frame-y 0.061516 sits below the
+    // module plate-bottom module-y 0.092126), so the frame must RISE — the
+    // 2026-10-04 "metal frame touches the ground" bug was a positive mount
+    // height dropping the belly pan 19.4 mm under the floor.
+    expect(frameAsm.position.y).toBeGreaterThan(0);
   });
 
   it('falls back to whole-pod steering when the template has no turret nodes', () => {

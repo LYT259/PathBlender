@@ -2,8 +2,9 @@
 /**
  * Version single-source check.
  *
- * The release number lives in six files on purpose (npm workspaces each carry
- * their own manifest, and the Tauri shell reads its own two). Nothing keeps
+ * The release number lives in eight copies on purpose (npm workspaces each
+ * carry their own manifest, the Tauri shell reads its own two, and both lock
+ * files stamp the number too). Nothing keeps
  * them in sync, and the service worker's cache name is stamped from the ROOT
  * version — so a drift is not cosmetic: users keep a stale app while the
  * desktop bundle reports a newer one. Fail loudly instead.
@@ -25,6 +26,15 @@ const SOURCES = [
   ['packages/desktop/src-tauri/tauri.conf.json', (t) => JSON.parse(t).version],
   ['packages/desktop/src-tauri/Cargo.toml', (t) => /^version\s*=\s*"([^"]+)"/m.exec(t)?.[1]],
   ['packages/web/src/version-info.ts', (t) => /^export const APP_VERSION = '([^']+)';/m.exec(t)?.[1]],
+  // package-lock.json repeats the number once per workspace; internal drift
+  // there is just as fatal, so the reader refuses to report a single value
+  // unless every workspace entry agrees.
+  ['package-lock.json', (t) => {
+    const stamps = new Set(Object.entries(JSON.parse(t).packages ?? {})
+      .filter(([key, pkg]) => (key === '' || key.startsWith('packages/')) && typeof pkg.version === 'string')
+      .map(([, pkg]) => pkg.version));
+    return stamps.size === 1 ? [...stamps][0] : `<drift inside: ${[...stamps].sort().join(' / ')}>`;
+  }],
 ];
 
 const found = [];
@@ -46,3 +56,20 @@ if (distinct.length > 1) {
   process.exit(1);
 }
 console.log(`version:check — all ${found.length} manifests agree at ${distinct[0]}`);
+
+// Desktop drag contract (2026-10-09): every drag in the product — timeline
+// row reorder, robot-list reorder, window file import — is HTML5 DnD. Tauri's
+// dragDropEnabled defaults to true, which routes the native drag session to
+// Tauri's own handler and the webview never delivers dragover/drop (the drag
+// ghost moves, release does nothing). Nothing in the shell listens to Tauri
+// drag events, so the flag must stay off. If this trips, someone re-enabled
+// it — fix the drag symptom by restoring false, not by rewriting the UI.
+const tauriConf = JSON.parse(readFileSync(resolve(ROOT, 'packages/desktop/src-tauri/tauri.conf.json'), 'utf8'));
+const mainWindow = tauriConf.app?.windows?.find((w) => w.label === 'main');
+if (mainWindow?.dragDropEnabled !== false) {
+  console.error('desktop drag contract broken: the main window must set "dragDropEnabled": false —');
+  console.error('with it true, WKWebView/WebView2 swallow HTML5 dragover/drop and row reorder + file import die silently.');
+  process.exit(1);
+}
+console.log('desktop drag contract — main window dragDropEnabled is false (HTML5 DnD live)');
+

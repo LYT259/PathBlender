@@ -98,6 +98,19 @@ describe('session file round-trip', () => {
     expect(back.robots[0]!.trajectory.teamNumber).toBe('');
   });
 
+  it('display names survive the round-trip and files without them still deserialize', () => {
+    const a = makeSession(parseGhostAuto(read('ghostauto/straight_run.ghostauto'), 'a'), 0);
+    a.trajectory.displayName = '红队射手';
+    const text = serializeSession([a], 'rebuilt-2026');
+    const back = deserializeSession(text);
+    expect(back.robots[0]!.trajectory.displayName).toBe('红队射手');
+    expect(back.robots[0]!.trajectory.teamNumber).toBe('0001');
+    // Older session files simply lack the field.
+    const legacy = JSON.parse(text);
+    for (const r of legacy.robots) delete r.displayName;
+    expect(deserializeSession(JSON.stringify(legacy)).robots[0]!.trajectory.displayName).toBeUndefined();
+  });
+
   it('pre-rename marker (ghpathblender) still deserializes', () => {
     const a = makeSession(parseGhostAuto(read('ghostauto/straight_run.ghostauto'), 'a'), 0);
     const legacy = JSON.parse(serializeSession([a], 'rebuilt-2026'));
@@ -132,17 +145,6 @@ describe('session id persistence (save/load keeps identity)', () => {
   });
 });
 
-describe('opponent flag round trip (red book §6.5-②)', () => {
-  it('persists through serialize → deserialize and stays optional for old files', () => {
-    const traj = parseTraj(read('traj/v3_swerve.traj'), 'v3_swerve.traj');
-    const robot = { ...makeSession(traj, 0), opponent: true };
-    const restored = deserializeSession(serializeSession([robot], 'rebuilt-2026'));
-    expect(restored.robots[0]!.opponent).toBe(true);
-    const plain = deserializeSession(serializeSession([makeSession(traj, 0)], 'rebuilt-2026'));
-    expect(plain.robots[0]!.opponent).toBeUndefined();
-  });
-});
-
 describe('colorblind palette remap (§7.3-3, landed 2026-10-04)', () => {
   it('maps default palette colors both ways and leaves custom colors untouched', () => {
     const a = SESSION_COLORS[0] as string;
@@ -156,5 +158,38 @@ describe('colorblind palette remap (§7.3-3, landed 2026-10-04)', () => {
     const wrapped = remapColorblind(last, true);
     expect(wrapped).toBe(COLORBLIND_COLORS[1]);
     expect(remapColorblind(wrapped, false)).toBe(SESSION_COLORS[1]);
+  });
+});
+
+describe('legacy default color migration on session read (muted palette, 2026-10-05)', () => {
+  const traj = parseGhostAuto(read('ghostauto/straight_run.ghostauto'), 'a');
+
+  /** A session file as a pre-mutation build wrote it, with one robot color. */
+  const sessionWithColor = (color: string): string => {
+    const text = JSON.parse(serializeSession([makeSession(traj)], 'rebuilt-2026'));
+    text.robots[0].color = color;
+    return JSON.stringify(text);
+  };
+
+  it('remaps the three former default colors to the muted palette', () => {
+    expect(deserializeSession(sessionWithColor('#FF6EC7')).robots[0]!.color).toBe(SESSION_COLORS[0]);
+    expect(deserializeSession(sessionWithColor('#00E5FF')).robots[0]!.color).toBe(SESSION_COLORS[1]);
+    expect(deserializeSession(sessionWithColor('#AAFF00')).robots[0]!.color).toBe(SESSION_COLORS[2]);
+  });
+
+  it('tolerates lowercase hex from hand-edited files', () => {
+    expect(deserializeSession(sessionWithColor('#ff6ec7')).robots[0]!.color).toBe(SESSION_COLORS[0]);
+  });
+
+  it('leaves custom, colorblind-palette, and unchanged-slot colors untouched', () => {
+    expect(deserializeSession(sessionWithColor('#123456')).robots[0]!.color).toBe('#123456');
+    expect(deserializeSession(sessionWithColor(COLORBLIND_COLORS[0]!)).robots[0]!.color).toBe(COLORBLIND_COLORS[0]);
+    // Slots 4–10 never changed; their values pass through as-is.
+    expect(deserializeSession(sessionWithColor('#FF9100')).robots[0]!.color).toBe('#FF9100');
+  });
+
+  it('a migrated color remaps through the colorblind toggle like a fresh one', () => {
+    const restored = deserializeSession(sessionWithColor('#FF6EC7')).robots[0]!;
+    expect(remapColorblind(restored.color, true)).toBe(COLORBLIND_COLORS[0]);
   });
 });

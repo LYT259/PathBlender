@@ -5,6 +5,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeSession, parsePathFile, serializeSession } from '@pathblender/core';
 import { App } from '../src/App';
+import { expectComboboxValue, pickComboboxValue } from './combobox';
 
 const samples = resolve(__dirname, '../../../samples');
 
@@ -19,7 +20,7 @@ async function importSamples(...paths: string[]) {
 }
 
 function selectRobot(name: string) {
-  fireEvent.click(screen.getByText(({ 'Straight Run': '#0001', 'Stop And Score': '#0002', 'Side Lane': '#0003' } as Record<string, string>)[name] ?? name, { selector: '.robot-name' }));
+  fireEvent.click(screen.getByText(({ 'Straight Run': '0001', 'Stop And Score': '0002', 'Side Lane': '0003' } as Record<string, string>)[name] ?? name, { selector: '.robot-name' }));
   return within(screen.getByRole('region', { name, exact: true }));
 }
 
@@ -27,7 +28,7 @@ function openChecks() {
   fireEvent.click(screen.getByRole('button', { name: /^Checks/i }));
 }
 
-const conflictPair = () => screen.getByText('#0001 × #0002', { selector: '.conflict-pair' });
+const conflictPair = () => screen.getByText('0001 × 0002', { selector: '.conflict-pair' });
 
 beforeEach(() => localStorage.clear());
 
@@ -82,14 +83,21 @@ describe('workspace workflow', () => {
     expect(screen.getByRole('region', { name: 'Stop And Score', exact: true })).toBeVisible();
   });
 
-  it('keeps hidden robots in collision analysis, then reveals and pauses at a selected conflict', async () => {
+  it('drops hidden robots from collision analysis until they are shown again, then pauses at a selected conflict', async () => {
     render(<App />);
     await importSamples('ghostauto/straight_run.ghostauto', 'ghostauto/stop_and_score.ghostauto');
     expect(conflictPair()).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /hide.*#0001/i }));
-    expect(screen.getByRole('button', { name: /show.*#0001/i })).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(screen.getByRole('button', { name: /hide.*0001/i }));
+    expect(screen.getByRole('button', { name: /show.*0001/i })).toHaveAttribute('aria-pressed', 'false');
+    // Hidden means absent for checks too (user request 2026-10-04): the
+    // conflict pair and its count leave with the robot…
+    expect(screen.queryByText('0001 × 0002', { selector: '.conflict-pair' })).not.toBeInTheDocument();
+    expect(screen.getByText('0', { selector: '.conflict-count' })).toBeInTheDocument();
+
+    // …and come back when it does.
+    fireEvent.click(screen.getByRole('button', { name: /show.*0001/i }));
     expect(conflictPair()).toBeInTheDocument();
     expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
 
@@ -98,7 +106,6 @@ describe('workspace workflow', () => {
     fireEvent.click(conflictPair().closest('button')!);
 
     expect(screen.getByRole('button', { name: /^Play$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /hide.*#0001/i })).toHaveAttribute('aria-pressed', 'true');
     expect(Number((screen.getByRole('slider', { name: 'Playback position' }) as HTMLInputElement).value)).toBeGreaterThan(0);
     expect(conflictPair()).toBeInTheDocument();
   });
@@ -118,10 +125,10 @@ describe('workspace workflow', () => {
     render(<App />);
     await importSamples('ghostauto/straight_run.ghostauto');
     const season = screen.getByRole('combobox', { name: 'Game season' });
-    expect(season).toHaveValue('rebuilt-2026');
-    fireEvent.change(season, { target: { value: 'reefscape-2025' } });
-    expect(season).toHaveValue('reefscape-2025');
-    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
+    expectComboboxValue(season, 'rebuilt-2026');
+    pickComboboxValue(season, 'reefscape-2025');
+    expectComboboxValue(season, 'reefscape-2025');
+    expect(screen.getByText('0001', { selector: '.robot-name' })).toBeInTheDocument();
 
     // Restore a different saved session, including its field and timing.
     const savedRobot = makeSession(parsePathFile(
@@ -135,29 +142,34 @@ describe('workspace workflow', () => {
       { type: 'application/json' },
     );
     fireEvent.drop(window, { dataTransfer: { files: [savedSession] } });
-    await screen.findByText('#0002', { selector: '.robot-name' });
-    expect(season).toHaveValue('chargedup-2023');
-    expect(screen.queryByText('#0001', { selector: '.robot-name' })).not.toBeInTheDocument();
-    expect(selectRobot('Stop And Score').getByText('1.25 s')).toBeInTheDocument();
+    await screen.findByText('0002', { selector: '.robot-name' });
+    expectComboboxValue(season, 'chargedup-2023');
+    expect(screen.queryByText('0001', { selector: '.robot-name' })).not.toBeInTheDocument();
+    // The restored start delay surfaces in the bottom arrangement surface.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: /^Stop And Score, 1\.25–/ }));
+    expect(screen.getByRole('spinbutton', { name: 'Start' })).toHaveValue(1.25);
   });
 
-  it('undoes and redoes scene changes with the restored toolbar buttons and ⌘Z', async () => {
+  it('undoes and redoes scene changes with the toolbar buttons and ⌘Z', async () => {
     render(<App />);
     await importSamples('ghostauto/straight_run.ghostauto', 'ghostauto/stop_and_score.ghostauto');
 
-    // Restored workspace chrome (2026-10-04): undo/redo plus both sidebar
-    // toggles. The import itself is an undoable step, so Undo is already
-    // armed; Redo waits until something has been undone.
+    // Workspace chrome: undo/redo only — the side panels are not
+    // collapsible (2026-10-04), so the sidebar toggles are gone and both
+    // panels stay open. The import itself is an undoable step, so Undo is
+    // already armed; Redo waits until something has been undone.
     const undoBtn = screen.getByRole('button', { name: 'Undo' });
     const redoBtn = screen.getByRole('button', { name: 'Redo' });
     expect(undoBtn).toBeEnabled();
     expect(redoBtn).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Show or hide path list' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Show or hide inspector' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('button', { name: 'Show or hide path list' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show or hide inspector' })).not.toBeInTheDocument();
+    expect(document.querySelector('.workspace-inspector')).not.toHaveAttribute('hidden');
 
-    // Clearing the session is one more undoable step.
-    fireEvent.click(document.querySelector<HTMLElement>('summary[aria-label="More actions"]')!);
-    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    // Clearing the session is one more undoable step. (The clear entry now
+    // lives on the toolbar home button; the more-menu no longer lists it.)
+    fireEvent.click(screen.getByRole('button', { name: 'Back to home' }));
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(0));
     expect(undoBtn).toBeEnabled();
     expect(screen.queryByRole('button', { name: 'Show or hide path list' })).not.toBeInTheDocument();
@@ -166,7 +178,7 @@ describe('workspace workflow', () => {
     // so re-query rather than reuse the pre-clear references.
     fireEvent.keyDown(window, { key: 'z', metaKey: true });
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
-    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('0001', { selector: '.robot-name' })).toBeInTheDocument();
     const redoBtnAgain = screen.getByRole('button', { name: 'Redo' });
     expect(redoBtnAgain).toBeEnabled();
 

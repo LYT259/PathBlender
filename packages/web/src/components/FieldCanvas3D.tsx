@@ -9,20 +9,23 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import {
+  activeActionsAt,
   chassisModules,
   robotVisualGeometry,
   samplePoseAt,
   sampleStateAt,
 } from '@pathblender/core';
-import { createGroundTrail } from '../ground-trail3d';
-import { bumperColor } from '../robot-identity';
+import { createGroundTrail, createGroundHeatmap } from '../ground-trail3d';
+import { bumperColor, heatmapColor, robotAnnotation } from '../robot-identity';
 import { buildChassis3D, validateModuleTemplate } from '../chassis3d';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
 import {
   resolveMouseAction,
+  useCustomMouseControls,
   useDefaultConstrained,
   useMouseControls,
   usePenAsMouse,
@@ -56,6 +59,7 @@ import {
   worldToRender,
   worldToRenderVec3,
 } from '../field3d-frame';
+import { CAM_HOME as FIELD3D_CAM_HOME } from '../field3d-models';
 import type { FieldModelMirror } from '../field3d-frame';
 
 export interface FieldCanvas3DHandle {
@@ -66,10 +70,22 @@ interface Props {
   field: FieldPackage;
   fieldImageUrl?: string;
   robots: SessionTrajectory[];
+  /** Robot (trajectory) ids whose path renders gray — illegal start zone
+   * verdicts (user 2026-10-09). */
+  dimPathIds?: ReadonlySet<string>;
   currentT: number;
   showTrail?: boolean;
+  /** Occupancy heatmap over every robot's full timeline (§7.3-3). */
+  showHeatmap?: boolean;
   /** Field construction variant (AndyMark vs welded), when offered. */
   variant?: 'welded' | 'andymark';
+  /**
+   * False while the parent keeps this canvas mounted but hidden (2D active).
+   * The rAF loop keeps ticking but skips all GPU work, so 2D playback never
+   * renders into the hidden buffer — yet the scene, models and camera
+   * survive, making the next 2D→3D switch instant (user request 2026-10-06).
+   */
+  active?: boolean;
 }
 
 interface Scene3D {
@@ -81,6 +97,7 @@ interface Scene3D {
   cy: number;
   dynamic: THREE.Group;
   trails: ReturnType<typeof createGroundTrail>[];
+  heatmaps: ReturnType<typeof createGroundHeatmap>[];
   /** Procedural MK5i-style chassis rigs, one per robot. */
   rigs: {
     root: THREE.Group;
@@ -91,9 +108,28 @@ interface Scene3D {
      *  itself for the old GLB / procedural fallback. */
     turrets: THREE.Group[];
     modules: { x: number; y: number }[];
+    /** The "what is it doing now" callout (user request 2026-10-08): a
+     *  billboard sprite above the robot + a short leader line, driven per
+     *  frame from the robot's own annotated events. Hidden entirely when
+     *  the user never annotated (or nothing has happened yet). */
+    action: { sprite: THREE.Sprite; line: THREE.Line; current?: string } | undefined;
   }[];
   /** Render-on-demand: a frame is drawn only when something changed. */
   dirty: () => void;
+  /** Drop an in-flight ViewCube fly-to. A wholesale camera move (Fit / `0`)
+   *  must win over the tween, which otherwise keeps writing the camera for
+   *  its remaining frames and leaves the reset eaten. */
+  cancelFly: () => void;
+  /** The scene CONTENT moved (playback steered the rigs, robots changed):
+   *  re-bake the shadow map on the next frame. Camera-only motion never
+   *  calls this — the shadow map stays cached through orbit/zoom/pan. */
+  invalidateShadows: () => void;
+  /** One full hidden frame while the canvas is parked (prewarm): compiles
+   *  GL programs, uploads buffers and bakes the shadow map so the user's
+   *  FIRST 3D click of a session renders instantly. No-op while visible —
+   *  the rAF loop draws anyway. Called from the content effects (model
+   *  mount, rig rebuild), never from the loop. */
+  warmup: () => void;
   /** Official 3D field model (when available); replaces the fallback. */
   modelRoot: THREE.Group;
   /** Field id of the model currently inside `modelRoot` (undefined = none).
@@ -114,9 +150,10 @@ interface Scene3D {
   retintCube: () => void;
 }
 
-// AS-style overview: higher and further back than the early low angle,
-// which read as a tilted slab (strong perspective) rather than a field.
-const CAM_HOME: [number, number, number] = [0, 13.5, 10.5];
+// AS-style overview home: direction comes from field3d-models (the
+// ViewCube's top–front edge — see that module for the derivation); the
+// radius doubles as the zoom clamp (maxDistance below), unchanged since R13.
+const CAM_HOME = FIELD3D_CAM_HOME;
 
 const WALL_H = 0.9;
 /** FRC official tag size (36h11 family, 6.5 in black square). */
@@ -151,42 +188,103 @@ function tokenColorHex(token: string, fallback: string): number {
   );
 }
 
-/** Localized label texture for one ViewCube face (512px for retina-crisp
- *  rendering). faceIdx: 0 +x, 1 -x, 2 top, 3 bottom, 4 +z, 5 -z — the
- *  per-world-face brightness is baked, Onshape-style lit cube. */
-function faceTexture(label: string, faceIdx: number): THREE.CanvasTexture {
+/** Original artwork informed by Onshape's public ViewCube reference:
+ * https://cad.onshape.com/help/Content/View/view_navigation_and_the_view_cube.htm
+ * Rounded face panels sit inside a continuous, softly shaded rim. */
+function faceTexture(label: string): THREE.CanvasTexture {
   const c = document.createElement('canvas');
   c.width = 512;
   c.height = 512;
   const g = c.getContext('2d')!;
-  const card = cssToken('--bg-card', '#2c2c2f');
-  const m = /^#([0-9a-f]{6})$/i.exec(card.trim());
-  const hex = m?.[1] ?? '8c8c91';
-  const base = [
-    parseInt(hex.slice(0, 2), 16),
-    parseInt(hex.slice(2, 4), 16),
-    parseInt(hex.slice(4, 6), 16),
-  ];
-  const shade = (mul: number) =>
-    `rgb(${base.map((v) => Math.round(Math.max(0, Math.min(255, v * mul)))).join(',')})`;
-  const faceMul = faceIdx === 2 ? 1.1 : faceIdx === 3 ? 0.78 : 1;
-  const grad = g.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0, shade(faceMul * 1.05));
-  grad.addColorStop(1, shade(faceMul * 0.92));
-  g.fillStyle = grad;
+  g.fillStyle = cssToken('--viewcube-rim', '#687078');
   g.fillRect(0, 0, 512, 512);
-  g.strokeStyle = cssToken('--border', '#3d3d41');
-  g.lineWidth = 14;
-  g.strokeRect(10, 10, 492, 492);
-  g.fillStyle = cssToken('--fg', '#e6e6e8');
-  g.font = '700 168px -apple-system, "Segoe UI", sans-serif';
+  const grad = g.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0, cssToken('--viewcube-face-top', '#50565d'));
+  grad.addColorStop(1, cssToken('--viewcube-face-bottom', '#434950'));
+  g.beginPath();
+  g.roundRect(30, 30, 452, 452, 56);
+  g.fillStyle = grad;
+  g.fill();
+  g.strokeStyle = cssToken('--viewcube-outline', '#767f88');
+  g.lineWidth = 2;
+  g.stroke();
+  g.fillStyle = cssToken('--viewcube-label', '#f0f2f4');
+  g.font = '500 128px -apple-system, "Segoe UI", sans-serif';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.fillText(label, 256, 272);
+  g.fillText(label, 256, 263);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
   return tex;
+}
+
+/** The "what is it doing now" callout above a robot (user request
+ *  2026-10-08): a billboard sprite + a short vertical leader, the same
+ *  plate/badge language as the 2D callout. Textures are cached per
+ *  (color, name) — playback revisits the same names every loop. */
+const ACTION_SPRITE_W_M = 0.56;
+const ACTION_SPRITE_H_M = 0.17;
+const actionTextureCache = new Map<string, THREE.CanvasTexture>();
+function actionTexture(name: string, color: string): THREE.CanvasTexture {
+  const key = `${color}::${name}`;
+  const hit = actionTextureCache.get(key);
+  if (hit) return hit;
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 78;
+  const g = c.getContext('2d')!;
+  g.beginPath();
+  g.roundRect(4, 4, 248, 70, 14);
+  g.fillStyle = cssToken('--bg-panel', '#ffffff');
+  g.fill();
+  g.strokeStyle = cssToken('--border', 'rgba(0, 0, 0, 0.10)');
+  g.lineWidth = 3;
+  g.stroke();
+  g.fillStyle = color;
+  g.font = '600 34px -apple-system, "Segoe UI", sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  // Single-line ellipsis — annotations are short verbs ("intake", "shoot").
+  const maxW = 224;
+  g.fillText(g.measureText(name).width > maxW ? `${name.slice(0, Math.max(1, Math.floor(maxW / g.measureText(name).width * name.length)))}…` : name, 128, 41);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  actionTextureCache.set(key, tex);
+  return tex;
+}
+function createActionCallout(color: string, offsetX = 0, offsetZ = 0): { sprite: THREE.Sprite; line: THREE.Line; current?: string } {
+  const material = new THREE.SpriteMaterial({ transparent: true, depthWrite: false });
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(ACTION_SPRITE_W_M, ACTION_SPRITE_H_M, 1);
+  sprite.position.set(offsetX, 0.72, offsetZ);
+  sprite.visible = false;
+  sprite.renderOrder = 10;
+  const geo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(offsetX, 0.5, offsetZ),
+    new THREE.Vector3(offsetX, 0.64, offsetZ),
+  ]);
+  const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color, transparent: true, depthWrite: false }));
+  line.visible = false;
+  return { sprite, line };
+}
+function setActionCallout(
+  callout: { sprite: THREE.Sprite; line: THREE.Line; current?: string } | undefined,
+  name: string | undefined,
+) {
+  if (!callout || callout.current === name) return;
+  callout.current = name;
+  if (!name) {
+    callout.sprite.visible = false;
+    callout.line.visible = false;
+    return;
+  }
+  const color = (callout.line.material as THREE.LineBasicMaterial).color;
+  callout.sprite.material.map = actionTexture(name, `#${color.getHexString()}`);
+  callout.sprite.material.needsUpdate = true;
+  callout.sprite.visible = true;
+  callout.line.visible = true;
 }
 
 /**
@@ -219,6 +317,30 @@ const FRAME_ASSETS = {
 export type FrameSize = keyof typeof FRAME_ASSETS;
 
 const framePromises = new Map<FrameSize, Promise<THREE.Group | null>>();
+
+/**
+ * Cheap one-shot WebGL probe. With the prewarmed canvas mounting in every
+ * session, this component's mount effects run even where 3D can never
+ * render (jsdom tests, locked-down webviews) — the GLB prefetches there
+ * would be dead network traffic, and jsdom's fetch stub rejects three's
+ * AbortSignal with an unhandled rejection. No WebGL → no 3D asset loads.
+ */
+let webglProbe: boolean | undefined;
+function hasWebGL(): boolean {
+  if (webglProbe === undefined) {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = (canvas.getContext('webgl2') ??
+        canvas.getContext('webgl')) as WebGLRenderingContext | null;
+      webglProbe = !!gl;
+      gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    } catch {
+      webglProbe = false;
+    }
+  }
+  return webglProbe;
+}
+
 function loadMk5iFrame(size: FrameSize): Promise<THREE.Group | null> {
   const hit = framePromises.get(size);
   if (hit) return hit;
@@ -347,11 +469,19 @@ function loadProcessedModel(dir: string): Promise<THREE.Group | null> {
 }
 
 export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function FieldCanvas3D(
-  { field, fieldImageUrl, robots, currentT, showTrail = true, variant = 'welded' },
+  { field, fieldImageUrl, robots, currentT, showTrail = true, showHeatmap = false, variant = 'welded', active = true, dimPathIds },
   ref,
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<Scene3D | null>(null);
+  // Hidden-but-mounted: the scaffold effect's loop reads this ref each frame
+  // and skips GPU work while the parent hides the canvas (2D active). On
+  // re-activation one dirty frame redraws the full scene immediately.
+  const activeRef = useRef(active);
+  useEffect(() => {
+    activeRef.current = active;
+    if (active) sceneRef.current?.dirty();
+  }, [active]);
   // Mouse scheme (Onshape/SolidWorks button map) and the three view
   // checkboxes — read at pointer-event time through refs so the scaffold
   // effect's closures stay current. Reverse scroll lives in zoom.ts (the
@@ -359,6 +489,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   const [mouseScheme] = useMouseControls();
   const mouseSchemeRef = useRef(mouseScheme);
   useEffect(() => { mouseSchemeRef.current = mouseScheme; }, [mouseScheme]);
+  const [customMouseMap] = useCustomMouseControls();
+  const customMouseMapRef = useRef(customMouseMap);
+  useEffect(() => { customMouseMapRef.current = customMouseMap; }, [customMouseMap]);
   const [defaultConstrained] = useDefaultConstrained();
   const defaultConstrainedRef = useRef(defaultConstrained);
   useEffect(() => { defaultConstrainedRef.current = defaultConstrained; }, [defaultConstrained]);
@@ -370,13 +503,14 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   const pinchChaseRef = useRef<{ cancel: () => void } | null>(null);
   const { t } = useI18n();
   // Environments without WebGL (jsdom, locked-down webviews) fall back to a
-  // quiet empty pane instead of crashing the app.
+  // localized failure message instead of crashing the app.
   const [glFailed, setGlFailed] = useState(false);
   // Official MK5i CAD module (null = not yet loaded / fell back) — the
   // rig-build effect re-runs when it arrives so existing views upgrade.
   const [moduleTemplate, setModuleTemplate] = useState<THREE.Group | null>(null);
   const [frameTemplates, setFrameTemplates] = useState<Partial<Record<FrameSize, THREE.Group | null>>>({});
   useEffect(() => {
+    if (!hasWebGL()) return; // no 3D rendering possible — keep the GLBs on disk
     void loadMk5iTemplate().then(setModuleTemplate);
     for (const size of Object.keys(FRAME_ASSETS) as FrameSize[]) {
       void loadMk5iFrame(size).then((g) =>
@@ -470,7 +604,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     //   solidworks — middle = orbit, Alt+middle = ROLL (spin in the screen
     //             plane), Ctrl+middle = pan, Shift+middle = drag-zoom,
     //             wheel = zoom.
-    // Left does nothing in either scheme (a viewer has no selection).
+    //   custom — every drag slot comes from the user's own map (custom
+    //             MouseMap); the wheel always stays zoom.
+    // Left does nothing by default in every scheme (a viewer has no
+    // selection), but custom may assign it.
     const pan = { active: false, x: 0, y: 0 };
     const dragZoom = { active: false, lastY: 0 };
     const roll = { active: false, x: 0 };
@@ -489,11 +626,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // Pen gate: a stylus only drives the view when "use pen as mouse".
       if (e.pointerType === 'pen' && !penAsMouseRef.current) return;
       const action = resolveMouseAction(
-        mouseSchemeRef.current, e.button, e, defaultConstrainedRef.current,
+        mouseSchemeRef.current, e.button, e, defaultConstrainedRef.current, customMouseMapRef.current,
       );
       if (action.kind === 'none') return;
       e.preventDefault(); // middle: no autoscroll; right: no native menu
-      noteInteraction();
       if (action.kind === 'orbit') {
         drag.active = true;
         drag.constrained = action.constrained;
@@ -531,7 +667,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (!pan.active) return;
       pan.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
-      endInteraction();
     };
     const onDragZoomMove = (e: PointerEvent) => {
       if (!dragZoom.active) return;
@@ -542,21 +677,18 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // applyPinchStep dollies toward the anchored point through the wheel
       // path's internals, so clamps and damping behave like a wheel notch.
       applyPinchStep(Math.exp(-dy * 0.006));
-      noteInteraction();
       markDirty();
     };
     const onDragZoomUp = (e: PointerEvent) => {
       if (!dragZoom.active) return;
       dragZoom.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
-      endInteraction();
     };
     const onRollMove = (e: PointerEvent) => {
       if (!roll.active) return;
       const dx = e.clientX - roll.x;
       roll.x = e.clientX;
       if (dx === 0) return;
-      noteInteraction();
       applyRoll(dx);
       markDirty();
     };
@@ -564,7 +696,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (!roll.active) return;
       roll.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
-      endInteraction();
     };
     const onDragMove = (e: PointerEvent) => {
       if (!drag.active) return;
@@ -574,7 +705,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       const dPhi = drag.constrained ? 0 : (e.clientY - drag.y) * ROT;
       drag.x = e.clientX;
       drag.y = e.clientY;
-      noteInteraction();
       const now = performance.now();
       const dt = Math.max(1, now - drag.lastT);
       drag.lastT = now;
@@ -587,7 +717,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       if (!drag.active) return;
       drag.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
-      endInteraction();
     };
     renderer.domElement.addEventListener('pointerdown', onDragDown);
     renderer.domElement.addEventListener('pointermove', onDragMove);
@@ -658,6 +787,25 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       needsDraw = true;
     };
 
+    // Content-driven shadow pass (2026-10-04): the shadow map re-renders
+    // only when the scene CONTENT changed — camera-only motion (orbit,
+    // pinch, wheel, pan) never re-bakes it, which is what the old
+    // interaction freeze bought. But that freeze was keyed to TIME, not
+    // content: a pinch overlapping playback parked the shadows at the
+    // freeze pose while the robots drove on ("the shadow doesn't follow
+    // the robot", user 2026-10-04), and its engage/disengage flutter made
+    // playback read as janky. Only the robots cast shadows (the heavy
+    // field models stay out of the pass), so the rig-driving and
+    // robot-rebuild effects call invalidateShadows(); gesture handlers
+    // need nothing. The pixel ratio stays at full DPR the whole time
+    // (2026-10-04: "keep it razor sharp while I'm still pinching").
+    renderer.shadowMap.autoUpdate = false;
+    let shadowDirty = true; // the first frame bakes the shadow map
+    const invalidateShadows = () => {
+      shadowDirty = true;
+      markDirty();
+    };
+
     // AdvantageScope's lighting recipe: no tone mapping, no environment
     // map, no fog — a hemisphere fill plus one shadow-casting key light.
     // (The earlier ACES+studio-env stack overexposed the official models.)
@@ -682,20 +830,14 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // Persistent containers, created once: the field effect below clears
     // and refills them on every season switch, and the tube/box effect owns
     // `dynamic`. The scaffold (camera included) outlives all of them.
+    // sceneRef is filled in below, after the draw path exists (warmup is
+    // part of Scene3D and needs the ViewCube renderer).
     const dynamic = new THREE.Group();
     dynamic.name = 'pb-dynamic'; // reachable by the regression walkthrough
     const modelRoot = new THREE.Group();
     const fallback = new THREE.Group();
     const fieldRoot = new THREE.Group();
     scene.add(dynamic, modelRoot, fallback, fieldRoot);
-    sceneRef.current = {
-      renderer, scene, camera, controls,
-      cx: 0, cy: 0,
-      dynamic, rigs: [], trails: [],
-      modelRoot, fallback, fieldRoot,
-      backgroundThemed,
-      dirty: markDirty, themed, retintCube,
-    };
 
 
 
@@ -729,7 +871,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       lastScale = gestureScale(e);
       gestureDone = false;
       markGestureStart();
-      noteInteraction();
     };
     const onGestureChange = (e: Event) => {
       e.preventDefault();
@@ -748,7 +889,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
           const { instant, deferred } = splitInstant(factor);
           applyPinchStep(instant);
           pinchChase.factor *= deferred; // remaining view zoom to apply
-          noteInteraction();
           markDirty();
         }
       }
@@ -758,7 +898,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       gestureDone = true;
       markGestureEnd();
       lastScale = 1;
-      endInteraction();
     };
     renderer.domElement.addEventListener('gesturestart', onGestureStart);
     renderer.domElement.addEventListener('gesturechange', onGestureChange);
@@ -792,30 +931,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       }
     };
 
-    // Adaptive interaction quality (round 5): the official field models
-    // (14–20 MB GLB) make full-quality renders hog the main thread, which
-    // is what batched the gesture events in the first place. While a pinch
-    // or drag runs (plus this linger window), render at pixel ratio 1 with
-    // the shadow map frozen; restore full quality once interaction settles.
-    const INTERACTIVE_LINGER_MS = 100;
-    let interactiveUntil = 0;
-    let lowQuality = false;
-    const setLowQuality = (on: boolean) => {
-      lowQuality = on;
-      renderer.setPixelRatio(on ? 1 : (window.devicePixelRatio || 1));
-      renderer.shadowMap.autoUpdate = !on;
-      if (!on) renderer.shadowMap.needsUpdate = true; // refresh frozen shadows once
-    };
-    const noteInteraction = () => {
-      interactiveUntil = performance.now() + INTERACTIVE_LINGER_MS;
-    };
-    // Finger lift / gesture end: drop the linger so the next frame is
-    // back at full pixel ratio — zooming in to inspect detail went
-    // visibly soft when the low ratio waited out the window (wheel
-    // streams still get the short debounce via noteInteraction).
-    const endInteraction = () => {
-      interactiveUntil = 0;
-    };
     let lastFrameT = performance.now();
 
     // Draw only when the camera moved or something was marked dirty —
@@ -865,23 +980,42 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const labels = [
       t('vc.right'), t('vc.left'), t('vc.top'), t('vc.bottom'), t('vc.front'), t('vc.back'),
     ];
-    // Face textures bake per-world-face shading (top lit, bottom dark) at
-    // 512px so the 110px cube stays crisp on retina displays.
-    const mats = labels.map((lab, i) => new THREE.MeshBasicMaterial({ map: faceTexture(lab, i) }));
+    const mats = labels.map((lab) => new THREE.MeshBasicMaterial({
+      map: faceTexture(lab), vertexColors: true,
+    }));
     // Face textures bake theme tokens at draw time; regenerate on theme flip.
     retintCube = () => {
       labels.forEach((lab, i) => {
         const m = mats[i];
         if (!m) return;
         m.map?.dispose();
-        m.map = faceTexture(lab, i);
+        m.map = faceTexture(lab);
         m.needsUpdate = true;
       });
       (cornerMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
       (edgeMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
     };
-    const cubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.55, 1.55), mats);
-    cubeGroup.add(cubeMesh);
+    // Keep the original full box exclusively for picking: appearance must
+    // not shrink the existing face/edge/corner targets or alter navigation.
+    const cubeMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1.55, 1.55, 1.55),
+      new THREE.MeshBasicMaterial({ visible: false }),
+    );
+    const roundedGeometry = new RoundedBoxGeometry(1.55, 1.55, 1.55, 5, 0.09);
+    const normals = roundedGeometry.getAttribute('normal');
+    const shading = new Float32Array(normals.count * 3);
+    const light = new THREE.Vector3(-0.45, 0.8, 0.55).normalize();
+    const normal = new THREE.Vector3();
+    for (let i = 0; i < normals.count; i++) {
+      normal.fromBufferAttribute(normals, i);
+      // Fixed local lighting keeps the six faces readable while the
+      // bevel normals produce a continuous highlight around the edges.
+      const value = 0.72 + 0.28 * Math.max(0, normal.dot(light));
+      shading.set([value, value, value], i * 3);
+    }
+    roundedGeometry.setAttribute('color', new THREE.BufferAttribute(shading, 3));
+    const roundedCube = new THREE.Mesh(roundedGeometry, mats);
+    cubeGroup.add(cubeMesh, roundedCube);
 
     // Onshape-style clean cube: no resident grips. Edge/corner intent is
     // signaled by two dynamic markers that appear only while hovered and
@@ -965,11 +1099,48 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     cubeCanvas.addEventListener('pointerdown', onCubeDown);
     cubeCanvas.addEventListener('pointermove', onCubeMove);
 
+    // No keyboard scope and no focus ring on the WebGL canvas (user
+    // 2026-10-07): clicking the field does nothing, so a box around the
+    // whole field read as a broken promise. View keys were canvas-scoped —
+    // deleted with the focus entry; scrub (←/→), refit (0) and the 2D/3D
+    // toggle (V) remain global, and the ViewCube stays pointer-driven.
+
+    // One full draw of both renderers, shared by the loop and the parked
+    // warmup below.
+    const drawFrame = () => {
+      needsDraw = false;
+      renderer.render(scene, camera);
+      // Mirror the main orientation into the cube and draw it too.
+      cubeGroup.quaternion.copy(camera.quaternion).invert();
+      cubeRenderer.render(cubeScene, cubeCam);
+    };
+    // Parked warmup (prewarm): one hidden frame that compiles every GL
+    // program, uploads the buffers/textures and bakes the shadow map while
+    // the canvas is still display:none — so the FIRST 3D click of a session
+    // only has to resize the buffer and draw. Content effects call this as
+    // things arrive (model mount, rig rebuild); the loop never does, so
+    // parked playback can't turn into continuous hidden rendering.
+    const warmup = () => {
+      if (activeRef.current) return; // visible — the loop draws anyway
+      if (shadowDirty) {
+        shadowDirty = false;
+        renderer.shadowMap.needsUpdate = true;
+      }
+      drawFrame();
+    };
+
     let raf = 0;
     const loop = () => {
       const now = performance.now();
       const dt = now - lastFrameT;
       lastFrameT = now;
+      // Hidden-but-mounted: skip every frame's GPU work (render, shadow
+      // bake, DPR sync) while the 2D view owns the screen. lastFrameT
+      // still advances so a pending tween/chase resumes with a sane dt.
+      if (!activeRef.current) {
+        raf = requestAnimationFrame(loop);
+        return;
+      }
       // ViewCube tween: ease the camera along the shortest spherical arc.
       if (tween) {
         const t = Math.min(1, (performance.now() - tween.start) / 300);
@@ -991,20 +1162,18 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         pinchChase.factor = stepped.remaining;
         markDirty();
       }
-      const interacting = now < interactiveUntil || pinchChase.factor !== 1 || drag.active || roll.active;
-      if (interacting !== lowQuality) {
-        setLowQuality(interacting);
-        // Restore repaints immediately: setPixelRatio resizes (clears) the
-        // buffer, and with damping already settled nothing else would mark
-        // this frame dirty — leaving the blurry low-quality frame up.
-        if (!interacting) needsDraw = true;
+      if (shadowDirty) {
+        // Consumed by the render below: the shadow map re-bakes only on
+        // frames where the content moved — camera motion alone never does.
+        shadowDirty = false;
+        renderer.shadowMap.needsUpdate = true;
       }
       const moved = controls.update();
       // DPR can change without a resize (window dragged between Retina and
       // 1x displays) — ResizeObserver misses it, leaving the buffer at the
-      // stale density. Re-sync the pixel ratio (preserving the interactive
-      // low-quality override); setPixelRatio re-allocates the buffer.
-      const dprWant = lowQuality ? 1 : (window.devicePixelRatio || 1);
+      // stale density. Re-sync the pixel ratio — ALWAYS the full DPR,
+      // gestures included; setPixelRatio re-allocates the buffer.
+      const dprWant = window.devicePixelRatio || 1;
       if (renderer.getPixelRatio() !== dprWant) {
         renderer.setPixelRatio(dprWant);
         needsDraw = true;
@@ -1014,16 +1183,22 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         cubeRenderer.setPixelRatio(cubeDprWant);
         needsDraw = true;
       }
-      if (needsDraw || moved) {
-        needsDraw = false;
-        renderer.render(scene, camera);
-        // Mirror the main orientation into the cube and draw it too.
-        cubeGroup.quaternion.copy(camera.quaternion).invert();
-        cubeRenderer.render(cubeScene, cubeCam);
-      }
+      if (needsDraw || moved) drawFrame();
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
+
+    // Filled in here, after the draw path exists (warmup is part of
+    // Scene3D and needs the ViewCube renderer created above).
+    sceneRef.current = {
+      renderer, scene, camera, controls,
+      cx: 0, cy: 0,
+      dynamic, rigs: [], trails: [], heatmaps: [],
+      modelRoot, fallback, fieldRoot,
+      backgroundThemed,
+      dirty: markDirty, invalidateShadows, warmup, themed, retintCube,
+      cancelFly: () => { tween = null; },
+    };
 
     // Test/debug hook: orientation + camera state assertions.
     (window as unknown as { __pb3d?: unknown }).__pb3d = { camera, controls, renderer, scene, modelCacheSize: () => modelCache.size };
@@ -1036,6 +1211,17 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       controls.removeEventListener('start', onUserStart);
       cubeCanvas.removeEventListener('pointerdown', onCubeDown);
       cubeCanvas.removeEventListener('pointermove', onCubeMove);
+      cubeMesh.geometry.dispose();
+      cubeMesh.material.dispose();
+      roundedGeometry.dispose();
+      mats.forEach((material) => {
+        material.map?.dispose();
+        material.dispose();
+      });
+      cornerMarker.geometry.dispose();
+      cornerMarker.material.dispose();
+      edgeMarker.geometry.dispose();
+      edgeMarker.material.dispose();
       cubeRenderer.dispose();
       viewcubeEl.remove();
       renderer.domElement.removeEventListener('pointerdown', onDragDown);
@@ -1265,6 +1451,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const st = sceneRef.current;
     if (!st) return;
     for (const { color, token } of st.themed) color.set(tokenColorHex(token, '#1c1c1e'));
+    for (const { robot, mesh } of st.heatmaps) (mesh.material as THREE.MeshBasicMaterial).color.set(heatmapColor(robot.trajectory.alliance, cssToken('--accent', '#0a84ff'), cssToken('--danger', '#ff453a')));
     st.retintCube();
     st.dirty();
   }, [themeResolved]);
@@ -1335,6 +1522,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       snapTagQuadsToDecalPlates(st.fieldRoot, g);
       st.fallback.visible = false;
       st.dirty();
+      // Parked canvas: bake the freshly mounted model while hidden, so the
+      // first 3D click never pays for its shaders/buffers.
+      st.warmup();
     };
 
     const cached = modelCache.get(dir);
@@ -1411,10 +1601,16 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     st.dynamic.clear();
     st.rigs = [];
     st.trails = [];
+    st.heatmaps = [];
     for (const r of robots) {
-      const trail = createGroundTrail(r, st.cx, st.cy);
+      const trail = createGroundTrail(r, st.cx, st.cy,
+        dimPathIds?.has(r.trajectory.id) ? cssToken('--fg-dim', '#9a9aa0') : undefined);
       st.dynamic.add(trail.mesh);
       st.trails.push(trail);
+      // Occupancy heatmap — one merged footprint-stain mesh per robot.
+      const heatmap = createGroundHeatmap(r, st.cx, st.cy, cssToken('--accent', '#0a84ff'), cssToken('--danger', '#ff453a'));
+      st.dynamic.add(heatmap.mesh);
+      st.heatmaps.push(heatmap);
       // MK5i-style chassis (bumper skirt + frame deck + swerve pods),
       // sized by this robot's season-resolved two-layer geometry; pods use
       // the official CAD module when its template has loaded.
@@ -1424,39 +1620,41 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // (2018 is gone). buildChassis3D scales the frame to the robot's
       // chassis rectangle, so file-sized robots still fit exactly.
       const frameSize: FrameSize = field.year === 2026 ? '27' : '30';
-      const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, r.trajectory.teamNumber || undefined, frameTemplates[frameSize] ?? null, st.renderer.capabilities.getMaxAnisotropy());
-      // Opponent rendering (§6.5-②): faded ghost in 3D — dashed outlines
-      // are a 2D idiom; opacity carries the same "not one of us" read.
-      if (r.opponent) {
-        chassis.group.traverse((child) => {
-          const mesh = child as THREE.Mesh;
-          const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
-          if (Array.isArray(mat)) mat.forEach((m) => { m.transparent = true; m.opacity = 0.45; });
-          else if (mat) { mat.transparent = true; mat.opacity = 0.45; }
-        });
-      }
+      const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, robotAnnotation(r.trajectory) || undefined, frameTemplates[frameSize] ?? null, st.renderer.capabilities.getMaxAnisotropy());
       st.dynamic.add(chassis.group);
+      // The callout rides the chassis group (inside it, at the footprint
+      // offset) so it follows the rig's per-frame pose.
+      const action = createActionCallout(bumperColor(r.trajectory.alliance), vis.outer.offsetX, vis.outer.offsetY);
+      chassis.group.add(action.sprite);
+      chassis.group.add(action.line);
       st.rigs.push({
         root: chassis.group,
         robot: r,
         pods: chassis.pods,
         turrets: chassis.turrets,
         modules,
+        action,
       });
-      st.dirty();
+      st.invalidateShadows();
     }
-  }, [robots, field, moduleTemplate, frameTemplates]);
+    // Parked canvas: bake the fresh rigs/trails while hidden — covers the
+    // initial prewarm and later CAD-template upgrades alike.
+    st.warmup();
+  }, [robots, field, moduleTemplate, frameTemplates, dimPathIds]);
 
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
-    for (const { mesh, robot } of st.trails) {
-      const time = currentT - robot.startDelayS;
-      mesh.visible = showTrail && time > (robot.trajectory.samples[0]?.t ?? 0);
-      mesh.material.uniforms.cutoff!.value = time;
+    // Full-route tape: only the toggle gates visibility, never the clock.
+    for (const { mesh } of st.trails) {
+      mesh.visible = showTrail;
+    }
+    // Same for the heatmap stain — the toggle, not the clock, gates it.
+    for (const { mesh } of st.heatmaps) {
+      mesh.visible = showHeatmap;
     }
     st.dirty();
-  }, [currentT, showTrail, robots, field, moduleTemplate, frameTemplates]);
+  }, [showTrail, showHeatmap, robots, field, moduleTemplate, frameTemplates]);
 
   // Drive the chassis rigs along the shared clock: pose from the shared
   // sampler. Modules stay bolted at the installed angle the whole time --
@@ -1475,7 +1673,8 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // The render frame reflects X, so the heading reflects with it —
       // leaving it raw would have every robot drive sideways.
       rig.root.rotation.y = headingToRender(pose.heading);
-      st.dirty();
+      setActionCallout(rig.action, activeActionsAt(rig.robot, currentT).map((a) => a.name).join(' · ') || undefined);
+      st.invalidateShadows();
     }
     // `moduleTemplate` matters here too: when the CAD template resolves it
     // rebuilds every rig at the origin — without re-driving the poses the
@@ -1493,6 +1692,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       const st = sceneRef.current;
       if (!st) return;
       pinchChaseRef.current?.cancel();
+      st.cancelFly();
       st.controls.target.set(0, 0, 0);
       st.camera.position.set(...CAM_HOME);
       st.controls.update();
@@ -1500,6 +1700,6 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     },
   }));
 
-  if (glFailed) return <div className="field-canvas-3d" aria-label="WebGL unavailable" />;
+  if (glFailed) return <div className="field-canvas-3d" role="status">{t('canvas.webglUnavailable')}</div>;
   return <div ref={hostRef} className="field-canvas-3d" />;
 });

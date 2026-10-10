@@ -10,7 +10,8 @@ interface WelcomeScreenProps {
   onOpenSession: () => void;
   onTryExample: () => void;
   exampleLoading?: boolean;
-  onDemo?: () => void;
+  /** Opens the in-app quick guide; the Help menu carries the same entry. */
+  onOpenGuide?: () => void;
 }
 
 function WelcomeIcon({ name }: { name: 'file' | 'folder' | 'session' | 'example' }) {
@@ -21,7 +22,7 @@ function WelcomeIcon({ name }: { name: 'file' | 'folder' | 'session' | 'example'
   </svg>;
 }
 
-export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryExample, onDemo, exampleLoading = false }: WelcomeScreenProps) {
+export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryExample, exampleLoading = false, onOpenGuide }: WelcomeScreenProps) {
   const { t } = useI18n();
   const { resolved } = useTheme();
 
@@ -51,11 +52,10 @@ export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryEx
             <WelcomeIcon name="example" />
             <span className="start-action-title">{t(exampleLoading ? 'welcome.loadingExample' : 'welcome.tryExample')}</span>
           </button>
-          {onDemo && <button type="button" className="start-action welcome-try-example" onClick={onDemo} disabled={exampleLoading} aria-label={t('welcome.demo')} aria-description={t('welcome.demoHint')}>
-            <WelcomeIcon name="example" />
-            <span className="start-action-title">{t('welcome.demo')}</span>
-          </button>}
         </div>
+        {onOpenGuide && <div className="start-guide">
+          <button type="button" className="start-guide-link" onClick={onOpenGuide}>{t('menu.userGuide')}</button>
+        </div>}
       </div>
     </section>
   );

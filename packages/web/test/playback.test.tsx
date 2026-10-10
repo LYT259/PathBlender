@@ -34,18 +34,56 @@ describe('playback clock bounds and keyboard ownership', () => {
     expect(result.current.t).toBe(0);
   });
 
-  it('leaves Space and arrow keys to buttons and modal dialogs', () => {
+  it('lets the playhead park beyond the transport end up to the scrub max, while replay loops at the end', () => {
+    // Composer case: composed end 6.22 s, whole auto axis 20 s scrubbable.
+    const { result, rerender } = renderHook(
+      ({ duration, scrubMax }) => usePlayback(duration, false, scrubMax),
+      { initialProps: { duration: 6.22, scrubMax: 20 } },
+    );
+    act(() => result.current.setT(15));
+    expect(result.current.t).toBe(15);
+    // Adding a clip (duration grows) must not yank the parked playhead.
+    rerender({ duration: 13, scrubMax: 20 });
+    expect(result.current.t).toBe(15);
+    // Arrow keys scrub to the axis max, End still jumps to the range end.
+    fireEvent.keyDown(window, { key: 'ArrowRight', code: 'ArrowRight', shiftKey: true });
+    expect(result.current.t).toBe(17);
+    fireEvent.keyDown(window, { key: 'End', code: 'End' });
+    expect(result.current.t).toBe(13);
+    // Closing the composer shrinks the scrub max — the playhead comes back.
+    rerender({ duration: 13, scrubMax: 13 });
+    expect(result.current.t).toBe(13);
+    // Playing from a parked position STARTS AT 0 (user 2026-10-08): the
+    // parked playhead gates the library; Play means run the arrangement,
+    // which begins at the beginning. (Re-open the axis first — closed, the
+    // scrub max itself clamps the park.)
+    rerender({ duration: 13, scrubMax: 20 });
+    act(() => result.current.setT(15));
+    act(() => result.current.setPlaying(true));
+    expect(result.current.playing).toBe(true);
+    expect(result.current.t).toBe(0);
+    // A duration shrinking under a RUNNING clock clamps in place — it does
+    // not restart the arrangement (no new play transition fires).
+    act(() => result.current.setT(10));
+    rerender({ duration: 6.22, scrubMax: 6.22 });
+    expect(result.current.t).toBe(6.22);
+    expect(result.current.playing).toBe(true);
+  });
+
+  it('leaves Space to the focused button, scrubs from button focus, and dialogs block all', () => {
     const { result } = renderHook(() => usePlayback(10));
     const ui = render(<button type="button">Import paths</button>);
-    fireEvent.keyDown(screen.getByRole('button'), { code: 'Space', key: ' ' });
-    fireEvent.keyDown(screen.getByRole('button'), { code: 'ArrowRight', key: 'ArrowRight' });
+    const button = screen.getByRole('button');
+    // Space activates the focused button — never play/pause.
+    fireEvent.keyDown(button, { code: 'Space', key: ' ' });
     expect(result.current.playing).toBe(false);
-    expect(result.current.t).toBe(0);
+    // Scrub keys cannot activate anything, so they work from button focus.
+    fireEvent.keyDown(button, { code: 'ArrowRight', key: 'ArrowRight' });
+    expect(result.current.t).toBe(0.5);
     ui.rerender(<div role="dialog" aria-modal="true">Preferences</div>);
     fireEvent.keyDown(window, { code: 'Space', key: ' ' });
     fireEvent.keyDown(window, { code: 'ArrowRight', key: 'ArrowRight' });
-    expect(result.current.playing).toBe(false);
-    expect(result.current.t).toBe(0);
+    expect(result.current.t).toBe(0.5);
   });
 
   it('does not toggle repeatedly while Space is held; explicit scrubbing pauses', () => {

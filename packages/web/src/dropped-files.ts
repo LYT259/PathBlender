@@ -1,7 +1,7 @@
 /**
  * Drag-and-drop folder support: DataTransfer entries walked recursively so
  * dropping a whole deploy directory behaves like picking it with the
- * folder input. Everything stays local (AGENTS.md §1) — this only collects
+ * folder input. Everything stays local (the app never uploads) — this only collects
  * File handles with their in-drop relative paths for the import pipeline.
  */
 

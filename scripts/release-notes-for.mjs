@@ -19,6 +19,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Converter } from 'opencc-js';
+import translations from './release-notes-locales.json' with { type: 'json' };
+const toHK = await Converter({ from: 'cn', to: 'hk' });
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const [versionArg, notesTsArg] = process.argv.slice(2);
@@ -46,7 +49,17 @@ function cmpSemver(a, b) {
   // same triple: release > prerelease; two prereleases compare by tag text
   if (pa[1] === null) return pb[1] === null ? 0 : 1;
   if (pb[1] === null) return -1;
-  return pa[1] < pb[1] ? -1 : pa[1] > pb[1] ? 1 : 0;
+  const aa = pa[1].split('.'), bb = pb[1].split('.');
+  for (let i = 0; i < Math.max(aa.length, bb.length); i++) {
+    if (aa[i] === undefined) return -1;
+    if (bb[i] === undefined) return 1;
+    if (aa[i] === bb[i]) continue;
+    const an = /^\d+$/.test(aa[i]), bn = /^\d+$/.test(bb[i]);
+    if (an && bn) return Number(aa[i]) - Number(bb[i]);
+    if (an !== bn) return an ? -1 : 1;
+    return aa[i] < bb[i] ? -1 : 1;
+  }
+  return 0;
 }
 
 /** Extract the VERSION_NOTES registry from the generated version-info.ts. */
@@ -57,9 +70,12 @@ function readVersionNotes() {
   const re = /\{ version: '((?:\\.|[^'\\])*)', date: '((?:\\.|[^'\\])*)', note: \{\s*([\s\S]*?)\s*\} \}/g;
   for (const m of ts.matchAll(re)) {
     const unesc = (s) => s.replace(/\\'/g, "'").replace(/\\\\/g, '\\').replace(/\\n/g, '\n');
-    const langVal = /(?:(?:'([a-z][a-z-]*)')|([a-z][a-z-]*))\s*:\s*(['"])((?:\\.|(?!\3)[^\\])*)\3/g;
+    // Keys appear in the registry in all three quotings: bare (bump-version.mjs),
+    // single-quoted ('zh-tw') and double-quoted ("zh" — the 2026-10-07 batch
+    // backfill wrote a few entries JSON-style; a stable release aggregates them).
+    const langVal = /(?:(?:'([a-z][a-z-]*)')|(?:"([a-z][a-z-]*)")|([a-z][a-z-]*))\s*:\s*(['"])((?:\\.|(?!\4)[^\\])*)\4/g;
     const note = {};
-    for (const lm of m[3].matchAll(langVal)) note[lm[1] ?? lm[2]] = unesc(lm[4]);
+    for (const lm of m[3].matchAll(langVal)) note[lm[1] ?? lm[2] ?? lm[3]] = unesc(lm[5]);
     entries.push({ version: unesc(m[1]), date: m[2], note });
   }
   if (entries.length === 0) throw new Error('no VERSION_NOTES entries parsed from version-info.ts');
@@ -71,10 +87,10 @@ const entries = readVersionNotes();
 let selected;
 if (isStable(version)) {
   // Aggregate everything newer than the previous stable release.
-  const prevStableIdx = entries.findIndex(
-    (e) => isStable(e.version) && cmpSemver(e.version, version) < 0,
-  );
-  selected = prevStableIdx === -1 ? entries : entries.slice(0, prevStableIdx);
+  const eligible = entries.filter((e) => cmpSemver(e.version, version) <= 0);
+  const previous = eligible.filter((e) => isStable(e.version) && cmpSemver(e.version, version) < 0)
+    .sort((a, b) => cmpSemver(b.version, a.version))[0];
+  selected = eligible.filter((e) => !previous || cmpSemver(e.version, previous.version) > 0);
 } else {
   const own = entries.find((e) => e.version === version);
   if (!own) {
@@ -84,57 +100,35 @@ if (isStable(version)) {
   selected = [own];
 }
 
-// GitHub-visible notes stay English-primary with the Chinese wording
-// alongside (repo convention): take en/zh from the per-language structure.
-const changes = selected
-  .filter((e) => e.note.en?.trim())
-  .map((e) => {
-    const en = e.note.en.trim();
-    const zh = e.note.zh?.trim();
-    return zh && zh !== en
-      ? `- v${e.version} (${e.date}): ${en} / ${zh}`
-      : `- v${e.version} (${e.date}): ${en}`;
-  });
-const changesBlock =
-  changes.length > 0
-    ? changes.join('\n')
-    : `- v${version}: improvements and fixes / 改进与修复（详见应用内关于页）`;
+const manifest = process.env.PB_RELEASE_ARTIFACTS
+  ? JSON.parse(readFileSync(resolve(process.env.PB_RELEASE_ARTIFACTS), 'utf8')) : null;
+if (manifest && manifest.version !== version) throw new Error('release artifact manifest version mismatch');
+const assets = manifest ? [
+  ['macos', manifest.macos.dmg], ['windows', manifest.windows.nsis],
+  ['deb', manifest.linux.deb], ['appimage', manifest.linux.appimage], ['rpm', manifest.linux.rpm],
+] : [['macosLegacy', `PathBlender_${version}_aarch64.dmg`]];
+if (assets.some(([, name]) => typeof name !== 'string' || !/^[\w.+-]+$/.test(name))) throw new Error('invalid release artifact name');
 
 const knownIssuesPath = process.env.PB_KNOWN_ISSUES ? resolve(process.env.PB_KNOWN_ISSUES) : join(root, 'docs/release-notes/known-issues.md');
-const knownIssues = existsSync(knownIssuesPath)
-  ? readFileSync(knownIssuesPath, 'utf-8')
-      // The file carries its own H1 and a maintainer-facing blockquote note;
-      // the release body already provides the section heading, and the
-      // maintenance note is not for users. Skip both (first seen doubled in
-      // the v0.1.6-beta.22 release body).
-      .split('\n')
-      .filter((l) => !l.startsWith('# ') && !l.startsWith('> '))
-      .join('\n')
-      .trim()
-  : '(none / 暂无)';
-
-const dmg = `PathBlender_${version}_aarch64.dmg`;
-
-console.log(`## What's new / 新变化
-
-${changesBlock}
-
-## Platforms & download / 平台与下载
-
-- **macOS (Apple Silicon, 13.0+)** — download \`${dmg}\` from the assets below, open it, and drag PathBlender to Applications.
-- **Windows / Linux** — installers are not provided yet; they are planned for a follow-up release. (The code is cross-platform; this release ships macOS only.)
-- **Web app / 网页版** — also runs directly in the browser at
-  [pathblender.pages.dev](https://pathblender.pages.dev) (viewer build:
-  import, playback and checking; no session save / PNG / folder import),
-  preview channel at [pathblender-preview.pages.dev](https://pathblender-preview.pages.dev).
-
-## Known issues & limitations / 已知问题与限制
-
-${knownIssues}
-
-## How to update / 更新方法
-
-- **Desktop app**: menu **PathBlender → Check for Updates…** (beta builds: enable the Beta channel in **Preferences → Updates** first), or simply download the dmg above and replace the app.
-- Full per-version notes live inside the app: **PathBlender → About PathBlender**.
-- 桌面版：菜单 **PathBlender → 检查更新…**（Beta 版先在 **偏好设置 → 更新** 打开 Beta 通道），或直接下载上方 dmg 覆盖安装。
-`);
+if (!existsSync(knownIssuesPath)) throw new Error('known issues document is missing');
+const issuesText = readFileSync(knownIssuesPath, 'utf8').split('\n')
+  .filter((line) => !line.startsWith('# ') && !line.startsWith('> ')).join('\n').trim();
+function issuesFor(lang) {
+  if (!issuesText.includes('<!-- language:')) return lang === 'zh-hk' ? toHK(issuesText) : issuesText;
+  const sections = Object.fromEntries([...issuesText.matchAll(/<!-- language: ([a-z-]+) -->\s*([\s\S]*?)(?=<!-- language:|$)/g)].map((m) => [m[1], m[2].trim()]));
+  if (sections[lang]) return sections[lang];
+  if (lang === 'zh-hk' && sections.zh) return toHK(sections.zh);
+  throw new Error(`known issues translation missing: ${lang}`);
+}
+function render(lang) {
+  const t = translations[lang];
+  const changes = selected.filter((e) => e.note.en?.trim()).map((e) => {
+    const text = lang === 'zh-hk' ? (e.note['zh-hk'] ?? (e.note.zh ? toHK(e.note.zh) : null)) : e.note[lang];
+    if (!text?.trim()) throw new Error(`release note translation missing: ${e.version} ${lang}`);
+    return `- v${e.version} (${e.date}): ${text.trim()}`;
+  }).join('\n') || t.fallback;
+  const downloads = assets.map(([platform, name]) => `- **${t.platforms[platform]}** — \`${name}\``).join('\n');
+  return `## ${t.changes}\n\n${changes}\n\n## ${t.download}\n\n${downloads}\n\n${t.web}\n\n## ${t.issues}\n\n${issuesFor(lang)}\n\n## ${t.update}\n\n${t.instructions}`;
+}
+console.log(render('en') + Object.entries(translations).filter(([lang]) => lang !== 'en').map(([lang, t]) =>
+  `\n\n<details>\n<summary>${t.label}</summary>\n\n${render(lang)}\n\n</details>`).join(''));

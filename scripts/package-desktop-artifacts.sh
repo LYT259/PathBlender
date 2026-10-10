@@ -22,6 +22,7 @@
 #                                skipped with a warning when no key is on
 #                                the machine (local install without the
 #                                release key)
+#   --target universal-apple-darwin  package and verify both Mac architectures
 # Defaults: required / required. Signing key comes from either
 # TAURI_SIGNING_PRIVATE_KEY (content) or TAURI_SIGNING_PRIVATE_KEY_PATH,
 # mirroring what tauri itself accepts.
@@ -32,18 +33,39 @@ cd "$(dirname "$0")/.."
 VERSION="${1:-}"
 DMG_MODE=required
 UPDATER_MODE=required
+TARGET=""
 [[ -n "$VERSION" ]] || { echo "usage: $0 <version> [--dmg required|best-effort] [--updater required|auto]" >&2; exit 1; }
 shift
 while (( $# > 0 )); do
   case "$1" in
     --dmg) DMG_MODE="$2"; shift 2 ;;
     --updater) UPDATER_MODE="$2"; shift 2 ;;
+    --target) TARGET="$2"; shift 2 ;;
     *) echo "package-desktop-artifacts.sh: unknown flag: $1" >&2; exit 1 ;;
   esac
 done
 
-APP=packages/desktop/src-tauri/target/release/bundle/macos/PathBlender.app
+case "$DMG_MODE:$UPDATER_MODE" in
+  (required:required|required:auto|best-effort:required|best-effort:auto) ;;
+  (*) echo "package-desktop-artifacts.sh: invalid packaging mode" >&2; exit 1 ;;
+esac
+case "$TARGET" in
+  ("") BUNDLE=packages/desktop/src-tauri/target/release/bundle; DMG_ARCH=aarch64 ;;
+  (universal-apple-darwin) BUNDLE=packages/desktop/src-tauri/target/universal-apple-darwin/release/bundle; DMG_ARCH=universal ;;
+  (*) echo "package-desktop-artifacts.sh: unsupported target: $TARGET" >&2; exit 1 ;;
+esac
+APP="$BUNDLE/macos/PathBlender.app"
 [[ -d "$APP" ]] || { echo "package-desktop-artifacts.sh: bundle not found: $APP" >&2; exit 1; }
+
+verify_architectures() {
+  [[ "$TARGET" == universal-apple-darwin ]] || return 0
+  local app="$1" executable
+  executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")
+  lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/$executable" || {
+    echo "package-desktop-artifacts.sh: Universal bundle is missing an architecture" >&2; return 1
+  }
+}
+verify_architectures "$APP"
 
 # --- 1. Dark-mode icon catalog -----------------------------------------------
 scripts/apply-dark-icon.sh "$APP"
@@ -100,7 +122,7 @@ DMG_DIR="$(dirname "$(dirname "$APP")")/dmg"
 rm -f "$(dirname "$APP")"/*.dmg
 rm -rf "$DMG_DIR"
 mkdir -p "$DMG_DIR"
-DMG="$DMG_DIR/PathBlender_${VERSION}_aarch64.dmg"
+DMG="$DMG_DIR/PathBlender_${VERSION}_${DMG_ARCH}.dmg"
 if ! scripts/make-dmg.sh "$APP" "$DMG"; then
   rm -f "$DMG"
   if [[ "$DMG_MODE" == best-effort ]]; then
@@ -127,6 +149,8 @@ if [[ -f "$DMG" ]]; then
   SEAL_RC=$?
   [[ -f "$MNT/PathBlender.app/Contents/Resources/Assets.car" ]]
   ICON_RC=$?
+  verify_architectures "$MNT/PathBlender.app"
+  ARCH_RC=$?
   set -e
   hdiutil detach "$MNT" >/dev/null 2>&1 || true
   if (( SEAL_RC != 0 )); then
@@ -135,6 +159,10 @@ if [[ -f "$DMG" ]]; then
   fi
   if (( ICON_RC != 0 )); then
     echo "package-desktop-artifacts.sh: dmg content is missing the day+night icon catalog (Assets.car)" >&2
+    exit 1
+  fi
+  if (( ARCH_RC != 0 )); then
+    echo "package-desktop-artifacts.sh: dmg content is not Universal" >&2
     exit 1
   fi
 fi

@@ -9,7 +9,7 @@
  * Installed as a git pre-push hook (see scripts/install-hooks.sh). Local
  * commits after a failure: fix the words, amend/revert, push again.
  *
- * Patterns are the project's own disclosure discipline (AGENTS.md red lines):
+ * Patterns are the project's own disclosure discipline:
  * account names, appeal ticket numbers, LAN IPs, real names/emails, key
  * material. Deliberately noisy over tea-leaf parsing — a hit is always
  * investigated, never auto-suppressed.

@@ -5,6 +5,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { broadcastPref, listenPrefs } from '../pref-sync';
+import { formatDecimal } from '../number-format';
 import { en, type MessageKey } from './en';
 import { ar } from './ar';
 import { az } from './az';
@@ -44,6 +45,7 @@ import { tr } from './tr';
 import { uk } from './uk';
 import { vi } from './vi';
 import { zh } from './zh';
+import { zhHant } from './zh-hant';
 import { zhHk } from './zh-hk';
 import { zhTw } from './zh-tw';
 
@@ -52,14 +54,14 @@ export type Lang =
   | 'fil' | 'fr' | 'he' | 'hi' | 'hr' | 'hu' | 'hy' | 'id' | 'it' | 'ja'
   | 'ko' | 'mk' | 'mr' | 'ms' | 'nb' | 'nl' | 'nn' | 'pl' | 'pt-BR' | 'ro'
   | 'rw' | 'sq' | 'sr' | 'sv' | 'ta' | 'tr' | 'uk' | 'vi'
-  | 'zh' | 'zh-hk' | 'zh-tw';
+  | 'zh' | 'zh-hant' | 'zh-hk';
 /** User choice: 'system' follows the OS language live (first visit uses it). */
 export type LangChoice = 'system' | Lang;
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = {
   en, ar, az, bg, bs, cs, da, de, el, es, fil, fr, he, hi, hr, hu, hy, id, it,
   ja, ko, mk, mr, ms, nb, nl, nn, pl, 'pt-BR': ptBR, ro, rw, sq, sr, sv, ta,
-  tr, uk, vi, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  tr, uk, vi, zh, 'zh-hant': zhHant, 'zh-hk': zhHk,
 };
 
 /**
@@ -84,15 +86,20 @@ export const legacyExampleNames: ReadonlySet<string> = new Set(
  * `endonym` is what the picker shows: a language is named in its own language,
  * because a user who cannot read the UI cannot read an English exonym either.
  *
- * Traditional Chinese is two rows (v1.23, user directive): the regions are
- * named in the label because the dictionaries differ by region, and the labels
- * follow the naming the user asked for. Macau has no row of its own — it reads
- * the Hong Kong one (`langFromTags`), per v1.22's 区域就近回退.
+ * Traditional Chinese ships two selectable rows (2026-10-10): the generic
+ * zh-hant row — a region-neutral full dictionary (zh-hant.ts), the home for a
+ * bare `zh-Hant` or `zh-TW` system tag — and Hong Kong, region-named because
+ * the underlying dictionaries differ by region. The zh-tw dictionary itself
+ * still ships unselectable (its picker row was withdrawn 2026-10-07 for the
+ * public round, fifth batch pending): it is the base the zh-hk override table
+ * spreads over (zh-hk.ts), so wording changes made for Taiwan keep reaching
+ * Hong Kong readers. Macau reads the Hong Kong row (`langFromTags`), per
+ * v1.22's 区域就近回退.
  */
 export const LANG_META: Record<Lang, { englishName: string; endonym: string }> = {
   zh: { englishName: 'Chinese (Simplified)', endonym: '简体中文' },
+  'zh-hant': { englishName: 'Chinese (Traditional, Generic)', endonym: '繁體中文（通用）' },
   'zh-hk': { englishName: 'Chinese (Traditional, Hong Kong)', endonym: '繁體中文（中國香港）' },
-  'zh-tw': { englishName: 'Chinese (Traditional, Taiwan)', endonym: '繁體中文（中國台灣）' },
   ar: { englishName: 'Arabic', endonym: 'العربية' },
   az: { englishName: 'Azerbaijani', endonym: 'Azərbaycanca' },
   bg: { englishName: 'Bulgarian', endonym: 'Български' },
@@ -155,14 +162,28 @@ export const LANGUAGES: readonly LangChoice[] = [
 ];
 
 /**
+ * Every localized "Follow system" label plus the bare word "system" — the
+ * searchable aliases for the pinned mode row (language-search.ts). Both
+ * scripts of Chinese are in here via their own dictionaries (跟随系统,
+ * 跟隨系統), so either matches.
+ */
+export const SYSTEM_LABELS: readonly string[] = [...new Set([
+  ...Object.values(DICTS).map((dict) => dict['prefs.langSystem']),
+  zhTw['prefs.langSystem'],
+  'system',
+])];
+
+/**
  * Browser tags → app language, first tag that matches any supported language
  * wins (that is what `navigator.languages` means: most preferred first). The
  * explicit `en` branch matters as much as the `zh` precedence: without it a
  * `['en-US', 'zh-CN']` list fell through English and opened in Chinese.
  *
- * Inside Chinese, Hans beats Hant only after the region check, and the region
- * decides *which* Traditional dictionary: HK and MO share one, TW and a bare
- * `zh-Hant` (no region — the largest user group) get the Taiwan one.
+ * Inside Chinese, Hans beats Hant only after the region check. The region
+ * decides *which* Traditional row: Hong Kong and Macau tags read the Hong
+ * Kong dictionary, while a Taiwan tag or a bare `zh-Hant` (no region) reads
+ * the generic Traditional row (2026-10-10) — the region-neutral dictionary
+ * those readers are better served by now that it ships.
  *
  * Portuguese ships only the Brazilian dictionary, so every `pt*` tag — a
  * bare `pt` or an unshipped region like `pt-PT` — lands on it (a Portuguese
@@ -174,7 +195,7 @@ export const LANGUAGES: readonly LangChoice[] = [
 export function langFromTags(tags: readonly string[]): Lang {
   for (const l of tags) {
     if (/^zh-(hant-(hk|mo)|hk|mo)/i.test(l)) return 'zh-hk';
-    if (/^zh-(hant(-tw)?|tw)/i.test(l)) return 'zh-tw';
+    if (/^zh-(hant(-tw)?|tw)/i.test(l)) return 'zh-hant';
     if (/^zh/i.test(l)) return 'zh';
     if (/^(he|iw)/i.test(l)) return 'he';
     if (/^ar/i.test(l)) return 'ar'; // arq/ars (Arabic variants) start with `ar` too
@@ -232,6 +253,12 @@ function systemLang(): Lang {
 
 export type TFunc = (key: MessageKey, vars?: Record<string, string | number>) => string;
 
+/**
+ * Locale-aware decimal rendering (number-format.ts): `fractionDigits` fixes
+ * precision like toFixed(), omitting it keeps "0.5"/"1" short.
+ */
+export type NFunc = (value: number, fractionDigits?: number) => string;
+
 function interpolate(template: string, vars?: Record<string, string | number>): string {
   if (!vars) return template;
   return template.replace(/\{(\w+)\}/g, (m, k: string) =>
@@ -243,6 +270,15 @@ function interpolate(template: string, vars?: Record<string, string | number>): 
 function savedChoice(): LangChoice {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved === null || saved === 'system') return 'system';
+  // The Taiwan row was withdrawn from the picker (2026-10-07, fifth batch
+  // pending). A stored zh-tw choice migrates in place to the generic
+  // Traditional dictionary its wording is a snapshot of: relaunching must
+  // neither blank the UI nor silently flip to 'system', which would start
+  // following the OS language instead of the choice the user actually made.
+  if (saved === 'zh-tw') {
+    localStorage.setItem(STORAGE_KEY, 'zh-hant');
+    return 'zh-hant';
+  }
   // Checked against the dictionary table, not a literal chain: the chain had
   // to be edited for every language added and silently reset an unknown-but-
   // valid choice (es/fr/tr saved in one window read back as 'system' in the
@@ -258,6 +294,7 @@ interface I18nContextValue {
   langChoice: LangChoice;
   setLang: (l: LangChoice) => void;
   t: TFunc;
+  n: NFunc;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -276,6 +313,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         broadcastPref('lang', l);
       },
       t: (key, vars) => interpolate((DICTS[lang] ?? en)[key] ?? en[key], vars),
+      n: (value, fractionDigits) => formatDecimal(value, lang, fractionDigits),
     }),
     [lang, choice],
   );

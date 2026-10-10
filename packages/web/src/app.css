@@ -1,5 +1,11 @@
 /* PathBlender — Apple HIG theme (light + dark) */
 * { box-sizing: border-box; }
+/* A programmatic focus landing carries no ring: on a freshly opened app one
+   reads as a stray box over the first robot card. The class is dropped by the
+   user's first real key or pointer event, so keyboard focus stays visible.
+   !important because the rules that draw the rings (e.g.
+   `.robot-library button:focus-visible`) out-specify a lone class selector. */
+.focus-silent:focus, .focus-silent:focus-visible { outline: none !important; }
 
 :root,
 [data-theme='dark'] {
@@ -48,6 +54,11 @@
   --seg-red-fg: #f2c1bb;
   --3d-slab: #3a3a40;
   --3d-wall: #4a4a4f;
+  --viewcube-rim: #687078;
+  --viewcube-face-top: #50565d;
+  --viewcube-face-bottom: #434950;
+  --viewcube-outline: #767f88;
+  --viewcube-label: #f0f2f4;
   --canvas-bg: #1c1c1e;
   --switch-track: rgba(120, 120, 128, 0.32);
   --switch-knob: #ffffff;
@@ -100,6 +111,11 @@
   --seg-red-fg: #c9302c;
   --3d-slab: #e3e3e8;
   --3d-wall: #c8c8cd;
+  --viewcube-rim: #d6dfe7;
+  --viewcube-face-top: #ffffff;
+  --viewcube-face-bottom: #f3f6f9;
+  --viewcube-outline: #b9c5cf;
+  --viewcube-label: #3d4752;
   --canvas-bg: #ffffff;
   --switch-track: rgba(120, 120, 128, 0.32);
   --switch-knob: #ffffff;
@@ -108,13 +124,21 @@
 }
 
 html, body, #root { height: 100%; margin: 0; }
+/* macOS 26+ rubber-bands the whole window (title bar included) when the
+   webview reports an overscroll at a document edge; the app never scrolls
+   the document, so every two-finger scroll read as pure bounce. The desktop
+   shell flips off the WKWebView bounce switch separately (lib.rs) — this
+   rule is the web layer of the same cut. */
+html { overscroll-behavior: none; }
 body {
   background: var(--bg);
   color: var(--fg);
   font: 13px/1.45 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
-/* Desktop: the window carries native vibrancy; translucent panels show it. */
-body.desktop { background: transparent; }
+/* macOS only: the window carries native vibrancy; translucent panels show it.
+   Windows keeps the opaque --bg fallback (no vibrancy behind the webview). */
+body.desktop.desktop-macos { background: transparent; }
+
 
 /* ---------- layout: top toolbar + main column (PathPlanner/Choreo/AS pattern) ---------- */
 .app { display: flex; flex-direction: column; height: 100%; }
@@ -125,7 +149,7 @@ body.desktop { background: transparent; }
 }
 /* Desktop overlay title bar: the traffic lights (centered at y=16) sit in
    the toolbar's left padding; the strip doubles as the window drag region. */
-body.desktop .toolbar { padding-left: 84px; }
+body.desktop.desktop-macos .toolbar { padding-left: 84px; }
 .toolbar-spacer, .canvas-spacer { flex: 1; }
 .tool-btn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -150,6 +174,12 @@ body.desktop .toolbar { padding-left: 84px; }
 }
 .field-canvas-3d { flex: 1; min-height: 0; }
 .field-canvas-3d canvas { display: block; }
+/* Parked 3D wrapper: fills the canvas slot like the canvas itself would,
+   and collapses (not just visually hides) while 2D owns the slot — the
+   explicit [hidden] rule is required because display:flex would otherwise
+   override the UA's display:none. */
+.canvas-3d-keep { flex: 1; min-height: 0; display: flex; }
+.canvas-3d-keep[hidden] { display: none; }
 
 /* ---------- preferences modal ---------- */
 .prefs-overlay {
@@ -165,6 +195,25 @@ body.desktop .toolbar { padding-left: 84px; }
 .prefs-row select { min-width: 180px; }
 .prefs-row.btns { justify-content: flex-end; margin-top: 14px; }
 .prefs-note { color: var(--fg-dim); font-size: 12px; margin: 12px 0 0; }
+
+/* ---------- Keyboard shortcut help dialog (2026-10-06 keyboard pass) ---------- */
+.help-dialog { width: 460px; max-height: min(78vh, 640px); overflow: auto; }
+.help-intro { margin: 0 0 12px; color: var(--fg-dim); font-size: 12.5px; line-height: 1.5; }
+.help-groups { display: grid; gap: 14px; }
+.help-groups h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-dim); }
+.help-row { display: flex; align-items: center; gap: 10px; padding: 2px 0; font-size: 13px; }
+.help-row kbd {
+  flex: 0 0 auto; min-width: 76px; text-align: center;
+  font: 11.5px ui-monospace, monospace;
+  background: var(--bg, rgba(127, 127, 127, 0.12));
+  border: 1px solid var(--border); border-bottom-width: 2px;
+  border-radius: 5px; padding: 2px 7px;
+}
+.help-desktop-hint { margin: 14px 0 0; color: var(--fg-dim); font-size: 12px; line-height: 1.5; }
+
+/* The canvases carry no focus ring and no Tab stop (user 2026-10-07):
+   clicking the field does nothing, so a box around the whole field read
+   as a broken promise. Playback keys are global and need no canvas focus. */
 
 /* ---------- AI side panel (VS Code style) ---------- */
 .ai-panel {
@@ -242,6 +291,9 @@ input[type="number"], input[type="text"] {
 }
 .switch input:checked + .sw-track { background: var(--ok); }
 .switch input:checked + .sw-track::after { left: 12.5px; }
+/* The track carries the switch's ring; the visually-hidden input paints none
+   of its own (focus-audit 2026-10-07: square ghost ring on the input). */
+.switch input:focus-visible { outline: none; }
 .switch input:focus-visible + .sw-track { outline: 2px solid var(--accent); }
 .sw-text { color: var(--fg-dim); font-size: 12px; }
 
@@ -317,6 +369,10 @@ input[type="number"], input[type="text"] {
 }
 .seg button:hover:not(:disabled) { color: var(--fg); }
 .seg button:disabled { opacity: 0.35; cursor: default; }
+/* Pills sit shoulder to shoulder inside the seg tray — an outside ring
+   slides under the neighbouring pill's background (read: clipped), so the
+   focus ring draws inside the pill (focus-audit 2026-10-07). */
+.seg button:focus-visible { outline-offset: -2px; }
 .seg button.on { background: var(--seg-on); color: var(--fg); box-shadow: var(--seg-on-shadow); }
 .seg button.on-blue { background: var(--seg-blue-bg); color: var(--seg-blue-fg); }
 .seg button.on-red { background: var(--seg-red-bg); color: var(--seg-red-fg); }
@@ -345,7 +401,6 @@ input[type="number"], input[type="text"] {
 .conflict-count.bad { background: var(--danger); color: var(--accent-fg); }
 .conflict-count.ok { background: var(--badge-ok-bg); color: var(--badge-ok-fg); }
 .all-clear { color: var(--ok); }
-.min-sep { color: var(--fg-dim); font-size: 12px; margin-top: 6px; }
 .conflict-list { list-style: none; margin: 0; padding: 0; }
 .conflict-item { margin-bottom: 8px; }
 .conflict-jump {
@@ -361,6 +416,8 @@ input[type="number"], input[type="text"] {
   display: flex; align-items: center; gap: 8px;
   font-size: 12px; color: var(--fg-dim); margin: 2px 0 8px;
 }
+/* Radius so the focus ring rounds like every other ring (focus-audit). */
+.tolerance-row input[type='range'] { border-radius: 6px; }
 .tolerance-row input[type='range'] { flex: 1; min-width: 60px; accent-color: var(--accent); }
 .tolerance-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tolerance-badge {
@@ -369,15 +426,6 @@ input[type="number"], input[type="text"] {
   border-radius: 8px; padding: 0 7px; margin-left: 6px; vertical-align: 1px;
 }
 .conflict-item.is-tolerance .conflict-jump { border-left-color: var(--warn, #c98a00); }
-.conflict-note { font-size: 11px; color: var(--fg-dim); }
-.conflict-note.is-opponent { color: var(--warn, #c98a00); }
-.report-export {
-  margin-top: 8px; width: 100%; padding: 7px 10px; font-size: 12px;
-  background: var(--bg-card); color: var(--fg);
-  border: 1px solid var(--border); border-radius: 6px; cursor: pointer;
-}
-.report-export:hover { background: var(--hover); }
-.opponent-toggle.is-opponent { color: var(--warn, #c98a00); }
 
 
 /* ---------- timeline ---------- */
@@ -479,7 +527,7 @@ input[type="number"], input[type="text"] {
   padding: 6px 10px; background: var(--material);
   border-bottom: 1px solid var(--border);
 }
-body.desktop .editor-bar { padding-left: 84px; }
+body.desktop.desktop-macos .editor-bar { padding-left: 84px; }
 .editor-title {
   display: inline-flex; align-items: center; gap: 8px;
   font-weight: 600; min-width: 0; overflow: hidden; white-space: nowrap;
@@ -645,21 +693,6 @@ body.desktop .editor-bar { padding-left: 84px; }
 }
 .ai-history-meta { font-size: 10.5px; color: var(--fg-dim); }
 .ai-carry-note { font-size: 11px; color: var(--accent); max-width: 260px; }
-
-/* ---------- site flavor: β badge (stable site) + preview banner ---------- */
-.beta-link .beta-glyph {
-  font-size: 14px; font-weight: 600; font-family: Georgia, 'Times New Roman', serif;
-  line-height: 1; display: inline-block; transform: translateY(0.5px);
-}
-.site-preview-banner {
-  flex: none; display: flex; align-items: center; justify-content: center; gap: 14px;
-  min-height: 28px; padding: 0 12px; font-size: 12px;
-  background: var(--accent-dim); color: var(--fg);
-  border-bottom: 1px solid var(--border);
-}
-.site-preview-banner a { color: var(--accent); font-weight: 600; text-decoration: none; }
-.site-preview-banner a:hover { text-decoration: underline; }
-.prefs-link { color: var(--accent); font-size: 12.5px; }
 
 /* ---------- AI model chip (read-only, opens Preferences) ---------- */
 .ai-model-chip {

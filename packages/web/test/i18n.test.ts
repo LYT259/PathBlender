@@ -43,24 +43,27 @@ import { tr } from '../src/i18n/tr';
 import { uk } from '../src/i18n/uk';
 import { vi } from '../src/i18n/vi';
 import { zh } from '../src/i18n/zh';
+import { zhHant } from '../src/i18n/zh-hant';
 import { zhHk, zhHkOverrides } from '../src/i18n/zh-hk';
 import { zhTw } from '../src/i18n/zh-tw';
 import { I18nProvider, isRtl, LANGUAGES, LANG_META, langLabel, langFromTags, type Lang } from '../src/i18n';
 
 /**
- * Every shipped dictionary. Adding a language means adding one row here (plus
- * `DICTS`, a `LANG_META` row and a `langFromTags` branch in
- * `src/i18n/index.tsx`, and a menu table in `packages/desktop`); these tests
- * then hold it to the same bar as English. Each full dictionary is typed
- * `Record<MessageKey, string>`, so a missing key is a compile error too — the
- * runtime checks below cover the blanks and the placeholders a type cannot.
+ * Every shipped dictionary — including zh-tw, which ships as the base under the
+ * zh-hk override table but has had no picker row since the 2026-10-07
+ * withdrawal (fifth batch pending). Adding a *selectable* language means
+ * adding one row here (plus `DICTS`, a `LANG_META` row and a `langFromTags`
+ * branch in `src/i18n/index.tsx`, and a menu table in `packages/desktop`);
+ * these tests then hold it to the same bar as English. Each full dictionary is
+ * typed `Record<MessageKey, string>`, so a missing key is a compile error too —
+ * the runtime checks below cover the blanks and the placeholders a type cannot.
  */
 const DICTS: Record<string, Record<string, string>> = {
   en, ar, az, bg, bs, cs, da, de, el, es, fil, fr, he, hi, hr, hu, hy, id, it: itDict,
   ja, ko, mk, mr, ms, nb, nl, nn, pl, 'pt-BR': ptBR, ro, rw, sq, sr, sv, ta,
-  tr, uk, vi, zh, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  tr, uk, vi, zh, 'zh-hant': zhHant, 'zh-hk': zhHk, 'zh-tw': zhTw,
 };
-const CODES = Object.keys(DICTS) as Lang[];
+const CODES = Object.keys(DICTS) as (keyof typeof DICTS)[];
 const KEYS = Object.keys(en);
 /** What the picker shows, in the order it shows it ('system' is a mode). */
 const pickerLabels = LANGUAGES.flatMap((l) => (l === 'system' ? [] : [langLabel(l)]));
@@ -98,66 +101,124 @@ describe('i18n dictionaries', () => {
    * deliberately verbatim. The whitelist is the whole allow-list, so a new key
    * that ships as its own English text fails the run.
    */
-  const KEEP_VERBATIM = new Set([
-    // Brand and format names, never translated.
-    'app.title',
-    // Mouse-scheme brand names and the em-dash "no action" cell.
-    'prefs.mouse.onshape', 'prefs.mouse.solidworks', 'prefs.mouse.solidworks.right',
-    'prefs.mouse.onshape.wheel', 'prefs.mouse.solidworks.wheel',
-    // 'Zoom' is the loanword in the Romance dictionaries (es/fr/pt-BR).
-    'prefs.mouse.zoom',
-    // Symbols and unit strings the field itself renders.
-    'conflicts.pair', 'customField.ppm', 'timeline.speed', 'timeline.clock',
-    'timeline.activity', 'timeline.band', 'canvas.clock', 'rail.png',
-    // View-cube initials: the Latin abbreviations collide, so the Latin-script
-    // dictionaries keep the English letters. Non-Latin scripts ship native
-    // initials: zh/zh-tw and ja/ko use single ideographs, and the third-batch
-    // ar/hi/mr/ta use script-native abbreviations instead.
-    'vc.top', 'vc.bottom', 'vc.front', 'vc.back', 'vc.left', 'vc.right',
-    // Words that genuinely coincide with English in at least one shipped
-    // language (fr 'Pause'/'Collision'/'alliance', es 'Robot'/'General',
-    // nl 'Timing'/'Updates'/'bumper (m)'/'Meters (m)' etc.).
-    'prefs.section.general', // Spanish 'General' is identical.
-    'workspace.details', 'robots.identity', 'robots.title',
-    'robots.collision', 'robots.alliance', 'timeline.pause', 'timeline.collision',
-    'site.version', 'about.version',
-    // 'GIF' is the universal acronym every shipped language keeps;
-    // 'Heatmap' is the German loanword (de); 'Differential' is the
-    // Danish loanword (da).
-    'actions.gif', 'actions.heatmapOn', 'robots.driveDifferential',
-    // Dutch coincidences: loanwords and shared unit plurals that spell exactly
-    // like the English source (nl 'Timing', 'Updates', 'bumper (m)',
-    // 'Bumpers {l} × {w} m', 'Meters/Centimeters/Inches (m/cm/in)').
-    'robots.timing', 'prefs.section.updates', 'robots.bumper', 'robots.profileEntry',
-    'prefs.unit.m', 'prefs.unit.cm', 'prefs.unit.in',
-    'prefs.unit.yd', // French 'Yards (yd)' is the same unit name.
-    // Vietnamese keeps 'Feet (ft)': the loanword is its standard written form
-    // for the imperial foot (vi 'foot' has no common native name).
-    'prefs.unit.ft',
-    // Tokens sent to the OS unchanged.
-    'prefs.channel.stable', 'prefs.channel.beta',
+  // Brand names, mathematical templates and symbols are language-independent.
+  const UNIVERSAL_VERBATIM = new Set<MessageKey>([
+    'app.title', 'conflicts.pair', 'customField.ppm', 'timeline.speed',
+    'timeline.clock', 'timeline.activity', 'timeline.band', 'canvas.clock',
+    'rail.png', 'actions.gif', 'prefs.mouse.onshape', 'prefs.mouse.solidworks',
+    'prefs.mouse.solidworks.right', 'sequence.seconds', 'tour.progress',
   ]);
+
+  // Pin exemptions to the language in which the previous audit accepted a
+  // loanword or the existing view-cube convention. Do not derive this table
+  // from dictionaries at runtime: that would bless every new English leak.
+  const KEEP_VERBATIM = {
+    'ar': [],
+    'az': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta"],
+    'bg': ['sequence.startGroupHub'],
+    'bs': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta",
+    'sequence.startGroupHub'],
+    'cs': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.stable","prefs.channel.beta","sequence.start",
+    'sequence.startGroupHub'],
+    'da': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","robots.alliance","timeline.pause","about.version","robots.driveDifferential","robots.timing","prefs.channel.beta","sequence.start",
+    'sequence.startGroupHub'],
+    'de': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","about.version","prefs.section.updates","prefs.channel.beta","sequence.start",
+    'sequence.startGroupHub', 'sequence.startGroupTrench'],
+    'el': ["prefs.channel.beta",
+    'sequence.startGroupHub'],
+    'es': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.section.general","workspace.details","robots.title","prefs.channel.beta",
+    'sequence.startGroupHub'],
+    'fil': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.file","menu.window","workspace.details","robots.collision","robots.timing","prefs.channel.stable","prefs.channel.beta",
+    'sequence.startGroupHub'],
+    'fr': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","robots.title","robots.collision","robots.alliance","timeline.pause","about.version","prefs.unit.yd","prefs.channel.stable","sequence.count",
+    'sequence.startGroupHub', 'sequence.startGroupTrench'],
+    'he': ["prefs.channel.stable","prefs.channel.beta",
+    'sequence.startGroupHub'],
+    'hi': ['sequence.startGroupHub'],
+    'hr': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta",
+    'sequence.startGroupHub'],
+    'hu': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details",
+    'sequence.startGroupHub'],
+    'hy': ['sequence.startGroupHub'],
+    'id': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta","prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom",
+    'sequence.startGroupHub'],
+    'it': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","menu.file","workspace.details","prefs.channel.beta",
+    'sequence.startGroupHub'],
+    'ja': ["prefs.channel.stable","prefs.channel.beta",
+    'sequence.startGroupHub'],
+    'ko': ["prefs.channel.stable","prefs.channel.beta",
+    'sequence.startGroupHub'],
+    'mk': ['sequence.startGroupHub'],
+    'mr': ['sequence.startGroupHub'],
+    'ms': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","robots.uploadSettings","prefs.channel.beta","library.importFolder","rail.import",
+    'sequence.startGroupHub'],
+    'nb': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","timeline.pause","robots.timing","prefs.channel.beta","sequence.start",
+    'sequence.startGroupHub'],
+    'nl': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","menu.help","workspace.details","robots.title","robots.timing","prefs.section.updates","robots.profileEntry","prefs.channel.beta","sequence.start","canvas.trail",
+    'sequence.startGroupHub', 'sequence.startGroupTrench'],
+    'nn': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","timeline.pause","prefs.channel.beta","sequence.start",
+    'sequence.startGroupHub'],
+    'pl': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.stable","prefs.channel.beta","sequence.start",
+    'sequence.startGroupHub'],
+    'pt-BR': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.channel.beta", "sequence.startGroupHub"],
+    'ro': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.section.general","workspace.details","prefs.channel.beta","sequence.start","field.style.schematic",
+    'sequence.startGroupHub'],
+    'rw': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","canvas.heatmap","canvas.overlays","prefs.channel.beta","actions.heatmapOn","field.style.rendered","prefs.channel.stable",
+    'sequence.startGroupHub', 'sequence.startGroupTrench'],
+    'sq': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta",
+    'sequence.startGroupHub'],
+    'sr': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta",
+    'sequence.startGroupHub'],
+    'sv': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","about.version","robots.driveDifferential","robots.timing","prefs.channel.beta","sequence.start",
+    'sequence.startGroupHub'],
+    'ta': ['sequence.startGroupHub'],
+    'tr': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta",
+    'sequence.startGroupHub', 'sequence.startGroupTrench'],
+    'uk': ['sequence.startGroupHub'],
+    'vi': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta",
+    'sequence.startGroupHub'],
+    'zh': ['sequence.startGroupHub',
+    'sequence.startGroupTrench'],
+    'zh-hk': ["sequence.startGroupHub","sequence.startGroupTrench"],
+    // zh-hant is a snapshot of zh-tw (its own picker row since 2026-10-10);
+    // zh-tw ships as the zh-hk base, still without a picker row.
+    'zh-hant': ['sequence.startGroupHub',
+    'sequence.startGroupTrench'],
+    'zh-tw': ['sequence.startGroupHub',
+    'sequence.startGroupTrench'],
+  } satisfies Record<Exclude<Lang, 'en'> | 'zh-tw', readonly MessageKey[]>;
+
+  function englishResidue(code: Exclude<Lang, 'en'> | 'zh-tw', dictionary: Record<string, string>): string[] {
+    const allowed: readonly string[] = KEEP_VERBATIM[code];
+    return Object.entries(en)
+      .filter(([key, source]) => !UNIVERSAL_VERBATIM.has(key as MessageKey) && !allowed.includes(key) && dictionary[key] === source)
+      .map(([key]) => key);
+  }
 
   it('nothing is left sitting on the English text', () => {
     for (const code of CODES) {
       if (code === 'en') continue;
-      for (const [key, source] of Object.entries(en)) {
-        if (KEEP_VERBATIM.has(key)) continue;
-        expect(DICTS[code]![key], `${code}:${key} still holds the English text`).not.toBe(source);
-      }
+      expect(englishResidue(code, DICTS[code]!), code).toEqual([]);
     }
   });
 
+  it('an exemption in one language never hides a leak in another', () => {
+    expect(englishResidue('es', DICTS.es!)).toEqual([]); // Spanish General.
+    expect(englishResidue('nl', { ...DICTS.nl, 'prefs.section.general': en['prefs.section.general'] }))
+      .toContain('prefs.section.general');
+    expect(englishResidue('zh', { ...DICTS.zh, 'vc.top': en['vc.top'] })).toContain('vc.top');
+  });
+
   it('the verbatim whitelist does not carry dead entries', () => {
-    // A key that stopped being identical to English should leave the list, or
-    // the gate silently allows a future regression on it. A key that left the
-    // source dictionary (the retired ai.* set) is just as dead — the `key in
-    // en` check used to let it ride, because an absent key compared to an
-    // absent key is `undefined === undefined`.
-    for (const key of KEEP_VERBATIM) {
-      expect(KEYS, `en:${key} is no longer a source key; drop it from KEEP_VERBATIM`).toContain(key);
-      const stillVerbatim = CODES.some((c) => c !== 'en' && DICTS[c]![key] === en[key as keyof typeof en]);
-      expect(stillVerbatim, `en:${key} is translated everywhere; drop it from KEEP_VERBATIM`).toBe(true);
+    for (const [code, keys] of Object.entries(KEEP_VERBATIM)) {
+      for (const key of keys) {
+        expect(KEYS, code + ':' + key).toContain(key);
+        expect(DICTS[code]![key], code + ':' + key + ' is translated now; drop its exemption').toBe(en[key as MessageKey]);
+      }
+    }
+    for (const key of UNIVERSAL_VERBATIM) {
+      expect(KEYS).toContain(key);
+      expect(CODES.some((c) => c !== 'en' && DICTS[c]![key] === en[key])).toBe(true);
     }
   });
 });
@@ -166,31 +227,39 @@ describe('language picker', () => {
   /**
    * Order comes from the registry's ASCII English sort key, not from a
    * collator — see the comment on LANGUAGES (report §7.2 v1.20). 'system' is a
-   * mode and stays pinned first; Chinese sorts first, so the three Chinese
+   * mode and stays pinned first; Chinese sorts first, so the two Chinese
    * names head the list and the rest keep their own alphabetical order.
    */
   it('offers the languages in a fixed alphabetical order after “system”', () => {
     expect([...LANGUAGES]).toEqual([
       'system',
       // English-name sort of the shipped registry — the stable, engine-
-      // independent order the picker promises (2026-10-04, batch 3+4).
-      'sq', 'ar', 'hy', 'az', 'bs', 'bg', 'zh', 'zh-hk', 'zh-tw', 'hr', 'cs',
+      // independent order the picker promises (2026-10-04, batch 3+4;
+      // 2026-10-07 dropped the zh-tw row).
+      'sq', 'ar', 'hy', 'az', 'bs', 'bg', 'zh', 'zh-hant', 'zh-hk', 'hr', 'cs',
       'da', 'nl', 'en', 'fil', 'fr', 'de', 'el', 'he', 'hi', 'hu', 'id', 'it',
       'ja', 'rw', 'ko', 'mk', 'ms', 'mr', 'nb', 'nn', 'pl', 'pt-BR', 'ro', 'sr',
       'es', 'sv', 'ta', 'tr', 'uk', 'vi',
     ]);
   });
 
-  it('lists exactly the shipped dictionaries', () => {
-    for (const code of CODES) expect(LANGUAGES).toContain(code);
-    expect(LANGUAGES).toHaveLength(CODES.length + 1); // +1: the 'system' mode
+  it('lists every selectable dictionary, and nothing the picker cannot honour', () => {
+    for (const code of CODES) {
+      if (code === 'zh-tw') continue;
+      expect(LANGUAGES).toContain(code);
+    }
+    // zh-tw still ships as the zh-hk base but must not be selectable
+    // (withdrawn 2026-10-07, fifth batch pending).
+    expect(LANGUAGES).not.toContain('zh-tw');
+    expect(LANGUAGES).toHaveLength(CODES.length); // 41 selectable + the 'system' mode
   });
 
 it('labels each language in its own language', () => {
-    // Self-maintaining: every shipped code must render its own endonym
+    // Self-maintaining: every selectable code must render its own endonym
     // (no English fallthrough in the picker) — the shipped set order is
-    // pinned by the dedicated ordering test above.
-    for (const code of CODES) {
+    // pinned by the dedicated ordering test above. zh-tw has no registry row.
+    for (const code of LANGUAGES) {
+      if (code === 'system') continue;
       const meta = LANG_META[code];
       expect(meta, code).toBeDefined();
       expect(langLabel(code), code).toBe(meta.endonym);
@@ -331,17 +400,19 @@ describe('system language detection', () => {
     expect(langFromTags(['tl'])).toBe('fil');
   });
 
-  it('splits Traditional Chinese by region, with Macau reading Hong Kong', () => {
-    // Report §7.2 v1.23: 澳门不单开 locale，就近并入 zh-hk (same rule as
-    // es-AR → es-MX), and a bare `zh-Hant` carries no region so it takes the
-    // larger community's dictionary.
+  it('routes Traditional readers by region: HK/MO to Hong Kong, the rest to generic', () => {
+    // Report §7.2 v1.23 routed TW and a bare `zh-Hant` to zh-tw; the Taiwan
+    // picker row was withdrawn on 2026-10-07 (public-round decision, fifth
+    // batch pending). Since 2026-10-10 the region-neutral zh-hant row ships,
+    // so HK/MO keep the Hong Kong dictionary while TW and region-less Hant
+    // read the generic Traditional dictionary (zh-tw wording, no HK pins).
     expect(langFromTags(['zh-HK'])).toBe('zh-hk');
     expect(langFromTags(['zh-Hant-HK'])).toBe('zh-hk');
     expect(langFromTags(['zh-MO'])).toBe('zh-hk');
     expect(langFromTags(['zh-Hant-MO'])).toBe('zh-hk');
-    expect(langFromTags(['zh-TW'])).toBe('zh-tw');
-    expect(langFromTags(['zh-Hant-TW'])).toBe('zh-tw');
-    expect(langFromTags(['zh-Hant'])).toBe('zh-tw');
+    expect(langFromTags(['zh-TW'])).toBe('zh-hant');
+    expect(langFromTags(['zh-Hant-TW'])).toBe('zh-hant');
+    expect(langFromTags(['zh-Hant'])).toBe('zh-hant');
     // Hans always wins over the region: a Simplified-Chrome install in Hong
     // Kong (`zh-Hans-HK`) must not open in Traditional.
     expect(langFromTags(['zh-Hans-HK'])).toBe('zh');
@@ -362,7 +433,8 @@ describe('RTL (Arabic and Hebrew)', () => {
     expect(isRtl('he')).toBe(true);
     expect(isRtl('ar')).toBe(true);
     for (const code of CODES) {
-      if (code !== 'he' && code !== 'ar') expect(isRtl(code), code).toBe(false);
+      if (code === 'he' || code === 'ar' || code === 'zh-tw') continue;
+      expect(isRtl(code), code).toBe(false);
     }
   });
 
@@ -376,6 +448,20 @@ describe('RTL (Arabic and Hebrew)', () => {
     render(provider());
     expect(document.documentElement.getAttribute('dir')).toBe('ltr');
     expect(document.documentElement.getAttribute('lang')).toBe('en');
+  });
+
+  it('migrates a stored zh-tw choice to the generic Traditional dictionary, in place', () => {
+    // The Taiwan row was withdrawn (2026-10-07, fifth batch pending). A user
+    // who had picked it must relaunch into Traditional Chinese — not a blank
+    // dictionary, not English, and not a silent 'system' that starts
+    // following the OS language instead of the choice they made. Since the
+    // generic zh-hant row ships (2026-10-10) it is the migration target: it
+    // carries the same wording the Taiwan row had.
+    localStorage.setItem('pb.lang', 'zh-tw');
+    render(createElement(I18nProvider, null, createElement('div')));
+    expect(document.documentElement.getAttribute('lang')).toBe('zh-hant');
+    expect(localStorage.getItem('pb.lang')).toBe('zh-hant');
+    localStorage.clear();
   });
 });
 
@@ -412,9 +498,11 @@ describe('Hong Kong dictionary (override table)', () => {
    * so 7 today with the floor at 5.
    */
   it('pins the named HK/TW divergences', () => {
-    expect(zhTw['robots.bumper' as MessageKey]).toContain('公尺');
-    expect(zhHk['robots.bumper']).toContain('米');
-    expect(zhHk['robots.bumper']).not.toContain('公尺');
+    // The bumper title dropped its unit (2026-10-05), so the 米/公尺 split
+    // now lives on the custom-field labels instead.
+    expect(zhTw['customField.length' as MessageKey]).toContain('公尺');
+    expect(zhHk['customField.length']).toContain('米');
+    expect(zhHk['customField.length']).not.toContain('公尺');
     expect(zhTw['updates.failed' as MessageKey]).toContain('網路');
     expect(zhHk['updates.failed']).toContain('網絡');
     expect(zhTw['robots.selectPrompt' as MessageKey]).toContain('詳細資訊');
@@ -424,17 +512,18 @@ describe('Hong Kong dictionary (override table)', () => {
 });
 
 describe('desktop native menu', () => {
-  it('has a menu table for every web language', () => {
-    // set_menu_language used to fall through to English for anything but
-    // zh/zh-tw, so es/fr/tr users got an English native menu beside a
-    // translated window. The match arms in lib.rs are the guard below.
+  it('is rebuilt from the web spec (set_menu) — labels ship with the dictionaries', () => {
+    // The menu went spec-driven (2026-10-06): the page pushes the whole tree
+    // with its own localized labels, so every shipped dictionary covers the
+    // native menu by construction and the old per-language Rust tables are
+    // gone. This test pins both halves of that contract.
     const rust = readFileSync(
       resolve(__dirname, '../../../packages/desktop/src-tauri/src/lib.rs'),
       'utf8',
     );
-    for (const code of CODES) {
-      expect(rust, `desktop menu arm for ${code}`).toContain(`"${code}" =>`);
-    }
+    expect(rust).toContain('fn set_menu');
+    expect(rust).not.toContain('struct MenuLang');
+    expect(rust).not.toContain('fn build_menu(');
   });
 });
 

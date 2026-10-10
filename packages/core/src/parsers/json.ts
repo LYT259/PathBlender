@@ -1,4 +1,4 @@
-/** Defensive JSON field readers: external files are untrusted (AGENTS.md §3). */
+/** Defensive JSON field readers: external files are untrusted. */
 
 import { ParseError } from './parse-error';
 

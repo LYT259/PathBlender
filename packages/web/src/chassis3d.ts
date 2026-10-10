@@ -44,16 +44,30 @@ const MK5I_HEIGHT_M = 6.17 * 0.0254;
  * bottom, NOT the ground): rail top at the corner mounts (frame-y
  * 0.061516 m, measured on mk5i-frame.glb) minus the module
  * mounting-plate bottom face that rides the rail top (module-y
- * 0.042118 m) = 0.019398 m. Pods sit this far above the frame assembly;
- * the frame assembly drops by the same amount so the wheels still touch
- * the field floor -- sinking the belly pan 19.4 mm under the floor, a
- * physically unbuildable stack-up we accept (the field slab hides it).
+ * 0.092126 m — the module GLB's largest full-footprint downward face,
+ * 2026-10-04 re-measurement; the earlier 0.042118 reading was the
+ * fork/gearbox underside and would put the plate BELOW the fork top
+ * 0.0775, mechanically impossible) = −0.030610 m. NEGATIVE on purpose:
+ * the plate bottom sits ABOVE the rail top's frame-y, so the frame
+ * assembly RISES 30.6 mm and the belly pan clears the field floor by
+ * 30.6 mm — the 0.042118 reading sank it 19.4 mm UNDER the floor (the
+ * "frame touches the ground" bug, user 2026-10-04). Consistency checks
+ * on the shipped assets: fork top 0.0775 < plate 0.0921 ✓, wheel top
+ * 0.1016 pokes 9.5 mm past the plate ✓, bolt heads (frame-y 0.0695 +
+ * 0.0306 ≈ 0.1001) stand ~4 mm over the plate top ≈ 0.0961 ✓.
  */
-const MODULE_MOUNT_Y_M = 0.019398;
-/** Split-GLB contract (2026-10-03): `mk5i-turret-*` nodes (turret +
- *  wheel) rotate about the steering axis at the origin; `mk5i-box-*`
- *  nodes are bolted to the mounting plate and never steer. */
-const MK5I_TURRET_PREFIX = 'mk5i-turret-';
+const MODULE_MOUNT_Y_M = -0.03061;
+/**
+ * Split-GLB contract (2026-10-03): the shipped GLB's scene holds exactly
+ * two top-level nodes — `mk5i-turret` (turret + wheel, rotates about the
+ * steering axis at the origin) and `mk5i-box` (bolted to the mounting
+ * plate, never steers). The names carry NO dash suffix: the old
+ * `mk5i-turret-` prefix matched nothing and silently fell back to
+ * whole-pod steering, which left every module at yaw 0 instead of the
+ * installed pose (user 2026-10-04). Exported so the shipped-GLB test
+ * pins name↔code drift and this can never regress silently again.
+ */
+export const MK5I_TURRET_PREFIX = 'mk5i-turret';
 
 export interface Chassis3D {
   group: THREE.Group;
@@ -112,25 +126,51 @@ export function buildChassis3D(
 
   // Everything bolted to the frame — the frame CAD itself, the bumper
   // ring, the team decals — assembles relative to the frame GLB's own y
-  // origin, so the whole assembly drops by MODULE_MOUNT_Y_M together:
-  // the modules' mounting plates then rest on the rail tops while the
-  // wheels stay on the field floor.
+  // origin, so the whole assembly shifts by −MODULE_MOUNT_Y_M together.
+  // With the corrected (negative) mount height that is a 30.6 mm RISE:
+  // the modules' mounting plates rest on the rail tops, the belly pan
+  // clears the floor, and the wheels stay on the field floor.
   const frameAsm = new THREE.Group();
   frameAsm.name = 'frame-assembly';
   frameAsm.position.y = -MODULE_MOUNT_Y_M;
   body.add(frameAsm);
 
-  // Bumper skirt: four boxes forming the ring at the outer footprint.
-  // No floor deck by design (user directive 2026-10-02: bumper + 4 CAD
-  // modules only) — the metal frame is its own CAD asset and slots in
-  // beside this ring.
+  // Bumper skirt: ONE continuous closed square ring around the footprint
+  // (user 2026-10-04, second pass: no seams between rails anywhere — a
+  // single band, outer square minus inner square). No floor deck by
+  // design (user directive 2026-10-02: bumper + 4 CAD modules only) —
+  // the metal frame is its own CAD asset and slots in beside this ring.
   const L = vis.outer.lengthM;
   const W = vis.outer.widthM;
   const d = vis.bumperDepthM;
-  add(frameAsm, L, BUMPER_H_M, d, 0, BUMPER_Y_M, (W - d) / 2, bumperMat);
-  add(frameAsm, L, BUMPER_H_M, d, 0, BUMPER_Y_M, -(W - d) / 2, bumperMat);
-  add(frameAsm, d, BUMPER_H_M, W - 2 * d, (L - d) / 2, BUMPER_Y_M, 0, bumperMat);
-  add(frameAsm, d, BUMPER_H_M, W - 2 * d, -(L - d) / 2, BUMPER_Y_M, 0, bumperMat);
+  const ringGeometry = (): THREE.BufferGeometry => {
+    const shape = new THREE.Shape();
+    shape.moveTo(-L / 2, -W / 2);
+    shape.lineTo(L / 2, -W / 2);
+    shape.lineTo(L / 2, W / 2);
+    shape.lineTo(-L / 2, W / 2);
+    shape.closePath();
+    const hole = new THREE.Path();
+    hole.moveTo(-(L / 2 - d), -(W / 2 - d));
+    hole.lineTo(L / 2 - d, -(W / 2 - d));
+    hole.lineTo(L / 2 - d, W / 2 - d);
+    hole.lineTo(-(L / 2 - d), W / 2 - d);
+    hole.closePath();
+    shape.holes.push(hole);
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: BUMPER_H_M, bevelEnabled: false });
+    geo.rotateX(Math.PI / 2); // (x,y,z)→(x,−z,y): shape-y→+z, extrusion lands y∈[−H,0]
+    geo.translate(0, BUMPER_H_M, 0); // lift to y∈[0,H]
+    return geo;
+  };
+  {
+    const geometry = ringGeometry();
+    applyBumperWeaveUV(geometry);
+    const mesh = new THREE.Mesh(geometry, bumperMat);
+    mesh.name = 'bumper-rail';
+    mesh.position.set(0, BUMPER_Y_M - BUMPER_H_M / 2, 0);
+    mesh.castShadow = true;
+    frameAsm.add(mesh);
+  }
 
   // The user-built MK5i frame CAD (tubes + corner blocks + hardware,
   // 27x27 in unscaled; modules stripped — the app mounts its own). Scaled
@@ -164,10 +204,10 @@ export function buildChassis3D(
 
   // Swerve pods at module positions (robot frame, relative to the
   // pose). The modules bolt to the frame, so pod heights are
-  // frame-relative: they hang in a group dropped by the same
-  // MODULE_MOUNT_Y_M as the frame assembly, and each pod sits that
-  // amount above it — mounting-plate bottoms exactly on the rail tops,
-  // wheel bottoms still on the field floor (net world height as before).
+  // frame-relative: they sit in a group shifted by −MODULE_MOUNT_Y_M
+  // like the frame assembly, and each pod sits at +MODULE_MOUNT_Y_M —
+  // mounting-plate bottoms exactly on the rail tops, wheel bottoms
+  // still on the field floor (net world y = 0, unchanged).
   const podMount = new THREE.Group();
   podMount.name = 'pod-mount';
   podMount.position.y = -MODULE_MOUNT_Y_M;
@@ -183,13 +223,13 @@ export function buildChassis3D(
       // Official CAD module: clone shares geometry/materials with every
       // other instance, so N robots × 4 pods reuse one GPU copy.
       const inst = moduleTemplate.clone(true);
-      // Split-GLB contract: pull the `mk5i-turret-*` nodes (top-most
-      // matches) into a turret group driven by steering; whatever
-      // remains in the clone is the box (the `mk5i-box-*` nodes plus
-      // anything unprefixed), frozen at the installed yaw — identical
-      // to the previous parked pose. An old GLB has no mk5i-turret-*
-      // nodes (a stale service-worker cache can serve it): fall back
-      // to the previous behavior — the whole pod steers.
+      // Split-GLB contract: pull the `mk5i-turret` node into a turret
+      // group driven by steering; whatever remains in the clone is the
+      // box (`mk5i-box` plus anything unprefixed), frozen at the
+      // installed yaw — identical to the previous parked pose. An old
+      // GLB has no `mk5i-turret` node (a stale service-worker cache can
+      // serve it): fall back to the previous behavior — the whole pod
+      // steers.
       const turretNodes: THREE.Object3D[] = [];
       const collectTurrets = (root: THREE.Object3D): void => {
         for (const child of root.children) {

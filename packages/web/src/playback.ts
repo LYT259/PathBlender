@@ -1,34 +1,53 @@
 import { useCallback, useEffect, useRef, useState, type SetStateAction } from 'react';
+import { PLAYBACK_SPEEDS } from './components/PlaybackControls';
 
 /** Unified autonomous clock: play / pause / speed / scrub, looping.
  * Keyboard: Space toggles play, ←/→ scrub ±0.5 s (±2 s with Shift),
  * Home rewinds to 0. Interactive controls and dialogs own their keys.
- */
-export function usePlayback(durationS: number) {
+ *
+ * `durationS` is the transport end — where playing loops and End jumps.
+ * `scrubMaxS` (default: the duration) is how far the playhead may be
+ * PLACED: the composer opens it to the whole auto axis so the playhead can
+ * park in empty future time and gate the route library there (user
+ * 2026-10-08), while replay stays confined to the chosen playback range. */
+export function usePlayback(durationS: number, suspended = false, scrubMaxS = durationS) {
   const duration = Number.isFinite(durationS) ? Math.max(0, durationS) : 0;
+  const scrubMax = Number.isFinite(scrubMaxS) ? Math.max(duration, scrubMaxS) : duration;
   const [rawT, setRawT] = useState(0);
   const [wantsPlayback, setWantsPlayback] = useState(false);
   const [speed, setSpeed] = useState(1);
   const lastRef = useRef<number | null>(null);
-  const t = Math.min(rawT, duration);
+  const t = Math.min(rawT, scrubMax);
   const playing = wantsPlayback && duration > 0;
   const setT = useCallback((value: SetStateAction<number>) => {
     setRawT((previous) => {
-      const next = typeof value === 'function' ? value(Math.min(previous, duration)) : value;
-      return Number.isFinite(next) ? Math.min(duration, Math.max(0, next)) : 0;
+      const next = typeof value === 'function' ? value(Math.min(previous, scrubMax)) : value;
+      return Number.isFinite(next) ? Math.min(scrubMax, Math.max(0, next)) : 0;
     });
-  }, [duration]);
+  }, [scrubMax]);
   const setPlaying = useCallback((value: SetStateAction<boolean>) => {
     setWantsPlayback((previous) => duration > 0 && (typeof value === 'function' ? value(previous) : value));
   }, [duration]);
 
   useEffect(() => {
-    setRawT((previous) => Math.min(previous, duration));
+    setRawT((previous) => Math.min(previous, scrubMax));
     if (duration === 0) setWantsPlayback(false);
-  }, [duration]);
+  }, [duration, scrubMax]);
+
+  // Playing starts from the beginning when the playhead is parked beyond the
+  // transport end (user 2026-10-08): the playhead may sit in the empty
+  // future stretch to gate the composer's route library, but pressing Play
+  // means "run the arrangement" — which begins at 0 s, not mid-air. Only the
+  // start transition: a duration that shrinks under a RUNNING clock clamps
+  // in place (the effect above) and playback simply continues.
+  const wasPlaying = useRef(false);
+  useEffect(() => {
+    if (playing && !wasPlaying.current && rawT > duration) setT(0);
+    wasPlaying.current = playing;
+  }, [playing, rawT, duration, setT]);
 
   useEffect(() => {
-    if (!playing) return;
+    if (!playing || suspended) return;
     let raf = 0;
     lastRef.current = null;
     const step = (now: number) => {
@@ -43,16 +62,30 @@ export function usePlayback(durationS: number) {
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [playing, speed, duration, setT]);
+  }, [playing, speed, duration, setT, suspended]);
+
+  // One step through the same speed list the transport buttons render.
+  // Mode changes are single-shot: held keys must not cycle the speeds.
+  const stepSpeed = useCallback((dir: number) => {
+    setSpeed((s) => {
+      const idx = PLAYBACK_SPEEDS.indexOf(s);
+      const base = idx < 0 ? PLAYBACK_SPEEDS.indexOf(1) : idx;
+      return PLAYBACK_SPEEDS[Math.min(PLAYBACK_SPEEDS.length - 1, Math.max(0, base + dir))] ?? s;
+    });
+  }, [setSpeed]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target instanceof Element ? e.target : null;
-      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey ||
-          el?.closest('input, select, textarea, button, a, summary, [role="button"], [role="slider"], [role="dialog"], dialog, [contenteditable]:not([contenteditable="false"])') ||
+      if (suspended || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey ||
+          el?.closest('input, select, textarea, [role="slider"], [role="dialog"], dialog, [contenteditable]:not([contenteditable="false"])') ||
           document.querySelector('dialog[open], [role="dialog"][aria-modal="true"]')) {
         return;
       }
+      // Space activates the focused button/link, so it never doubles as
+      // play/pause; scrub/step keys cannot activate anything and work from
+      // button focus too (2026-10-07: keyboard pass review).
+      if (e.code === 'Space' && el?.closest('button, a, summary, [role="button"]')) return;
       if (e.code === 'Space') {
         if (duration === 0 || e.repeat) return;
         e.preventDefault();
@@ -66,11 +99,23 @@ export function usePlayback(durationS: number) {
         e.preventDefault();
         setPlaying(false);
         setT(0);
+      } else if (e.key === 'End') {
+        // Jump to the range end — one shot per press (a jump, not a scrub).
+        if (duration === 0 || e.repeat) return;
+        e.preventDefault();
+        setPlaying(false);
+        setT(duration);
+      } else if (e.code === 'Comma' && e.shiftKey && !e.repeat) {
+        e.preventDefault();
+        stepSpeed(-1);
+      } else if (e.code === 'Period' && e.shiftKey && !e.repeat) {
+        e.preventDefault();
+        stepSpeed(1);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [duration, setPlaying, setT]);
+  }, [duration, setPlaying, setT, suspended, stepSpeed]);
 
   return { t, setT, playing, setPlaying, speed, setSpeed };
 }

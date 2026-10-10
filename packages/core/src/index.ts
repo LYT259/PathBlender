@@ -23,9 +23,12 @@ export {
   fieldById,
   flipPoseToBlue,
   makeCustomField,
+  mirrorAcrossLongAxis,
+  routeStartRegion,
+  startsInAllianceZone,
   withFieldVariant,
 } from './field';
-export type { FieldArtStyle, FieldImageCalibration, FieldPackage } from './field';
+export type { FieldArtStyle, FieldImageCalibration, FieldPackage, StartRegionClass, StartRegionGeometry, StartZoneRect } from './field';
 export { fieldImageWorldRect } from './field';
 
 export { lerpAngle, sampleTrajectory, wrapAngle } from './math';
@@ -56,8 +59,6 @@ export type { DetectedFormat, ParseErrorKind } from './parsers';
 export type { RobotProfile, ProfileDynamics, ProfileDefaultConstraints } from './parsers/robot-profile';
 export { applyProfileToTrajectory } from './profile-apply';
 export type { AutoSegment } from './parsers/pathplanner-auto';
-export { compareScenarios } from './collision/ab-compare';
-export type { AbCompare, AbPairDelta } from './collision/ab-compare';
 
 // PathPlanner trajectory generation (Phase 2 port, MIT-licensed upstream).
 export { DCMotor } from './pathplanner/dc-motor';
@@ -82,7 +83,7 @@ export type { Obb } from './collision/obb';
 export { detectCollisions, minimumSeparation } from './collision/detect';
 export { autoResolveConflicts } from './resolve';
 export type { CollisionInterval, DetectOptions } from './collision/detect';
-export { detectFieldBounds } from './collision/field-bounds';
+export { BOUNDS_TOLERANCE_M, detectFieldBounds } from './collision/field-bounds';
 export type {
   FieldBoundsOptions,
   OutOfBoundsInterval,
@@ -100,8 +101,31 @@ export {
   sampleStateAt,
   serializeSession,
   sessionDuration,
+  hasEmptyArrangement,
 } from './session';
-export type { SessionFileV1, SessionTrajectory, SessionRouteOption, SessionProfileOption } from './session';
+export type { SessionFileV1, SessionTrajectory, SessionRouteOption, SessionProfileOption, SessionSerializeOptions } from './session';
+
+export {
+  LIBRARY_CHAIN_TOLERANCES,
+  SEQUENCE_JOIN_TOLERANCES,
+  checkSequenceJoins,
+  checkSequenceTiming,
+  resolveSequence,
+  routeConnectsAfter,
+  sampleSequenceState,
+  segmentDurationS,
+  sequenceEventTimes,
+  sessionStartsInZone,
+} from './auto-sequence';
+export type {
+  AutoSequence,
+  AutoSequenceSegment,
+  ResolvedSequenceSegment,
+  RouteContinuity,
+  SequenceJoinIssue,
+  SequenceJoinOptions,
+  SequenceTimingIssue,
+} from './auto-sequence';
 
 export {
   STEERING_STATIC_MPS,
@@ -113,3 +137,5 @@ export {
   withSeasonGeometry,
 } from './robot-geometry';
 export type { MotionState, RobotVisualGeometry, SeasonRobotProfile } from './robot-geometry';
+export { activeActionsAt, groupedActionsAt, normalizeActionWord } from './action-words';
+export type { ActionWord, ActionKind, ActionGroup } from './action-words';

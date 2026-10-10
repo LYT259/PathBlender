@@ -26,6 +26,7 @@
  */
 import { act, fireEvent, render, screen, waitFor, cleanup, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { expectComboboxValue, pickComboboxValue } from './combobox';
 
 const native = vi.hoisted(() => ({ invoke: vi.fn((_command: string, ..._args: unknown[]) => Promise.resolve()), close: vi.fn(() => Promise.resolve()) }));
 const emit = vi.hoisted(() => ({ checks: [] as string[] }));
@@ -159,6 +160,10 @@ describe('shared desktop preferences', () => {
   it('theme changes no longer drive the Dock icon (decoupled)', async () => {
     await renderPreferences();
     const icons = () => screen.getByRole('group', { name: 'App icon' });
+    // Let the mount-time Dock apply land before drafting: under vitest 4 its
+    // promise settles after these back-to-back clicks, so Save is still
+    // disabled when the click fires and the draft never gets applied.
+    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false }));
     // Pin the icon first…
     fireEvent.click(within(icons()).getByRole('radio', { name: 'Dark', exact: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -189,7 +194,7 @@ describe('shared desktop preferences', () => {
     expect(prefsCheck.calls).toEqual(['stable']);
     expect(button).toBeDisabled(); // checking in flight
     act(() => prefsCheck.onEvent!({ kind: 'upToDate' }));
-    expect(await screen.findByText("You're up to date")).toBeInTheDocument();
+    expect(await screen.findByText("You’re up to date")).toBeInTheDocument();
     expect(button).toBeEnabled();
     // The settings check never routes through the one-shot menu runner…
     expect(emit.checks).toEqual([]);
@@ -227,6 +232,20 @@ describe('shared desktop preferences', () => {
     expect(prefsCheck.install).not.toHaveBeenCalled();
   });
 
+  it('Escape layers: an open dropdown consumes it before the window closes', async () => {
+    await renderPreferences();
+    const channel = openUpdates();
+    fireEvent.click(channel);
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    fireEvent.keyDown(channel, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(native.close).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    // The second Escape, with the dropdown closed, belongs to the window.
+    fireEvent.keyDown(channel, { key: 'Escape' });
+    await waitFor(() => expect(native.close).toHaveBeenCalledOnce());
+  });
+
   it('ignores extra clicks while a check is in flight — one native request', async () => {
     await renderPreferences();
     openUpdates();
@@ -235,17 +254,17 @@ describe('shared desktop preferences', () => {
     fireEvent.click(button);
     expect(prefsCheck.calls).toEqual(['stable']);
     act(() => prefsCheck.onEvent!({ kind: 'upToDate' }));
-    expect(await screen.findByText("You're up to date")).toBeInTheDocument();
+    expect(await screen.findByText("You’re up to date")).toBeInTheDocument();
   });
 
   it('checks use the SAVED channel, not the draft — and says so next to the button', async () => {
     await renderPreferences();
-    fireEvent.change(openUpdates(), { target: { value: 'beta' } });
+    pickComboboxValue(openUpdates(), 'beta');
     expect(await screen.findByText('Update checks use the saved channel: Stable.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Check for updates' }));
     expect(prefsCheck.calls).toEqual(['stable']);
     act(() => prefsCheck.onEvent!({ kind: 'upToDate' }));
-    expect(await screen.findByText("You're up to date")).toBeInTheDocument();
+    expect(await screen.findByText("You’re up to date")).toBeInTheDocument();
   });
 
   it('opens the native settings window from the toolbar', async () => {
@@ -258,7 +277,7 @@ describe('shared desktop preferences', () => {
 
   it('stages the channel: Save applies, Cancel discards', async () => {
     const first = await renderPreferences();
-    fireEvent.change(openUpdates(), { target: { value: 'beta' } });
+    pickComboboxValue(openUpdates(), 'beta');
     expect(localStorage.getItem('pb.updateChannel')).toBeNull();
     expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -267,9 +286,9 @@ describe('shared desktop preferences', () => {
     expect(localStorage.getItem('pb.updateChannel')).toBeNull();
 
     await renderPreferences();
-    expect(openUpdates()).toHaveValue('stable');
+    expectComboboxValue(openUpdates(), 'stable');
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
-    fireEvent.change(screen.getByRole('combobox', { name: 'Update channel' }), { target: { value: 'beta' } });
+    pickComboboxValue(screen.getByRole('combobox', { name: 'Update channel' }), 'beta');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     // Save applies but KEEPS the window open (user request 2026-10-02):
     // still only the one close from the Cancel above.
@@ -281,7 +300,13 @@ describe('shared desktop preferences', () => {
   it('retains appearance drafts across sections and applies only on Save', async () => {
     await renderPreferences();
     fireEvent.click(within(screen.getByRole('group', { name: 'Theme', exact: true })).getByRole('radio', { name: 'Dark', exact: true }));
-    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), { target: { value: 'zh' } });
+    // Language drafts through the searchable picker: open, narrow to the one
+    // row, pick it — the choice is a draft until Save like every setting.
+    fireEvent.click(screen.getByRole('button', { name: /Language/ }));
+    const search = await screen.findByRole('combobox', { name: 'Search languages' });
+    fireEvent.change(search, { target: { value: '简体中文' } });
+    const row = await screen.findByRole('option', { name: /简体中文/ });
+    fireEvent.click(row);
     const general = screen.getByRole('tab', { name: 'General' });
     general.focus();
     fireEvent.keyDown(general, { key: 'End' });
@@ -290,7 +315,7 @@ describe('shared desktop preferences', () => {
     expect(localStorage.getItem('pb.theme')).toBeNull();
     fireEvent.keyDown(screen.getByRole('tab', { name: 'About' }), { key: 'Home' });
     expect(within(screen.getByRole('group', { name: 'Theme', exact: true })).getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
-    expect(screen.getByRole('combobox', { name: 'Language' })).toHaveValue('zh');
+    expect(screen.getByRole('button', { name: /Language/ })).toHaveTextContent('简体中文');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(localStorage.getItem('pb.theme')).toBe('dark'));
     expect(localStorage.getItem('pb.lang')).toBe('zh');

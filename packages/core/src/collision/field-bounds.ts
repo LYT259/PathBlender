@@ -29,6 +29,27 @@ export interface FieldBoundsOptions {
 }
 
 /**
+ * Boundary forgiveness, meters (user decisions 2026-10-04, 2026-10-07 and
+ * 2026-10-09): a bumper that barely crosses the wall line is not a
+ * reportable "out of bounds" — during a match such an overlap is plausibly
+ * tolerance stack, not a broken path. The budget covers field-model
+ * rounding and pose quantization (millimetres), real-field assembly
+ * tolerance (~1 in, FIRST game-manual element tolerances), and a robot
+ * envelope assumed larger than the real machine (PathPlanner files carry
+ * no size, so the default 0.9 m bumper box overstates a compact ~0.75 m
+ * robot by ~3 in per side) — typical stack ≈2.5–3 in. The threshold is
+ * exactly 3 inches = 0.0762 m (user rule 2026-10-09, superseding the
+ * 2026-10-07 "1 in" and 2026-10-04 "0.02 m" values after real imports kept
+ * showing a-few-inches wall hugs): penetrations below it stay silent, at
+ * or above it the interval is reported with its measured depth. Genuine
+ * errors (waypoints dragged past the wall, wrong-season field) are
+ * typically ≥6 in and remain well above. Historical regression cases stay
+ * forgiven: the welcome example's #8814 starting 3.6 mm over the line
+ * (2026-10-04) and its 0.9 in wall brush (2026-10-07).
+ */
+export const BOUNDS_TOLERANCE_M = 0.0762;
+
+/**
  * SAT overlap between an OBB and the playfield AABB. Returns the overlap
  * depth (0 when disjoint) and the edge(s) with the deepest crossing.
  */
@@ -54,8 +75,10 @@ function obbVsField(
 
   let depth = 0;
   const edges: OutOfBoundsInterval['edges'] = [];
+  // ≥, not >: the user rule is "equal to or beyond 1 inch warns" — exactly
+  // at the threshold already counts as out.
   const check = (d: number, edge: 'far' | 'left' | 'near' | 'right') => {
-    if (d > 1e-9) {
+    if (d >= BOUNDS_TOLERANCE_M) {
       depth = Math.max(depth, d);
       edges.push(edge);
     }

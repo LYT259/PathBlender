@@ -1,0 +1,146 @@
+{
+  "en": {
+    "label": "English",
+    "changes": "What's new",
+    "download": "Platforms & download",
+    "issues": "Known issues & limitations",
+    "update": "How to update",
+    "fallback": "- Improvements and fixes; see the in-app version history.",
+    "platforms": {
+      "macos": "macOS 13.0+ (Apple Silicon and Intel)",
+      "macosLegacy": "macOS 13.0+ (Apple Silicon)",
+      "windows": "Windows x86_64 (NSIS)",
+      "deb": "Linux x86_64 (DEB)",
+      "appimage": "Linux x86_64 (AppImage)",
+      "rpm": "Linux x86_64 (RPM)"
+    },
+    "web": "Download installers from the assets below. On macOS, open the DMG and drag PathBlender to Applications. The [web viewer](https://lyt259.github.io/pathblender/) supports importing paths, playback and checking; session saving and exports require the desktop app.",
+    "instructions": "- Use **Check for Updates…** in the desktop app; for beta builds, enable the Beta channel in **Preferences → Updates** first. You can also install the package for your platform from the assets below.\n- Full per-version notes are available in **About PathBlender**.\n- On Linux, automatic updates use the AppImage. DEB/RPM users should download and install the new package for their distribution."
+  },
+  "zh": {
+    "label": "简体中文",
+    "changes": "新变化",
+    "download": "平台与下载",
+    "issues": "已知问题与限制",
+    "update": "更新方法",
+    "fallback": "- 改进与修复，详见应用内版本历史。",
+    "platforms": {
+      "macos": "macOS 13.0+（Apple Silicon 与 Intel）",
+      "macosLegacy": "macOS 13.0+（Apple Silicon）",
+      "windows": "Windows x86_64（NSIS）",
+      "deb": "Linux x86_64（DEB）",
+      "appimage": "Linux x86_64（AppImage）",
+      "rpm": "Linux x86_64（RPM）"
+    },
+    "web": "从下方附件下载安装包。macOS 用户打开 DMG 后将 PathBlender 拖入 Applications。[网页查看器](https://lyt259.github.io/pathblender/)支持导入路径、回放与检查；保存会话和导出需使用桌面版。",
+    "instructions": "- 在桌面应用中选择**检查更新…**；Beta 版先在**偏好设置 → 更新**启用 Beta 通道。也可下载下方适合自己平台的安装包。\n- 完整版本记录见**关于 PathBlender**。\n- Linux 自动更新使用 AppImage；DEB/RPM 用户请下载并安装适合发行版的新包。"
+  },
+  "zh-hk": {
+    "label": "繁體中文（中國香港）",
+    "changes": "新變化",
+    "download": "平台與下載",
+    "issues": "已知問題與限制",
+    "update": "更新方法",
+    "fallback": "- 改進與修復，詳見應用程式內的版本歷史。",
+    "platforms": {
+      "macos": "macOS 13.0+（Apple Silicon 與 Intel）",
+      "macosLegacy": "macOS 13.0+（Apple Silicon）",
+      "windows": "Windows x86_64（NSIS）",
+      "deb": "Linux x86_64（DEB）",
+      "appimage": "Linux x86_64（AppImage）",
+      "rpm": "Linux x86_64（RPM）"
+    },
+    "web": "從下方附件下載安裝套件。macOS 使用者開啟 DMG 後將 PathBlender 拖入 Applications。[網頁檢視器](https://lyt259.github.io/pathblender/)支援匯入路徑、播放與檢查；儲存工作階段和匯出需使用桌面版。",
+    "instructions": "- 在桌面應用程式中選擇**檢查更新…**；Beta 版先在**偏好設定 → 更新**啟用 Beta 頻道。亦可下載下方適合自己平台的安裝套件。\n- 完整版本記錄見**關於 PathBlender**。\n- Linux 自動更新使用 AppImage；DEB/RPM 使用者請下載並安裝適合發行版的新套件。"
+  },
+  "es": {
+    "label": "Español",
+    "changes": "Novedades",
+    "download": "Plataformas y descarga",
+    "issues": "Problemas conocidos y limitaciones",
+    "update": "Cómo actualizar",
+    "fallback": "- Mejoras y correcciones; consulta el historial de versiones dentro de la aplicación.",
+    "platforms": {
+      "macos": "macOS 13.0+ (Apple Silicon e Intel)",
+      "macosLegacy": "macOS 13.0+ (Apple Silicon)",
+      "windows": "Windows x86_64 (NSIS)",
+      "deb": "Linux x86_64 (DEB)",
+      "appimage": "Linux x86_64 (AppImage)",
+      "rpm": "Linux x86_64 (RPM)"
+    },
+    "web": "Descarga los instaladores de los adjuntos. En macOS, abre el DMG y arrastra PathBlender a Aplicaciones. El [visor web](https://lyt259.github.io/pathblender/) admite importar rutas, reproducción y comprobación; guardar sesiones y exportar requiere la aplicación de escritorio.",
+    "instructions": "- Usa **Buscar actualizaciones…** en la aplicación de escritorio; en betas, activa antes el canal Beta en **Preferencias → Actualizaciones**. También puedes instalar el paquete de tu plataforma desde los adjuntos.\n- El historial completo por versión está en **Acerca de PathBlender**.\n- En Linux, las actualizaciones automáticas usan el AppImage. Los usuarios de DEB/RPM deben descargar e instalar el paquete nuevo de su distribución."
+  },
+  "fr": {
+    "label": "Français",
+    "changes": "Nouveautés",
+    "download": "Plateformes et téléchargement",
+    "issues": "Problèmes et limites connus",
+    "update": "Comment mettre à jour",
+    "fallback": "- Améliorations et correctifs ; voir l’historique des versions dans l’application.",
+    "platforms": {
+      "macos": "macOS 13.0+ (Apple Silicon et Intel)",
+      "macosLegacy": "macOS 13.0+ (Apple Silicon)",
+      "windows": "Windows x86_64 (NSIS)",
+      "deb": "Linux x86_64 (DEB)",
+      "appimage": "Linux x86_64 (AppImage)",
+      "rpm": "Linux x86_64 (RPM)"
+    },
+    "web": "Téléchargez les installateurs depuis les fichiers joints. Sur macOS, ouvrez le DMG et glissez PathBlender dans Applications. Le [visionneur web](https://lyt259.github.io/pathblender/) prend en charge l’import de parcours, la lecture et la détection ; l’enregistrement de sessions et les exports exigent l’application de bureau.",
+    "instructions": "- Utilisez **Rechercher des mises à jour…** dans l’application de bureau ; en bêta, activez d’abord le canal Bêta dans **Préférences → Mises à jour**. Vous pouvez aussi installer le paquet de votre plateforme depuis les fichiers joints.\n- L’historique complet par version se trouve dans **À propos de PathBlender**.\n- Sous Linux, les mises à jour automatiques passent par l’AppImage. Les utilisateurs de DEB/RPM doivent télécharger et installer le nouveau paquet de leur distribution."
+  },
+  "tr": {
+    "label": "Türkçe",
+    "changes": "Yenilikler",
+    "download": "Platformlar ve indirme",
+    "issues": "Bilinen sorunlar ve sınırlamalar",
+    "update": "Nasıl güncellenir",
+    "fallback": "- İyileştirmeler ve düzeltmeler; uygulamadaki sürüm geçmişine bakın.",
+    "platforms": {
+      "macos": "macOS 13.0+ (Apple Silicon ve Intel)",
+      "macosLegacy": "macOS 13.0+ (Apple Silicon)",
+      "windows": "Windows x86_64 (NSIS)",
+      "deb": "Linux x86_64 (DEB)",
+      "appimage": "Linux x86_64 (AppImage)",
+      "rpm": "Linux x86_64 (RPM)"
+    },
+    "web": "Kurulum dosyalarını aşağıdaki eklerden indirin. macOS'ta DMG'yi açın ve PathBlender'ı Uygulamalar'a sürükleyin. [Web görüntüleyici](https://lyt259.github.io/pathblender/) yol içe aktarma, oynatma ve denetimi destekler; oturum kaydetme ve dışa aktarma masaüstü uygulaması gerektirir.",
+    "instructions": "- Masaüstü uygulamasında **Güncellemeleri Denetle…**'yi kullanın; beta sürümlerde önce **Tercihler → Güncellemeler**'den Beta kanalını açın. Aşağıdaki eklerden platformunuza uygun paketi de kurabilirsiniz.\n- Sürüm başına tüm notlar **PathBlender Hakkında**'da.\n- Linux'ta otomatik güncellemeler AppImage'ı kullanır. DEB/RPM kullanıcıları dağıtımlarına uygun yeni paketi indirip kurmalıdır."
+  },
+  "pt-br": {
+    "label": "Português (Brasil)",
+    "changes": "Novidades",
+    "download": "Plataformas e download",
+    "issues": "Problemas e limitações conhecidos",
+    "update": "Como atualizar",
+    "fallback": "- Melhorias e correções; veja o histórico de versões dentro do aplicativo.",
+    "platforms": {
+      "macos": "macOS 13.0+ (Apple Silicon e Intel)",
+      "macosLegacy": "macOS 13.0+ (Apple Silicon)",
+      "windows": "Windows x86_64 (NSIS)",
+      "deb": "Linux x86_64 (DEB)",
+      "appimage": "Linux x86_64 (AppImage)",
+      "rpm": "Linux x86_64 (RPM)"
+    },
+    "web": "Baixe os instaladores nos anexos abaixo. No macOS, abra o DMG e arraste o PathBlender para Aplicativos. O [visualizador web](https://lyt259.github.io/pathblender/) suporta importar trajetórias, reprodução e verificação; salvar sessões e exportar exige o aplicativo de desktop.",
+    "instructions": "- Use **Buscar atualizações…** no aplicativo de desktop; em betas, antes ative o canal Beta em **Preferências → Atualizações**. Você também pode instalar o pacote da sua plataforma pelos anexos abaixo.\n- O histórico completo por versão está em **Sobre o PathBlender**.\n- No Linux, as atualizações automáticas usam o AppImage. Usuários de DEB/RPM devem baixar e instalar o novo pacote da sua distribuição."
+  },
+  "he": {
+    "label": "עברית",
+    "changes": "חדשות",
+    "download": "פלטפורמות והורדה",
+    "issues": "בעיות ומגבלות ידועות",
+    "update": "איך מעדכנים",
+    "fallback": "- שיפורים ותיקונים; ראו את היסטוריית הגרסאות בתוך האפליקציה.",
+    "platforms": {
+      "macos": "macOS 13.0+ (Apple Silicon ו-Intel)",
+      "macosLegacy": "macOS 13.0+ (Apple Silicon)",
+      "windows": "Windows x86_64 (NSIS)",
+      "deb": "Linux x86_64 (DEB)",
+      "appimage": "Linux x86_64 (AppImage)",
+      "rpm": "Linux x86_64 (RPM)"
+    },
+    "web": "הורידו את קובצי ההתקנה מהקבצים המצורפים. ב-macOS פתחו את ה-DMG וגררו את PathBlender אל Applications. [המציג המקוון](https://lyt259.github.io/pathblender/) תומך בייבוא מסלולים, השמעה ובדיקה; שמירת הפעלות וייצוא דורשים את אפליקציית שולחן העבודה.",
+    "instructions": "- השתמשו ב**בדיקת עדכונים…** באפליקציית שולחן העבודה; בבניות בטא הפעילו קודם את ערוץ הבטא ב**העדפות → עדכונים**. אפשר גם להתקין את החבילה לפלטפורמה שלכם מהקבצים המצורפים.\n- היסטוריית הגרסאות המלאה נמצאת ב**אודות PathBlender**.\n- ב-Linux עדכונים אוטומטיים פועלים דרך ה-AppImage. משתמשי DEB/RPM צריכים להוריד ולהתקין את החבילה החדשה של ההפצה שלהם."
+  }
+}

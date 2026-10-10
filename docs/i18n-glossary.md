@@ -1,10 +1,10 @@
 # i18n 术语契约（对照表 + keep-verbatim 白名单）
 
-> Source: PathBlender Red Book (formerly Product Plan), §7.2 v1.20; GHPaths report v1.31, reverse-sync item ④. This table keeps terminology consistent across the twenty-four dictionaries.
-> 依据：《PathBlender_红皮书》（原《PathBlender_产品计划书》）§7.2 v1.20（GHPaths 报告 v1.31 反向同步第 ④ 条）——二十四份字典已各自取舍，没有一张表就会各说各话。
+> This table keeps terminology consistent across all shipped dictionaries.
+> 本表让全部随包字典的术语保持一致——各份字典已各自取舍，没有一张表就会各说各话。
 > **规矩：新术语先补本表，再往字典里写。** 表里没定的词不要由某一份字典单独决定。
 
-字典位置：`packages/web/src/i18n/{en,ar,cs,de,es,fil,fr,he,hi,id,it,ja,ko,mr,ms,nl,pl,pt-br,ta,tr,vi,zh,zh-hk,zh-tw}.ts`（`en.ts` 是键源与源文案；`zh-hk.ts` 是覆盖表不是完整字典——见第 6 节）。第三批（de/it/ar/hi/mr/ms/ta/fil/vi/id，10 种）2026-10-04 落地；第四批待评估。
+字典位置：`packages/web/src/i18n/*.ts`（`en.ts` 是键源与源文案；`zh-hk.ts` 是覆盖表不是完整字典——见第 6 节）。共 41 份字典文件、40 种可选界面语言（第三、四批 2026-10-04 落地）。`zh-tw.ts` 自 2026-10-07 起不再出现在语言选择器（撤下，计划归第五批恢复），但仍作为 `zh-hk` 的底表随包发布，本表的 zh-tw 列继续约束这份底表。
 完整性/占位符/漏翻三道门禁在 `packages/web/test/i18n.test.ts`。
 
 ## 1. 核心术语对照
@@ -47,8 +47,8 @@
 ## 3. 数据与文案的分界
 
 - **文案翻**：界面标签、提示、错误说明。
-- **数据不翻、不改写**：用户导入的文件名、路线名、机器人名、队号，以及写进导出文件（`.pb` 会话、PNG 文件名）的内容——任何语言下都保持原文。
-- 内置场地/赛季名属**文案**，需要本地化时按本节补表（当前实现仍显示官方英文名，未本地化——见计划书 §7.2 v1.20 第 ⑤ 条，待办）。
+- **数据不翻、不改写**：用户导入的文件名、路线名、机器人名、队号，以及写进导出文件（`.pb` 会话、GIF 与方案包文件名）的内容——任何语言下都保持原文。
+- 内置场地/赛季名属**文案**，需要本地化时按本节补表（当前实现仍显示官方英文名，未本地化——待办）。
 
 ## 4. 数字与排版
 
@@ -56,7 +56,7 @@
 - 千分位、百分号目前不出现；将来出现时同样以代码产出形态为准。
 - fr 按法语习惯在 `:` `;` 前留空格；es/tr 不加。
 - 省略号统一用 `…`（U+2026），不用三个句点。
-- 插值保持朴素 `{name}` 替换，不做复数形态（计划书 §7.2 v1.19 已判定西/法/土复数简单可接受）。
+- 插值保持朴素 `{name}` 替换，不做复数形态（西/法/土复数形态简单，可接受）。
 
 ## 6. 港台分工（`zh-hk` 是覆盖表，不是第二份字典）
 
@@ -70,9 +70,9 @@
 | `updates.failed` | 網路 | **網絡** | TERMS 里 `網絡→網路` 就是台式改写，HK 保留 網絡 |
 | `robots.selectPrompt` | 詳細資訊 | **詳細資料** | HK 界面（Microsoft zh-HK）用 詳細資料，TW 用 詳細資訊 |
 
-**澳门读 `zh-hk`**，不单开 locale（计划书 §7.2 v1.22「区域就近回退」/ v1.23 判定）：`langFromTags()` 把 `zh-HK`/`zh-MO`/`zh-Hant-HK`/`zh-Hant-MO` 都指到这里；`zh-Hans-HK`/`zh-Hans-MO` 仍走简体（Hans 压过地区——HK、澳门的 Chrome 常报 `zh-Hans-HK`，不写这条会把简体用户丢進繁體）。裸 `zh-Hant`（无地区）给台湾那份。
+**澳门读 `zh-hk`**，不单开 locale（「区域就近回退」判定）：`langFromTags()` 把 `zh-HK`/`zh-MO`/`zh-Hant-HK`/`zh-Hant-MO` 都指到这里；`zh-Hans-HK`/`zh-Hans-MO` 仍走简体（Hans 压过地区——HK、澳门的 Chrome 常报 `zh-Hans-HK`，不写这条会把简体用户丢進繁體）。2026-10-07 起 `zh-TW` 与裸 `zh-Hant`（无地区）也指到 `zh-hk`——台湾入口撤下（计划归第五批恢复）后，`zh-hk` 是唯一随包可选的繁體字典。
 
-**门禁**（计划书 §7.2 v1.24 第 ② 条）：只比"差异条数 > 0"不够——有人删掉几条覆盖，那条断言还是绿的。所以 `i18n.test.ts` 另钉三条**具名分歧**（公尺↔米、網路↔網絡、詳細資訊↔詳細資料）+ 覆盖条数下限 5，并保留"两边只允许在覆盖表那几条上不同"。**加覆盖键时同步补一条具名断言。**
+**门禁**：只比"差异条数 > 0"不够——有人删掉几条覆盖，那条断言还是绿的。所以 `i18n.test.ts` 另钉三条**具名分歧**（公尺↔米、網路↔網絡、詳細資訊↔詳細資料）+ 覆盖条数下限 5，并保留"两边只允许在覆盖表那几条上不同"。**加覆盖键时同步补一条具名断言。**
 
 **为什么不做成"共享层 + 两个分区层"**（GHPaths 的三层结构）：本项目 `zh-tw.ts` 是手写包、不是 OpenCC 输出，台港一致的书面词本来就直接写在这份底里，分区差异只剩 7 条，再拆一层共享包只多一次跳转；等覆盖表长到几十条（接近 GHPaths 的 32/412）再考虑改结构。附带印证：GHPaths 实测 `cn→hk` 字形转换**只给字形不给词**（照样输出 默認/導出/文件/在線），这正说明本项目 `scripts/gen-zh-hant.mjs` 为什么必须带一张 TERMS 表（默認→預設、導入→匯入、文件→檔案……）——同一形态，我们早已如此。
 
@@ -87,4 +87,15 @@
 注册表在 `packages/web/src/i18n/index.tsx` 的 `LANG_META`：每语言一行 `{ englishName（排序键，纯 ASCII）, endonym（显示名） }`。
 显示用自称，**排序用英文键**，「跟随系统」钉顶不参与排序；不用 `Intl.Collator`（V8 与 WebKit 对 CJK 的排序表版本不一致，会让开发服务器与桌面壳排出不同顺序）。
 新增语言 = 加一行 `LANG_META` + 一份 `Record<MessageKey, string>` 字典（同区域变体走第 6 节的覆盖表，不复制整份）+ `langFromTags()` 一条分支 + 桌面 `lib.rs` 一张菜单表（`i18n.test.ts` 会逐个断言，漏菜单表就红）。
-当前顺序（十五个界面选项下恒定）：跟随系统 · 简体中文 · 繁體中文（中國香港） · 繁體中文（中國台灣） · Čeština · Nederlands · English · Français · עברית · 日本語 · 한국어 · Polski · Português (Brasil) · Español · Türkçe。
+当前有 41 个界面语言码，连同「跟随系统」共 42 个选项；精确顺序以 `LANGUAGES` 注册表与 `i18n.test.ts` 的排序断言为准。早期十五个选项的列表是历史快照，不作当前范围。
+
+
+## 8. rw / hy 的术语复核（2026-10-07）
+
+卢旺达语将 route/path 统一为 `inzira`，collision 为 `kugongana`；产品中保存的 session 按其实际含义描述为 `isesengura`（分析），不宣称这是标准 IT 专名。导入用 `Injiza`；没有可靠本族行业词的 FRC 技术名 `bumper` 保留原词，周围句子本地化，不再把整个保护结构称为布料。路径库用存放处的描述词 `ububiko`。
+
+依据为 [GNOME/GIMP 的 Paths 译例](https://raw.githubusercontent.com/GNOME/gimp/master/po/rw.po)、[卢旺达警察的碰撞用例](https://police.gov.rw/rw/amakuru/amakuru-ya-polisi/news-detail/news/abapolisi-20-basoje-amahugurwa-yo-gutwara-moto-zifashishwa-mu-gucunga-umutekano-wo-mu-muhanda/)、[UNICEF Rwanda 的 analysis 用例](https://www.unicef.org/rwanda/rw/reports/isesengura-ku-mibereho-yabana-mu-rwanda)，以及 [GNOME Characters 的插入/存放词根](https://raw.githubusercontent.com/GNOME/gnome-characters/main/po/rw.po)。词根与实际用例支持术语选择；具体软件句子和语法一致关系仍是结合上下文的审核结果，不是这些来源对本产品的认证。
+
+亚美尼亚语路径统一为 `երթուղի`，本次替换提示使用定指单数 `երթուղին`，导入多个路径的提示使用 `երթուղիները`。复数、定冠词及非生命直接宾语的规则可由 [Armenian handbook](https://slaviccenters.duke.edu/sites/slaviccenters.duke.edu/files/handbook_of_armenian.pdf) 查证；语法可以按规则审核，不把「缺一个母语者」当作永远无法完成的条件。
+
+漏译豁免按语言登记：某语种与英文恰好同形的词，只豁免该语种；品牌、格式、符号单独处理。保留的技术名必须可以解释来源，不将未查证的英语残留自动认定为借词。结构测试、术语一致性检查与文本快照用于防止已修问题回归，不替代语义审校。

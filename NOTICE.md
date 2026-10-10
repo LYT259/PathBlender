@@ -15,7 +15,7 @@ works; each remains under its own license:
   of PathPlanner) — https://github.com/Cybersonics/Collaborative_Pathplanner_103_Fork
   The `.ghostauto` format facts implemented here are uncopyrightable facts; any
   code reference requires a license check of that repository first (see
-  AGENTS.md red line §2).
+  docs/releasing.md).
 - **AdvantageScopeAssets** (BSD-3-Clause) —
   https://github.com/Mechanical-Advantage/AdvantageScopeAssets
   The bundled 3D field models (`public/fields3d/`, FRC 2022–2026 incl.

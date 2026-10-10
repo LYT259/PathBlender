@@ -1,9 +1,8 @@
 /**
- * App-icon appearance preference (desktop): system / light / dark,
- * independent from the interface theme (theme.tsx). Persisted to
- * localStorage 'pb.appIcon' — deliberately NOT the theme's storage key —
- * and synced between the main and preferences windows over the pref
- * bridge (pref-sync.ts).
+ * App-icon appearance preference: system / light / dark, independent from the
+ * interface theme (theme.tsx). Persisted to localStorage 'pb.appIcon' —
+ * deliberately NOT the theme's storage key — and synced between the main and
+ * preferences windows over the pref bridge (pref-sync.ts).
  *
  * Scope (macOS): the choice drives the RUNNING app's Dock tile through
  * dock-icon.ts, always with explicit artwork. 'system' mirrors the OS via
@@ -13,7 +12,8 @@
  * light/dark ignores the OS. Finder / Launchpad icons are rendered by
  * macOS from the bundle catalog and always follow the OS appearance; no
  * per-app runtime override exists for them. Browser builds never reach
- * native code (syncDockIcon no-ops).
+ * native code (syncDockIcon no-ops) but resolve the same artwork for the
+ * tab icon (site-icon.ts), so one preference covers both surfaces.
  */
 
 import {
@@ -27,6 +27,9 @@ import {
 } from 'react';
 import { broadcastPref, isDesktop, listenPrefs } from './pref-sync';
 import { syncDockIcon } from './dock-icon';
+import { applySiteIcon } from './site-icon';
+import faviconDay from './assets/favicon-day.png';
+import faviconNight from './assets/favicon-night.png';
 
 export type IconAppearanceMode = 'system' | 'light' | 'dark';
 
@@ -34,10 +37,11 @@ const STORAGE_KEY = 'pb.appIcon';
 
 interface AppIconCtx {
   mode: IconAppearanceMode;
+  systemDark: boolean;
   setMode: (m: IconAppearanceMode) => void;
 }
 
-const Ctx = createContext<AppIconCtx>({ mode: 'system', setMode: () => {} });
+const Ctx = createContext<AppIconCtx>({ mode: 'system', systemDark: true, setMode: () => {} });
 
 function readStored(): IconAppearanceMode {
   try {
@@ -73,12 +77,13 @@ export function AppIconProvider({ children }: { children: ReactNode }) {
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  // Desktop: converge the running Dock tile with the choice on mount
-  // (restart restore) and on every choice/OS flip. Both windows mount this
-  // provider, so a change arrives twice with the same value — the native
-  // side is idempotent.
+  // Converge the icon surface with the choice on mount (restart restore) and on
+  // every choice/OS flip: the Dock tile on desktop, the tab icon in a browser.
+  // Both windows mount this provider, so a change arrives twice with the same
+  // value — both sinks are idempotent.
   useEffect(() => {
     syncDockIcon(mode, systemDark, isDesktop);
+    applySiteIcon(mode, systemDark, { day: faviconDay, night: faviconNight }, !isDesktop);
   }, [mode, systemDark]);
 
   const setMode = useCallback((m: IconAppearanceMode) => {
@@ -100,7 +105,7 @@ export function AppIconProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const value = useMemo(() => ({ mode, setMode }), [mode, setMode]);
+  const value = useMemo(() => ({ mode, systemDark, setMode }), [mode, systemDark, setMode]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

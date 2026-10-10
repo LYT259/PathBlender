@@ -6,15 +6,20 @@
  * store itself: a saved scheme survives a reopen (app restart), while an
  * unsaved draft never leaks into it.
  */
-import { fireEvent, render, screen, cleanup } from '@testing-library/react';
+import { fireEvent, render, screen, cleanup, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { PreferencesPanel } from '../src/components/PreferencesPanel';
 import { I18nProvider } from '../src/i18n';
+import { en } from '../src/i18n/en';
 import { ThemeProvider } from '../src/theme';
 import { UpdateChannelProvider } from '../src/update-channel';
+import { comboboxValues, expectComboboxValue, openCombobox, pickComboboxValue } from './combobox';
 
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);
+
+const schemePicker = () => screen.getByRole('combobox', { name: /mouse controls/i });
+const unitsPicker = () => screen.getByRole('combobox', { name: /length unit/i });
 
 function panel() {
   const result = render(
@@ -26,7 +31,7 @@ function panel() {
       </UpdateChannelProvider>
     </ThemeProvider>,
   );
-  expect(screen.queryByLabelText(/mouse controls/i, { selector: 'select' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('combobox', { name: /mouse controls/i })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('tab', { name: 'Controls' }));
   return result;
 }
@@ -34,10 +39,10 @@ function panel() {
 describe('mouse controls & units settings', () => {
   it('shows the scheme select, the verified function table and checkbox defaults', () => {
     panel();
-    const mouse = screen.getByLabelText(/mouse controls/i, { selector: 'select' }) as HTMLSelectElement;
-    const units = screen.getByLabelText(/length unit/i, { selector: 'select' }) as HTMLSelectElement;
-    expect(mouse.value).toBe('onshape');
-    expect(units.value).toBe('m');
+    const mouse = schemePicker();
+    const units = unitsPicker();
+    expectComboboxValue(mouse, 'onshape');
+    expectComboboxValue(units, 'in');
     // Function rows carry the verified Onshape bindings (2026-10-03).
     expect(screen.getByText('Right mouse button drag')).toBeInTheDocument();
     expect(screen.getByText('Alt + Right mouse button drag')).toBeInTheDocument();
@@ -52,8 +57,10 @@ describe('mouse controls & units settings', () => {
   it('swaps the diagram and table to the verified SOLIDWORKS bindings', () => {
     panel();
     expect(screen.getByRole('figure', { name: 'Button map' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'SOLIDWORKS', exact: true })).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(/mouse controls/i, { selector: 'select' }), { target: { value: 'solidworks' } });
+    const schemeList = openCombobox(schemePicker());
+    expect(within(schemeList).getByRole('option', { name: 'SOLIDWORKS', exact: true })).toBeInTheDocument();
+    fireEvent.keyDown(schemePicker(), { key: 'Escape' });
+    pickComboboxValue(schemePicker(), 'solidworks');
     expect(screen.getByText('Middle mouse button drag')).toBeInTheDocument();
     expect(screen.getByText('Ctrl + Middle mouse button drag')).toBeInTheDocument();
     expect(screen.getByText('Scroll wheel in/out or Shift + Middle mouse button drag')).toBeInTheDocument();
@@ -77,7 +84,7 @@ describe('mouse controls & units settings', () => {
     expect(container.querySelector('[data-mouse-button="left"]')).toBeNull();
     expect(container.querySelector('.mouse-callout-left')).toBeNull();
     expect(container.querySelector('[data-mouse-button="right"]')).not.toBeNull();
-    fireEvent.change(screen.getByLabelText(/mouse controls/i, { selector: 'select' }), { target: { value: 'solidworks' } });
+    pickComboboxValue(schemePicker(), 'solidworks');
     expect(container.querySelector('[data-mouse-button="right"]')).toBeNull();
     expect(container.querySelector('.mouse-callout-right')).toBeNull();
     expect(container.querySelector('[data-mouse-button="middle"]')).not.toBeNull();
@@ -87,14 +94,14 @@ describe('mouse controls & units settings', () => {
 
   it('orders the five unit choices like the reference and saves every one of them', () => {
     panel();
-    const units = screen.getByLabelText(/length unit/i, { selector: 'select' }) as HTMLSelectElement;
-    expect(Array.from(units.options).map(option => option.value)).toEqual(['cm', 'ft', 'in', 'm', 'yd']);
-    // ft/yd are fully wired (2026-10-04): an example in the chosen unit,
-    // Save enabled, and the choice persists like any other unit.
-    fireEvent.change(units, { target: { value: 'ft' } });
-    expect(screen.getByText('Distances in the checks panel use this unit, e.g. 3.04 ft')).toBeInTheDocument();
-    fireEvent.change(units, { target: { value: 'yd' } });
-    expect(screen.getByText('Distances in the checks panel use this unit, e.g. 1.01 yd')).toBeInTheDocument();
+    const units = unitsPicker();
+    expect(comboboxValues(units)).toEqual(['cm', 'ft', 'in', 'm', 'yd']);
+    // ft/yd are fully wired (2026-10-04): Save enabled, and the choice
+    // persists like any other unit. The hint sentence under the picker was
+    // removed (user request 2026-10-07) — nothing else may appear under it.
+    pickComboboxValue(units, 'ft');
+    expect(document.querySelector('.preferences-units-group .preferences-setting-description')).toBeNull();
+    pickComboboxValue(units, 'yd');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(localStorage.getItem('pb.lengthUnit')).toBe('yd');
   });
@@ -105,10 +112,11 @@ describe('mouse controls & units settings', () => {
     // current unit over it.
     localStorage.setItem('pb.lengthUnit', 'ftin');
     panel();
-    const units = screen.getByLabelText(/length unit/i, { selector: 'select' }) as HTMLSelectElement;
-    expect(units.value).toBe('ftin');
-    expect(screen.getByText('Distances in the checks panel use this unit, e.g. 3′0.5″')).toBeInTheDocument();
-    fireEvent.change(units, { target: { value: 'ft' } });
+    // The hidden read-only row never renders in the dropdown; the legacy
+    // value is still shown on the trigger itself.
+    const units = unitsPicker();
+    expect(units).toHaveTextContent(en['prefs.unit.ftin']);
+    pickComboboxValue(units, 'ft');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(localStorage.getItem('pb.lengthUnit')).toBe('ft');
   });
@@ -139,12 +147,12 @@ describe('mouse controls & units settings', () => {
     const save = screen.getByRole('button', { name: /save/i }) as HTMLButtonElement;
     expect(save.disabled).toBe(true);
 
-    fireEvent.change(screen.getByLabelText(/length unit/i, { selector: 'select' }), { target: { value: 'in' } });
-    fireEvent.change(screen.getByLabelText(/mouse controls/i, { selector: 'select' }), { target: { value: 'solidworks' } });
+    pickComboboxValue(unitsPicker(), 'm');
+    pickComboboxValue(schemePicker(), 'solidworks');
     expect(save.disabled).toBe(false);
 
     fireEvent.click(save);
-    expect(localStorage.getItem('pb.lengthUnit')).toBe('in');
+    expect(localStorage.getItem('pb.lengthUnit')).toBe('m');
     expect(localStorage.getItem('pb.mouseControls')).toBe('solidworks');
     expect(save.disabled).toBe(true); // drafts became current
   });
@@ -153,17 +161,15 @@ describe('mouse controls & units settings', () => {
     // Written before the panel mounts, as a previous session's Save would.
     localStorage.setItem('pb.mouseControls', 'solidworks');
     panel();
-    const mouse = screen.getByLabelText(/mouse controls/i, { selector: 'select' }) as HTMLSelectElement;
-    expect(mouse.value).toBe('solidworks');
+    expectComboboxValue(schemePicker(), 'solidworks');
   });
 
   it('discards an unsaved mouse-scheme draft when the panel is closed and reopened', () => {
     const first = panel();
-    fireEvent.change(screen.getByLabelText(/mouse controls/i, { selector: 'select' }), { target: { value: 'solidworks' } });
+    pickComboboxValue(schemePicker(), 'solidworks');
     expect(localStorage.getItem('pb.mouseControls')).toBeNull(); // draft only — nothing persisted
     first.unmount();
     panel();
-    const mouse = screen.getByLabelText(/mouse controls/i, { selector: 'select' }) as HTMLSelectElement;
-    expect(mouse.value).toBe('onshape'); // reopen reads the store, not the dropped draft
+    expectComboboxValue(schemePicker(), 'onshape'); // reopen reads the store, not the dropped draft
   });
 });

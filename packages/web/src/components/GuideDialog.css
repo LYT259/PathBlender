@@ -1,0 +1,11 @@
+/* Quick guide dialog (onboarding plan §5): wider than the shortcuts dialog —
+   it carries prose — and scrolls by topic with a footer of further entry points. */
+.guide-dialog { width: 560px; max-width: calc(100vw - 48px); max-height: min(80vh, 720px); display: flex; flex-direction: column; overflow: hidden; }
+.guide-topics { overflow: auto; padding-right: 4px; }
+.guide-topic { margin: 0 0 16px; }
+.guide-topic h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-dim); }
+.guide-topic p { margin: 0 0 6px; font-size: 13px; line-height: 1.55; }
+.guide-topic ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.guide-topic li { font-size: 13px; line-height: 1.5; }
+.guide-footer { display: flex; align-items: center; gap: 14px; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--border); }
+.guide-footer a { color: var(--accent, #0a84ff); font-size: 13px; }

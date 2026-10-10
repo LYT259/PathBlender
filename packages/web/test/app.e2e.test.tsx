@@ -24,13 +24,20 @@ function dropFiles(files: File[]): void {
   fireEvent.drop(window, { dataTransfer: { files } });
 }
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  // Pin meters: the dimension text here is a proxy for file-supplied
+  // geometry round-tripping, not a unit-preference assertion.
+  localStorage.setItem('pb.lengthUnit', 'm');
+});
 
-function selectRobot(name: string): HTMLElement {
-  const label = [...document.querySelectorAll('.robot-library-name')].find((element) => element.getAttribute('title') === name);
+function selectRobot(identity: string, regionName: string): HTMLElement {
+  // The row tooltip carries the full identity (display name, or teamNumber,
+  // or route name); the inspector region keeps the imported route name.
+  const label = [...document.querySelectorAll('.robot-library-name')].find((element) => element.getAttribute('title') === identity);
   expect(label).toBeDefined();
   fireEvent.click(label!.closest('button')!);
-  return screen.getByRole('region', { name, exact: true });
+  return screen.getByRole('region', { name: regionName, exact: true });
 }
 
 describe('App import → fusion → collision flow', () => {
@@ -96,10 +103,10 @@ describe('App import → fusion → collision flow', () => {
     });
 
     // Choreo card + ghost cards
-    expect(screen.getByTitle('swerve')).toBeInTheDocument();
-    expect(screen.getByText('#0001', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('#0002', { selector: '.robot-name' })).toBeInTheDocument();
-    expect(screen.getByText('#0001', { selector: '.robot-library-team' })).toBeInTheDocument();
+    expect(screen.getByText('Choreo', { selector: '.robot-library-meta span' })).toBeInTheDocument();
+    expect(screen.getByText('0001', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('0002', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('0001', { selector: '.robot-library-team' })).toBeInTheDocument();
 
     // Collisions: the tuned pair (straight_run × stop_and_score) plus the
     // Choreo swerve sample, which starts at (1,1) right next to Straight
@@ -111,7 +118,7 @@ describe('App import → fusion → collision flow', () => {
       { timeout: 3000 },
     );
     expect(
-      screen.getByText('#0001 × #0002', { selector: '.conflict-pair' }),
+      screen.getByText('0001 × 0002', { selector: '.conflict-pair' }),
     ).toBeInTheDocument();
     expect(screen.getAllByText(/closest/i, { selector: '.conflict-when' })).toHaveLength(2);
   });
@@ -135,7 +142,7 @@ describe('App import → fusion → collision flow', () => {
     expect(new Set(colors).size).toBe(3);
   });
 
-  it('team numbers: extracted from .ghostauto, shown read-only in the inspector', async () => {
+  it('team numbers: extracted from .ghostauto, shown on the heading and robot card', async () => {
     render(<App />);
     dropFiles([file('ghostauto/straight_run.ghostauto')]);
     await waitFor(
@@ -143,10 +150,14 @@ describe('App import → fusion → collision flow', () => {
         expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument();
       },
     );
-    const inspector = selectRobot('Straight Run');
-    expect(within(inspector).getByText('0001')).toBeInTheDocument();
+    const inspector = selectRobot('0001', 'Straight Run');
+    // The identity rows under the heading (team # / alliance) were removed
+    // 2026-10-04; the team number still shows in the inspector heading and
+    // on the robot card.
+    expect(within(inspector).getByRole('heading', { name: '0001' })).toBeInTheDocument();
+    expect(within(inspector).queryByText('team #')).not.toBeInTheDocument();
     expect(within(inspector).queryByRole('textbox')).not.toBeInTheDocument();
-    expect(screen.getByText('#0001', { selector: '.robot-library-team' })).toBeInTheDocument();
+    expect(screen.getByText('0001', { selector: '.robot-library-team' })).toBeInTheDocument();
   });
 
   it('the file picker has no extension filter (all formats selectable)', () => {
@@ -231,7 +242,7 @@ describe('App import → fusion → collision flow', () => {
   it('AI assistant stays withdrawn: no entry point in toolbar, inspector or preferences', async () => {
     render(<App />);
     dropFiles([file('ghostauto/side_lane.ghostauto')]);
-    await screen.findByText('#0003', { selector: '.robot-name' });
+    await screen.findByText('0003', { selector: '.robot-name' });
     // 2026-09-20 retreat: every assistant surface is unreachable while
     // AI_ENABLED is false (ai/availability.ts); the code itself remains.
     expect(screen.queryByRole('button', { name: 'AI Assistant', exact: true })).not.toBeInTheDocument();
@@ -257,8 +268,14 @@ describe('App import → fusion → collision flow', () => {
         expect(screen.getByText('1', { selector: '.conflict-count' })).toBeInTheDocument();
       },
     );
-    const inspector = selectRobot('Straight Run');
+    const inspector = selectRobot('0001', 'Straight Run');
+    // The composition editor lives on the bottom arrangement surface; the
+    // inspector itself is read-only robot data. Conflicts are reported, not
+    // auto-resolved (viewer-only positioning stays intact).
     expect(within(inspector).queryByRole('spinbutton')).not.toBeInTheDocument();
+    expect(within(inspector).queryByRole('heading', { name: 'Auto sequence' })).not.toBeInTheDocument();
+    // One per robot card plus the footer compose action.
+    expect(screen.getAllByRole('button', { name: 'Arrange timeline' })).toHaveLength(3);
     expect(screen.queryByRole('button', { name: /resolve|adjust/i })).not.toBeInTheDocument();
   });
 
@@ -277,7 +294,7 @@ describe('App import → fusion → collision flow', () => {
       () => {
       expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument();
     });
-    expect(screen.getByText('#0003', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(screen.getByText('0003', { selector: '.robot-name' })).toBeInTheDocument();
   });
 
   it('PathPlanner .path now imports natively (Phase 2 generation)', async () => {
@@ -289,7 +306,7 @@ describe('App import → fusion → collision flow', () => {
       },
       { timeout: 5000 },
     );
-    expect(screen.getByTitle('Pickup')).toBeInTheDocument();
+    expect(screen.getByText('PathPlanner', { selector: '.robot-library-meta span' })).toBeInTheDocument();
   });
 
   it('.auto imports when its referenced .path files arrive in the same batch', async () => {
@@ -308,7 +325,7 @@ describe('App import → fusion → collision flow', () => {
       },
       { timeout: 10000 },
     );
-    expect(screen.getByTitle('Example Auto')).toBeInTheDocument();
+    expect(screen.getByText('PP Auto', { selector: '.robot-library-meta span' })).toBeInTheDocument();
     expect(screen.getAllByText(/9\.22/, { selector: '.robot-library-meta span' }).length).toBeGreaterThan(0);
   }, 30000);
 
@@ -319,16 +336,20 @@ describe('App import → fusion → collision flow', () => {
       () => {
       expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument();
     });
-    const inspector = selectRobot('swerve');
+    const inspector = selectRobot('AAAAAA', 'swerve');
     // Pure viewer (2026-09-30): alliance comes from the file; no toggle.
     expect(within(inspector).queryByRole('button', { name: 'Blue' })).not.toBeInTheDocument();
     expect(within(inspector).queryByRole('button', { name: 'Red' })).not.toBeInTheDocument();
-    expect(within(inspector).getByText(/blue|red/i)).toBeInTheDocument();
+    // The inspector alliance row went with the identity block (2026-10-04);
+    // the alliance now shows on the toolbar toggle alone.
+    expect(within(inspector).queryByText(/^(blue|red)$/i)).not.toBeInTheDocument();
+    expect(within(screen.getByRole('group', { name: 'alliance' })).getByRole('button', { name: 'Blue' })).toBeInTheDocument();
     expect(within(inspector).queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
     expect(inspector.querySelector('.robot-dimensions')).toHaveTextContent('0.81 m');
-    // The responsive overflow menu contains a second Save action; jsdom
-    // does not apply the CSS breakpoint that chooses between the two.
-    expect(screen.getByText('Save session', { selector: '.toolbar > .save-action' })).toBeEnabled();
+    // Save moved to the File menu (2026-10-06): the toolbar carries no
+    // Save button anymore; the menubar/⌘S path is covered in
+    // menu-dispatch.test.tsx.
+    expect(document.querySelector('.toolbar > .save-action')).toBeNull();
   });
 });
 
@@ -344,13 +365,10 @@ describe('artwork style switcher vs 3D', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '3D', exact: true }));
     expect(style()).toBeNull(); // 3D: official model replaces the artwork
-    const trails = screen.getByRole('checkbox', { name: 'trails' });
-    expect(trails).toBeChecked();
-    fireEvent.click(trails);
-    expect(trails).not.toBeChecked();
+    // Tails are always on — the toggle was removed for good (2026-10-05).
+    expect(screen.queryByRole('checkbox', { name: 'trails' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: '2D', exact: true }));
     expect(style()).not.toBeNull(); // back to 2D: the choice returns
-    expect(screen.getByRole('checkbox', { name: 'trails' })).not.toBeChecked();
   });
 });

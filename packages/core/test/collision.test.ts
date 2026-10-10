@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { compareScenarios, detectCollisions, makeSession, minimumSeparation } from '../src';
+import { detectCollisions, makeSession, minimumSeparation } from '../src';
 import { parseGhostAuto } from '../src';
 
 const SAMPLES = resolve(__dirname, '../../../samples');
@@ -91,46 +91,5 @@ describe('timing tolerance scan (red book §6.5-①)', () => {
     expect(hits[0]!.kind).toBe('planned');
     expect(hits[0]!.offsetS).toBe(0);
     expect(hits[0]!.toleranceS).toBeUndefined();
-  });
-});
-
-describe('A-B scenario comparison (§7.3-3, landed 2026-10-04)', () => {
-  const basePair = () => {
-    const a = load('straight_run');
-    const b = load('stop_and_score');
-    return [a, b] as const;
-  };
-
-  it('reports the tightening of the closest pair when a delay changes', () => {
-    const [a, b] = basePair();
-    const delayed = { ...a, startDelayS: 0.5 };
-    const result = compareScenarios([a, b], [delayed, b]);
-    expect(result.pairs.length).toBeGreaterThanOrEqual(1);
-    const pair = result.pairs.find((p) => p.aId === a.trajectory.id || p.bId === a.trajectory.id);
-    expect(pair).toBeDefined();
-    // Empirical (probed 2026-10-04): a 0.5 s later start opens ~0.027 m at
-    // the closest approach — the assert pins direction and reality, not a
-    // naive "delta = delay" assumption.
-    expect(pair!.deltaM).toBeGreaterThan(0);
-    expect(pair!.deltaM).toBeLessThan(0.2);
-  });
-
-  it('flags robots present in only one scenario', () => {
-    const [a, b] = basePair();
-    const result = compareScenarios([a, b], [a]);
-    expect(result.removedIds).toEqual([b.trajectory.id]);
-    const result2 = compareScenarios([a], [a, b]);
-    expect(result2.addedIds).toEqual([b.trajectory.id]);
-  });
-
-  it('sorts pairs by delta so the tightest comes first', () => {
-    const [a, b] = basePair();
-    const c = load('side_lane');
-    const delayed = { ...a, startDelayS: 0.5 };
-    const result = compareScenarios([a, b, c], [delayed, b, c]);
-    expect(result.pairs).toHaveLength(3);
-    for (let i = 1; i < result.pairs.length; i++) {
-      expect(result.pairs[i]!.deltaM).toBeGreaterThanOrEqual(result.pairs[i - 1]!.deltaM);
-    }
   });
 });

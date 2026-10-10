@@ -8,6 +8,7 @@ import type { Pose2d, RobotGeometry, Trajectory, TrajectorySample } from './type
 import { sampleTrajectory } from './math';
 import { makeCustomField } from './field';
 import type { RobotProfile } from './parsers/robot-profile';
+import { resolveSequence, sampleSequenceState, type AutoSequence } from './auto-sequence';
 
 export interface SessionRouteOption {
   id: string;
@@ -28,23 +29,53 @@ export interface SessionTrajectory {
   /** UI display color; persisted in session files. */
   color: string;
   visible: boolean;
-  /** Opponent marker (red book §6.5-②): faded/dashed rendering + defense
-   *  notes in the conflict report instead of resolve notes. */
-  opponent?: boolean;
   /** Selected route inside this team's alternatives; older sessions may lack them. */
   routeId?: string;
+  /**
+   * This team's route/sequence is mirrored between the left/right trench
+   * sides (user-approved per-team mirror, 2026-10-05). Stored on the slot,
+   * applied in the alliance view derivation — the imported samples stay
+   * untouched and the flag is an involution. New routes added to the team
+   * inherit it because every view path reads the slot flag.
+   */
+  mirrored?: boolean;
   /** Alternatives belong to this team slot, including after save/restore. */
   routeOptions?: SessionRouteOption[];
   profileOptions?: SessionProfileOption[];
   /** Explicitly applied configuration, retained when switching routes. */
   profileId?: string;
+  /**
+   * Multi-segment composition (red book v1.38): the robot plays these routes
+   * in order, with the first segment's wait acting as the start delay.
+   * Absent = legacy single-route behavior with `startDelayS`. When present,
+   * `startDelayS` mirrors the first segment's wait (kept in sync on write,
+   * re-synced on session load) so consumers can keep reading either field.
+   */
+  sequence?: AutoSequence;
 }
 
-/** Palette mirroring the 103 fork's ghost colors (community-familiar). */
+/** Muted gold, violet, and sage for the first three team slots; later slots retain the legacy ghost palette. */
 export const SESSION_COLORS = [
-  '#FF6EC7', '#00E5FF', '#AAFF00', '#FF9100', '#E040FB',
+  '#C5A16A', '#A28CBA', '#8FA482', '#FF9100', '#E040FB',
   '#00E676', '#FF5252', '#40C4FF', '#FFD740', '#7C4DFF',
 ];
+
+/**
+ * First three defaults before the muted palette (2026-10-05), remapped on
+ * session read: restored sessions then match freshly assigned colors, and
+ * the colorblind remap recognizes them again (the old values left the
+ * default palette, so it passed them through untouched). Matching is by
+ * value, not slot — a robot that joined as slot 3 keeps its slot-3 hue. A
+ * custom color that happened to equal a former default is remapped too:
+ * session files cannot distinguish the two (the same limitation the
+ * colorblind remap already documents). Matching tolerates case — the
+ * serializer always writes uppercase, hand-edited files may not.
+ */
+const LEGACY_DEFAULT_COLORS: Record<string, string> = {
+  '#FF6EC7': '#C5A16A',
+  '#00E5FF': '#A28CBA',
+  '#AAFF00': '#8FA482',
+};
 
 /**
  * Colorblind-safe palette (Okabe-Ito, the canonical CVD-safe set) for the
@@ -78,9 +109,16 @@ export function makeSession(traj: Trajectory, colorIndex = 0): SessionTrajectory
 
 /**
  * Robot pose on the global clock: parked at the first state before its
- * start delay, clamped to the last state after the trajectory ends.
+ * start delay, clamped to the last state after the trajectory ends. A
+ * composed robot samples through its sequence — parked (zero velocity) at
+ * the previous segment's end during waits, never interpolated across a
+ * gap between segments.
  */
 export function samplePoseAt(st: SessionTrajectory, globalT: number): Pose2d {
+  if (st.sequence) {
+    const s = sampleSequenceState(st, globalT);
+    if (s) return { x: s.x, y: s.y, heading: s.heading };
+  }
   const localT = globalT - st.startDelayS;
   const s = sampleTrajectory(st.trajectory.samples, localT);
   if (!s) return { x: 0, y: 0, heading: 0 };
@@ -91,22 +129,43 @@ export function samplePoseAt(st: SessionTrajectory, globalT: number): Pose2d {
  * Full interpolated state (pose + velocities) on the global clock —
  * same clamping semantics as samplePoseAt. The MK5i wheel-steering
  * rendering needs each robot's vx/vy/ω, not just the pose. Returns
- * undefined for trajectories with no samples.
+ * undefined for legacy trajectories with no samples. Waiting/parked states of a composed
+ * robot report zero velocity.
  */
 export function sampleStateAt(st: SessionTrajectory, globalT: number): TrajectorySample | undefined {
+  if (st.sequence) {
+    return sampleSequenceState(st, globalT)
+      ?? sampleTrajectory(st.trajectory.samples, globalT - st.startDelayS);
+  }
   return sampleTrajectory(st.trajectory.samples, globalT - st.startDelayS);
 }
 
 export function activeStartT(st: SessionTrajectory): number {
+  const resolved = resolveSequence(st);
+  if (resolved) return resolved[0]?.startS ?? 0;
   return st.startDelayS;
 }
 
 export function activeEndT(st: SessionTrajectory): number {
+  const resolved = resolveSequence(st);
+  if (resolved) return resolved[resolved.length - 1]?.endS ?? 0;
   return st.startDelayS + st.trajectory.durationS;
 }
 
 export function sessionDuration(sts: readonly SessionTrajectory[]): number {
   return sts.reduce((m, st) => Math.max(m, activeEndT(st)), 0);
+}
+
+/**
+ * An explicitly EMPTY arrangement — the user removed every leg (or opened
+ * the composer and committed nothing). Such a robot has nothing to show and
+ * no honest position on the field: it is not "parked at its route's start",
+ * it is not running an auto at all. Renderers and the collision check skip
+ * it; the robot list keeps the row so the arrangement stays editable.
+ * A legacy robot (no `sequence`) is NOT empty — it plays its own route.
+ */
+export function hasEmptyArrangement(st: SessionTrajectory): boolean {
+  return st.sequence !== undefined && st.sequence.segments.length === 0;
 }
 
 export function sessionGeometry(st: SessionTrajectory): RobotGeometry {
@@ -149,15 +208,16 @@ export interface SessionFileV1 {
     teamName: string;
     /** Optional since v1.4; older session files simply lack it. */
     teamNumber?: string;
+    displayName?: string;
     source: Trajectory['source'];
     alliance: Trajectory['alliance'];
     startDelayS: number;
     color: string;
     visible: boolean;
-    /** Optional since v1.7 files. */
-    opponent?: boolean;
     /** Route-library id when the robot's current route came from the library. */
     routeId?: string;
+    /** Per-team left/right mirror (optional since 2026-10-05; absent = off). */
+    mirrored?: boolean;
     routeOptions?: SessionRouteOption[];
     profileOptions?: SessionProfileOption[];
     profileId?: string;
@@ -174,14 +234,33 @@ export interface SessionFileV1 {
     editable?: Trajectory['editable'];
     edited?: boolean;
     original?: Trajectory['original'];
+    /**
+     * Multi-segment composition (added 2026-10-04, still v1: optional so
+     * every session file saved before it keeps opening unchanged).
+     */
+    sequence?: AutoSequence;
   }>;
+}
+
+/**
+ * Output shaping for `serializeSession`. Both options default to what the
+ * shareable `.pb` file has always been, so existing callers are unchanged.
+ */
+export interface SessionSerializeOptions {
+  /** Two-space indent (the shipped-file shape) or compact text. */
+  pretty?: boolean;
+  /** Leave a robot's route library out — the autosave slot uses this for
+   * libraries the restore path regenerates anyway, and as a quota fallback. */
+  omitRouteOptions?: (st: SessionTrajectory) => boolean;
 }
 
 export function serializeSession(
   sts: readonly SessionTrajectory[],
   fieldId: string,
   field?: import('./field').FieldPackage,
+  options: SessionSerializeOptions = {},
 ): string {
+  const pretty = options.pretty !== false;
   const file: SessionFileV1 = {
     app: APP_MARKER,
     version: 1,
@@ -205,16 +284,23 @@ export function serializeSession(
       name: st.trajectory.name,
       teamName: st.trajectory.teamName,
       teamNumber: st.trajectory.teamNumber,
+      displayName: st.trajectory.displayName,
       source: st.trajectory.source,
       alliance: st.trajectory.alliance,
-      startDelayS: st.startDelayS,
+      // The sequence's first wait is the start delay; write both so files
+      // stay self-consistent even if a consumer only ever reads one field.
+      startDelayS: st.sequence && st.sequence.segments.length > 0
+        ? Math.max(0, st.sequence.segments[0]!.waitBeforeS)
+        : st.startDelayS,
       color: st.color,
       visible: st.visible,
-      opponent: st.opponent,
       routeId: st.routeId,
-      routeOptions: st.routeOptions,
+      mirrored: st.mirrored === true ? true : undefined,
+      // `undefined` drops the key from the JSON entirely.
+      routeOptions: options.omitRouteOptions?.(st) ? undefined : st.routeOptions,
       profileOptions: st.profileOptions,
       profileId: st.profileId,
+      sequence: st.sequence,
       geometry: st.trajectory.geometry,
       geometrySource: st.trajectory.geometrySource,
       moduleLocations: st.trajectory.moduleLocations,
@@ -227,7 +313,7 @@ export function serializeSession(
       original: st.trajectory.original,
     })),
   };
-  return JSON.stringify(file, null, 2);
+  return JSON.stringify(file, null, pretty ? 2 : 0);
 }
 
 export function deserializeSession(text: string): {
@@ -253,11 +339,13 @@ export function deserializeSession(text: string): {
       })
     : undefined;
   const robots = v.robots.map((r) => {
+    const sequence = readSequence(r.sequence);
     const traj: Trajectory = {
       id: r.id ?? crypto.randomUUID(),
       name: r.name,
       teamName: r.teamName,
       teamNumber: r.teamNumber ?? '',
+      displayName: typeof r.displayName === 'string' ? r.displayName : undefined,
       source: r.source,
       alliance: r.alliance,
       samples: r.samples,
@@ -278,14 +366,15 @@ export function deserializeSession(text: string): {
     };
     return {
       trajectory: traj,
-      startDelayS: r.startDelayS,
-      color: r.color,
+      startDelayS: sequence ? Math.max(0, sequence.segments[0]?.waitBeforeS ?? 0) : r.startDelayS,
+      color: typeof r.color === 'string' ? (LEGACY_DEFAULT_COLORS[r.color.toUpperCase()] ?? r.color) : r.color,
       visible: r.visible,
-      opponent: r.opponent === true ? true : undefined,
       routeId: r.routeId,
+      mirrored: r.mirrored === true ? true : undefined,
       routeOptions: readRouteOptions(r.routeOptions),
       profileOptions: readProfileOptions(r.profileOptions),
       profileId: typeof r.profileId === 'string' ? r.profileId : undefined,
+      sequence,
     } satisfies SessionTrajectory;
   });
   return { fieldId: v.fieldId, field: customField, robots };
@@ -295,6 +384,27 @@ function validGeometry(value: RobotGeometry | undefined): boolean {
   return !!value && Number.isFinite(value.lengthM) && value.lengthM > 0 &&
     Number.isFinite(value.widthM) && value.widthM > 0 &&
     Number.isFinite(value.offsetX) && Number.isFinite(value.offsetY);
+}
+
+function readSequence(value: AutoSequence | undefined): AutoSequence | undefined {
+  if (value === undefined) return undefined;
+  const segments = value?.segments;
+  if (!Array.isArray(segments)) return undefined;
+  if (segments.some((segment) => !segment || typeof segment.id !== 'string' || typeof segment.routeId !== 'string')) {
+    throw new Error('invalid auto sequence');
+  }
+  // Numeric damage self-heals: non-finite or negative waits clamp to zero
+  // instead of bricking the whole session file. A damaged playS (partial
+  // execution, 2026-10-08) drops back to playing the route whole.
+  return {
+    segments: segments.map((segment) => ({
+      ...segment,
+      waitBeforeS: Number.isFinite(segment.waitBeforeS) ? Math.max(0, segment.waitBeforeS) : 0,
+      playS: segment.playS !== undefined && Number.isFinite(segment.playS) && segment.playS > 0
+        ? segment.playS
+        : undefined,
+    })),
+  };
 }
 
 function readRouteOptions(value: SessionRouteOption[] | undefined): SessionRouteOption[] | undefined {

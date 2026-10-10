@@ -7,11 +7,10 @@
 }
 
 .timeline-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; min-height: 24px; }
-.timeline-toolbar h2 { margin: 0; font-size: 12px; font-weight: 600; }
 .timeline-playback-bar {
   display: grid; grid-template-areas: 'clock transport speeds';
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px 16px;
-  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+  margin-top: 10px; padding-top: 10px;
 }
 .timeline-transport { grid-area: transport; display: flex; align-items: center; justify-content: center; gap: 3px; }
 .timeline-transport button {
@@ -34,7 +33,9 @@
 .timeline-legend i.timeline-legend-event { background: var(--fg-dim); border-radius: 1px; transform: rotate(45deg); }
 .timeline-empty { color: var(--fg-dim); margin: 10px 0 0; font-size: 12px; }
 
-.timeline-scroller { overflow: auto; max-height: 210px; margin-top: 10px; padding: 0 2px 2px; scrollbar-width: thin; }
+/* Padding carries the 2px outline + 2px offset of the row buttons' rings —
+   2px clipped them at the top/left edges (focus-audit 2026-10-07). */
+.timeline-scroller { overflow: auto; max-height: 210px; margin-top: 6px; padding: 4px; scrollbar-width: thin; }
 .timeline-surface { min-width: 550px; padding-right: var(--timeline-end-inset); position: relative; }
 .timeline-axis, .timeline-row { display: grid; grid-template-columns: var(--timeline-label-width) minmax(0, 1fr); column-gap: var(--timeline-column-gap); }
 /* The ruler rides below the track rows (user spec, 2026-10-02): the numbers
@@ -52,6 +53,9 @@
   -webkit-appearance: none; appearance: none; position: absolute; top: 14px; left: -7px;
   width: calc(100% + 14px); height: 22px; margin: 0; padding: 0;
   border: 0; background: transparent; cursor: ew-resize; z-index: 3;
+  /* Rounded so its inset focus ring is rounded too — a full-width square ring
+     read as a foreign rectangle (user report, focus-audit 2026-10-07). */
+  border-radius: 8px;
 }
 .timeline-scrubber::-webkit-slider-runnable-track { height: 2px; background: var(--border); border: 0; }
 .timeline-scrubber::-moz-range-track { height: 2px; background: var(--border); border: 0; }
@@ -60,22 +64,38 @@
 .timeline-rows { display: flex; flex-direction: column; gap: 2px; }
 .timeline-row { min-height: 29px; align-items: center; border-radius: 5px; }
 .timeline-row.is-selected { background: var(--accent-dim); }
+/* The label and its lane are ONE hover unit (user request 2026-10-06): hovering
+   either tints the whole row, so hover spans exactly like the selection tint.
+   A selected row keeps its accent on hover — the blend just reads one step in. */
+.timeline-row:hover { background: var(--hover); }
+.timeline-row.is-selected:hover { background: color-mix(in srgb, var(--hover) 60%, var(--accent-dim)); }
 .timeline-robot { min-width: 0; display: flex; align-items: center; gap: 8px; height: 29px; padding: 0 6px; border: 0; border-radius: 5px; background: transparent; color: var(--fg-dim); font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
-.timeline-robot:hover { background: var(--hover); color: var(--fg); }
+.timeline-row:hover .timeline-robot { color: var(--fg); }
 .timeline-robot[aria-pressed='true'] { color: var(--fg); font-weight: 600; }
 .timeline-robot span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .timeline-robot-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
 .timeline-lane { position: relative; height: 26px; min-width: 0; }
 .timeline-lane::before { content: ''; position: absolute; top: 12px; left: 0; right: 0; height: 1px; background: var(--border); }
 .timeline-activity { position: absolute; top: 7px; height: 12px; min-width: 2px; opacity: .4; border-radius: 3px; }
-.timeline-issue { position: absolute; height: 7px; min-width: 5px; border: 0; border-radius: 2px; padding: 0; cursor: pointer; z-index: 1; }
-.timeline-issue::after { content: ''; position: absolute; inset: -3px 0; }
-.timeline-collision { top: 4px; background: var(--danger); }
-.timeline-bounds { bottom: 4px; background: var(--oob); }
 .timeline-event { position: absolute; top: 8px; width: 9px; height: 9px; border: 1px solid var(--bg-panel); border-radius: 2px; padding: 0; background: var(--fg); transform: translateX(-50%) rotate(45deg); cursor: pointer; z-index: 2; }
 .timeline-playhead-plane { position: absolute; top: 0; bottom: 0; left: calc(var(--timeline-label-width) + var(--timeline-column-gap)); right: var(--timeline-end-inset); pointer-events: none; z-index: 2; }
 .timeline-playhead { position: absolute; top: 0; bottom: 0; width: 1px; transform: translateX(-.5px); background: var(--accent); }
 .timeline-workspace button:focus-visible, .timeline-scrubber:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Selecting is by ROW — the label sits at the front of the robot's whole
+   strip, so its focus ring wraps the entire row from the label to the 20 s
+   end instead of the label alone (user 2026-10-07). Event dots ring the row
+   the same way; neither paints a ring of its own. */
+.timeline-row:has(.timeline-robot:focus-visible),
+.timeline-row:has(.timeline-event:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.timeline-row .timeline-robot:focus-visible, .timeline-row .timeline-event:focus-visible { outline: none; }
+/* Speed pills sit shoulder to shoulder — an outside ring slides under the
+   next pill's background, so draw it inside (focus-audit 2026-10-07). */
+.timeline-speeds button:focus-visible { outline-offset: -2px; }
+/* The scrubber's ring must read as ONE strip covering the ruler numbers
+   0–20 and the track below them, not a thin band under the digits
+   (user 2026-10-07): the ruler carries the ring, the input paints none. */
+.timeline-axis .timeline-ruler:has(.timeline-scrubber:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.timeline-scrubber:focus-visible { outline: none; }
 
 @media (max-width: 780px) {
   .timeline.timeline-workspace { padding: 10px 12px 12px; --timeline-label-width: 112px; --timeline-column-gap: 10px; }

@@ -147,3 +147,11 @@
 @media (min-height: 760px) and (min-width: 641px) {
   .workspace-empty.start-screen { padding-bottom: 183px; }
 }
+
+/* Guide link (onboarding plan §5): the quiet way in — one link, not a third
+   primary. */
+.start-guide { display: flex; justify-content: center; margin-top: 18px; }
+.start-guide-link { padding: 6px 14px; border: 0; border-radius: 8px; background: transparent; color: var(--start-secondary-fg); font: inherit; font-size: 13px; cursor: pointer; }
+.start-guide-link:hover { color: var(--fg); }
+.start-guide-link:active { background: var(--hover); }
+.start-guide-link:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }

@@ -1,23 +1,33 @@
+import { SelectControl } from './SelectControl';
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
-import { LANGUAGES, langLabel, useI18n, type LangChoice } from '../i18n';
+import { useI18n, type LangChoice } from '../i18n';
 import { useTheme, type ThemeMode } from '../theme';
 import { useAppIcon, type IconAppearanceMode } from '../app-icon';
 import { readColorblind, writeColorblind } from '../pref-sync';
 import {
+  CUSTOM_MOUSE_BUTTONS,
+  DEFAULT_CUSTOM_MOUSE_MAP,
   MOUSE_SCHEMES,
+  useCustomMouseControls,
   useDefaultConstrained,
   useMouseControls,
   usePenAsMouse,
   useReverseScrollZoom,
+  type CustomMouseAction,
+  type CustomMouseButton,
+  type CustomMouseMap,
   type MouseControlsScheme,
 } from '../mouse-controls';
-import { LENGTH_UNITS, lengthUnitExample, useLengthUnit, type LengthUnit } from '../length-units';
+import { LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
 import { checkForUpdate, installPendingUpdate } from '../update-check';
-import { APP_VERSION, noteText, VERSION_NOTES } from '../version-info';
+import { noteText, VERSION_NOTES } from '../version-info';
+import dayIcon from '../assets/app-icon-day.png';
+import nightIcon from '../assets/app-icon-night.png';
+import { BUILD_VERSION } from '../build-version';
 import { copyText } from '../download';
-import { VIEWER_ONLY, SITE_PREVIEW, SITE_URLS } from '../viewer';
 import { Icon } from './Icon';
+import { LanguagePicker } from './LanguagePicker';
 import { MouseControlsDiagram } from './MouseControlsDiagram';
 import { IconAppearancePicker } from './IconAppearancePicker';
 import './PreferencesPanel.css';
@@ -39,12 +49,19 @@ type UpdateCheck =
   | { kind: 'failed' };
 
 /** Shared settings; changes only reach other windows after Save. */
-export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClose: () => void }) {
+export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
+  desktop: boolean;
+  onClose: () => void;
+  /** Fired on Save so the hosting window applies the new palette at once —
+   * the Tauri broadcast only reaches windows on desktop shells. */
+  onColorblindSaved?: (on: boolean) => void;
+}) {
   const { langChoice, setLang, t } = useI18n();
   const { mode, setMode } = useTheme();
-  const { mode: iconMode, setMode: setIconMode } = useAppIcon();
+  const { mode: iconMode, systemDark, setMode: setIconMode } = useAppIcon();
   const { channel, setChannel } = useUpdateChannel();
   const [mouseControls, setMouseControls] = useMouseControls();
+  const [customMouse, setCustomMouse] = useCustomMouseControls();
   const [lengthUnit, setLengthUnit] = useLengthUnit();
   const [reverseScroll, setReverseScroll] = useReverseScrollZoom();
   const [defaultConstrained, setDefaultConstrained] = useDefaultConstrained();
@@ -52,10 +69,14 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const [section, setSection] = useState<Section>('general');
   const [languageDraft, setLanguageDraft] = useState<LangChoice | null>(null);
   const [themeDraft, setThemeDraft] = useState<ThemeMode | null>(null);
-  const [colorblind, setColorblind] = useState(readColorblind);
+  // Colorblind stages like every other shared setting (user request
+  // 2026-10-04): the checkbox only drafts; Save persists + broadcasts.
+  const [savedColorblind, setSavedColorblind] = useState(readColorblind);
+  const [colorblindDraft, setColorblindDraft] = useState<boolean | null>(null);
   const [iconDraft, setIconDraft] = useState<IconAppearanceMode | null>(null);
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
   const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
+  const [customDraft, setCustomDraft] = useState<CustomMouseMap | null>(null);
   const [unitDraft, setUnitDraft] = useState<LengthUnit | null>(null);
   const [reverseDraft, setReverseDraft] = useState<boolean | null>(null);
   const [constrainedDraft, setConstrainedDraft] = useState<boolean | null>(null);
@@ -64,19 +85,26 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
   const [updateCheck, setUpdateCheck] = useState<UpdateCheck>({ kind: 'idle' });
   const id = useId();
   const tabRefs = useRef<Partial<Record<Section, HTMLButtonElement | null>>>({});
-  const sections: Section[] = desktop || VIEWER_ONLY ? ['general', 'controls', 'updates', 'about'] : ['general', 'controls', 'about'];
+  // The website keeps no Updates section (user request 2026-10-07): the site
+  // itself is the beta channel and never self-updates, so the tab is
+  // desktop-only.
+  const sections: Section[] = desktop ? ['general', 'controls', 'updates', 'about'] : ['general', 'controls', 'about'];
   const language = languageDraft ?? langChoice;
   const theme = themeDraft ?? mode;
   const icon = iconDraft ?? iconMode;
   const updateChannel = channelDraft ?? channel;
   const mouse = mouseDraft ?? mouseControls;
+  const customEffective = customDraft ?? customMouse;
   const unit = unitDraft ?? lengthUnit;
   const reverse = reverseDraft ?? reverseScroll;
   const constrained = constrainedDraft ?? defaultConstrained;
   const pen = penDraft ?? penAsMouse;
+  const colorblind = colorblindDraft ?? savedColorblind;
   const dirty = language !== langChoice || theme !== mode || icon !== iconMode ||
     updateChannel !== channel || mouse !== mouseControls || unit !== lengthUnit ||
-    reverse !== reverseScroll || constrained !== defaultConstrained || pen !== penAsMouse;
+    reverse !== reverseScroll || constrained !== defaultConstrained || pen !== penAsMouse ||
+    colorblind !== savedColorblind ||
+    (customDraft !== null && JSON.stringify(customDraft) !== JSON.stringify(customMouse));
   const updateStatusText =
     updateCheck.kind === 'checking' ? t('prefs.checking')
       : updateCheck.kind === 'upToDate' ? t('updates.upToDate')
@@ -130,16 +158,25 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
       setUpdateCheck({ kind: 'idle' });
     }
     if (mouse !== mouseControls) setMouseControls(mouse);
+    if (customDraft !== null) {
+      setCustomMouse(customDraft);
+      setCustomDraft(null); // deep-compared against the store, so drop it once saved
+    }
     if (unit !== lengthUnit) setLengthUnit(unit);
     if (reverse !== reverseScroll) setReverseScroll(reverse);
     if (constrained !== defaultConstrained) setDefaultConstrained(constrained);
     if (pen !== penAsMouse) setPenAsMouse(pen);
+    if (colorblind !== savedColorblind) {
+      writeColorblind(colorblind);
+      setSavedColorblind(colorblind);
+      onColorblindSaved?.(colorblind);
+    }
     // Save keeps the window open (user request 2026-10-02): drafts become
     // current, dirty clears, and the user closes via Cancel/Escape/⌘W when
     // done — matching System Settings' persist-in-place behavior.
   }
 
-  return <div className="preferences-panel" onKeyDown={(event) => {
+  return <div className="preferences-panel" tabIndex={-1} onKeyDown={(event) => {
     if (event.key === 'Escape') { event.stopPropagation(); onClose(); }
   }}>
     <aside className="preferences-sidebar">
@@ -159,12 +196,12 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
         key={section} id={`${id}-${section}-panel`} aria-labelledby={`${id}-${section}-tab`}>
         <header className="preferences-heading"><h2>{t(`prefs.section.${section}`)}</h2></header>
         {section === 'general' && <>
-          <div className="preferences-group"><label className="preferences-setting">
-            <span>{t('prefs.language')}</span>
-            <select value={language} onChange={(event) => setLanguageDraft(event.target.value as LangChoice)}>
-              {LANGUAGES.map((choice) => <option key={choice} value={choice}>{choice === 'system' ? t('prefs.langSystem') : langLabel(choice)}</option>)}
-            </select>
-          </label></div>
+          <div className="preferences-group preferences-language-group">
+            <div className="preferences-setting">
+              <span id={`${id}-language-label`}>{t('prefs.language')}</span>
+              <LanguagePicker value={language} onChange={setLanguageDraft} labelledBy={`${id}-language-label`} />
+            </div>
+          </div>
           <fieldset className="preferences-appearance"><legend>{t('prefs.theme')}</legend>
             <div className="preferences-theme-options">
               {(['system', 'light', 'dark'] as const).map((choice) => <label key={choice} className="preferences-theme-choice">
@@ -175,30 +212,34 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
             </div>
           </fieldset>
           {desktop && <IconAppearancePicker value={icon} onChange={setIconDraft} />}
-          <label className="preferences-setting">
+          <label className="preferences-setting preferences-checkbox">
             <span>{t('prefs.colorblind')}</span>
-            <input type="checkbox" checked={colorblind} onChange={(e) => { setColorblind(e.target.checked); writeColorblind(e.target.checked); }} />
+            <input type="checkbox" checked={colorblind} onChange={(e) => setColorblindDraft(e.target.checked)} />
           </label>
-          <p className="preferences-setting-description">{t('prefs.colorblindHint')}</p>
         </>}
         {section === 'controls' && <>
           <div className="preferences-group preferences-units-group">
             <label className="preferences-setting"><span>{t('prefs.units')}</span>
-              <select value={unit} onChange={(event) => setUnitDraft(event.target.value as LengthUnit)}>
+              <SelectControl aria-label={t('prefs.units')} value={unit} onValueChange={(value) => setUnitDraft(value as LengthUnit)}>
                 {lengthUnit === 'ftin' && <option value="ftin" hidden disabled>{t('prefs.unit.ftin')}</option>}
                 {LENGTH_UNITS.map((choice) => <option key={choice} value={choice}>{t(`prefs.unit.${choice}`)}</option>)}
-              </select>
+              </SelectControl>
             </label>
-            <p className="preferences-setting-description">{`${t('prefs.units.hint')} ${lengthUnitExample(unit)}`}</p>
           </div>
           <div className="preferences-group preferences-mouse-group">
             <label className="preferences-setting"><span>{t('prefs.mouseControls')}</span>
-              <select value={mouse} onChange={(event) => setMouseDraft(event.target.value as MouseControlsScheme)}>
+              <SelectControl aria-label={t('prefs.mouseControls')} value={mouse} onValueChange={(value) => setMouseDraft(value as MouseControlsScheme)}>
                 {MOUSE_SCHEMES.map((choice) => <option key={choice} value={choice}>{t(`prefs.mouse.${choice}`)}</option>)}
-              </select>
+              </SelectControl>
             </label>
-            <MouseControlsDiagram scheme={mouse} iconMode={icon} constrained={constrained} />
-            <details className="preferences-mouse-details"><summary>{t('prefs.mouse.shortcuts')}</summary>
+            <MouseControlsDiagram scheme={mouse} iconMode={icon} constrained={constrained} custom={customEffective} />
+            {mouse === 'custom'
+              ? <CustomMouseEditor
+                  map={customEffective}
+                  onChange={(button, action) => setCustomDraft({ ...customEffective, [button]: action })}
+                  onReset={() => setCustomDraft({ ...DEFAULT_CUSTOM_MOUSE_MAP })}
+                />
+              : <details className="preferences-mouse-details"><summary>{t('prefs.mouse.shortcuts')}</summary>
             <div className="preferences-mouse-table">
               {(mouse === 'solidworks'
                 // SOLIDWORKS: Alt+middle is Roll View (its own row); the
@@ -220,16 +261,19 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
                 <span>{t(row.label)}</span>
                 <strong>{t(row.bind)}</strong>
               </div>)}
-            </div></details>
+            </div></details>}
             <div className="preferences-mouse-options">
             <label className="preferences-setting preferences-checkbox">
               <span>{t('prefs.mouse.reverseScroll')}</span>
               <input type="checkbox" checked={reverse} onChange={(event) => setReverseDraft(event.target.checked)} />
             </label>
-            <label className="preferences-setting preferences-checkbox">
+            {/* The constrained-rotate default only steers the presets; in the
+                custom scheme constrained rotation is a directly assignable
+                action, so the checkbox would do nothing there. */}
+            {mouse !== 'custom' && <label className="preferences-setting preferences-checkbox">
               <span>{t('prefs.mouse.defaultConstrained')}</span>
               <input type="checkbox" checked={constrained} onChange={(event) => setConstrainedDraft(event.target.checked)} />
-            </label>
+            </label>}
             <label className="preferences-setting preferences-checkbox">
               <span>{t('prefs.mouse.penAsMouse')}</span>
               <input type="checkbox" checked={pen} onChange={(event) => setPenDraft(event.target.checked)} />
@@ -237,31 +281,30 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
           </div>
 
         </>}
-        {section === 'updates' && <>
-          {desktop ? <div className="preferences-group">
-            <label className="preferences-setting"><span>{t('prefs.channel')}</span>
-              <select value={updateChannel} onChange={(event) => setChannelDraft(event.target.value as UpdateChannel)}>
-                <option value="stable">{t('prefs.channel.stable')}</option><option value="beta">{t('prefs.channel.beta')}</option>
-              </select>
-            </label>
-            <div className="preferences-update-check">
-              <div className="update-actions">
-                <button type="button" className="btn accent" disabled={updateCheck.kind === 'checking' || updateCheck.kind === 'installing'}
-                  aria-describedby={`${id}-update-status`} onClick={startUpdateCheck}><Icon name="refresh" size={15} />{t('prefs.checkUpdates')}</button>
-                {updateCheck.kind === 'found' &&
-                  <button type="button" className="btn" onClick={startInstall}>{t('prefs.installUpdate')}</button>}
-              </div>
-              <p id={`${id}-update-status`} role="status">{updateStatusText}</p>
-              {savedChannelHint && <p>{savedChannelHint}</p>}
+        {section === 'updates' && <div className="preferences-group">
+          <label className="preferences-setting"><span>{t('prefs.channel')}</span>
+            <SelectControl aria-label={t('prefs.channel')} value={updateChannel} onValueChange={(value) => setChannelDraft(value as UpdateChannel)}>
+              <option value="stable">{t('prefs.channel.stable')}</option><option value="beta">{t('prefs.channel.beta')}</option>
+            </SelectControl>
+          </label>
+          <div className="preferences-update-check">
+            <div className="update-actions">
+              <button type="button" className="btn accent" disabled={updateCheck.kind === 'checking' || updateCheck.kind === 'installing'}
+                aria-describedby={`${id}-update-status`} onClick={startUpdateCheck}><Icon name="refresh" size={15} />{t('prefs.checkUpdates')}</button>
+              {updateCheck.kind === 'found' &&
+                <button type="button" className="btn" onClick={startInstall}>{t('prefs.installUpdate')}</button>}
             </div>
-          </div> : <div className="preferences-group"><div className="preferences-setting"><span>{t('site.version')}</span>
-            <a className="prefs-link" href={SITE_PREVIEW ? SITE_URLS.stable : SITE_URLS.preview} target="_blank" rel="noopener noreferrer">{t(SITE_PREVIEW ? 'site.backStable' : 'site.tryPreview')} ↗</a>
-          </div></div>}
-        </>}
+            <p id={`${id}-update-status`} role="status">{updateStatusText}</p>
+            {savedChannelHint && <p>{savedChannelHint}</p>}
+          </div>
+        </div>}
         {section === 'about' && <>
-          <div className="preferences-product"><strong>PathBlender</strong><span className="preferences-version" dir="ltr">Version {APP_VERSION}</span>
+          <div className="preferences-product"><div className="preferences-product-title"><strong>PathBlender</strong><img
+            className="preferences-product-icon" alt="" width="72" height="72"
+            src={(icon === 'system' ? systemDark : icon === 'dark') ? nightIcon : dayIcon} />
+          </div><span className="preferences-version" dir="ltr">{BUILD_VERSION}</span>
             <button className="btn" type="button" onClick={() => {
-              void copyText(`PathBlender ${APP_VERSION} (${desktop ? 'desktop' : 'web'})\n` + VERSION_NOTES.slice(0, 5).map((note) => `${note.version} (${note.date}) — ${noteText(note.note, langChoice)}`).join('\n'))
+              void copyText(BUILD_VERSION)
                 .then((ok) => setCopyStatus(t(ok ? 'about.copyDone' : 'about.copyFailed')));
             }}>{t('about.copy')}</button>
             <p className="preferences-copy-status" role="status">{copyStatus}</p>
@@ -273,10 +316,47 @@ export function PreferencesPanel({ desktop, onClose }: { desktop: boolean; onClo
           </div>}
         </>}
       </section>
-      <footer className="preferences-footer"><span className="preferences-save-hint">{dirty ? t('prefs.unsaved') : ''}</span>
+      {/* About holds nothing editable (user request 2026-10-07): no footer
+         buttons there — General/Controls/Updates keep the staging pair. */}
+      {section !== 'about' && <footer className="preferences-footer"><span className="preferences-save-hint">{dirty ? t('prefs.unsaved') : ''}</span>
         <div><button type="button" className="btn" onClick={onClose}>{t('prefs.cancel')}</button>
           <button type="button" className="btn accent" disabled={!dirty} onClick={save}>{t('prefs.save')}</button></div>
-      </footer>
+      </footer>}
     </div>
+  </div>;
+}
+
+/** The six actions a custom drag button can hold (option order = table order). */
+const CUSTOM_ACTIONS: CustomMouseAction[] = ['rotate', 'constrained', 'pan', 'zoom', 'roll', 'none'];
+
+/**
+ * Assignment rows for the custom scheme: one select per drag button
+ * (user request 2026-10-07 — a per-modifier matrix read as too complex).
+ * Modifier combos are fixed rules, stated below the rows rather than
+ * edited; the wheel has no row on purpose: it always zooms and only its
+ * direction reverses via the existing checkbox.
+ */
+function CustomMouseEditor({ map, onChange, onReset }: {
+  map: CustomMouseMap;
+  onChange: (button: CustomMouseButton, action: CustomMouseAction) => void;
+  onReset: () => void;
+}) {
+  const { t } = useI18n();
+  const caption = t('prefs.mouse.custom.editor');
+  return <div className="preferences-mouse-custom">
+    <p className="preferences-mouse-custom-caption">{caption}</p>
+    <div className="preferences-mouse-custom-grid" role="group" aria-label={caption}>
+      {CUSTOM_MOUSE_BUTTONS.map((button) => <div key={button} className="preferences-mouse-custom-row">
+        <span>{t(`prefs.mouse.btn.${button}`)}</span>
+        <SelectControl className="preferences-mouse-custom-select" value={map[button]}
+          aria-label={t('prefs.mouse.custom.buttonAria', { button: t(`prefs.mouse.btn.${button}`) })}
+          onValueChange={(value) => onChange(button, value as CustomMouseAction)}>
+          {CUSTOM_ACTIONS.map((action) => <option key={action} value={action}>{t(`prefs.mouse.${action}`)}</option>)}
+        </SelectControl>
+      </div>)}
+    </div>
+    <p className="preferences-setting-description">{t('prefs.mouse.custom.derived')}</p>
+    <p className="preferences-setting-description">{t('prefs.mouse.custom.wheelNote')}</p>
+    <button type="button" className="btn preferences-mouse-custom-reset" onClick={onReset}>{t('prefs.mouse.custom.reset')}</button>
   </div>;
 }

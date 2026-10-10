@@ -1,7 +1,7 @@
 /**
  * Unified internal trajectory model.
  *
- * Architecture invariant (AGENTS.md): every external format converts into
+ * Architecture invariant: every external format converts into
  * these types at the parse boundary; rendering and collision detection only
  * ever consume this model. No format-specific fields leak through.
  *
@@ -89,6 +89,8 @@ export interface Trajectory {
    * empty for formats without it > user-editable on the robot card.
    */
   teamNumber: string;
+  /** Optional user-facing label; independent of imported team metadata and route name. */
+  displayName?: string;
   source: TrajectorySource;
   alliance: Alliance;
   samples: TrajectorySample[];

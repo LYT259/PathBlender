@@ -5,7 +5,7 @@
  * boxes, trajectory tubes, the fallback structures — goes through the
  * functions here, so a transform can no longer drift between one layer and
  * the next. That drift is the recurring bug in this file's history (four
- * rounds of 3D corrections, engineering-log 2026.9.7 → 9.13): tags were
+ * rounds of 3D corrections, 2026.9.7 → 9.13): tags were
  * fitted to the official assets while the robots kept an earlier, X-mirrored
  * mapping, so the two layers disagreed about which end of the field is blue.
  *
@@ -107,7 +107,7 @@ export function headingToRender(headingRad: number): number {
  * taken from accessor min/max — lands within 11 mm horizontally and
  * 12/20 mm vertically of the WPILib layout mapped by `tagRenderPose`, with
  * id-for-id pairing; the old hard-coded `Ry(180°) + (0, 0.13, 1.16)` (fitted
- * to the retired Onshape model, engineering-log 2026.9.13) misses by up to
+ * to the retired Onshape model, measured 2026.9.13) misses by up to
  * 16.8 m.
  */
 export type { FieldModelMirror, Field3DModelEntry } from './field3d-models';

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { makeSession, parseGhostAuto } from '@pathblender/core';
+import { makeSession, parseGhostAuto, type SessionTrajectory } from '@pathblender/core';
 import { I18nProvider } from '../src/i18n';
 import { RobotInspector, RobotList } from '../src/components/RobotList';
 
@@ -32,6 +32,9 @@ function inspectorCallbacks() {
 
 beforeEach(() => {
   localStorage.setItem('pb.lang', 'en');
+  // Pin meters for this file: its subject is read-only inspector behavior,
+  // not the unit preference (the inches default is asserted separately).
+  localStorage.setItem('pb.lengthUnit', 'm');
   mode.viewerOnly = false;
 });
 
@@ -42,11 +45,11 @@ describe('robot workspace controls', () => {
     const onUpdate = vi.fn();
     render(<I18nProvider><RobotList robots={[sample]} conflicts={[]} selectedId={sample.trajectory.id} onSelect={onSelect} onImport={vi.fn()} onUpdate={onUpdate} onPickRoute={vi.fn()} /></I18nProvider>);
 
-    const select = screen.getByRole('button', { name: '#0001, Ghost, 8.30 s' });
+    const select = screen.getByRole('button', { name: '0001, Ghost, 8.30 s' });
     expect(select).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Remove from session' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Hide #0001 on field' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide 0001 on field' }));
     expect(onUpdate).toHaveBeenCalledWith(sample.trajectory.id, { visible: false });
     expect(onSelect).not.toHaveBeenCalled();
     fireEvent.click(select);
@@ -57,20 +60,58 @@ describe('robot workspace controls', () => {
     const sample = robot();
     render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
 
-    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    // The composition editor adds one Start spinbutton; dimensions and
+    // geometry stay read-only (no length/width inputs).
+    expect(screen.queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
     expect(screen.getAllByText(`${sample.trajectory.geometry.lengthM.toFixed(2)} m`).length).toBeGreaterThan(0);
     expect(screen.getAllByText(`${sample.trajectory.geometry.widthM.toFixed(2)} m`).length).toBeGreaterThan(0);
+  });
+
+  it('renders dimensions in the default length unit (inches) when none is stored', () => {
+    localStorage.removeItem('pb.lengthUnit');
+    const sample = robot();
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
+    // File geometry 0.9 m → 35.4 in under the default inches preference.
+    expect(screen.getAllByText('35.4 in').length).toBeGreaterThan(0);
   });
 
   it('exposes no editing affordances anywhere on the card', () => {
     const sample = robot();
     render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
     // Pure viewer (2026-09-30): no team-number input, no alliance toggle,
-    // no delay/geometry spinbuttons, no edit/reset/export actions.
-    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    // no geometry spinbuttons, no edit/reset/export actions. The composition
+    // editor's start-time fields are the one deliberate editing surface
+    // (multi-segment auto, red book v1.38).
+    expect(screen.queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /edit path/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^\.path$|\.traj$|\.ghostauto$/ })).not.toBeInTheDocument();
+  });
+
+  it('no longer repeats team identity under the robot name (removed 2026-10-04)', () => {
+    const sample = robot();
+    sample.trajectory.teamName = 'The Cheesy Poofs';
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
+    // The whole identity block (team name / team # / alliance rows) is gone —
+    // that identity is already obvious from the robot card and alliance bar.
+    expect(screen.queryByText('team #')).not.toBeInTheDocument();
+    expect(screen.queryByText('alliance')).not.toBeInTheDocument();
+    expect(screen.queryByText('The Cheesy Poofs')).not.toBeInTheDocument();
+    // Robot data stays read-only; the composition editor lives on the
+    // bottom arrangement surface, not in this panel.
+    expect(screen.queryByText('Auto sequence')).not.toBeInTheDocument();
+    expect(screen.getByText('Robot data')).toBeInTheDocument();
+  });
+
+  it('the details heading keeps the original identity even when a display name is set', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    sample.trajectory.displayName = 'My Robot';
+    render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
+    // Display names label the list, playback bar and field; the details
+    // panel sticks to the imported teamNumber/name rule.
+    expect(screen.getByRole('heading', { name: '0001' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'My Robot' })).not.toBeInTheDocument();
   });
 
   it('preserves viewer-only limits while showing robot data', () => {
@@ -78,7 +119,7 @@ describe('robot workspace controls', () => {
     const sample = robot();
     sample.trajectory.geometrySource = 'default';
     render(<I18nProvider><RobotInspector robot={sample} {...inspectorCallbacks()} /></I18nProvider>);
-    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton', { name: /length|width/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'edit path' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '.ghostauto' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Remove from session' })).not.toBeInTheDocument();
@@ -86,58 +127,137 @@ describe('robot workspace controls', () => {
   });
 });
 
-describe('team number chip (metadata edit, 2026-10-02)', () => {
-  it('edits the team number inline from the row', () => {
-    const sample = robot();
-    sample.trajectory.teamNumber = '0001';
-    const onUpdate = vi.fn();
+describe('display name editor (free-text label, 2026-10-04)', () => {
+  function renderList(robots: SessionTrajectory[], onUpdate = vi.fn()) {
     render(
       <I18nProvider>
         <RobotList
-          robots={[sample]}
+          robots={robots}
           conflicts={[]}
           selectedId={null}
           onSelect={vi.fn()}
           onImport={vi.fn()}
           onUpdate={onUpdate}
           onPickRoute={vi.fn()}
-
         />
       </I18nProvider>,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Edit team number' }));
-    const input = screen.getByRole('textbox');
+    return onUpdate;
+  }
+  function openEditor(): HTMLInputElement {
+    fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
+    return screen.getByRole('textbox', { name: 'Edit display name' }) as HTMLInputElement;
+  }
+  function committedTrajectory(onUpdate: ReturnType<typeof vi.fn>) {
+    const patch = onUpdate.mock.calls[0]![1] as { trajectory: SessionTrajectory['trajectory'] };
+    return patch.trajectory;
+  }
+
+  it('edits the display name inline without touching the imported team number', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    const onUpdate = renderList([sample]);
+    const input = openEditor();
+    expect(input).toHaveValue('0001');
     fireEvent.change(input, { target: { value: '2910' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onUpdate).toHaveBeenCalledTimes(1);
-    const [id, patch] = onUpdate.mock.calls[0]!;
-    expect(id).toBe(sample.trajectory.id);
-    expect((patch as { trajectory: { teamNumber: string } }).trajectory.teamNumber).toBe('2910');
+    expect(onUpdate.mock.calls[0]![0]).toBe(sample.trajectory.id);
+    const trajectory = committedTrajectory(onUpdate);
+    expect(trajectory.displayName).toBe('2910');
+    expect(trajectory.teamNumber).toBe('0001');
   });
 
-  it('strips non-digits and discards on Escape', () => {
+  it('accepts free text in any language and commits on blur', () => {
     const sample = robot();
     sample.trajectory.teamNumber = '0001';
-    const onUpdate = vi.fn();
-    render(
-      <I18nProvider>
-        <RobotList
-          robots={[sample]}
-          conflicts={[]}
-          selectedId={null}
-          onSelect={vi.fn()}
-          onImport={vi.fn()}
-          onUpdate={onUpdate}
-          onPickRoute={vi.fn()}
+    const onUpdate = renderList([sample]);
+    const input = openEditor();
+    fireEvent.change(input, { target: { value: '红队射手' } });
+    fireEvent.blur(input);
+    expect(committedTrajectory(onUpdate).displayName).toBe('红队射手');
+  });
 
-        />
-      </I18nProvider>,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Edit team number' }));
-    const input = screen.getByRole('textbox');
+  it('keeps mixed text verbatim — no digit filtering', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    const onUpdate = renderList([sample]);
+    const input = openEditor();
     fireEvent.change(input, { target: { value: '29a1b0' } });
-    expect(input).toHaveValue('2910');
+    expect(input).toHaveValue('29a1b0');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(committedTrajectory(onUpdate).displayName).toBe('29a1b0');
+  });
+
+  it('caps the draft at 64 characters', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    renderList([sample]);
+    expect(openEditor()).toHaveAttribute('maxlength', '64');
+  });
+
+  it('discards the draft on Escape', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    const onUpdate = renderList([sample]);
+    const input = openEditor();
+    fireEvent.change(input, { target: { value: 'x' } });
     fireEvent.keyDown(input, { key: 'Escape' });
     expect(onUpdate).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
+  it('clearing the input restores the original identity display', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    sample.trajectory.displayName = 'My Robot';
+    const onUpdate = renderList([sample]);
+    const input = openEditor();
+    expect(input).toHaveValue('My Robot');
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    const trajectory = committedTrajectory(onUpdate);
+    expect(trajectory.displayName).toBeUndefined();
+    expect(trajectory.teamNumber).toBe('0001');
+  });
+
+  it('leaving the editor unchanged commits nothing', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    const onUpdate = renderList([sample]);
+    fireEvent.blur(openEditor());
+    expect(onUpdate).not.toHaveBeenCalled();
+  });
+
+  it('ignores Enter while an IME composition is in flight', () => {
+    const sample = robot();
+    sample.trajectory.teamNumber = '0001';
+    const onUpdate = renderList([sample]);
+    const input = openEditor();
+    fireEvent.change(input, { target: { value: '红队' } });
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(committedTrajectory(onUpdate).displayName).toBe('红队');
+  });
+});
+
+describe('always-visible mirror button (2026-10-05)', () => {
+  it('presses from mirroredIds and routes clicks to the shared mirror toggle', () => {
+    const sample = robot();
+    const onMirror = vi.fn();
+    const base = { robots: [sample], conflicts: [], selectedId: null as string | null, onSelect: vi.fn(), onImport: vi.fn(), onUpdate: vi.fn() };
+    const { rerender } = render(
+      <I18nProvider><RobotList {...base} onMirror={onMirror} onMirrorButtonClick={onMirror} mirroredIds={new Set([sample.trajectory.id])} /></I18nProvider>,
+    );
+    const button = screen.getByRole('button', { name: 'Mirror left/right' });
+    expect(button).toBeEnabled();
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(button);
+    expect(onMirror).toHaveBeenCalledWith(sample.trajectory.id);
+    // Without the App wiring the button renders disabled instead of dead.
+    rerender(<I18nProvider><RobotList {...base} /></I18nProvider>);
+    expect(screen.getByRole('button', { name: 'Mirror left/right' })).toBeDisabled();
   });
 });
