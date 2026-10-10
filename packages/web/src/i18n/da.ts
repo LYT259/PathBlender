@@ -348,6 +348,7 @@ export const da = {
   "menu.file": "Arkiv",
   "menu.edit": "Redigér",
   "menu.view": "Vis",
+  "menu.window": "Vindue",
   "menu.playback": "Afspilning",
   "menu.help": "Hjælp",
   'menu.userGuide': "Hurtigguide",

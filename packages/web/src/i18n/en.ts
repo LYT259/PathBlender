@@ -366,6 +366,7 @@ export const en = {
   'menu.file': 'File',
   'menu.edit': 'Edit',
   'menu.view': 'View',
+  'menu.window': 'Window',
   'menu.playback': 'Playback',
   'menu.help': 'Help',
   'menu.userGuide': "Quick guide",

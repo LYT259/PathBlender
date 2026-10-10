@@ -350,6 +350,7 @@ export const nn = {
   "menu.file": "Arkiv",
   "menu.edit": "Rediger",
   "menu.view": "Vis",
+  "menu.window": "Vindauge",
   "menu.playback": "Avspeling",
   "menu.help": "Hjelp",
   'menu.userGuide': "Rask rettleiar",

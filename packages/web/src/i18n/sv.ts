@@ -348,6 +348,7 @@ export const sv = {
   "menu.file": "Arkiv",
   "menu.edit": "Redigera",
   "menu.view": "Visa",
+  "menu.window": "Fönster",
   "menu.playback": "Uppspelning",
   "menu.help": "Hjälp",
   'menu.userGuide': "Snabbguide",

@@ -348,6 +348,7 @@ export const el = {
   "menu.file": "Αρχείο",
   "menu.edit": "Επεξεργασία",
   "menu.view": "Προβολή",
+  "menu.window": "Παράθυρο",
   "menu.playback": "Αναπαραγωγή",
   "menu.help": "Βοήθεια",
   'menu.userGuide': "Γρήγορος οδηγός",

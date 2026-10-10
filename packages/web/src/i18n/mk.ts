@@ -348,6 +348,7 @@ export const mk = {
   "menu.file": "Датотека",
   "menu.edit": "Уреди",
   "menu.view": "Преглед",
+  "menu.window": "Прозорец",
   "menu.playback": "Репродукција",
   "menu.help": "Помош",
   'menu.userGuide': "Кратко упатство",

@@ -373,6 +373,7 @@ export const ja: Record<MessageKey, string> = {
   "menu.file": "ファイル",
   "menu.edit": "編集",
   "menu.view": "表示",
+  "menu.window": "ウィンドウ",
   "menu.playback": "再生",
   "menu.help": "ヘルプ",
   'menu.userGuide': "クイックガイド",

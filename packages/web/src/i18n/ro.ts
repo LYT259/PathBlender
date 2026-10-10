@@ -349,6 +349,7 @@ export const ro = {
   "menu.file": "Fișier",
   "menu.edit": "Editare",
   "menu.view": "Vizualizare",
+  "menu.window": "Fereastră",
   "menu.playback": "Redare",
   "menu.help": "Ajutor",
   'menu.userGuide': "Ghid rapid",

@@ -367,6 +367,7 @@ export const tr: Record<MessageKey, string> = {
   "menu.file": "Dosya",
   "menu.edit": "Düzen",
   "menu.view": "Görünüm",
+  "menu.window": "Pencere",
   "menu.playback": "Oynatma",
   "menu.help": "Yardım",
   'menu.userGuide': "Hızlı kılavuz",

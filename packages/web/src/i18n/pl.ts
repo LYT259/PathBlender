@@ -372,6 +372,7 @@ export const pl: Record<MessageKey, string> = {
   "menu.file": "Plik",
   "menu.edit": "Edycja",
   "menu.view": "Widok",
+  "menu.window": "Okno",
   "menu.playback": "Odtwarzanie",
   "menu.help": "Pomoc",
   'menu.userGuide': "Krótki przewodnik",

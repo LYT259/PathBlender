@@ -352,6 +352,7 @@ export const id = {
   "menu.file": "Berkas",
   "menu.edit": "Sunting",
   "menu.view": "Tampilan",
+  "menu.window": "Jendela",
   "menu.playback": "Pemutaran",
   "menu.help": "Bantuan",
   'menu.userGuide': "Panduan cepat",

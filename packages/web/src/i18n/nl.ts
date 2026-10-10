@@ -369,6 +369,7 @@ export const nl: Record<MessageKey, string> = {
   "menu.file": "Bestand",
   "menu.edit": "Bewerk",
   "menu.view": "Weergave",
+  "menu.window": "Venster",
   "menu.playback": "Afspelen",
   "menu.help": "Help",
   'menu.userGuide': "Snelle gids",

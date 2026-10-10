@@ -350,6 +350,7 @@ export const uk = {
   "menu.file": "Файл",
   "menu.edit": "Редагування",
   "menu.view": "Вигляд",
+  "menu.window": "Вікνο",
   "menu.playback": "Відтворення",
   "menu.help": "Довідка",
   'menu.userGuide': "Швидкий посібник",
