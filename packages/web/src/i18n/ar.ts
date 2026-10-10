@@ -352,6 +352,7 @@ export const ar = {
   "menu.file": "ملف",
   "menu.edit": "تحرير",
   "menu.view": "عرض",
+  "menu.window": "نافذة",
   "menu.playback": "التشغيل",
   "menu.help": "مساعدة",
   'menu.userGuide': "دليل سريع",

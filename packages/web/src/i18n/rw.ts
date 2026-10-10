@@ -348,6 +348,7 @@ export const rw = {
   "menu.file": "Idosiye",
   "menu.edit": "Guhindura",
   "menu.view": "Kureba",
+  "menu.window": "Idirishya",
   "menu.playback": "Gukina",
   "menu.help": "Ubufasha",
   'menu.userGuide': "Amabwiriza yihuse",

@@ -352,6 +352,7 @@ export const it = {
   "menu.file": "File",
   "menu.edit": "Modifica",
   "menu.view": "Visualizza",
+  "menu.window": "Finestra",
   "menu.playback": "Riproduzione",
   "menu.help": "Aiuto",
   'menu.userGuide': "Guida rapida",

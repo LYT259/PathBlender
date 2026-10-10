@@ -348,6 +348,7 @@ export const hu = {
   "menu.file": "Fájl",
   "menu.edit": "Szerkesztés",
   "menu.view": "Nézet",
+  "menu.window": "Ablak",
   "menu.playback": "Lejátszás",
   "menu.help": "Súgó",
   'menu.userGuide': "Rövid útmutató",

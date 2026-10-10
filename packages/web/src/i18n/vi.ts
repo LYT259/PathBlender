@@ -352,6 +352,7 @@ export const vi = {
   "menu.file": "Tệp",
   "menu.edit": "Chỉnh sửa",
   "menu.view": "Xem",
+  "menu.window": "Cửa sổ",
   "menu.playback": "Phát lại",
   "menu.help": "Trợ giúp",
   'menu.userGuide': "Hướng dẫn nhanh",

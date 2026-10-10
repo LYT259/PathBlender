@@ -352,6 +352,7 @@ export const fil = {
   "menu.file": "File",
   "menu.edit": "I-edit",
   "menu.view": "Tingnan",
+  "menu.window": "Window",
   "menu.playback": "Pag-playback",
   "menu.help": "Tulong",
   'menu.userGuide': "Mabilis na gabay",

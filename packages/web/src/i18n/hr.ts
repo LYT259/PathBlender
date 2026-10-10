@@ -348,6 +348,7 @@ export const hr = {
   "menu.file": "Datoteka",
   "menu.edit": "Uredi",
   "menu.view": "Prikaz",
+  "menu.window": "Prozor",
   "menu.playback": "Reprodukcija",
   "menu.help": "Pomoć",
   'menu.userGuide': "Kratki vodič",

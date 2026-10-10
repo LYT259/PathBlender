@@ -350,6 +350,7 @@ export const sq = {
   "menu.file": "Skedar",
   "menu.edit": "Redakto",
   "menu.view": "Shiko",
+  "menu.window": "Dritare",
   "menu.playback": "Riprodhim",
   "menu.help": "Ndihmë",
   'menu.userGuide': "Udhëzues i shpejtë",

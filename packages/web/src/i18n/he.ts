@@ -374,6 +374,7 @@ export const he: Record<MessageKey, string> = {
   "menu.file": "קובץ",
   "menu.edit": "עריכה",
   "menu.view": "תצוגה",
+  "menu.window": "חלון",
   "menu.playback": "השמעה",
   "menu.help": "עזרה",
   'menu.userGuide': "מדריך מהיר",

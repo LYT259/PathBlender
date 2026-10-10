@@ -370,6 +370,7 @@ export const ptBR: Record<MessageKey, string> = {
   "menu.file": "Arquivo",
   "menu.edit": "Editar",
   "menu.view": "Visualizar",
+  "menu.window": "Janela",
   "menu.playback": "Reprodução",
   "menu.help": "Ajuda",
   'menu.userGuide': "Guia rápido",

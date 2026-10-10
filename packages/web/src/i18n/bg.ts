@@ -348,6 +348,7 @@ export const bg = {
   "menu.file": "Файл",
   "menu.edit": "Редактиране",
   "menu.view": "Изглед",
+  "menu.window": "Прозорец",
   "menu.playback": "Възпроизвеждане",
   "menu.help": "Помощ",
   'menu.userGuide': "Кратко ръководство",

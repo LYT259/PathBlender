@@ -352,6 +352,7 @@ export const de = {
   "menu.file": "Ablage",
   "menu.edit": "Bearbeiten",
   "menu.view": "Ansicht",
+  "menu.window": "Fenster",
   "menu.playback": "Wiedergabe",
   "menu.help": "Hilfe",
   'menu.userGuide': "Kurzanleitung",

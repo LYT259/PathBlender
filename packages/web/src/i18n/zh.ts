@@ -359,6 +359,7 @@ export const zh: Record<MessageKey, string> = {
   "menu.file": "文件",
   "menu.edit": "编辑",
   "menu.view": "显示",
+  "menu.window": "窗口",
   "menu.playback": "回放",
   "menu.help": "帮助",
   'menu.userGuide': "快速指南",
