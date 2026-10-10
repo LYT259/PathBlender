@@ -1,5 +1,5 @@
 import { SelectControl } from './SelectControl';
-import { Fragment, useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import { Fragment, useEffect, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type PointerEvent } from 'react';
 import { routeConnectsAfter, routeStartRegion, LIBRARY_CHAIN_TOLERANCES, startsInAllianceZone, type RouteContinuity, type SequenceJoinIssue, type SessionRouteOption, type SessionTrajectory, type StartRegionClass, type StartZoneRect } from '@pathblender/core';
 import { sequenceViewFor, type AutoSequenceSegment } from '../auto-sequence-state';
 import { boundedClipStart, canPlaceClip, clipGaps, clipsFor, placeClip, segmentsFromClips, type TimelineClip } from '../sequence-timeline-clips';
@@ -384,14 +384,45 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   }
   function switchRobot(id: string) { cancelDrag(); setMenu(null); setError(null); onSelect(id); }
   const ghostRoute = active.routes.find((route) => route.id === activeGhost?.routeId);
-  // Neighbour gaps for the selection bar (user 2026-10-10): how long this
-  // chosen leg waits after the previous one ends, and how long the next one
-  // waits after this ends. First/last legs show only the side that exists.
+  // Neighbour context for the selection bar (user 2026-10-10): the four
+  // fields — after-previous wait, start, end, before-next wait — are linked
+  // views of ONE placement; editing any repositions the same leg and every
+  // other field follows. The imported duration itself never stretches.
   const chosenIndex = chosen ? activeClips.findIndex((clip) => clip.id === chosen.id) : -1;
   const previousClip = chosenIndex > 0 ? activeClips[chosenIndex - 1] : undefined;
   const nextClip = chosenIndex >= 0 && chosenIndex < activeClips.length - 1 ? activeClips[chosenIndex + 1] : undefined;
-  const gapBeforeS = chosen && previousClip ? chosen.startS - (previousClip.startS + previousClip.durationS) : undefined;
-  const gapAfterS = chosen && nextClip ? nextClip.startS - (chosen.startS + chosen.durationS) : undefined;
+  const round9 = (value: number) => Math.round(value * 1e9) / 1e9;
+  const previousEndS = previousClip ? round9(previousClip.startS + previousClip.durationS) : undefined;
+  const nextStartS = nextClip ? nextClip.startS : undefined;
+  const chosenEndS = chosen ? round9(chosen.startS + chosen.durationS) : undefined;
+  const gapBeforeS = chosen && previousEndS !== undefined ? round9(chosen.startS - previousEndS) : undefined;
+  const gapAfterS = chosen && nextStartS !== undefined && chosenEndS !== undefined ? round9(nextStartS - chosenEndS) : undefined;
+  /** One editable placement field: blur (or Enter) commits the derived
+   *  start — parse and placement failures revert the box, Escape cancels
+   *  the pending edit and leaves the field (same contract the Start input
+   *  always had; it now rides this factory too). Derived starts round to
+   *  the nanosecond like the keyboard nudge, killing float tails. */
+  function placeField(current: number, derive: (value: number) => number) {
+    const revert = (event: { currentTarget: HTMLInputElement }) => { event.currentTarget.value = formatStart(current); };
+    return {
+      onBlur: (event: FocusEvent<HTMLInputElement>) => {
+        const raw = event.currentTarget.value.trim(); const value = raw === '' ? NaN : Number(raw);
+        if (value === Number(formatStart(current))) return;
+        if (!Number.isFinite(value) || !commit({ ...chosen!, startS: round9(derive(value)) })) revert(event);
+      },
+      onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') { event.currentTarget.blur(); return; }
+        // Escape cancels the pending edit first: revert the value and
+        // leave the field; a second Escape (focus now on the lane) then
+        // leaves the composer.
+        if (event.key === 'Escape' && !event.nativeEvent.isComposing) {
+          event.preventDefault(); event.stopPropagation();
+          revert(event);
+          event.currentTarget.blur();
+        }
+      },
+    };
+  }
   return <section ref={rootRef} className="sequence-composer" aria-label={t('sequence.arrange')}
     onPointerMove={move} onPointerUp={(event) => {
       const drag = dragRef.current;
@@ -566,25 +597,22 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     </div></div>
     {chosen && <div className="sequence-selection-bar">
       <span className="sequence-selected-route">{active.routes.find((route) => route.id === chosen.routeId)?.relPath.split('/').at(-1)}</span>
-      <label>{t('sequence.start')} <input key={`${activeId}:${chosen.id}:${chosen.startS}`} type="number" min="0" max={Math.max(0, autoPeriodS - chosen.durationS)} step="any" defaultValue={formatStart(chosen.startS)}
-        aria-label={t('sequence.start')} onBlur={(event) => {
-          const raw = event.currentTarget.value.trim(); const value = raw === '' ? NaN : Number(raw);
-          if (value === Number(formatStart(chosen.startS))) return;
-          if (!Number.isFinite(value) || !commit({ ...chosen, startS: value })) event.currentTarget.value = formatStart(chosen.startS);
-        }} onKeyDown={(event) => {
-          if (event.key === 'Enter') { event.currentTarget.blur(); return; }
-          // Escape cancels the pending edit first: revert the value and
-          // leave the field; a second Escape (focus now on the lane) then
-          // leaves the composer.
-          if (event.key === 'Escape' && !event.nativeEvent.isComposing) {
-            event.preventDefault(); event.stopPropagation();
-            event.currentTarget.value = formatStart(chosen.startS);
-            event.currentTarget.blur();
-          }
-        }} /> s</label>
-      <span>{t('sequence.end')} <b>{n(chosen.startS + chosen.durationS, 2)}s</b></span>
-      {gapBeforeS !== undefined && <span>{t('sequence.afterPrev')} <b>{n(gapBeforeS, 2)}s</b></span>}
-      {gapAfterS !== undefined && <span>{t('sequence.beforeNext')} <b>{n(gapAfterS, 2)}s</b></span>}
+      {/* Four linked editable views of one placement (user 2026-10-10):
+          change any field and the others follow on the shared remount key
+          (startS). First/last legs show only the neighbour side that
+          exists; the imported duration is never stretched. */}
+      {gapBeforeS !== undefined && previousEndS !== undefined && <label>{t('sequence.afterPrev')} <input key={`${activeId}:${chosen.id}:${chosen.startS}`} type="number" min="0" step="any"
+        defaultValue={formatStart(gapBeforeS)} aria-label={t('sequence.afterPrev')}
+        {...placeField(gapBeforeS, (value) => previousEndS + value)} /> s</label>}
+      <label>{t('sequence.start')} <input key={`${activeId}:${chosen.id}:${chosen.startS}`} type="number" min="0" max={Math.max(0, autoPeriodS - chosen.durationS)} step="any"
+        defaultValue={formatStart(chosen.startS)} aria-label={t('sequence.start')}
+        {...placeField(chosen.startS, (value) => value)} /> s</label>
+      <label>{t('sequence.end')} <input key={`${activeId}:${chosen.id}:${chosen.startS}`} type="number" min={chosen.durationS} max={autoPeriodS} step="any"
+        defaultValue={formatStart(chosenEndS!)} aria-label={t('sequence.end')}
+        {...placeField(chosenEndS!, (value) => value - chosen.durationS)} /> s</label>
+      {gapAfterS !== undefined && nextStartS !== undefined && <label>{t('sequence.beforeNext')} <input key={`${activeId}:${chosen.id}:${chosen.startS}`} type="number" min="0" step="any"
+        defaultValue={formatStart(gapAfterS)} aria-label={t('sequence.beforeNext')}
+        {...placeField(gapAfterS, (value) => nextStartS - value - chosen.durationS)} /> s</label>}
     </div>}
     {menu?.robotId === activeId && <div ref={menuRef} className="sequence-clip-menu" role="menu" aria-label={t('sequence.arrange')}
       style={{ left: Math.max(8, Math.min(menu.x, window.innerWidth - 188)), top: Math.max(8, Math.min(menu.y, window.innerHeight - 54)) }}

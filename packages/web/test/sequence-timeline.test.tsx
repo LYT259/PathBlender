@@ -207,25 +207,46 @@ describe('live arrangement editing', () => {
     expect(bar).toHaveTextContent('FCeSt.traj');
     expect(bar).not.toHaveTextContent('8814');
   });
-  it('shows the waits to the previous and next legs in the selection bar (user 2026-10-10)', () => {
+  it('edits any linked placement field and the others follow (user 2026-10-10)', () => {
     const robot = applySequenceSegments(fixture(), [
       { id: 'first', routeId: 'a', waitBeforeS: 0 },  // 0–4
       { id: 'middle', routeId: 'b', waitBeforeS: 2 }, // 6–9
       { id: 'last', routeId: 'a', waitBeforeS: 5 },   // 14–18
     ]);
-    render(<LiveHarness robot={robot} />);
-    const bar = () => document.querySelector('.sequence-selection-bar')!;
+    const commit = vi.fn(); render(<LiveHarness robot={robot} onCommit={commit} />);
+    const field = (name: string) => screen.getByRole('spinbutton', { name }) as HTMLInputElement;
     fireEvent.click(clips()[1]!); // middle: waits 2 s after the first, 5 s before the last
-    expect(bar().textContent).toContain('After previous');
-    expect(bar().textContent).toContain('2.00s');
-    expect(bar().textContent).toContain('Before next');
-    expect(bar().textContent).toContain('5.00s');
-    fireEvent.click(clips()[0]!); // first leg: nothing before it
-    expect(bar().textContent).not.toContain('After previous');
-    expect(bar().textContent).toContain('Before next');
-    fireEvent.click(clips()[2]!); // last leg: nothing after it
-    expect(bar().textContent).toContain('After previous');
-    expect(bar().textContent).not.toContain('Before next');
+    expect(field('After previous').value).toBe('2.0');
+    expect(field('Start').value).toBe('6.0');
+    expect(field('End').value).toBe('9.0');
+    expect(field('Before next').value).toBe('5.0');
+    // Editing the after-previous wait repositions the leg; every field follows.
+    fireEvent.change(field('After previous'), { target: { value: '3' } }); fireEvent.blur(field('After previous'));
+    expect(field('After previous').value).toBe('3.0');
+    expect(field('Start').value).toBe('7.0');
+    expect(field('End').value).toBe('10.0');
+    expect(field('Before next').value).toBe('4.0');
+    // Editing the end repositions through the same linkage.
+    fireEvent.change(field('End'), { target: { value: '12' } }); fireEvent.blur(field('End'));
+    expect(field('Start').value).toBe('9.0');
+    expect(field('End').value).toBe('12.0');
+    expect(field('Before next').value).toBe('2.0');
+    // Editing the before-next wait anchors on the next leg's start.
+    fireEvent.change(field('Before next'), { target: { value: '1' } }); fireEvent.blur(field('Before next'));
+    expect(field('Start').value).toBe('10.0');
+    expect(field('After previous').value).toBe('6.0');
+    // A placement that cannot work reverts the box and commits nothing.
+    const calls = commit.mock.calls.length;
+    fireEvent.change(field('End'), { target: { value: '25' } }); fireEvent.blur(field('End'));
+    expect(field('End').value).toBe('13.0');
+    expect(commit.mock.calls.length).toBe(calls);
+    // First/last legs show only the neighbour side that exists.
+    fireEvent.click(clips()[0]!);
+    expect(screen.queryByRole('spinbutton', { name: 'After previous' })).toBeNull();
+    expect(screen.queryByRole('spinbutton', { name: 'Before next' })).not.toBeNull();
+    fireEvent.click(clips()[2]!);
+    expect(screen.queryByRole('spinbutton', { name: 'After previous' })).not.toBeNull();
+    expect(screen.queryByRole('spinbutton', { name: 'Before next' })).toBeNull();
   });
   it('shows both gaps while dragging, updates before release and commits only once', () => {
     const robot = applySequenceSegments(fixture(), [
