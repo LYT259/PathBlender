@@ -20,7 +20,6 @@ export const zhHkOverrides: Partial<Record<MessageKey, string>> = {
   'customField.margin': '邊距 (米)',
   'customField.length': '長 (米)',
   'customField.width': '寬 (米)',
-  'checks.abDelta': '最緊的一對{dir}了 {d} 米',
   // "network": HK keeps 網絡; the TERMS table converts it to TW 網路.
   'updates.failed': '更新檢查失敗，請檢查網絡後重試',
   // "details": HK UI convention is 詳細資料; TW Microsoft uses 詳細資訊.

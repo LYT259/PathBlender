@@ -64,9 +64,6 @@ body.desktop.desktop-macos .workspace-toolbar { padding-left: 100px; }
 .btn.accent:active { opacity: .8; }
 /* Toolbar pair: both import buttons share .btn sizing so they line up. */
 .import-action, .import-folder-action { white-space: nowrap; }
-/* The standalone A-B compare button keeps its label on one line; its armed
-   state reuses .tool-btn.on (accent) plus the aria-pressed background. */
-.ab-action { flex: none; white-space: nowrap; }
 .seg { border-radius: 8px; padding: 3px; }
 .seg button { min-height: 26px; padding: 3px 10px; border-radius: 5px; }
 .switch .sw-track::after { transition: transform 120ms ease; left: 1.5px; }

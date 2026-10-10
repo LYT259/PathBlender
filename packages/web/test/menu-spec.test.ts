@@ -91,10 +91,10 @@ describe('menu spec', () => {
     expect(edit.items.find((e) => e.id === 'remove-selected')?.enabled).toBe(false);
   });
 
-  it('View menu covers fit, 2D/3D, alliance, season list (all fields + custom), construction, artwork, heatmap and A-B compare', () => {
+  it('View menu covers fit, 2D/3D, alliance, season list (all fields + custom), construction, artwork and heatmap', () => {
     const view = find(buildMenuSpec(ctx()), 'View')!;
     const ids = idsOf(view.items);
-    for (const id of ['fit', 'view-2d', 'view-3d', 'alliance-blue', 'alliance-red', 'heatmap', 'ab-compare']) {
+    for (const id of ['fit', 'view-2d', 'view-3d', 'alliance-blue', 'alliance-red', 'heatmap']) {
       expect(ids, id).toContain(id);
     }
     const seasons = view.items.find((e) => e.id === undefined && e.kind === 'submenu' && e.label === 'Game season')!;
