@@ -277,6 +277,53 @@ fn open_prefs(app: &AppHandle) {
         .hidden_title(true)
         .traffic_light_position(tauri::Position::Logical(tauri::LogicalPosition::new(18.0, 35.0)));
     let _ = builder.build();
+    #[cfg(target_os = "macos")]
+    if let Some(win) = app.get_webview_window(PREFS_WINDOW) {
+        disable_webview_scroll_bounce(&win);
+    }
+}
+
+/// macOS 26+ rubber-bands the entire window (title bar included) when the
+/// webview is scrolled past a content edge: WKWebView is an AppKit "elastic
+/// scrolling" view, and per NSResponder.h such views forward boundary scroll
+/// events up the responder chain — where the system answers with a
+/// window-level bounce. The app document never scrolls (html/body are
+/// height:100%), so every two-finger scroll read as pure bounce. AppKit
+/// exposes no window-side opt-out (no public NSWindow API, verified against
+/// the macOS 27 SDK); the only lever is the WebKit-private bounce switch —
+/// the macOS twin of iOS `scrollView.bounces` (wry#557). The web side adds
+/// `overscroll-behavior: none` as the second layer of the same cut. Called
+/// after each webview exists; a removed selector degrades to stock behavior
+/// via the respondsToSelector guard.
+#[cfg(target_os = "macos")]
+fn disable_webview_scroll_bounce<R: tauri::Runtime>(window: &tauri::WebviewWindow<R>) {
+    let _ = window.with_webview(|webview| {
+        use objc2::runtime::AnyObject;
+        use objc2::{msg_send, sel};
+        let wk = webview.inner() as *mut AnyObject;
+        if wk.is_null() {
+            return;
+        }
+        // SAFETY: with_webview runs this closure on the main thread (these
+        // selectors are main-thread-only) and the WKWebView pointer is valid
+        // only inside it. Undeclared selectors cannot be sent unchecked, so
+        // each send is gated on respondsToSelector first.
+        unsafe {
+            let obj = &*wk;
+            let rubber: bool = msg_send![obj, respondsToSelector: sel!(_setRubberBandingEnabled:)];
+            if rubber {
+                let _: () = msg_send![obj, _setRubberBandingEnabled: false];
+            }
+            let vert: bool = msg_send![obj, respondsToSelector: sel!(_setAlwaysBounceVertical:)];
+            if vert {
+                let _: () = msg_send![obj, _setAlwaysBounceVertical: false];
+            }
+            let horiz: bool = msg_send![obj, respondsToSelector: sel!(_setAlwaysBounceHorizontal:)];
+            if horiz {
+                let _: () = msg_send![obj, _setAlwaysBounceHorizontal: false];
+            }
+        }
+    });
 }
 
 /// Open the repo link in the user's system browser (handoff 2026-10-05).
@@ -436,6 +483,10 @@ pub fn run() {
         .setup(|app| {
             let menu = startup_menu(app.handle())?;
             app.set_menu(menu)?;
+            #[cfg(target_os = "macos")]
+            if let Some(win) = app.get_webview_window("main") {
+                disable_webview_scroll_bounce(&win);
+            }
             Ok(())
         })
         .on_page_load(move |webview, payload| {

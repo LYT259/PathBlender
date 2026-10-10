@@ -124,6 +124,12 @@
 }
 
 html, body, #root { height: 100%; margin: 0; }
+/* macOS 26+ rubber-bands the whole window (title bar included) when the
+   webview reports an overscroll at a document edge; the app never scrolls
+   the document, so every two-finger scroll read as pure bounce. The desktop
+   shell flips off the WKWebView bounce switch separately (lib.rs) — this
+   rule is the web layer of the same cut. */
+html { overscroll-behavior: none; }
 body {
   background: var(--bg);
   color: var(--fg);
