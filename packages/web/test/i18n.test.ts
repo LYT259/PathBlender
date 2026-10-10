@@ -176,10 +176,12 @@ describe('i18n dictionaries', () => {
     'uk': ['sequence.startGroupHub'],
     'vi': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.beta",
     'sequence.startGroupHub'],
-    'zh': ['sequence.startGroupHub'],
-    'zh-hk': [],
+    'zh': ['sequence.startGroupHub',
+    'sequence.startGroupTrench'],
+    'zh-hk': ["sequence.startGroupHub","sequence.startGroupTrench"],
     // Ships as the zh-hk base, not as a picker row — see the DICTS comment.
-    'zh-tw': ['sequence.startGroupHub'],
+    'zh-tw': ['sequence.startGroupHub',
+    'sequence.startGroupTrench'],
   } satisfies Record<Exclude<Lang, 'en'> | 'zh-tw', readonly MessageKey[]>;
 
   function englishResidue(code: Exclude<Lang, 'en'> | 'zh-tw', dictionary: Record<string, string>): string[] {

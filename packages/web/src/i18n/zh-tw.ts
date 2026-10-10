@@ -23,7 +23,7 @@ export const zhTw: Record<MessageKey, string> = {
   'sequence.orderLabel': '排序方式',
   'sequence.orderName': '字母順序',
   'sequence.orderStart': '按起點分組',
-  'sequence.startGroupTrench': '溝槽',
+  'sequence.startGroupTrench': 'Trench',
   'sequence.startGroupHub': 'Hub',
   'sequence.startGroupOther': '其他起點',
   'sequence.joinFix': "請在 PathPlanner 或 Choreo 中修好接縫後重新匯入路線。",

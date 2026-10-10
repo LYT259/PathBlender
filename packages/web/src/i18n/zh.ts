@@ -19,7 +19,7 @@ export const zh: Record<MessageKey, string> = {
   'sequence.orderLabel': '排序方式',
   'sequence.orderName': '字母顺序',
   'sequence.orderStart': '按起点分组',
-  'sequence.startGroupTrench': '沟槽',
+  'sequence.startGroupTrench': 'Trench',
   'sequence.startGroupHub': 'Hub',
   'sequence.startGroupOther': '其他起点',
   'sequence.joinFix': '请在 PathPlanner 或 Choreo 中修好接缝后重新导入路线。',

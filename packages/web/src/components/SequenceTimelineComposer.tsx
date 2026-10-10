@@ -142,21 +142,29 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       blocked: occupied || route.trajectory.durationS <= 0 || overAuto || outOfZone || (continuity ? !continuity.connects : false),
       outOfZone: outOfZone || undefined,
       continuity,
-      region: routeStartRegion(route.trajectory, startRegions) || undefined,
+      region: zone !== undefined && !outOfZone
+        ? routeStartRegion(route.trajectory, startRegions) || undefined
+        : undefined,
     });
   }
   // Draggable first (stable within each group), grayed after — the picker
   // answers "what can follow the playhead" in one glance.
   library.sort((a, b) => Number(a.blocked) - Number(b.blocked));
-  // "Group by start" order (user 2026-10-09, persisted across launches):
-  // within the draggable/blocked partition, routes cluster under their
-  // start class — the declared classes first in declaration order, the
-  // unmatched bucket last — and stay in filename order inside each. The
-  // functional partition stays primary so gating never hides behind
-  // cosmetics.
+  // "Group by start" order (user 2026-10-09, refined 2026-10-10):
+  // FIRST-LEG PICKING ONLY — the grouping answers "where may the auto
+  // legally start", exactly the state the zone gate below is live in, so
+  // once any leg exists continuity owns the library and the grouping (and
+  // its toggle) step aside. Only starts inside the legal zone carry a
+  // named class (region coupling above): everything else — mid-field
+  // starts, the far-side hub approach, the under-arm trench spots past the
+  // line — reads as one "Other" bucket. Within the draggable/blocked
+  // partition routes cluster under their class, declaration order first,
+  // unmatched last, filename order inside each; the functional partition
+  // stays primary so gating never hides behind cosmetics.
   const groupOrder = startRegions ? [...new Set(startRegions.map((region) => region.id))] : [];
   const [routeOrder, setRouteOrder] = useRouteOrder();
-  const grouped = routeOrder === 'start' && startRegions !== undefined && startRegions.length > 0;
+  const grouped = routeOrder === 'start' && startRegions !== undefined && startRegions.length > 0
+    && activeClips.length === 0;
   const groupRank = (region: string | undefined) => {
     const index = groupOrder.indexOf(region ?? '');
     return index === -1 ? groupOrder.length : index; // unmatched bucket last
@@ -361,7 +369,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         <option value="paths">{t('timeline.rangePaths')}</option>
       </SelectControl>} />
     <div className="sequence-route-library">
-      {startRegions !== undefined && startRegions.length > 0 && <SelectControl className="timeline-range sequence-order" aria-label={t('sequence.orderLabel')} value={routeOrder}
+      {startRegions !== undefined && startRegions.length > 0 && activeClips.length === 0 && <SelectControl className="timeline-range sequence-order" aria-label={t('sequence.orderLabel')} value={routeOrder}
         onValueChange={(value) => setRouteOrder(value as RouteOrder)}>
         <option value="name">{t('sequence.orderName')}</option>
         <option value="start">{t('sequence.orderStart')}</option>
