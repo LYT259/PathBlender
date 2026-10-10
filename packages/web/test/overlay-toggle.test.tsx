@@ -35,8 +35,8 @@ const raw = readFileSync(resolve(__dirname, '../../../samples/ghostauto/straight
 const overlayButtons = () => {
   const group = screen.getByRole('group', { name: 'Overlays' });
   return {
-    trail: within(group).getByRole('button', { name: 'Trail' }),
-    heatmap: within(group).getByRole('button', { name: 'Heatmap' }),
+    trail: within(group).getByRole('button', { name: 'Routes' }),
+    heatmap: within(group).getByRole('button', { name: 'Occupancy zones' }),
   };
 };
 
@@ -126,7 +126,7 @@ describe('the canvas-bar overlay pair', () => {
     // Default-on means the menu offers to hide it; the menu command and the
     // segmented button toggle the SAME state in both directions.
     fireEvent.click(screen.getByText('View', { selector: '.menu-top' }));
-    fireEvent.click(screen.getByText('Hide heatmap'));
+    fireEvent.click(screen.getByText('Hide occupancy zones'));
     await waitFor(() => expect(overlayButtons().heatmap).toHaveAttribute('aria-pressed', 'false'));
     fireEvent.click(overlayButtons().heatmap);
     await waitFor(() => expect(overlayButtons().heatmap).toHaveAttribute('aria-pressed', 'true'));
