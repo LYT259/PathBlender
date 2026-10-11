@@ -219,19 +219,19 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
         </>}
         {section === 'controls' && <>
           <div className="preferences-group preferences-units-group">
-            <label className="preferences-setting"><span>{t('prefs.units')}</span>
-              <SelectControl aria-label={t('prefs.units')} value={unit} onValueChange={(value) => setUnitDraft(value as LengthUnit)}>
+            <div className="preferences-setting"><span id={`${id}-units-label`}>{t('prefs.units')}</span>
+              <SelectControl aria-labelledby={`${id}-units-label`} value={unit} onValueChange={(value) => setUnitDraft(value as LengthUnit)}>
                 {lengthUnit === 'ftin' && <option value="ftin" hidden disabled>{t('prefs.unit.ftin')}</option>}
                 {LENGTH_UNITS.map((choice) => <option key={choice} value={choice}>{t(`prefs.unit.${choice}`)}</option>)}
               </SelectControl>
-            </label>
+            </div>
           </div>
           <div className="preferences-group preferences-mouse-group">
-            <label className="preferences-setting"><span>{t('prefs.mouseControls')}</span>
-              <SelectControl aria-label={t('prefs.mouseControls')} value={mouse} onValueChange={(value) => setMouseDraft(value as MouseControlsScheme)}>
+            <div className="preferences-setting"><span id={`${id}-mouse-label`}>{t('prefs.mouseControls')}</span>
+              <SelectControl aria-labelledby={`${id}-mouse-label`} value={mouse} onValueChange={(value) => setMouseDraft(value as MouseControlsScheme)}>
                 {MOUSE_SCHEMES.map((choice) => <option key={choice} value={choice}>{t(`prefs.mouse.${choice}`)}</option>)}
               </SelectControl>
-            </label>
+            </div>
             <MouseControlsDiagram scheme={mouse} iconMode={icon} constrained={constrained} custom={customEffective} />
             {mouse === 'custom'
               ? <CustomMouseEditor
@@ -282,11 +282,11 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
 
         </>}
         {section === 'updates' && <div className="preferences-group">
-          <label className="preferences-setting"><span>{t('prefs.channel')}</span>
-            <SelectControl aria-label={t('prefs.channel')} value={updateChannel} onValueChange={(value) => setChannelDraft(value as UpdateChannel)}>
+          <div className="preferences-setting"><span id={`${id}-channel-label`}>{t('prefs.channel')}</span>
+            <SelectControl aria-labelledby={`${id}-channel-label`} value={updateChannel} onValueChange={(value) => setChannelDraft(value as UpdateChannel)}>
               <option value="stable">{t('prefs.channel.stable')}</option><option value="beta">{t('prefs.channel.beta')}</option>
             </SelectControl>
-          </label>
+          </div>
           <div className="preferences-update-check">
             <div className="update-actions">
               <button type="button" className="btn accent" disabled={updateCheck.kind === 'checking' || updateCheck.kind === 'installing'}
