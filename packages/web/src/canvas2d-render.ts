@@ -96,6 +96,32 @@ export function fitViewFor(field: FieldPackage, w: number, h: number): RenderVie
   return { scale: Math.min(w / spanX, h / spanY), cx: field.lengthM / 2, cy: field.widthM / 2 };
 }
 
+/**
+ * Zoom clamp with re-homing at the fit floor (2026-10-11). The zoom-out
+ * floor IS the fit view, so a view whose scale lands on it must be exactly
+ * the fit view — centred on (homeCx, homeCy), not merely clamped in place.
+ * Without this, cursor-anchored zoom-out left the field stuck off-centre
+ * with margins showing until the user pressed Fit: the anchor math keeps
+ * the world point under the cursor fixed, and once the scale stopped
+ * moving at the floor that anchor silently stopped the centre from ever
+ * coming back.
+ *
+ * Contract: when the clamped scale sits at/below minScale (relative epsilon
+ * 1e-9) the return value is { minScale, homeCx, homeCy } exactly; otherwise
+ * cx/cy pass through UNCHANGED, so callers detect the snap by comparing
+ * cx/cy against their input and skip the cursor-anchor adjustment.
+ */
+export function clampZoomView(
+  view: RenderView,
+  opts: { minScale: number; maxScale: number; homeCx: number; homeCy: number },
+): RenderView {
+  const scale = Math.min(opts.maxScale, Math.max(opts.minScale, view.scale));
+  if (scale <= opts.minScale * (1 + 1e-9)) {
+    return { scale: opts.minScale, cx: opts.homeCx, cy: opts.homeCy };
+  }
+  return { scale, cx: view.cx, cy: view.cy };
+}
+
 export interface FieldFrameParams {
   /** Canvas size in the ctx's coordinate space (CSS px on-screen). */
   w: number;

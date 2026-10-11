@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
-import { renderFieldFrame, fitViewFor, type RenderView } from '../canvas2d-render';
+import { renderFieldFrame, fitViewFor, clampZoomView, type RenderView } from '../canvas2d-render';
 import { saveBytes } from '../download';
 import { useI18n } from '../i18n';
 import { useTheme } from '../theme';
@@ -199,12 +199,27 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     // field below what it looks like on open ("缩到刚打开时的样子，不能
     // 再小了"). The static 8 px/m term is only an unreachable safety net.
     const MAX_SCALE = 6000;
-    const clampScale = (s: number) =>
-      Math.min(MAX_SCALE, Math.max(Math.max(8, fitScaleRef.current), s));
+    // Reaching the fit floor re-homes the view onto the field centre
+    // (clampZoomView): zooming all the way out lands exactly on the Fit / `0`
+    // view instead of leaving the field stuck off-centre.
+    const zoomRange = () => ({
+      minScale: Math.max(8, fitScaleRef.current),
+      maxScale: MAX_SCALE,
+      homeCx: field.lengthM / 2,
+      homeCy: field.widthM / 2,
+    });
     const zoomAt = (sx: number, sy: number, factor: number) => {
       const v = viewRef.current;
       const before = world(sx, sy);
-      v.scale = clampScale(v.scale * factor);
+      const next = clampZoomView({ scale: v.scale * factor, cx: v.cx, cy: v.cy }, zoomRange());
+      if (next.cx !== v.cx || next.cy !== v.cy) {
+        // Snapped home at the floor — the cursor anchor is moot.
+        v.scale = next.scale;
+        v.cx = next.cx;
+        v.cy = next.cy;
+        return;
+      }
+      v.scale = next.scale;
       const after = world(sx, sy);
       v.cx += before.x - after.x;
       v.cy += before.y - after.y;
@@ -228,8 +243,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       const { w, h } = sizeRef.current;
       const wx = v.cx + (sx - w / 2) / v.scale;
       const wy = v.cy - (sy - h / 2) / v.scale;
-      const scale = clampScale(v.scale * factor);
-      return { scale, cx: wx - (sx - w / 2) / scale, cy: wy + (sy - h / 2) / scale };
+      const next = clampZoomView({ scale: v.scale * factor, cx: v.cx, cy: v.cy }, zoomRange());
+      if (next.cx !== v.cx || next.cy !== v.cy) return next; // fit floor: re-home, anchor moot
+      return { scale: next.scale, cx: wx - (sx - w / 2) / next.scale, cy: wy + (sy - h / 2) / next.scale };
     };
     const chaseStepFrame = () => {
       chaseRaf = 0;
