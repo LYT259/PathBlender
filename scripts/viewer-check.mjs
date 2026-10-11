@@ -38,9 +38,9 @@ const ORIGIN = new URL(BASE).origin;
  * helpers (language-names.ts, language-search.ts) never match the shape. */
 const DICTIONARIES = readdirSync(resolve(process.cwd(), 'packages/web/src/i18n'))
   .filter((f) => /^[a-z]{2,3}(-[a-z]+)?\.ts$/.test(f)).length;
-/** zh-tw.ts ships as the zh-hk override base and for saved prefs but has no
- * picker row (f601437, beta.88) — every other dictionary is selectable. */
-const SELECTABLE_LANGS = DICTIONARIES - 1;
+/** Every dictionary is a selectable picker row since the 2026-10-11 region
+ * versions (zh-tw reinstated; zh-hk/zh-mo/en-GB added — 43 rows today). */
+const SELECTABLE_LANGS = DICTIONARIES;
 /** Read from source: `const GITHUB_URL = '…'` in the app shell. */
 const GITHUB_URL = readFileSync(resolve(process.cwd(), 'packages/web/src/App.tsx'), 'utf8')
   .match(/const GITHUB_URL = '([^']+)'/)?.[1] ?? '';

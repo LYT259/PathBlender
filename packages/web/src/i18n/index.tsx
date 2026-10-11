@@ -7,6 +7,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { broadcastPref, listenPrefs } from '../pref-sync';
 import { formatDecimal } from '../number-format';
 import { en, type MessageKey } from './en';
+import { enGb } from './en-gb';
 import { ar } from './ar';
 import { az } from './az';
 import { bg } from './bg';
@@ -45,23 +46,24 @@ import { tr } from './tr';
 import { uk } from './uk';
 import { vi } from './vi';
 import { zh } from './zh';
-import { zhHant } from './zh-hant';
 import { zhHk } from './zh-hk';
+import { zhMo } from './zh-mo';
 import { zhTw } from './zh-tw';
 
 export type Lang =
-  | 'en' | 'ar' | 'az' | 'bg' | 'bs' | 'cs' | 'da' | 'de' | 'el' | 'es'
-  | 'fil' | 'fr' | 'he' | 'hi' | 'hr' | 'hu' | 'hy' | 'id' | 'it' | 'ja'
-  | 'ko' | 'mk' | 'mr' | 'ms' | 'nb' | 'nl' | 'nn' | 'pl' | 'pt-BR' | 'ro'
-  | 'rw' | 'sq' | 'sr' | 'sv' | 'ta' | 'tr' | 'uk' | 'vi'
-  | 'zh' | 'zh-hant' | 'zh-hk';
+  | 'en' | 'en-GB' | 'ar' | 'az' | 'bg' | 'bs' | 'cs' | 'da' | 'de' | 'el'
+  | 'es' | 'fil' | 'fr' | 'he' | 'hi' | 'hr' | 'hu' | 'hy' | 'id' | 'it'
+  | 'ja' | 'ko' | 'mk' | 'mr' | 'ms' | 'nb' | 'nl' | 'nn' | 'pl' | 'pt-BR'
+  | 'ro' | 'rw' | 'sq' | 'sr' | 'sv' | 'ta' | 'tr' | 'uk' | 'vi'
+  | 'zh' | 'zh-hk' | 'zh-mo' | 'zh-tw';
 /** User choice: 'system' follows the OS language live (first visit uses it). */
 export type LangChoice = 'system' | Lang;
 
 const DICTS: Record<Lang, Record<MessageKey, string>> = {
-  en, ar, az, bg, bs, cs, da, de, el, es, fil, fr, he, hi, hr, hu, hy, id, it,
-  ja, ko, mk, mr, ms, nb, nl, nn, pl, 'pt-BR': ptBR, ro, rw, sq, sr, sv, ta,
-  tr, uk, vi, zh, 'zh-hant': zhHant, 'zh-hk': zhHk,
+  en, 'en-GB': enGb, ar, az, bg, bs, cs, da, de, el, es, fil, fr, he, hi,
+  hr, hu, hy, id, it, ja, ko, mk, mr, ms, nb, nl, nn, pl, 'pt-BR': ptBR,
+  ro, rw, sq, sr, sv, ta, tr, uk, vi, zh, 'zh-hk': zhHk, 'zh-mo': zhMo,
+  'zh-tw': zhTw,
 };
 
 /**
@@ -76,8 +78,9 @@ export const legacyExampleNames: ReadonlySet<string> = new Set(
 
 /**
  * Language registry (report §7.2 v1.20): one row per language, holding the name
- * it is sorted by and the name it is displayed by. `Record<Lang, …>` makes
- * adding a code to `Lang` without adding a row a compile error.
+ * it is sorted by, the name it is displayed by, and the short text mark the
+ * picker shows beside the check icon. `Record<Lang, …>` makes adding a code to
+ * `Lang` without adding a row a compile error.
  *
  * `englishName` is the **sort key**, and it is ASCII on purpose: the order then
  * comes out of a plain string comparison instead of `Intl.Collator`, whose
@@ -85,59 +88,63 @@ export const legacyExampleNames: ReadonlySet<string> = new Set(
  * dev-server-vs-desktop-shell drift the GHPaths v1.31 sync warned about.
  * `endonym` is what the picker shows: a language is named in its own language,
  * because a user who cannot read the UI cannot read an English exonym either.
+ * `mark` is a short script/region cue (简/繁/EN/あ…) from the explicit per-row
+ * map below — never derived by slicing the code, because script and code
+ * diverge (sr's dictionary is Latin-script; zh-hk/zh-mo/zh-tw all share 繁).
  *
- * Traditional Chinese ships two selectable rows (2026-10-10): the generic
- * zh-hant row — a region-neutral full dictionary (zh-hant.ts), the home for a
- * bare `zh-Hant` or `zh-TW` system tag — and Hong Kong, region-named because
- * the underlying dictionaries differ by region. The zh-tw dictionary itself
- * still ships unselectable (its picker row was withdrawn 2026-10-07 for the
- * public round, fifth batch pending): it is the base the zh-hk override table
- * spreads over (zh-hk.ts), so wording changes made for Taiwan keep reaching
- * Hong Kong readers. Macau reads the Hong Kong row (`langFromTags`), per
- * v1.22's 区域就近回退.
+ * Traditional Chinese ships three region-named selectable rows (2026-10-11):
+ * Hong Kong, Macau and Taiwan. The dictionaries layer — zh-hk.ts is an
+ * override table over zh-tw.ts, zh-mo.ts over zh-hk.ts (CLDR parentLocales
+ * zh-Hant-MO → zh-Hant-HK) — so wording changes made for Taiwan keep reaching
+ * Hong Kong and Macau readers. The region-neutral generic Traditional row
+ * (zh-hant) was withdrawn the same day: it was a byte-identical snapshot of
+ * the Taiwan dictionary, so bare `zh-Hant` tags and stored `zh-hant` choices
+ * land on zh-tw with identical wording.
  */
-export const LANG_META: Record<Lang, { englishName: string; endonym: string }> = {
-  zh: { englishName: 'Chinese (Simplified)', endonym: '简体中文' },
-  'zh-hant': { englishName: 'Chinese (Traditional, Generic)', endonym: '繁體中文（通用）' },
-  'zh-hk': { englishName: 'Chinese (Traditional, Hong Kong)', endonym: '繁體中文（中國香港）' },
-  ar: { englishName: 'Arabic', endonym: 'العربية' },
-  az: { englishName: 'Azerbaijani', endonym: 'Azərbaycanca' },
-  bg: { englishName: 'Bulgarian', endonym: 'Български' },
-  bs: { englishName: 'Bosnian', endonym: 'Bosanski' },
-  cs: { englishName: 'Czech', endonym: 'Čeština' },
-  da: { englishName: 'Danish', endonym: 'Dansk' },
-  nl: { englishName: 'Dutch', endonym: 'Nederlands' },
-  en: { englishName: 'English', endonym: 'English' },
-  el: { englishName: 'Greek', endonym: 'Ελληνικά' },
-  fil: { englishName: 'Filipino', endonym: 'Filipino' },
-  fr: { englishName: 'French', endonym: 'Français' },
-  de: { englishName: 'German', endonym: 'Deutsch' },
-  he: { englishName: 'Hebrew', endonym: 'עברית' },
-  hi: { englishName: 'Hindi', endonym: 'हिन्दी' },
-  hr: { englishName: 'Croatian', endonym: 'Hrvatski' },
-  hu: { englishName: 'Hungarian', endonym: 'Magyar' },
-  hy: { englishName: 'Armenian', endonym: 'Հայերեն' },
-  id: { englishName: 'Indonesian', endonym: 'Bahasa Indonesia' },
-  it: { englishName: 'Italian', endonym: 'Italiano' },
-  ja: { englishName: 'Japanese', endonym: '日本語' },
-  ko: { englishName: 'Korean', endonym: '한국어' },
-  mk: { englishName: 'Macedonian', endonym: 'Македонски' },
-  ms: { englishName: 'Malay', endonym: 'Bahasa Melayu' },
-  mr: { englishName: 'Marathi', endonym: 'मराठी' },
-  nb: { englishName: 'Norwegian (Bokmål)', endonym: 'Norsk bokmål' },
-  nn: { englishName: 'Norwegian (Nynorsk)', endonym: 'Norsk nynorsk' },
-  pl: { englishName: 'Polish', endonym: 'Polski' },
-  'pt-BR': { englishName: 'Portuguese (Brazilian)', endonym: 'Português (Brasil)' },
-  ro: { englishName: 'Romanian', endonym: 'Română' },
-  rw: { englishName: 'Kinyarwanda', endonym: 'Kinyarwanda' },
-  sq: { englishName: 'Albanian', endonym: 'Shqip' },
-  sr: { englishName: 'Serbian', endonym: 'Srpski' },
-  es: { englishName: 'Spanish', endonym: 'Español' },
-  sv: { englishName: 'Swedish', endonym: 'Svenska' },
-  ta: { englishName: 'Tamil', endonym: 'தமிழ்' },
-  tr: { englishName: 'Turkish', endonym: 'Türkçe' },
-  uk: { englishName: 'Ukrainian', endonym: 'Українська' },
-  vi: { englishName: 'Vietnamese', endonym: 'Tiếng Việt' },
+export const LANG_META: Record<Lang, { englishName: string; endonym: string; mark: string }> = {
+  zh: { englishName: 'Chinese (Simplified)', endonym: '简体中文', mark: '简' },
+  'zh-hk': { englishName: 'Chinese (Traditional, Hong Kong)', endonym: '繁體中文（香港）', mark: '繁' },
+  'zh-mo': { englishName: 'Chinese (Traditional, Macau)', endonym: '繁體中文（澳門）', mark: '繁' },
+  'zh-tw': { englishName: 'Chinese (Traditional, Taiwan)', endonym: '繁體中文（台灣）', mark: '繁' },
+  ar: { englishName: 'Arabic', endonym: 'العربية', mark: 'ع' },
+  az: { englishName: 'Azerbaijani', endonym: 'Azərbaycanca', mark: 'AZ' },
+  bg: { englishName: 'Bulgarian', endonym: 'Български', mark: 'БГ' },
+  bs: { englishName: 'Bosnian', endonym: 'Bosanski', mark: 'BS' },
+  cs: { englishName: 'Czech', endonym: 'Čeština', mark: 'CS' },
+  da: { englishName: 'Danish', endonym: 'Dansk', mark: 'DA' },
+  nl: { englishName: 'Dutch', endonym: 'Nederlands', mark: 'NL' },
+  en: { englishName: 'English (United States)', endonym: 'English (United States)', mark: 'EN' },
+  'en-GB': { englishName: 'English (United Kingdom)', endonym: 'English (United Kingdom)', mark: 'EN' },
+  el: { englishName: 'Greek', endonym: 'Ελληνικά', mark: 'Α' },
+  fil: { englishName: 'Filipino', endonym: 'Filipino', mark: 'FIL' },
+  fr: { englishName: 'French', endonym: 'Français', mark: 'FR' },
+  de: { englishName: 'German', endonym: 'Deutsch', mark: 'DE' },
+  he: { englishName: 'Hebrew', endonym: 'עברית', mark: 'א' },
+  hi: { englishName: 'Hindi', endonym: 'हिन्दी', mark: 'अ' },
+  hr: { englishName: 'Croatian', endonym: 'Hrvatski', mark: 'HR' },
+  hu: { englishName: 'Hungarian', endonym: 'Magyar', mark: 'HU' },
+  hy: { englishName: 'Armenian', endonym: 'Հայերեն', mark: 'Հ' },
+  id: { englishName: 'Indonesian', endonym: 'Bahasa Indonesia', mark: 'ID' },
+  it: { englishName: 'Italian', endonym: 'Italiano', mark: 'IT' },
+  ja: { englishName: 'Japanese', endonym: '日本語', mark: 'あ' },
+  ko: { englishName: 'Korean', endonym: '한국어', mark: '한' },
+  mk: { englishName: 'Macedonian', endonym: 'Македонски', mark: 'МК' },
+  ms: { englishName: 'Malay', endonym: 'Bahasa Melayu', mark: 'MS' },
+  mr: { englishName: 'Marathi', endonym: 'मराठी', mark: 'म' },
+  nb: { englishName: 'Norwegian (Bokmål)', endonym: 'Norsk bokmål', mark: 'NB' },
+  nn: { englishName: 'Norwegian (Nynorsk)', endonym: 'Norsk nynorsk', mark: 'NN' },
+  pl: { englishName: 'Polish', endonym: 'Polski', mark: 'PL' },
+  'pt-BR': { englishName: 'Portuguese (Brazilian)', endonym: 'Português (Brasil)', mark: 'PT' },
+  ro: { englishName: 'Romanian', endonym: 'Română', mark: 'RO' },
+  rw: { englishName: 'Kinyarwanda', endonym: 'Kinyarwanda', mark: 'RW' },
+  sq: { englishName: 'Albanian', endonym: 'Shqip', mark: 'SQ' },
+  sr: { englishName: 'Serbian', endonym: 'Srpski', mark: 'SR' },
+  es: { englishName: 'Spanish', endonym: 'Español', mark: 'ES' },
+  sv: { englishName: 'Swedish', endonym: 'Svenska', mark: 'SV' },
+  ta: { englishName: 'Tamil', endonym: 'தமிழ்', mark: 'த' },
+  tr: { englishName: 'Turkish', endonym: 'Türkçe', mark: 'TR' },
+  uk: { englishName: 'Ukrainian', endonym: 'Українська', mark: 'УК' },
+  vi: { englishName: 'Vietnamese', endonym: 'Tiếng Việt', mark: 'VI' },
 };
 const STORAGE_KEY = 'pb.lang';
 const LANG_CODES = Object.keys(LANG_META) as Lang[];
@@ -148,9 +155,9 @@ const LANG_CODES = Object.keys(LANG_META) as Lang[];
  * English key, which is stable across engines, builds and whichever UI
  * language is active (a list that rearranges itself after a language switch
  * cannot be clicked from memory). One consequence is worth stating: Chinese
- * sorts first, so the three CJK rows head the list — the group our main
+ * sorts first, so the four CJK rows head the list — the group our main
  * audience reaches for — with the Latin names in their own alphabetical order
- * behind them. Result in all forty-one UI languages.
+ * behind them. Result in all forty-three UI languages.
  */
 export const LANGUAGES: readonly LangChoice[] = [
   'system',
@@ -180,10 +187,15 @@ export const SYSTEM_LABELS: readonly string[] = [...new Set([
  * `['en-US', 'zh-CN']` list fell through English and opened in Chinese.
  *
  * Inside Chinese, Hans beats Hant only after the region check. The region
- * decides *which* Traditional row: Hong Kong and Macau tags read the Hong
- * Kong dictionary, while a Taiwan tag or a bare `zh-Hant` (no region) reads
- * the generic Traditional row (2026-10-10) — the region-neutral dictionary
- * those readers are better served by now that it ships.
+ * decides *which* Traditional row: Hong Kong, Macau and Taiwan tags each read
+ * their own dictionary. A bare `zh-Hant` (no region) lands on zh-tw — the
+ * generic Traditional row withdrawn 2026-10-11 was a byte-identical snapshot
+ * of the Taiwan dictionary, so those readers get identical wording.
+ *
+ * English ships US and UK dictionaries: only an explicit GB tag gets UK
+ * spelling — bare `en`, `en-US`, `en-AU`, `en-CA`, `en-IN`… every other
+ * English region reads US English (the stable rule). A script subtag does not
+ * change the region: `en-Latn-GB` is still British English.
  *
  * Portuguese ships only the Brazilian dictionary, so every `pt*` tag — a
  * bare `pt` or an unshipped region like `pt-PT` — lands on it (a Portuguese
@@ -194,8 +206,10 @@ export const SYSTEM_LABELS: readonly string[] = [...new Set([
  */
 export function langFromTags(tags: readonly string[]): Lang {
   for (const l of tags) {
-    if (/^zh-(hant-(hk|mo)|hk|mo)/i.test(l)) return 'zh-hk';
-    if (/^zh-(hant(-tw)?|tw)/i.test(l)) return 'zh-hant';
+    if (/^zh-(hant-hk|hk)/i.test(l)) return 'zh-hk';
+    if (/^zh-(hant-mo|mo)/i.test(l)) return 'zh-mo';
+    // Bare zh-Hant lands here too: the withdrawn generic row was the Taiwan snapshot.
+    if (/^zh-(hant(-tw)?|tw)/i.test(l)) return 'zh-tw';
     if (/^zh/i.test(l)) return 'zh';
     if (/^(he|iw)/i.test(l)) return 'he';
     if (/^ar/i.test(l)) return 'ar'; // arq/ars (Arabic variants) start with `ar` too
@@ -234,6 +248,9 @@ export function langFromTags(tags: readonly string[]): Lang {
     if (/^ja/i.test(l)) return 'ja';
     if (/^ko/i.test(l)) return 'ko';
     if (/^pl/i.test(l)) return 'pl';
+    // Only an explicit GB tag gets UK spelling (script subtag or not:
+    // en-Latn-GB is GB too); all other en-* regions read US English.
+    if (/^en-(latn-)?gb/i.test(l)) return 'en-GB';
     if (/^en/i.test(l)) return 'en';
   }
   return 'en';
@@ -270,14 +287,15 @@ function interpolate(template: string, vars?: Record<string, string | number>): 
 function savedChoice(): LangChoice {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved === null || saved === 'system') return 'system';
-  // The Taiwan row was withdrawn from the picker (2026-10-07, fifth batch
-  // pending). A stored zh-tw choice migrates in place to the generic
-  // Traditional dictionary its wording is a snapshot of: relaunching must
-  // neither blank the UI nor silently flip to 'system', which would start
-  // following the OS language instead of the choice the user actually made.
-  if (saved === 'zh-tw') {
-    localStorage.setItem(STORAGE_KEY, 'zh-hant');
-    return 'zh-hant';
+  // The generic Traditional row was withdrawn (2026-10-11); its dictionary
+  // was a byte-identical snapshot of zh-tw, so a stored zh-hant choice
+  // migrates in place to the Taiwan row: the landing wording is identical to
+  // what the user had, and it never falls to 简体, English or 'system' (which
+  // would start following the OS language instead of the choice the user
+  // actually made).
+  if (saved === 'zh-hant') {
+    localStorage.setItem(STORAGE_KEY, 'zh-tw');
+    return 'zh-tw';
   }
   // Checked against the dictionary table, not a literal chain: the chain had
   // to be edited for every language added and silently reset an unknown-but-

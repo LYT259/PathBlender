@@ -1,6 +1,6 @@
 # PathBlender
 
-[English](README.md) | **简体中文** | [繁體中文（中國香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
+[English](README.md) | **简体中文** | [繁體中文（香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
 **面向 FRC 联盟策略协作的多源自动路径融合查看器。**
 
@@ -60,7 +60,7 @@ PathBlender 补上这个空缺：
 
 路径文件**完全在你的设备上解析**。零后端、零账号、零遥测、零分析。网页构建不发出任何网络请求；桌面版只有你主动点「检查更新」时才联网（访问 GitHub Releases）——路径文件绝不离开应用。
 
-另含：会话级红蓝联盟视角、机器人队号标注、上述赛季场地与官方 AprilTag 叠加、40 种界面语言——English / 简体中文 / 繁體中文（中國香港）/ Français / Español / Deutsch / Italiano / Português (Brasil) / Nederlands / Polski / Čeština / Türkçe / Ελληνικά / עברית / العربية / हिन्दी / 日本語 / 한국어，完整清单见界面语言菜单——深浅色主题跟随系统。
+另含：会话级红蓝联盟视角、机器人队号标注、上述赛季场地与官方 AprilTag 叠加、43 种界面语言——English (United States) / English (United Kingdom) / 简体中文 / 繁體中文（香港）/ 繁體中文（澳門）/ 繁體中文（台灣）/ Français / Español / Deutsch / Italiano / Português (Brasil) / Nederlands / Polski / Čeština / Türkçe / Ελληνικά / עברית / العربية / हिन्दी / 日本語 / 한국어，完整清单见界面语言菜单——深浅色主题跟随系统。
 
 完整操作指南与 FAQ：[English](docs/user-guide.en.md) · [简体中文](docs/user-guide.zh.md)。
 

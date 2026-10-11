@@ -24,6 +24,7 @@
 .language-picker-names { display: flex; flex-direction: column; align-items: start; gap: 3px; min-inline-size: 0; overflow-wrap: anywhere; }
 .language-picker-names > span { font-size: 12px; line-height: 1.4; }
 .language-picker-names > small { color: var(--fg-dim); font-size: 11px; line-height: 1.4; }
+.language-picker-mark { flex: none; min-inline-size: 3ch; text-align: center; font-size: 11px; line-height: 1.4; color: var(--fg-dim); }
 .language-picker-check { inline-size: 16px; flex: none; color: var(--accent); }
 .language-picker-system { border-block-end: 1px solid var(--border); border-radius: 6px 6px 0 0; margin-block-end: 4px; }
 .language-picker-empty { display: grid; justify-items: center; gap: 8px; padding: 28px 12px; font-size: 12px; text-align: center; }

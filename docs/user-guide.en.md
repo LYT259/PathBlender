@@ -168,12 +168,14 @@ rest of the alliance.
 - **Keyboard shortcuts**: press `?` anywhere (Help menu → Keyboard
   shortcuts);
 - **Appearance & languages**: light/dark/follow-system in Preferences
-  (⌘, on desktop); the UI ships in 40 languages — English, 简体中文,
-  繁體中文（中國香港）, Français, Español, Deutsch,
+  (⌘, on desktop); the UI ships in 43 languages — English (United States),
+  English (United Kingdom), 简体中文, 繁體中文（香港）, 繁體中文（澳門）,
+  繁體中文（台灣）, Français, Español, Deutsch,
   Italiano, Português (Brasil), Nederlands, Polski, Čeština, Türkçe,
   Ελληνικά, עברית, العربية, हिन्दी, 日本語, 한국어 among them — the full
-  list is in the language menu, and the app follows your system language
-  until you pick one;
+  list is in the language menu, where every row carries a short text mark
+  on the right (简 / 繁 / EN / あ / 한 …) instead of a flag, and the app
+  follows your system language until you pick one;
 - **Updates** (desktop): menu **PathBlender → Check for Updates…**;
   Preferences → Updates switches between the stable and beta channels.
   On Linux, in-app updates use the AppImage; DEB/RPM installs update by

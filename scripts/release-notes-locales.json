@@ -36,7 +36,7 @@
     "instructions": "- 在桌面应用中选择**检查更新…**；Beta 版先在**偏好设置 → 更新**启用 Beta 通道。也可下载下方适合自己平台的安装包。\n- 完整版本记录见**关于 PathBlender**。\n- Linux 自动更新使用 AppImage；DEB/RPM 用户请下载并安装适合发行版的新包。"
   },
   "zh-hk": {
-    "label": "繁體中文（中國香港）",
+    "label": "繁體中文（香港）",
     "changes": "新變化",
     "download": "平台與下載",
     "issues": "已知問題與限制",

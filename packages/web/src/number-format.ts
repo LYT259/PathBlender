@@ -37,6 +37,7 @@ const TAGS: Record<Lang, string> = {
   ar: 'en',
   mr: 'en',
   en: 'en',
+  'en-GB': 'en-GB',
   az: 'az',
   bg: 'bg',
   bs: 'bs',
@@ -73,8 +74,9 @@ const TAGS: Record<Lang, string> = {
   uk: 'uk',
   vi: 'vi',
   zh: 'zh',
-  'zh-hant': 'zh-Hant',
   'zh-hk': 'zh-HK',
+  'zh-mo': 'zh-MO',
+  'zh-tw': 'zh-TW',
 };
 
 const cache = new Map<string, Intl.NumberFormat>();
