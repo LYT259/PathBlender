@@ -78,6 +78,9 @@ describe('noteText fallback chain', () => {
 describe('About section localizes the update notes', () => {
   beforeEach(() => localStorage.clear());
   afterEach(cleanup);
+  // Tests below shadow the shared jsdom navigator's languages getter with an
+  // own property; drop it afterwards so the prototype getter serves the rest.
+  afterEach(() => { delete (window.navigator as unknown as { languages?: unknown }).languages; });
 
   function renderAbout(lang: string) {
     localStorage.setItem('pb.lang', lang);
@@ -93,6 +96,27 @@ describe('About section localizes the update notes', () => {
       </ThemeProvider>,
     );
     fireEvent.click(screen.getByRole('tab', { name: /about|关于/i }));
+  }
+
+  function renderAboutFollowingSystem(tags: readonly string[]) {
+    // No pb.lang: the choice stays 'system' and the OS tag list resolves the
+    // display language — the note must follow THAT resolution, not fall back.
+    Object.defineProperty(window.navigator, 'languages', { get: () => [...tags], configurable: true });
+    render(
+      <ThemeProvider>
+        <AppIconProvider>
+          <UpdateChannelProvider>
+            <I18nProvider>
+              <PreferencesPanel desktop={false} onClose={() => {}} />
+            </I18nProvider>
+          </UpdateChannelProvider>
+        </AppIconProvider>
+      </ThemeProvider>,
+    );
+    // desktop=false orders the tabs general, controls, about — click the last
+    // one without guessing what 'About' is called in the resolved language.
+    const tabs = screen.getAllByRole('tab');
+    fireEvent.click(tabs[tabs.length - 1]);
   }
 
   it('shows the Chinese note when the UI language is Chinese', () => {
@@ -116,5 +140,23 @@ describe('About section localizes the update notes', () => {
     const { date } = VERSION_NOTES[0];
     expect(screen.getAllByText(date).length).toBeGreaterThan(0);
     expect(screen.queryByText(date.replaceAll('.', '-'))).not.toBeInTheDocument();
+  });
+
+  it('a Follow-system reader gets the note in the OS-resolved language, not the zh fallback', () => {
+    // Regression (2026-10-11): the About list keyed noteText by the raw
+    // choice, and 'system' hits no note key — every Follow-system reader
+    // landed on the Simplified Chinese default regardless of the OS language.
+    renderAboutFollowingSystem(['fr']);
+    const { fr, zh } = VERSION_NOTES[0].note;
+    expect(fr).toBeTruthy();
+    expect(screen.getByText(fr!)).toBeInTheDocument();
+    expect(screen.queryByText(zh!)).not.toBeInTheDocument();
+  });
+
+  it('a Follow-system reader on a Hong Kong tag reads the Taiwan wording', () => {
+    renderAboutFollowingSystem(['zh-HK']);
+    const note = VERSION_NOTES[0].note;
+    expect(screen.getByText(note['zh-tw']!)).toBeInTheDocument();
+    expect(screen.queryByText(note.zh!)).not.toBeInTheDocument();
   });
 });

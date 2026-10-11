@@ -56,7 +56,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
    * the Tauri broadcast only reaches windows on desktop shells. */
   onColorblindSaved?: (on: boolean) => void;
 }) {
-  const { langChoice, setLang, t } = useI18n();
+  const { lang, langChoice, setLang, t } = useI18n();
   const { mode, setMode } = useTheme();
   const { mode: iconMode, systemDark, setMode: setIconMode } = useAppIcon();
   const { channel, setChannel } = useUpdateChannel();
@@ -310,8 +310,10 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
             <p className="preferences-copy-status" role="status">{copyStatus}</p>
           </div>
           {VERSION_NOTES.length > 0 && <div className="preferences-history"><h3>{t('prefs.releaseNotes')}</h3>
+            {/* Resolved `lang`, not the raw choice: 'system' hits no note
+                key, so Follow-system readers would fall to the zh default. */}
             <ol>{VERSION_NOTES.slice(0, 5).map((note) => <li key={note.version}>
-              <div><strong dir="ltr">Version {note.version}</strong><time>{note.date}</time></div><p>{noteText(note.note, langChoice)}</p>
+              <div><strong dir="ltr">Version {note.version}</strong><time>{note.date}</time></div><p>{noteText(note.note, lang)}</p>
             </li>)}</ol>
           </div>}
         </>}

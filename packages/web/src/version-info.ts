@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.2';
+export const APP_VERSION = '0.1.9-beta.3';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.3', date: '2026.10.11', note: {
+    en: 'Language picker: script and region marks align in a fixed column, arrow keys start from the current language, and About release notes follow the interface language',
+    zh: '语言选择器：文字标识按固定列对齐，方向键从当前语言起步，关于页更新说明跟随界面语言',
+    'zh-tw': '語言選擇器：文字標識按固定欄對齊，方向鍵從目前語言開始，關於頁的更新說明跟隨介面語言',
+    cs: 'Výběr jazyka: značky písma a oblasti jsou zarovnány v pevném sloupci, klávesy se šipkami vycházejí od aktuálního jazyka a poznámky aktualizací v O aplikaci sledují jazyk rozhraní',
+    nl: 'Taalkiezer: script- en regiomarkeringen lijnen uit in een vaste kolom, de pijltoetsen starten vanaf de huidige taal, en de updatenotities in Info volgen je interfacetaal',
+    fr: 'Sélecteur de langue : les marques d’écriture et de région s’alignent dans une colonne fixe, les touches fléchées partent de la langue courante, et les notes de mise à jour d’À propos suivent la langue de l’interface',
+    he: 'בוחר השפה: סימני הכתב והאזור מיושרים בעמודה קבועה, מקשי החצים מתחילים מהשפה הנוכחית, והערות העדכון באודות עוקבות אחר שפת הממשק',
+    ja: '言語選択：文字と地域のマークが固定列に整列し、矢印キーは現在の言語から始まり、「情報」の更新説明はインターフェース言語に追従します',
+    ko: '언어 선택기: 문자와 지역 표시가 고정 열에 정렬되고, 방향키는 현재 언어에서 시작하며, 정보 페이지의 업데이트 설명이 인터페이스 언어를 따릅니다',
+    pl: 'Wybór języka: znaczniki pisma i regionu są wyrównane w stałej kolumnie, klawisze strzałek startują od bieżącego języka, a notatki aktualizacji w O aplikacji podążają za językiem interfejsu',
+    'pt-br': 'Seletor de idioma: as marcas de escrita e de região se alinham em uma coluna fixa, as teclas de seta partem do idioma atual, e as notas de atualização em Sobre seguem o idioma da interface',
+    es: 'Selector de idioma: las marcas de escritura y de región se alinean en una columna fija, las teclas de flecha parten del idioma actual, y las notas de actualización de Acerca de siguen el idioma de la interfaz',
+    tr: 'Dil seçici: yazı ve bölge işaretleri sabit bir sütunda hizalanıyor, ok tuşları geçerli dilden başlıyor ve Hakkında’daki güncelleme notları arayüz dilini izliyor',
+    ar: 'منتقي اللغة: علامات الكتابة والمنطقة تنتظم في عمود ثابت، ومفاتيح الأسهم تنطلق من اللغة الحالية، وملاحظات التحديث في «حول» تتبع لغة الواجهة',
+    az: 'Dil seçicisi: yazı və bölgə işarələri sabit sütunda düzülür, ox düymələri cari dildən başlayır və Haqqında bölməsindəki yeniləmə qeydləri interfeys dilinizi izləyir',
+    bg: 'Избор на език: знаците за писменост и регион се подравняват във фиксирана колона, клавишите със стрелки започват от текущия език, а бележките за обновяване в „За“ следват езика на интерфейса',
+    bs: 'Izbornik jezika: oznake pisma i regije poravnate su u fiksnoj koloni, tipke sa strelicama polaze od trenutnog jezika, a napomene o ažuriranju u „O aplikaciji“ prate vaš jezik interfejsa',
+    da: 'Sprogvælger: skrift- og regionsmærker er justeret i en fast kolonne, piletasterne starter fra det aktuelle sprog, og opdateringsnoterne under Om følger dit UI-sprog',
+    de: 'Sprachauswahl: Schrift- und Regionsmarkierungen sind in einer festen Spalte ausgerichtet, die Pfeiltasten starten bei der aktuellen Sprache, und die Update-Hinweise unter Über folgen der UI-Sprache',
+    el: 'Επιλογέας γλώσσας: τα σήματα γραφής και περιοχής στοιχίζονται σε σταθερή στήλη, τα πλήκτρα βέλους ξεκινούν από την τρέχουσα γλώσσα, και οι σημειώσεις ενημέρωσης στις Πληροφορίες ακολουθούν τη γλώσσα διεπαφής',
+    fil: 'Language picker: ang mga marka ng script at rehiyon ay naka-align sa isang fixed na column, ang mga arrow key ay nagsisimula sa kasalukuyang wika, at ang mga update note sa Tungkol sa ay sumusunod sa UI language mo',
+    hi: 'भाषा चयनकर्ता: लिपि और क्षेत्र के चिह्न एक निश्चित कॉलम में संरेखित होते हैं, तीर कुंजियाँ वर्तमान भाषा से शुरू होती हैं, और \'के बारे में\' अपडेट नोट्स आपकी UI भाषा का पालन करते हैं',
+    hr: 'Izbornik jezika: oznake pisma i regije poravnate su u fiksnom stupcu, tipke sa strelicama polaze od trenutnog jezika, a napomene o ažuriranju u „O aplikaciji“ prate vaš jezik sučelja',
+    hu: 'Nyelvválasztó: az írás- és régiójelölések fix oszlopba igazodnak, a nyílbillentyűk az aktuális nyelvtől indulnak, és a Névjegy frissítési megjegyzései a felületi nyelvet követik',
+    hy: 'Լեզվի ընտրիչ. գրի և տարածաշրջանի նշանները հավասարվում են ֆիքսված սյունակում, սլաքների ստեղնները սկսում են ընթացիկ լեզվից, իսկ «Հավելվածի մասին» թարմացման նշումները հետևում են ձեր ինտերֆեյսի լեզվին',
+    id: 'Pemilih bahasa: tanda aksara dan wilayah sejajar dalam kolom tetap, tombol panah mulai dari bahasa saat ini, dan catatan pembaruan di Tentang mengikuti bahasa UI Anda',
+    it: 'Selettore della lingua: le marche di scrittura e regione si allineano in una colonna fissa, i tasti freccia partono dalla lingua corrente, e le note di aggiornamento in Info seguono la lingua dell’interfaccia',
+    mk: 'Избирач на јазик: ознаките за писмо и регион се порамнуваат во фиксна колона, копчињата со стрелки почнуваат од тековниот јазик, а белешките за ажурирање во „За“ го следат јазикот на интерфејсот',
+    mr: 'भाषा निवडक: लिपी व प्रदेश खुणा एका स्थिर स्तंभात संरेखित होतात, बाण की सध्याच्या भाषेपासून सुरू होतात, आणि \'बद्दल\' अपडेट टिपा तुमच्या UI भाषेचे पालन करतात',
+    ms: 'Pemilih bahasa: tanda tulisan dan wilayah selari dalam lajur tetap, kekunci anak panah bermula dari bahasa semasa, dan nota kemas kini di Perihal mengikut bahasa UI Anda',
+    nb: 'Språkvelger: skrift- og regionsmerker står på linje i en fast kolonne, piltastene starter fra gjeldende språk, og oppdateringsnotene under Om følger UI-språket ditt',
+    nn: 'Språkveljar: skrift- og regionsmerke står på linje i ei fast kolonne, piltastane startar frå gjeldande språk, og oppdateringsnotane under Om følgjer UI-språket ditt',
+    ro: 'Selector de limbă: marcajele de scriere și regiune se aliniază într-o coloană fixă, tastele săgeți pornesc de la limba curentă, iar notele de actualizare din Despre urmăresc limba interfeței tale',
+    rw: 'Ihitamo ry’ururimi: ibimenyetso by’inyandiko n’akarere biratunganijwe mu murongo umwe udahinduka, buto z’icyerekezo zitangira ku rurimi rw’ubu, kandi ibyo kuvugururwa muri Ibyerekeye bikurikiza ururimi rwawe rwa UI',
+    sq: 'Përzgjedhësi i gjuhës: shenjat e shkrimit dhe të rajonit rreshtohen në një kolonë fikse, tastet me shigjeta fillojnë nga gjuha aktuale, dhe shënimet e përditësimit në Rreth ndjekin gjuhën tënde të ndërfaqes',
+    sr: 'Изборник језика: ознаке писма и региона поравнате су у фиксној колони, тастери са стрелицама полазе од тренутног језика, а напомене о ажурирању у „O aplikaciji“ прате ваш језик интерфејса',
+    sv: 'Språkväljare: skrift- och regionsmärken är justerade i en fast kolumn, piltangenterna startar från det aktuella språket, och uppdateringsnoteringarna under Om följer ditt UI-språk',
+    ta: 'மொழி தேர்வி: எழுத்துமுறை மற்றும் பிராந்திய குறிகள் நிலையான நிரலில் சீரமைக்கப்படுகின்றன, அம்புக்குறி விசைகள் தற்போதைய மொழியிலிருந்து தொடங்குகின்றன, மேலும் \'பற்றி\' புதுப்பிப்புக் குறிப்புகள் உங்கள் UI மொழியைப் பின்பற்றுகின்றன',
+    uk: 'Вибір мови: позначки письма та регіону вирівняні у фіксованому стовпці, клавіші зі стрілками починають від поточної мови, а нотатки оновлень у «Про додаток» слідують мові інтерфейсу',
+    vi: 'Trình chọn ngôn ngữ: nhãn chữ viết và vùng được căn thẳng trong một cột cố định, phím mũi tên bắt đầu từ ngôn ngữ hiện tại, và ghi chú cập nhật trong trang Giới thiệu theo ngôn ngữ giao diện của bạn',
+  } },
   { version: '0.1.9-beta.2', date: '2026.10.11', note: {
     en: 'Fixed dropdown boxes opening when pointing or clicking beside the box instead of on it',
     zh: '修复在下拉框旁边指向或点击也会将其打开的问题',
