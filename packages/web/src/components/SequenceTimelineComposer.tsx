@@ -2,7 +2,7 @@ import { SelectControl } from './SelectControl';
 import { Fragment, useEffect, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type PointerEvent } from 'react';
 import { routeConnectsAfter, routeStartRegion, LIBRARY_CHAIN_TOLERANCES, startsInAllianceZone, type RouteContinuity, type SequenceJoinIssue, type SessionRouteOption, type SessionTrajectory, type StartRegionClass, type StartZoneRect } from '@pathblender/core';
 import { sequenceViewFor, type AutoSequenceSegment } from '../auto-sequence-state';
-import { boundedClipStart, canPlaceClip, clipGaps, clipsFor, placeClip, segmentsFromClips, type TimelineClip } from '../sequence-timeline-clips';
+import { boundedClipStart, canPlaceClip, clipGaps, clipsFor, placeClip, sameClipLayout, segmentsFromClips, type TimelineClip } from '../sequence-timeline-clips';
 import { robotIdentity } from '../robot-identity';
 import { routeLabel } from '../route-library';
 import { formatLength, useLengthUnit } from '../length-units';
@@ -41,6 +41,14 @@ interface Props {
   /** Hover/focus route preview: `routeId` resolves through the robot being
    * edited unless `robotId` names another track's team (2026-10-08). */
   onPreviewRoute?: (routeId: string | null, robotId?: string) => void;
+  /** Live drag what-if (user 2026-10-11): while a clip drag has an in-lane
+   * candidate, reports the full candidate arrangement of the robot being
+   * edited (committed clips with the candidate in place) so the field and
+   * the collision badges rehearse it in real time; `null` whenever no
+   * candidate exists — press, release, Escape, off-lane, unplaceable.
+   * Render-only: the committed store never sees it, release commits through
+   * the normal onChange path. */
+  onDragPreview?: (robotId: string, clips: TimelineClip[] | null) => void;
   joins?: SequenceJoinIssue[];
   playback?: Playback;
   /** Transport end honoring the playback-range choice — shared with the
@@ -70,7 +78,7 @@ const clampToAxis = (t: number, axisS: number) => Math.min(axisS, Math.max(0, t)
 
 /** Pointer capture works across WebKit and mouse/touch/pen, without relying
  * on custom HTML drag payloads. A gesture is one undoable operation. */
-export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, startZone, startRegions, open, onClose, onChange, onPreviewRoute, joins = [], playback, playbackEndS, playbackRange = 'full', onPlaybackRangeChange, onJump }: Props) {
+export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, startZone, startRegions, open, onClose, onChange, onPreviewRoute, onDragPreview, joins = [], playback, playbackEndS, playbackRange = 'full', onPlaybackRangeChange, onJump }: Props) {
   const { t, n, lang } = useI18n();
   const [unit] = useLengthUnit();
   const [selected, setSelected] = useState<{ robotId: string; clipId: string } | null>(null);
@@ -89,6 +97,22 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   const menuRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<Drag | null>(null);
   const suppressClick = useRef(false);
+  // Live drag what-if (user 2026-10-11): the last arrangement reported for
+  // the running drag, deduped semantically — a wiggle inside the same
+  // 0.1 s snap cell never re-renders the field.
+  const dragPreviewRef = useRef<{ robotId: string; clips: TimelineClip[] } | null>(null);
+  const emitDragPreview = (robotId: string, clips: TimelineClip[]) => {
+    const prev = dragPreviewRef.current;
+    if (prev && prev.robotId === robotId && sameClipLayout(prev.clips, clips)) return;
+    dragPreviewRef.current = { robotId, clips };
+    onDragPreview?.(robotId, clips);
+  };
+  const clearDragPreview = () => {
+    const prev = dragPreviewRef.current;
+    if (!prev) return;
+    dragPreviewRef.current = null;
+    onDragPreview?.(prev.robotId, null);
+  };
   const tracks = robots.map((robot) => {
     const view = sequenceViewFor(robot);
     return { robot, routes: view.routes, clips: clipsFor(view.segments, view.routes) };
@@ -220,6 +244,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
   useEffect(() => {
     dragRef.current = null;
     setGhost(null); setMenu(null); setError(null);
+    clearDragPreview();
   }, [open, activeId]);
   // Keyboard entry (2026-10-06 keyboard pass): opening the composer moves
   // focus onto the editing lane, so Tab reaches the segments and Escape has
@@ -281,6 +306,9 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     dragRef.current = { robotId: activeId!, kind, clip, x: event.clientX, y: event.clientY, moved: false };
     event.currentTarget.setPointerCapture(event.pointerId);
     if (kind === 'move') setSelected({ robotId: activeId!, clipId: clip.id });
+    // A press on any draggable retires the hover preview at once (user
+    // 2026-10-11): from here the live drag what-if owns the field.
+    onPreviewRoute?.(null);
     setMenu(null); setError(null);
   }
   /** Scrub the playhead from inert timeline surfaces (user 2026-10-07):
@@ -335,7 +363,7 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     if (drag.kind === 'move' && (event.clientY < rect.top || event.clientY > rect.bottom)) {
       drag.offLane = true; drag.candidate = undefined;
       setDragPoint({ x: event.clientX, y: event.clientY });
-      setGhost(null); return;
+      setGhost(null); clearDragPreview(); return;
     }
     if (drag.kind === 'move') drag.offLane = false;
     const clip = drag.clip!;
@@ -370,11 +398,18 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     // the drag UI — the route visibly follows the pointer, up and down at
     // will, until the release snaps it back into the lane.
     if (drag.kind === 'add' && (event.clientY < rect.top || event.clientY > rect.bottom)) {
-      setGhost(null); return;
+      setGhost(null); clearDragPreview(); return;
     }
     setGhost({ robotId: activeId!, clip: candidate });
+    // Live what-if (user 2026-10-11): rehearse the committed arrangement
+    // with the candidate in place. A candidate that cannot land (overlap)
+    // reports null instead — the field keeps the honest committed layout,
+    // exactly what releasing here would fall back to.
+    const preview = placeClip(activeClips, candidate, autoPeriodS);
+    if (preview) emitDragPreview(activeId!, preview);
+    else clearDragPreview();
   }
-  function cancelDrag() { dragRef.current = null; setGhost(null); setDragPoint(null); onPreviewRoute?.(null); }
+  function cancelDrag() { dragRef.current = null; setGhost(null); setDragPoint(null); onPreviewRoute?.(null); clearDragPreview(); }
   /** Hit-test the route library — the "home" drop zone: a dragged-OUT clip
    *  released there is removed, and a freshly dragged library route released
    *  there cancels its add instead of placing anything (user 2026-10-10). */
