@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.5';
+export const APP_VERSION = '0.1.9-beta.6';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.6', date: '2026.10.11', note: {
+    en: '2026 field artwork re-rendered from the official CAD model — 2× sharper when zooming in, hub alliance colours corrected',
+    zh: '2026 赛季场地渲染图改由官方 CAD 模型重新渲染——放大查看时清晰度提升 2 倍，两个 Hub 的联盟配色已修正',
+    'zh-tw': '2026 賽季場地彩現圖改由官方 CAD 模型重新彩現——放大檢視時清晰度提升 2 倍，兩個 Hub 的聯盟配色已修正',
+    cs: 'Grafika pole 2026 překreslená z oficiálního CAD modelu — při přiblížení 2× ostřejší, alianční barvy hubů opraveny',
+    nl: '2026-veldartwork opnieuw gerenderd vanuit het officiële CAD-model — 2× scherper bij inzoomen, alliantiekleuren van de hubs gecorrigeerd',
+    fr: 'Rendu du terrain 2026 régénéré depuis le modèle CAO officiel — 2× plus net en zoomant, couleurs d’alliance des hubs corrigées',
+    he: 'אומנות המגרש של 2026 עובדה מחדש ממודל ה-CAD הרשמי — חדה פי 2 בעת התקרבות, צבעי הברית של הרכזים תוקנו',
+    ja: '2026フィールド画像を公式CADモデルから再レンダリング — ズーム時の精細さが2倍に向上、ハブのアライアンスカラーを修正',
+    ko: '2026 필드 아트워크를 공식 CAD 모델에서 다시 렌더링 — 확대 시 2배 더 선명해지고, 허브 얼라이언스 색상이 수정되었습니다',
+    pl: 'Grafika pola 2026 wyrenderowana ponownie z oficjalnego modelu CAD — 2× ostrzejsza przy powiększaniu, poprawione kolory sojuszy hubów',
+    'pt-br': 'Arte do campo 2026 renderizada novamente a partir do modelo CAD oficial — 2× mais nítida ao ampliar, cores de aliança dos hubs corrigidas',
+    es: 'Gráficos del campo 2026 renderizados de nuevo desde el modelo CAD oficial — 2× más nítidos al acercar, colores de alianza de los hubs corregidos',
+    tr: '2026 saha görselliği resmî CAD modelinden yeniden render edildi — yakınlaştırmada 2× daha keskin, hub ittifak renkleri düzeltildi',
+    ar: 'أُعيد رسم ملعب 2026 من نموذج CAD الرسمي — أوضح بمرتين عند التكبير، وصُحّحت ألوان التحالف على المحورين',
+    az: '2026 meydan təsviri rəsmi CAD modelindən yenidən render edildi — yaxınlaşdırmada 2× daha dəqiq, mərkəzlərin alyans rəngləri düzəldildi',
+    bg: 'Изображението на полето 2026 е рендерирано наново от официалния CAD модел — 2× по-остро при приближаване, коригирани съюзнически цветове на хъбовете',
+    bs: 'Prikaz polja 2026 ponovo renderiran iz službenog CAD modela — 2× oštriji pri zumiranju, ispravljene boje saveza na hubovima',
+    da: '2026-banens grafik gengivet på ny fra den officielle CAD-model — 2× skarpere ved zoom, hubbernes alliancefarver rettet',
+    de: '2026er-Feldgrafik aus dem offiziellen CAD-Modell neu gerendert — beim Zoomen 2× schärfer, Allianzfarben der Hubs korrigiert',
+    el: 'Η απεικόνιση του γηπέδου 2026 ξαναδόθηκε από το επίσημο μοντέλο CAD — 2× πιο καθαρή στο ζουμ, διορθώθηκαν τα χρώματα συμμαχίας των hubs',
+    fil: 'Ang artwork ng 2026 field ay muling na-render mula sa opisyal na CAD model — 2× mas malinaw kapag nag-zoom, naitama ang mga kulay ng alyansa ng mga hub',
+    hi: '2026 फ़ील्ड आर्टवर्क आधिकारिक CAD मॉडल से फिर से रेंडर किया गया — ज़ूम करने पर 2× अधिक स्पष्ट, हब के एलायंस रंग ठीक किए गए',
+    hr: 'Prikaz polja 2026 ponovno renderiran iz službenog CAD modela — 2× oštriji pri zumiranju, ispravljene boje saveza na hubovima',
+    hu: 'A 2026-os pálya grafikája újrarenderelve a hivatalos CAD-modellből — nagyításnál 2× élesebb, a hubok szövetségi színei javítva',
+    hy: '2026 դաշտի պատկերը վերահաստատվել է պաշտոնական CAD մոդելից — խոշորացնելիս 2× ավելի հստակ, հաբերի դաշնային գույները շտկվել են',
+    id: 'Gambar lapangan 2026 dirender ulang dari model CAD resmi — 2× lebih tajam saat memperbesar, warna aliansi hub dikoreksi',
+    it: 'Grafica del campo 2026 ri-renderizzata dal modello CAD ufficiale — 2× più nitida ingrandendo, colori di alleanza degli hub corretti',
+    mk: 'Графиката на полето 2026 повторно рендерирана од официјалниот CAD модел — 2× поостра при зумирање, коригирани алијансните бои на хабовите',
+    mr: '2026 फील्ड आर्टवर्क अधिकृत CAD मॉडेलमधून पुन्हा रेंडर केले — झूम करताना 2× अधिक स्पष्ट, हबचे ॲलायन्स रंग दुरुस्त केले',
+    ms: 'Karya seni padang 2026 di render semula daripada model CAD rasmi — 2× lebih tajam apabila zum, warna pakatan hub diperbetulkan',
+    nb: '2026-feltgrafikken er rendret på nytt fra den offisielle CAD-modellen — 2× skarpere ved zoom, hubbenes alliansefarger korrigert',
+    nn: '2026-feltgrafikken er rendra på nytt frå den offisielle CAD-modellen — 2× skarpare ved zoom, alliansefargane på hubbane korrigerte',
+    ro: 'Grafica terenului 2026 re-randată din modelul CAD oficial — de 2× mai clară la mărire, culorile de alianță ale huburilor corectate',
+    rw: 'Ishusho y’uwanja wa 2026 yongeye gukorwa ivuye ku moderi CAD yemewe — isobanutse inshuro 2 iyo wazuze, amabara y’ubufatanye kuri hubs arakosowe',
+    sq: 'Grafika e fushës 2026 u ri-render nga modeli zyrtar CAD — 2× më e mprehtë kur zmadhon, ngjyrat e aleancës së hub-eve u korrigjuan',
+    sr: 'Графика поља 2026 поново рендерисана из званичног CAD модела — 2× оштрија при зумирању, исправљене боје савеза на хабовима',
+    sv: '2026 års plangrafik renderades om från den officiella CAD-modellen — 2× skarpare vid zoom, hubbarnas alliansfärger korrigerade',
+    ta: '2026 வீச்சுப் படம் அதிகாரப்பூர்வ CAD மாதிரியிலிருந்து மீண்டும் ரெண்டர் செய்யப்பட்டது — ஜூம் செய்யும்போது 2× கூர்மை, ஹப்களின் கூட்டணி நிறங்கள் சரிசெய்யப்பட்டன',
+    uk: 'Зображення поля 2026 повторно відрендерено з офіційної CAD-моделі — у 2 рази чіткіше при наближенні, виправлено кольори альянсів хабів',
+    vi: 'Hình ảnh sân 2026 được render lại từ mô hình CAD chính thức — sắc nét gấp 2 lần khi phóng to, đã sửa màu liên minh của các hub',
+  } },
   { version: '0.1.9-beta.5', date: '2026.10.11', note: {
     en: 'Zooming the 2D field all the way out now returns to the centred fit view',
     zh: '将 2D 场地缩到最小时，现在会回到居中的全场适配视图',

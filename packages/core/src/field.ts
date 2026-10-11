@@ -394,16 +394,21 @@ export const REBUILT_2026: FieldPackage = {
   { id: 31, x: 0.0081, y: 3.7457, z: 0.5524, rotRad: 0, quat: [0, 0, 0, 1] },
   { id: 32, x: 0.0081, y: 4.1775, z: 0.5524, rotRad: 0, quat: [0, 0, 0, 1] },
   ],
-  // Rendered artwork (AdvantageScopeAssets Field2d_2026FRCFieldV2, BSD-3;
-  // source render: Chief Delphi high-resolution field image), 3902×1584.
-  // Corner calibration from its config (topLeft [524,95], bottomRight
-  // [3378,1489] over 651.22″×317.677″) mapped onto this package's 16.54×8.07
-  // constants → 2854 px of length at 172.55 px/m, blue corner 524 px from
-  // the left edge, 95 px from the bottom edge. Tag-decal probe vs the
-  // AndyMark layout: median 15 px (≈ 9 cm), no systematic bias; the
-  // welded/AndyMark deltas (≤ 34 mm ≈ 6 px) are below the artwork's own
-  // scatter, so one sheet serves both variants.
-  imageRendered: { pixelWidth: 3902, pixelHeight: 1584, ppm: 172.55, ppmY: 172.74, marginM: 0, originPx: { x: 524, y: 95 } },
+  // Rendered artwork: re-rendered 2026-10-11 from the bundled AdvantageScope
+  // Field3d GLB (packages/web/public/fields3d/2026-rebuilt/model.glb, BSD-3;
+  // untextured solid-colour meshes from the official Onshape CAD) via
+  // scripts/cad/render-field-topdown.mjs, at exactly 2× the previous sheet
+  // (7804×3168) so deep 2D zooms stay sharp. It replaces the community
+  // Fusion render (AdvantageScopeAssets Field2d_2026FRCFieldV2), which had
+  // the two hubs' alliance colours MIRRORED — the GLB follows the official
+  // CAD (HUB tags 18–21 at x≈4.6 m mark the BLUE hub, 2026 manual §5.4).
+  // Calibration is exactly 2× the previous corner calibration: blue corner
+  // 1048 px from the left edge, 190 px from the bottom edge. Registration is
+  // validated by construction — the script re-renders with magenta markers
+  // at all 32 official welded tag positions above and requires every
+  // centroid within 2 px of this calibration's prediction (measured 2026-10-11:
+  // median 0.70 px, max 0.92 px; 1 px ≈ 2.9 mm) before writing the PNG.
+  imageRendered: { pixelWidth: 7804, pixelHeight: 3168, ppm: 345.10, ppmY: 345.48, marginM: 0, originPx: { x: 1048, y: 190 } },
   aprilTagsAndyMark: TAGS_2026_ANDYMARK,
 };
 
