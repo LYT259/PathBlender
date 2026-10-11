@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.4';
+export const APP_VERSION = '0.1.9-beta.5';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.5', date: '2026.10.11', note: {
+    en: 'Zooming the 2D field all the way out now returns to the centred fit view',
+    zh: '将 2D 场地缩到最小时，现在会回到居中的全场适配视图',
+    'zh-tw': '將 2D 場地縮到最小時，現在會回到置中的全場檢視',
+    cs: 'Při úplném oddálení 2D pole se pohled nyní vrátí na vycentrovaný přizpůsobený pohled',
+    nl: 'Als je het 2D-veld helemaal uitzoomt, keert de weergave nu terug naar de gecentreerde passende weergave',
+    fr: 'Un zoom arrière à fond sur le champ 2D ramène désormais à la vue ajustée centrée',
+    he: 'התרחקות מלאה משדה ה-2D מחזירה כעת לתצוגת ההתאמה הממורכזת',
+    ja: '2Dフィールドを最大までズームアウトすると、中央のフィット表示に戻るようになりました',
+    ko: '2D 필드를 끝까지 축소하면 이제 중앙 정렬된 맞춤 보기로 돌아갑니다',
+    pl: 'Maksymalne oddalenie pola 2D przywraca teraz wyśrodkowany, dopasowany widok',
+    'pt-br': 'Afastar o campo 2D por completo agora retorna à visualização ajustada e centralizada',
+    es: 'Alejar por completo el campo 2D ahora vuelve a la vista ajustada y centrada',
+    tr: '2D sahayı sonuna kadar uzaklaştırmak artık ortalanmış sığdırma görünümüne döndürüyor',
+    ar: 'تصغير الحقل ثنائي الأبعاد إلى أقصى حد يعيد العرض الآن إلى العرض الملائم المتمركز',
+    az: '2D meydanı tam uzaqlaşdırmaq indi mərkəzləşdirilmiş uyğun görünüşə qaytarır',
+    bg: 'Пълното отдалечаване на 2D полето вече връща центрирания побран изглед',
+    bs: 'Potpuno udaljavanje 2D polja sada vraća na centrirani prilagođeni prikaz',
+    da: 'Når 2D-banen zoomes helt ud, vender visningen nu tilbage til den centrerede tilpasningsvisning',
+    de: 'Vollständiges Herauszoomen des 2D-Felds kehrt nun zur zentrierten Einpassansicht zurück',
+    el: 'Η πλήρης σμίκρυνση του 2D γηπέδου επιστρέφει τώρα στην κεντραρισμένη προσαρμοσμένη όψη',
+    fil: 'Ang pag-zoom out nang buo sa 2D field ay babalik na ngayon sa nakacenter na fit view',
+    hi: '2D फ़ील्ड को पूरी तरह ज़ूम आउट करने पर दृश्य अब केंद्रित फ़िट व्यू पर वापस आ जाता है',
+    hr: 'Potpuno udaljavanje 2D polja sada vraća na centrirani prilagođeni prikaz',
+    hu: 'A 2D pálya teljes kicsinyítésekor a nézet most visszatér a középre igazított illesztett nézethez',
+    hy: '2D դաշտը լրիվ փոքրացնելիս տեսքն այժմ վերադառնում է կենտրոնացված ամբողջական տեսքի',
+    id: 'Memperkecil bidang 2D sepenuhnya kini kembali ke tampilan muat yang terpusat',
+    it: 'Riducendo al massimo lo zoom del campo 2D si torna ora alla vista adattata centrata',
+    mk: 'Целосното оддалечување на 2D теренот сега се враќа на центрираниот прилагоден приказ',
+    mr: '2D फील्ड पूर्णपणे झूम आउट केल्यावर दृश्य आता मध्यस्थित फिट व्यूवर परत येते',
+    ms: 'Mengezum keluar medan 2D sepenuhnya kini kembali ke paparan muat yang berpusat',
+    nb: 'Når 2D-banen zoomes helt ut, går visningen nå tilbake til den sentrerte tilpassede visningen',
+    nn: 'Når 2D-banen zoomast heilt ut, går visinga no tilbake til den sentrerte tilpassa visinga',
+    ro: 'Micșorarea completă a terenului 2D revine acum la vizualizarea potrivită centrată',
+    rw: 'Kugabanya ikibuga cya 2D burundu ubu bisubiza ku mbonerahamwe yuzuye iri hagati',
+    sq: 'Zvogëlimi i plotë i fushës 2D tani kthehet në pamjen e përshtatur të qendërzuar',
+    sr: 'Потпуно удаљавање 2D поља сада враћа на центрирани прилагођени приказ',
+    sv: 'När 2D-planen zoomas ut helt återgår vyn nu till den centrerade anpassade vyn',
+    ta: '2D வயலை முழுவதுமாக ஜூம் அவுட் செய்யும்போது காட்சி இப்போது மையப்படுத்தப்பட்ட பொருத்த காட்சிக்குத் திரும்பும்',
+    uk: 'Повне зменшення 2D поля тепер повертає до центрованого вписаного вигляду',
+    vi: 'Thu nhỏ sân 2D hết mức giờ sẽ quay về khung nhìn vừa vặn đã căn giữa',
+  } },
   { version: '0.1.9-beta.4', date: '2026.10.11', note: {
     en: 'The sequence editor now rehearses a dragged route live — the field and collision warnings follow the block before you drop it',
     zh: '编排器现在会实时预演拖拽中的路径块——场地与碰撞警告在放下前就跟随它移动',

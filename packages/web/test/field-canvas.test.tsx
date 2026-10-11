@@ -296,4 +296,33 @@ describe('zoom range limits', () => {
     // the full fit scale (40 px/m → 400 px), not half of it (R11).
     expect(strokeRect.mock.lastCall![2]).toBeCloseTo(400, 0);
   });
+
+  it('zooming all the way out RE-CENTRES on the fit view — no Fit press needed', () => {
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240);
+    paint();
+    expect(strokeRect).toHaveBeenLastCalledWith(20, 20, 400, 200);
+    const canvas = container.querySelector('canvas')!;
+    const wheelAt = (deltaY: number, x: number, y: number) => {
+      const wheel = new WheelEvent('wheel', { deltaY });
+      Object.defineProperty(wheel, 'offsetX', { value: x });
+      Object.defineProperty(wheel, 'offsetY', { value: y });
+      fireEvent(canvas, wheel);
+    };
+
+    // Zoom IN with the cursor off-centre: cursor anchoring keeps the world
+    // point under (300, 120) fixed, so the view centre slides off the field
+    // (the reported bug: this shift survived zooming back out).
+    for (let i = 0; i < 5; i++) wheelAt(-120, 300, 120);
+    paint();
+    const zoomed = strokeRect.mock.lastCall!;
+    expect(zoomed[2]).toBeGreaterThan(400); // zoomed in…
+    expect(zoomed[0]).not.toBeCloseTo(20, 6); // …and pushed off-centre
+
+    // Zoom all the way back out: hitting the floor must BE the fit view —
+    // exactly what Fit / `0` produces, margins gone, no reset press needed.
+    for (let i = 0; i < 60; i++) wheelAt(120, 300, 120);
+    paint();
+    expect(strokeRect).toHaveBeenLastCalledWith(20, 20, 400, 200);
+  });
 });
