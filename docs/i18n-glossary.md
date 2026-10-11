@@ -92,7 +92,7 @@
 
 注册表在 `packages/web/src/i18n/index.tsx` 的 `LANG_META`：每语言一行 `{ englishName（排序键，纯 ASCII）, endonym（显示名）, mark（选择器行右的短文字标识：简/繁/EN/あ/한…，不用旗帜） }`。
 显示用自称，**排序用英文键**，「跟随系统」钉顶不参与排序；不用 `Intl.Collator`（V8 与 WebKit 对 CJK 的排序表版本不一致，会让开发服务器与桌面壳排出不同顺序）。
-新增语言 = 加一行 `LANG_META` + 一份 `Record<MessageKey, string>` 字典（同区域变体走第 6 节的覆盖表，不复制整份）+ `langFromTags()` 一条分支 + 桌面 `lib.rs` 一张菜单表（`i18n.test.ts` 会逐个断言，漏菜单表就红）。
+新增语言 = 加一行 `LANG_META` + 一份 `Record<MessageKey, string>` 字典（同区域变体走第 6 节的覆盖表，不复制整份）+ `langFromTags()` 一条分支。桌面原生菜单自 2026-10-06 起改为 spec-driven：标签随 web 字典经 `set_menu` 下推，Rust 侧无按语言菜单表（`i18n.test.ts` 钉住这一方向）。
 当前有 43 个界面语言码，连同「跟随系统」共 44 个选项；精确顺序以 `LANGUAGES` 注册表与 `i18n.test.ts` 的排序断言为准。早期十五个选项的列表是历史快照，不作当前范围。
 
 

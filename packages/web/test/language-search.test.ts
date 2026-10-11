@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { LANGUAGES, SYSTEM_LABELS, type Lang } from '../src/i18n';
 import { LANGUAGE_NAMES } from '../src/i18n/language-names';
 import { foldLanguageName, searchLanguages } from '../src/i18n/language-search';
+import { zh } from '../src/i18n/zh';
+import { zhHk } from '../src/i18n/zh-hk';
+import { zhMo } from '../src/i18n/zh-mo';
+import { zhTw } from '../src/i18n/zh-tw';
+import { enGb } from '../src/i18n/en-gb';
 
 /**
  * The language-search contract (LanguagePicker + language-search.ts): a query
@@ -43,6 +48,19 @@ describe('language search', () => {
     expect(searchLanguages('system')).toContain('system');
     expect(searchLanguages('跟随系统')).toContain('system');
     expect(searchLanguages('跟隨系統')).toContain('system');
+  });
+
+  it('the system row matches the label each override-table dictionary inherits', () => {
+    // SYSTEM_LABELS is built from DICTS at module load (i18n/index.tsx), and
+    // the override tables inherit their carrier's label verbatim — zh-hk and
+    // zh-mo read zh-tw's 跟隨系統 (the Macau table is empty on purpose),
+    // en-GB reads en's "Follow system". Set-deduped or not, each dictionary's
+    // own label must still reach the pinned mode row. Looping the
+    // dictionaries rather than SYSTEM_LABELS pins the DICTS → aliases wiring
+    // itself.
+    for (const dict of [zh, zhTw, zhHk, zhMo, enGb]) {
+      expect(searchLanguages(dict['prefs.langSystem' as keyof typeof dict])).toContain('system');
+    }
   });
 
   it('blank queries are not searches: the full picker list comes back', () => {
@@ -98,6 +116,13 @@ describe('language search', () => {
     expect(searchLanguages('Russian')).toEqual([]);
     expect(searchLanguages('русский')).toEqual([]);
     expect(searchLanguages('רוסית')).toEqual([]);
+    // The regional rows keep the same promise: Russian names for Hong Kong /
+    // Macau / Taiwan / UK English surface nothing, even though the shipped
+    // Cyrillic-script languages (bg/mk/sr/uk) name the same targets.
+    expect(searchLanguages('китайский (Гонконг [САР])')).toEqual([]);
+    expect(searchLanguages('китайский (Макао [САР])')).toEqual([]);
+    expect(searchLanguages('китайский (Тайвань)')).toEqual([]);
+    expect(searchLanguages('британский английский')).toEqual([]);
   });
 
   it('the withdrawn region-neutral Traditional row stays unreachable', () => {
