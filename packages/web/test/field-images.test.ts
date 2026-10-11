@@ -212,7 +212,7 @@ describe('fieldImageFor (variant- and style-aware artwork registry)', () => {
       'reefscape-2025': [3510, 1610],
       'chargedup-2023/rendered': [3608, 1462],
       'crescendo-2024/rendered': [3840, 1554],
-      'rebuilt-2026/rendered': [3902, 1584],
+      'rebuilt-2026/rendered': [7804, 3168],
     };
     const files: Record<string, string> = {
       'rapidreact-2022': 'rapidreact2022.png',
