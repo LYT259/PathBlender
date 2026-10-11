@@ -9,7 +9,8 @@
  *
  * COVERAGE (pointer + real file system): welcome state → two .ghostauto
  * imports → collision jump → folder import and its route library in the
- * composer → playback rates → all 40 languages + RTL round trips → theme
+ * composer → playback rates → the full language-picker count + language/RTL
+ * round trips → theme
  * staging → out-of-bounds panel → season + construction persistence across a
  * reload → artwork repaint proofs → custom field → read-only inspector →
  * robot removal through the context menu → PathPlanner batch → session
@@ -359,10 +360,9 @@ const optionCount = await pickerOptions.count();
 // three-letter fil.ts); helper modules (language-names.ts,
 // language-search.ts) never match the shape, so a new dictionary file still
 // grows the count alone.
-// One shaped file is not a selectable row: zh-tw.ts ships as the base the
-// zh-hk override table spreads over, without a picker entry since the
-// 2026-10-07 withdrawal (fifth batch pending).
-const NOT_SELECTABLE = 1;
+// Every shaped file is a selectable row since the 2026-10-11 region versions
+// (zh-tw reinstated as the Taiwan picker row; zh-hk/zh-mo/en-GB added).
+const NOT_SELECTABLE = 0;
 const shaped = readdir(resolve(process.cwd(), 'packages/web/src/i18n'))
   .filter((f) => /^[a-z]{2,3}(-[a-z]+)*\.ts$/.test(f));
 const dictionaries = shaped.length - NOT_SELECTABLE;

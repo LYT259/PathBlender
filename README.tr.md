@@ -1,6 +1,6 @@
 # PathBlender
 
-[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文（中國香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | **Türkçe** | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
+[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文（香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | **Türkçe** | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
 **FRC ittifak stratejisi için çok kaynaklı otonom yol füzyon görüntüleyicisi.**
 
@@ -58,7 +58,7 @@ Sahalar: FRC 2022–2026 yerleşik; ayrıca kalibrasyonlu özel saha içe aktarm
 
 Yol dosyaları **tamamen sizin makinenizde** çözümlenir. Arka uç yok, hesap yok, telemetri yok, analitik yok. Web yapımı hiçbir ağ çağrısı yapmaz; masaüstü uygulaması yalnızca sizin tetiklediğiniz güncelleme denetimi için ağa bağlanır (GitHub Releases) — yol dosyaları uygulamadan asla çıkmaz.
 
-Ayrıca: oturum düzeyinde kırmızı/mavi ittifak görünümü, robot başına takım numarası etiketleri, resmî AprilTag üst katmanlarıyla yukarıdaki sezon sahaları ve **40 dilde** arayüz — tam liste dil menüsünde — açık ve koyu temalarla (sistemi izler).
+Ayrıca: oturum düzeyinde kırmızı/mavi ittifak görünümü, robot başına takım numarası etiketleri, resmî AprilTag üst katmanlarıyla yukarıdaki sezon sahaları ve **43 dilde** arayüz — tam liste dil menüsünde — açık ve koyu temalarla (sistemi izler).
 
 Araçlara göre tam kılavuz ve SSS (İngilizce ve Çince):
 [English](docs/user-guide.en.md) ·

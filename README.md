@@ -1,6 +1,6 @@
 # PathBlender
 
-**English** | [简体中文](README.zh-CN.md) | [繁體中文（中國香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
+**English** | [简体中文](README.zh-CN.md) | [繁體中文（香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
 **Multi-source autonomous path fusion viewer for FRC alliance strategy.**
 
@@ -119,8 +119,9 @@ check you trigger (GitHub Releases) — path files never leave the app.
 
 Also included: a session-level red/blue alliance view, per-robot team
 number annotations, the season fields above with official AprilTag
-overlays, and a **40-language** UI — English / 简体中文 /
-繁體中文（中國香港） / Français / Español / Deutsch / Italiano / Português
+overlays, and a **43-language** UI — English (United States) /
+English (United Kingdom) / 简体中文 / 繁體中文（香港）/ 繁體中文（澳門）/
+繁體中文（台灣）/ Français / Español / Deutsch / Italiano / Português
 (Brasil) / Nederlands / Polski / Čeština / Türkçe / Ελληνικά / עברית /
 العربية / हिन्दी / 日本語 / 한국어, with the full list in the language menu —
 in light and dark themes (follows the system).
@@ -150,7 +151,7 @@ Four checks, all run locally — none of them ships with the app:
 | Layer | Command | What it proves |
 | --- | --- | --- |
 | Unit + jsdom suites | `npm test` (or `-w @pathblender/core` / `-w @pathblender/web`) | Parsers, geometry, fusion and collision maths, and component behaviour in a simulated DOM. |
-| Pointer walkthrough | `npm run build -w @pathblender/web && npm run preview -w @pathblender/web`, then `node scripts/browser-walkthrough.mjs` | The production build driven with a real mouse and real files: folder import, the composer's click-and-drag placement, save/restore through an actual download, all 40 languages including RTL, artwork repaints, service worker, and 3D (model, lit robots, ViewCube picks, season switches). |
+| Pointer walkthrough | `npm run build -w @pathblender/web && npm run preview -w @pathblender/web`, then `node scripts/browser-walkthrough.mjs` | The production build driven with a real mouse and real files: folder import, the composer's click-and-drag placement, save/restore through an actual download, all 43 languages including RTL, artwork repaints, service worker, and 3D (model, lit robots, ViewCube picks, season switches). |
 | Keyboard walkthrough | same preview server, then `node scripts/keyboard-walkthrough.mjs` | The same app driven with the keyboard only — every main workflow has to be completable without a mouse. |
 | Website gate check | `VITE_VIEWER_ONLY=1 npm run build -w @pathblender/web`, then `node scripts/serve-dist.mjs 4179` and `VIEWER_BASE=http://localhost:4179/ node scripts/viewer-check.mjs` | The hosted viewer build keeps import, playback, collision checking and timeline arranging, asks nothing outside its own origin on load, follows the OS language on first visit — and cannot write a file out through any route, including the Ctrl/Cmd+S accelerators that have no button at all. Re-run it whenever a save or export affordance moves. |
 

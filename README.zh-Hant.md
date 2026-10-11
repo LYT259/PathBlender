@@ -1,6 +1,6 @@
 # PathBlender
 
-[English](README.md) | [简体中文](README.zh-CN.md) | **繁體中文（中國香港）** | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
+[English](README.md) | [简体中文](README.zh-CN.md) | **繁體中文（香港）** | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
 **面向 FRC 聯盟策略協作的多源自動路徑融合檢視器。**
 
@@ -60,7 +60,7 @@ PathBlender 補上這個空缺：
 
 路徑檔案**完全在你的裝置上解析**。零後端、零帳號、零遙測、零分析。網頁建構不發出任何網路請求；桌面版只有你主動點「檢查更新」時才連網（存取 GitHub Releases）——路徑檔案絕不離開應用程式。
 
-另含：工作階段級紅藍聯盟視角、機器人隊號標註、上述賽季場地與官方 AprilTag 疊加、40 種介面語言——English / 简体中文 / 繁體中文（中國香港）/ Français / Español / Deutsch / Italiano / Português (Brasil) / Nederlands / Polski / Čeština / Türkçe / Ελληνικά / עברית / العربية / हिन्दी / 日本語 / 한국어，完整清單見介面語言選單——深淺色主題跟隨系統。
+另含：工作階段級紅藍聯盟視角、機器人隊號標註、上述賽季場地與官方 AprilTag 疊加、43 種介面語言——English (United States) / English (United Kingdom) / 简体中文 / 繁體中文（香港）/ 繁體中文（澳門）/ 繁體中文（台灣）/ Français / Español / Deutsch / Italiano / Português (Brasil) / Nederlands / Polski / Čeština / Türkçe / Ελληνικά / עברית / العربية / हिन्दी / 日本語 / 한국어，完整清單見介面語言選單——深淺色主題跟隨系統。
 
 完整操作指南與 FAQ：[English](docs/user-guide.en.md) · [简体中文](docs/user-guide.zh.md)。
 

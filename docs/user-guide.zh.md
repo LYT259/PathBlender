@@ -103,7 +103,7 @@
 
 - **会话文件与导出**（桌面版）：保存/打开 `.pb` 会话（更名前的 `.ghpb.json` 旧会话仍可打开），把准确的场地交给下一场策略会；导出当前 2D 视图的 GIF 回放，或把路径、会话与回放打包成方案包发联盟群。桌面版一切功能都在 PathBlender 菜单里；
 - **键盘快捷键**：任意位置按 `?`（帮助菜单 → 键盘快捷键）；
-- **外观与语言**：偏好设置里深色/浅色/跟随系统（桌面 ⌘,）；界面支持 40 种语言——English、简体中文、繁體中文（中國香港）、Français、Español、Deutsch、Italiano、Português (Brasil)、Nederlands、Polski、Čeština、Türkçe、Ελληνικά、עברית、العربية、हिन्दी、日本語、한국어 等，完整清单见语言菜单；未手动选择时跟随系统语言；
+- **外观与语言**：偏好设置里深色/浅色/跟随系统（桌面 ⌘,）；界面支持 43 种语言——English (United States)、English (United Kingdom)、简体中文、繁體中文（香港）、繁體中文（澳門）、繁體中文（台灣）、Français、Español、Deutsch、Italiano、Português (Brasil)、Nederlands、Polski、Čeština、Türkçe、Ελληνικά、עברית、العربية、हिन्दी、日本語、한국어 等，完整清单见语言菜单（每行右侧带 简/繁/EN/あ/한 等短文字标识，不用旗帜）；未手动选择时跟随系统语言；
 - **更新**（桌面版）：菜单 **PathBlender → 检查更新…**；偏好设置 → 更新 可切换 stable / beta 通道。Linux 上应用内更新走 AppImage；DEB/RPM 安装的用户下载新包覆盖安装即可更新。
 
 ## 网页版与桌面版

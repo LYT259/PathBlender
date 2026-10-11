@@ -55,9 +55,17 @@ describe('noteText fallback chain', () => {
     expect(noteText(note, 'zh-hk')).toBe('ZT');
   });
 
-  it('the generic Traditional row reads its own zh-hant entry', () => {
-    const note = { en: 'EN', zh: 'ZH', 'zh-tw': 'ZT', 'zh-hant': 'ZHANT' };
-    expect(noteText(note, 'zh-hant')).toBe('ZHANT');
+  it('Macau reads the Taiwan wording too', () => {
+    // zh-mo layers on zh-hk, which layers on zh-tw; the note registry only
+    // carries the Taiwan Traditional text, so both region rows read it.
+    const note = { en: 'EN', zh: 'ZH', 'zh-tw': 'ZT' };
+    expect(noteText(note, 'zh-mo')).toBe('ZT');
+  });
+
+  it('UK English reads the English note', () => {
+    // NOTE_LANGS has no en-GB row — the US note is the English note.
+    const note = { en: 'EN', zh: 'ZH', 'zh-tw': 'ZT' };
+    expect(noteText(note, 'en-GB')).toBe('EN');
   });
 
   it('a missing language falls back to Simplified Chinese, then English', () => {
