@@ -1,4 +1,38 @@
-# MK5i module CAD → glTF pipeline (private; not shipped)
+# CAD/asset pipeline scripts (private; not shipped)
+
+## 2026 field artwork top-down render (2026-10-11)
+
+`render-field-topdown.mjs` renders `assets/fields/rebuilt2026-rendered.png`
+(7804×3168, exactly 2× the previous sheet) top-down from the bundled
+AdvantageScope Field3d GLB (`packages/web/public/fields3d/2026-rebuilt/
+model.glb`, BSD-3 — untextured solid-colour meshes from the official
+Onshape CAD). It replaced the community Fusion render, which had the two
+hubs' alliance colours mirrored.
+
+- Lighting mirrors FieldCanvas3D (HemisphereLight 0.6π + DirectionalLight
+  1.1π at (9,16,8), NoToneMapping, DoubleSide, roughness ≥ 0.55,
+  metalness ≤ 0.05); orthographic top-down camera covers exactly the world
+  rectangle of the previous calibration, then the frame is flipped
+  horizontally so right = world +x, top = world +y.
+- Validation first (repo rule: load-bearing geometry is checked against
+  official data): a throwaway frame adds 32 magenta discs at the welded
+  2026 AprilTag positions parsed out of `packages/core/src/field.ts`; their
+  pixel centroids must land within 2 px of the `imageRendered` calibration
+  prediction before anything is written. 2026-10-11 run: median 0.70 px,
+  max 0.92 px.
+
+```sh
+node scripts/cad/render-field-topdown.mjs          # validate → render → write the PNG
+node scripts/cad/render-field-topdown.mjs --check  # validate only, write nothing
+```
+
+Requires system Chrome (playwright-core, `channel: 'chrome'`); serves the
+repo root on a localhost port so the page can import three and fetch the
+GLB. If the GLB or the calibration ever changes, re-run and keep
+`imageRendered` for 'rebuilt-2026' in `packages/core/src/field.ts` in sync
+(the script header documents the contract).
+
+## MK5i module CAD → glTF pipeline
 
 Builds `packages/web/public/models/mk5i-module.glb` — the 3D swerve
 module instanced 4× per robot. User decision 2026-10-02: the modules
@@ -7,7 +41,7 @@ in. Same-day follow-up decision: use the **FRC Designs Onshape
 re-creation** (it models the two Kraken X60 motors, which the official
 SDS export does not — SDS never ships motors).
 
-## Provenance
+### Provenance
 
 - **Shipped geometry** — "MK5i DesignApp.step" (FRC Designs Onshape
   module, exported 2026-10-02):
@@ -40,7 +74,7 @@ SDS export does not — SDS never ships motors).
 - Parasolid has no open-source reader, so both STEP hops went through
   Onshape; everything after STEP is automated below.
 
-## Rebuild (deterministic)
+### Rebuild (deterministic)
 
 ```sh
 blender --background --python scripts/cad/mk5i-convert.py -- \
@@ -51,7 +85,7 @@ Calibration is measured from the mesh (steering axis = turret bbox
 center, floor = wheel bottom, rolling dir = wheel axle ⊥), baked into
 vertices — no operator semantics, byte-reproducible runs.
 
-## Acceptance (checked 2026-10-03 build)
+### Acceptance (checked 2026-10-03 build)
 
 - bbox after normalize: `[-0.1084, -0.0917, 0] .. [0.1082, 0.0926, 0.1564]`
   — floor exactly z=0, steering axis straddles the origin, height
@@ -66,7 +100,7 @@ vertices — no operator semantics, byte-reproducible runs.
   (rolling is the long plan axis) and falls back to the procedural
   module if either ever fails.
 
-## Runtime contract (mirrored in web/src/chassis3d.ts)
+### Runtime contract (mirrored in web/src/chassis3d.ts)
 
 - meters, +Y up, single scene root;
 - origin = steering axis ∩ floor; +X = the wheel's rolling direction
@@ -74,7 +108,7 @@ vertices — no operator semantics, byte-reproducible runs.
 - small enough to clone 4× per robot with shared GPU buffers
   (a few meshes / tens of thousands of triangles).
 
-## Box/turret split + chassis measurements (2026-10-03)
+### Box/turret split + chassis measurements (2026-10-03)
 
 The shipped GLB is now two nodes — `mk5i-box` (static: top plate, both
 Kraken motors, L plate) and `mk5i-turret` (steers: fork + wheel) — so
@@ -110,7 +144,7 @@ bolted to the rail.
   (20× 2-1/2 in long bolts — 5 per corner in an L pattern — plus 24
   short bolts and 20 nuts); positions match the STEP within 0.33 mm.
 
-## Mount height — plate-bottom face (CORRECTED 2026-10-04)
+### Mount height — plate-bottom face (CORRECTED 2026-10-04)
 
 The frame/module stack-up in `chassis3d.ts` (`MODULE_MOUNT_Y_M`) needs
 the module mounting-plate BOTTOM face height above the wheel floor,
@@ -138,7 +172,7 @@ measured on the shipped module GLB.
   the shipped GLB is the authority, and the plate↔rail contact makes
   the render self-consistent by construction.
 
-## Box radial offset experiment — wheel biased to the corner (REVERTED 2026-10-04)
+### Box radial offset experiment — wheel biased to the corner (REVERTED 2026-10-04)
 
 The DesignApp replica centers the wheel column in the module
 footprint, but on the real MK5i the wheel is biased to the corner of
@@ -181,7 +215,7 @@ mounting bolts.
   Geometry guarded by `packages/web/test/mk5i-module-glb.test.ts`,
   including an explicit lz = +0.0763 corner-bolt coverage assertion.
 
-## Top-view sprite for the 2D canvas (2026-10-03)
+### Top-view sprite for the 2D canvas (2026-10-03)
 
 `assets/robots/mk5i-module-top.png` — the 2D canvas's module artwork
 (`FieldCanvas.tsx` draws it parked at each corner's installed yaw; the
