@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { createElement } from 'react';
 import { readFileSync } from 'node:fs';
@@ -432,6 +432,26 @@ describe('system language detection', () => {
     expect(langFromTags([])).toBe('en');
   });
 
+  it('matches region tags case-insensitively, extension subtags included', () => {
+    // Every region branch carries /i — casing must never be load-bearing
+    // (lowercase tags do arrive, e.g. from POSIX-style locale ids).
+    expect(langFromTags(['zh-hant'])).toBe('zh-tw');
+    expect(langFromTags(['zh-hk'])).toBe('zh-hk');
+    expect(langFromTags(['zh-mo'])).toBe('zh-mo');
+    expect(langFromTags(['zh-tw'])).toBe('zh-tw');
+    expect(langFromTags(['ZH-Hant-MO'])).toBe('zh-mo');
+    expect(langFromTags(['en-gb'])).toBe('en-GB');
+    // Variant and private-use subtags qualify the tag, not the region: an
+    // extended Hong Kong tag still reads the Hong Kong dictionary.
+    expect(langFromTags(['zh-Hant-HK-x-private'])).toBe('zh-hk');
+    expect(langFromTags(['zh-Hant-MO-x-private'])).toBe('zh-mo');
+    // en-GB-oed (Oxford-spelling variant) is British English all the same.
+    expect(langFromTags(['en-GB-oed'])).toBe('en-GB');
+    // A Traditional reader in an unlisted region follows the script, like
+    // bare zh-Hant: zh-Hant-CN lands on zh-tw, never on 简体.
+    expect(langFromTags(['zh-Hant-CN'])).toBe('zh-tw');
+  });
+
   it('honours the browser preference order instead of scanning for a favourite', () => {
     // Regression: 'en' had no branch at all, so ['en-US', 'zh-CN'] — a Chrome
     // list that means "English, then Chinese" — opened in Chinese.
@@ -474,6 +494,53 @@ describe('RTL (Arabic and Hebrew)', () => {
     expect(document.documentElement.getAttribute('lang')).toBe('zh-tw');
     expect(localStorage.getItem('pb.lang')).toBe('zh-tw');
     localStorage.clear();
+  });
+});
+
+describe('stored choice (savedChoice)', () => {
+  afterEach(() => {
+    localStorage.clear();
+    // Drop the own-property mock so the Navigator prototype getter shows again.
+    delete (navigator as { languages?: readonly string[] }).languages;
+  });
+
+  const renderWithChoice = () => render(createElement(I18nProvider, null, createElement('div')));
+  const langAttr = () => document.documentElement.getAttribute('lang');
+  const mockSystemLang = (tags: string[]) =>
+    Object.defineProperty(navigator, 'languages', { configurable: true, get: () => tags });
+
+  it('keeps a valid stored code, the region rows included', () => {
+    // The region codes are ordinary Lang values in storage — a user who picked
+    // 繁體中文（香港） or UK English must relaunch into exactly that row.
+    for (const code of ['zh-hk', 'zh-mo', 'zh-tw', 'en-GB']) {
+      localStorage.setItem('pb.lang', code);
+      renderWithChoice();
+      expect(langAttr(), code).toBe(code);
+      localStorage.clear();
+    }
+  });
+
+  it('follows the OS again when nothing is stored', () => {
+    mockSystemLang(['fr']);
+    renderWithChoice();
+    expect(langAttr()).toBe('fr');
+  });
+
+  it('treats an unreadable stored value as no choice at all', () => {
+    // Junk can only arrive from a hand-edited or version-skewed store; the
+    // contract is a read-time fallback to 'system'. 'toString' and
+    // 'constructor' are the sharp cases: inherited Object.prototype keys must
+    // not masquerade as language codes (the `includes` comment on
+    // savedChoice) — and the empty string is not a code either.
+    mockSystemLang(['fr']);
+    for (const junk of ['klingon', '', 'toString', 'constructor']) {
+      localStorage.setItem('pb.lang', junk);
+      renderWithChoice();
+      // 'fr' can only come from systemLang() — a junk value kept as the
+      // language would paint itself into the attribute instead.
+      expect(langAttr(), JSON.stringify(junk)).toBe('fr');
+      localStorage.clear();
+    }
   });
 });
 
