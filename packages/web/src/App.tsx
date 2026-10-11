@@ -55,7 +55,7 @@ import { Timeline } from './components/Timeline';
 import { SequenceTimelineComposer } from './components/SequenceTimelineComposer';
 import { RobotList, RobotInspector } from './components/RobotList';
 import { applySequenceSegments, sequenceViewFor, type AutoSequenceSegment } from './auto-sequence-state';
-import { clipsFor, sameClipLayout } from './sequence-timeline-clips';
+import { clipsFor, sameClipLayout, segmentsFromClips, type TimelineClip } from './sequence-timeline-clips';
 import { applyUploadedProfile } from './robot-profile-ui';
 import { checkSequenceJoins } from '@pathblender/core';
 import { ConflictPanel } from './components/ConflictPanel';
@@ -163,6 +163,20 @@ function AppBody() {
   // while editing one team, hovering another team's placed leg previews that
   // team's route. Undefined = the robot being edited (library hover/keys).
   const [previewRobotId, setPreviewRobotId] = useState<string | undefined>(undefined);
+  // Live drag what-if (user 2026-10-11): the composer's in-lane drag
+  // candidate as (robotId, candidate arrangement). Render-only rehearsal —
+  // injected downstream of the committed store, so history, autosave and
+  // exports never see it; release commits through the normal onChange path.
+  const [dragPreview, setDragPreview] = useState<{ robotId: string; clips: TimelineClip[] } | null>(null);
+  // The composer already dedupes emissions; this guard keeps an identical
+  // re-report from re-rendering the field anyway.
+  const onComposerDragPreview = useCallback((robotId: string, clips: TimelineClip[] | null) => {
+    setDragPreview((prev) => {
+      if (clips === null) return prev === null ? prev : null;
+      if (prev && prev.robotId === robotId && sameClipLayout(prev.clips, clips)) return prev;
+      return { robotId, clips };
+    });
+  }, []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Bumped by Edit ▸ Rename Selected Team — RobotList opens the inline editor.
   const [renameSignal, setRenameSignal] = useState(0);
@@ -233,6 +247,18 @@ function AppBody() {
   // Keep source paths in their original blue-side frame. Both renderers,
   // analysis, inspectors and session exports consume the same alliance view.
   const robots = useMemo(() => robotsForAlliance(sourceRobots, alliance, field), [sourceRobots, alliance, field]);
+  // Live drag what-if injection (user 2026-10-11): the candidate replaces
+  // the dragged robot's arrangement DOWNSTREAM of the committed store on
+  // purpose — autosave, session save, exports, the timeline and the robot
+  // list all keep reading `robots`, while rendering and checks
+  // (seasonRobots → visible → conflicts/bounds/dimPathIds/canvases) follow
+  // `liveRobots`. Nothing persists mid-drag.
+  const liveRobots = useMemo(() => {
+    if (!dragPreview) return robots;
+    return robots.map((robot) => robot.trajectory.id === dragPreview.robotId
+      ? applySequenceSegments(robot, segmentsFromClips(dragPreview.clips))
+      : robot);
+  }, [robots, dragPreview]);
   const hasRobots = robots.length > 0;
   // Keyboard landing (2026-10-06 keyboard pass): the welcome button that
   // loaded the example is unmounted by the very action it triggered, which
@@ -262,8 +288,8 @@ function AppBody() {
   // robots are re-resolved against the selected field's season, so checks
   // and rendering follow the season switch; file-provided sizes always win.
   const seasonRobots = useMemo(
-    () => robots.map((r) => withSeasonGeometry(r, field.year)),
-    [robots, field],
+    () => liveRobots.map((r) => withSeasonGeometry(r, field.year)),
+    [liveRobots, field],
   );
   // 3D exists only where an official model does (2022+). Model-less seasons
   // (2018–2020) and custom fields offer no 3D at all — the hand-built
@@ -348,7 +374,7 @@ function AppBody() {
     }
     return dimmedPathRobotIds(visible, field.startZone);
   }, [previewSource, previewRobotId, sourceRobots, selectedId, visible, field]);
-  useEffect(() => { setPreviewRouteId(null); setPreviewRobotId(undefined); }, [composerOpen, selectedId]);
+  useEffect(() => { setPreviewRouteId(null); setPreviewRobotId(undefined); setDragPreview(null); }, [composerOpen, selectedId]);
   // One transport end for BOTH modes (user 2026-10-07): editing used to
   // force the full auto period; the playback-range choice now governs
   // inside the composer too, with a synced selector in its control bar.
@@ -1528,7 +1554,7 @@ function AppBody() {
         </main>
         {/* Playback spans the full workspace, below both side panels. */}
 {hasRobots && !composerOpen && <footer className="app-footer"><Timeline teamOrder={teamOrder} composeAction={<button ref={composeButtonRef} className="btn small" aria-keyshortcuts="e" onClick={() => { const id = (selectedRobot ?? robots[0])?.trajectory.id; if (id) openSequenceFor(id); }}>{tr('sequence.arrange')}</button>} robots={robots} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
-        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} startZone={field.startZone} startRegions={field.startRegions} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={(routeId, robotId) => { setPreviewRouteId(routeId); setPreviewRobotId(routeId ? robotId : undefined); }} joins={sequenceJoins} playback={playback} playbackEndS={playbackEndS} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} onJump={jumpToSeam} />}
+        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} startZone={field.startZone} startRegions={field.startRegions} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={(routeId, robotId) => { setPreviewRouteId(routeId); setPreviewRobotId(routeId ? robotId : undefined); }} onDragPreview={onComposerDragPreview} joins={sequenceJoins} playback={playback} playbackEndS={playbackEndS} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} onJump={jumpToSeam} />}
 
       {cfOpen && <CustomFieldPanel
         open
