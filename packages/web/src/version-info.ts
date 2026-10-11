@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.1';
+export const APP_VERSION = '0.1.9-beta.2';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.2', date: '2026.10.11', note: {
+    en: 'Fixed dropdown boxes opening when pointing or clicking beside the box instead of on it',
+    zh: '修复在下拉框旁边指向或点击也会将其打开的问题',
+    'zh-tw': '修復在下拉方塊旁邊指向或點擊也會將其開啟的問題',
+    cs: 'Opraveno: rozbalovací pole se otevírala i při najetí nebo kliknutí vedle pole místo na něj',
+    nl: 'Opgelost: dropdownvelden openden ook wanneer je ernaast wees of klikte in plaats van op het veld',
+    fr: 'Corrigé : les listes déroulantes s’ouvraient aussi en pointant ou en cliquant à côté du champ au lieu de dessus',
+    he: 'תוקן: תיבות נפתחות נפתחו גם בהצבעה או בלחיצה ליד התיבה במקום עליה',
+    ja: '修正：ボックスの上ではなく隣をポイントまたはクリックしてもドロップダウンが開く問題',
+    ko: '수정: 상자가 아닌 옆을 가리키거나 클릭해도 드롭다운 상자가 열리던 문제',
+    pl: 'Naprawiono: listy rozwijane otwierały się także przy wskazaniu lub kliknięciu obok pola zamiast na nie',
+    'pt-br': 'Corrigido: as caixas suspensas abriam ao apontar ou clicar ao lado da caixa em vez de nela',
+    es: 'Corregido: los cuadros desplegables se abrían al apuntar o hacer clic junto al cuadro en lugar de sobre él',
+    tr: 'Düzeltildi: açılır kutular, kutunun üzeri yerine yanına işaret edildiğinde veya tıklandığında da açılıyordu',
+    ar: 'إصلاح: المربعات المنسدلة كانت تُفتح عند الإشارة أو النقر بجانب المربع بدلاً من عليه',
+    az: 'Həll edildi: açılan qutular qutunun özünə yox, yanına işarə edən və ya klikləyən zaman da açılırdı',
+    bg: 'Коригирано: падащите полета се отваряха и при посочване или щракване до полето вместо върху него',
+    bs: 'Ispravljeno: padajuća polja su se otvarala i prilikom pokazivanja ili klika pored polja umjesto na njega',
+    da: 'Rettet: rullemenuer åbnede også, når man pegede eller klikkede ved siden af boksen i stedet for på den',
+    de: 'Behoben: Dropdown-Felder öffneten sich auch, wenn man daneben zeigte oder klickte statt auf das Feld',
+    el: 'Διορθώθηκε: τα αναπτυσσόμενα πλαίσια άνοιγαν και όταν δείχνατε ή κάνατε κλικ δίπλα στο πλαίσιο αντί πάνω του',
+    fil: 'Naayos: ang mga dropdown box ay bumubukas kahit itinuro o na-click ang tabi ng kahon sa halip na ang kahon mismo',
+    hi: 'ठीक किया: ड्रॉपडाउन बॉक्स पर करने के बजाए बगल में इशारा या क्लिक करने पर भी वे खुल जाते थे',
+    hr: 'Ispravljeno: padajuća polja su se otvarala i pri pokazivanju ili kliku pokraj polja umjesto na njega',
+    hu: 'Javítva: a legördülő mezők akkor is kinyíltak, ha a mező mellé mutattunk vagy kattintottunk a mező helyett',
+    hy: 'Շտկվել է. բացվող վանդակները բացվում էին նաև վանդակի կողքը ցույց տալիս կամ սեղմելիս, ոչ թե վանդակի վրա',
+    id: 'Diperbaiki: kotak dropdown ikut terbuka saat mengarahkan atau mengeklik di samping kotak, bukan pada kotaknya',
+    it: 'Corretto: i menu a discesa si aprivano anche puntando o facendo clic accanto alla casella invece che su di essa',
+    mk: 'Поправено: паѓачките полиња се отвораа и при покажување или кликнување до полето наместо врз него',
+    mr: 'दुरुस्त: ड्रॉपडाउन बॉक्सवर न करता बाजूला निर्देश केल्यावर किंवा क्लिक केल्यावरही ते उघडत होते',
+    ms: 'Diperbaiki: kotak lungsur turun turut terbuka apabila menuding atau mengklik di sebelah kotak dan bukan pada kotak',
+    nb: 'Fikset: rullegardinbokser åpnet seg også når man pekte eller klikket ved siden av boksen i stedet for på den',
+    nn: 'Fiksa: nedtrekksboksar opna seg også når ein peikte eller klikka ved sida av boksen i staden for på han',
+    ro: 'Remediat: casetele derulante se deschideau și la indicarea sau clicul de lângă casetă în loc de pe ea',
+    rw: 'Byakosowe: agasanduku k’amahitamo gafunguraga iyo ukanda iruhande yako ariko si ku gasanduku ubwako',
+    sq: 'Rregulluar: kutitë zgjedhëse hapeshin edhe duke treguar ose klikuar pranë kutisë në vend se mbi të',
+    sr: 'Исправљено: падајућа поља су се отварала и при показивању или клику поред поља уместо на њега',
+    sv: 'Fixat: listrutor öppnades även när man pekade eller klickade bredvid rutan istället för på den',
+    ta: 'சரிசெய்யப்பட்டது: பெட்டியின் மீது அல்லாமல் அதன் அருகில் சுட்டியதும் கிளிக் செய்ததும் கீழ்த்தோன்றல் பெட்டிகள் திறந்தன',
+    uk: 'Виправлено: спадні поля відкривалися також при наведенні або кліку поруч із полем, а не на ньому',
+    vi: 'Đã sửa: hộp thả xuống cũng mở khi trỏ hoặc nhấp bên cạnh hộp thay vì trên hộp',
+  } },
   { version: '0.1.9-beta.1', date: '2026.10.11', note: {
     en: 'Language picker update: English now comes as United States and United Kingdom, Traditional Chinese as Hong Kong, Macau and Taiwan (a saved generic Traditional choice moves to Taiwan), and every row carries a short text mark on the right',
     zh: '语言选择器更新：英语分为美国与英国，繁体中文分为香港、澳门与台湾（已存的通用繁体选择会迁移到台湾），每行右侧带一个短文字标识',
