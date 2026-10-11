@@ -1,6 +1,6 @@
 # PathBlender
 
-[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文（中國香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | **Português (Brasil)** | [עברית](README.he.md)
+[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文（香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | **Português (Brasil)** | [עברית](README.he.md)
 
 **Visualizador de fusão multi-fonte de trajetórias autônomas para a estratégia de alianças da FRC.**
 
@@ -58,7 +58,7 @@ Campos: FRC 2022–2026 embutidos, além da importação de campos personalizado
 
 Os arquivos de trajetórias são analisados **inteiramente na sua máquina**. Não há backend, contas, telemetria nem analytics. A build web não faz nenhuma chamada de rede; o aplicativo de desktop contata a rede apenas na verificação de atualizações que você disparar (GitHub Releases) — arquivos de trajetórias nunca saem do aplicativo.
 
-Também inclui: visão de aliança vermelha/azul por sessão, anotações de número de equipe por robô, os campos de temporada acima com AprilTags oficiais sobrepostos e uma interface em **40 idiomas** — lista completa no menu de idioma — nos temas claro e escuro (segue o sistema).
+Também inclui: visão de aliança vermelha/azul por sessão, anotações de número de equipe por robô, os campos de temporada acima com AprilTags oficiais sobrepostos e uma interface em **43 idiomas** — lista completa no menu de idioma — nos temas claro e escuro (segue o sistema).
 
 Guia completo por ferramenta e FAQ (em inglês e chinês):
 [English](docs/user-guide.en.md) ·

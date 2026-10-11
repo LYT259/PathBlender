@@ -3,6 +3,7 @@ import { type Lang } from '../src/i18n';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { en, type MessageKey } from '../src/i18n/en';
+import { enGb } from '../src/i18n/en-gb';
 import { ar } from '../src/i18n/ar';
 import { az } from '../src/i18n/az';
 import { bg } from '../src/i18n/bg';
@@ -41,8 +42,8 @@ import { tr } from '../src/i18n/tr';
 import { uk } from '../src/i18n/uk';
 import { vi } from '../src/i18n/vi';
 import { zh } from '../src/i18n/zh';
-import { zhHant } from '../src/i18n/zh-hant';
 import { zhHk } from '../src/i18n/zh-hk';
+import { zhMo } from '../src/i18n/zh-mo';
 import { zhTw } from '../src/i18n/zh-tw';
 
 /**
@@ -55,9 +56,9 @@ import { zhTw } from '../src/i18n/zh-tw';
  * they are the reason the fixes cannot quietly rot back.
  */
 const DICTS: Record<string, Record<string, string>> = {
-  en, ar, az, bg, bs, cs, da, de, el, es, fil, fr, he, hi, hr, hu, hy, id, it: itDict,
+  en, 'en-GB': enGb, ar, az, bg, bs, cs, da, de, el, es, fil, fr, he, hi, hr, hu, hy, id, it: itDict,
   ja, ko, mk, mr, ms, nb, nl, nn, pl, 'pt-BR': ptBR, ro, rw, sq, sr, sv, ta,
-  tr, uk, vi, zh, 'zh-hant': zhHant, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  tr, uk, vi, zh, 'zh-hk': zhHk, 'zh-mo': zhMo, 'zh-tw': zhTw,
 };
 const CODES = Object.keys(DICTS) as (keyof typeof DICTS)[];
 const KEYS = Object.keys(en);
@@ -123,7 +124,7 @@ describe('pre-formatted measurements are not given a second unit', () => {
  */
 const COMMA = ['az', 'bg', 'bs', 'cs', 'da', 'de', 'el', 'es', 'fr', 'hr', 'hu', 'id', 'it', 'mk',
   'nb', 'nl', 'nn', 'pl', 'pt-BR', 'ro', 'rw', 'sq', 'sr', 'sv', 'tr', 'uk', 'vi', 'hy'];
-const POINT = ['fil', 'hi', 'ja', 'ko', 'mr', 'ms', 'ta', 'zh', 'zh-hant', 'zh-hk', 'zh-tw'];
+const POINT = ['fil', 'hi', 'ja', 'ko', 'mr', 'ms', 'ta', 'zh', 'zh-hk', 'zh-mo', 'zh-tw', 'en-GB'];
 const DECIMAL_KEYS = ['timeline.stepBack', 'timeline.stepForward'];
 
 describe('hard-coded decimals match the locale separator', () => {
@@ -264,7 +265,8 @@ const PATH_STEMS: Record<Lang, string[]> = {
   nb: ['rut'], nn: ['rut'], nl: ['route'], pl: ['tras'], 'pt-BR': ['trajet', 'rota'],
   ro: ['rut'], rw: ['inzira'], sq: ['rrug'], sr: ['rut'], sv: ['rut'],
   ta: ['பாதை', 'வழித்தட'], tr: ['yol', 'rota'], uk: ['маршрут'], vi: ['đường đi', 'tuyến'],
-  zh: ['路径', '路线'], 'zh-hant': ['路徑', '路線'], 'zh-hk': ['路徑', '路線'], 'zh-tw': ['路徑', '路線'],
+  zh: ['路径', '路线'], 'zh-hk': ['路徑', '路線'], 'zh-mo': ['路徑', '路線'], 'zh-tw': ['路徑', '路線'],
+  'en-GB': ['path', 'route'],
 };
 
 const pathFamily = KEYS.filter(
@@ -323,8 +325,8 @@ const TIMELINE_STEMS: Record<Lang, string[]> = {
   "ro": ["de timp"], "rw": ["murongo"], "sq": ["kohore"],
   "sr": ["vremensk"], "sv": ["tidslinje"], "ta": ["காலவரிசை"],
   "tr": ["aman çizelgesi"], "uk": ["шкал"], "vi": ["dòng thời gian"],
-  "zh": ["时间轴"], "zh-tw": ["時間軸"], "en": ["timeline"],
-  "pt-BR": ["linha do tempo"], "zh-hk": ["時間軸"], "zh-hant": ["時間軸"]
+  "zh": ["时间轴"], "zh-tw": ["時間軸"], "en": ["timeline"], "en-GB": ["timeline"],
+  "pt-BR": ["linha do tempo"], "zh-hk": ["時間軸"], "zh-mo": ["時間軸"]
 };
 
 describe('one concept, one term per language', () => {

@@ -61,7 +61,7 @@ describe('release-notes-for.mjs', () => {
     expect(out.stdout).toContain("Fix 'quotes' in notes");
     expect(out.stdout).toContain("引号转义");
     expect(out.stdout).toContain("<summary>简体中文</summary>");
-    expect(out.stdout).toContain("<summary>繁體中文（中國香港）</summary>");
+    expect(out.stdout).toContain("<summary>繁體中文（香港）</summary>");
     // The five extra public-facing locales (2026-10-07) fold in after Chinese;
     // a beta prints its own note in each of them, outside the English lead.
     expect(out.stdout).toContain("<summary>Español</summary>");

@@ -7,11 +7,13 @@
  *
  * WARNING — read `git diff` before committing its output. packages/web/src/i18n/
  * zh-tw.ts has drifted from what this script produces: it carries Taiwan wording
- * that no rule here knows about (復原 for Undo, 同場回放, 資料夾 for folder,
- * 詳細資訊…), which regeneration turns into 撤銷 / 同場播放 / 檔案夾 / 詳情.
- * Adding those to TERMS is the way back to "regeneration is safe"; until then,
- * for a key addition or removal, edit zh-tw.ts by hand and keep this script for
- * bulk work only.
+ * that no rule here knows about (復原 for Undo, 同場回放, 回放 for replay in
+ * welcome.importFolderHint, 資料夾 for folder, 詳細資訊…), which regeneration
+ * turns into 撤銷 / 同場播放 / 播放 / 檔案夾 / 詳情. Adding those to TERMS is
+ * the way back to "regeneration is safe"; until then, for a key addition or
+ * removal, edit zh-tw.ts by hand and keep this script for bulk work only.
+ * (回放→播放 above is global, so a single key's 回放 cannot be pinned by TERMS —
+ * that one stays on the drift list by construction.)
  *
  * zh-hk.ts is not generated and must not be: it is an override table applied on
  * top of zh-tw at import time, so regenerating zh-tw propagates to Hong Kong by
@@ -56,6 +58,18 @@ const TERMS = [
   ['佈局', '布局'], // 台惯用「布局」；OpenCC 產「佈局」時回正
   [' (米)', ' (公尺)'],
   ['米)', '公尺)'],
+  // 2026-10-11 alignment batch: keep regeneration from reverting the zh-tw.ts
+  // wording audit of the same day (Microsoft zh-tw conventions / in-file
+  // consistency). Order matters: these run after every rule above — 重播→回放
+  // in particular must follow 回放→播放 (it re-marks replay hints the generic
+  // rule flips; welcome.importFolderHint's 回放 still lands on the drift list,
+  // see the header WARNING).
+  ['自定義', '自訂'], // Microsoft zh-tw 用「自訂」
+  ['擴展名', '副檔名'], // Microsoft zh-tw/zh-hk 均用「副檔名」
+  ['英呎', '英尺'], // 台灣法定名稱「英尺」（兜底：當前轉換鏈不產「英呎」）
+  ['英寸', '英吋'], // 台灣法定名稱「英吋」；zh.ts 兩處（in / ftin）全覆蓋
+  ['獨占', '獨佔'], // 字典其餘位置一律寫「佔」
+  ['重播', '回放'], // app 術語為「回放」
 ];
 
 // zh-Hant for HK+TW both: 'hk' avoids TW-only phrasing (網路/軟體) in favor
