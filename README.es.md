@@ -1,6 +1,6 @@
 # PathBlender
 
-[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文（中國香港）](README.zh-Hant.md) | **Español** | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
+[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文（香港）](README.zh-Hant.md) | **Español** | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
 **Visor de fusión de rutas autónomas multifuente para la estrategia de alianzas de FRC.**
 
@@ -58,7 +58,7 @@ Campos: FRC 2022–2026 integrados, más importación de campos personalizados c
 
 Los archivos de rutas se analizan **enteramente en tu máquina**. No hay backend, ni cuentas, ni telemetría, ni analítica. La compilación web no hace ninguna llamada de red; la aplicación de escritorio contacta con la red solo para la comprobación de actualizaciones que tú disparas (GitHub Releases) — los archivos de rutas nunca salen de la aplicación.
 
-También incluye: vista de alianza roja/azul a nivel de sesión, anotaciones de número de equipo por robot, los campos de temporada anteriores con superposición oficial de AprilTags y una interfaz en **40 idiomas** — con la lista completa en el menú de idioma — en temas claro y oscuro (sigue al sistema).
+También incluye: vista de alianza roja/azul a nivel de sesión, anotaciones de número de equipo por robot, los campos de temporada anteriores con superposición oficial de AprilTags y una interfaz en **43 idiomas** — con la lista completa en el menú de idioma — en temas claro y oscuro (sigue al sistema).
 
 Guía completa por herramienta y preguntas frecuentes (en inglés y chino):
 [English](docs/user-guide.en.md) ·

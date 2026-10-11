@@ -1,6 +1,6 @@
 # PathBlender
 
-[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文（中國香港）](README.zh-Hant.md) | [Español](README.es.md) | **Français** | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
+[English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文（香港）](README.zh-Hant.md) | [Español](README.es.md) | **Français** | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
 **Visionneuse de fusion multi-sources de parcours autonomes pour la stratégie d’alliance FRC.**
 
@@ -58,7 +58,7 @@ Terrains : FRC 2022–2026 intégrés, plus l’import de terrains personnalis�
 
 Les fichiers de parcours sont analysés **entièrement sur votre machine**. Pas de backend, pas de compte, pas de télémétrie, pas d’analytique. La build web n’émet aucun appel réseau ; l’application de bureau ne touche au réseau que pour la vérification de mises à jour que vous déclenchez (GitHub Releases) — les fichiers de parcours ne quittent jamais l’application.
 
-Sont aussi inclus : une vue d’alliance rouge/bleu par session, les annotations de numéro d’équipe par robot, les terrains de saison ci-dessus avec les AprilTags officiels en surimpression, et une interface en **40 langues** — liste complète dans le menu de langue — en thèmes clair et sombre (suit le système).
+Sont aussi inclus : une vue d’alliance rouge/bleu par session, les annotations de numéro d’équipe par robot, les terrains de saison ci-dessus avec les AprilTags officiels en surimpression, et une interface en **43 langues** — liste complète dans le menu de langue — en thèmes clair et sombre (suit le système).
 
 Guide complet par outil et FAQ (en anglais et chinois) :
 [English](docs/user-guide.en.md) ·

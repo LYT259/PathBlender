@@ -5,7 +5,7 @@ import { I18nProvider, LANGUAGES, langLabel, type LangChoice } from '../src/i18n
 
 /**
  * LanguagePicker behaviour: the search input actually filters (in any of the
- * 40 UI languages, whatever the UI is showing), the list and selection obey
+ * 43 UI languages, whatever the UI is showing), the list and selection obey
  * the panel's draft semantics (pick reports through onChange; typing never
  * selects), the empty state clears back to the full list, and the combobox
  * keyboard contract holds — arrows/Home/End walk options, Enter picks,
@@ -40,6 +40,26 @@ describe('language picker', () => {
     expect(options[0]).toHaveTextContent('Follow system');
     // Registry order pinned by the i18n tests: Albanian leads the languages.
     expect(options[1]).toHaveTextContent(langLabel('sq'));
+  });
+
+  it('renders every language row’s mark chip as decoration, hidden from AT', async () => {
+    // The mark (简/繁/EN/あ…) is a visual disambiguator for rows whose endonyms
+    // look alike; screen readers already get the full endonym, so the chip is
+    // aria-hidden decoration — and never empty, or it would paint a blank chip.
+    const { trigger } = renderPicker();
+    fireEvent.click(trigger);
+    await screen.findAllByRole('option');
+    const marks = document.querySelectorAll('.language-picker-mark');
+    expect(marks).toHaveLength(LANGUAGES.length - 1); // every row but 'system'
+    for (const mark of marks) {
+      expect(mark).toHaveAttribute('aria-hidden', 'true');
+      expect(mark.textContent?.trim()).not.toBe('');
+    }
+    // Spot-pin the two families the chip exists to disambiguate.
+    const byValue = (v: string) => document.querySelector(`[data-value="${v}"] .language-picker-mark`);
+    expect(byValue('zh-tw')).toHaveTextContent('繁');
+    expect(byValue('zh-mo')).toHaveTextContent('繁');
+    expect(byValue('en-GB')).toHaveTextContent('EN');
   });
 
   it('typing filters to the matching languages and shows their names', async () => {

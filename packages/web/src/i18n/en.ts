@@ -23,7 +23,7 @@ export const en = {
   'tour.task.alliance.title': "Switch the red/blue alliance",
   'tour.task.alliance.hint': "Use the red/blue switch in the toolbar: the whole session moves to the other half together — the verdicts stay the same, only your viewpoint changes.",
   'tour.task.mirror.title': "Mirror one robot",
-  'tour.task.mirror.hint': "Press Mirror left/right on 8814’s row — only that robot, with its route library, flips across the centreline. Then look at the checks panel again.",
+  'tour.task.mirror.hint': "Press Mirror left/right on 8814’s row — only that robot, with its route library, flips across the centerline. Then look at the checks panel again.",
   'tour.finished': "That is the core check workflow. Press “End example” above to leave and import your alliance’s own paths — the Help menu reopens this checklist any time.",
   'welcome.folderAdvice': 'Import a whole folder so you can switch routes when a conflict appears.',
   'welcome.importFile': 'Import path files',
