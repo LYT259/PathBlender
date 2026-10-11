@@ -1,5 +1,5 @@
 import { SelectControl } from './SelectControl';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { activeEndT, activeStartT, type CollisionInterval, type RobotGeometry, type SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { type LibraryProfile } from '../route-library';
@@ -219,6 +219,7 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
 export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: RobotInspectorProps) {
   const { t, n, lang } = useI18n();
   const [unit] = useLengthUnit();
+  const uid = useId();
   if (!robot) return <div className="robot-inspector-empty">{t('robots.selectPrompt')}</div>;
   const { trajectory } = robot;
   const id = trajectory.id;
@@ -245,10 +246,10 @@ export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: Robot
           {trajectory.holonomic !== undefined && <div><dt>{t('robots.drive')}</dt><dd>{t(trajectory.holonomic ? 'robots.driveHolonomic' : 'robots.driveDifferential')}</dd></div>}
         </dl>
         {libraryProfiles.length > 0 && (
-          <label className="robot-inspector-row robot-inspector-profile">
-            <span>{t('robots.applyProfile')}</span>
+          <div className="robot-inspector-row robot-inspector-profile">
+            <span id={`${uid}-profile-label`}>{t('robots.applyProfile')}</span>
             <SelectControl
-              aria-label={t('robots.applyProfile')}
+              aria-labelledby={`${uid}-profile-label`}
               value=""
               title={t('robots.applyProfileHint')}
               onValueChange={(value) => {
@@ -262,7 +263,7 @@ export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: Robot
                 </option>
               ))}
             </SelectControl>
-          </label>
+          </div>
         )}
         {warnings.length > 0 && (
           <ul className="robot-inspector-warnings">{warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>
