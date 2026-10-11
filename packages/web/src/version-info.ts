@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.3';
+export const APP_VERSION = '0.1.9-beta.4';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.4', date: '2026.10.11', note: {
+    en: 'The sequence editor now rehearses a dragged route live — the field and collision warnings follow the block before you drop it',
+    zh: '编排器现在会实时预演拖拽中的路径块——场地与碰撞警告在放下前就跟随它移动',
+    'zh-tw': '編排器現在會即時預演拖曳中的路徑塊——場地與碰撞警告在放下前就會跟隨它移動',
+    cs: 'Editor sekvencí nyní živě zkouší taženou trasu — pole i varování o kolizi následují blok ještě před jeho upuštěním',
+    nl: 'De sequentie-editor oefent een gesleepte route nu live — het veld en de botsingswaarschuwingen volgen het blok al voordat je het loslaat',
+    fr: 'L’éditeur de séquence répète désormais un trajet déplacé en direct — le terrain et les avertissements de collision suivent le bloc avant même que vous le lâchiez',
+    he: 'עורך הרצף מציג כעת חזרה חיה של מסלול נגרר — השדה ואזהרות ההתנגשות עוקבים אחר הבלוק עוד לפני שמשחררים אותו',
+    ja: 'シーケンスエディターがドラッグ中のルートをライブで予行するようになりました——ドロップする前からフィールドと衝突警告がブロックに追従します',
+    ko: '시퀀스 편집기가 이제 드래그 중인 경로를 실시간으로 예행합니다 — 놓기 전부터 필드와 충돌 경고가 블록을 따라 움직입니다',
+    pl: 'Edytor sekwencji teraz na żywo próbuje przeciąganą trasę — pole i ostrzeżenia o kolizjach podążają za blokiem jeszcze przed jego upuszczeniem',
+    'pt-br': 'O editor de sequência agora ensaia ao vivo uma rota arrastada — o campo e os avisos de colisão acompanham o bloco antes de você soltá-lo',
+    es: 'El editor de secuencias ahora ensaya en vivo una ruta arrastrada — el campo y los avisos de colisión siguen al bloque antes de soltarlo',
+    tr: 'Sıra düzenleyici artık sürüklenen rotayı canlı olarak prova ediyor — alan ve çarpışma uyarıları bloğu bırakmadan önce bile takip ediyor',
+    ar: 'أصبح محرر التسلسل يجري بروفة حية للمسار المسحوب — فالساحة وتحذيرات التصادم تتبع الكتلة قبل إفلاتها',
+    az: 'Ardıcıllıq redaktoru artıq sürüşdürülən marşrutu canlı olaraq sınayır — sahə və toqqşma xəbərdarlıqları bloku buraxmazdan əvvəl izləyir',
+    bg: 'Редакторът на последователности вече репетира на живо влачения маршрут — полето и предупрежденията за сблъсък следват блока още преди да го пуснете',
+    bs: 'Uređivač sekvenci sada uživo probtava povlačenu rutu — teren i upozorenja o sudaru prate blok prije nego što ga ispustite',
+    da: 'Sekvenseditoren øver nu en trukket rute live — banen og kollisionsadvarslerne følger blokken, før du slipper den',
+    de: 'Der Sequenzeditor probt eine gezogene Route jetzt live — Feld und Kollisionswarnungen folgen dem Block schon vor dem Loslassen',
+    el: 'Ο επεξεργαστής ακολουθίας δοκιμάζει πλέον ζωντανά μια συρόμενη διαδρομή — το γήπεδο και οι προειδοποιήσεις σύγκρουσης ακολουθούν το μπλοκ πριν το αφήσετε',
+    fil: 'Ang sequence editor ay live nang nag-eensayo ng dinadala na ruta — sumusunod ang field at mga babala sa banggaan sa bloke bago mo pa ito bitawan',
+    hi: 'सीक्वेंस एडिटर अब खींचे जा रहे रूट का लाइव पूर्वाभ्यास करता है — फ़ील्ड और टकराव चेतावनियाँ ब्लॉक को छोड़ने से पहले ही उसके साथ चलती हैं',
+    hr: 'Uređivač slijedova sada uživo probtava povlačenu rutu — teren i upozorenja o sudaru prate blok prije nego što ga pustite',
+    hu: 'A sorozatszerkesztő most élőben próbálja a húzott útvonalat — a pálya és az ütközésfigyelmeztetések már elengedés előtt követik a blokkot',
+    hy: 'Հաջորդականության խմբագիրն այժմ կենդանի փորձ է անում քաշվող երթուղին — դաշտը և բախման նախազգուշացումները հետևում են բլոկին՝ նախքան այն բաց թողնելը',
+    id: 'Editor urutan kini melatih rute yang diseret secara langsung — lapangan dan peringatan tabrakan mengikuti blok sebelum Anda melepaskannya',
+    it: 'L’editor di sequenza ora prova dal vivo un percorso trascinato — il campo e gli avvisi di collisione seguono il blocco prima ancora di rilasciarlo',
+    mk: 'Уредникот на секвенци сега живо ја пробува влечената рута — теренот и предупредувањата за судир го следат блокот пред да го испуштите',
+    mr: 'सिक्वेन्स एडिटर आता ड्रॅग केलेल्या मार्गाची थेट तालीम करते — फील्ड आणि टक्कर इशारे ब्लॉक सोडण्यापूर्वीच त्याच्यासोबत जातात',
+    ms: 'Editor urutan kini berlatih secara langsung laluan yang diseret — padang dan amaran pelanggaran mengikut blok sebelum anda melepaskannya',
+    nb: 'Sekvenseditoren øver nå en dradd rute live — banen og kollisjonsadvarslene følger blokken før du slipper den',
+    nn: 'Sekvenseditoren øvar no på ein dragen rute live — bana og kollisjonsåtvaringane følgjer blokka før du slepp ho',
+    ro: 'Editorul de secvențe repetă acum live o rută trasă — terenul și avertismentele de coliziune urmăresc blocul înainte să-l eliberați',
+    rw: 'Umuhinduzi w’urukurikirane ubu yiga ako kanya inzira ikururwa — ikibuga n’ibimenyetso by’amakimbirane bikurikira buloki mbere yo kuyirekura',
+    sq: 'Redaktori i sekuencës tani provon live një rrugë të tërhequr — fusha dhe paralajmërimet e përplasjes e ndjekin bllokun para se ta lëshoni',
+    sr: 'Уређивач секвенци сада уживо проба превучену руту — терен и упозорења о сударима прате блок пре него што га пустите',
+    sv: 'Sekvensredigeraren övar nu en dragen rutt live — planen och kollisionsvarningarna följer blocket innan du släpper det',
+    ta: 'வரிசை எடிட்டர் இப்போது இழுக்கப்படும் பாதையை நேரடியாக முன்பயிற்சி செய்கிறது — களம் மற்றும் மோதல் எச்சரிக்கைகள் தொகுதியை விடுவதற்கு முன்பே அதைப் பின்தொடர்கின்றன',
+    uk: 'Редактор послідовності тепер наживо репетирує перетягуваний маршрут — поле і попередження про зіткнення слідують за блоком ще до того, як ви його відпустите',
+    vi: 'Trình chỉnh sửa chuỗi giờ đây diễn tập trực tiếp tuyến đang kéo — sân và cảnh báo va chạm đi theo khối trước khi bạn thả nó ra',
+  } },
   { version: '0.1.9-beta.3', date: '2026.10.11', note: {
     en: 'Language picker: script and region marks align in a fixed column, arrow keys start from the current language, and About release notes follow the interface language',
     zh: '语言选择器：文字标识按固定列对齐，方向键从当前语言起步，关于页更新说明跟随界面语言',
