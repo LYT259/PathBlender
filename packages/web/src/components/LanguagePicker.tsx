@@ -55,8 +55,11 @@ export function LanguagePicker({ value, onChange, labelledBy }: {
     if (!results.length) return;
     setActive((current) => {
       if (current === null) {
-        const anchor = step === 1 ? selectedIndex : results.length - 1;
-        return anchor >= 0 ? anchor : 0;
+        // The first arrow anchors on the current choice, whichever way it
+        // points; only when the choice is filtered out does Down start at the
+        // top and Up at the end (SelectControl's expand() keeps this contract).
+        if (selectedIndex >= 0) return selectedIndex;
+        return step === 1 ? 0 : results.length - 1;
       }
       return Math.min(results.length - 1, Math.max(0, current + step));
     });

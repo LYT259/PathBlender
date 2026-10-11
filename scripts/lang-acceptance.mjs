@@ -57,13 +57,15 @@ for (const lang of LANGS) {
     // welcome.title is the start screen's accessible name (aria-label, not
     // visible text): en must carry it verbatim, every other language must
     // carry its own translation — doubles as the AT-name localization check.
+    // en-GB is English too: its override table only respells 8 keys, so it
+    // shares en's welcome.title by design and is held to the en assertion.
     const ariaTitle = await page.evaluate(() =>
       document.querySelector('.start-screen')?.getAttribute('aria-label') ?? '');
     const enTitle = 'Import paths to get started';
-    if (lang !== 'en') {
+    if (lang !== 'en' && lang !== 'en-GB') {
       check(`${lang}: start-screen AT name translated`, ariaTitle !== enTitle && ariaTitle !== '', ariaTitle.slice(0, 40));
     } else {
-      check('en: start-screen AT name', ariaTitle === enTitle, ariaTitle.slice(0, 40));
+      check(`${lang}: start-screen AT name`, ariaTitle === enTitle, ariaTitle.slice(0, 40));
     }
 
     // No horizontal overflow on the welcome screen.

@@ -18,14 +18,19 @@
 .language-picker-clear { display: grid; place-items: center; flex: none; inline-size: 28px; block-size: 28px; padding: 0; border: 0; border-radius: 4px; color: var(--fg-dim); background: transparent; cursor: pointer; }
 .language-picker-clear:hover { color: var(--fg); background: var(--hover); }
 .language-picker-results { position: relative; max-block-size: 180px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border) transparent; padding: 5px; }
-.language-picker-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; inline-size: 100%; min-block-size: 42px; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--fg); text-align: start; font: inherit; cursor: pointer; }
+/* Reserve the mark and check columns even when a row has neither. The name
+   can wrap without moving either right-hand alignment edge. */
+.language-picker-option { display: grid; grid-template-columns: minmax(0, 1fr) 32px 16px; grid-template-areas: "names mark check"; align-items: center; gap: 12px; inline-size: 100%; min-block-size: 42px; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--fg); text-align: start; font: inherit; cursor: pointer; }
 .language-picker-option:hover, .language-picker-option.language-picker-active { background: var(--hover); }
 .language-picker-option[aria-selected='true'] { background: var(--seg-bg); }
-.language-picker-names { display: flex; flex-direction: column; align-items: start; gap: 3px; min-inline-size: 0; overflow-wrap: anywhere; }
+.language-picker-names { grid-area: names; display: flex; flex-direction: column; align-items: start; gap: 3px; min-inline-size: 0; overflow-wrap: anywhere; }
 .language-picker-names > span { font-size: 12px; line-height: 1.4; }
 .language-picker-names > small { color: var(--fg-dim); font-size: 11px; line-height: 1.4; }
-.language-picker-mark { flex: none; min-inline-size: 3ch; text-align: center; font-size: 11px; line-height: 1.4; color: var(--fg-dim); }
-.language-picker-check { inline-size: 16px; flex: none; color: var(--accent); }
+.language-picker-mark { grid-area: mark; min-inline-size: 0; text-align: right; white-space: nowrap; unicode-bidi: isolate; font-size: 11px; line-height: 1.4; color: var(--fg-dim); }
+.language-picker-check { grid-area: check; display: grid; place-items: center; inline-size: 16px; color: var(--accent); }
+/* Keep these visual identifiers on the physical right in RTL interfaces too,
+   while letting the language names retain their own reading direction. */
+.language-picker-option:dir(rtl) { grid-template-columns: 16px 32px minmax(0, 1fr); grid-template-areas: "check mark names"; }
 .language-picker-system { border-block-end: 1px solid var(--border); border-radius: 6px 6px 0 0; margin-block-end: 4px; }
 .language-picker-empty { display: grid; justify-items: center; gap: 8px; padding: 28px 12px; font-size: 12px; text-align: center; }
 .language-picker-empty strong { font-weight: 500; }
