@@ -41,8 +41,10 @@ const DICTIONARIES = readdirSync(resolve(process.cwd(), 'packages/web/src/i18n')
 /** Every dictionary is a selectable picker row since the 2026-10-11 region
  * versions (zh-tw reinstated; zh-hk/zh-mo/en-GB added — 43 rows today). */
 const SELECTABLE_LANGS = DICTIONARIES;
-/** Read from source: `const GITHUB_URL = '…'` in the app shell. */
-const GITHUB_URL = readFileSync(resolve(process.cwd(), 'packages/web/src/App.tsx'), 'utf8')
+/** Read from source: `const GITHUB_URL = '…'` — moved from App.tsx to
+ * project-support.ts when the gated Star links landed (same-PR harness rule
+ * from the README's verification table). */
+const GITHUB_URL = readFileSync(resolve(process.cwd(), 'packages/web/src/project-support.ts'), 'utf8')
   .match(/const GITHUB_URL = '([^']+)'/)?.[1] ?? '';
 /** Read from source: `const SPEEDS = [...]` in the transport controls. */
 const SPEEDS = JSON.parse(readFileSync(resolve(process.cwd(), 'packages/web/src/components/PlaybackControls.tsx'), 'utf8')
