@@ -25,6 +25,7 @@ import { noteText, VERSION_NOTES } from '../version-info';
 import dayIcon from '../assets/app-icon-day.png';
 import nightIcon from '../assets/app-icon-night.png';
 import { BUILD_VERSION } from '../build-version';
+import { ProjectSupport } from './ProjectSupport';
 import { copyText } from '../download';
 import { Icon } from './Icon';
 import { LanguagePicker } from './LanguagePicker';
@@ -309,6 +310,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
             }}>{t('about.copy')}</button>
             <p className="preferences-copy-status" role="status">{copyStatus}</p>
           </div>
+          <ProjectSupport />
           {VERSION_NOTES.length > 0 && <div className="preferences-history"><h3>{t('prefs.releaseNotes')}</h3>
             {/* Resolved `lang`, not the raw choice: 'system' hits no note
                 key, so Follow-system readers would fall to the zh default. */}

@@ -2,31 +2,43 @@
 
 **English** | [简体中文](README.zh-CN.md) | [繁體中文（香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
-**Multi-source autonomous path fusion viewer for FRC alliance strategy.**
+**See your alliance’s autonomous routes together. Find conflicts before the match.**
 
-> **Before a match: put every alliance partner’s auto on one field, replay them together, and catch robot-to-robot conflicts while there is still time to change the plan.**
+[**Try it in your browser**](https://pathblender.pages.dev) ·
+[Download the desktop app](https://github.com/LYT259/pathblender/releases) ·
+[First path check](docs/user-guide.en.md#try-it-without-files) ·
+[Star on GitHub](https://github.com/LYT259/pathblender)
 
-Blend autonomous path files exported from different toolchains onto one
-field: unified-timeline playback and collision checking, built for
-**alliance strategy groups** — not just the programming team. It is a
-**viewer**: analyze the autos you have, find the conflicts, fix them in
-the tool that owns the path, re-import, and check again.
+PathBlender brings Choreo and PathPlanner routes onto one field and one clock
+for FRC alliance strategy. Replay the robots together, find a conflict, and
+compare a different start time before agreeing on a plan.
 
-![3D field view](docs/screenshots/field3d.png)
+![A synthetic practice session: locate an overlap, delay B, and replay the changed plan](docs/screenshots/first-check.gif)
+
+*Original teaching routes on a practice field, not a real match. Try your own
+check from the welcome screen — no files, installation, or account needed.*
+
+- **Bring different tools together:** import Choreo, PathPlanner and
+  Collaborative `.ghostauto` files.
+- **Make the timing visible:** shared playback, collision checks and
+  session-level start-time comparisons.
+- **Keep paths on your machine:** parsing and analysis happen locally.
+
+If this is useful or interesting to you, **Star the repository** to support
+PathBlender and find it again later.
 
 ## Why
 
 In FRC qualification and playoff matches, all three robots in an alliance
 run their autonomous programs on the same field at the same time. Teams
-plan paths in different tools (Choreo, PathPlanner), and nobody can see
-whether the resulting autos will collide until they actually do — in a
-match.
+plan paths in different tools (Choreo, PathPlanner), and comparing separate exports makes it harder to spot overlaps
+before the match.
 
 PathBlender fills that gap:
 
 - **Multi-toolchain import** — Choreo `.traj`, Team 103 Collaborative fork
   `.ghostauto`, and native PathPlanner `.path` / `.auto` (trajectory
-  generation ported to TypeScript — no other browser tool does this);
+  generation ported to TypeScript);
 - **Unified timeline playback** — every robot on one shared autonomous
   clock (15 s; 20 s for the 2026 season), play / pause / scrub / speed
   control (0.25×–1×);
@@ -43,20 +55,18 @@ PathBlender fills that gap:
   library, and a picker beside each robot switches its active auto live.
   PathPlanner `settings.json` files apply real bumper dimensions;
 
-- **Zero install, zero upload (web)** — a pure static web app: files are
-  parsed locally in your browser, and the web build makes **no network
-  requests at all**;
+- **Zero install, zero upload (web)** — a static web app: path files are
+  parsed and checked locally in your browser;
 - **Also a desktop app** — the same UI in a lightweight Tauri shell for
   macOS, Windows and Linux, adding session save/open, GIF replay and
   solution-package export, and in-app updates (stable or beta channel).
-  Its only network activity is the update check you trigger, which
-  contacts GitHub Releases.
+  Desktop update checks contact GitHub Releases.
 
 ## Quick start
 
-1. Get the app (see below) — or, with no files at hand, press **Try the
-   example** on the welcome screen to load a built-in multi-robot session
-   and see playback and collision checking immediately.
+1. Get the app (see below) — or press **Try your first path check** on the
+   welcome screen for a guided exercise with three synthetic routes.
+   **Try an example** opens the separate built-in multi-robot session.
 2. Import path files from every alliance partner — `.traj`, `.ghostauto`,
    `.path`, `.auto`, mixed freely (one file or a whole folder, on the web
    app as well as the desktop;
@@ -113,9 +123,9 @@ any other season or a practice field).
 ## Privacy
 
 Path files are parsed **entirely on your machine**. There is no backend,
-no account, no telemetry, and no analytics. The web build ships zero
-network calls; the desktop app contacts the network only for the update
-check you trigger (GitHub Releases) — path files never leave the app.
+no account, no telemetry, and no analytics. The browser fetches the app and
+its assets; desktop update checks contact GitHub Releases. Path files are
+not uploaded. External links open their named destinations when you select them.
 
 Also included: a session-level red/blue alliance view, per-robot team
 number annotations, the season fields above with official AprilTag
