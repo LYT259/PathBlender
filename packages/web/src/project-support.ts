@@ -1,6 +1,8 @@
-/** Release-owned switch. Enable only after the repository is approved and public.
+/** Release-owned switch. Flipped on 2026-10-13 by explicit user decision to
+ * preview the real post-public state ahead of the repository going public
+ * (the repo itself is still private; the links resolve once it is public).
  * No remote status lookup, GitHub SDK, analytics, or authentication is needed. */
-export const PUBLIC_REPOSITORY_READY = false;
+export const PUBLIC_REPOSITORY_READY = true;
 export const GITHUB_URL = 'https://github.com/LYT259/pathblender';
 
 export function supportEnabled(publicReady: boolean, dev: boolean, search: string): boolean {

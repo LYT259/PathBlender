@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.7';
+export const APP_VERSION = '0.1.9-beta.8';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.8', date: '2026.10.13', note: {
+    en: 'GitHub Star entries now shown on the welcome screen, toolbar and About page',
+    zh: '欢迎页、工具栏和关于页新增 GitHub Star 入口',
+    'zh-tw': '歡迎頁、工具列和關於頁新增 GitHub Star 入口',
+    cs: 'Odkaz GitHub Star na vítací obrazovce, v panelu nástrojů a na stránce O aplikaci',
+    nl: 'GitHub Star-link nu zichtbaar op het startscherm, in de werkbalk en op de About-pagina',
+    fr: 'Entrée GitHub Star désormais visible sur l’accueil, la barre d’outils et la page À propos',
+    he: 'קישור GitHub Star מוצג כעת במסך הפתיחה, בסרגל הכלים ובדף האודות',
+    ja: 'ウェルカム画面・ツールバー・About ページに GitHub Star 入口を表示',
+    ko: '시작 화면, 도구 모음, 정보 페이지에 GitHub Star 항목 표시',
+    pl: 'Wpis GitHub Star teraz na ekranie powitalnym, pasku narzędzi i stronie O programie',
+    'pt-br': 'Entradas GitHub Star agora exibidas na tela de boas-vindas, na barra de ferramentas e na página Sobre',
+    es: 'Entradas GitHub Star ahora visibles en la pantalla de bienvenida, la barra de herramientas y la página Acerca de',
+    tr: 'GitHub Star girişleri artık karşılama ekranında, araç çubuğunda ve Hakkında sayfasında görünüyor',
+    ar: 'روابط Star على GitHub تظهر الآن في شاشة الترحيب وشريط الأدوات وصفحة «حول»',
+    az: 'GitHub Star keçidləri artıq salamlama ekranında, alət panelində və «Haqqında» səhifəsində görünür',
+    bg: 'Връзки GitHub Star вече на началния екран, в лентата с инструменти и в страницата „Относно“',
+    bs: 'GitHub Star linkovi sada vidljivi na početnom ekranu, traci s alatima i stranici „O aplikaciji“',
+    da: 'GitHub Star-links vises nu på velkomstskærmen, i værktøjslinjen og på Om-siden',
+    de: 'GitHub-Star-Einträge jetzt auf Willkommensseite, Symbolleiste und Info-Seite sichtbar',
+    el: 'Σύνδεσμοι GitHub Star τώρα στην αρχική οθόνη, τη γραμμή εργαλείων και τη σελίδα Σχετικά',
+    fil: 'Ngayon ay nakikita na ang GitHub Star entry sa welcome screen, toolbar, at About page',
+    hi: 'GitHub Star प्रविष्टियाँ अब स्वागत स्क्रीन, टूलबार और About पेज पर दिखती हैं',
+    hr: 'GitHub Star poveznice sada vidljive na početnom ekranu, alatnoj traci i stranici „O aplikaciji“',
+    hu: 'GitHub Star bejegyzések mostantól láthatók a üdvözlőképernyőn, az eszközsávon és a Névjegy oldalon',
+    hy: 'GitHub Star հղումները հիմա երևում են ողջույնի էկրանին, գործիքների վահանակում և «Մասին» էջում',
+    id: 'Entri GitHub Star kini tampil di layar sambutan, bilah alat, dan halaman Tentang',
+    it: 'Le voci GitHub Star ora appaiono nella schermata iniziale, nella barra degli strumenti e nella pagina Informazioni',
+    mk: 'GitHub Star врските сега видливи на почетниот екран, во алатникот и на страницата „За“',
+    mr: 'GitHub Star प्रविष्टी आता स्वागत स्क्रीन, टूलबार आणि About पेजवर दिसतात',
+    ms: 'Entri GitHub Star kini dipaparkan pada skrin aluan, bar alat dan halaman Perihal',
+    nb: 'GitHub Star-lenker vises nå på velkomstskjermen, i verktøylinjen og på Om-siden',
+    nn: 'GitHub Star-lenker syner no på velkomstskjermen, i verktøylinja og på Om-sida',
+    ro: 'Intrările GitHub Star apar acum pe ecranul de întâmpinare, în bara de unelte și pe pagina Despre',
+    rw: 'Ihuza rya GitHub Star ruri ku mugaragaro w’itangiza, ku bikoresho no ku ipaji y’ibijyanye',
+    sq: 'Lidhjet GitHub Star tani dukshme në ekranin e mirëseardhjes, shiritin e mjeteve dhe faqen Rreth',
+    sr: 'GitHub Star veze sada vidljive na početnom ekranu, traci sa alatkama i stranici „O aplikaciji“',
+    sv: 'GitHub Star-länkar visas nu på välkomstskärmen, i verktygsfältet och på Om-sidan',
+    ta: 'GitHub Star உள்ளீடுகள் இப்போது வரவேற்பு திரை, கருவிப் பட்டை மற்றும் About பக்கத்தில் தெரிகின்றன',
+    uk: 'Посилання GitHub Star тепер видно на екрані вітання, панелі інструментів і сторінці «Про»',
+    vi: 'Các mục GitHub Star giờ hiển thị trên màn hình chào mừng, thanh công cụ và trang Giới thiệu',
+  } },
   { version: '0.1.9-beta.7', date: '2026.10.13', note: {
     en: 'New hands-on exercise: try your first path check with three built-in practice routes — no files needed',
     zh: '新增上手练习：用三条内置教学路线试做第一次路径检查——无需准备文件',
