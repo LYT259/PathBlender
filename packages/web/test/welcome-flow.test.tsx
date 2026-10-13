@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeSession, parsePathFile, serializeSession } from '@pathblender/core';
 import { App } from '../src/App';
 import { en } from '../src/i18n/en';
+import { engagementEnglish } from '../src/engagement-copy';
 import { expectComboboxValue } from './combobox';
 
 const checkHint = en['onboarding.check'];
@@ -35,11 +36,12 @@ describe('welcome flow', () => {
     expect(within(welcome).getByRole('heading', { name: 'PathBlender' })).toBeInTheDocument();
     // Brand, then straight to the buttons (the 2026-10-07 purpose pitch was
     // removed on user request — the welcome screen stays copy-light);
-    // the quick-guide link closes the column.
+    // the quick-guide link closes the column, with the public-ready Star
+    // link after it (gate flipped on 2026-10-13 ahead of going public).
     expect(welcome.textContent).toBe([
       'PathBlender',
       'Import path files', 'Import folder', 'Open saved session', 'Try an example',
-      'Try your first path check', en['menu.userGuide'],
+      'Try your first path check', en['menu.userGuide'], engagementEnglish.star,
     ].join(''));
     expect(within(welcome).getByRole('button', { name: 'Import path files' })).toHaveAccessibleDescription(/Choreo or PathPlanner/);
     const folder = within(welcome).getByRole('button', { name: 'Import folder' });
