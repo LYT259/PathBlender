@@ -1,0 +1,19 @@
+/* Shares the existing guide/checklist rhythm and theme; no new palette/motion. */
+.first-check-guide { padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--bg-panel); font-size: 12px; line-height: 1.5; }
+.first-check-guide header, .first-check-guide header > div, .first-check-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.first-check-guide header { justify-content: space-between; }
+.first-check-guide h3 { font-size: inherit; margin: 8px 0 4px; }
+.first-check-guide p { margin: 4px 0 8px; }
+.first-check-note { color: var(--fg-dim); }
+.first-check-guide .project-support { margin-top: 10px; }
+/* In the teaching flow, keep the actual guide and field above the two panels
+   on narrow screens. Both panels remain reachable by scrolling. */
+@media (max-width: 900px) {
+  .app-body.workspace-body.is-first-check { display: flex; flex-direction: column; overflow-y: auto; }
+  .is-first-check > .workspace-stage { order: -1; flex: 0 0 auto; }
+  .is-first-check > .workspace-stage .canvas-slot { flex: 0 0 300px; }
+  .workspace-body.is-first-check > .robot-library,
+  .workspace-body.is-first-check > .workspace-inspector {
+    position: static; inset: auto; width: auto; flex: 0 0 auto; box-shadow: none;
+  }
+}

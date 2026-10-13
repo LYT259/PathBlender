@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 
 const paths = {
+  star: <path d="m12 3 2.8 5.7 6.3.9-4.5 4.4 1 6.2-5.6-3-5.6 3 1-6.2L2.9 9.6l6.3-.9Z" />,
   back: <path d="m14 5-7 7 7 7" />,
   timeline: <><path d="M4 4v16M4 8h16M4 16h16"/><rect x="7" y="5" width="7" height="6" rx="1.5"/><rect x="12" y="13" width="8" height="6" rx="1.5"/></>,
   mirror: <g fill="currentColor" stroke="none" transform="rotate(35 12 12)"><path d="M7 2 1.5 7.5H5V15a5 5 0 0 0 5 5h1v-4h-1a1 1 0 0 1-1-1V7.5h3.5Z"/><path transform="rotate(180 12 12)" d="M7 2 1.5 7.5H5V15a5 5 0 0 0 5 5h1v-4h-1a1 1 0 0 1-1-1V7.5h3.5Z"/></g>,

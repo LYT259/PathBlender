@@ -70,16 +70,16 @@ import { listenPrefs, readColorblind } from './pref-sync';
 import { effectiveReverseScroll, useMouseControls, useReverseScrollZoom } from './mouse-controls';
 import { setReverseScrollZoom } from './zoom';
 import { VIEWER_ONLY } from './viewer';
+import { StarLink, ProjectSupport } from './components/ProjectSupport';
+import { SHOW_PROJECT_SUPPORT, GITHUB_URL } from './project-support';
+import { FirstCheckGuide } from './components/FirstCheckGuide';
+import { createFirstCheck, delayPracticeB, isFirstCheckSession, PRACTICE_B_ID, PRACTICE_FIELD } from './first-check';
 
 const SESSION_EXT = '.pb';
 // Sessions saved before the 2026-10-03 rename carry the legacy double
 // extension; they must keep opening (naming-is-contract: files on disk).
 const LEGACY_SESSION_EXT = '.ghpb.json';
 const isSessionFileName = (name: string) => name.endsWith(SESSION_EXT) || name.endsWith(LEGACY_SESSION_EXT);
-// The project's public home — the repo is private today; the link simply
-// starts resolving once it goes public.
-const GITHUB_URL = 'https://github.com/LYT259/pathblender';
-
 // The field + variant survive refreshes (a custom field is not persisted —
 // its definition lives only in the session payload).
 const FIELD_PREF_KEY = 'pb.field';
@@ -1080,6 +1080,7 @@ function AppBody() {
   // the labels, so the shell needs no language tables of its own).
 
   const hasExample = robots.some(isExampleRobot);
+  const hasFirstCheck = fieldId === CUSTOM_FIELD_ID && isFirstCheckSession(sourceRobots);
 
   // Play detection for the tour (plan §3): needs hasExample, so it lives
   // here rather than with the tour hook — deps arrays evaluate eagerly.
@@ -1135,6 +1136,33 @@ function AppBody() {
     } finally {
       if (request === exampleRequest.current) setExampleLoading(false);
     }
+  };
+  const startFirstCheck = () => {
+    exampleRequest.current += 1;
+    setExampleLoading(false);
+    playback.setPlaying(false);
+    const practice = withColorblindPalette(createFirstCheck(), colorblindRef.current);
+    setScene({ robots: practice, alliance: 'blue', fieldId: CUSTOM_FIELD_ID,
+      customField: PRACTICE_FIELD, customImageUrl: undefined, fieldStyle: 'schematic',
+      drafts: {}, composerOpen: false });
+    importedFileStoreRef.current.clear();
+    settingsFilesRef.current.clear();
+    pathTextsRef.current.clear();
+    pendingProfilesRef.current = [];
+    setSelectedId(practice[0]!.trajectory.id);
+    setInspectorMode('checks');
+    setView3D(false);
+    setToleranceS(0);
+    setErrors([]);
+    setT(0);
+  };
+  const exitFirstCheck = () => {
+    playback.setPlaying(false);
+    setScene({ robots: [], fieldId: initialFieldPref.id, fieldVariant: initialFieldPref.variant,
+      fieldStyle: initialFieldPref.style, customField: undefined, customImageUrl: undefined,
+      drafts: {}, composerOpen: false });
+    setSelectedId(null);
+    setT(0);
   };
   const exitExample = () => {
     // Ending the example always lands on the welcome page (user 2026-10-04:
@@ -1456,7 +1484,7 @@ function AppBody() {
           <button className="tool-btn square" data-session-history="undo" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
           <button className="tool-btn square" data-session-history="redo" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
         </div>}
-        {hasRobots && <a className="tool-btn square toolbar-github" href={GITHUB_URL} target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub" onClick={openGithub}><Icon name="github" size={18} /></a>}
+        {hasRobots && (SHOW_PROJECT_SUPPORT ? <StarLink className="tool-btn toolbar-github" /> : <a className="tool-btn square toolbar-github" href={GITHUB_URL} target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub" onClick={openGithub}><Icon name="github" size={18} /></a>)}
         <span className="toolbar-spacer" data-tauri-drag-region="" />
         {/* Save moved to the File menu (2026-10-06): the menu bar is the
             complete entry point, so the workspace keeps only controls that
@@ -1469,11 +1497,18 @@ function AppBody() {
       </header>
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
-        <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
+        <main className={`app-body workspace-body ${hasFirstCheck ? 'is-first-check' : ''} ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
           {leftOpen && <RobotList teamOrder={teamOrder} robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={openSequenceFor} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} header={
-            hasExample && !tour.dismissed ? <OnboardingTasks done={tour.done} expanded={tour.expanded} onToggle={tour.toggle} onDismiss={tour.dismiss} /> : undefined
+            hasExample && !tour.dismissed ? <><OnboardingTasks done={tour.done} expanded={tour.expanded} onToggle={tour.toggle} onDismiss={tour.dismiss} />{Object.values(tour.done).every(Boolean) && <ProjectSupport dismissible />}</> : undefined
           } />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
+            {hasFirstCheck && <FirstCheckGuide conflict={conflicts[0]}
+              clear={sourceRobots.every((r) => r.visible && !hasEmptyArrangement(r)) && conflicts.length === 0 && bounds.length === 0}
+              delayed={(sourceRobots.find((r) => r.trajectory.id === PRACTICE_B_ID)?.startDelayS ?? 0) > 0}
+              onPlay={() => { setT(0); playback.setPlaying(true); }}
+              onLocate={(issue) => { setInspectorMode('checks'); jumpToIssue(issue.closestT, [issue.aId, issue.bId]); }}
+              onDelay={() => { playback.setPlaying(false); setComposerOpen(false); setRobots(delayPracticeB); setT(0); }}
+              onRestart={startFirstCheck} onExit={exitFirstCheck} />}
             {hasExample && <div className="example-notice"><strong>{tr('welcome.exampleBadge')}</strong><span>{tr('welcome.exampleNotice')}</span><button className="btn small" onClick={exitExample}>{tr('welcome.exitExample')}</button></div>}
             <div className="canvas-slot">
               {/* The import page stays clean: the field picker, its construction
@@ -1521,7 +1556,7 @@ function AppBody() {
                     above now guarantees. */}
                 <button className="tool-btn canvas-recenter" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} aria-keyshortcuts="0" onClick={resetView}><Icon name="recenter" size={17} /></button>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={() => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} onOpenGuide={() => setShowGuide(true)} /> : <>
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={() => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} onOpenGuide={() => setShowGuide(true)} onFirstCheck={startFirstCheck} /> : <>
                 {/* Parked 3D: mounted at the first 3D entry — or earlier,
                     prewarmed hidden once robots exist (see prewarm3D above) —
                     then hidden (not unmounted) while 2D shows: scene, models

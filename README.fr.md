@@ -2,30 +2,43 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文（香港）](README.zh-Hant.md) | [Español](README.es.md) | **Français** | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
-**Visionneuse de fusion multi-sources de parcours autonomes pour la stratégie d’alliance FRC.**
+**Voyez ensemble les parcours autonomes de votre alliance. Trouvez les conflits avant le match.**
 
-Fusionne sur un même terrain les fichiers de parcours autonomes exportés par différentes chaînes d’outils : lecture sur une frise chronologique unifiée et détection de collisions, conçue pour les **groupes de stratégie d’alliance** — pas seulement pour l’équipe de programmation. C’est une **visionneuse** : analysez les autonomes que vous avez, trouvez les conflits, corrigez dans l’outil propriétaire du parcours, réimportez, revérifiez.
+[**Essayez-le dans votre navigateur**](https://pathblender.pages.dev) ·
+[Téléchargez l’application de bureau](https://github.com/LYT259/pathblender/releases) ·
+[Premier contrôle de parcours](docs/user-guide.en.md#try-it-without-files) ·
+[Star sur GitHub](https://github.com/LYT259/pathblender)
 
-![Vue 3D du terrain](docs/screenshots/field3d.png)
+PathBlender réunit les parcours de Choreo et de PathPlanner sur un même terrain et une même horloge pour la stratégie d’alliance FRC. Rejouez les robots ensemble, trouvez un conflit et comparez un horaire de départ différent avant d’arrêter un plan.
+
+![Une session d’entraînement synthétique : localiser un recouvrement, décaler B et rejouer le plan modifié](docs/screenshots/first-check.gif)
+
+*Parcours d’enseignement originaux sur un terrain d’entraînement, pas un vrai match. Faites votre propre contrôle depuis l’écran d’accueil — sans fichiers, sans installation et sans compte.*
+
+- **Réunit des outils différents :** importez des fichiers Choreo, PathPlanner et `.ghostauto` de Collaborative.
+- **Rend la temporisation visible :** lecture partagée, contrôles de collision et comparaison des heures de départ au niveau de la session.
+- **Garde les parcours sur votre machine :** l’analyse et la vérification se font en local.
+
+Si PathBlender vous est utile ou intéressant, **mettez une Star au dépôt** pour soutenir le projet et le retrouver plus tard.
 
 ## Pourquoi
 
-En qualifications et en éliminatoires FRC, les trois robots d’une alliance exécutent leurs programmes autonomes sur le même terrain en même temps. Chaque équipe trace ses parcours dans des outils différents (Choreo, PathPlanner) et personne ne peut voir si les autonomes qui en résultent vont se percuter — jusqu’à ce que ça arrive, en match.
+En qualifications et en éliminatoires FRC, les trois robots d’une alliance exécutent leurs programmes autonomes sur le même terrain en même temps. Chaque équipe trace ses parcours dans des outils différents (Choreo, PathPlanner) et comparer des exports séparés rend plus difficile de repérer les recouvrements avant le match.
 
 PathBlender comble ce manque :
 
-- **Import multi-outils** — Choreo `.traj`, `.ghostauto` du fork Collaborative de l’équipe 103, et `.path` / `.auto` natifs de PathPlanner (la génération de trajectoire est portée en TypeScript — aucun autre outil web ne fait ça) ;
+- **Import multi-outils** — Choreo `.traj`, `.ghostauto` du fork Collaborative de l’équipe 103, et `.path` / `.auto` natifs de PathPlanner (la génération de trajectoire est portée en TypeScript) ;
 - **Lecture sur une frise unifiée** — tous les robots sur une même horloge d’autonome (15 s ; 20 s pour la saison 2026), lecture / pause / scrub / vitesse (0,25×–1×) ;
 - **Détection de collisions et d’interférences** — recouvrement de rectangles de pare-chocs (OBB) sur toute la frise, avec rapport de conflits (qui, quand, où) et marqueurs de sortie de terrain ;
 - **Vue 3D du terrain** — modèles officiels des terrains FRC 2022–2026 (constructions soudée et AndyMark quand elles diffèrent), orbite libre et cadrage en un clic ; les terrains personnalisés importés restent en 2D. La vue 2D offre un style schématique et un style rendu par saison, avec la disposition officielle des AprilTags en surimpression ;
 - **Bibliothèque de parcours** — importez tout le dossier deploy d’une équipe : les fichiers étrangers sont ignorés et chaque parcours rejoint une bibliothèque ; un sélecteur à côté de chaque robot change son autonome actif en direct. Les `settings.json` PathPlanner appliquent les vraies dimensions des pare-chocs ;
 
-- **Zéro installation, zéro envoi (web)** — une application web purement statique : les fichiers sont analysés localement dans votre navigateur, et la build web **n’émet aucune requête réseau** ;
-- **Aussi une application de bureau** — la même interface dans une enveloppe Tauri légère pour macOS, Windows et Linux, qui ajoute l’enregistrement/ouverture de sessions, la réexportation GIF et le paquet de solution, et les mises à jour intégrées (canal stable ou bêta). Sa seule activité réseau est la vérification de mises à jour que vous déclenchez, qui contacte GitHub Releases.
+- **Zéro installation, zéro envoi (web)** — une application web statique : les fichiers de parcours sont analysés et vérifiés localement dans votre navigateur ;
+- **Aussi une application de bureau** — la même interface dans une enveloppe Tauri légère pour macOS, Windows et Linux, qui ajoute l’enregistrement/ouverture de sessions, la réexportation GIF et le paquet de solution, et les mises à jour intégrées (canal stable ou bêta). Les vérifications de mises à jour du bureau contactent GitHub Releases.
 
 ## Démarrage rapide
 
-1. Obtenez l’application (voir ci-dessous) — ou, sans fichiers sous la main, appuyez sur **Essayer un exemple** sur l’écran d’accueil pour charger une session multi-robots intégrée et voir immédiatement la lecture et la détection de collisions.
+1. Obtenez l’application (voir ci-dessous) — ou appuyez sur **Essayez votre premier contrôle de parcours** sur l’écran d’accueil pour suivre un exercice guidé avec trois parcours synthétiques. **Essayer un exemple** ouvre à part la session multi-robots intégrée.
 2. Importez les fichiers de parcours de chaque partenaire d’alliance — `.traj`, `.ghostauto`, `.path`, `.auto`, mélangés librement (un fichier ou un dossier entier, sur le web comme au bureau ; chaque `.path` référencé par un `.auto` doit arriver dans le même lot). Les fichiers corrompus sont signalés un à un sans bloquer les autres.
 3. Appuyez sur **lecture**. Les conflits apparaissent comme des anneaux rouges sur le terrain, des segments rouges sur la frise et des entrées dans le panneau de conflits (qui, quand, où) — cliquez sur l’une pour sauter l’horloge à cet instant.
 4. Investiguez : changez le parcours d’un robot depuis la bibliothèque, basculez la vue d’alliance ou avancez l’horloge. Quand vous savez ce qui doit changer, faites-le dans l’outil de l’équipe propriétaire, réexportez, déposez le nouveau fichier — la session se met à jour sur place.
@@ -56,7 +69,7 @@ Terrains : FRC 2022–2026 intégrés, plus l’import de terrains personnalis�
 
 ## Confidentialité
 
-Les fichiers de parcours sont analysés **entièrement sur votre machine**. Pas de backend, pas de compte, pas de télémétrie, pas d’analytique. La build web n’émet aucun appel réseau ; l’application de bureau ne touche au réseau que pour la vérification de mises à jour que vous déclenchez (GitHub Releases) — les fichiers de parcours ne quittent jamais l’application.
+Les fichiers de parcours sont analysés **entièrement sur votre machine**. Pas de backend, pas de compte, pas de télémétrie, pas d’analytique. Le navigateur télécharge l’application et ses ressources ; les vérifications de mises à jour du bureau contactent GitHub Releases. Les fichiers de parcours ne sont pas envoyés. Les liens externes ouvrent leur destination lorsque vous les sélectionnez.
 
 Sont aussi inclus : une vue d’alliance rouge/bleu par session, les annotations de numéro d’équipe par robot, les terrains de saison ci-dessus avec les AprilTags officiels en surimpression, et une interface en **43 langues** — liste complète dans le menu de langue — en thèmes clair et sombre (suit le système).
 

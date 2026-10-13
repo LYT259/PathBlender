@@ -11,10 +11,35 @@ happens in the tool that owns the path. An in-app **quick guide** ships
 with the app (Help menu → Quick guide, or the link on the welcome screen)
 and reads offline.
 
+## Try it without files
+
+From the welcome screen, choose **Try your first path check**. It opens
+three original synthetic routes (A, B and C) on a practice field. These are
+teaching data, not a real team's autonomous programs or official field geometry.
+
+1. Choose **Play the routes** to see the robots move on a shared clock.
+2. Choose **Show the conflict**. The playhead jumps to A and B's overlap;
+   the field and checks panel show the actual collision calculation.
+3. Choose **Start B two seconds later**. The session timing changes and
+   the checks recalculate. The original route samples are unchanged.
+4. Choose **Replay the changed plan**. In the unmodified exercise all
+   three robots remain visible and the check finds no collisions or
+   out-of-bounds paths. This result describes these teaching data; it is
+   not a guarantee about a real robot run.
+
+You can **Hide the guide** and explore freely, **Restart this exercise**, or
+**End practice** to return to the welcome screen. Undo/redo and session save/open
+use the same workflow as your own paths (saving requires the desktop app).
+The existing **Try an example** entry opens the separate route-library example.
+
+If the exercise helped, [Star PathBlender on GitHub](https://github.com/LYT259/pathblender).
+For a problem, [open an issue](https://github.com/LYT259/pathblender/issues) —
+you do not have to share your private route files.
+
 ## Your first alliance path check
 
 Seven steps from zero to a finished check. No files yet? Every step can be
-practised first on the built-in **Try the example** session.
+practised first on the built-in **Try an example** session.
 
 ### 1. Collect each team's files
 
