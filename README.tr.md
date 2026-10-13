@@ -2,30 +2,43 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文（香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | **Türkçe** | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
-**FRC ittifak stratejisi için çok kaynaklı otonom yol füzyon görüntüleyicisi.**
+**İttifakınızın otonom yollarını birlikte görün. Çakışmaları maçtan önce bulun.**
 
-Farklı araç zincirlerinden dışa aktarılan otonom yol dosyalarını tek bir sahada kaynaştırır: birleşik zaman çizelgesinde oynatma ve çakışma denetimi; **ittifak strateji grupları** için tasarlandı — yalnızca programlama ekibi için değil. Bu bir **görüntüleyicidir**: elinizdeki otonomları analiz edin, çakışmaları bulun, düzeltmeyi yolun sahibi araçta yapın, yeniden içe aktarın ve tekrar denetleyin.
+[**Tarayıcınızda deneyin**](https://pathblender.pages.dev) ·
+[Masaüstü uygulamasını indirin](https://github.com/LYT259/pathblender/releases) ·
+[İlk yol denetimi](docs/user-guide.en.md#try-it-without-files) ·
+[GitHub’da Star verin](https://github.com/LYT259/pathblender)
 
-![3B saha görünümü](docs/screenshots/field3d.png)
+PathBlender, Choreo ve PathPlanner yollarını FRC ittifak stratejisi için tek bir sahada ve tek bir saatte bir araya getirir. Robotları birlikte oynatın, bir çakışma bulun ve planı kesinleştirmeden önce farklı bir başlangıç zamanını karşılaştırın.
+
+![Sentetik bir antrenman oturumu: bir örtüşmeyi bulun, B’yi geciktirin ve değişen planı yeniden oynatın](docs/screenshots/first-check.gif)
+
+*Antrenman sahasındaki özgün eğitim yolları; gerçek bir maç değil. Kendi denetiminizi giriş ekranından yapın — dosya, kurulum veya hesap gerekmez.*
+
+- **Farklı araçları bir araya getirir:** Choreo, PathPlanner ve Collaborative `.ghostauto` dosyalarını içe aktarın.
+- **Zamanlamayı görünür kılar:** ortak oynatma, çarpışma denetimleri ve oturum düzeyinde başlangıç zamanı karşılaştırması.
+- **Yolları makinenizde tutar:** çözümleme ve denetim yerel olarak yapılır.
+
+Bunu yararlı ya da ilginç bulursanız, PathBlender’ı desteklemek ve sonra yeniden bulmak için **depoya Star vermeyi** düşünün.
 
 ## Neden
 
-FRC eleme ve play-off maçlarında bir ittifakın üç robotu aynı anda aynı sahada otonom programlarını çalıştırır. Takımlar yollarını farklı araçlarda planlar (Choreo, PathPlanner) ve ortaya çıkan otonomların çarpışıp çarpışmayacağını kimse göremez — ta ki maç ortasında gerçekten çarpışana kadar.
+FRC eleme ve play-off maçlarında bir ittifakın üç robotu aynı anda aynı sahada otonom programlarını çalıştırır. Takımlar yollarını farklı araçlarda planlar (Choreo, PathPlanner) ve ayrı dışa aktarımları karşılaştırmak, örtüşmeleri maçtan önce görmeyi zorlaştırır.
 
 PathBlender bu boşluğu doldurur:
 
-- **Çok araçlı içe aktarma** — Choreo `.traj`, 103. takım Collaborative fork'u `.ghostauto` ve yerel PathPlanner `.path` / `.auto` (yörünge üretimi TypeScript'e taşındı — bunu yapan başka bir tarayıcı aracı yok);
+- **Çok araçlı içe aktarma** — Choreo `.traj`, 103. takım Collaborative fork'u `.ghostauto` ve yerel PathPlanner `.path` / `.auto` (yörünge üretimi TypeScript'e taşındı);
 - **Birleşik zaman çizelgesinde oynatma** — tüm robotlar tek bir otonom saatinde (15 sn; 2026 sezonunda 20 sn), oynat / duraklat / sürükle / hız kontrolü (0,25×–1×);
 - **Çakışma ve girişim denetimi** — tüm zaman çizelgesi boyunca tampon dikdörtgeni (OBB) örtüşme kontrolü; çakışma raporu (kimler, ne zaman, nerede) ve saha dışı işaretleriyle;
 - **3B saha görünümü** — FRC 2022–2026 resmî saha modelleri (yapılar farklıysa kaynak ve AndyMark varyantları), serbest yörünge ve tek tıkla sığdırma; içe aktarılan özel sahalar 2B kalır. 2B görünüm sezon başına şematik ve gerçekçi iki stil sunar, resmî AprilTag yerleşimi üstte gösterilir;
 - **Rota kütüphanesi** — bir takımın tamam deploy klasörünü içe aktarın: alâkasız dosyalar atlanır, her yol kütüphaneye girer; her robotun yanındaki seçici etkin otonomunu canlı değiştirir. PathPlanner `settings.json` dosyaları gerçek tampon boyutlarını uygular;
 
-- **Sıfır kurulum, sıfır yükleme (web)** — salt statik bir web uygulaması: dosyalar tarayıcınızda yerel olarak çözümlenir ve web yapımı **hiçbir ağ isteği göndermez**;
-- **Ayrıca masaüstü uygulaması** — macOS, Windows ve Linux için hafif bir Tauri kabuğunda aynı arayüz; oturum kaydetme/açma, GIF tekrar oynatma ve çözüm paketi dışa aktarma ile uygulama içi güncellemeler (kararlı veya beta kanalı) ekler. Tek ağ etkinliği, sizin tetiklediğiniz ve GitHub Releases'e bağlanan güncelleme denetimidir.
+- **Sıfır kurulum, sıfır yükleme (web)** — statik bir web uygulaması: yol dosyaları tarayıcınızda yerel olarak çözümlenir ve denetlenir;
+- **Ayrıca masaüstü uygulaması** — macOS, Windows ve Linux için hafif bir Tauri kabuğunda aynı arayüz; oturum kaydetme/açma, GIF tekrar oynatma ve çözüm paketi dışa aktarma ile uygulama içi güncellemeler (kararlı veya beta kanalı) ekler. Masaüstünün güncelleme denetimleri GitHub Releases'e bağlanır.
 
 ## Hızlı başlangıç
 
-1. Uygulamayı edinin (aşağıya bakın) — ya da elinizde dosya yokken giriş ekranındaki **Bir örnek deneyin** düğmesiyle yerleşik çok robotlu oturumu yükleyin; oynatma ve çakışma denetimini anında görün.
+1. Uygulamayı edinin (aşağıya bakın) — ya da giriş ekranındaki **İlk yol denetiminizi deneyin** düğmesiyle üç sentetik yolla yönlendirilmiş bir alıştırma yapın. **Bir örnek deneyin** ise ayrı olarak yerleşik çok robotlu oturumu açar.
 2. İttifak ortağı her takımın yol dosyalarını içe aktarın — `.traj`, `.ghostauto`, `.path`, `.auto` serbestçe karıştırılabilir (tek dosya ya da bütün klasör; web'de de masaüstünde de; bir `.auto`'nun referans verdiği her `.path` aynı grupta gelmelidir). Bozuk dosyalar tek tek, nedenleriyle bildirilir; diğerlerini durdurmaz.
 3. **Oynat**'a basın. Çakışmalar sahada kırmızı halkalar, zaman çizelgesinde kırmızı bölümler ve çakışma panelinde kayıtlar (kimler, ne zaman, nerede) olarak görünür — birine tıklayın, saat o ana atlayasın.
 4. İnceleyin: kütüphaneden robotun rotasını değiştirin, ittifak görünümünü çevirin veya saati ilerletin. Ne değişmesi gerektiğini anladığınızda, yolu sahibi olan takımın aracında değişikliği yapın, yeniden dışa aktarın ve yeni dosyayı bırakın — oturum yerinde güncellenir.
@@ -56,7 +69,7 @@ Sahalar: FRC 2022–2026 yerleşik; ayrıca kalibrasyonlu özel saha içe aktarm
 
 ## Gizlilik
 
-Yol dosyaları **tamamen sizin makinenizde** çözümlenir. Arka uç yok, hesap yok, telemetri yok, analitik yok. Web yapımı hiçbir ağ çağrısı yapmaz; masaüstü uygulaması yalnızca sizin tetiklediğiniz güncelleme denetimi için ağa bağlanır (GitHub Releases) — yol dosyaları uygulamadan asla çıkmaz.
+Yol dosyaları **tamamen sizin makinenizde** çözümlenir. Arka uç yok, hesap yok, telemetri yok, analitik yok. Tarayıcı uygulamayı ve varlıklarını indirir; masaüstünün güncelleme denetimleri GitHub Releases'e bağlanır. Yol dosyaları yüklenmez. Dış bağlantılar, siz seçtiğinizde adı geçen hedeflerini açar.
 
 Ayrıca: oturum düzeyinde kırmızı/mavi ittifak görünümü, robot başına takım numarası etiketleri, resmî AprilTag üst katmanlarıyla yukarıdaki sezon sahaları ve **43 dilde** arayüz — tam liste dil menüsünde — açık ve koyu temalarla (sistemi izler).
 

@@ -100,6 +100,26 @@ try {
     }
     await ctx.close();
   }
+  // RTL + long-copy passes for the new engagement copy (ar/he are the RTL UI
+  // locales; the buttons below must match engagement-copy.ts exactly).
+  const rtl = [
+    ['ar', 'جرّب أول فحص مسارات لك', 'تشغيل المسارات', 'إظهار التعارض', 'اجعل B يبدأ بعد ثانيتين'],
+    ['he', 'נסו את בדיקת המסלולים הראשונה שלכם', 'השמיעו את המסלולים', 'הציגו את ההתנגשות', 'התחילו את B שתי שניות מאוחר יותר'],
+  ];
+  for (const [lang, firstCheck, play, find, compare] of rtl) {
+    const { page, ctx: rtlCtx } = await fresh(`${base}?support-preview=1`, 'light', { width: 390, height: 844 }, lang);
+    await check(await page.evaluate(() => document.documentElement.getAttribute('dir')), `${lang}: document runs RTL`);
+    await check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${lang}: welcome has no horizontal overflow`);
+    await page.getByRole('button', { name: firstCheck }).click();
+    await page.locator('.first-check-guide').waitFor();
+    await check(await page.locator('.first-check-guide').evaluate(el => el.scrollWidth <= el.clientWidth), `${lang}: guide fits its container at 390px`);
+    await page.getByRole('button', { name: play, exact: true }).click();
+    await page.getByRole('button', { name: find, exact: true }).click();
+    await page.getByRole('button', { name: compare, exact: true }).click();
+    await check(await page.locator('.conflict-count').first().innerText() === '0', `${lang}: exercise completes and collision clears`);
+    await page.screenshot({ path: `${out}/practice-rtl-${lang}-390.png` });
+    await rtlCtx.close();
+  }
   if (process.env.WALK_PRODUCTION) {
     for (const query of ['', '?support-preview=1']) {
       const {page,ctx} = await fresh(`${process.env.WALK_PRODUCTION}${query}`);

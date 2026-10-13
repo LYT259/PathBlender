@@ -2,30 +2,43 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文（香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | **Português (Brasil)** | [עברית](README.he.md)
 
-**Visualizador de fusão multi-fonte de trajetórias autônomas para a estratégia de alianças da FRC.**
+**Veja juntos as trajetórias autônomas da sua aliança. Encontre os conflitos antes do jogo.**
 
-Funde, em um mesmo campo, os arquivos de trajetórias autônomas exportados por diferentes cadeias de ferramentas: reprodução em uma linha do tempo unificada e verificação de colisões, feito para os **grupos de estratégia da aliança** — não só para a equipe de programação. É um **visualizador**: analise os autônomos que você tem, encontre os conflitos, corrija na ferramenta que é dona da trajetória, reimporte e confira de novo.
+[**Experimente no navegador**](https://pathblender.pages.dev) ·
+[Baixe o aplicativo de desktop](https://github.com/LYT259/pathblender/releases) ·
+[Primeira checagem de trajetórias](docs/user-guide.en.md#try-it-without-files) ·
+[Star no GitHub](https://github.com/LYT259/pathblender)
 
-![Vista 3D do campo](docs/screenshots/field3d.png)
+O PathBlender reúne as trajetórias do Choreo e do PathPlanner em um só campo e um só relógio para a estratégia de alianças da FRC. Reproduza os robôs juntos, encontre um conflito e compare um horário de partida diferente antes de fechar o plano.
+
+![Uma sessão de prática sintética: localize uma sobreposição, atrase o B e reproduza o plano alterado](docs/screenshots/first-check.gif)
+
+*Trajetórias de ensino originais num campo de treino, não um jogo real. Faça sua própria checagem direto da tela de boas-vindas — sem arquivos, sem instalação e sem conta.*
+
+- **Reúne ferramentas diferentes:** importe arquivos do Choreo, do PathPlanner e `.ghostauto` do Collaborative.
+- **Torna a temporização visível:** reprodução compartilhada, checagens de colisão e comparação de horários de partida em nível de sessão.
+- **Mantém as trajetórias na sua máquina:** a análise e a verificação acontecem localmente.
+
+Se isso for útil ou interessante para você, **dê uma Star no repositório** para apoiar o PathBlender e encontrá-lo de novo mais tarde.
 
 ## Por quê
 
-Nos jogos de classificação e playoff da FRC, os três robôs de uma aliança executam seus programas autônomos no mesmo campo, ao mesmo tempo. Cada equipe planeja trajetórias em ferramentas diferentes (Choreo, PathPlanner) e ninguém consegue ver se os autônomos resultantes vão colidir — até colidirem de verdade, no meio do jogo.
+Nos jogos de classificação e playoff da FRC, os três robôs de uma aliança executam seus programas autônomos no mesmo campo, ao mesmo tempo. Cada equipe planeja trajetórias em ferramentas diferentes (Choreo, PathPlanner) e comparar exportações separadas dificulta enxergar sobreposições antes do jogo.
 
 O PathBlender preenche essa lacuna:
 
-- **Importação multi-ferramenta** — Choreo `.traj`, `.ghostauto` do fork Collaborative da equipe 103 e `.path` / `.auto` nativos do PathPlanner (a geração de trajetória foi portada para TypeScript — nenhuma outra ferramenta web faz isso);
+- **Importação multi-ferramenta** — Choreo `.traj`, `.ghostauto` do fork Collaborative da equipe 103 e `.path` / `.auto` nativos do PathPlanner (a geração de trajetória foi portada para TypeScript);
 - **Reprodução em linha do tempo unificada** — todos os robôs em um único relógio de autônomo (15 s; 20 s na temporada 2026), reproduzir / pausar / arrastar / controle de velocidade (0,25×–1×);
 - **Verificação de colisões e interferências** — sobreposição de retângulos de para-choques (OBB) ao longo de toda a linha do tempo, com relatório de conflitos (quem, quando, onde) e marcações de fora do campo;
 - **Vista 3D do campo** — modelos oficiais dos campos da FRC 2022–2026 (construções soldada e AndyMark quando diferem), órbita livre e enquadramento em um clique; campos personalizados importados ficam em 2D. A vista 2D oferece um estilo esquemático e um renderizado por temporada, com a disposição oficial de AprilTags sobreposta;
 - **Biblioteca de rotas** — importe a pasta deploy inteira de uma equipe: arquivos alheios são ignorados e cada rota entra numa biblioteca; um seletor ao lado de cada robô troca o autônomo ativo em tempo real. Os `settings.json` do PathPlanner aplicam as dimensões reais dos para-choques;
 
-- **Zero instalação, zero envio (web)** — um web app puramente estático: os arquivos são analisados localmente no seu navegador, e a build web **não faz nenhuma requisição de rede**;
-- **Também um aplicativo de desktop** — a mesma interface num envoltório Tauri leve para macOS, Windows e Linux, que acrescenta salvar/abrir sessões, repetição em GIF e exportação de pacote de solução, além de atualizações dentro do app (canal estável ou beta). Sua única atividade de rede é a verificação de atualizações que você disparar, que contata o GitHub Releases.
+- **Zero instalação, zero envio (web)** — um web app estático: os arquivos de trajetórias são analisados e verificados localmente no seu navegador;
+- **Também um aplicativo de desktop** — a mesma interface num envoltório Tauri leve para macOS, Windows e Linux, que acrescenta salvar/abrir sessões, repetição em GIF e exportação de pacote de solução, além de atualizações dentro do app (canal estável ou beta). As verificações de atualização do desktop contatam o GitHub Releases.
 
 ## Início rápido
 
-1. Obtenha o aplicativo (veja abaixo) — ou, sem arquivos à mão, aperte **Experimentar um exemplo** na tela de boas-vindas para carregar uma sessão multi-robô embutida e ver na hora a reprodução e a verificação de colisões.
+1. Obtenha o aplicativo (veja abaixo) — ou aperte **Experimente sua primeira checagem de trajetórias** na tela de boas-vindas para um exercício guiado com três trajetórias sintéticas. **Experimentar um exemplo** abre à parte a sessão multi-robô embutida.
 2. Importe os arquivos de trajetórias de cada parceiro da aliança — `.traj`, `.ghostauto`, `.path`, `.auto`, misturados livremente (um arquivo ou uma pasta inteira, na web e no desktop; cada `.path` referenciado por um `.auto` deve chegar no mesmo lote). Arquivos quebrados são relatados um a um sem parar os demais.
 3. Aperte **reproduzir**. Os conflitos aparecem como anéis vermelhos no campo, trechos vermelhos na linha do tempo e entradas no painel de conflitos (quem, quando, onde) — clique numa para pular o relógio direto para aquele instante.
 4. Investigue: troque a rota de um robô pela biblioteca, alterne a visão da aliança ou avance o relógio. Quando souber o que precisa mudar, faça a mudança na ferramenta da equipe dona, reexporte e solte o arquivo novo — a sessão se atualiza no lugar.
@@ -56,7 +69,7 @@ Campos: FRC 2022–2026 embutidos, além da importação de campos personalizado
 
 ## Privacidade
 
-Os arquivos de trajetórias são analisados **inteiramente na sua máquina**. Não há backend, contas, telemetria nem analytics. A build web não faz nenhuma chamada de rede; o aplicativo de desktop contata a rede apenas na verificação de atualizações que você disparar (GitHub Releases) — arquivos de trajetórias nunca saem do aplicativo.
+Os arquivos de trajetórias são analisados **inteiramente na sua máquina**. Não há backend, contas, telemetria nem analytics. O navegador baixa o aplicativo e seus recursos; as verificações de atualização do desktop contatam o GitHub Releases. Arquivos de trajetórias não são enviados. Links externos abrem o destino indicado quando você os seleciona.
 
 Também inclui: visão de aliança vermelha/azul por sessão, anotações de número de equipe por robô, os campos de temporada acima com AprilTags oficiais sobrepostos e uma interface em **43 idiomas** — lista completa no menu de idioma — nos temas claro e escuro (segue o sistema).
 
