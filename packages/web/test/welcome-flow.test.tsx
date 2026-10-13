@@ -31,7 +31,7 @@ describe('welcome flow', () => {
   it('shows the brand and starting actions while retaining accessible descriptions', () => {
     render(<App />);
     const welcome = screen.getByRole('region', { name: 'Import paths to get started' });
-    expect(within(welcome).getAllByRole('button')).toHaveLength(5);
+    expect(within(welcome).getAllByRole('button')).toHaveLength(6);
     expect(within(welcome).getByRole('heading', { name: 'PathBlender' })).toBeInTheDocument();
     // Brand, then straight to the buttons (the 2026-10-07 purpose pitch was
     // removed on user request — the welcome screen stays copy-light);
@@ -39,7 +39,7 @@ describe('welcome flow', () => {
     expect(welcome.textContent).toBe([
       'PathBlender',
       'Import path files', 'Import folder', 'Open saved session', 'Try an example',
-      en['menu.userGuide'],
+      'Try your first path check', en['menu.userGuide'],
     ].join(''));
     expect(within(welcome).getByRole('button', { name: 'Import path files' })).toHaveAccessibleDescription(/Choreo or PathPlanner/);
     const folder = within(welcome).getByRole('button', { name: 'Import folder' });

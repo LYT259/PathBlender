@@ -2,30 +2,43 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md) | [繁體中文（香港）](README.zh-Hant.md) | **Español** | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
-**Visor de fusión de rutas autónomas multifuente para la estrategia de alianzas de FRC.**
+**Mira juntas las rutas autónomas de tu alianza. Encuentra los conflictos antes del partido.**
 
-Combina en un mismo campo los archivos de rutas autónomas exportados por distintas cadenas de herramientas: reproducción en una línea de tiempo unificada y comprobación de colisiones, pensado para los **grupos de estrategia de la alianza** — no solo para el equipo de programación. Es un **visor**: analiza las autonomías que ya tienes, encuentra los conflictos, corrige en la herramienta dueña de la ruta, vuelve a importar y comprueba de nuevo.
+[**Pruébalo en tu navegador**](https://pathblender.pages.dev) ·
+[Descarga la aplicación de escritorio](https://github.com/LYT259/pathblender/releases) ·
+[Primera comprobación de rutas](docs/user-guide.en.md#try-it-without-files) ·
+[Star en GitHub](https://github.com/LYT259/pathblender)
 
-![Vista 3D del campo](docs/screenshots/field3d.png)
+PathBlender reúne las rutas de Choreo y PathPlanner en un solo campo y un solo reloj para la estrategia de alianzas de FRC. Reproduce los robots juntos, encuentra un conflicto y compara una hora de salida distinta antes de cerrar el plan.
+
+![Una sesión de práctica sintética: localiza un solape, retrasa a B y reproduce el plan cambiado](docs/screenshots/first-check.gif)
+
+*Rutas de enseñanza originales en un campo de práctica, no un partido real. Haz tu propia comprobación desde la pantalla de bienvenida — sin archivos, sin instalación y sin cuenta.*
+
+- **Reúne herramientas distintas:** importa archivos de Choreo, PathPlanner y `.ghostauto` de Collaborative.
+- **Hace visible la temporización:** reproducción compartida, comprobaciones de colisión y comparación de horas de salida a nivel de sesión.
+- **Mantiene las rutas en tu equipo:** el análisis y la comprobación ocurren en local.
+
+Si te resulta útil o interesante, **dale una Star al repositorio** para apoyar a PathBlender y encontrarlo más adelante.
 
 ## Por qué
 
-En los partidos de clasificación y eliminatorias de FRC, los tres robots de una alianza ejecutan sus programas autónomos sobre el mismo campo al mismo tiempo. Cada equipo planifica sus rutas en herramientas distintas (Choreo, PathPlanner) y nadie puede ver si las autonomías resultantes van a chocar — hasta que chocan de verdad, en pleno partido.
+En los partidos de clasificación y eliminatorias de FRC, los tres robots de una alianza ejecutan sus programas autónomos sobre el mismo campo al mismo tiempo. Cada equipo planifica sus rutas en herramientas distintas (Choreo, PathPlanner) y comparar exportaciones por separado dificulta detectar solapes antes del partido.
 
 PathBlender cubre ese hueco:
 
-- **Importación multifuente** — Choreo `.traj`, `.ghostauto` del fork Collaborative del equipo 103 y `.path` / `.auto` nativos de PathPlanner (la generación de trayectorias está portada a TypeScript — ninguna otra herramienta web hace esto);
+- **Importación multifuente** — Choreo `.traj`, `.ghostauto` del fork Collaborative del equipo 103 y `.path` / `.auto` nativos de PathPlanner (la generación de trayectorias está portada a TypeScript);
 - **Reproducción en línea de tiempo unificada** — todos los robots sobre un mismo reloj autónomo (15 s; 20 s en la temporada 2026), reproducir / pausar / desplazar / controlar la velocidad (0,25×–1×);
 - **Comprobación de colisiones e interferencias** — solapamiento de rectángulos de parachoques (OBB) a lo largo de toda la línea de tiempo, con informe de conflictos (quiénes, cuándo, dónde) y marcas de salida del campo;
 - **Vista 3D del campo** — modelos oficiales de los campos de FRC 2022–2026 (construcción soldada y de AndyMark cuando difieren), órbita libre y encuadre en un clic; los campos personalizados importados permanecen en 2D. La vista 2D ofrece un estilo esquemático y otro renderizado por temporada, con la disposición oficial de AprilTags superpuesta;
 - **Biblioteca de rutas** — importa una carpeta completa del directorio deploy de cualquier equipo: los archivos ajenos se omiten y cada ruta entra en una biblioteca; un selector junto a cada robot cambia su autonomía activa en vivo. Los `settings.json` de PathPlanner aplican las dimensiones reales de los parachoques;
 
-- **Cero instalación, cero subidas (web)** — una aplicación web puramente estática: los archivos se analizan localmente en tu navegador y la compilación web **no hace ninguna petición de red**;
-- **También aplicación de escritorio** — la misma interfaz en un entorno Tauri ligero para macOS, Windows y Linux, que añade guardar/abrir sesiones, repetición GIF y exportación de paquete de solución, y actualizaciones integradas (canal estable o beta). Su única actividad de red es la comprobación de actualizaciones que tú disparas, que contacta con GitHub Releases.
+- **Cero instalación, cero subidas (web)** — una aplicación web estática: los archivos de rutas se analizan y comprueban localmente en tu navegador;
+- **También aplicación de escritorio** — la misma interfaz en un entorno Tauri ligero para macOS, Windows y Linux, que añade guardar/abrir sesiones, repetición GIF y exportación de paquete de solución, y actualizaciones integradas (canal estable o beta). Las comprobaciones de actualización del escritorio contactan con GitHub Releases.
 
 ## Inicio rápido
 
-1. Consigue la aplicación (ver abajo) — o, sin archivos a mano, pulsa **Probar un ejemplo** en la pantalla de bienvenida para cargar una sesión multirrobot integrada y ver la reproducción y la comprobación de colisiones al instante.
+1. Consigue la aplicación (ver abajo) — o pulsa **Prueba tu primera comprobación de rutas** en la pantalla de bienvenida para seguir un ejercicio guiado con tres rutas sintéticas. **Probar un ejemplo** abre aparte la sesión multirrobot integrada.
 2. Importa los archivos de rutas de cada equipo de la alianza — `.traj`, `.ghostauto`, `.path`, `.auto`, mezclados libremente (un archivo o una carpeta entera, en la web y en el escritorio; cada `.path` referenciado por un `.auto` debe llegar en el mismo lote). Los archivos rotos se informan uno a uno sin detener a los demás.
 3. Pulsa **reproducir**. Los conflictos aparecen como anillos rojos en el campo, segmentos rojos en la línea de tiempo y entradas en el panel de conflictos (quiénes, cuándo, dónde) — pulsa una para saltar el reloj a ese instante.
 4. Investiga: cambia la ruta de un robot desde la biblioteca, alterna la vista de alianza o avanza el reloj. Cuando sepas qué hay que cambiar, hazlo en la herramienta del equipo dueño, reexporta y suelta el archivo nuevo — la sesión se actualiza en el sitio.
@@ -56,7 +69,7 @@ Campos: FRC 2022–2026 integrados, más importación de campos personalizados c
 
 ## Privacidad
 
-Los archivos de rutas se analizan **enteramente en tu máquina**. No hay backend, ni cuentas, ni telemetría, ni analítica. La compilación web no hace ninguna llamada de red; la aplicación de escritorio contacta con la red solo para la comprobación de actualizaciones que tú disparas (GitHub Releases) — los archivos de rutas nunca salen de la aplicación.
+Los archivos de rutas se analizan **enteramente en tu máquina**. No hay backend, ni cuentas, ni telemetría, ni analítica. El navegador descarga la aplicación y sus recursos; las comprobaciones de actualización del escritorio contactan con GitHub Releases. Los archivos de rutas no se suben. Los enlaces externos abren su destino al seleccionarlos.
 
 También incluye: vista de alianza roja/azul a nivel de sesión, anotaciones de número de equipo por robot, los campos de temporada anteriores con superposición oficial de AprilTags y una interfaz en **43 idiomas** — con la lista completa en el menú de idioma — en temas claro y oscuro (sigue al sistema).
 

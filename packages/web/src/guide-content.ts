@@ -1,7 +1,7 @@
 /**
  * In-app quick guide (2026-10-07 onboarding plan §5): topic copy shipped with
- * the app so the core explanations read offline — the web build makes no
- * network requests and the venue Wi-Fi cannot be counted on.
+ * the app so the core explanations need no separate network request once
+ * loaded — the venue Wi-Fi cannot be counted on.
  *
  * Framework strings (dialog title, link labels) live in the i18n dictionaries;
  * this body is maintained in English + Simplified + Traditional Chinese only,
@@ -47,6 +47,19 @@ export function pickLocalized(text: LocalizedText, lang: Lang): string {
 }
 
 export const GUIDE_TOPICS: GuideTopic[] = [
+  {
+    id: 'first-check',
+    title: { en: 'Try a check without files', hans: '无需文件，试做一次检查', hant: '無需檔案，試做一次檢查' },
+    intro: {
+      en: 'Choose “Try your first path check” on the welcome screen. Three synthetic teaching routes run on a practice field; no real team files are needed.',
+      hans: '在欢迎页选择「试做第一次路径检查」。练习场上有三条自制教学路线，无需真实队伍文件。',
+      hant: '在歡迎頁選擇「試做第一次路徑檢查」。練習場上有三條自製教學路徑，無需真實隊伍檔案。',
+    },
+    points: [
+      { en: 'Play the routes, show the conflict, start B two seconds later, then replay. The live collision checks show what changed; the source routes are untouched.', hans: '播放路线、查看冲突、让 B 晚两秒出发，再次回放。实际碰撞检查会显示变化，原始路线保持不变。', hant: '播放路徑、查看衝突、讓 B 晚兩秒出發，再次播放。實際碰撞檢查會顯示變化，原始路徑保持不變。' },
+      { en: 'Hide the guide to explore, restart the exercise, or end practice to return home. The separate “Try an example” entry keeps the existing route-library example.', hans: '可以收起引导自由探索、重新开始练习，或结束练习回到欢迎页。原有的「体验示例」仍打开路线库示例。', hant: '可以收起引導自由探索、重新開始練習，或結束練習回到歡迎頁。原有的「體驗範例」仍開啟路徑庫範例。' },
+    ],
+  },
   {
     id: 'purpose',
     title: {
@@ -261,8 +274,8 @@ export const GUIDE_TOPICS: GuideTopic[] = [
         hant: '鍵盤快速鍵：任意位置按 ?，或從說明選單開啟。',
       },
       {
-        en: 'No files at hand? “Try the example” on the welcome screen loads a real multi-robot session.',
-        hans: '手头没有文件？欢迎页的「试试示例」会加载一个真实的多机器人会话。',
+        en: 'No files at hand? “Try an example” on the welcome screen loads a real multi-robot session.',
+        hans: '手头没有文件？欢迎页的「体验示例」会加载一个真实的多机器人会话。',
         hant: '手邊沒有檔案？歡迎頁的「試試示例」會載入一個真實的多機器人工作階段。',
       },
       {

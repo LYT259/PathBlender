@@ -3,6 +3,8 @@ import { useTheme } from '../theme';
 import dayIcon from '../assets/app-icon-day.png';
 import nightIcon from '../assets/app-icon-night.png';
 import './WelcomeScreen.css';
+import { StarLink } from './ProjectSupport';
+import { engagementText } from '../engagement-copy';
 
 interface WelcomeScreenProps {
   onImport: () => void;
@@ -12,6 +14,7 @@ interface WelcomeScreenProps {
   exampleLoading?: boolean;
   /** Opens the in-app quick guide; the Help menu carries the same entry. */
   onOpenGuide?: () => void;
+  onFirstCheck?: () => void;
 }
 
 function WelcomeIcon({ name }: { name: 'file' | 'folder' | 'session' | 'example' }) {
@@ -22,8 +25,8 @@ function WelcomeIcon({ name }: { name: 'file' | 'folder' | 'session' | 'example'
   </svg>;
 }
 
-export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryExample, exampleLoading = false, onOpenGuide }: WelcomeScreenProps) {
-  const { t } = useI18n();
+export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryExample, exampleLoading = false, onOpenGuide, onFirstCheck }: WelcomeScreenProps) {
+  const { t, lang } = useI18n();
   const { resolved } = useTheme();
 
   return (
@@ -53,9 +56,11 @@ export function WelcomeScreen({ onImport, onImportFolder, onOpenSession, onTryEx
             <span className="start-action-title">{t(exampleLoading ? 'welcome.loadingExample' : 'welcome.tryExample')}</span>
           </button>
         </div>
-        {onOpenGuide && <div className="start-guide">
-          <button type="button" className="start-guide-link" onClick={onOpenGuide}>{t('menu.userGuide')}</button>
-        </div>}
+        <div className="start-guide">
+          {onFirstCheck && <button type="button" className="start-guide-link" onClick={onFirstCheck} aria-description={engagementText(lang, 'firstCheckHint')}>{engagementText(lang, 'firstCheck')}</button>}
+          {onOpenGuide && <button type="button" className="start-guide-link" onClick={onOpenGuide}>{t('menu.userGuide')}</button>}
+          <StarLink />
+        </div>
       </div>
     </section>
   );

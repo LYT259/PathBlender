@@ -112,8 +112,10 @@ check(
 // --- Quick guide (2026-10-07 onboarding plan): the welcome screen offers the
 // in-app guide; opening it shows the topic body and Escape closes it back to
 // the welcome screen. (The purpose pitch that used to sit here was removed on
-// user request — the welcome screen stays copy-light.) ---
-await page.locator('.start-guide-link').click();
+// user request — the welcome screen stays copy-light.) The star-readiness
+// pass added a sibling "first path check" link with the same class, so pick
+// the guide entry by its own label instead of the shared class. ---
+await page.locator('.workspace-empty').getByRole('button', { name: 'Quick guide' }).click();
 await page.waitForSelector('.guide-dialog');
 check(
   'quick guide opens with the transforms topic',
