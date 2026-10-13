@@ -40,8 +40,8 @@ try {
   }
   {
     const { page, ctx } = await fresh(base);
-    await check(await page.getByRole('link', { name: 'Star on GitHub' }).count() === 0, 'Private default: no Star invitation');
-    await page.screenshot({ path: `${out}/welcome-private.png` });
+    await check(await page.getByRole('link', { name: 'Star on GitHub' }).count() === 1, 'Public-ready default: welcome Star link without preview param');
+    await page.screenshot({ path: `${out}/welcome-default.png` });
     await ctx.close();
   }
   const { page, ctx } = await fresh(`${base}?support-preview=1`);
@@ -123,13 +123,13 @@ try {
   if (process.env.WALK_PRODUCTION) {
     for (const query of ['', '?support-preview=1']) {
       const {page,ctx} = await fresh(`${process.env.WALK_PRODUCTION}${query}`);
-      await check(await page.getByRole('link',{name:'Star on GitHub'}).count() === 0, `Production ${query || 'default'}: public gate stays closed`);
+      await check(await page.getByRole('link',{name:'Star on GitHub'}).count() === 1, `Production ${query || 'default'}: Star link visible (public-ready)`);
       await page.getByRole('button',{name:'Try your first path check'}).click();
       await page.getByRole('button',{name:'Play the routes',exact:true}).click();
       await page.getByRole('button',{name:'Show the conflict',exact:true}).click();
       await page.getByRole('button',{name:'Start B two seconds later',exact:true}).click();
       await page.getByRole('button',{name:'Replay the changed plan',exact:true}).click();
-      await check(await page.locator('.conflict-count').first().innerText() === '0' && await page.getByRole('link',{name:'Star on GitHub'}).count() === 0, `Production ${query || 'default'}: exercise works without Star invitation`);
+      await check(await page.locator('.conflict-count').first().innerText() === '0' && await page.getByRole('button',{name:'Dismiss this invitation'}).count() === 1, `Production ${query || 'default'}: exercise works and invitation appears after replay`);
       await ctx.close();
     }
   }
