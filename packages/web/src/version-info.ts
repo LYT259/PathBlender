@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.6';
+export const APP_VERSION = '0.1.9-beta.7';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.7', date: '2026.10.13', note: {
+    en: 'New hands-on exercise: try your first path check with three built-in practice routes — no files needed',
+    zh: '新增上手练习：用三条内置教学路线试做第一次路径检查——无需准备文件',
+    'zh-tw': '新增上手練習：用三條內建教學路徑試做第一次路徑檢查——無需準備檔案',
+    cs: 'Nové cvičení: vyzkoušejte svou první kontrolu tras se třemi vestavěnými cvičnými trasami — bez souborů',
+    nl: 'Nieuwe oefening: probeer uw eerste routecontrole met drie ingebouwde oefenroutes — geen bestanden nodig',
+    fr: 'Nouvel exercice : essayez votre premier contrôle de parcours avec trois parcours d’entraînement intégrés — aucun fichier requis',
+    he: 'תרגול חדש: נסו את בדיקת המסלולים הראשונה שלכם עם שלושה מסלולי אימון מובנים — בלי קבצים',
+    ja: '新しい練習を追加：内蔵の練習用パス 3 本ではじめてのパス検査を試せます——ファイルは不要です',
+    ko: '새 연습 추가: 내장된 연습 경로 세 개로 첫 경로 검사를 해 볼 수 있습니다 — 파일이 필요 없습니다',
+    pl: 'Nowe ćwiczenie: wypróbuj swoje pierwsze sprawdzanie tras na trzech wbudowanych trasach ćwiczeniowych — bez plików',
+    'pt-br': 'Novo exercício: experimente sua primeira checagem de trajetórias com três trajetórias de treino embutidas — sem arquivos',
+    es: 'Nuevo ejercicio: prueba tu primera comprobación de rutas con tres rutas de práctica integradas — sin archivos',
+    tr: 'Yeni alıştırma: yerleşik üç antrenman yoluyla ilk yol denetiminizi deneyin — dosya gerekmez',
+    ar: 'تمرين جديد: جرّب أول فحص مسارات لك عبر ثلاثة مسارات تدريبية مدمجة — دون أي ملفات',
+    az: 'Yeni məşq: daxili üç təlim marşrutu ilə ilk marşrut yoxlamanızı sınayın — fayl lazım deyil',
+    bg: 'Нова тренировка: опитайте първата си проверка на маршрути с три вградени тренировъчни маршрута — без файлове',
+    bs: 'Nova vježba: isprobajte svoju prvu provjeru ruta s tri ugrađene vježbovne rute — bez datoteka',
+    da: 'Ny øvelse: prøv din første rutekontrol med tre indbyggede øveruter — ingen filer nødvendige',
+    de: 'Neue Übung: Probiere deine erste Pfadprüfung mit drei eingebauten Übungspfaden — keine Dateien nötig',
+    el: 'Νέα άσκηση: δοκιμάστε τον πρώτο σας έλεγχο διαδρομών με τρεις ενσωματωμένες διαδρομές εξάσκησης — χωρίς αρχεία',
+    fil: 'Bagong pagsasanay: subukan ang unang pagsusuri ng path gamit ang tatlong built-in na practice ruta — walang kailangang file',
+    hi: 'नया अभ्यास: तीन अंतर्निहित अभ्यास पथों के साथ अपनी पहली पथ जाँच आज़माएँ — किसी फ़ाइल की ज़रूरत नहीं',
+    hr: 'Nova vježba: isprobajte svoju prvu provjeru ruta s tri ugrađene vježbovne rute — bez datoteka',
+    hu: 'Új gyakorlat: próbáld ki az első útvonal-ellenőrzésed három beépített gyakorlóútvonallal — fájl nélkül',
+    hy: 'Նոր վարժություն՝ փորձեք ձեր առաջին երթուղիների ստուգումը երեք ներկառուցված մարզական երթուղիներով — առանց ֆայլերի',
+    id: 'Latihan baru: coba pemeriksaan jalur pertama Anda dengan tiga jalur latihan bawaan — tanpa berkas',
+    it: 'Nuovo esercizio: prova il tuo primo controllo dei percorsi con tre percorsi di allenamento integrati — nessun file necessario',
+    mk: 'Нова вежба: пробајте го првиот провер на рути со три вградени руте за вежбање — без датотеки',
+    mr: 'नवीन सराव: तीन अंगभूत सराव मार्गांसह तुमची पहिली मार्ग तपासणी वापरून पहा — फाइल्सची गरज नाही',
+    ms: 'Latihan baharu: cuba semakan laluan pertama anda dengan tiga laluan latihan terbina dalam — tiada fail diperlukan',
+    nb: 'Ny øvelse: prøv din første rutesjekk med tre innebygde øvelsesruter — ingen filer nødvendige',
+    nn: 'Ny øving: prøv din første rutesjekk med tre innebygde øvingsruter — ingen filer trengst',
+    ro: 'Exercițiu nou: încearcă prima ta verificare de rute cu trei rute de antrenament integrate — fără fișiere',
+    rw: 'Imyitozo nshya: gerageza ikizwe cya mbere cy’inzira hamwe n’inzira eshatu zo mu rutonde — nta dosiye ikenewe',
+    sq: 'Ushtim i ri: provoni kontrollin tuaj të parë të rrugëve me tre rrugë stërvitjeje të integruara — pa skedarë',
+    sr: 'Nova vežba: isprobajte svoju prvu proveru ruta sa tri ugrađene rute za vežbu — bez datoteka',
+    sv: 'Ny övning: prova din första kontroll av rutter med tre inbyggda övningsrutter — inga filer behövs',
+    ta: 'புதிய பயிற்சி: உள்ளமைக்கப்பட்ட மூன்று பயிற்சிப் பாதைகளுடன் உங்கள் முதல் பாதைச் சரிபார்ப்பை முயற்சிக்கவும் — கோப்புகள் தேவையில்லை',
+    uk: 'Нова вправа: спробуйте свою першу перевірку маршрутів на трьох вбудованих навчальних маршрутах — файли не потрібні',
+    vi: 'Bài tập mới: thử lần kiểm tra đường đi đầu tiên với ba tuyến luyện tập có sẵn — không cần tệp',
+  } },
   { version: '0.1.9-beta.6', date: '2026.10.11', note: {
     en: '2026 field artwork re-rendered from the official CAD model — 2× sharper when zooming in, hub alliance colours corrected',
     zh: '2026 赛季场地渲染图改由官方 CAD 模型重新渲染——放大查看时清晰度提升 2 倍，两个 Hub 的联盟配色已修正',

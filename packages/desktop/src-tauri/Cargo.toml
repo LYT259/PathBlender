@@ -1,6 +1,6 @@
 [package]
 name = "pathblender-desktop"
-version = "0.1.9-beta.6"
+version = "0.1.9-beta.7"
 description = "PathBlender — FRC alliance path fusion viewer (desktop shell)"
 edition = "2021"
 
