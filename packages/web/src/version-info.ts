@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.10';
+export const APP_VERSION = '0.1.9-beta.11';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.11', date: '2026.10.14', note: {
+    en: 'Focus rings now appear only during keyboard navigation',
+    zh: '焦点框现在只在键盘导航时显示',
+    'zh-tw': '焦點框現在只在鍵盤導覽時顯示',
+    cs: 'Ohnisové rámečky se nyní zobrazují jen při navigaci klávesnicí',
+    nl: 'Focusringen verschijnen nu alleen bij navigeren met het toetsenbord',
+    fr: 'Les contours de mise au point n’apparaissent désormais qu’en navigation clavier',
+    he: 'טבעות המיקוד מופיעות כעת רק בניווט במקלדת',
+    ja: 'フォーカスリングはキーボード操作時のみ表示されるようになりました',
+    ko: '포커스 링은 이제 키보드 탐색 시에만 표시됩니다',
+    pl: 'Obrysy fokusu widoczne są teraz tylko podczas nawigacji klawiaturą',
+    'pt-br': 'Os anéis de foco agora aparecem apenas na navegação pelo teclado',
+    es: 'Los anillos de enfoque ahora solo aparecen al navegar con el teclado',
+    tr: 'Odak halkaları artık yalnızca klavyeyle gezinirken görünüyor',
+    ar: 'تظهر حلقات التركيز الآن فقط عند التنقل بلوحة المفاتيح',
+    az: 'Fokus halqaları indi yalnız klaviatura ilə naviqasiya zamanı görünür',
+    bg: 'Контурите на фокуса вече се показват само при навигация с клавиатурата',
+    bs: 'Fokus prstenovi se sada prikazuju samo pri kretanju tastaturom',
+    da: 'Fokusringe vises nu kun ved navigation med tastaturet',
+    de: 'Fokusringe werden jetzt nur bei der Tastaturnavigation angezeigt',
+    el: 'Οι δακτύλιοι εστίασης εμφανίζονται πλέον μόνο κατά την πλοήγηση με πληκτρολόγιο',
+    fil: 'Ang focus ring ay lalabas na lang kapag nag-navigate gamit ang keyboard',
+    hi: 'फ़ोकस रिंग अब केवल कीबोर्ड नेविगेशन के दौरान दिखती हैं',
+    hr: 'Fokus prstenovi sada se prikazuju samo pri navigaciji tipkovnicom',
+    hu: 'A fókuszgyűrűk mostantól csak billentyűzetes navigációnál jelennek meg',
+    hy: 'Ֆոկուսի օղակներն այժմ երևում են միայն ստեղնաշարով նավիգացիայի ժամանակ',
+    id: 'Cincin fokus kini hanya muncul saat bernavigasi dengan keyboard',
+    it: 'Gli anelli di attivazione ora compaiono solo durante la navigazione da tastiera',
+    mk: 'Прстените на фокусот сега се прикажуваат само при навигација со тастатура',
+    mr: 'फोकस रिंग आता फक्त कीबोर्ड नेव्हिगेशनदरम्यान दिसतात',
+    ms: 'Cincin fokus kini hanya muncul semasa menavigasi dengan papan kekunci',
+    nb: 'Fokusringer vises nå bare ved tastaturnavigering',
+    nn: 'Fokusringar visast no berre ved tastaturnavigering',
+    ro: 'Inelele de focalizare apar acum doar la navigarea cu tastatura',
+    rw: 'Focus ring igaragara ubu gusa iyo utambaza ukoresheje keyboard',
+    sq: 'Unazat e fokusit tani shfaqen vetëm gjatë navigimit me tastierë',
+    sr: 'Prstenovi fokusa sada se prikazuju samo pri navigaciji tastaturom',
+    sv: 'Fokusringar visas nu bara vid tangentbordsnavigering',
+    ta: 'முனைப்பு வளையங்கள் இப்போது விசைப்பலகை வழிசெலுத்தலின் போது மட்டுமே தோன்றும்',
+    uk: 'Кільця фокусу тепер з’являються лише під час навігації з клавіатури',
+    vi: 'Vòng lấy tiêu điểm giờ chỉ xuất hiện khi điều hướng bằng bàn phím',
+  } },
   { version: '0.1.9-beta.10', date: '2026.10.14', note: {
     en: 'Action and number labels no longer cover each other when robots bunch up',
     zh: '机器人聚在一起时，动作与队号标签不再互相遮挡',

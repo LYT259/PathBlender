@@ -9,8 +9,14 @@ import { ThemeProvider } from './theme';
 import { AppIconProvider } from './app-icon';
 import { UpdateChannelProvider } from './update-channel';
 import { PrefsWindow } from './prefs-window';
+import { installFocusModality } from './focus-modality';
 import './app.css';
 import './workspace.css';
+
+// Ring-or-not follows the physical input (mouse vs keyboard), not the
+// browser's :focus-visible guess — see focus-modality.ts. Covers the prefs
+// webview too: it runs this same bundle in its own document.
+installFocusModality();
 
 // Desktop ⌘, Preferences opens a second webview on the same bundle,
 // distinguished only by the ?window=prefs query param. It renders its own

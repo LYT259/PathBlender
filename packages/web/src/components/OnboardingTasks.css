@@ -21,7 +21,7 @@
   border: 0; border-radius: 6px; background: transparent; color: var(--fg-dim); cursor: pointer;
 }
 .tour-toggle:hover, .tour-close:hover { color: var(--fg); background: var(--hover); }
-.tour-toggle:focus-visible, .tour-close:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+:where(html.kbd-nav) .tour-toggle:focus-visible, :where(html.kbd-nav) .tour-close:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 .tour-toggle svg { transition: transform 0.15s ease; transform: rotate(-90deg); }
 .tour-toggle[aria-expanded='false'] svg { transform: rotate(90deg); }
 .tour-tasks { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
