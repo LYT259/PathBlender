@@ -31,6 +31,7 @@ import {
 import { TRAIL_WIDTH_M } from './ground-trail';
 import { bumperColor, heatmapColor, robotAnnotation } from './robot-identity';
 import { MK5I_MODULE_TOP_WORLD_M } from './robot-sprites';
+import { placeLabel, type LayoutRect } from './callout-layout';
 
 export interface RenderView {
   /** Screen pixels per meter. */
@@ -292,11 +293,15 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
     const modules = chassisModules(g.robot.trajectory, vis.chassis);
     ctx.save();
     ctx.globalAlpha = 0.35;
-    drawRobot(ctx, sx, sy, g.pose, g.robot, vis, modules, p.sprite, view.scale, false, false, null, currentT, w, h, true);
+    drawRobot(ctx, sx, sy, g.pose, g.robot, vis, modules, p.sprite, view.scale, false, false, null, currentT, w, h, [], true);
     ctx.restore();
   }
 
-  // Robots at currentT.
+  // Robots at currentT. Label plates (number badges, action stacks)
+  // register into this shared list as each robot draws, so every label
+  // placed later avoids everything already on screen — bunched robots
+  // no longer stack their callouts over each other (2026-10-14).
+  const labelRects: LayoutRect[] = [];
   for (const r of robots) {
     const state = sampleStateAt(r, currentT);
     const pose = state
@@ -330,6 +335,7 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
       currentT,
       w,
       h,
+      labelRects,
     );
   }
 
@@ -367,6 +373,10 @@ function drawRobot(
   currentT: number,
   canvasW: number,
   canvasH: number,
+  /** Labels already placed this frame — this robot's badges avoid them
+   *  and register themselves for the robots drawn after (2026-10-14:
+   *  bunched robots drew stacks and number plates over each other). */
+  labelRects: LayoutRect[],
   ghost = false,
 ) {
   const { outer, chassis } = vis;
@@ -479,7 +489,7 @@ function drawRobot(
   const num = robotAnnotation(r.trajectory);
   // Horizontal side the number badge took (1 right, -1 left, 1 when it
   // never drew) — the action badge mirrors onto the other side.
-  let numDir = 1;
+  let numDir: 1 | -1 = 1;
   if (num) {
     // The visible footprint can be offset from the trajectory origin.
     // Rotate that local offset exactly as the bumper/chassis above.
@@ -504,21 +514,31 @@ function drawRobot(
     const margin = 6;
     const leader = 20;
     const offset = Math.SQRT1_2 * (reach + leader);
-    const dir = cx + offset + labelW + margin <= canvasW ? 1 : -1;
-    numDir = dir;
+    const prefer = cx + offset + labelW + margin <= canvasW ? 1 : -1;
+    // Collision layout (2026-10-14): the badge keeps its preferred
+    // diagonal when clear, flips or slides past labels earlier robots
+    // placed this frame, and registers itself for everyone after.
+    const place = placeLabel({
+      anchor: { x: cx, y: cy },
+      offset,
+      size: { w: labelW, h: labelH },
+      prefer,
+      y0: cy - offset - labelH / 2,
+      canvas: { w: canvasW, h: canvasH },
+      margin,
+      gap: 4,
+      obstacles: labelRects,
+    });
+    numDir = place.side;
     // Keep the badge inside the viewport and align its text to backing
     // pixels. Font size remains in CSS pixels; the existing DPR transform
     // rasterizes it directly at display resolution, independent of zoom.
     const dpr = window.devicePixelRatio || 1;
     const snap = (value: number) => Math.round(value * dpr) / dpr;
-    const bx = snap(Math.max(margin, Math.min(
-      cx + dir * offset - (dir < 0 ? labelW : 0),
-      canvasW - margin - labelW,
-    )));
-    const by = snap(Math.max(margin, Math.min(
-      cy - offset - labelH / 2,
-      canvasH - margin - labelH,
-    )));
+    const bx = snap(place.x);
+    const by = snap(place.y);
+    if (!ghost) labelRects.push({ x: bx, y: by, w: labelW, h: labelH });
+    const dir = place.side;
     const lx = dir > 0 ? bx : bx + labelW;
     const ly = by + labelH / 2;
     // An opaque under-stroke keeps the fine leader legible over artwork.
@@ -584,7 +604,6 @@ function drawRobot(
     const gap = 4;
     const leader = 20;
     const offset = Math.SQRT1_2 * (reach + leader);
-    const dir = -numDir;
     const dpr = window.devicePixelRatio || 1;
     const snap = (value: number) => Math.round(value * dpr) / dpr;
     // Pre-measure every box: names stack left, the one countdown sits
@@ -598,10 +617,26 @@ function drawRobot(
       return { group, sec, secW, h, w };
     });
     const stackH = boxes.reduce((m, b) => m + b.h, 0) + (boxes.length - 1) * gap;
-    const y0 = snap(Math.max(margin, Math.min(
-      cy + offset - 11,
-      canvasH - margin - stackH,
-    )));
+    const stackW = Math.max(...boxes.map((b) => b.w));
+    // Collision layout (2026-10-14): the whole stack is one unit — placed
+    // on the diagonal opposite the number badge when clear, flipped or
+    // slid vertically past labels earlier robots (or this robot's own
+    // number) placed this frame, then registered as an obstacle itself.
+    const place = placeLabel({
+      anchor: { x: cx, y: cy },
+      offset,
+      size: { w: stackW, h: stackH },
+      prefer: numDir === 1 ? -1 : 1,
+      y0: cy + offset - 11,
+      canvas: { w: canvasW, h: canvasH },
+      margin,
+      gap,
+      obstacles: labelRects,
+    });
+    const dir = place.side;
+    const stackX = snap(place.x);
+    labelRects.push({ x: stackX, y: snap(place.y), w: stackW, h: stackH });
+    const y0 = snap(place.y);
     ctx.lineCap = 'round';
     // Shared anchor dot at the footprint center, robot-colored.
     ctx.fillStyle = color;
@@ -613,10 +648,7 @@ function drawRobot(
     ctx.fill();
     let byCursor = y0;
     for (const box of boxes) {
-      const bx = snap(Math.max(margin, Math.min(
-        cx + dir * offset - (dir < 0 ? box.w : 0),
-        canvasW - margin - box.w,
-      )));
+      const bx = snap(dir > 0 ? stackX : stackX + stackW - box.w);
       const ly = byCursor + box.h / 2;
       const lx = dir > 0 ? bx : bx + box.w;
       // Leader from the anchor to this badge's robot-facing edge — the
