@@ -155,7 +155,10 @@
 .preferences-checkbox input:checked { background: var(--accent); }
 .preferences-checkbox input:checked::after { left: 13px; }
 :where(html.kbd-nav) .preferences-checkbox input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.preferences-update-check { margin: 0 16px 16px; padding-top: 14px; }
+/* No top padding here: the setting row above already carries 14px of bottom
+   padding, and this block lost its border-top divider (7e55bcf) — extra
+   padding would just reopen the dead band between row and button. */
+.preferences-update-check { margin: 0 16px 16px; }
 .preferences-update-check .btn { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; }
 .preferences-update-check p:empty { display: none; }
 .preferences-update-check p { margin: 10px 0 0; color: var(--fg-dim); font-size: 12px; line-height: 1.6; }
