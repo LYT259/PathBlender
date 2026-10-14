@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.11';
+export const APP_VERSION = '0.1.9-beta.12';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.12', date: '2026.10.14', note: {
+    en: 'In Settings › Updates, the Check for Updates button now sits closer to the update channel row.',
+    zh: '「设置 › 更新」页里，检查更新按钮现在更靠近更新通道一行。',
+    'zh-tw': '「設定 › 更新」頁裡，檢查更新按鈕現在更靠近更新通道一行。',
+    cs: 'V Nastavení › Aktualizace je nyní tlačítko Zkontrolovat aktualizace blíže řádku s aktualizačním kanálem.',
+    nl: 'In Instellingen › Updates staat de knop Controleren op updates nu dichter bij de rij met het updatekanaal.',
+    fr: 'Dans Réglages › Mises à jour, le bouton Rechercher des mises à jour est maintenant plus près de la ligne du canal de mise à jour.',
+    he: 'בהגדרות › עדכונים, כפתור בדיקת העדכונים קרוב כעת יותר לשורת ערוץ העדכון.',
+    ja: '設定 › アップデートで、アップデートを確認ボタンがアップデートチャンネルの行に近づきました。',
+    ko: '설정 › 업데이트에서 업데이트 확인 버튼이 업데이트 채널 행에 더 가깝게 배치되었습니다.',
+    pl: 'W Ustawieniach › Aktualizacje przycisk Sprawdź aktualizacje znajduje się teraz bliżej wiersza kanału aktualizacji.',
+    'pt-br': 'Em Configurações › Atualizações, o botão Verificar atualizações agora fica mais próximo da linha do canal de atualização.',
+    es: 'En Ajustes › Actualizaciones, el botón Buscar actualizaciones ahora está más cerca de la fila del canal de actualización.',
+    tr: 'Ayarlar › Güncellemeler bölümünde Güncellemeleri denetle düğmesi artık güncelleme kanalı satırına daha yakındır.',
+    ar: 'في الإعدادات › التحديثات، أصبح زر التحقق من التحديثات أقرب إلى صف قناة التحديث.',
+    az: 'Parametrlər › Yeniləmələr bölməsində Yeniləmələri yoxla düyməsi indi yeniləmə kanalı sətrinə daha yaxındır.',
+    bg: 'В Настройки › Актуализации бутонът за проверка за актуализации е по-близо до реда с канала за актуализации.',
+    bs: 'U Postavkama › Ažuriranja, dugme Provjeri ažuriranja sada je bliže redu sa kanalom ažuriranja.',
+    da: 'Under Indstillinger › Opdateringer ligger knappen Søg efter opdateringer nu tættere på rækken med opdateringskanalen.',
+    de: 'Unter Einstellungen › Aktualisierungen ist die Schaltfläche „Nach Updates suchen“ jetzt näher an der Zeile mit dem Update-Kanal.',
+    el: 'Στις Ρυθμίσεις › Ενημερώσεις, το κουμπί Έλεγχος για ενημερώσεις βρίσκεται τώρα πιο κοντά στη γραμμή του καναλιού ενημερώσεων.',
+    fil: 'Sa Mga Setting › Mga Update, ang button na Suriin ang mga update ay mas malapit na ngayon sa row ng update channel.',
+    hi: 'सेटिंग्स › अपडेट में, अपडेट की जाँच करें बटन अब अपडेट चैनल पंक्ति के अधिक पास है।',
+    hr: 'U Postavkama › Ažuriranja, gumb Provjeri ažuriranja sada je bliže retku s kanalom ažuriranja.',
+    hu: 'A Beállítások › Frissítések oldalon a Frissítések keresése gomb mostantól közelebb van a frissítési csatorna sorához.',
+    hy: 'Կարգավորումներ › Թարմացումներ բաժնում «Ստուգել թարմացումները» կոճակն այժմ ավելի մոտ է թարմացման ալիքի տողին։',
+    id: 'Di Pengaturan › Pembaruan, tombol Periksa pembaruan kini lebih dekat ke baris kanal pembaruan.',
+    it: 'In Impostazioni › Aggiornamenti, il pulsante Verifica aggiornamenti ora è più vicino alla riga del canale di aggiornamento.',
+    mk: 'Во Поставки › Ажурирања, копчето Провери ажурирања сега е поблиску до редот со каналот за ажурирања.',
+    mr: 'सेटिंग्ज › अपडेट्स मध्ये, अपडेट तपासा बटण आता अपडेट चॅनेल ओळीजवळ आहे.',
+    ms: 'Dalam Tetapan › Kemas Kini, butang Semak kemas kini kini lebih hampir dengan baris saluran kemas kini.',
+    nb: 'Under Innstillinger › Oppdateringer ligger knappen Søk etter oppdateringer nå nærmere raden med oppdateringskanalen.',
+    nn: 'Under Innstillingar › Oppdateringar ligg knappen Søk etter oppdateringar no nærare rada med oppdateringskanalen.',
+    ro: 'În Setări › Actualizări, butonul Verifică actualizările este acum mai aproape de rândul canalului de actualizare.',
+    rw: 'Mu settings, bouton yo kugenzura updates ubu iri hafi y’umurongo wa update channel.',
+    sq: 'Në Cilësime › Përditësimet, butoni Kontrollo përditësimet tani ndodhet më afër rreshtit të kanalit të përditësimeve.',
+    sr: 'U Podešavanjima › Ažuriranja, dugme Proveri ažuriranja sada je bliže redu sa kanalom ažuriranja.',
+    sv: 'Under Inställningar › Uppdateringar ligger knappen Sök efter uppdateringar nu närmare raden med uppdateringskanalen.',
+    ta: 'அமைப்புகள் › புதுப்பிப்புகளில், புதுப்பிப்புகளைச் சரிபார்க்கும் பொத்தான் இப்போது புதுப்பிப்பு சேனல் வரிசைக்கு அருகில் உள்ளது.',
+    uk: 'У Параметрах › Оновлення кнопка Перевірити оновлення тепер ближче до рядка каналу оновлень.',
+    vi: 'Trong Cài đặt › Cập nhật, nút Kiểm tra cập nhật hiện nằm gần hàng kênh cập nhật hơn.',
+  } },
   { version: '0.1.9-beta.11', date: '2026.10.14', note: {
     en: 'Focus rings now appear only during keyboard navigation',
     zh: '焦点框现在只在键盘导航时显示',
