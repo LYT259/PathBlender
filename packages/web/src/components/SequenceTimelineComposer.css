@@ -11,7 +11,7 @@
 .sequence-route-source { display: flex; align-items: center; gap: 7px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; background: var(--bg-card); color: var(--fg); font: inherit; font-size: 12px; cursor: grab; }
 /* The chip strip scrolls, so an outside ring clips top+bottom no matter the
    padding budget — draw the focus ring inside the chip (focus-audit 2026-10-07). */
-.sequence-route-source:focus-visible { outline-offset: -2px; }
+:where(html.kbd-nav) .sequence-route-source:focus-visible { outline-offset: -2px; }
 .sequence-route-source:hover { border-color: var(--accent); background: var(--accent-dim); }
 .sequence-route-source > span:not(.sequence-grip) { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sequence-route-source small, .sequence-grip { color: var(--fg-dim); }
@@ -31,7 +31,7 @@
 .sequence-track.is-editing .sequence-track-name { background: var(--accent-dim); }
 .sequence-track.is-editing .sequence-track-name small { color: var(--accent); }
 .sequence-track-lane { height: 33px; position: relative; overflow: hidden; border-radius: 8px; cursor: ew-resize; touch-action: none; user-select: none; background-image: linear-gradient(to right, var(--border) 1px, transparent 1px); background-color: var(--bg-card); border-block: 1px solid var(--border); }
-.sequence-track-lane:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+:where(html.kbd-nav) .sequence-track-lane:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .sequence-track.is-editing .sequence-track-lane { height: 52px; border-block-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
 .sequence-clip { position: absolute; top: 6px; height: 21px; min-width: 2px; display: flex; flex-direction: column; justify-content: center; gap: 5px; overflow: hidden; padding: 0 7px; border: 1px solid color-mix(in srgb, var(--robot-color) 50%, var(--border)); border-radius: 4px; background: color-mix(in srgb, var(--robot-color) 18%, var(--bg-panel)); color: var(--fg); text-align: left; font: inherit; font-size: 10px; cursor: pointer; }
 .sequence-clip strong { display: flex; align-items: center; gap: 6px; width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 500; }
@@ -106,10 +106,10 @@
 /* Radius + inset ring: a full-width square ring read as a foreign rectangle
    (user report, focus-audit 2026-10-07). */
 .sequence-playback-controls > input { display: block; width: 100%; margin: 0; accent-color: var(--accent); border-radius: 8px; }
-.sequence-playback-controls > input:focus-visible { outline-offset: -2px; }
+:where(html.kbd-nav) .sequence-playback-controls > input:focus-visible { outline-offset: -2px; }
 .sequence-clip-menu { position: fixed; z-index: 1500; width: 180px; padding: 5px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); box-shadow: 0 8px 24px var(--shadow); }
 .sequence-clip-menu button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--danger); font: inherit; font-size: 12px; cursor: pointer; }
-.sequence-clip-menu button:hover, .sequence-clip-menu button:focus-visible { background: var(--badge-err-bg); outline: 0; }
+.sequence-clip-menu button:hover, :where(html.kbd-nav) .sequence-clip-menu button:focus-visible { background: var(--badge-err-bg); outline: 0; }
 
 .sequence-drag-badge { position: fixed; z-index: 60; display: flex; align-items: center; gap: 7px; max-width: 260px; border: 1px solid var(--accent); border-radius: 6px; padding: 6px 10px; background: var(--bg-card); color: var(--fg); font: inherit; font-size: 12px; white-space: nowrap; pointer-events: none; transform: translate(10px, 14px); box-shadow: 0 4px 14px rgb(0 0 0 / .28); }
 .sequence-drag-badge > span:not(.sequence-grip) { overflow: hidden; text-overflow: ellipsis; }

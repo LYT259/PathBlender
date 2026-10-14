@@ -49,7 +49,7 @@
   line-height: 1.4;
   cursor: pointer;
 }
-.start-action:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 5px; }
+:where(html.kbd-nav) .start-action:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 5px; }
 .start-action:disabled { cursor: default; opacity: .6; }
 .start-action-title { min-width: 0; overflow-wrap: anywhere; }
 .start-icon { flex-shrink: 0; }
@@ -154,4 +154,4 @@
 .start-guide-link { padding: 6px 14px; border: 0; border-radius: 8px; background: transparent; color: var(--start-secondary-fg); font: inherit; font-size: 13px; cursor: pointer; }
 .start-guide-link:hover { color: var(--fg); }
 .start-guide-link:active { background: var(--hover); }
-.start-guide-link:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+:where(html.kbd-nav) .start-guide-link:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }

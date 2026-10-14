@@ -41,7 +41,11 @@ body { font: 13px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 button, input, select, textarea { font-family: inherit; }
 button, summary, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button, a, input, select, textarea, summary { outline-offset: 3px; }
-:focus-visible { outline: 2px solid var(--focus-ring); }
+:where(html.kbd-nav) :focus-visible { outline: 2px solid var(--focus-ring); }
+/* Pointer mode must also silence the UA's native ring: browsers apply
+   :focus-visible to text inputs unconditionally, so without this the user
+   agent's 1px `outline: auto` shows through under the gated author rules. */
+:where(html:not(.kbd-nav)) :focus-visible { outline: none; }
 button { touch-action: manipulation; }
 button:disabled { cursor: default; }
 .ui-icon { flex-shrink: 0; vertical-align: middle; }
