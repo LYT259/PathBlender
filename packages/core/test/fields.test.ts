@@ -139,9 +139,11 @@ describe('withFieldVariant', () => {
       // budget as the 2019–2020 AdvantageScope renders.
       expect(rect.right - f.lengthM).toBeLessThan(3.5);
       expect(rect.top - f.widthM).toBeLessThan(3.5);
-      // Carpet edges land where the calibration was measured: blue corner
-      // 420 px from the left, 74 px from the bottom.
-      expect(img!.originPx).toEqual({ x: 420, y: 74 });
+      // Carpet edges land where the calibration was measured on the
+      // upstream (red-end-drawn) PNG: columns 420/3351, rows 73/1454.
+      // After the in-repo 180° rotation (2026-10-14 orientation audit)
+      // the blue corner is 422 px from the left, 73 px from the bottom.
+      expect(img!.originPx).toEqual({ x: 422, y: 73 });
     }
   });
 });
