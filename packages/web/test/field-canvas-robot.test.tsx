@@ -533,18 +533,21 @@ describe('current-action callout', () => {
   it('stacks one box per distinct ending, soonest first', () => {
     // intake runs to the route end (1 s); close_blocker flashes until 2 s —
     // two distinct endings, two boxes, the sooner-ending one on top.
+    // The stack clamps at the left margin as ONE unit (collision layout
+    // 2026-10-14): boxes keep the anchor-side alignment they have when
+    // unclamped, so both leaders end on the stack's right edge (162).
     paint([annotatedRobot([{ name: 'intake', t: 0 }, { name: 'close_blocker', t: 0 }])], { currentT: 0.5 });
     const rects = calls.filter((c) => c.name === 'roundRect');
     expect(rects).toHaveLength(3); // number + two action boxes
-    expectArgs(rects[1]!, [6, 141, 100, 22, 5]); // intake | 0.5s
+    expectArgs(rects[1]!, [62, 141, 100, 22, 5]); // intake | 0.5s
     expectArgs(rects[2]!, [6, 167, 156, 22, 5]); // close_blocker | 1.5s
     const sec1 = calls.find((c) => c.name === 'fillText' && c.args[0] === '0.5s')!;
-    expect(sec1.args[1]).toBe(100);
+    expect(sec1.args[1]).toBe(156);
     const sec2 = calls.find((c) => c.name === 'fillText' && c.args[0] === '1.5s')!;
     expect(sec2.args[1]).toBe(156);
     expect(sec2.args[2]).toBe(178);
     const fanEnds = calls.filter((c) => c.name === 'lineTo' && [152, 178].includes(c.args[1] as number));
-    expect(fanEnds.map((c) => c.args)).toEqual([[106, 152], [162, 178]]);
+    expect(fanEnds.map((c) => c.args)).toEqual([[162, 152], [162, 178]]);
   });
 
   it('mirrors to down-right when the number badge flipped up-left', () => {

@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.9';
+export const APP_VERSION = '0.1.9-beta.11';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,7 +40,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.9-beta.9', date: '2026.10.14', note: {
+  { version: '0.1.9-beta.11', date: '2026.10.14', note: {
     en: 'Focus rings now appear only during keyboard navigation',
     zh: '焦点框现在只在键盘导航时显示',
     'zh-tw': '焦點框現在只在鍵盤導覽時顯示',
@@ -82,6 +82,49 @@ export const VERSION_NOTES: VersionNote[] = [
     uk: 'Кільця фокусу тепер з’являються лише під час навігації з клавіатури',
     vi: 'Vòng lấy tiêu điểm giờ chỉ xuất hiện khi điều hướng bằng bàn phím',
   } },
+  { version: '0.1.9-beta.10', date: '2026.10.14', note: {
+    en: 'Action and number labels no longer cover each other when robots bunch up',
+    zh: '机器人聚在一起时，动作与队号标签不再互相遮挡',
+    'zh-tw': '機器人聚在一起時，動作與隊號標籤不再互相遮擋',
+    cs: 'Popisky akcí a čísel týmů se při shluku robotů už nepřekrývají',
+    nl: 'Actie- en teamnummerlabels bedekken elkaar niet meer wanneer robots dicht op elkaar staan',
+    fr: 'Les étiquettes d’action et de numéro ne se recouvrent plus quand les robots se regroupent',
+    he: 'תוויות הפעולה והמספרים כבר לא מסתירות זו את זו כשהרובוטים מתקבצים',
+    ja: 'ロボットが密集しても、アクションとチーム番号のラベルが重ならなくなりました',
+    ko: '로봇이 몰려 있어도 동작 및 팀 번호 라벨이 서로 가리지 않습니다',
+    pl: 'Etykiety akcji i numerów zespołów nie nakładają się już, gdy roboty stoją blisko siebie',
+    'pt-br': 'Os rótulos de ação e número não se cobrem mais quando os robôs ficam juntos',
+    es: 'Las etiquetas de acción y número ya no se tapan entre sí cuando los robots se agrupan',
+    tr: 'Robotlar toplandığında eylem ve numara etiketleri artık birbirini kapatmıyor',
+    ar: 'لم تعد بطاقات الإجراءات والأرقام تحجب بعضها بعضًا عندما تتجمع الروبوتات',
+    az: 'Robotlar bir yerdə toplandıqda əməliyyat və nömrə etiketləri artıq bir-birini örtmür',
+    bg: 'Етикетите за действия и номера вече не се застъпват, когато роботите се съберат на едно място',
+    bs: 'Oznake akcija i brojeva se više ne preklapaju kada se roboti skupe na jednom mjestu',
+    da: 'Handlings- og nummeretiketter dækker ikke længere hinanden, når robotterne samles',
+    de: 'Aktions- und Nummernschilder verdecken einander nicht mehr, wenn Roboter eng zusammenstehen',
+    el: 'Οι ετικέτες ενεργειών και αριθμών δεν καλύπτουν πλέον η μία την άλλη όταν μαζεύονται τα ρομπότ',
+    fil: 'Hindi na nagtatakpan ang mga label ng aksyon at numero kapag nagkukumpulan ang mga robot',
+    hi: 'रोबोट एक जगह जमा हों तो एक्शन और नंबर लेबल अब एक-दूसरे को नहीं ढकते',
+    hr: 'Oznake akcija i brojeva više se ne preklapaju kad se roboti okupe na jednom mjestu',
+    hu: 'A művelet- és számcímkék nem fedik többé egymást, amikor a robotok összegyűlnek',
+    hy: 'Ռոբոտները մի տեղ հավաքվելիս գործողությունների և համարների պիտակներն այլևս իրար չեն ծածկում',
+    id: 'Label tindakan dan nomor tidak lagi saling menutupi saat robot berkumpul di satu tempat',
+    it: 'Le etichette di azione e numero non si coprono più quando i robot si affollano',
+    mk: 'Етикетите за дејства и броеви веќе не се покриваат меѓусебно кога роботите ќе се соберат на едно место',
+    mr: 'रोबॉट्स एकत्र जमल्यावर ऍक्शन आणि क्रमांक लेबल आता एकमेकांना झाकत नाहीत',
+    ms: 'Label tindakan dan nombor tidak lagi bertindih apabila robot berkumpul di satu tempat',
+    nb: 'Handlings- og nummeretiketter dekker ikke lenger hverandre når robotene samler seg',
+    nn: 'Handlings- og nummeretikettar dekkjer ikkje lenger kvarandre når robotane samlar seg',
+    ro: 'Etichetele de acțiune și număr nu se mai acoperă reciproc când roboții se adună la un loc',
+    rw: 'Amatariki y’ibikorwa n’imibare ntacyo bahisha iyo roboti zahuriye hamwe',
+    sq: 'Etiketat e veprimeve dhe numrave nuk mbulohen më njëra-tjetrën kur robotët mblidhen bashkë',
+    sr: 'Oznake akcija i brojeva se više ne preklapaju kada se roboti skupe na jednom mestu',
+    sv: 'Åtgärds- och nummeretiketter täcker inte längre varandra när robotarna samlas',
+    ta: 'ரோபோக்கள் நெருங்கி நிற்கும்போது அதிரவை மற்றும் எண் லேபிள்கள் இனி ஒன்றையொன்று மறைப்பதில்லை',
+    uk: 'Підписи дій і номерів більше не перекривають одні одних, коли роботи збираються поруч',
+    vi: 'Nhãn hành động và số đội không còn che lẫn nhau khi các robot tụ lại gần nhau',
+  } },
+  { version: '0.1.9-beta.9', date: '2026.10.14', note: { en: 'Fix field orientation of the rendered (semi-realistic) field artwork for 2022-2025: the alliance stations were drawn on the wrong ends; the artwork now matches the schematic view and robot paths.', zh: '修复 2022-2025 渲染图（写实风格）的场地朝向：联盟站点画反了两端，现在与示意图和机器人路径一致。', 'zh-tw': '修復 2022-2025 渲染圖（寫實風格）的場地朝向：聯盟站點畫反了兩端，現在與示意圖和機器人路徑一致。', cs: 'Opravena orientace polorealistického vykresleného hřiště pro 2022-2025: stanoviště aliancí byla nakreslena na opačných koncích; nyní odpovídá schematickému zobrazení a cestám robotů.', nl: 'De oriëntatie van het semi-realistische veld van 2022-2025 is gerepareerd: de alliance-stations stonden aan de verkeerde uiteinden; nu klopt het beeld met de schematische weergave en de robotpaden.', fr: 'Correction de l’orientation du terrain semi-réaliste de 2022-2025 : les stations d’alliance étaient dessinées aux mauvais bouts ; le rendu correspond désormais à la vue schématique et aux trajectoires des robots.', he: 'תוקן כיוון שדה התצוגה החצי-מציאותית ל-2022-2025: עמדות הבריתות שורטטו בקצוות ההפוכים; התצוגה תואמת כעת למבט הסכמטי ולמסלולי הרובוטים.', ja: '2022-2025 のセミリアルなフィールド描画の向きを修正：両アライアンスのステーションが逆の端に描かれていたのを、模式図とロボット経路に一致するように直しました。', ko: '2022-2025 반실사 필드 아트워크의 방향 수정: 양측 얼라이언스 스테이션이 반대쪽 끝에 그려져 있었으며, 이제 개략도와 로봇 경로와 일치합니다.', pl: 'Poprawiono orientację półrealistycznego renderu pola dla sezonów 2022-2025: stacje sojuszy były narysowane na przeciwnych końcach; teraz zgadza się z widokiem schematycznym i trasami robotów.', 'pt-br': 'Corrigida a orientação do campo renderizado (semirrealista) de 2022-2025: as estações de aliança estavam nos extremos trocados; agora corresponde à vista esquemática e aos caminhos dos robôs.', es: 'Se corrigió la orientación del campo renderizado (semirrealista) de 2022-2025: las estaciones de alianza estaban en los extremos invertidos; ahora coincide con la vista esquemática y las trayectorias de los robots.', tr: '2022-2025 yarı gerçekçi saha görselinin yönü düzeltildi: ittifak istasyonları ters uçlara çizilmişti; görsel artık şematik görünüm ve robot yollarıyla uyumlu.', ar: 'تم إصلاح اتجاه ملعب العرض شبه الواقعي لمواسم 2022-2025: كانت محطات التحالفات مرسومة عند الطرفين المعكوسين؛ والآن يتطابق العرض مع المشهد التخطيطي ومسارات الروبوتات.', az: '2022-2025 yarım-realistik meydan təsvirinin istiqaməti düzəldildi: alyans stansiyaları tərs uclarda çəkilmişdi; təsvir indi sxematik görünüş və robot yolları ilə üst-üstə düşür.', bg: 'Поправена ориентацията на полуреалистичното изображение на полето за 2022-2025: съюзните станции бяха изрисувани на разменените краища; сега то съвпада със схематичния изглед и траекториите на роботите.', bs: 'Ispravljena orijentacija polurealističnog prikaza polja za 2022-2025: stanice saveza bile su nacrtane na zamijenjenim krajevima; sada se poklapa sa shematskim prikazom i putanjama robota.', da: 'Rettet orienteringen af det halvrealistiske gengivne felt for 2022-2025: alliancestationerne var tegnet i de forkerte ender; nu matcher det den skematiske visning og robotternes baner.', de: 'Die Ausrichtung der halbrealistischen Felddarstellung für 2022-2025 ist korrigiert: Die Allianzstationen waren an den vertauschten Enden gezeichnet; jetzt passt sie zur schematischen Ansicht und zu den Roboterpfaden.', el: 'Διορθώθηκε ο προσανατολισμός του ημιρεαλιστικού γηπέδου για το 2022-2025: οι σταθμοί των συμμαχιών ήταν σχεδιασμένοι στα αντεστραμμένα άκρα· τώρα συμφωνεί με τη σχηματική προβολή και τις τροχιές των ρομπότ.', fil: 'Inayos ang direksyon ng semi-realistic na field artwork para sa 2022-2025: nasa maling dulo ang mga alliance station; ngayon ay tumutugma na sa schematic na view at sa mga landas ng robot.', hi: '2022-2025 के अर्ध-यथार्थ फ़ील्ड चित्रण की दिशा ठीक की गई: गठबंधन स्टेशन उलटे सिरों पर बने थे; अब यह योजनाबद्ध दृश्य और रोबोट पथों से मेल खाता है।', hr: 'Ispravljena orijentacija polurealističnog prikaza polja za 2022-2025: stanice saveza bile su nacrtane na zamijenjenim krajevima; sada se poklapa sa shematskim prikazom i putanjama robota.', hu: 'A 2022-2025 félig realisztikus pályaábrázolásának tájolása javítva: a szövetségi állomások a megcserélt végeken voltak rajzolva; most egyezik a sematikus nézettel és a robotok útvonalaival.', hy: 'Ուղղվել է 2022-2025 թթ. կիսաիրատեսական դաշտի պատկերման ուղղվածությունը. դաշինքների կայանները գծված էին փոխանակված ծայրերին. այժմ այն համապատասխանում է սխեմատիկ տեսքին և ռոբոտների հետագծերին։', id: 'Perbaikan orientasi artwork lapangan semi-realistis untuk 2022-2025: stasiun aliansi tergambar di ujung yang tertukar; kini cocok dengan tampilan skematik dan jalur robot.', it: 'Corretto l’orientamento del campo renderizzato (semirealistico) per il 2022-2025: le stazioni delle alleanze erano disegnate alle estremità invertite; ora corrisponde alla vista schematica e alle traiettorie dei robot.', mk: 'Исправена е ориентацијата на полуреалистичкиот приказ на теренот за 2022-2025: станиците на сојузите беа нацртани на заменетите краеви; сега се совпаѓа со шематскиот приказ и патеките на роботите.', mr: '2022-2025 साठीच्या अर्ध-वास्तववादी मैदान चित्राची दिशा दुरुस्त केली: युती स्थानके उलट्या टोकांवर काढली होती; आता ते नकाशा दृश्य आणि रोबॉट मार्गांशी जुळते.', ms: 'Pembaikan orientasi lukisan padang semi-realistik bagi 2022-2025: stesen pakatan dilukis di hujung yang bertukar; kini sepadan dengan paparan skematik dan laluan robot.', nb: 'Rettet orienteringen av det halvrealistiske feltet for 2022-2025: alliansestasjonene var tegnet i de ombyttede endene; nå samsvarer det med den skjematiske visningen og robotbanene.', nn: 'Rettet orienteringa av det halvrealistiske feltet for 2022-2025: alliansestasjonane var teikna i dei bytta endane; no samsvarer det med den skjematiske visinga og robotbanane.', ro: 'S-a corectat orientarea terenului redate (semirealist) pentru 2022-2025: stațiile alianțelor erau desenate la capetele inversate; acum se potrivește cu vizualizarea schematică și traiectoriile roboților.', rw: 'Byakosojwe imyugaruro y’ishusho y’ikibuga cya 2022-2025: sitasiyo z’ubufatanye zasohotse ku mahoro yahanaguwe; ubu ihuye n’igareba ka schematique n’inzira za robot.', sq: 'Rregulluar orientimi i fushës së vizatuar gjysmë-realistike për 2022-2025: stacionet e aleancave ishin vizatuar në skajet e këmbyera; tani përputhet me pamjen skematike dhe shtigjet e robotëve.', sr: 'Ispravljena orijentacija polurealističnog prikaza polja za 2022-2025: stanice saveza bile su nacrtane na zamenitim krajevima; sada se poklapa sa šematskim prikazom i putanjama robota.', sv: 'Rättad orientering av det halvrealistiska fältet för 2022-2025: alliansstationerna var ritade i de ombytta ändarna; nu stämmer det med den schematiska vyn och robotbanorna.', ta: '2022-2025 அரை-யதார்த்த மைதானப் படத்தின் திசை சரிசெய்யப்பட்டது: கூட்டணி நிலையங்கள் மாற்றப்பட்ட முனைகளில் வரையப்பட்டிருந்தன; இப்போது வரைபடக் காட்சி மற்றும் ரோபோ பாதைகளுடன் பொருந்துகிறது.', uk: 'Виправлено орієнтацію напівреалістичного зображення поля для 2022-2025: станції альянсів були намальовані на протилежних кінцях; тепер воно відповідає схематичному вигляду та шляхам роботів.', vi: 'Đã sửa hướng của bản dựng sân bán thực tế cho 2022-2025: các trạm liên minh bị vẽ ở hai đầu đổi chỗ cho nhau; giờ nó khớp với chế độ xem sơ đồ và các đường đi của robot.' } },
   { version: '0.1.9-beta.8', date: '2026.10.13', note: {
     en: 'GitHub Star entries now shown on the welcome screen, toolbar and About page',
     zh: '欢迎页、工具栏和关于页新增 GitHub Star 入口',
