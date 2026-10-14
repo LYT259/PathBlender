@@ -10,10 +10,10 @@
 .language-picker-popover-up { inset-block-start: auto; inset-block-end: calc(100% + 8px); }
 .language-picker-search-area { padding: 12px 12px 10px; border-block-end: 1px solid var(--border); }
 .language-picker-search { display: flex; align-items: center; gap: 8px; padding-inline: 9px 4px; min-block-size: 34px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--fg-dim); }
-.language-picker-search:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+:where(html.kbd-nav) .language-picker-search:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 .language-picker-search > svg { flex: none; }
 .language-picker .language-picker-search input { appearance: none; min-inline-size: 0; inline-size: 100%; padding: 6px 0; border: 0; border-radius: 0; background: transparent; color: var(--fg); caret-color: var(--accent); font: inherit; font-size: 12px; outline: none; }
-.language-picker .language-picker-search input:focus-visible { outline: none; }
+:where(html.kbd-nav) .language-picker .language-picker-search input:focus-visible { outline: none; }
 .language-picker .language-picker-search input::placeholder { color: var(--fg-dim); opacity: 1; }
 .language-picker-clear { display: grid; place-items: center; flex: none; inline-size: 28px; block-size: 28px; padding: 0; border: 0; border-radius: 4px; color: var(--fg-dim); background: transparent; cursor: pointer; }
 .language-picker-clear:hover { color: var(--fg); background: var(--hover); }
@@ -36,7 +36,7 @@
 .language-picker-empty strong { font-weight: 500; }
 .language-picker-empty p { color: var(--fg-dim); margin: 0; line-height: 1.5; }
 .language-picker-empty button { margin-block-start: 4px; border: 0; border-radius: 4px; padding: 6px 10px; font: inherit; background: var(--btn-bg); color: var(--fg); cursor: pointer; }
-.language-picker button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+:where(html.kbd-nav) .language-picker button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
 @media (max-width: 440px) {
   .language-picker { inline-size: 100%; }
   .language-picker-popover { inline-size: 100%; max-inline-size: 100%; }
