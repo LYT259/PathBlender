@@ -46,17 +46,26 @@ export const FIELD3D_MODELS: Record<string, Field3DModelEntry> = {
 };
 
 /**
- * Home camera direction — the ViewCube's top–front edge (0, 1, 1) in the
+ * Home camera direction — the ViewCube's top–front edge (0, 1, −1) in the
  * render frame: 45° elevation over the front face, azimuth square to it
  * (user request 2026-10-06: the toolbar recenter must land exactly where
  * that cube-edge click lands). The radius is the unchanged R13 home
  * distance; FieldCanvas3D also derives maxDistance from it. Lives here
  * beside the rest of the 3D scene's numeric facts, THREE-free, so tests
  * assert it without loading three.
+ *
+ * The Z sign is the alliance-side contract (2026-10-16): the render frame
+ * puts blue at +X (field3d-frame.ts), so a camera at −Z looking at the
+ * origin projects blue onto the LEFT half of the screen — the same
+ * blue-left standard as the 2D artwork. The pre-fix home sat at +Z, which
+ * mirrored every season red-left/blue-right in reset view (user report;
+ * headless screenshots of all six views confirmed it against the models'
+ * own alliance-colour materials). Guarded per season by
+ * field3d-home-orientation.test.ts.
  */
 export const CAM_HOME_R = Math.hypot(13.5, 10.5);
 export const CAM_HOME: [number, number, number] = [
   0,
   CAM_HOME_R / Math.SQRT2,
-  CAM_HOME_R / Math.SQRT2,
+  -CAM_HOME_R / Math.SQRT2,
 ];
