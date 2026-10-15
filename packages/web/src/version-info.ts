@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.12';
+export const APP_VERSION = '0.1.9-beta.13';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.13', date: '2026.10.15', note: {
+    en: 'ViewCube: clicking now matches the visible panels, edges and corners',
+    zh: 'ViewCube：点击区域现在与可见的面、棱边和角一致。',
+    'zh-tw': 'ViewCube：點擊區域現在與可見的面、稜邊和角一致。',
+    cs: 'ViewCube: klik nyní odpovídá viditelným plochám, hranám a rohům.',
+    nl: 'ViewCube: klikken volgt nu de zichtbare vlakken, randen en hoeken.',
+    fr: 'ViewCube : le clic correspond désormais aux faces, arêtes et coins visibles.',
+    he: 'ViewCube: הלחיצה תואמת כעת לפאות, לקצוות ולפינות הגלויים.',
+    ja: 'ViewCube：クリック位置が表示中の面・辺・角と一致するようになりました。',
+    ko: 'ViewCube: 이제 클릭이 보이는 면·모서리·꼭짓점과 일치합니다.',
+    pl: 'ViewCube: klikanie zgadza się teraz z widocznymi ściankami, krawędziami i narożnikami.',
+    'pt-br': 'ViewCube: o clique agora corresponde às faces, arestas e cantos visíveis.',
+    es: 'ViewCube: el clic ahora coincide con las caras, aristas y esquinas visibles.',
+    tr: 'ViewCube: tıklama artık görünür yüzler, kenarlar ve köşelerle eşleşiyor.',
+    ar: 'ViewCube: النقر يطابق الآن الأوجه والحواف والزوايا الظاهرة.',
+    az: 'ViewCube: klikləmə indi görünən üzlər, kənarlar və bucaqlarla üst-üstə düşür.',
+    bg: 'ViewCube: щракването вече съвпада с видимите лица, ръбове и ъгли.',
+    bs: 'ViewCube: klik se sada poklapa s vidljivim stranama, ivicama i uglovima.',
+    da: 'ViewCube: klik rammer nu de synlige flader, kanter og hjørner.',
+    de: 'ViewCube: Klicks treffen jetzt die sichtbaren Flächen, Kanten und Ecken.',
+    el: 'ViewCube: το κλικ αντιστοιχεί πλέον στις ορατές έδρες, ακμές και κορυφές.',
+    fil: 'ViewCube: tumutugma na ngayon ang klik sa mga nakikitang panel, gilid, at sulok.',
+    hi: 'ViewCube: क्लिक अब दिखाई देने वाले फलकों, किनारों और कोनों से मेल खाता है।',
+    hr: 'ViewCube: klik se sada poklapa s vidljivim stranama, bridovima i kutovima.',
+    hu: 'ViewCube: a kattintás most a látható lapok, élek és sarkok szerint működik.',
+    hy: 'ViewCube: սեղմումն այժմ համընկնում է երևող նիստերի, կողերի ու անկյունների հետ։',
+    id: 'ViewCube: klik kini mengikuti panel, sisi, dan sudut yang terlihat.',
+    it: 'ViewCube: il clic ora corrisponde a facce, spigoli e angoli visibili.',
+    mk: 'ViewCube: кликот сега одговара на видливите страни, рабови и агли.',
+    mr: 'ViewCube: क्लिक आता दिसणाऱ्या फलक, कडा आणि कोपऱ्यांशी जुळतो.',
+    ms: 'ViewCube: klik kini sepadan dengan panel, tepi dan penjuru yang kelihatan.',
+    nb: 'ViewCube: klikk treffer nå de synlige flatene, kantene og hjørnene.',
+    nn: 'ViewCube: klikk treff no dei synlege flatene, kantane og hjørna.',
+    ro: 'ViewCube: clicul corespunde acum fețelor, muchiilor și colțurilor vizibile.',
+    rw: 'ViewCube: clic ubu ikora ku ma face, edge n’angle bigaragara.',
+    sq: 'ViewCube: klikimi tani i përputhet faqeve, skajeve dhe qoshve të dukshme.',
+    sr: 'ViewCube: klik sada pogoda vidljive stranice, ivice i uglove.',
+    sv: 'ViewCube: klick träffar nu de synliga ytorna, kanterna och hörnen.',
+    ta: 'ViewCube: சொடுக்கு இப்போது தெரியும் முகங்கள், விளிம்புகள் மற்றும் மூலைகளுடன் பொருந்துகிறது.',
+    uk: 'ViewCube: клацання тепер відповідає видимим граням, ребрам і кутам.',
+    vi: 'ViewCube: cú nhấp giờ đây khớp với các mặt, cạnh và góc nhìn thấy.',
+  } },
   { version: '0.1.9-beta.12', date: '2026.10.14', note: {
     en: 'In Settings › Updates, the Check for Updates button now sits closer to the update channel row.',
     zh: '「设置 › 更新」页里，检查更新按钮现在更靠近更新通道一行。',
