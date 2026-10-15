@@ -955,8 +955,16 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     cubeCam.position.set(0, 0, 3.6);
     const cubeGroup = new THREE.Group();
     cubeScene.add(cubeGroup);
+    // BoxGeometry material order is +X, −X, +Y, −Y, +Z, −Z. The home camera
+    // now sits at −Z (blue-left CAM_HOME, 2026-10-16), so the face a resting
+    // user sees straight on is −Z and the one on their screen-right is −X.
+    // CAD-cube convention says the resting view faces "Front" with "Right"
+    // on the right — so the strings pair swapped axes (left↔right,
+    // front↔back) rather than the geometric slot order; a click still flies
+    // to the clicked face's own normal, which is what keeps "Front" = the
+    // recenter view and "Right" = the view from the home view's right side.
     const labels = [
-      t('vc.right'), t('vc.left'), t('vc.top'), t('vc.bottom'), t('vc.front'), t('vc.back'),
+      t('vc.left'), t('vc.right'), t('vc.top'), t('vc.bottom'), t('vc.back'), t('vc.front'),
     ];
     const cubeAppearance = createViewcubeAppearance(labels, cssToken);
     retintCube = cubeAppearance.retint;
