@@ -58,6 +58,7 @@
   --viewcube-face-top: #3d4146;
   --viewcube-face-bottom: #34383d;
   --viewcube-feature: #34383d;
+  --viewcube-edge: #34383d;
   --viewcube-hover-face: #244c74;
   --viewcube-hover-feature: #549dde;
   --viewcube-hover-label: #d6ecff;
@@ -118,6 +119,7 @@
   --viewcube-face-top: #ffffff;
   --viewcube-face-bottom: #f3f6f9;
   --viewcube-feature: #f3f6f9;
+  --viewcube-edge: #929da8;
   --viewcube-hover-face: #c6dff5;
   --viewcube-hover-feature: #5599d2;
   --viewcube-hover-label: #163e64;
