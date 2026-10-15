@@ -100,11 +100,12 @@ export function drawViewcubeFace(
 
   // Each strip wraps over a real bevel. Rounded ends stop before the corner
   // pads instead of a short floating cylinder in the middle of the edge.
+  // Keep all twelve strips visible at rest, with a separate hover highlight.
   for (const [u, v] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
     const hot = region?.kind === 'edge' && region.u === u && region.v === v;
     g.fillStyle = hot
       ? token('--viewcube-hover-feature', '#549dde')
-      : token('--viewcube-rim', '#878b90');
+      : token('--viewcube-edge', '#34383d');
     g.beginPath();
     if (u) g.roundRect((u > 0 ? s : 0) - edgeHalfWidth, edgeStart, edgeHalfWidth * 2, s - 2 * edgeStart, edgeHalfWidth);
     else g.roundRect(edgeStart, (v! > 0 ? 0 : s) - edgeHalfWidth, s - 2 * edgeStart, edgeHalfWidth * 2, edgeHalfWidth);
