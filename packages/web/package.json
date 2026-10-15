@@ -1,6 +1,6 @@
 {
   "name": "@pathblender/web",
-  "version": "0.1.9-beta.14",
+  "version": "0.1.9-beta.15",
   "private": true,
   "type": "module",
   "scripts": {
