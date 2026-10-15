@@ -9,7 +9,8 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { createViewcubeAppearance, viewcubeDirectionAt } from '../viewcube-appearance';
+import type { CubeDirection } from '../viewcube-appearance';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import {
   activeActionsAt,
@@ -148,6 +149,8 @@ interface Scene3D {
   themed: { color: THREE.Color; token: string }[];
   /** ViewCube face textures bake tokens; regenerate on theme change. */
   retintCube: () => void;
+  /** ViewCube face labels are canvas-baked; re-render them on locale change. */
+  setCubeLabels: (labels: readonly string[]) => void;
 }
 
 // AS-style overview home: direction comes from field3d-models (the
@@ -186,37 +189,6 @@ function tokenColorHex(token: string, fallback: string): number {
   return (
     (mix(parseFloat(m[1]!), 0) << 16) | (mix(parseFloat(m[2]!), 1) << 8) | mix(parseFloat(m[3]!), 2)
   );
-}
-
-/** Original artwork informed by Onshape's public ViewCube reference:
- * https://cad.onshape.com/help/Content/View/view_navigation_and_the_view_cube.htm
- * Rounded face panels sit inside a continuous, softly shaded rim. */
-function faceTexture(label: string): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 512;
-  const g = c.getContext('2d')!;
-  g.fillStyle = cssToken('--viewcube-rim', '#687078');
-  g.fillRect(0, 0, 512, 512);
-  const grad = g.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0, cssToken('--viewcube-face-top', '#50565d'));
-  grad.addColorStop(1, cssToken('--viewcube-face-bottom', '#434950'));
-  g.beginPath();
-  g.roundRect(30, 30, 452, 452, 56);
-  g.fillStyle = grad;
-  g.fill();
-  g.strokeStyle = cssToken('--viewcube-outline', '#767f88');
-  g.lineWidth = 2;
-  g.stroke();
-  g.fillStyle = cssToken('--viewcube-label', '#f0f2f4');
-  g.font = '500 128px -apple-system, "Segoe UI", sans-serif';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillText(label, 256, 263);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 8;
-  return tex;
 }
 
 /** The "what is it doing now" callout above a robot (user request
@@ -548,6 +520,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       return owner;
     };
     let retintCube: () => void = () => {};
+    let setCubeLabels: (labels: readonly string[]) => void = () => {};
     scene.background = new THREE.Color(cssToken('--canvas-bg', '#1c1c1e'));
     const backgroundThemed = { color: scene.background as THREE.Color, token: '--canvas-bg' };
     themed.push(backgroundThemed);
@@ -560,14 +533,15 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // damping/tween deadlock does not apply.
     controls.enableDamping = true; // default dampingFactor (0.05): the original glide
     // Turntable-style vertical clamp: both sides of the field stay
-    // reachable. 0.15 keeps a top-down view (never gimbal-dead at the
-    // exact pole); 2.60 leans well past the far wall from the home side —
-    // the "other side's" low grazing angle users asked for (the old 1.62
-    // clamp blocked it; that read as one-sided dragging). The camera can
-    // dip below the slab plane at these angles without cutting into the
-    // model because the slab is thin and the near wall occludes.
-    controls.minPolarAngle = 0.15;
-    controls.maxPolarAngle = 2.6;
+    // reachable — leaning well past the far wall (the old 1.62 clamp read
+    // as one-sided dragging). Pole epsilons keep lookAt non-degenerate
+    // while letting ViewCube Top/Bottom clicks land as true plan views
+    // (the previous 0.15/2.6 left them 8.6°/31° askew); flyTo clamps to
+    // the same pair. At near-polar angles the camera looks at the field
+    // from above/below the slab plane — fine for the thin slab + occluding
+    // walls.
+    controls.minPolarAngle = 0.02;
+    controls.maxPolarAngle = Math.PI - 0.02;
     // Dolly range (user round 11, 2026-10-03): 0.15 m is deep CAD-grade
     // zoom — Onshape lets you zoom until geometry degenerates, and the old
     // 1 m floor still stopped short ("放大的极限还要大得多"). The ceiling
@@ -959,8 +933,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       let d = to.theta - from.theta;
       if (d > Math.PI) to.theta -= 2 * Math.PI;
       else if (d < -Math.PI) to.theta += 2 * Math.PI;
-      to.phi = THREE.MathUtils.clamp(to.phi, 0.15, 2.6);
-      from.phi = THREE.MathUtils.clamp(from.phi, 0.15, 2.6);
+      // Keep a hair off the poles (an exactly vertical lookAt with up=+Y is
+      // degenerate), but close enough that Top/Bottom land as true plan
+      // views — the old 0.15 rad clamp left them 8.6° askew.
+      const POLE = 0.02;
+      to.phi = THREE.MathUtils.clamp(to.phi, POLE, Math.PI - POLE);
+      from.phi = THREE.MathUtils.clamp(from.phi, POLE, Math.PI - POLE);
       tween = { from, to, start: performance.now() };
     };
     const viewcubeEl = document.createElement('div');
@@ -980,124 +958,53 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const labels = [
       t('vc.right'), t('vc.left'), t('vc.top'), t('vc.bottom'), t('vc.front'), t('vc.back'),
     ];
-    const mats = labels.map((lab) => new THREE.MeshBasicMaterial({
-      map: faceTexture(lab), vertexColors: true,
-    }));
-    // Face textures bake theme tokens at draw time; regenerate on theme flip.
-    retintCube = () => {
-      labels.forEach((lab, i) => {
-        const m = mats[i];
-        if (!m) return;
-        m.map?.dispose();
-        m.map = faceTexture(lab);
-        m.needsUpdate = true;
-      });
-      (cornerMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
-      (edgeMarker.material as THREE.MeshBasicMaterial).color.set(cssToken('--accent', '#0a84ff'));
-    };
-    // Keep the original full box exclusively for picking: appearance must
-    // not shrink the existing face/edge/corner targets or alter navigation.
-    const cubeMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(1.55, 1.55, 1.55),
-      new THREE.MeshBasicMaterial({ visible: false }),
-    );
-    const roundedGeometry = new RoundedBoxGeometry(1.55, 1.55, 1.55, 5, 0.09);
-    const normals = roundedGeometry.getAttribute('normal');
-    const shading = new Float32Array(normals.count * 3);
-    const light = new THREE.Vector3(-0.45, 0.8, 0.55).normalize();
-    const normal = new THREE.Vector3();
-    for (let i = 0; i < normals.count; i++) {
-      normal.fromBufferAttribute(normals, i);
-      // Fixed local lighting keeps the six faces readable while the
-      // bevel normals produce a continuous highlight around the edges.
-      const value = 0.72 + 0.28 * Math.max(0, normal.dot(light));
-      shading.set([value, value, value], i * 3);
-    }
-    roundedGeometry.setAttribute('color', new THREE.BufferAttribute(shading, 3));
-    const roundedCube = new THREE.Mesh(roundedGeometry, mats);
-    cubeGroup.add(cubeMesh, roundedCube);
-
-    // Onshape-style clean cube: no resident grips. Edge/corner intent is
-    // signaled by two dynamic markers that appear only while hovered and
-    // move to the classified feature (the resident hotspot meshes left
-    // faint artifacts on real GPUs and read as dented corners).
-    const CUBE_H = 1.55 / 2;
-    const hoverMat = () =>
-      new THREE.MeshBasicMaterial({ color: cssToken('--accent', '#0a84ff'), transparent: true, opacity: 0.95 });
-    const cornerMarker = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12), hoverMat());
-    const edgeMarker = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.5, 10), hoverMat());
-    cornerMarker.visible = false;
-    edgeMarker.visible = false;
-    cubeGroup.add(cornerMarker, edgeMarker);
-    const hideMarkers = () => {
-      cornerMarker.visible = false;
-      edgeMarker.visible = false;
-    };
+    const cubeAppearance = createViewcubeAppearance(labels, cssToken);
+    retintCube = cubeAppearance.retint;
+    setCubeLabels = cubeAppearance.setLabels;
+    cubeGroup.add(cubeAppearance.mesh);
 
     const ray = new THREE.Raycaster();
     const cubePtr = new THREE.Vector2();
-    interface CubePick {
-      dir: THREE.Vector3 | null;
-      faceIdx: number;
-      hot: THREE.Mesh | null;
-    }
-    const pick = (ev: PointerEvent): CubePick => {
+    // Picking raycasts the appearance mesh itself and classifies the hit's
+    // UV in the same texture space the regions are painted in — so a
+    // region's click boundary is exactly its visible outline (panel inset,
+    // edge strips, corner pads). The old flat-box + 0.5·half-size threshold
+    // predated the painted layout and misclassified the whole rim band.
+    const pick = (ev: PointerEvent): CubeDirection | null => {
       const r = cubeCanvas.getBoundingClientRect();
       cubePtr.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
       ray.setFromCamera(cubePtr, cubeCam);
-      const hit = ray.intersectObject(cubeMesh, false)[0];
-      if (!hit) return { dir: null, faceIdx: -1, hot: null };
-      // Classify by how many local axes sit near their extreme: one → face,
-      // two → edge, three → corner (the world direction IS the local one —
-      // the cube only mirrors the camera).
-      const p = cubeMesh.worldToLocal(hit.point.clone());
-      const big = [Math.abs(p.x) > 0.5 * CUBE_H, Math.abs(p.y) > 0.5 * CUBE_H, Math.abs(p.z) > 0.5 * CUBE_H];
-      const dir = new THREE.Vector3(
-        big[0] ? Math.sign(p.x) : 0,
-        big[1] ? Math.sign(p.y) : 0,
-        big[2] ? Math.sign(p.z) : 0,
-      );
-      const faceIdx =
-        dir.lengthSq() === 1
-          ? [dir.x, -dir.x, dir.y, -dir.y, dir.z, -dir.z].findIndex((v) => v === 1)
-          : -1;
-      return { dir: dir.lengthSq() > 0 ? dir : null, faceIdx, hot: null };
+      const hit = ray.intersectObject(cubeAppearance.mesh, false)[0];
+      if (!hit || !hit.uv || hit.face?.materialIndex === undefined) return null;
+      return viewcubeDirectionAt(hit.face.materialIndex, hit.uv.x, hit.uv.y);
     };
-    const applyHover = (p: CubePick) => {
-      mats.forEach((m, i) => m.color.set(i === p.faceIdx ? cssToken('--accent', '#0a84ff') : '#ffffff'));
-      hideMarkers();
-      const nz = p.dir
-        ? [p.dir.x, p.dir.y, p.dir.z].filter((v) => Math.abs(v) > 0.4).length
-        : 0;
-      if (nz === 3 && p.dir) {
-        cornerMarker.position.copy(p.dir).multiplyScalar(CUBE_H);
-        cornerMarker.visible = true;
-      } else if (nz === 2 && p.dir) {
-        const axis = [0, 1, 2].find((i) => p.dir!.getComponent(i) === 0) ?? 0;
-        if (axis === 0) edgeMarker.rotation.set(0, 0, Math.PI / 2);
-        else if (axis === 2) edgeMarker.rotation.set(Math.PI / 2, 0, 0);
-        else edgeMarker.rotation.set(0, 0, 0);
-        edgeMarker.position.copy(p.dir).multiplyScalar(CUBE_H);
-        edgeMarker.visible = true;
-      }
+    const applyHover = (dir: CubeDirection | null) => {
+      cubeAppearance.setHover(dir);
       markDirty();
+      cubeCanvas.style.cursor = dir ? 'pointer' : 'default';
     };
     const onCubeDown = (ev: PointerEvent) => {
       ev.stopPropagation();
-      const p = pick(ev);
-      if (!p.dir) return;
+      const dir = pick(ev);
+      if (!dir) return;
       // Test hook: the walkthrough asserts the camera reaches this target.
-      (window as unknown as { __pb3d?: { lastPick?: THREE.Vector3 } }).__pb3d!.lastPick = p.dir.clone();
+      (window as unknown as { __pb3d?: { lastPick?: THREE.Vector3 } }).__pb3d!.lastPick =
+        new THREE.Vector3(dir[0], dir[1], dir[2]);
       const dist = camera.position.distanceTo(controls.target);
-      flyTo(controls.target.clone().add(p.dir.clone().multiplyScalar(dist)));
+      flyTo(controls.target.clone().add(new THREE.Vector3(dir[0], dir[1], dir[2]).multiplyScalar(dist)));
     };
     const onCubeMove = (ev: PointerEvent) => {
-      const p = pick(ev);
-      applyHover(p);
-      cubeCanvas.style.cursor = p.dir ? 'pointer' : 'default';
+      applyHover(pick(ev));
+    };
+    // The pointer can leave the canvas between moves (or get interrupted
+    // mid-gesture); without this the last region stays lit forever.
+    const onCubeLeave = () => {
+      applyHover(null);
     };
     cubeCanvas.addEventListener('pointerdown', onCubeDown);
     cubeCanvas.addEventListener('pointermove', onCubeMove);
+    cubeCanvas.addEventListener('pointerleave', onCubeLeave);
+    cubeCanvas.addEventListener('pointercancel', onCubeLeave);
 
     // No keyboard scope and no focus ring on the WebGL canvas (user
     // 2026-10-07): clicking the field does nothing, so a box around the
@@ -1196,12 +1103,16 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       dynamic, rigs: [], trails: [], heatmaps: [],
       modelRoot, fallback, fieldRoot,
       backgroundThemed,
-      dirty: markDirty, invalidateShadows, warmup, themed, retintCube,
+      dirty: markDirty, invalidateShadows, warmup, themed, retintCube, setCubeLabels,
       cancelFly: () => { tween = null; },
     };
 
     // Test/debug hook: orientation + camera state assertions.
-    (window as unknown as { __pb3d?: unknown }).__pb3d = { camera, controls, renderer, scene, modelCacheSize: () => modelCache.size };
+    (window as unknown as { __pb3d?: unknown }).__pb3d = {
+      camera, controls, renderer, scene, modelCacheSize: () => modelCache.size,
+      cubeHover: cubeAppearance.getHover,
+      cubeQuat: () => cubeGroup.quaternion.toArray(),
+    };
 
     return () => {
       cancelAnimationFrame(raf);
@@ -1211,17 +1122,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       controls.removeEventListener('start', onUserStart);
       cubeCanvas.removeEventListener('pointerdown', onCubeDown);
       cubeCanvas.removeEventListener('pointermove', onCubeMove);
-      cubeMesh.geometry.dispose();
-      cubeMesh.material.dispose();
-      roundedGeometry.dispose();
-      mats.forEach((material) => {
-        material.map?.dispose();
-        material.dispose();
-      });
-      cornerMarker.geometry.dispose();
-      cornerMarker.material.dispose();
-      edgeMarker.geometry.dispose();
-      edgeMarker.material.dispose();
+      cubeCanvas.removeEventListener('pointerleave', onCubeLeave);
+      cubeCanvas.removeEventListener('pointercancel', onCubeLeave);
+      cubeAppearance.dispose();
       cubeRenderer.dispose();
       viewcubeEl.remove();
       renderer.domElement.removeEventListener('pointerdown', onDragDown);
@@ -1455,6 +1358,18 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     st.retintCube();
     st.dirty();
   }, [themeResolved]);
+
+  // ViewCube labels are canvas-baked at scaffold time; re-render them when
+  // the display language changes (the scaffold effect runs once, so without
+  // this the cube kept the boot locale's words forever).
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    st.setCubeLabels([
+      t('vc.right'), t('vc.left'), t('vc.top'), t('vc.bottom'), t('vc.front'), t('vc.back'),
+    ]);
+    st.dirty();
+  }, [t]);
 
   // Official 3D field model (AdvantageScope assets, BSD-3): replaces the
   // hand-built fallback. Parsed models are cached module-level (processed
