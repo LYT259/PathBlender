@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.13';
+export const APP_VERSION = '0.1.9-beta.14';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.14', date: '2026.10.15', note: {
+    en: 'ViewCube: the edge bars are now visible by default and turn blue on hover',
+    zh: 'ViewCube：棱边条现在默认可见，悬停时变蓝。',
+    'zh-tw': 'ViewCube：稜邊條現在預設可見，懸停時變藍。',
+    cs: 'ViewCube: hrany jsou teď ve výchozím stavu viditelné a při přejezdu zmodrají.',
+    nl: 'ViewCube: de randbalken zijn nu standaard zichtbaar en worden blauw bij aanwijzen.',
+    fr: 'ViewCube : les barres d’arêtes sont désormais visibles par défaut et deviennent bleues au survol.',
+    he: 'ViewCube: פסי הקצוות גלויים כעת כברירת מחדל והופכים לכחול בריחוף.',
+    ja: 'ViewCube：エッジバーが常に表示され、ホバーで青く変わります。',
+    ko: 'ViewCube: 모서리 막대가 기본으로 표시되며 마우스를 올리면 파랗게 됩니다.',
+    pl: 'ViewCube: paski krawędzi są teraz domyślnie widoczne i po najechaniu stają się niebieskie.',
+    'pt-br': 'ViewCube: as barras de aresta agora ficam visíveis por padrão e ficam azuis ao passar o mouse.',
+    es: 'ViewCube: las barras de arista ahora son visibles de forma predeterminada y se vuelven azules al pasar el cursor.',
+    tr: 'ViewCube: kenar çubukları artık varsayılan olarak görünür ve üzerine gelince maviye döner.',
+    ar: 'ViewCube: أصبحت أشرطة الحواف ظاهرة افتراضيًا وتتحول إلى الأزرق عند التمرير فوقها.',
+    az: 'ViewCube: kənar zolaqları indi standart olaraq görünür və üzərinə gələndə maviyə çevrilir.',
+    bg: 'ViewCube: лентите на ръбовете вече са видими по подразбиране и посиняват при посочване.',
+    bs: 'ViewCube: trake ivica sada su vidljive podrazumijano i postaju plave pri prelasku miša.',
+    da: 'ViewCube: kantlinjerne er nu synlige som standard og bliver blå, når musen holdes over.',
+    de: 'ViewCube: Die Kantenbalken sind jetzt standardmäßig sichtbar und werden beim Darüberfahren blau.',
+    el: 'ViewCube: οι μπάρες ακμών είναι πλέον ορατές από προεπιλογή και γίνονται μπλε όταν βρεθεί πάνω τους ο δείκτης.',
+    fil: 'ViewCube: nakikita na ngayon agad ang mga gilid na bar at nagiging asul kapag dumaan ang cursor.',
+    hi: 'ViewCube: किनारे की पट्टियाँ अब डिफ़ॉल्ट रूप से दिखती हैं और हॉवर करने पर नीली हो जाती हैं।',
+    hr: 'ViewCube: trake bridova sada su vidljive prema zadanim postavkama i postaju plave pri prelasku miša.',
+    hu: 'ViewCube: az élsávok mostantól alapértelmezetten láthatók, és rámutatáskor kékké válnak.',
+    hy: 'ViewCube: կողերի շերտերն այժմ երևում են լռելյայն և մկնիկով անցնելիս դառնում են կապույտ։',
+    id: 'ViewCube: bilah tepi kini terlihat secara bawaan dan menjadi biru saat diarahkan.',
+    it: 'ViewCube: le barre degli spigoli ora sono visibili per impostazione predefinita e diventano blu al passaggio del mouse.',
+    mk: 'ViewCube: лентите на рабовите сега се видливи по основно и посинуваат при покажување.',
+    mr: 'ViewCube: कडांच्या पट्ट्या आता पूर्वनिर्धारितपणे दिसतात आणि होव्हर केल्यावर निळ्या होतात.',
+    ms: 'ViewCube: bar tepi kini kelihatan secara lalai dan bertukar biru apabila diluncurkan.',
+    nb: 'ViewCube: kantstrekene er nå synlige som standard og blir blå når musen holdes over.',
+    nn: 'ViewCube: kantstripane er no synlege som standard og blir blå når musa er over.',
+    ro: 'ViewCube: barele muchiilor sunt acum vizibile implicit și devin albastre la plasarea cursorului.',
+    rw: 'ViewCube: ibara ku mpinga noneho riragaragara kandi rihinduka ubururu mu kugenda hejuru.',
+    sq: 'ViewCube: shiritet e skajeve tani duhen si parazgjedhje dhe bëhen blu kur kalon kursori.',
+    sr: 'ViewCube: trake ivica su sada vidljive po podrazumevanom i postaju plave pri prelasku miša.',
+    sv: 'ViewCube: kantstrecken är nu synliga som standard och blir blå när muspekaren hålls över.',
+    ta: 'ViewCube: விளிம்புப் பட்டைகள் இப்போது முன்னிருப்பாகத் தெரிகின்றன, மேல் சுட்டும்போது நீலமாகின்றன.',
+    uk: 'ViewCube: смужки ребер тепер видимі типово та стають синіми при наведенні.',
+    vi: 'ViewCube: các thanh cạnh giờ hiển thị mặc định và chuyển sang màu xanh khi di chuột lên.',
+  } },
   { version: '0.1.9-beta.13', date: '2026.10.15', note: {
     en: 'ViewCube: clicking now matches the visible panels, edges and corners',
     zh: 'ViewCube：点击区域现在与可见的面、棱边和角一致。',
