@@ -130,7 +130,10 @@ describe('i18n dictionaries', () => {
     'fil': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.file","menu.window","workspace.details","robots.collision","robots.timing","prefs.channel.stable","prefs.channel.beta",
     'sequence.startGroupHub'],
     'fr': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","robots.title","robots.collision","robots.alliance","timeline.pause","about.version","prefs.unit.yd","prefs.channel.stable","sequence.count",
-    'sequence.startGroupHub', 'sequence.startGroupTrench'],
+    'sequence.startGroupHub', 'sequence.startGroupTrench',
+    // French spells "monochrome" exactly like English (same Greek-derived
+    // word in both languages) — accepted loan, not a missed translation.
+    'prefs.iconStyle.monochrome'],
     'he': ["prefs.channel.stable","prefs.channel.beta",
     'sequence.startGroupHub'],
     'hi': ['sequence.startGroupHub'],

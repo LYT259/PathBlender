@@ -8,7 +8,7 @@
  * loop). Web/browser contexts: both helpers degrade to no-ops.
  */
 
-type PrefKey = 'lang' | 'theme' | 'appIcon' | 'updateChannel' | 'mouseControls' | 'customMouseControls'
+type PrefKey = 'lang' | 'theme' | 'appIcon' | 'appIconStyle' | 'updateChannel' | 'mouseControls' | 'customMouseControls'
   | 'lengthUnit' | 'reverseScroll' | 'defaultConstrained' | 'penAsMouse' | 'colorblindPalette';
 
 // `__TAURI_INTERNALS__` covers Linux/Windows (http(s)-served webviews);

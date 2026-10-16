@@ -2,7 +2,7 @@ import { SelectControl } from './SelectControl';
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useI18n, type LangChoice } from '../i18n';
 import { useTheme, type ThemeMode } from '../theme';
-import { useAppIcon, type IconAppearanceMode } from '../app-icon';
+import { useAppIcon, ICON_STYLE_ARTWORK, type IconAppearanceMode, type IconStyle } from '../app-icon';
 import { readColorblind, writeColorblind } from '../pref-sync';
 import {
   CUSTOM_MOUSE_BUTTONS,
@@ -22,8 +22,6 @@ import { LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
 import { checkForUpdate, installPendingUpdate } from '../update-check';
 import { noteText, VERSION_NOTES } from '../version-info';
-import dayIcon from '../assets/app-icon-day.png';
-import nightIcon from '../assets/app-icon-night.png';
 import { BUILD_VERSION } from '../build-version';
 import { ProjectSupport } from './ProjectSupport';
 import { copyText } from '../download';
@@ -59,7 +57,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
 }) {
   const { lang, langChoice, setLang, t } = useI18n();
   const { mode, setMode } = useTheme();
-  const { mode: iconMode, systemDark, setMode: setIconMode } = useAppIcon();
+  const { mode: iconMode, style: iconStyle, systemDark, setMode: setIconMode, setStyle: setIconStyle } = useAppIcon();
   const { channel, setChannel } = useUpdateChannel();
   const [mouseControls, setMouseControls] = useMouseControls();
   const [customMouse, setCustomMouse] = useCustomMouseControls();
@@ -75,6 +73,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   const [savedColorblind, setSavedColorblind] = useState(readColorblind);
   const [colorblindDraft, setColorblindDraft] = useState<boolean | null>(null);
   const [iconDraft, setIconDraft] = useState<IconAppearanceMode | null>(null);
+  const [iconStyleDraft, setIconStyleDraft] = useState<IconStyle | null>(null);
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
   const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
   const [customDraft, setCustomDraft] = useState<CustomMouseMap | null>(null);
@@ -93,6 +92,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   const language = languageDraft ?? langChoice;
   const theme = themeDraft ?? mode;
   const icon = iconDraft ?? iconMode;
+  const iconStyleValue = iconStyleDraft ?? iconStyle;
   const updateChannel = channelDraft ?? channel;
   const mouse = mouseDraft ?? mouseControls;
   const customEffective = customDraft ?? customMouse;
@@ -102,6 +102,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   const pen = penDraft ?? penAsMouse;
   const colorblind = colorblindDraft ?? savedColorblind;
   const dirty = language !== langChoice || theme !== mode || icon !== iconMode ||
+    iconStyleValue !== iconStyle ||
     updateChannel !== channel || mouse !== mouseControls || unit !== lengthUnit ||
     reverse !== reverseScroll || constrained !== defaultConstrained || pen !== penAsMouse ||
     colorblind !== savedColorblind ||
@@ -152,6 +153,10 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   function save() {
     if (language !== langChoice) setLang(language);
     if (theme !== mode) setMode(theme);
+    // Style first, then appearance: both state updates land in the same
+    // commit, so the provider re-syncs the Dock tile once with the final
+    // pair — no intermediate wrong-artwork flash between the two.
+    if (iconStyleValue !== iconStyle) setIconStyle(iconStyleValue);
     if (icon !== iconMode) setIconMode(icon);
     if (updateChannel !== channel) {
       setChannel(updateChannel);
@@ -212,7 +217,8 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
               </label>)}
             </div>
           </fieldset>
-          {desktop && <IconAppearancePicker value={icon} onChange={setIconDraft} />}
+          {desktop && <IconAppearancePicker value={icon} onChange={setIconDraft}
+            style={iconStyleValue} onStyleChange={setIconStyleDraft} />}
           <label className="preferences-setting preferences-checkbox">
             <span>{t('prefs.colorblind')}</span>
             <input type="checkbox" checked={colorblind} onChange={(e) => setColorblindDraft(e.target.checked)} />
@@ -302,7 +308,9 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
         {section === 'about' && <>
           <div className="preferences-product"><div className="preferences-product-title"><strong>PathBlender</strong><img
             className="preferences-product-icon" alt="" width="72" height="72"
-            src={(icon === 'system' ? systemDark : icon === 'dark') ? nightIcon : dayIcon} />
+            src={(icon === 'system' ? systemDark : icon === 'dark')
+              ? ICON_STYLE_ARTWORK[iconStyleValue].dark
+              : ICON_STYLE_ARTWORK[iconStyleValue].light} />
           </div><span className="preferences-version" dir="ltr">{BUILD_VERSION}</span>
             <button className="btn" type="button" onClick={() => {
               void copyText(BUILD_VERSION)
