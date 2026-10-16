@@ -185,9 +185,9 @@ export const zh: Record<MessageKey, string> = {
   'vc.back': '后',
   'vc.left': '左',
   'vc.right': '右',
-  'field.variant': '场地结构（Welded=焊接场 / AndyMark=拼装场）',
+  'field.variant': '场地结构',
 
-  'field.style': '底图风格（示意图 / 渲染图）',
+  'field.style': '底图风格',
 
   'field.style.schematic': '示意图',
 

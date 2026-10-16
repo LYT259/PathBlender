@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.19';
+export const APP_VERSION = '0.1.9-beta.20';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.20', date: '2026.10.16', note: {
+    en: "Simplified Chinese labels for the field construction and artwork style groups",
+    'zh': '「场地结构」与「底图风格」菜单标签已简化。',
+    'zh-tw': '「場地結構」與「底圖風格」選單標籤已簡化。',
+    'cs': 'Zjednodušeny čínské popisky konstrukce hřiště a stylu podkladu.',
+    'nl': 'Vereenvoudigde Chinese labels voor veldconstructie en artworkstijl.',
+    'fr': 'Libellés chinois simplifiés pour la construction du terrain et le style d’illustration.',
+    'he': 'פושטו התוויות בסינית לבניית המגרש ולסגנון הגרפיקה.',
+    'ja': 'フィールド構造とアートスタイルの中国語ラベルを簡素化しました。',
+    'ko': '필드 구조와 아트 스타일의 중국어 라벨을 간소화했습니다.',
+    'pl': 'Uproszczono chińskie etykiety konstrukcji boiska i stylu grafiki.',
+    'pt-br': 'Rótulos em chinês da construção do campo e do estilo de arte simplificados.',
+    'es': 'Se simplificaron las etiquetas en chino de la construcción del campo y del estilo del arte.',
+    'tr': 'Saha yapımı ve görsel stil Çince etiketleri basitleştirildi.',
+    'ar': 'تبسيط التسميات الصينية لبناء الملعب ونمط الرسم.',
+    'az': 'Meydan konstruksiyası və qrafika üslubu üçün çin dilində yazılar sadələşdirildi.',
+    'bg': 'Опростени китайски надписи за конструкцията на игрището и стила на графиката.',
+    'bs': 'Pojednostavljeni kineski nazivi za konstrukciju terena i stil grafike.',
+    'da': 'Forenklede kinesiske etiketter for banekonstruktion og grafikstil.',
+    'de': 'Vereinfachte chinesische Beschriftungen für Feldkonstruktion und Grafikstil.',
+    'el': 'Απλοποιήθηκαν οι κινεζικές ετικέτες για την κατασκευή του πεδίου και το στυλ γραφικών.',
+    'fil': 'Pinapayak ang mga Tsino na label ng konstruksyon ng field at istilo ng artwork.',
+    'hi': 'फ़ील्ड निर्माण और कला शैली के चीनी लेबल सरल किए गए।',
+    'hr': 'Pojednostavljeni kineski nazivi za konstrukciju terena i stil grafike.',
+    'hu': 'A pályaépítés és a grafikastílus kínai feliratai egyszerűsödtek.',
+    'hy': 'Պարզեցվեցին դաշտի կառուցվածքի և գրաֆիկական ոճի չինարեն պիտակները:',
+    'id': 'Label Tiongkok untuk konstruksi lapangan dan gaya grafis disederhanakan.',
+    'it': 'Semplificate le etichette in cinese per costruzione del campo e stile grafico.',
+    'mk': 'Поедноставени кинески натписи за конструкцијата на полето и стилот на графиката.',
+    'mr': 'फील्ड बांधकाम आणि कला शैलीची चिनी लेबले सरल केली.',
+    'ms': 'Label Cina untuk pembinaan padang dan gaya grafik dipermudahkan.',
+    'nb': 'Forenklede kinesiske etiketter for banekonstruksjon og grafikkstil.',
+    'nn': 'Forenkla kinesiske etikettar for banekonstruksjon og grafikkstil.',
+    'ro': 'Etichetele chinezești pentru construcția terenului și stilul grafic au fost simplificate.',
+    'rw': 'Byorohejwe ibyanditswe by’Igishinwa ku bwubatsi bw’ikibuga n’uburyo bw’ishusho.',
+    'sq': 'Thjeshtuan etiketat kineze për ndërtimin e fushës dhe stilin e grafikës.',
+    'sr': 'Pojednostavljeni kineski natpisi za konstrukciju terena i stil grafike.',
+    'sv': 'Förenklade kinesiska etiketter för fältkonstruktion och grafisk stil.',
+    'ta': 'மைதான கட்டுமானம் மற்றும் கலை பாணிக்கான சீன லேபிள்கள் எளிமையாக்கப்பட்டன.',
+    'uk': 'Спрощено китайські підписи для конструкції поля та стилю графіки.',
+    'vi': 'Đơn giản hóa nhãn tiếng Trung cho kết cấu sân và phong cách đồ họa.',
+  } },
   { version: '0.1.9-beta.19', date: '2026.10.16', note: {
     en: "Settings: the mouse-controls diagram logo now follows the app icon style",
     'zh': '设置：操作页鼠标图示的 logo 现在跟随应用图标样式。',
