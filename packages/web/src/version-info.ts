@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.21';
+export const APP_VERSION = '0.1.9-beta.22';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.22', date: '2026.10.16', note: {
+    en: "About PathBlender now shows the current app icon style; the panel updates on every open",
+    'zh': '「关于 PathBlender」现在显示当前应用图标样式，面板每次打开都会刷新。',
+    'zh-tw': '「關於 PathBlender」現在顯示目前應用圖示樣式，面板每次開啟都會重新整理。',
+    'cs': 'Okno „O aplikaci PathBlender“ nyní ukazuje aktuální styl ikony a při každém otevření se aktualizuje.',
+    'nl': '„Over PathBlender” toont nu de huidige stijl van het app-pictogram; het venster werkt bij elke keer dat het opent.',
+    'fr': '« À propos de PathBlender » affiche désormais le style d’icône actuel ; le panneau s’actualise à chaque ouverture.',
+    'he': '„אודות PathBlender” מציג כעת את סגנון סמל האפליקציה הנוכחי; החלון מתעדכן בכל פתיחה.',
+    'ja': '「PathBlender について」が現在のアプリアイコンスタイルを表示し、パネルは開くたびに更新されます。',
+    'ko': '«PathBlender 정보»가 현재 앱 아이콘 스타일을 표시하며, 패널은 열 때마다 갱신됩니다.',
+    'pl': '„O programie PathBlender” pokazuje teraz bieżący styl ikony, a panel odświeża się przy każdym otwarciu.',
+    'pt-br': '“Sobre o PathBlender” agora mostra o estilo atual do ícone; o painel é atualizado sempre que abre.',
+    'es': '«Acerca de PathBlender» ahora muestra el estilo actual del icono; el panel se actualiza cada vez que se abre.',
+    'tr': '«PathBlender Hakkında» artık geçerli uygulama simgesi stilini gösteriyor; panel her açılışta güncellenir.',
+    'ar': '«عن PathBlender» يعرض الآن نمط أيقونة التطبيق الحالي؛ وتتحدث اللوحة في كل مرة تُفتح فيها.',
+    'az': '„PathBlender haqqında” indi nişanın hazırkı stilini göstərir; panel hər açılışda yenilənir.',
+    'bg': '„Относно PathBlender“ вече показва текущия стил на иконата; панелът се обновява при всяко отваряне.',
+    'bs': '„O PathBlenderu” sada prikazuje trenutni stil ikone; panel se ažurira pri svakom otvaranju.',
+    'da': '„Om PathBlender” viser nu app-ikonets aktuelle stil; panelet opdateres ved hver åbning.',
+    'de': '„Über PathBlender“ zeigt jetzt den aktuellen App-Symbol-Stil; das Fenster wird bei jedem Öffnen aktualisiert.',
+    'el': 'Το «Σχετικά με το PathBlender» δείχνει πλέον το τρέχον στυλ του εικονιδίου· ο πίνακας ενημερώνεται σε κάθε άνοιγμα.',
+    'fil': 'Ang „Tungkol sa PathBlender” ay ipinapakita na ang kasalukuyang estilo ng icon; sariwa ang panel sa bawat pagbubukas.',
+    'hi': '«पैथब्लेंडर के बारे में» अब ऐप आइकन की वर्तमान शैली दिखाता है; पैनल हर बार खुलने पर अपडेट होता है।',
+    'hr': '„O PathBlenderu” sada prikazuje trenutni stil ikone; panel se ažurira pri svakom otvaranju.',
+    'hu': 'A „PathBlender névjegye” most az ikon aktuális stílusát mutatja; a panel minden megnyitáskor frissül.',
+    'hy': '«PathBlender-ի մասին» պատուհանն այժմ ցուցադրում է պատկերակի ընթացիկ ոճը․ վահանակը թարմանում է ամեն բացելիս։',
+    'id': '„Tentang PathBlender” kini menampilkan gaya ikon saat ini; panel diperbarui setiap kali dibuka.',
+    'it': '«Informazioni su PathBlender» mostra ora lo stile attuale dell’icona; il pannello si aggiorna a ogni apertura.',
+    'mk': '„За PathBlender“ сега ја прикажува тековната стил на иконата; панелот се освежува при секое отворање.',
+    'mr': '«पथब्लेंडर विषयी» आता आयकनची सध्याची शैली दाखवते; पॅनेल प्रत्येक वेळी उघडल्यावर रिफ्रेश होते.',
+    'ms': '„Perihal PathBlender” kini menunjukkan gaya ikon semasa; panel dikemas kini setiap kali dibuka.',
+    'nb': '«Om PathBlender» viser nå app-ikonets gjeldende stil; panelet oppdateres hver gang det åpnes.',
+    'nn': '«Om PathBlender» viser no appikonet sin gjeldande stil; panelet oppdaterer seg kvar gong det opnast.',
+    'ro': '„Despre PathBlender” afișează acum stilul curent al iconiței; panoul se actualizează la fiecare deschidere.',
+    'rw': '«Ibyerekeye PathBlender» noneho yerekana imisusire iriho y’igishushanyo; paneli ihuza buri yifunguye.',
+    'sq': '„Rreth PathBlender” tregon tani stilin aktual të ikonës; paneli përditësohet sa herë hapet.',
+    'sr': '„O PathBlender-u” sada prikazuje trenutni stil ikone; panel se ažurira pri svakom otvaranju.',
+    'sv': '”Om PathBlender” visar nu appikonens aktuella stil; panelen uppdateras varje gång den öppnas.',
+    'ta': '«PathBlender பற்றி» இப்போது ஐகானின் தற்போதைய பாணியைக் காட்டுகிறது; ஒவ்வொரு திறப்பிலும் பலகம் புதுப்பிக்கப்படும்.',
+    'uk': '«Про PathBlender» тепер показує поточний стиль іконки; панель оновлюється при кожному відкритті.',
+    'vi': '«Giới thiệu PathBlender» giờ hiển thị kiểu biểu tượng hiện tại; hộp thoại cập nhật mỗi lần mở.',
+  } },
   { version: '0.1.9-beta.21', date: '2026.10.16', note: {
     en: "Simplified Chinese labels for the field construction and artwork style groups",
     'zh': '「场地结构」与「底图风格」菜单标签已简化。',
