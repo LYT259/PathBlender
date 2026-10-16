@@ -205,6 +205,17 @@ function AppBody() {
       .then(({ invoke }) => invoke('open_preferences'))
       .catch(() => setShowPrefs(true));
   }
+  /** Menu "Check for Updates" (user request 2026-10-16): land the settings
+   * window on its Updates section with the check already running — visible
+   * "checking…" feedback at once (the old one-shot menu check showed nothing
+   * until the network answered), and a found update becomes the explicit
+   * two-step install flow instead of a silent download+relaunch. */
+  function openPreferencesOnUpdates() {
+    if (!IS_DESKTOP) { setShowPrefs(true); return; }
+    void import('@tauri-apps/api/core')
+      .then(({ invoke }) => invoke('open_preferences', { updates: true }))
+      .catch(() => setShowPrefs(true));
+  }
   /** External links: the desktop shell owns the default browser, the web opens a tab. */
   function openExternalUrl(url: string) {
     if (!IS_DESKTOP) { window.open(url, '_blank', 'noopener'); return; }
@@ -991,10 +1002,12 @@ function AppBody() {
     canvasRef.current?.exportGif((ok) => flash(tr(ok ? 'toast.gifSaved' : 'toast.gifFailed'), ok ? 'ok' : 'error'));
   }, [view3D, flash, tr]);
 
-  // Native "Check for Updates…" and channel switches. The Rust shell owns
-  // the channel→feed mapping (check_update); feed unreachable (offline, or
-  // no release assets yet) reports 'failed' → the honest toast, not a fake
-  // "up to date". Install + relaunch are one hop: the user asked for it.
+  // Channel-switch checks (the menu's "Check for Updates" no longer routes
+  // here — it opens the settings window's Updates section instead, see
+  // openPreferencesOnUpdates). The Rust shell owns the channel→feed mapping
+  // (check_update); feed unreachable (offline, or no release assets yet)
+  // reports 'failed' → the honest toast, not a fake "up to date". Install +
+  // relaunch are one hop: the user asked for it.
   const checkForUpdates = useCallback(
     (ch: UpdateChannel = updateChannel) => {
       if (!IS_DESKTOP) return;
@@ -1380,7 +1393,7 @@ function AppBody() {
     'range-paths': () => setPlaybackRange('paths'),
     'jump-first-issue': jumpFirstIssue,
     preferences: openPreferences,
-    'check-update': () => void checkForUpdates(),
+    'check-update': openPreferencesOnUpdates,
     'open-guide': () => setShowGuide(true),
     'open-shortcuts': () => setShowHelp(true),
     // Tour entry (plan §3): opens the example when none is running and
