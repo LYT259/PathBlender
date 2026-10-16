@@ -239,7 +239,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
                 {MOUSE_SCHEMES.map((choice) => <option key={choice} value={choice}>{t(`prefs.mouse.${choice}`)}</option>)}
               </SelectControl>
             </div>
-            <MouseControlsDiagram scheme={mouse} iconMode={icon} constrained={constrained} custom={customEffective} />
+            <MouseControlsDiagram scheme={mouse} iconMode={icon} iconStyle={iconStyleValue} constrained={constrained} custom={customEffective} />
             {mouse === 'custom'
               ? <CustomMouseEditor
                   map={customEffective}

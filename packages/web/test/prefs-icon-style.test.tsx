@@ -110,4 +110,17 @@ describe('icon style setting in PreferencesPanel', () => {
     expect(within(styleGroup()).getByRole('radio', { name: 'Classic' })).toBeChecked();
     expect(within(appearanceGroup()).getByRole('radio', { name: 'Dark' })).toBeChecked();
   });
+
+  it('the Controls-tab mouse diagram logo follows the icon style (user report 2026-10-16)', () => {
+    mount();
+    fireEvent.click(screen.getByRole('tab', { name: 'Controls' }));
+    expect(document.querySelector('.mouse-controls-drawing image'))
+      .toHaveAttribute('href', expect.stringContaining('app-icon-day')); // classic by default
+    fireEvent.click(screen.getByRole('tab', { name: 'General' }));
+    fireEvent.click(within(styleGroup()).getByRole('radio', { name: 'Monochrome' }));
+    fireEvent.click(saveButton());
+    fireEvent.click(screen.getByRole('tab', { name: 'Controls' }));
+    expect(document.querySelector('.mouse-controls-drawing image'))
+      .toHaveAttribute('href', expect.stringContaining('app-icon-mono-day'));
+  });
 });
