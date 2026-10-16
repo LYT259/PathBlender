@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.21';
+export const APP_VERSION = '0.1.9-beta.22';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.22', date: '2026.10.16', note: {
+    'en': 'Menu bar Check for Updates now opens the Updates page in Settings and runs the check there',
+    'zh': '菜单栏「检查更新」现在会打开设置的更新页并自动开始检查。',
+    'zh-tw': '選單列「檢查更新」現在會開啟設定的更新頁並自動開始檢查。',
+    'cs': 'Položka „Zkontrolovat aktualizace“ v panelu nabídek nyní otevře stránku Aktualizace v nastavení a kontrolu rovnou spustí.',
+    'nl': 'Controleren op updates in de menubalk opent nu de pagina Updates in Instellingen en start de controle daar.',
+    'fr': '« Vérifier les mises à jour » dans la barre de menus ouvre désormais la page Mises à jour des réglages et lance la vérification.',
+    'he': 'בדיקת העדכונים בסרגל התפריטים פותחת כעת את עמוד העדכונים בהגדרות ומריצה את הבדיקה שם.',
+    'ja': 'メニューバーの「アップデートを確認」が設定のアップデートページを開き、そこで確認を自動的に開始するようになりました。',
+    'ko': '메뉴 막대의 업데이트 확인이 이제 설정의 업데이트 페이지를 열고 그곳에서 확인을 자동으로 시작합니다.',
+    'pl': 'Sprawdzanie aktualizacji na pasku menu otwiera teraz stronę Aktualizacje w ustawieniach i od razu tam sprawdza.',
+    'pt-br': 'O Verificar atualizações da barra de menus agora abre a página Atualizações das configurações e inicia a verificação ali.',
+    'es': 'Buscar actualizaciones en la barra de menús ahora abre la página Actualizaciones de Ajustes y ejecuta ahí la comprobación.',
+    'tr': 'Menü çubuğundaki Güncellemeleri denetle artık ayarlardaki Güncellemeler sayfasını açıyor ve denetimi orada başlatıyor.',
+    'ar': '«التحقق من التحديثات» في شريط القوائم يفتح الآن صفحة التحديثات في الإعدادات ويبدأ التحقق هناك.',
+    'az': 'Menyu çubuğundaki Yeniləmələri yoxla artıq parametrlərdəki Yeniləmələr səhifəsini açır və yoxlamanı orada başladır.',
+    'bg': '„Проверка за актуализации“ в лентата с менюта вече отваря страницата Актуализации в настройките и стартира проверката там.',
+    'bs': 'Provjeri ažuriranja u traci izbornika sada otvara stranicu Ažuriranja u postavkama i pokreće provjeru tamo.',
+    'da': 'Søg efter opdateringer i menulinjen åbner nu siden Opdateringer i indstillingerne og starter tjekket der.',
+    'de': 'Nach Updates suchen in der Menüleiste öffnet jetzt die Seite Updates in den Einstellungen und startet die Prüfung dort.',
+    'el': 'Η επιλογή Έλεγχος για ενημερώσεις στη γραμμή μενού ανοίγει πλέον τη σελίδα Ενημερώσεις στις ρυθμίσεις και εκτελεί εκεί τον έλεγχο.',
+    'fil': 'Ang Suriin ng mga update sa menu bar ay bubukas na ngayon ng pahina ng Mga Update sa Settings at doon magsisimula ang pagsusuri.',
+    'hi': 'मेनू बार का अपडेट देखें अब सेटिंग्स का अपडेट पेज खोलता है और वहीं जाँच शुरू करता है।',
+    'hr': 'Provjeri ažuriranja u traci izbornika sada otvara stranicu Ažuriranja u postavkama i pokreće provjeru tamo.',
+    'hu': 'A frissítések keresése a menüsávon most a Beállítások Frissítések oldalát nyitja meg, és ott el is indítja az ellenőrzést.',
+    'hy': '«Ստուգել թարմացումները» հրամանը մենյուի վանդակից հիմա բացում է կարգավորումների Թարմացումներ էջը և այնտեղ սկսում ստուգումը։',
+    'id': 'Periksa pembaruan di bilah menu kini membuka halaman Pembaruan di Pengaturan dan menjalankan pemeriksaan di sana.',
+    'it': 'Cerca aggiornamenti nella barra dei menu ora apre la pagina Aggiornamenti delle impostazioni e avvia lì la verifica.',
+    'mk': 'Провери ажурирања во лентата со мениња сега ја отвара страницата Ажурирања во поставките и таму ја започнува проверката.',
+    'mr': 'मेनू बारमधील अपडेट्स तपासा आता सेटिंग्जचा अपडेट्स पृष्ठ उघडते आणि तिथेच तपासणी सुरू करते.',
+    'ms': 'Semak kemas kini dalam bar menu kini membuka halaman Kemas Kini dalam Tetapan dan menjalankan semakan di situ.',
+    'nb': 'Se etter oppdateringer i menylinjen åpner nå Oppdateringer-siden i innstillingene og starter kontrollen der.',
+    'nn': 'Sjå etter oppdateringar i menylinja opnar no Oppdateringar-sida i innstillingane og startar kontrollen der.',
+    'ro': 'Verifică actualizări din bara de meniu deschide acum pagina Actualizări din setări și pornește verificarea acolo.',
+    'rw': 'Kugenzura ivugururye mu menu bar none ubifungura paji ya Ivugururwa mu Igenamiterere kandi ubanza igenzurwo hafi.',
+    'sq': 'Kontrollo përditësimet në shiritin e menysë tani hap faqen Përditësime në Cilësimet dhe nis kontrollin atje.',
+    'sr': 'Provera ažuriranja u traci menija sada otvara stranicu Ažuriranja u podešavanjima i tamo pokreće proveru.',
+    'sv': 'Sök efter uppdateringar i menyraden öppnar nu sidan Uppdateringar i inställningarna och startar kontrollen där.',
+    'ta': 'மெனு பட்டியில் புதுப்பிப்புகளைச் சரிபார் இப்போது அமைப்புகளின் புதுப்பிப்புப் பக்கத்தைத் திறந்து அங்கே சரிபார்ப்பைத் தொடங்குகிறது.',
+    'uk': '«Перевірити оновлення» в рядку меню тепер відкриває сторінку Оновлення в налаштуваннях і одразу запускає перевірку.',
+    'vi': 'Kiểm tra bản cập nhật trên thanh menu giờ đây sẽ mở trang Cập nhật trong Cài đặt và bắt đầu kiểm tra ngay tại đó.',
+  } },
   { version: '0.1.9-beta.21', date: '2026.10.16', note: {
     en: "Simplified Chinese labels for the field construction and artwork style groups",
     'zh': '「场地结构」与「底图风格」菜单标签已简化。',
