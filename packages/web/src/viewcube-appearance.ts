@@ -22,7 +22,10 @@ export type CubeDirection = readonly [number, number, number];
 export type FaceRegion = { kind: 'face' | 'edge' | 'corner'; u: number; v: number } | null;
 
 // Three.js BoxGeometry material order, with the texture's right/up basis.
-const FACE_FRAMES: readonly { n: CubeDirection; u: CubeDirection; v: CubeDirection }[] = [
+// FACTS about the mesh's real UV layout — the pick classifier reads them,
+// and the raycast replay test guards them against silent axis/sign edits.
+// The glyph-turn below is the only intentional departure on the paint side.
+export const FACE_FRAMES: readonly { n: CubeDirection; u: CubeDirection; v: CubeDirection }[] = [
   { n: [1, 0, 0], u: [0, 0, -1], v: [0, 1, 0] },
   { n: [-1, 0, 0], u: [0, 0, 1], v: [0, 1, 0] },
   { n: [0, 1, 0], u: [1, 0, 0], v: [0, 0, -1] },
@@ -31,6 +34,40 @@ const FACE_FRAMES: readonly { n: CubeDirection; u: CubeDirection; v: CubeDirecti
   { n: [0, 0, -1], u: [-1, 0, 0], v: [0, 1, 0] },
 ];
 const dot = (a: CubeDirection, b: CubeDirection) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+/**
+ * Which vc.* label key each material slot carries — the single source for
+ * BOTH label construction sites in FieldCanvas3D (the scaffold bake AND the
+ * locale-change repaint). 2026-10-16 lesson: the home-camera flip updated
+ * one site while the second kept the pre-flip order and repainted over it
+ * on mount, so the resting cube showed "Back" facing the user within one
+ * render. The pairing is geometric, pinned against CAM_HOME by test: the
+ * −Z face (the home view's side of the field) is "front", −X (screen right
+ * at home, whose screen-right the camera's D×up gives) is "right".
+ */
+export const VIEWCUBE_LABEL_KEYS = [
+  'vc.left', 'vc.right', 'vc.top', 'vc.bottom', 'vc.back', 'vc.front',
+] as const;
+
+/**
+ * In-plane turn of the painted glyph per material slot. The two ±Y faces'
+ * textures read along the field's length axis, so the 2026-10-16 home flip
+ * (CAM_HOME azimuth π) reversed the horizontal direction they are read
+ * from — Top/Bottom glyphs landed upside down at the resting view. Only
+ * the glyph turns: strips, corner pads and the pick classifier all read
+ * FACE_FRAMES, which stays the mesh's UV fact. A fixed texture cannot read
+ * upright from both ends of the field; the away end reads inverted, the
+ * same trade Onshape's cube makes.
+ */
+export const VIEWCUBE_GLYPH_TURN: readonly number[] = [0, 0, Math.PI, Math.PI, 0, 0];
+
+/** World direction the painted glyph's up axis points to, turn applied. */
+export function viewcubeGlyphUp(face: number): CubeDirection {
+  const frame = FACE_FRAMES[face];
+  if (!frame) return [0, 0, 0];
+  const s = VIEWCUBE_GLYPH_TURN[face] ? -1 : 1;
+  return [frame.v[0] * s, frame.v[1] * s, frame.v[2] * s];
+}
 
 /** An edge paints two adjoining faces; a corner paints three. */
 export function viewcubeFaceRegion(face: number, direction: CubeDirection | null): FaceRegion {
@@ -84,6 +121,7 @@ type TokenReader = (name: string, fallback: string) => string;
 /** Only the selected region changes color; the neutral rim is never tinted. */
 export function drawViewcubeFace(
   g: CanvasRenderingContext2D, label: string, region: FaceRegion, token: TokenReader,
+  glyphTurn = 0,
 ): void {
   const { textureSize: s, faceInset: inset, faceRadius, cornerRadius, edgeStart, edgeHalfWidth, labelSize } = VIEWCUBE_APPEARANCE;
   g.clearRect(0, 0, s, s);
@@ -124,7 +162,18 @@ export function drawViewcubeFace(
   g.font = `500 ${labelSize}px -apple-system, "Segoe UI", sans-serif`;
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  g.fillText(label, s / 2, s / 2 + 7);
+  // Only the glyph turns (VIEWCUBE_GLYPH_TURN): strips and corner pads are
+  // symmetric at rest, and the hover layout must stay where the pick
+  // classifier — which reads FACE_FRAMES, the mesh's UV fact — expects it.
+  if (glyphTurn) {
+    g.save();
+    g.translate(s / 2, s / 2);
+    g.rotate(glyphTurn);
+    g.fillText(label, 0, 7);
+    g.restore();
+  } else {
+    g.fillText(label, s / 2, s / 2 + 7);
+  }
 }
 
 export function createViewcubeAppearance(labels: readonly string[], token: TokenReader) {
@@ -153,7 +202,7 @@ export function createViewcubeAppearance(labels: readonly string[], token: Token
   let hovered: CubeDirection | null = null;
   let hoverKey = '';
   const redraw = () => faces.forEach((face, i) => {
-    drawViewcubeFace(face.context, face.label, viewcubeFaceRegion(i, hovered), token);
+    drawViewcubeFace(face.context, face.label, viewcubeFaceRegion(i, hovered), token, VIEWCUBE_GLYPH_TURN[i] ?? 0);
     face.texture.needsUpdate = true;
   });
   redraw();
