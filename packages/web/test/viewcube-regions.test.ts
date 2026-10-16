@@ -11,10 +11,14 @@ import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import {
+  FACE_FRAMES,
   VIEWCUBE_APPEARANCE,
+  VIEWCUBE_LABEL_KEYS,
   viewcubeDirectionAt,
   viewcubeFaceRegion,
+  viewcubeGlyphUp,
 } from '../src/viewcube-appearance';
+import { CAM_HOME } from '../src/field3d-models';
 
 const S = VIEWCUBE_APPEARANCE.textureSize;
 const HALF = S / 2 - VIEWCUBE_APPEARANCE.faceInset; // 208 px panel extent
@@ -200,5 +204,67 @@ describe('classifier vs real raycast geometry', () => {
     }
     expect(mism, `${mism.length}/${checked} mismatches:\n${mism.slice(0, 10).join('\n')}`).toEqual([]);
     expect(checked).toBeGreaterThan(1000);
+  });
+});
+
+describe('labels and glyphs pair with the 3D home view', () => {
+  // 2026-10-16 regressions, both sides of the same coin: (a) the label
+  // arrays drifted between the scaffold bake and the locale repaint after
+  // the home-camera flip, so the resting cube read "Back" facing the user;
+  // (b) the ±Y faces' glyphs stayed painted for the pre-flip reading
+  // direction and landed upside down. These tests derive the home view's
+  // screen axes from CAM_HOME alone — the same numbers FieldCanvas3D's
+  // camera poses with — so any future home change that breaks the pairing
+  // or the upright reading fails here, per face.
+  const len = Math.hypot(CAM_HOME[0], CAM_HOME[1], CAM_HOME[2]);
+  const cam = [CAM_HOME[0] / len, CAM_HOME[1] / len, CAM_HOME[2] / len];
+  const dot3 = (a: readonly number[], b: readonly number[]) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const cross3 = (a: readonly number[], b: readonly number[]) => [
+    a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0],
+  ];
+  const norm3 = (v: readonly number[]) => {
+    const l = Math.hypot(v[0], v[1], v[2]) || 1;
+    return [v[0] / l, v[1] / l, v[2] / l];
+  };
+  const screenAxes = (camDir: readonly number[]) => {
+    const D = [-camDir[0], -camDir[1], -camDir[2]]; // lookAt origin
+    const up = [0, 1, 0];
+    const right = norm3(cross3(D, up)); // unnormalized it is |sinφ| long and
+    // every >0.99 pairing below silently never fires — normalize before compare.
+    const screenUp = norm3([
+      up[0] - dot3(up, D) * D[0], up[1] - dot3(up, D) * D[1], up[2] - dot3(up, D) * D[2],
+    ]);
+    return { D, right, screenUp };
+  };
+  const home = screenAxes(cam);
+
+  it('the face the home view looks from is Front; screen-right is Right; screen-left is Left', () => {
+    const horiz = norm3([cam[0], 0, cam[2]]); // camera azimuth: the side of the field
+    for (let f = 0; f < 6; f++) {
+      const n = FACE_FRAMES[f]!.n;
+      if (dot3(n, horiz) > 0.99) expect(VIEWCUBE_LABEL_KEYS[f], `face ${f} faces the camera`).toBe('vc.front');
+      if (dot3(n, horiz) < -0.99) expect(VIEWCUBE_LABEL_KEYS[f], `face ${f} faces away`).toBe('vc.back');
+      if (dot3(n, home.right) > 0.99) expect(VIEWCUBE_LABEL_KEYS[f], `face ${f} sits screen-right`).toBe('vc.right');
+      if (dot3(n, home.right) < -0.99) expect(VIEWCUBE_LABEL_KEYS[f], `face ${f} sits screen-left`).toBe('vc.left');
+    }
+  });
+
+  it('every glyph visible in the home view reads upright', () => {
+    for (let f = 0; f < 6; f++) {
+      const n = FACE_FRAMES[f]!.n;
+      if (dot3(n, home.D) < -0.01) {
+        // Face turned toward the camera (visible at home): its glyph's up
+        // must lean with the screen's up, not against it.
+        expect(dot3(viewcubeGlyphUp(f), home.screenUp), `face ${f} visible at home`).toBeGreaterThan(0);
+      }
+    }
+    // The bottom face mirrors this at the below-field mirror of home
+    // (where it is the visible one) — CAM_HOME with the elevation negated.
+    const below = screenAxes([cam[0], -cam[1], cam[2]]);
+    expect(dot3(viewcubeGlyphUp(3), below.screenUp), 'bottom face at the mirrored view').toBeGreaterThan(0);
+    // Side faces stay world-up regardless of azimuth (camera up is +Y, no roll).
+    for (const f of [0, 1, 4, 5]) {
+      expect(viewcubeGlyphUp(f)[1], `side face ${f}`).toBeGreaterThan(0.99);
+    }
   });
 });
