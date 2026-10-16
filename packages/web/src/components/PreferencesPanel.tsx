@@ -21,7 +21,7 @@ import {
 import { LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
 import { checkForUpdate, installPendingUpdate } from '../update-check';
-import { noteText, VERSION_NOTES } from '../version-info';
+import { APP_VERSION, noteText, VERSION_NOTES } from '../version-info';
 import { BUILD_VERSION } from '../build-version';
 import { ProjectSupport } from './ProjectSupport';
 import { copyText } from '../download';
@@ -32,6 +32,18 @@ import { IconAppearancePicker } from './IconAppearancePicker';
 import './PreferencesPanel.css';
 
 type Section = 'general' | 'controls' | 'updates' | 'about';
+
+/**
+ * The About history lists the running version's whole cycle — its first
+ * beta through its final release (user request 2026-10-16) — not the old
+ * fixed five-entry window, which cut a long cycle off mid-run. When the
+ * next cycle's first beta ships, the list resets to that cycle; older
+ * releases stay readable in the GitHub release notes.
+ */
+const CYCLE_BASE = APP_VERSION.replace(/-.*$/, '');
+const CYCLE_NOTES = VERSION_NOTES.filter(
+  (note) => note.version === CYCLE_BASE || note.version.startsWith(`${CYCLE_BASE}-`),
+);
 
 /**
  * The settings-window update check is a two-step flow (unlike the native
@@ -319,10 +331,10 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
             <p className="preferences-copy-status" role="status">{copyStatus}</p>
           </div>
           <ProjectSupport />
-          {VERSION_NOTES.length > 0 && <div className="preferences-history"><h3>{t('prefs.releaseNotes')}</h3>
+          {CYCLE_NOTES.length > 0 && <div className="preferences-history"><h3>{t('prefs.releaseNotes')}</h3>
             {/* Resolved `lang`, not the raw choice: 'system' hits no note
                 key, so Follow-system readers would fall to the zh default. */}
-            <ol>{VERSION_NOTES.slice(0, 5).map((note) => <li key={note.version}>
+            <ol>{CYCLE_NOTES.map((note) => <li key={note.version}>
               <div><strong dir="ltr">Version {note.version}</strong><time>{note.date}</time></div><p>{noteText(note.note, lang)}</p>
             </li>)}</ol>
           </div>}
