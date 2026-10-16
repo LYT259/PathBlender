@@ -142,6 +142,26 @@ describe('About section localizes the update notes', () => {
     expect(screen.queryByText(date.replaceAll('.', '-'))).not.toBeInTheDocument();
   });
 
+  it('lists the whole current version cycle, not a five-entry window', () => {
+    // Regression (2026-10-16): the list was VERSION_NOTES.slice(0, 5), so a
+    // long cycle got cut mid-run — on 0.1.9-beta.18 the reader saw only
+    // back to beta.14. The About history now spans the running version's
+    // full cycle, first beta through final release.
+    renderAbout('en');
+    const base = APP_VERSION.replace(/-.*$/, '');
+    const cycle = VERSION_NOTES.filter(
+      (n) => n.version === base || n.version.startsWith(`${base}-`),
+    );
+    expect(cycle.length).toBeGreaterThan(5);
+    const rendered = [...document.querySelectorAll('.preferences-history ol strong')]
+      .map((el) => el.textContent?.replace('Version ', ''));
+    expect(rendered).toEqual(cycle.map((n) => n.version));
+    // Newest first, and the cycle's first beta (not a previous release)
+    // closes the list.
+    expect(rendered[0]).toBe(APP_VERSION);
+    expect(rendered[rendered.length - 1]).toBe(`${base}-beta.1`);
+  });
+
   it('a Follow-system reader gets the note in the OS-resolved language, not the zh fallback', () => {
     // Regression (2026-10-11): the About list keyed noteText by the raw
     // choice, and 'system' hits no note key — every Follow-system reader
