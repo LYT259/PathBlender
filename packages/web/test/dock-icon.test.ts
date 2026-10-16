@@ -20,23 +20,23 @@ describe('syncDockIcon', () => {
   it('desktop + fixed dark pins night artwork even when the OS is light', async () => {
     syncDockIcon('dark', false, true);
     await vi.waitFor(() => expect(native.invoke).toHaveBeenCalled());
-    expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true });
+    expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true, style: 'classic' });
   });
 
   it('desktop + fixed light pins day artwork even when the OS is dark', async () => {
     syncDockIcon('light', true, true);
     await vi.waitFor(() => expect(native.invoke).toHaveBeenCalled());
-    expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false });
+    expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false, style: 'classic' });
   });
 
   it('desktop + system mirrors the current OS appearance', async () => {
     syncDockIcon('system', true, true);
     await vi.waitFor(() => expect(native.invoke).toHaveBeenCalled());
-    expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true });
+    expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true, style: 'classic' });
     native.invoke.mockClear();
     syncDockIcon('system', false, true);
     await vi.waitFor(() => expect(native.invoke).toHaveBeenCalled());
-    expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false });
+    expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false, style: 'classic' });
   });
 
   it('browser context → never invokes the shell', () => {
@@ -55,5 +55,19 @@ describe('syncDockIcon', () => {
     await new Promise((r) => setTimeout(r, 20)); // let the rejection settle
     process.off('unhandledRejection', onUnhandled);
     expect(unhandled).toEqual([]);
+  });
+});
+
+describe('syncDockIcon style parameter', () => {
+  it('passes the monochrome family through to the shell', async () => {
+    syncDockIcon('system', true, true, 'monochrome');
+    await vi.waitFor(() => expect(native.invoke).toHaveBeenCalled());
+    expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true, style: 'monochrome' });
+  });
+
+  it('defaults to classic when the caller omits the family', async () => {
+    syncDockIcon('light', false, true);
+    await vi.waitFor(() => expect(native.invoke).toHaveBeenCalled());
+    expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false, style: 'classic' });
   });
 });

@@ -404,19 +404,31 @@ fn push_menu_event<R: tauri::Runtime>(app: &AppHandle<R>, name: &str) {
     }
 }
 
-/// Apply the app-icon appearance choice (web-side app-icon.tsx, independent
-/// from the UI theme) to the running app's Dock tile (macOS only). The
-/// bundle's icon catalog already tracks the OS appearance; this runtime
-/// override (`setApplicationIconImage` with explicit artwork) pins the tile
-/// to the choice — in 'system' mode the web side re-pushes the OS-matching
+/// Apply the app-icon preferences (web-side app-icon.tsx, independent from
+/// the UI theme) to the running app's Dock tile (macOS only). The bundle's
+/// icon catalog already tracks the OS appearance; this runtime override
+/// (`setApplicationIconImage` with explicit artwork) pins the tile to the
+/// choice — in 'system' mode the web side re-pushes the OS-matching
 /// artwork on every appearance flip, so no Dock re-render behavior is
-/// relied upon. Missing artwork or a non-macOS host is a quiet no-op — the
-/// catalog remains the fallback there.
+/// relied upon. `style` selects the artwork family (classic red/black vs
+/// monochrome white/black); the mapping below is a fixed whitelist of
+/// bundled resource names — a caller-provided path is never accepted.
+/// Missing artwork or a non-macOS host is a quiet no-op — the catalog
+/// remains the fallback there.
+fn dock_icon_resource(style: &str, dark: bool) -> &'static str {
+    match (style, dark) {
+        ("monochrome", false) => "icon-mono-day.png",
+        ("monochrome", true) => "icon-mono-night.png",
+        (_, false) => "icon-day.png",
+        (_, true) => "icon-night.png",
+    }
+}
+
 #[tauri::command]
-fn set_dock_icon(app: AppHandle, dark: bool) -> Result<(), String> {
+fn set_dock_icon(app: AppHandle, dark: bool, style: Option<String>) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     {
-        let name = if dark { "icon-night.png" } else { "icon-day.png" };
+        let name = dock_icon_resource(style.as_deref().unwrap_or("classic"), dark);
         let path = app
             .path()
             .resource_dir()
@@ -430,7 +442,7 @@ fn set_dock_icon(app: AppHandle, dark: bool) -> Result<(), String> {
             .map_err(|e| e.to_string())?;
     }
     #[cfg(not(target_os = "macos"))]
-    let _ = (app, dark);
+    let _ = (app, dark, style);
     Ok(())
 }
 
@@ -595,5 +607,25 @@ async fn save_file(
             std::fs::write(&path, &data).map_err(|e| e.to_string())?;
             Ok(Some(path.to_string_lossy().into_owned()))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::dock_icon_resource;
+
+    /// The whitelist is the whole contract: every (style, dark) pair maps to
+    /// one of the four bundled dock resources, and anything unexpected falls
+    /// back to the classic pair — never a caller-controlled path.
+    #[test]
+    fn dock_icon_resource_is_a_fixed_whitelist() {
+        assert_eq!(dock_icon_resource("classic", false), "icon-day.png");
+        assert_eq!(dock_icon_resource("classic", true), "icon-night.png");
+        assert_eq!(dock_icon_resource("monochrome", false), "icon-mono-day.png");
+        assert_eq!(dock_icon_resource("monochrome", true), "icon-mono-night.png");
+        assert_eq!(dock_icon_resource("", false), "icon-day.png");
+        assert_eq!(dock_icon_resource("neon", true), "icon-night.png");
+        // Path-like input is just an unknown style: classic fallback.
+        assert_eq!(dock_icon_resource("../../etc/passwd", false), "icon-day.png");
     }
 }

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <title>PathBlender — black tile with white routes</title>
+  <desc>Tile width 412 units. Both paths have a constant 45-unit stroke. Transparent exterior.</desc>
+  <defs>
+    <filter id="route-shadow" x="-25%" y="-25%" width="150%" height="155%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.7" result="blur"/>
+      <feOffset in="blur" dx="0" dy="3" result="offset"/>
+      <feFlood flood-color="#181617" flood-opacity="0.34" result="color"/>
+      <feComposite in="color" in2="offset" operator="in"/>
+    </filter>
+  </defs>
+  <rect id="tile" x="50" y="50" width="412" height="412" rx="100" fill="#181617"/>
+  <g id="route-shadows" stroke="#FFFFFF" stroke-width="45" stroke-linecap="butt" stroke-linejoin="round" filter="url(#route-shadow)">
+    <use href="#upper-route"/>
+    <use href="#lower-route"/>
+  </g>
+  <g id="routes" stroke="#FFFFFF" stroke-width="45" stroke-linecap="butt" stroke-linejoin="round">
+    <path id="upper-route" d="M 100 120.5 C 138 148 148 162 132 192 C 117 216 96 244 96 268 C 96 295 119 310 149 310 C 209 310 241 237 283 184 C 317 142 339 120.5 382 120.5 L 410 120.5"/>
+    <path id="lower-route" stroke="#FFFFFF" d="M 200 366 C 200 390 219 404 248 404 C 291 404 306 380 323 342 C 341 303 355 272.5 387 272.5 L 410 272.5"/>
+  </g>
+</svg>

@@ -56,6 +56,10 @@ export const ko: Record<MessageKey, string> = {
   'prefs.installUpdate': "설치하고 다시 시작",
   'prefs.checkSavedChannel': "업데이트 확인에는 저장된 채널을 사용합니다: {channel}.",
   'prefs.appIcon': "앱 아이콘",
+  'prefs.iconStyle': '아이콘 스타일',
+  'prefs.iconAppearance': '아이콘 외관',
+  'prefs.iconStyle.classic': '클래식',
+  'prefs.iconStyle.monochrome': '흑백',
   'welcome.title': '경로를 가져와 시작하세요',
   'welcome.description': '경로를 함께 재생하고 간섭을 확인합니다.',
 
