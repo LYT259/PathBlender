@@ -9,7 +9,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { createViewcubeAppearance, viewcubeDirectionAt } from '../viewcube-appearance';
+import { createViewcubeAppearance, viewcubeDirectionAt, VIEWCUBE_LABEL_KEYS } from '../viewcube-appearance';
 import type { CubeDirection } from '../viewcube-appearance';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import {
@@ -963,9 +963,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // front↔back) rather than the geometric slot order; a click still flies
     // to the clicked face's own normal, which is what keeps "Front" = the
     // recenter view and "Right" = the view from the home view's right side.
-    const labels = [
-      t('vc.left'), t('vc.right'), t('vc.top'), t('vc.bottom'), t('vc.back'), t('vc.front'),
-    ];
+    // Both this bake and the locale repaint below read the SAME exported
+    // key list — a second hand-written copy here drifted from the flip and
+    // repainted the pre-flip labels over these on mount (2026-10-16).
+    const labels = VIEWCUBE_LABEL_KEYS.map((key) => t(key));
     const cubeAppearance = createViewcubeAppearance(labels, cssToken);
     retintCube = cubeAppearance.retint;
     setCubeLabels = cubeAppearance.setLabels;
@@ -1369,13 +1370,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
 
   // ViewCube labels are canvas-baked at scaffold time; re-render them when
   // the display language changes (the scaffold effect runs once, so without
-  // this the cube kept the boot locale's words forever).
+  // this the cube kept the boot locale's words forever). Same exported key
+  // list as the bake — the two must never diverge (2026-10-16 drift bug).
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
-    st.setCubeLabels([
-      t('vc.right'), t('vc.left'), t('vc.top'), t('vc.bottom'), t('vc.front'), t('vc.back'),
-    ]);
+    st.setCubeLabels(VIEWCUBE_LABEL_KEYS.map((key) => t(key)));
     st.dirty();
   }, [t]);
 
