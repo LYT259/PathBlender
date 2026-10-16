@@ -16,6 +16,7 @@ import {
   VIEWCUBE_LABEL_KEYS,
   viewcubeDirectionAt,
   viewcubeFaceRegion,
+  viewcubeFlyAzimuth,
   viewcubeGlyphUp,
 } from '../src/viewcube-appearance';
 import { CAM_HOME } from '../src/field3d-models';
@@ -268,3 +269,54 @@ describe('labels and glyphs pair with the 3D home view', () => {
     }
   });
 });
+
+const r_s = (th: number, sinPhi: number) => Math.sin(th) * sinPhi;
+const r_c = (th: number, sinPhi: number) => Math.cos(th) * sinPhi;
+describe('fly-to azimuth keeps the promise "blue on the left"', () => {
+  // 2026-10-16 user report (screen recording): clicking the cube's Top
+  // landed a plan view reading red-left/blue-right. Root cause: pole
+  // directions have no horizontal component, so the spherical theta
+  // collapsed to atan2(0,0)=0 — an arbitrary side of the field. The
+  // azimuth those landings must carry is the home one, the only side
+  // whose plan view keeps blue left (matching every other view, the 2D
+  // sheet and field3d-home-orientation.test.ts) — a camera that never
+  // rolls cannot give blue-left AND north-up in a plan view; the promise
+  // picks blue-left, so the plan view is north-down. Single code path:
+  // no season or construction variant reaches here, one fix covers all.
+  const POLE_PHI = 0.02; // flyTo's off-the-pole clamp, mirrored here
+
+  it('pole directions land on the home azimuth, not atan2(0,0)=0', () => {
+    expect(viewcubeFlyAzimuth([0, 1, 0])).toBeCloseTo(Math.PI, 12);
+    expect(viewcubeFlyAzimuth([0, -1, 0])).toBeCloseTo(Math.PI, 12);
+  });
+
+  it('the plan view the pole azimuth gives keeps blue left and the Top glyph upright', () => {
+    const th = viewcubeFlyAzimuth([0, 1, 0]);
+    // Camera at (theta, phi=POLE_PHI, r) looking at the target: the
+    // landing pose flyTo tweens to.
+    const sph = { s: Math.sin(POLE_PHI), c: Math.cos(POLE_PHI) };
+    const pos = [r_s(th, sph.s), sph.c, r_c(th, sph.s)];
+    const D = pos.map((v) => -v); // lookAt origin
+    const up = [0, 1, 0];
+    const dot3 = (a: number[], b: number[]) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const cross3 = (a: number[], b: number[]) => [
+      a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0],
+    ];
+    const right = cross3(D, up);
+    const screenUp = [
+      up[0] - dot3(up, D) * D[0], up[1] - dot3(up, D) * D[1], up[2] - dot3(up, D) * D[2],
+    ];
+    // Screen right must point AWAY from the render frame's blue end (+X):
+    expect(right[0], 'blue (+X) must sit screen-left').toBeLessThan(0);
+    // And the Top glyph's painted up (viewcubeGlyphUp(2)) leans with the
+    // screen's up — the widget's marker reads upright in the plan view.
+    expect(dot3([...viewcubeGlyphUp(2)], screenUp), 'Top glyph upright').toBeGreaterThan(0);
+  });
+
+  it('non-pole directions keep their own azimuth', () => {
+    expect(viewcubeFlyAzimuth([1, 0, 0])).toBeCloseTo(Math.PI / 2, 12);
+    expect(viewcubeFlyAzimuth([0, 0, 1])).toBeCloseTo(0, 12);
+    expect(viewcubeFlyAzimuth([-1, 0, -1])).toBeCloseTo(-3 * Math.PI / 4, 12);
+  });
+});
+

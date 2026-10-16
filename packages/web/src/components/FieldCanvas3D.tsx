@@ -9,7 +9,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { createViewcubeAppearance, viewcubeDirectionAt, VIEWCUBE_LABEL_KEYS } from '../viewcube-appearance';
+import { createViewcubeAppearance, viewcubeDirectionAt, viewcubeFlyAzimuth, VIEWCUBE_LABEL_KEYS } from '../viewcube-appearance';
 import type { CubeDirection } from '../viewcube-appearance';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import {
@@ -929,7 +929,14 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       const from = new THREE.Spherical().setFromVector3(
         camera.position.clone().sub(controls.target),
       );
-      const to = new THREE.Spherical().setFromVector3(toPos.clone().sub(controls.target));
+      const offset = toPos.clone().sub(controls.target);
+      const to = new THREE.Spherical().setFromVector3(offset);
+      // Pole targets (Top/Bottom) have no horizontal component, so the
+      // spherical theta above collapses to 0 — an arbitrary side of the
+      // field. Route every landing through the shared azimuth rule: poles
+      // take the home azimuth (blue-left plan view, upright Top glyph),
+      // everything else keeps its own atan2.
+      to.theta = viewcubeFlyAzimuth([offset.x, offset.y, offset.z]);
       let d = to.theta - from.theta;
       if (d > Math.PI) to.theta -= 2 * Math.PI;
       else if (d < -Math.PI) to.theta += 2 * Math.PI;
