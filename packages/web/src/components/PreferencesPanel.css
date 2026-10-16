@@ -39,11 +39,14 @@
 :where(html.kbd-nav) .preferences-theme-choice input:focus-visible + .preferences-theme-preview { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 .preferences-product { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 /* About header (user request 2026-10-07): the name stays left, the app icon
-   sits at the far right of the content row and runs larger than the old 48px. */
-.preferences-product-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
+   sits at the far right of the content row and runs larger than the old 48px.
+   The row is top-aligned so the name starts at the row top instead of
+   centering against the 72px icon (spacing fix 2026-10-16). */
+.preferences-product-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; width: 100%; }
+.preferences-product-text { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .preferences-product-icon { display: block; object-fit: contain; flex-shrink: 0; }
-.preferences-product-title > strong { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
-.preferences-product > span { font-size: 13px; color: var(--fg); }
+.preferences-product-text > strong { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+.preferences-product-text > span { font-size: 13px; color: var(--fg); }
 .preferences-product .btn { margin-top: 8px; }
 .preferences-copy-status { min-height: 18px; margin: 0; color: var(--fg-dim); font-size: 11px; }
 .preferences-history { margin-top: 22px; }
