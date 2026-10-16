@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.19';
+export const APP_VERSION = '0.1.9-beta.20';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.20', date: '2026.10.16', note: {
+    en: "About: the update history now lists the full current version cycle, from the first beta to the final release.",
+    'zh': '关于：更新记录现在完整列出当前版本的全部条目，从首个 beta 一直到正式版。',
+    'zh-tw': '關於：更新記錄現在完整列出目前版本的所有條目，從首個 beta 一直到正式版。',
+    'cs': 'O aplikaci: historie aktualizací nyní uvádí celý cyklus aktuální verze, od první bety až po finální vydání.',
+    'nl': 'Over: de updategeschiedenis vermeldt nu de volledige reeks van de huidige versie, van de eerste bèta tot de definitieve uitgave.',
+    'fr': 'À propos : l’historique des mises à jour liste désormais tout le cycle de la version actuelle, de la première bêta à la version finale.',
+    'he': 'אודות: היסטוריית העדכונים מציגה כעת את המחזור המלא של הגרסה הנוכחית, מהבטא הראשון ועד הגרסה הסופית.',
+    'ja': '情報：更新履歴に現在のバージョンの全サイクル（最初のベータから正式版まで）が表示されるようになりました。',
+    'ko': '정보: 업데이트 기록에 현재 버전의 전체 주기(첫 베타부터 정식 버전까지)가 표시됩니다.',
+    'pl': 'O programie: historia aktualizacji obejmuje teraz pełny cykl bieżącej wersji, od pierwszej bety aż do wydania finalnego.',
+    'pt-br': 'Sobre: o histórico de atualizações agora lista todo o ciclo da versão atual, do primeiro beta à versão final.',
+    'es': 'Acerca de: el historial de actualizaciones ahora muestra todo el ciclo de la versión actual, desde la primera beta hasta la versión final.',
+    'tr': 'Hakkında: güncelleme geçmişi artık geçerli sürümün tüm döngüsünü, ilk betadan son sürüme kadar listeliyor.',
+    'ar': 'حول: يعرض سجل التحديثات الآن دورة الإصدار الحالي كاملة، من أول إصدار تجريبي إلى الإصدار النهائي.',
+    'az': 'Haqqında: yeniləmə tarixçəsi indi cari versiyanın tam dövrünü — ilk betadan son buraxılışa qədər — göstərir.',
+    'bg': 'Относно: историята на актуализациите вече показва пълния цикъл на текущата версия — от първата бета до финалното издание.',
+    'bs': 'O aplikaciji: historija ažuriranja sada prikazuje cijeli ciklus trenutne verzije, od prve beta do konačnog izdanja.',
+    'da': 'Om: opdateringshistorikken viser nu hele cyklussen for den aktuelle version, fra første beta til den endelige udgivelse.',
+    'de': 'Über: der Updateverlauf listet jetzt den gesamten Zyklus der aktuellen Version, von der ersten Beta bis zum finalen Release.',
+    'el': 'Σχετικά: το ιστορικό ενημερώσεων εμφανίζει πλέον ολόκληρο τον κύκλο της τρέχουσας έκδοσης, από το πρώτο beta έως την τελική κυκλοφορία.',
+    'fil': 'Tungkol dito: kinabibilang na ngayon ng update history ang buong cycle ng kasalukuyang bersyon, mula unang beta hanggang sa huling release.',
+    'hi': 'परिचय: अपडेट इतिहास अब मौजूदा संस्करण का पूरा चक्र दिखाता है, पहले बीटा से अंतिम रिलीज़ तक।',
+    'hr': 'O aplikaciji: povijest ažuriranja sada prikazuje cijeli ciklus trenutne verzije, od prve bete do konačnog izdanja.',
+    'hu': 'Névjegy: a frissítések előzményei most a jelenlegi verzió teljes ciklusát listázzák, az első bétától a végső kiadásig.',
+    'hy': 'Մասին. թարմացումների պատմությունն այժմ ցուցադրում է ընթացիկ տարբերակի ամբողջ ցիկլը՝ առաջին բետայից մինչև վերջնական թողարկումը։',
+    'id': 'Tentang: riwayat pembaruan kini mencantumkan seluruh siklus versi saat ini, dari beta pertama hingga rilis final.',
+    'it': 'Info: la cronologia degli aggiornamenti ora elenca l’intero ciclo della versione attuale, dalla prima beta alla release finale.',
+    'mk': 'За апликацијата: историјата на ажурирања сега го прикажува целиот циклус на моменталната верзија, од првата бета до конечното издание.',
+    'mr': 'माहिती: अपडेट इतिहास आता सध्याच्या आवृत्तीचा संपूर्ण चक्र दाखवतो, पहिल्या बीटापासून अंतिम प्रकाशनापर्यंत.',
+    'ms': 'Perihal: sejarah kemas kini kini menyenaraikan keseluruhan kitaran versi semasa, dari beta pertama hingga keluaran akhir.',
+    'nb': 'Om: oppdateringshistorikken viser nå hele syklusen til gjeldende versjon, fra første beta til den endelige utgivelsen.',
+    'nn': 'Om: oppdateringshistorikken vis no heile syklusen til gjeldande versjon, frå første beta til den endelege utgivinga.',
+    'ro': 'Despre: istoricul actualizărilor listează acum întregul ciclu al versiunii curente, de la prima betă până la lansarea finală.',
+    'rw': 'Ibyerekeye: amateka y’ivugururwa ubu arekana byose, kuva kuri beta ya mbere kugeza ku verisiyo yanyuma.',
+    'sq': 'Rreth: historiku i përditësimeve tani liston ciklin e plotë të versionit aktual, nga beta e parë deri në versionin final.',
+    'sr': 'O aplikaciji: istorija ažuriranja sada prikazuje ceo ciklus trenutne verzije, od prve beta do konačnog izdanja.',
+    'sv': 'Om: uppdateringshistoriken visar nu hela cykeln för den aktuella versionen, från första betan till den slutliga utgåvan.',
+    'ta': 'பற்றி: புதுப்பிப்பு வரலாறு இப்போது தற்போதைய பதிப்பின் முழு சுழற்சியையும் பட்டியலிடுகிறது, முதல் பீட்டாவிலிருந்து இறுதி வெளியீடு வரை.',
+    'uk': 'Про програму: історія оновлень тепер показує повний цикл поточної версії — від першої бети до фінального випуску.',
+    'vi': 'Giới thiệu: lịch sử cập nhật giờ đây liệt kê toàn bộ chu trình của phiên bản hiện tại, từ bản beta đầu tiên đến bản phát hành cuối cùng.',
+  } },
   { version: '0.1.9-beta.19', date: '2026.10.16', note: {
     en: "Settings: the mouse-controls diagram logo now follows the app icon style",
     'zh': '设置：操作页鼠标图示的 logo 现在跟随应用图标样式。',
