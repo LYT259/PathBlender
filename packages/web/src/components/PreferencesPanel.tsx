@@ -306,12 +306,12 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
           </div>
         </div>}
         {section === 'about' && <>
-          <div className="preferences-product"><div className="preferences-product-title"><strong>PathBlender</strong><img
+          <div className="preferences-product"><div className="preferences-product-title"><div className="preferences-product-text"><strong>PathBlender</strong><span className="preferences-version" dir="ltr">{BUILD_VERSION}</span></div><img
             className="preferences-product-icon" alt="" width="72" height="72"
             src={(icon === 'system' ? systemDark : icon === 'dark')
               ? ICON_STYLE_ARTWORK[iconStyleValue].dark
               : ICON_STYLE_ARTWORK[iconStyleValue].light} />
-          </div><span className="preferences-version" dir="ltr">{BUILD_VERSION}</span>
+          </div>
             <button className="btn" type="button" onClick={() => {
               void copyText(BUILD_VERSION)
                 .then((ok) => setCopyStatus(t(ok ? 'about.copyDone' : 'about.copyFailed')));
