@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.18';
+export const APP_VERSION = '0.1.9-beta.19';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.19', date: '2026.10.16', note: {
+    en: "Settings: the mouse-controls diagram logo now follows the app icon style",
+    'zh': '设置：操作页鼠标图示的 logo 现在跟随应用图标样式。',
+    'zh-tw': '設定：操作頁滑鼠圖示的 logo 現在跟隨應用圖示樣式。',
+    'cs': 'Nastavení: logo ukázky ovládání myší nyní následuje styl ikony aplikace.',
+    'nl': 'Instellingen: het logo bij het muisdiagram volgt nu de stijl van het app-pictogram.',
+    'fr': 'Réglages : le logo du schéma de la souris suit désormais le style de l’icône de l’app.',
+    'he': 'הגדרות: הלוגו בתרשים העכבר עוקב כעת אחר סגנון סמל האפליקציה.',
+    'ja': '設定：マウス操作図のロゴがアプリアイコンのスタイルに従うようになりました。',
+    'ko': '설정: 마우스 조작 그림의 로고가 앱 아이콘 스타일을 따릅니다.',
+    'pl': 'Ustawienia: logo schematu obsługi myszy jest teraz zgodne ze stylem ikony aplikacji.',
+    'pt-br': 'Ajustes: o logo do diagrama do mouse agora segue o estilo do ícone do aplicativo.',
+    'es': 'Ajustes: el logotipo del diagrama del ratón ahora sigue el estilo del icono de la aplicación.',
+    'tr': 'Ayarlar: fare kullanımı şemasındaki logo artık uygulama simgesi stilini izliyor.',
+    'ar': 'الإعدادات: شعار مخطط استخدام الفأرة يتبع الآن نمط أيقونة التطبيق.',
+    'az': 'Parametrlər: siçan diaqramındakı loqo indi proqram nişanının stilinə uyğundur.',
+    'bg': 'Настройки: логото в схемата за мишката вече следва стила на иконата на приложението.',
+    'bs': 'Postavke: logo dijagrama miša sada prati stil ikone aplikacije.',
+    'da': 'Indstillinger: logoet i musediagrammet følger nu app-ikonstilen.',
+    'de': 'Einstellungen: Das Logo im Maus-Diagramm folgt nun dem Stil des App-Symbols.',
+    'el': 'Ρυθμίσεις: το λογότυπο του διαγράμματος ποντικιού ακολουθεί πλέον το στυλ του εικονιδίου εφαρμογής.',
+    'fil': 'Settings: sumusunod na ang logo sa mouse diagram sa estilo ng icon ng app.',
+    'hi': 'सेटिंग्स: माउस डायग्राम का लोगो अब ऐप आइकन शैली का अनुसरण करता है।',
+    'hr': 'Postavke: logo dijagrama miša sada prati stil ikone aplikacije.',
+    'hu': 'Beállítások: az egérvezérlési ábra logója most az alkalmazásikon stílusát követi.',
+    'hy': 'Կարգավորումներ. մկնիկի սխեմայի լոգոն այժմ հետևում է հավելվածի պատկերակի ոճին։',
+    'id': 'Pengaturan: logo diagram kontrol mouse kini mengikuti gaya ikon aplikasi.',
+    'it': 'Impostazioni: il logo dello schema del mouse ora segue lo stile dell’icona dell’app.',
+    'mk': 'Поставки: логото во шемата за глушецот сега го следи стилот на иконата на апликацијата.',
+    'mr': 'सेटिंग्ज: माउस आकृतीचा लोगो आता अ‍ॅप चिन्ह शैलीचे अनुसरण करतो.',
+    'ms': 'Tetapan: logo rajah kawalan tetikus kini mengikut gaya ikon aplikasi.',
+    'nb': 'Innstillinger: logoen i musediagrammet følger nå app-ikonstilen.',
+    'nn': 'Innstillingar: logoen i muse-diagrammet følgjer no app-ikonstilen.',
+    'ro': 'Setări: logo-ul diagramei pentru mouse urmează acum stilul iconiței aplicației.',
+    'rw': 'Igenamiterere: ikirango mu igishushanyo cya imbeba noneho kikurikira imisusire y’igishushanyo cya porogaramu.',
+    'sq': 'Cilësimet: logoja e diagramit të miut ndjek tani stilin e ikonës së aplikacionit.',
+    'sr': 'Podešavanja: logo dijagrama miša sada prati stil ikone aplikacije.',
+    'sv': 'Inställningar: logotypen i musdiagrammet följer nu appikonstilen.',
+    'ta': 'அமைப்புகள்: சுட்டி வரைபட லோகோ இப்போது ஐகான் பாணியைப் பின்பற்றுகிறது.',
+    'uk': 'Налаштування: логотип схеми керування мишею тепер відповідає стилю іконки додатка.',
+    'vi': 'Cài đặt: logo sơ đồ điều khiển chuột giờ theo kiểu biểu tượng ứng dụng.',
+  } },
   { version: '0.1.9-beta.18', date: '2026.10.16', note: {
     en: "App icon: choose a Classic or Monochrome style, separate from the light/dark appearance",
     'zh': '应用图标：新增「经典／黑白」样式选择，与浅色／深色外观相互独立。',
