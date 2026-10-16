@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { CAM_HOME } from './field3d-models';
 
 /** Visual candidates, not Onshape's proprietary dimensions. All regions share
  * one face atlas so edge strips terminate at the same corner pads on every side.
@@ -76,6 +77,26 @@ export function viewcubeFaceRegion(face: number, direction: CubeDirection | null
   const u = dot(frame.u, direction);
   const v = dot(frame.v, direction);
   return { kind: u && v ? 'corner' : u || v ? 'edge' : 'face', u, v };
+}
+
+/**
+ * Azimuth (spherical theta) a ViewCube fly-to lands on for direction `d`.
+ *
+ * Pole directions (Top/Bottom) carry no horizontal component, so a plain
+ * atan2 collapses their theta to 0 — an arbitrary side of the field whose
+ * plan view read red-left/blue-right (2026-10-16 user report, screen
+ * recording; single code path — no season or construction variant reaches
+ * here, one branch covers every year and both builds). Those landings pin
+ * to the home azimuth instead: blue stays on the left like every other
+ * view and the 2D sheet (field3d-home-orientation.test.ts), and the Top
+ * glyph — painted for the home reading direction — stands upright in the
+ * plan view. A camera that never rolls cannot give blue-left AND north-up
+ * at once; the product promise picks blue-left, so the plan view is
+ * north-down. Non-pole directions keep their own atan2 untouched.
+ */
+export function viewcubeFlyAzimuth(dir: readonly number[]): number {
+  if (Math.hypot(dir[0]!, dir[2]!) < 1e-9) return Math.atan2(CAM_HOME[0], CAM_HOME[2]);
+  return Math.atan2(dir[0]!, dir[2]!);
 }
 
 /** Pick classification, in the same texture space the faces are painted in
