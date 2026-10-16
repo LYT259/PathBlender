@@ -1,6 +1,6 @@
 {
   "name": "@pathblender/desktop",
-  "version": "0.1.9-beta.19",
+  "version": "0.1.9-beta.20",
   "private": true,
   "scripts": {
     "build": "npm run build -w ../../packages/web",
