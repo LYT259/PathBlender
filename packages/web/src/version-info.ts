@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.24';
+export const APP_VERSION = '0.1.9-beta.25';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.25', date: '2026.10.16', note: {
+    en: "The About PathBlender menu item works again and follows the app icon style",
+    'zh': '「关于 PathBlender」菜单项恢复正常，并跟随应用图标样式。',
+    'zh-tw': '「關於 PathBlender」選單項目恢復正常，並跟隨應用圖示樣式。',
+    'cs': 'Položka nabídky „O aplikaci PathBlender“ opět funguje a následuje styl ikony aplikace.',
+    'nl': 'Het menu-item „Over PathBlender” werkt weer en volgt de stijl van het app-pictogram.',
+    'fr': 'L’entrée de menu « À propos de PathBlender » fonctionne à nouveau et suit le style d’icône de l’app.',
+    'he': 'פריט התפריט „אודות PathBlender” עובד שוב ועוקב אחר סגנון סמל האפליקציה.',
+    'ja': 'メニューの「PathBlender について」が再び機能し、アプリアイコンのスタイルに従います。',
+    'ko': '메뉴의 «PathBlender 정보» 항목이 다시 작동하며 앱 아이콘 스타일을 따릅니다.',
+    'pl': 'Pozycja menu „O programie PathBlender” znów działa i zachowuje się zgodnie ze stylem ikony aplikacji.',
+    'pt-br': 'O item de menu “Sobre o PathBlender” funciona novamente e segue o estilo do ícone do aplicativo.',
+    'es': 'La entrada de menú «Acerca de PathBlender» vuelve a funcionar y sigue el estilo del icono de la aplicación.',
+    'tr': '«PathBlender Hakkında» menü ögesi yeniden çalışıyor ve uygulama simgesi stilini izliyor.',
+    'ar': 'عاد عنصر القائمة «عن PathBlender» إلى العمل ويتبع نمط أيقونة التطبيق.',
+    'az': '„PathBlender haqqında” menyu elementi yenidən işləyir və proqram nişanının stilinə uyğun olur.',
+    'bg': 'Менюто „Относно PathBlender“ отново работи и следва стила на иконата на приложението.',
+    'bs': 'Stavka menija „O PathBlenderu” ponovo radi i prati stil ikone aplikacije.',
+    'da': 'Menupunktet „Om PathBlender” virker igen og følger app-ikonstilen.',
+    'de': 'Der Menüeintrag „Über PathBlender“ funktioniert wieder und folgt dem App-Symbol-Stil.',
+    'el': 'Η επιλογή μενού «Σχετικά με το PathBlender» λειτουργεί ξανά και ακολουθεί το στυλ του εικονιδίου εφαρμογής.',
+    'fil': 'Gumagana na muli ang menu item na „Tungkol sa PathBlender” at sumusunod sa estilo ng icon ng app.',
+    'hi': 'मेनू आइटम «पैथब्लेंडर के बारे में» फिर से काम करता है और ऐप आइकन शैली का अनुसरण करता है।',
+    'hr': 'Stavka izbornika „O PathBlenderu” ponovno radi i prati stil ikone aplikacije.',
+    'hu': 'A „PathBlender névjegye” menüelem ismét működik, és az alkalmazásikon stílusát követi.',
+    'hy': '«PathBlender-ի մասին» ցանկի տարրը նորից աշխատում է և հետևում պատկերակի ոճին։',
+    'id': 'Item menu „Tentang PathBlender” berfungsi kembali dan mengikuti gaya ikon aplikasi.',
+    'it': 'La voce di menu «Informazioni su PathBlender» funziona di nuovo e segue lo stile dell’icona dell’app.',
+    'mk': 'Ставката од менито „За PathBlender“ повторно работи и го следи стилот на иконата на апликацијата.',
+    'mr': 'मेनू आयटम «पथब्लेंडर विषयी» पुन्हा कार्य करतो आणि आयकन शैलीचे अनुसरण करतो.',
+    'ms': 'Item menu „Perihal PathBlender” berfungsi semula dan mengikut gaya ikon aplikasi.',
+    'nb': 'Menyelementet «Om PathBlender» fungerer igjen og følger app-ikonstilen.',
+    'nn': 'Menyelementet «Om PathBlender» verkar igjen og følgjer appikonstilen.',
+    'ro': 'Elementul de meniu „Despre PathBlender” funcționează din nou și urmează stilul iconiței aplicației.',
+    'rw': 'Ikintu cyo mu bikubiyemo «Ibyerekeye PathBlender» kongera gikora kandi gikurikira imisusire y’igishushanyo.',
+    'sq': 'Zëri i menusë „Rreth PathBlender” funksionon përsëri dhe ndjek stilin e ikonës së aplikacionit.',
+    'sr': 'Stavka menija „O PathBlender-u” ponovo radi i prati stil ikone aplikacije.',
+    'sv': 'Menyobjektet ”Om PathBlender” fungerar igen och följer appikonstilen.',
+    'ta': '«PathBlender பற்றி» மெனு உருப்படி மீண்டும் செயல்படுகிறது மற்றும் ஐகான் பாணியைப் பின்பற்றுகிறது.',
+    'uk': 'Пункт меню «Про PathBlender» знову працює та відповідає стилю іконки додатка.',
+    'vi': 'Mục menu «Giới thiệu PathBlender» hoạt động trở lại và theo kiểu biểu tượng ứng dụng.',
+  } },
   { version: '0.1.9-beta.24', date: '2026.10.16', note: {
     'en': 'Menu bar Check for Updates now opens the Updates page in Settings and runs the check there',
     'zh': '菜单栏「检查更新」现在会打开设置的更新页并自动开始检查。',

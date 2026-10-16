@@ -58,6 +58,10 @@ describe('dock icon packaging contract', () => {
     expect(rustSource).toContain('orderFrontStandardAboutPanelWithOptions');
     expect(rustSource).toContain('NSAboutPanelOptionApplicationIcon');
     expect(rustSource).not.toMatch(/PredefinedMenuItem::about|about_with/);
+    // Role entries carry no `enabled` in the web spec (serde default false)
+    // — a plain item built with that default is grayed out and the click
+    // never dispatches. The about item must be forced enabled.
+    expect(rustSource).toContain('MenuItem::with_id(app, "about", &e.label, true,');
   });
 
   it('Dock artwork and UI preview artwork are the same files (per family)', () => {

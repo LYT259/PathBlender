@@ -238,10 +238,13 @@ fn build_entry(app: &AppHandle, e: &MenuItemIn, ids: &mut Vec<String>) -> tauri:
             // only platform where the role entry is built — the app menu is
             // mac_only): the predefined variant caches the bundle icon in
             // its panel forever, so it cannot follow the runtime icon
-            // override (show_about_panel).
+            // override (show_about_panel). Role entries carry no `enabled`
+            // in the web spec (they were predefined one-shots) — the serde
+            // default is false, which would gray the item out and swallow
+            // the click, so it is forced enabled here.
             "about" => {
                 ids.push("about".to_string());
-                Built::Item(MenuItem::with_id(app, "about", &e.label, e.enabled, None::<&str>)?)
+                Built::Item(MenuItem::with_id(app, "about", &e.label, true, None::<&str>)?)
             }
             "hide" => Built::Predefined(PredefinedMenuItem::hide(app, Some(&e.label))?),
             "hideOthers" => Built::Predefined(PredefinedMenuItem::hide_others(app, Some(&e.label))?),
