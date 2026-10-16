@@ -51,6 +51,15 @@ describe('dock icon packaging contract', () => {
       .toEqual(new Set(Object.values(EXPECTED).map((t) => t.split('/').pop())));
   });
 
+  it('the About panel opens with the current dock artwork, not the predefined about', () => {
+    // The predefined about item builds its panel once from the bundle icon
+    // and never re-reads the runtime override (user report 2026-10-16);
+    // the shell must keep presenting the panel itself, icon included.
+    expect(rustSource).toContain('orderFrontStandardAboutPanelWithOptions');
+    expect(rustSource).toContain('NSAboutPanelOptionApplicationIcon');
+    expect(rustSource).not.toMatch(/PredefinedMenuItem::about|about_with/);
+  });
+
   it('Dock artwork and UI preview artwork are the same files (per family)', () => {
     const pairs: Array<[string, string]> = [
       ['icon-mono-day-rounded.png', ICON_STYLE_ARTWORK.monochrome.light],
