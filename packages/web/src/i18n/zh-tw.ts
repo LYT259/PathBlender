@@ -51,6 +51,10 @@ export const zhTw: Record<MessageKey, string> = {
   'prefs.installUpdate': "安裝並重啟",
   'prefs.checkSavedChannel': "更新檢查使用已儲存的通道：{channel}。",
   'prefs.appIcon': "應用圖示",
+  'prefs.iconStyle': '圖示樣式',
+  'prefs.iconAppearance': '圖示外觀',
+  'prefs.iconStyle.classic': '經典',
+  'prefs.iconStyle.monochrome': '黑白',
   'welcome.title': '從匯入路徑開始',
 
   'tour.title': "入門引導",

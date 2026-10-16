@@ -96,6 +96,12 @@
 
 /* App-icon previews use the same radio affordance as interface appearance. */
 .preferences-icon-appearance { margin-bottom: 24px; }
+.preferences-icon-subgroup { min-width: 0; margin: 0; padding: 0; border: 0; }
+.preferences-icon-subgroup + .preferences-icon-subgroup { margin-block-start: 20px; }
+.preferences-icon-subgroup legend { font-size: 12px; color: var(--fg-dim); font-weight: 400; }
+.preferences-icon-style-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* A neutral stage keeps both the white and black tile silhouettes visible. */
+.preferences-icon-subgroup .preferences-icon-preview { background: var(--hover); }
 .preferences-icon-preview { display: grid; place-items: center; position: relative; width: 100%; height: 80px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg-panel); }
 .preferences-icon-preview img { display: block; object-fit: contain; }
 .preferences-icon-pair { position: relative; width: 78px; height: 60px; }

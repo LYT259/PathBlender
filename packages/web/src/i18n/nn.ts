@@ -45,6 +45,10 @@ export const nn = {
   'prefs.installUpdate': "Installer og start på ny",
   'prefs.checkSavedChannel': "Oppdateringssjekkar brukar den lagra kanalen: {channel}.",
   'prefs.appIcon': "Appikon",
+  'prefs.iconStyle': 'Ikonstil',
+  'prefs.iconAppearance': 'Ikonutsjånad',
+  'prefs.iconStyle.classic': 'Klassisk',
+  'prefs.iconStyle.monochrome': 'Monokrom',
   'welcome.title': 'Importer ruter for å kome i gang',
 
   'tour.title': "Kom i gang",
