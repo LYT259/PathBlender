@@ -109,7 +109,7 @@ describe('shared desktop preferences', () => {
     expect(within(icons()).getByRole('radio', { name: 'Follow system' })).toBeChecked();
     // Default 'system' mirrors the OS appearance with matching artwork
     // (matchMedia stubbed to light above).
-    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false }));
+    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false, style: 'classic' }));
     // The preview-only note is gone; the scope hint was removed too
     // (user request 2026-10-03).
     expect(screen.queryByText(/Dock icon/)).not.toBeInTheDocument();
@@ -130,7 +130,7 @@ describe('shared desktop preferences', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(localStorage.getItem('pb.appIcon')).toBe('dark'));
     expect(localStorage.getItem('pb.theme')).toBeNull();
-    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true }));
+    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true, style: 'classic' }));
     expect(native.close).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
 
@@ -139,7 +139,7 @@ describe('shared desktop preferences', () => {
     native.invoke.mockClear();
     await renderPreferences();
     expect(within(icons()).getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
-    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true }));
+    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true, style: 'classic' }));
   });
 
   it('discards an unsaved app icon choice on Cancel', async () => {
@@ -163,11 +163,11 @@ describe('shared desktop preferences', () => {
     // Let the mount-time Dock apply land before drafting: under vitest 4 its
     // promise settles after these back-to-back clicks, so Save is still
     // disabled when the click fires and the draft never gets applied.
-    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false }));
+    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false, style: 'classic' }));
     // Pin the icon first…
     fireEvent.click(within(icons()).getByRole('radio', { name: 'Dark', exact: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true }));
+    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true, style: 'classic' }));
 
     // …then move the interface theme: the icon must not follow.
     native.invoke.mockClear();

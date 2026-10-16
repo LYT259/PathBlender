@@ -45,6 +45,10 @@ export const uk = {
   'prefs.installUpdate': "Встановити та перезапустити",
   'prefs.checkSavedChannel': "Перевірки оновлень використовують збережений канал: {channel}.",
   'prefs.appIcon': "Іконка додатка",
+  'prefs.iconStyle': 'Стиль іконки',
+  'prefs.iconAppearance': 'Вигляд іконки',
+  'prefs.iconStyle.classic': 'Класичний',
+  'prefs.iconStyle.monochrome': 'Монохромний',
   'welcome.title': 'Імпортуйте маршрути, щоб почати',
 
   'tour.title': "Перші кроки",

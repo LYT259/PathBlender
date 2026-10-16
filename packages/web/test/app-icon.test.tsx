@@ -1,10 +1,12 @@
 /**
- * App-icon appearance provider: an independent preference (localStorage
- * 'pb.appIcon' — NOT the interface theme's key) with desktop Dock-tile
- * application, cross-window sync over the pref bridge, and restart restore.
- * 'system' mirrors the OS appearance live (explicit artwork re-pushed on
- * every flip); fixed light/dark ignores the OS. The no-echo rule applies:
- * a remotely applied change must never be re-broadcast.
+ * App-icon preference provider: an independent preference pair — style
+ * (classic / monochrome artwork family, localStorage 'pb.appIconStyle') and
+ * appearance mode (system / light / dark, 'pb.appIcon' — NOT the interface
+ * theme's key) — with desktop Dock-tile application, cross-window sync over
+ * the pref bridge, and restart restore. 'system' mirrors the OS appearance
+ * live (explicit artwork re-pushed on every flip); fixed light/dark ignores
+ * the OS. Neither choice ever resets the other. The no-echo rule applies: a
+ * remotely applied change must never be re-broadcast.
  */
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -38,13 +40,16 @@ vi.mock('../src/pref-sync', () => ({
 import { AppIconProvider, useAppIcon } from '../src/app-icon';
 
 function Probe() {
-  const { mode, setMode } = useAppIcon();
+  const { mode, style, setMode, setStyle } = useAppIcon();
   return (
     <div>
       <span data-testid="mode">{mode}</span>
+      <span data-testid="style">{style}</span>
       <button onClick={() => setMode('light')} data-testid="set-light" />
       <button onClick={() => setMode('dark')} data-testid="set-dark" />
       <button onClick={() => setMode('system')} data-testid="set-system" />
+      <button onClick={() => setStyle('classic')} data-testid="set-classic" />
+      <button onClick={() => setStyle('monochrome')} data-testid="set-mono" />
     </div>
   );
 }
@@ -81,7 +86,7 @@ describe('app icon appearance provider', () => {
   it('defaults to system and applies the OS-matching artwork on mount', async () => {
     const { getByTestId } = renderProbe();
     expect(getByTestId('mode').textContent).toBe('system');
-    await vi.waitFor(() => expect(dockCalls()).toEqual([['set_dock_icon', { dark: false }]]));
+    await vi.waitFor(() => expect(dockCalls()).toEqual([['set_dock_icon', { dark: false, style: 'classic' }]]));
     expect(localStorage.getItem('pb.appIcon')).toBeNull();
   });
 
@@ -92,7 +97,7 @@ describe('app icon appearance provider', () => {
     expect(getByTestId('mode').textContent).toBe('dark');
     expect(localStorage.getItem('pb.appIcon')).toBe('dark');
     expect(localStorage.getItem('pb.theme')).toBeNull(); // never the theme key
-    await vi.waitFor(() => expect(dockCalls()).toContainEqual(['set_dock_icon', { dark: true }]));
+    await vi.waitFor(() => expect(dockCalls()).toContainEqual(['set_dock_icon', { dark: true, style: 'classic' }]));
     expect(bridge.broadcasts).toEqual([['appIcon', 'dark']]);
   });
 
@@ -100,10 +105,10 @@ describe('app icon appearance provider', () => {
     const { getByTestId } = renderProbe();
     await mountSettled();
     act(() => getByTestId('set-dark').click());
-    await vi.waitFor(() => expect(dockCalls()).toContainEqual(['set_dock_icon', { dark: true }]));
+    await vi.waitFor(() => expect(dockCalls()).toContainEqual(['set_dock_icon', { dark: true, style: 'classic' }]));
     act(() => getByTestId('set-system').click());
     expect(localStorage.getItem('pb.appIcon')).toBeNull();
-    await vi.waitFor(() => expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: false }]));
+    await vi.waitFor(() => expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: false, style: 'classic' }]));
     expect(bridge.broadcasts).toEqual([['appIcon', 'dark'], ['appIcon', 'system']]);
   });
 
@@ -111,7 +116,7 @@ describe('app icon appearance provider', () => {
     localStorage.setItem('pb.appIcon', 'dark');
     const { getByTestId } = renderProbe();
     expect(getByTestId('mode').textContent).toBe('dark');
-    await vi.waitFor(() => expect(dockCalls()).toEqual([['set_dock_icon', { dark: true }]]));
+    await vi.waitFor(() => expect(dockCalls()).toEqual([['set_dock_icon', { dark: true, style: 'classic' }]]));
   });
 
   it('corrupted storage falls back to system (never throws)', () => {
@@ -123,9 +128,9 @@ describe('app icon appearance provider', () => {
   it('system mode follows OS appearance flips live; fixed modes ignore them', async () => {
     const { getByTestId, unmount } = renderProbe();
     await mountSettled();
-    expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: false }]); // OS light
+    expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: false, style: 'classic' }]); // OS light
     act(() => bridge.systemChange?.({ matches: true })); // OS goes dark
-    await vi.waitFor(() => expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: true }]));
+    await vi.waitFor(() => expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: true, style: 'classic' }]));
     unmount();
 
     // Fixed light must NOT follow the OS (an idempotent re-apply of the same
@@ -134,10 +139,10 @@ describe('app icon appearance provider', () => {
     native.invoke.mockClear();
     renderProbe();
     await mountSettled();
-    expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: false }]);
+    expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: false, style: 'classic' }]);
     act(() => bridge.systemChange?.({ matches: true }));
     await new Promise((r) => setTimeout(r, 50)); // let any (wrong) call land
-    expect(dockCalls()).not.toContainEqual(['set_dock_icon', { dark: true }]);
+    expect(dockCalls()).not.toContainEqual(['set_dock_icon', { dark: true, style: 'classic' }]);
   });
 
   it('applies a change from the other window WITHOUT re-broadcasting', async () => {
@@ -146,7 +151,7 @@ describe('app icon appearance provider', () => {
     act(() => bridge.handler?.('appIcon', 'dark'));
     expect(getByTestId('mode').textContent).toBe('dark');
     expect(localStorage.getItem('pb.appIcon')).toBe('dark');
-    await vi.waitFor(() => expect(dockCalls()).toContainEqual(['set_dock_icon', { dark: true }]));
+    await vi.waitFor(() => expect(dockCalls()).toContainEqual(['set_dock_icon', { dark: true, style: 'classic' }]));
     expect(bridge.broadcasts).toEqual([]); // no echo loop
   });
 
@@ -171,5 +176,99 @@ describe('app icon appearance provider', () => {
         .querySelector<HTMLLinkElement>('head link[rel~="icon"]')
         ?.getAttribute('href'),
     ).toContain('favicon-night');
+  });
+});
+
+describe('app icon style preference', () => {
+  it('defaults to classic, absent storage never writes the key', async () => {
+    const { getByTestId } = renderProbe();
+    expect(getByTestId('style').textContent).toBe('classic');
+    await vi.waitFor(() => expect(dockCalls()).toEqual([['set_dock_icon', { dark: false, style: 'classic' }]]));
+    expect(localStorage.getItem('pb.appIconStyle')).toBeNull();
+  });
+
+  it('monochrome persists under its own key, applies natively, broadcasts — mode untouched', async () => {
+    const { getByTestId } = renderProbe();
+    await mountSettled();
+    act(() => getByTestId('set-mono').click());
+    expect(getByTestId('style').textContent).toBe('monochrome');
+    expect(getByTestId('mode').textContent).toBe('system'); // style never resets appearance
+    expect(localStorage.getItem('pb.appIconStyle')).toBe('monochrome');
+    expect(localStorage.getItem('pb.appIcon')).toBeNull(); // and appearance keeps its own key
+    await vi.waitFor(() =>
+      expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: false, style: 'monochrome' }]));
+    expect(bridge.broadcasts).toEqual([['appIconStyle', 'monochrome']]);
+  });
+
+  it('back to classic removes the stored key; an appearance change keeps the style', async () => {
+    const { getByTestId } = renderProbe();
+    await mountSettled();
+    // One waitFor per step: vite-node drops .then chains attached while an
+    // import is in flight (see file header), so pace the three changes.
+    act(() => getByTestId('set-mono').click());
+    await vi.waitFor(() =>
+      expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: false, style: 'monochrome' }]));
+    act(() => getByTestId('set-dark').click());
+    expect(bridge.broadcasts).toEqual([['appIconStyle', 'monochrome'], ['appIcon', 'dark']]);
+    await vi.waitFor(() =>
+      expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: true, style: 'monochrome' }]));
+    act(() => getByTestId('set-classic').click());
+    expect(localStorage.getItem('pb.appIconStyle')).toBeNull();
+    expect(localStorage.getItem('pb.appIcon')).toBe('dark'); // mode survived the style round-trip
+    expect(getByTestId('style').textContent).toBe('classic');
+    await vi.waitFor(() =>
+      expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: true, style: 'classic' }]));
+  });
+
+  it('restart restores a saved monochrome style alongside a saved appearance', async () => {
+    localStorage.setItem('pb.appIconStyle', 'monochrome');
+    localStorage.setItem('pb.appIcon', 'light');
+    const { getByTestId } = renderProbe();
+    expect(getByTestId('style').textContent).toBe('monochrome');
+    expect(getByTestId('mode').textContent).toBe('light');
+    await vi.waitFor(() =>
+      expect(dockCalls()).toEqual([['set_dock_icon', { dark: false, style: 'monochrome' }]]));
+  });
+
+  it('corrupted or unknown style values fall back to classic (never throws)', () => {
+    localStorage.setItem('pb.appIconStyle', 'neon');
+    const { getByTestId } = renderProbe();
+    expect(getByTestId('style').textContent).toBe('classic');
+    act(() => bridge.handler?.('appIconStyle', 'neon'));
+    expect(getByTestId('style').textContent).toBe('classic');
+  });
+
+  it('system-mode OS flips re-push the monochrome artwork live; fixed modes ignore them', async () => {
+    localStorage.setItem('pb.appIconStyle', 'monochrome');
+    const { getByTestId, unmount } = renderProbe();
+    await mountSettled();
+    expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: false, style: 'monochrome' }]);
+    act(() => bridge.systemChange?.({ matches: true }));
+    await vi.waitFor(() =>
+      expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: true, style: 'monochrome' }]));
+    unmount();
+  });
+
+  it('applies a style saved in the other window WITHOUT re-broadcasting', async () => {
+    const { getByTestId } = renderProbe();
+    await mountSettled();
+    act(() => bridge.handler?.('appIconStyle', 'monochrome'));
+    expect(getByTestId('style').textContent).toBe('monochrome');
+    expect(localStorage.getItem('pb.appIconStyle')).toBe('monochrome');
+    await vi.waitFor(() =>
+      expect(dockCalls().at(-1)).toEqual(['set_dock_icon', { dark: false, style: 'monochrome' }]));
+    expect(bridge.broadcasts).toEqual([]); // no echo loop
+  });
+
+  it('browser context: style works in storage but the tab icon stays classic — no browser entry', () => {
+    bridge.desktop = false;
+    const { getByTestId } = renderProbe();
+    act(() => getByTestId('set-mono').click());
+    expect(localStorage.getItem('pb.appIconStyle')).toBe('monochrome');
+    expect(
+      document
+        .querySelector<HTMLLinkElement>('head link[rel~="icon"]')
+        ?.getAttribute('href'),
+    ).toContain('favicon-day'); // classic favicons — the site has no style entry
   });
 });

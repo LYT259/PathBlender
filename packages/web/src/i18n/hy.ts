@@ -45,6 +45,10 @@ export const hy = {
   'prefs.installUpdate': "Տեղադրել և վերագործարկել",
   'prefs.checkSavedChannel': "Թարմացումների ստուգումները օգտագործում են պահված ալիքը․ {channel}։",
   'prefs.appIcon': "Հավելվածի պատկերակ",
+  'prefs.iconStyle': 'Պատկերակի ոճ',
+  'prefs.iconAppearance': 'Պատկերակի տեսք',
+  'prefs.iconStyle.classic': 'Դասական',
+  'prefs.iconStyle.monochrome': 'Միագույն',
   'welcome.title': 'Սկսելու համար ներմուծեք երթուղիներ',
 
   'tour.title': "Առաջին քայլեր",
