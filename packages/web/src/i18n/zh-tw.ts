@@ -190,9 +190,9 @@ export const zhTw: Record<MessageKey, string> = {
   'vc.back': '後',
   'vc.left': '左',
   'vc.right': '右',
-  'field.variant': '場地結構（Welded=焊接場 / AndyMark=拼裝場）',
+  'field.variant': '場地結構',
 
-  'field.style': '底圖風格（示意圖 / 渲染圖）',
+  'field.style': '底圖風格',
 
   'field.style.schematic': '示意圖',
 
