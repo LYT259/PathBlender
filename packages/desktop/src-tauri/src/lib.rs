@@ -322,16 +322,30 @@ fn startup_menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
     MenuBuilder::new(app).item(&sub).build()
 }
 
-fn open_prefs(app: &AppHandle) {
+/// `updates` steers the window at the Updates section and starts a check
+/// there (menu "Check for Updates", user request 2026-10-16): an
+/// already-open window gets a `pb-prefs-go-updates` DOM CustomEvent — the
+/// same eval channel as menu commands (ADR-0003), stashed on `window` in
+/// case the page is still loading — while a fresh window is created with
+/// `?go=updates`, which its mount path reads (an eval into a webview that
+/// hasn't navigated yet would be lost).
+fn open_prefs(app: &AppHandle, updates: bool) {
     if let Some(win) = app.get_webview_window(PREFS_WINDOW) {
+        if updates {
+            let _ = win.eval(
+                "window.__pbGoUpdates=1;\
+                 window.dispatchEvent(new CustomEvent('pb-prefs-go-updates'))",
+            );
+        }
         let _ = win.set_focus();
         return;
     }
-    let builder = WebviewWindowBuilder::new(
-        app,
-        PREFS_WINDOW,
-        WebviewUrl::App("index.html?window=prefs".into()),
-    )
+    let url = if updates {
+        "index.html?window=prefs&go=updates"
+    } else {
+        "index.html?window=prefs"
+    };
+    let builder = WebviewWindowBuilder::new(app, PREFS_WINDOW, WebviewUrl::App(url.into()))
     .title("Preferences")
     .inner_size(780.0, 580.0)
     .min_inner_size(640.0, 480.0)
@@ -425,8 +439,8 @@ fn open_external(url: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn open_preferences(app: AppHandle) {
-    open_prefs(&app);
+fn open_preferences(app: AppHandle, updates: Option<bool>) {
+    open_prefs(&app, updates.unwrap_or(false));
 }
 
 /// (file name, base64 bytes) pairs — the payload shape of the web side's
@@ -607,7 +621,7 @@ pub fn run() {
                     #[cfg(not(target_os = "macos"))]
                     push_menu_event(app, "about");
                 }
-                "preferences" => open_prefs(app),
+                "preferences" => open_prefs(app, false),
                 "import" => {
                     // The shell owns the picker and pushes the chosen files
                     // through the open-with channel — the web-side hidden

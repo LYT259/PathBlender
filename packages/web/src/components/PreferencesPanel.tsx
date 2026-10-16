@@ -1,5 +1,5 @@
 import { SelectControl } from './SelectControl';
-import { useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useI18n, type LangChoice } from '../i18n';
 import { useTheme, type ThemeMode } from '../theme';
 import { useAppIcon, ICON_STYLE_ARTWORK, type IconAppearanceMode, type IconStyle } from '../app-icon';
@@ -60,12 +60,16 @@ type UpdateCheck =
   | { kind: 'failed' };
 
 /** Shared settings; changes only reach other windows after Save. */
-export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
+export function PreferencesPanel({ desktop, onClose, onColorblindSaved, initialSection, autoCheckUpdates }: {
   desktop: boolean;
   onClose: () => void;
   /** Fired on Save so the hosting window applies the new palette at once —
    * the Tauri broadcast only reaches windows on desktop shells. */
   onColorblindSaved?: (on: boolean) => void;
+  /** Landing section — the prefs window created for updates starts there. */
+  initialSection?: Section;
+  /** Start the update check once on mount (the ?go=updates window). */
+  autoCheckUpdates?: boolean;
 }) {
   const { lang, langChoice, setLang, t } = useI18n();
   const { mode, setMode } = useTheme();
@@ -77,7 +81,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   const [reverseScroll, setReverseScroll] = useReverseScrollZoom();
   const [defaultConstrained, setDefaultConstrained] = useDefaultConstrained();
   const [penAsMouse, setPenAsMouse] = usePenAsMouse();
-  const [section, setSection] = useState<Section>('general');
+  const [section, setSection] = useState<Section>(initialSection ?? 'general');
   const [languageDraft, setLanguageDraft] = useState<LangChoice | null>(null);
   const [themeDraft, setThemeDraft] = useState<ThemeMode | null>(null);
   // Colorblind stages like every other shared setting (user request
@@ -155,6 +159,34 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
       else setUpdateCheck({ kind: 'failed' });
     });
   }
+
+  // Landing on Updates from outside (menu "Check for Updates", user request
+  // 2026-10-16). The desktop shell has two delivery paths: it creates this
+  // window with ?go=updates (→ initialSection + autoCheckUpdates props) or
+  // re-targets an already-open one with a shell-eval'd pb-prefs-go-updates
+  // CustomEvent. The listener must survive re-renders with a fresh check
+  // closure, hence the ref (same pattern as App's menuHandlersRef).
+  const startUpdateCheckRef = useRef(startUpdateCheck);
+  startUpdateCheckRef.current = startUpdateCheck;
+  const goUpdates = useCallback(() => {
+    setSection('updates');
+    startUpdateCheckRef.current();
+  }, []);
+  useEffect(() => {
+    window.addEventListener('pb-prefs-go-updates', goUpdates);
+    return () => window.removeEventListener('pb-prefs-go-updates', goUpdates);
+  }, [goUpdates]);
+  useEffect(() => {
+    // The freshly created ?go=updates window starts its check on mount…
+    if (autoCheckUpdates) goUpdates();
+    // …and if the shell eval'd the event into a window whose page was still
+    // loading, the dispatch was lost — the __pbGoUpdates stash survives it.
+    const w = window as { __pbGoUpdates?: unknown };
+    if (w.__pbGoUpdates) {
+      delete w.__pbGoUpdates;
+      goUpdates();
+    }
+  }, [autoCheckUpdates, goUpdates]);
 
   function startInstall() {
     if (updateCheck.kind !== 'found') return;
