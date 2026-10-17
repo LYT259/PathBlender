@@ -661,8 +661,12 @@ export function makeCustomField(cal: {
   };
 }
 
-/** Flip a pose from the red frame into the blue frame (180° about center). */
-export function flipPoseToBlue(pose: Pose2d, field: FieldPackage): Pose2d {
+/**
+ * Flip a pose from the red frame into the blue frame (180° about center).
+ * Only the field dimensions are read, so any object carrying lengthM/widthM
+ * (a full FieldPackage, or the pared pick the zone predicate passes) fits.
+ */
+export function flipPoseToBlue(pose: Pose2d, field: Pick<FieldPackage, 'lengthM' | 'widthM'>): Pose2d {
   return {
     x: field.lengthM - pose.x,
     y: field.widthM - pose.y,
@@ -672,20 +676,32 @@ export function flipPoseToBlue(pose: Pose2d, field: FieldPackage): Pose2d {
 
 /**
  * Whether a trajectory's first sample starts inside the season's legal auto
- * starting region (FieldPackage.startZone, a union of rectangles). The
- * trajectory is the blue-frame SOURCE sample (sourceRobots stay blue;
- * `robotsForAlliance` derives the red view), and the red view's region is
- * the mirror of the blue one — so on the source frame the predicate is the
- * same for both alliances and the alliance never enters it. Zone boundaries
+ * starting region (FieldPackage.startZone, a union of rectangles). Zone rects
+ * are blue-frame (the red view's region is the 180° flip of the blue one),
+ * so the natural callers pass the blue-frame SOURCE sample (sourceRobots
+ * stay blue; `robotsForAlliance` derives the red view) and the alliance
+ * never enters the predicate. With `field` supplied a red-frame trajectory
+ * is accepted too: its first sample is flipped back to blue before the
+ * comparison, making the verdict frame-invariant — the alliance view the
+ * renderer consumes may be judged directly (2026-10-17: the red view fed
+ * flipped samples to the blue-frame rects and grayed EVERY path). Without
+ * `field` the caller vouches the samples are already blue. Zone boundaries
  * are inclusive (tape belongs to the zone); no samples means nothing to
  * gate.
  */
-export function startsInAllianceZone(trajectory: Trajectory, zone: readonly StartZoneRect[]): boolean {
+export function startsInAllianceZone(
+  trajectory: Trajectory,
+  zone: readonly StartZoneRect[],
+  field?: Pick<FieldPackage, 'lengthM' | 'widthM'>,
+): boolean {
   const first = trajectory.samples[0];
   if (!first) return true;
+  const pose = field && trajectory.alliance === 'red'
+    ? flipPoseToBlue(first, field)
+    : first;
   return zone.some((r) =>
-    first.x >= r.xMinM - 1e-9 && first.x <= r.xMaxM + 1e-9 &&
-    first.y >= r.yMinM - 1e-9 && first.y <= r.yMaxM + 1e-9);
+    pose.x >= r.xMinM - 1e-9 && pose.x <= r.xMaxM + 1e-9 &&
+    pose.y >= r.yMinM - 1e-9 && pose.y <= r.yMaxM + 1e-9);
 }
 
 /**

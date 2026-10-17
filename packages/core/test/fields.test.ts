@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Trajectory } from '../src';
-import { FIELDS, REBUILT_2026, fieldById, fieldImageWorldRect, makeCustomField, routeStartRegion, startsInAllianceZone, withFieldVariant } from '../src';
+import { FIELDS, REBUILT_2026, applyAllianceChange, fieldById, fieldImageWorldRect, makeCustomField, routeStartRegion, startsInAllianceZone, withFieldVariant } from '../src';
 
 describe('FIELDS registry', () => {
   it('covers 2022 through 2026', () => {
@@ -220,6 +220,21 @@ describe('legal starting regions per season (first-leg gate, user 2026-10-08)', 
     expect(startsInAllianceZone(traj(3.5, 2.0), z)).toBe(false);  // deep only in the CS strip
     expect(startsInAllianceZone(traj(4.5, 2.79), z)).toBe(true);  // CS strip lower edge
     expect(startsInAllianceZone(traj(4.5, 2.7), z)).toBe(false);
+  });
+
+  it('judges a red-frame first sample by flipping it back to blue (2026-10-17: the red view grayed every path)', () => {
+    const f = fieldById('rebuilt-2026')!;
+    const z = f.startZone!;
+    const legal = { ...traj(1, 1), alliance: 'blue' } as Trajectory;
+    const legalRed = applyAllianceChange(legal, 'red', f);
+    // The raw flipped sample sits deep past the blue-frame line — yet with
+    // the field supplied the verdict must match the blue frame exactly.
+    expect(legalRed.samples[0]!.x).toBeGreaterThan(z[0]!.xMaxM);
+    expect(startsInAllianceZone(legalRed, z, f)).toBe(true);
+    expect(startsInAllianceZone(legal, z, f)).toBe(true);
+    // An illegal start stays illegal after the flip too.
+    const illegal = { ...traj(9, 1), alliance: 'blue' } as Trajectory;
+    expect(startsInAllianceZone(applyAllianceChange(illegal, 'red', f), z, f)).toBe(false);
   });
 
   it('never gates a trajectory without samples', () => {

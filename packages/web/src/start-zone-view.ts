@@ -1,4 +1,4 @@
-import { sessionStartsInZone, startsInAllianceZone, type SessionTrajectory, type StartZoneRect } from '@pathblender/core';
+import { sessionStartsInZone, startsInAllianceZone, type FieldPackage, type SessionTrajectory, type StartZoneRect } from '@pathblender/core';
 import { sequenceViewFor } from './auto-sequence-state';
 
 /**
@@ -9,15 +9,21 @@ import { sequenceViewFor } from './auto-sequence-state';
  * from being ARRANGED, the gray path shows the same verdict on paths that
  * are already there (imported files, restored sessions). Seasons without an
  * established starting region gate nothing.
+ *
+ * The robots here are the ALLIANCE VIEW (App derives them through
+ * `robotsForAlliance`), so `field` must be supplied: it lets the predicate
+ * flip a red-frame first sample back to blue, keeping the verdict identical
+ * in both views (2026-10-17: without it the red view grayed every path).
  */
 export function dimmedPathRobotIds(
   robots: readonly SessionTrajectory[],
   zone: readonly StartZoneRect[] | undefined,
+  field?: FieldPackage,
 ): Set<string> {
   const ids = new Set<string>();
   if (!zone) return ids;
   for (const robot of robots) {
-    if (!sessionStartsInZone(robot, zone)) ids.add(robot.trajectory.id);
+    if (!sessionStartsInZone(robot, zone, field)) ids.add(robot.trajectory.id);
   }
   return ids;
 }

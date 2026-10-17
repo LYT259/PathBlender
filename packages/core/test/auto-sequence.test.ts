@@ -483,6 +483,19 @@ describe('sessionStartsInZone', () => {
     expect(sessionStartsInZone(makeSession(route({ samples: at(9, 9) })), zone)).toBe(false);
   });
 
+  it('flips a red-frame view robot back to blue when the field is supplied', () => {
+    // A 10×10 stand-in field: the 180° view flip sends (x,y) → (10−x,10−y).
+    const field = { lengthM: 10, widthM: 10 };
+    // A legal blue start (0.5,0.5) seen through the red view lands at (9.5,9.5).
+    const redView = makeSession(route({ samples: at(9.5, 9.5), alliance: 'red' }));
+    expect(sessionStartsInZone(redView, zone, field)).toBe(true);
+    // Blue twin (8,8): out of the pocket in either frame.
+    const redIllegal = makeSession(route({ samples: at(2, 2), alliance: 'red' }));
+    expect(sessionStartsInZone(redIllegal, zone, field)).toBe(false);
+    // Without the field the caller vouches blue-frame samples (legacy contract).
+    expect(sessionStartsInZone(redView, zone)).toBe(false);
+  });
+
   it('judges a composition by its first segment only', () => {
     const inZone = route({ id: 'a', durationS: 2, samples: at(0.2, 0.2) });
     const farAway = route({ id: 'b', durationS: 2, samples: at(9, 9) });
