@@ -6,6 +6,7 @@ export const ar = {
   'sequence.afterPrev': 'بعد السابقة',
   'sequence.beforeNext': 'قبل التالية',
   'sequence.seconds': 'ث',
+  'sequence.moreActions': '+{n} أخرى',
   'sequence.count': '{n} مقاطع',
   'sequence.delay': 'تأخير البدء',
   'sequence.wait': 'انتظار',

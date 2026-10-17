@@ -12,6 +12,7 @@ export const zhTw: Record<MessageKey, string> = {
   'sequence.afterPrev': '距上一條',
   'sequence.beforeNext': '距下一條',
   'sequence.seconds': "秒",
+  'sequence.moreActions': '還有 {n} 項',
   'sequence.count': "{n} 段",
   'sequence.delay': "起步延遲",
   'sequence.wait': "等待",

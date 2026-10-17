@@ -6,6 +6,7 @@ export const nb = {
   'sequence.afterPrev': 'Etter forrige',
   'sequence.beforeNext': 'Før neste',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} flere',
   'sequence.count': '{n} segmenter',
   'sequence.delay': 'Startforsinkelse',
   'sequence.wait': 'Vent',

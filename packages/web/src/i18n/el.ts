@@ -6,6 +6,7 @@ export const el = {
   'sequence.afterPrev': 'Μετά την προηγούμενη',
   'sequence.beforeNext': 'Πριν από την επόμενη',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} ακόμα',
   'sequence.count': '{n} τμήματα',
   'sequence.delay': 'Αρχική καθυστέρηση',
   'sequence.wait': 'Αναμονή',

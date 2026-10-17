@@ -17,6 +17,7 @@ export const ptBR: Record<MessageKey, string> = {
   'sequence.afterPrev': 'Após a anterior',
   'sequence.beforeNext': 'Antes da próxima',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} mais',
   'sequence.count': '{n} segmentos',
   'sequence.delay': 'Atraso inicial',
   'sequence.wait': 'Espera',

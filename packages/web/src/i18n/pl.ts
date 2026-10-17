@@ -17,6 +17,7 @@ export const pl: Record<MessageKey, string> = {
   'sequence.afterPrev': 'Po poprzedniej',
   'sequence.beforeNext': 'Przed następną',
   'sequence.seconds': 's',
+  'sequence.moreActions': 'Jeszcze {n}',
   'sequence.count': 'Segmenty: {n}',
   'sequence.delay': 'Opóźnienie startu',
   'sequence.wait': 'Oczekiwanie',

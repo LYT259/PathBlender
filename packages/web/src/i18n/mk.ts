@@ -6,6 +6,7 @@ export const mk = {
   'sequence.afterPrev': 'По претходната',
   'sequence.beforeNext': 'Пред следната',
   'sequence.seconds': 'с',
+  'sequence.moreActions': 'Уште {n}',
   'sequence.count': '{n} сегменти',
   'sequence.delay': 'Почетно доцнење',
   'sequence.wait': 'Чекање',

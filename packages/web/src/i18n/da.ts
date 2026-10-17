@@ -6,6 +6,7 @@ export const da = {
   'sequence.afterPrev': 'Efter forrige',
   'sequence.beforeNext': 'Før næste',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} flere',
   'sequence.count': '{n} segmenter',
   'sequence.delay': 'Startforsinkelse',
   'sequence.wait': 'Vent',

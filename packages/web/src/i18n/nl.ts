@@ -17,6 +17,7 @@ export const nl: Record<MessageKey, string> = {
   'sequence.afterPrev': 'Na vorige',
   'sequence.beforeNext': 'Voor volgende',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} meer',
   'sequence.count': '{n} segmenten',
   'sequence.delay': 'Startvertraging',
   'sequence.wait': 'Wachten',

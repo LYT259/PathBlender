@@ -6,6 +6,7 @@ export const rw = {
   'sequence.afterPrev': "Nyuma y’ibanza",
   'sequence.beforeNext': "Mbere y’ikurikira",
   "sequence.seconds": "s",
+  "sequence.moreActions": "ibindi {n}",
   "sequence.count": "{n} ibice",
   "sequence.delay": "Gutinda gutangira",
   "sequence.wait": "Gutegereza",
