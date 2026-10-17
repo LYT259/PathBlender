@@ -30,9 +30,9 @@
   flex-shrink: 0; display: flex; align-items: center; justify-content: center;
   width: 17px; height: 17px; margin-top: 1px;
   border: 1.5px solid var(--border); border-radius: 50%;
-  color: var(--accent);
+  color: var(--accent-text);
 }
-.tour-tasks li.is-done .tour-check { border-color: var(--accent); background: var(--accent-dim); }
+.tour-tasks li.is-done .tour-check { border-color: var(--accent-text); background: var(--accent-dim); }
 .tour-text { display: grid; gap: 1px; min-width: 0; }
 .tour-task-title { font-size: 12px; line-height: 1.4; color: var(--fg); }
 .tour-tasks li.is-done .tour-task-title { color: var(--fg-dim); }

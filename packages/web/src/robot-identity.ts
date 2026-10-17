@@ -23,14 +23,15 @@ export function bumperColor(alliance: 'red' | 'blue'): string {
 }
 
 /**
- * Occupancy-heatmap tint per alliance (2026-10-06): blue keeps the UI
- * accent (its original color), red pairs with the theme's system-red
- * token — the same --danger/--accent family the rest of the UI uses.
- * Tokens are injected so both the 2D canvas and the 3D scene share one
- * testable rule.
+ * Occupancy-heatmap tint per alliance (2026-10-06). DATA color, not chrome:
+ * since 2026-10-17 the pair comes from the dedicated --heatmap-blue /
+ * --heatmap-red theme tokens and is fully independent of the interface
+ * accent — the blue alliance's heatmap stays blue whatever accent the UI
+ * wears. Tokens are injected so both the 2D canvas and the 3D scene share
+ * one testable rule.
  */
-export function heatmapColor(alliance: 'red' | 'blue', accent: string, danger: string): string {
-  return alliance === 'red' ? danger : accent;
+export function heatmapColor(alliance: 'red' | 'blue', blue: string, red: string): string {
+  return alliance === 'red' ? red : blue;
 }
 
 /** Field labels omit the list's numeric prefix and never replace actual team metadata. */

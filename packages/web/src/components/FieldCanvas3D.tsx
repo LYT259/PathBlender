@@ -1315,15 +1315,30 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
   // token-backed structure material. React to the theme context —
   // the data-theme attribute is written by ThemeProvider's effect, so a DOM
   // read during render would always see the previous value.
-  const themeResolved = useTheme().resolved;
+  const { resolved: themeResolved, accent } = useTheme();
   useEffect(() => {
     const st = sceneRef.current;
     if (!st) return;
     for (const { color, token } of st.themed) color.set(tokenColorHex(token, '#1c1c1e'));
-    for (const { robot, mesh } of st.heatmaps) (mesh.material as THREE.MeshBasicMaterial).color.set(heatmapColor(robot.trajectory.alliance, cssToken('--accent', '#0a84ff'), cssToken('--danger', '#ff453a')));
+    for (const { robot, mesh } of st.heatmaps) (mesh.material as THREE.MeshBasicMaterial).color.set(heatmapColor(robot.trajectory.alliance, cssToken('--heatmap-blue', '#0a84ff'), cssToken('--heatmap-red', '#ff453a')));
     st.retintCube();
     st.dirty();
   }, [themeResolved]);
+
+  // Accent flips retint the ViewCube: its hover colors are baked into face
+  // textures (viewcube-appearance.ts), so the CSS change alone paints
+  // nothing. data-accent lands via ThemeProvider's layout effect, so the
+  // tokens read here already carry the new accent. Retint + dirty only — no
+  // scene rebuild, no camera change, no playback interruption, and the rAF
+  // loop draws the next frame even while playback is paused. The heatmaps
+  // deliberately stay out: their alliance colors are data, not chrome
+  // (2026-10-17 decoupling).
+  useEffect(() => {
+    const st = sceneRef.current;
+    if (!st) return;
+    st.retintCube();
+    st.dirty();
+  }, [accent]);
 
   // ViewCube labels are canvas-baked at scaffold time; re-render them when
   // the display language changes (the scaffold effect runs once, so without
@@ -1488,7 +1503,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       st.dynamic.add(trail.mesh);
       st.trails.push(trail);
       // Occupancy heatmap — one merged footprint-stain mesh per robot.
-      const heatmap = createGroundHeatmap(r, st.cx, st.cy, cssToken('--accent', '#0a84ff'), cssToken('--danger', '#ff453a'));
+      const heatmap = createGroundHeatmap(r, st.cx, st.cy, cssToken('--heatmap-blue', '#0a84ff'), cssToken('--heatmap-red', '#ff453a'));
       st.dynamic.add(heatmap.mesh);
       st.heatmaps.push(heatmap);
       // MK5i-style chassis (bumper skirt + frame deck + swerve pods),

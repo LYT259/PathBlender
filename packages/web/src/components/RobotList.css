@@ -19,7 +19,7 @@
 .robot-library-row.is-hidden .robot-library-visibility { color: var(--fg-dim); }
 .robot-library-empty { padding: 4px 10px 14px; color: var(--fg-dim); font-size: 12px; line-height: 1.6; }
 .robot-library-empty p { margin: 0 0 14px; }
-:where(html.kbd-nav) .robot-library button:focus-visible, :where(html.kbd-nav) .robot-inspector button:focus-visible, :where(html.kbd-nav) .robot-inspector input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:where(html.kbd-nav) .robot-library button:focus-visible, :where(html.kbd-nav) .robot-inspector button:focus-visible, :where(html.kbd-nav) .robot-inspector input:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 .robot-inspector { padding: 18px 16px 22px; color: var(--fg); }
 .robot-inspector-empty { padding: 24px 18px; color: var(--fg-dim); font-size: 12px; line-height: 1.6; }
 .robot-inspector-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
@@ -47,7 +47,7 @@
 /* Per-robot route picker: flip between imported autos without re-importing. */
 .route-picker { flex: none; width: 88px; max-width: 88px; height: 30px; padding: 0 5px; color: var(--fg); background: var(--btn-bg); border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 11px; cursor: pointer; }
 .route-picker:hover { background: var(--bg-card); border-color: var(--border); color: var(--fg); }
-:where(html.kbd-nav) .route-picker:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+:where(html.kbd-nav) .route-picker:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
 .route-picker option { color: initial; background: initial; }
 
 .robot-inspector-profile select { max-width: 150px; height: 28px; padding: 3px 6px; color: var(--fg); background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 11px; }
@@ -56,7 +56,7 @@
    back by user request; path editing stays out — pure viewer otherwise). */
 .robot-team-chip { display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 30px; height: 30px; padding: 0 4px; border: 0; border-radius: 6px; background: transparent; color: var(--fg-dim); font: 600 11px ui-monospace, monospace; cursor: pointer; }
 .robot-team-chip:hover { background: var(--hover); color: var(--fg); }
-.robot-team-input { flex: none; width: 44px; height: 28px; padding: 0 4px; border: 1px solid var(--accent, #0a84ff); border-radius: 6px; background: var(--bg, #1c1c1e); color: var(--fg, #e6e6e8); font: 600 11px ui-monospace, monospace; text-align: center; }
+.robot-team-input { flex: none; width: 44px; height: 28px; padding: 0 4px; border: 1px solid var(--accent-text, #0a84ff); border-radius: 6px; background: var(--bg, #1c1c1e); color: var(--fg, #e6e6e8); font: 600 11px ui-monospace, monospace; text-align: center; }
 
 /* The editor occupies the name's position, with no duplicate team chip. */
 .robot-team-chip { width: 30px; align-self: flex-start; margin-top: 5px; }
@@ -80,25 +80,25 @@
 .robot-library-row.needs-settings .robot-identity-cell { grid-column: 1; grid-row: 1; }
 .robot-library-row.needs-settings .route-picker { grid-column: 2; grid-row: 1; }
 .robot-library-row.needs-settings .robot-library-visibility { grid-column: 3; grid-row: 1; }
-.robot-settings-upload { grid-row: 2; grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0 7px 9px 10px; min-height: 30px; padding: 5px 9px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); border-radius: 5px; background: var(--accent-dim); color: var(--accent); font: inherit; font-size: 11px; font-weight: 550; cursor: pointer; }
-.robot-settings-upload:hover { border-color: var(--accent); }
+.robot-settings-upload { grid-row: 2; grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0 7px 9px 10px; min-height: 30px; padding: 5px 9px; border: 1px solid color-mix(in srgb, var(--accent-text) 45%, var(--border)); border-radius: 5px; background: var(--accent-dim); color: var(--accent-text); font: inherit; font-size: 11px; font-weight: 550; cursor: pointer; }
+.robot-settings-upload:hover { border-color: var(--accent-text); }
 
 /* Team cards separate identity, route arrangement and missing-file action. */
 .robot-library .robot-library-row { display: grid; grid-template-columns: minmax(0, 1fr) 28px; gap: 0 2px; padding: 0 6px 8px 0; margin-bottom: 6px; border-color: var(--border); background: var(--bg-panel); cursor: pointer; }
-.robot-library .robot-library-row.is-selected { background: var(--accent-dim); border-color: var(--accent); }
-:where(html.kbd-nav) .robot-library-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.robot-library .robot-library-row.is-selected { background: var(--accent-dim); border-color: var(--accent-text); }
+:where(html.kbd-nav) .robot-library-row:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 /* Selecting is by TEAM, so the identity button's ring wraps the whole card,
    not just the name row (user report 2026-10-07). The button itself is
    programmatic-focus only (tabindex=-1), so the card's ring never doubles up. */
-:where(html.kbd-nav) .robot-library-row:has(.robot-library-select:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+:where(html.kbd-nav) .robot-library-row:has(.robot-library-select:focus-visible) { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 :where(html.kbd-nav) .robot-library-row .robot-library-select:focus-visible { outline: none; }
 /* Landing silence: the freshly opened app must not paint any ring (2026-10-06). */
 .robot-library-row:has(.robot-library-select.focus-silent) { outline: none !important; }
 .robot-library .robot-library-row .robot-identity-cell, .robot-library .robot-library-row .robot-team-editor { grid-column: 1; grid-row: 1; }
 .robot-library .robot-library-row .robot-library-visibility { grid-column: 2; grid-row: 1; align-self: start; margin-top: 6px; }
 .robot-arrange-button { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; gap: 7px; min-height: 30px; margin: 0 2px 0 10px; padding: 4px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--btn-bg); color: var(--fg); font: inherit; font-size: 11px; cursor: pointer; }
-.robot-arrange-button .ui-icon { color: var(--accent); }
-.robot-arrange-button:hover:not(:disabled) { border-color: var(--accent); background: var(--bg-panel); }
+.robot-arrange-button .ui-icon { color: var(--accent-text); }
+.robot-arrange-button:hover:not(:disabled) { border-color: var(--accent-text); background: var(--bg-panel); }
 .robot-library .robot-settings-upload { grid-column: 1 / -1; grid-row: 4; min-height: 32px; margin: 7px 2px 0 10px; padding: 6px 9px; border: 1px solid transparent; border-radius: 7px; background: var(--accent); color: var(--accent-fg); font-size: 12px; font-weight: 500; }
 .robot-library .robot-settings-upload:hover { background: var(--accent); filter: brightness(1.05); }
 .robot-settings-upload:active { opacity: .85; }
@@ -128,7 +128,7 @@
 .robot-library-actions { grid-column: 2; grid-row: 1; display: flex; align-items: center; gap: 2px; align-self: start; margin-top: 6px; }
 .robot-library .robot-library-row .robot-library-actions > button { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 30px; min-height: 30px; margin: 0; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--fg-dim); cursor: pointer; }
 .robot-library .robot-library-actions > button:hover:not(:disabled) { background: var(--hover); color: var(--fg); }
-.robot-library .robot-library-actions > .robot-mirror-button[aria-pressed="true"] { background: var(--accent-dim); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.robot-library .robot-library-actions > .robot-mirror-button[aria-pressed="true"] { background: var(--accent-dim); color: var(--accent-text); box-shadow: inset 0 0 0 1px var(--accent-text); }
 .robot-mirror-button:disabled { cursor: not-allowed; opacity: .5; }
 .robot-library .robot-arrange-button { grid-column: 1 / -1; grid-row: 3; justify-self: start; max-width: calc(100% - var(--robot-content-inset)); min-height: 26px; margin: 10px 0 4px; margin-inline-start: var(--robot-content-inset); padding: 3px 6px; gap: 4px; text-align: start; }
 .robot-arrange-button > .ui-icon { flex: none; }

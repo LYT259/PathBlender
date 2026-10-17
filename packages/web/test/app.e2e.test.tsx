@@ -206,8 +206,10 @@ describe('App import → fusion → collision flow', () => {
     );
     const initialTheme = document.documentElement.dataset.theme;
     const other = initialTheme === 'light' ? 'dark' : 'light';
+    // Scoped to the Theme group: the Accent picker adds its own checked
+    // radio below (2026-10-17), so a bare checked-radio query is ambiguous.
     const themeOf = (scope: HTMLElement) =>
-      within(scope).getByRole('radio', { checked: true }) as HTMLInputElement;
+      within(within(scope).getByRole('group', { name: 'Theme' })).getByRole('radio', { checked: true }) as HTMLInputElement;
     fireEvent.click(screen.getByRole('button', { name: 'Preferences' }));
     const dialog = screen.getByRole('dialog', { name: 'Preferences' });
     const initialMode = themeOf(dialog).value;
