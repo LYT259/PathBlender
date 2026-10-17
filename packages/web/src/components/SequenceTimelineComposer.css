@@ -12,7 +12,7 @@
 /* The chip strip scrolls, so an outside ring clips top+bottom no matter the
    padding budget — draw the focus ring inside the chip (focus-audit 2026-10-07). */
 :where(html.kbd-nav) .sequence-route-source:focus-visible { outline-offset: -2px; }
-.sequence-route-source:hover { border-color: var(--accent); background: var(--accent-dim); }
+.sequence-route-source:hover { border-color: var(--accent-text); background: var(--accent-dim); }
 .sequence-route-source > span:not(.sequence-grip) { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sequence-route-source small, .sequence-grip { color: var(--fg-dim); }
 .sequence-timeline-scroll { overflow-x: auto; padding: 0 18px 3px; }
@@ -29,24 +29,24 @@
 .sequence-track-name i { background: var(--robot-color); }
 .sequence-track-name small { color: var(--fg-dim); font-size: 9px; padding-left: 13px; }
 .sequence-track.is-editing .sequence-track-name { background: var(--accent-dim); }
-.sequence-track.is-editing .sequence-track-name small { color: var(--accent); }
+.sequence-track.is-editing .sequence-track-name small { color: var(--accent-text); }
 .sequence-track-lane { height: 33px; position: relative; overflow: hidden; border-radius: 8px; cursor: ew-resize; touch-action: none; user-select: none; background-image: linear-gradient(to right, var(--border) 1px, transparent 1px); background-color: var(--bg-card); border-block: 1px solid var(--border); }
-:where(html.kbd-nav) .sequence-track-lane:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.sequence-track.is-editing .sequence-track-lane { height: 52px; border-block-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+:where(html.kbd-nav) .sequence-track-lane:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -2px; }
+.sequence-track.is-editing .sequence-track-lane { height: 52px; border-block-color: color-mix(in srgb, var(--accent-text) 35%, var(--border)); }
 .sequence-clip { position: absolute; top: 6px; height: 21px; min-width: 2px; display: flex; flex-direction: column; justify-content: center; gap: 5px; overflow: hidden; padding: 0 7px; border: 1px solid color-mix(in srgb, var(--robot-color) 50%, var(--border)); border-radius: 4px; background: color-mix(in srgb, var(--robot-color) 18%, var(--bg-panel)); color: var(--fg); text-align: left; font: inherit; font-size: 10px; cursor: pointer; }
 .sequence-clip strong { display: flex; align-items: center; gap: 6px; width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 500; }
 .sequence-clip small { font-size: 10px; white-space: nowrap; color: var(--fg-dim); font-variant-numeric: tabular-nums; }
 .sequence-track.is-editing .sequence-clip { top: 4px; height: 32px; padding: 0 10px; font-size: 12px; cursor: grab; touch-action: none; user-select: none; }
 .sequence-clip-number { font-size: 10px; color: var(--fg-dim); }
-.sequence-clip.is-chosen { outline: 2px solid var(--accent); outline-offset: 1px; z-index: 2; }
+.sequence-clip.is-chosen { outline: 2px solid var(--accent-text); outline-offset: 1px; z-index: 2; }
 /* The seam check and the clip it annotates are ONE hover unit (user request
    2026-10-06): hovering either turns both blue. Each clip's seam lives in
    the same zero-size wrapper as the clip, so :has() pairs them without new
    markup. A red (bad) seam stays red when the clip is hovered — only the
    ok-check borrows the accent. */
-.sequence-track-lane > div:has(.sequence-seam:hover) .sequence-clip { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--bg-panel)); }
-.sequence-track-lane > div:has(.sequence-clip:hover) .sequence-clip { border-color: var(--accent); }
-.sequence-track-lane > div:has(.sequence-clip:hover) .sequence-seam:not(.is-bad) { border-color: var(--accent); color: var(--fg); }
+.sequence-track-lane > div:has(.sequence-seam:hover) .sequence-clip { border-color: var(--accent-text); background: color-mix(in srgb, var(--accent-text) 14%, var(--bg-panel)); }
+.sequence-track-lane > div:has(.sequence-clip:hover) .sequence-clip { border-color: var(--accent-text); }
+.sequence-track-lane > div:has(.sequence-clip:hover) .sequence-seam:not(.is-bad) { border-color: var(--accent-text); color: var(--fg); }
 .sequence-clip:active { cursor: grabbing; }
 .sequence-clip.is-moving { opacity: .3; }
 .sequence-auto-end { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--fg-dim); pointer-events: none; }
@@ -54,10 +54,10 @@
 .sequence-wait { position: absolute; top: 20px; pointer-events: none; height: 1px; border-top: 1px dashed var(--fg-dim); text-align: center; color: var(--fg-dim); }
 .sequence-wait > span { display: block; margin-top: 5px; font-size: 10px; overflow: hidden; white-space: nowrap; }
 .sequence-seam { position: absolute; top: 34px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; max-width: 240px; overflow: hidden; padding: 1px 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--fg-dim); font: inherit; font-size: 9px; line-height: 1.2; white-space: nowrap; text-overflow: ellipsis; z-index: 1; cursor: pointer; }
-.sequence-seam:hover { border-color: var(--accent); color: var(--fg); }
+.sequence-seam:hover { border-color: var(--accent-text); color: var(--fg); }
 .sequence-seam.is-bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
 .sequence-empty-lane { position: absolute; inset: 0; display: grid; place-items: center; color: var(--fg-dim); font-size: 12px; pointer-events: none; }
-.sequence-ghost { position: absolute; top: 7px; height: 58px; padding: 8px; border: 2px solid var(--accent); border-radius: 5px; background: var(--bg-panel); box-shadow: 0 2px 8px var(--shadow); color: var(--accent); z-index: 3; pointer-events: none; display: flex; flex-direction: column; gap: 6px; overflow: hidden; font-size: 11px; white-space: nowrap; }
+.sequence-ghost { position: absolute; top: 7px; height: 58px; padding: 8px; border: 2px solid var(--accent-text); border-radius: 5px; background: var(--bg-panel); box-shadow: 0 2px 8px var(--shadow); color: var(--accent-text); z-index: 3; pointer-events: none; display: flex; flex-direction: column; gap: 6px; overflow: hidden; font-size: 11px; white-space: nowrap; }
 .sequence-ghost.is-invalid { border-color: var(--danger); color: var(--danger); }
 .sequence-selection-bar { min-height: 42px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 6px 18px; border-top: 1px solid var(--border); font-size: 11px; color: var(--fg-dim); }
 .sequence-selection-bar input { width: 72px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); color: var(--fg); font: inherit; font-variant-numeric: tabular-nums; }
@@ -95,23 +95,23 @@
 .sequence-route-source[aria-disabled='true'] { opacity: .4; cursor: not-allowed; }
 .sequence-ghost { top: 4px; height: 32px; }
 .sequence-gap-guide { position: absolute; top: 36px; border-top: 1px solid currentColor; color: var(--warn); z-index: 4; pointer-events: none; }
-.sequence-gap-guide.next { color: var(--accent); top: 46px; }
+.sequence-gap-guide.next { color: var(--accent-text); top: 46px; }
 .sequence-gap-guide.is-overlap { color: var(--danger); }
 .sequence-gap-guide::before, .sequence-gap-guide::after { content: ''; position: absolute; top: -3px; width: 5px; height: 5px; border-top: 1px solid; border-left: 1px solid; }
 .sequence-gap-guide::before { left: 0; transform: rotate(-45deg); }
 .sequence-gap-guide::after { right: 0; transform: rotate(135deg); }
 .sequence-gap-guide > span { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); padding: 0 3px; background: var(--bg-panel); font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.sequence-playhead { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--accent); z-index: 5; pointer-events: none; }
+.sequence-playhead { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--accent-text); z-index: 5; pointer-events: none; }
 .sequence-playback-controls { padding: 4px 18px 12px; }
 /* Radius + inset ring: a full-width square ring read as a foreign rectangle
    (user report, focus-audit 2026-10-07). */
-.sequence-playback-controls > input { display: block; width: 100%; margin: 0; accent-color: var(--accent); border-radius: 8px; }
+.sequence-playback-controls > input { display: block; width: 100%; margin: 0; accent-color: var(--accent-text); border-radius: 8px; }
 :where(html.kbd-nav) .sequence-playback-controls > input:focus-visible { outline-offset: -2px; }
 .sequence-clip-menu { position: fixed; z-index: 1500; width: 180px; padding: 5px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); box-shadow: 0 8px 24px var(--shadow); }
 .sequence-clip-menu button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--danger); font: inherit; font-size: 12px; cursor: pointer; }
 .sequence-clip-menu button:hover, :where(html.kbd-nav) .sequence-clip-menu button:focus-visible { background: var(--badge-err-bg); outline: 0; }
 
-.sequence-drag-badge { position: fixed; z-index: 60; display: flex; align-items: center; gap: 7px; max-width: 260px; border: 1px solid var(--accent); border-radius: 6px; padding: 6px 10px; background: var(--bg-card); color: var(--fg); font: inherit; font-size: 12px; white-space: nowrap; pointer-events: none; transform: translate(10px, 14px); box-shadow: 0 4px 14px rgb(0 0 0 / .28); }
+.sequence-drag-badge { position: fixed; z-index: 60; display: flex; align-items: center; gap: 7px; max-width: 260px; border: 1px solid var(--accent-text); border-radius: 6px; padding: 6px 10px; background: var(--bg-card); color: var(--fg); font: inherit; font-size: 12px; white-space: nowrap; pointer-events: none; transform: translate(10px, 14px); box-shadow: 0 4px 14px rgb(0 0 0 / .28); }
 .sequence-drag-badge > span:not(.sequence-grip) { overflow: hidden; text-overflow: ellipsis; }
 .sequence-drag-badge small { color: var(--fg-dim); }
 

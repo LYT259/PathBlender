@@ -8,4 +8,4 @@
 .guide-topic ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 .guide-topic li { font-size: 13px; line-height: 1.5; }
 .guide-footer { display: flex; align-items: center; gap: 14px; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--border); }
-.guide-footer a { color: var(--accent, #0a84ff); font-size: 13px; }
+.guide-footer a { color: var(--accent-text, #0a84ff); font-size: 13px; }

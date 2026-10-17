@@ -118,7 +118,7 @@ body.desktop.desktop-macos .workspace-toolbar { padding-left: 100px; }
 .conflict-jump { padding: 11px 12px; border-radius: 8px; background: var(--bg-panel); border-left-width: 2px; gap: 6px; }
 .conflict-pair { font-size: 12px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
 .conflict-when { font-size: 10px; line-height: 1.6; font-variant-numeric: tabular-nums; }
-.issue-action { color: var(--accent); font-size: 10px; margin-top: 3px; }
+.issue-action { color: var(--accent-text); font-size: 10px; margin-top: 3px; }
 .issue-robot-actions { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 0 12px; }
 .issue-robot-actions > span { width: 100%; color: var(--fg-dim); font-size: 10px; }
 .issue-robot-actions .btn { min-width: 0; font-size: 10px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }

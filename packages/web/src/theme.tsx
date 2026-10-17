@@ -6,6 +6,13 @@
  * The interface theme is deliberately decoupled from the app-icon
  * appearance: the Dock tile is driven by the independent preference in
  * app-icon.tsx, not by the palette resolved here.
+ *
+ * The accent color (2026-10-17) is a THIRD independent axis: blue (default,
+ * no CSS overrides), brand red or silver, persisted under its own
+ * 'pb.accent' key and written to <html data-accent> for the CSS variant
+ * blocks. It never touches the theme mode, the icon preferences, or any
+ * data color (alliance/heatmap/bumper/path palettes all read their own
+ * tokens — see the heatmap decoupling in robot-identity.ts).
  */
 
 import {
@@ -21,16 +28,40 @@ import {
 import { broadcastPref, listenPrefs } from './pref-sync';
 
 export type ThemeMode = 'system' | 'dark' | 'light';
+export type AccentColor = 'blue' | 'red' | 'silver';
 
 const STORAGE_KEY = 'pb.theme';
+const ACCENT_STORAGE_KEY = 'pb.accent';
+
+function readStoredAccent(): AccentColor {
+  try {
+    const v = localStorage.getItem(ACCENT_STORAGE_KEY);
+    return v === 'red' || v === 'silver' ? v : 'blue'; // missing/invalid → blue
+  } catch {
+    return 'blue'; // storage unavailable — session-only accent
+  }
+}
+
+function writeStoredAccent(a: AccentColor): void {
+  try {
+    if (a === 'blue') localStorage.removeItem(ACCENT_STORAGE_KEY); // default stays keyless
+    else localStorage.setItem(ACCENT_STORAGE_KEY, a);
+  } catch {
+    /* storage unavailable — session-only choice */
+  }
+}
 
 interface ThemeCtx {
   mode: ThemeMode;
   resolved: 'dark' | 'light';
   setMode: (m: ThemeMode) => void;
+  accent: AccentColor;
+  setAccent: (a: AccentColor) => void;
 }
 
-const Ctx = createContext<ThemeCtx>({ mode: 'system', resolved: 'dark', setMode: () => {} });
+const Ctx = createContext<ThemeCtx>({
+  mode: 'system', resolved: 'dark', setMode: () => {}, accent: 'blue', setAccent: () => {},
+});
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>(() => {
@@ -41,6 +72,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       return 'system';
     }
   });
+  const [accent, setAccentState] = useState<AccentColor>(readStoredAccent);
   const [systemDark, setSystemDark] = useState(
     () => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true,
   );
@@ -57,10 +89,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   // Layout effect: data-theme must land on <html> before any child's passive
   // effect reads computed styles (the 3D scene retints from CSS tokens) and
-  // before the browser paints (no wrong-theme flash on mount).
+  // before the browser paints (no wrong-theme flash on mount). data-accent
+  // rides the same effect for the same two reasons — the ViewCube retints
+  // from tokens too, and a restart straight into red/silver must not flash
+  // blue first.
   useLayoutEffect(() => {
     document.documentElement.dataset.theme = resolved;
   }, [resolved]);
+  useLayoutEffect(() => {
+    document.documentElement.dataset.accent = accent;
+  }, [accent]);
 
   const setMode = useCallback((m: ThemeMode) => {
     setModeState(m);
@@ -73,25 +111,39 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     broadcastPref('theme', m); // other windows (desktop prefs) apply instantly
   }, []);
 
-  // Apply theme changed in another window (no re-broadcast — the echo is a
-  // same-value no-op and stops the loop).
+  const setAccent = useCallback((a: AccentColor) => {
+    setAccentState(a);
+    writeStoredAccent(a);
+    broadcastPref('accent', a);
+  }, []);
+
+  // Apply theme/accent changed in another window (no re-broadcast — the echo
+  // is a same-value no-op and stops the loop).
   useEffect(
     () =>
       listenPrefs((key, v) => {
-        if (key !== 'theme') return;
-        const m = (v === 'dark' || v === 'light' ? v : 'system') as ThemeMode;
-        setModeState(m);
-        try {
-          if (m === 'system') localStorage.removeItem(STORAGE_KEY);
-          else localStorage.setItem(STORAGE_KEY, m);
-        } catch {
-          /* session-only */
+        if (key === 'theme') {
+          const m = (v === 'dark' || v === 'light' ? v : 'system') as ThemeMode;
+          setModeState(m);
+          try {
+            if (m === 'system') localStorage.removeItem(STORAGE_KEY);
+            else localStorage.setItem(STORAGE_KEY, m);
+          } catch {
+            /* session-only */
+          }
+        } else if (key === 'accent') {
+          const a: AccentColor = v === 'red' || v === 'silver' ? v : 'blue';
+          setAccentState(a);
+          writeStoredAccent(a);
         }
       }),
     [],
   );
 
-  const value = useMemo(() => ({ mode, resolved, setMode }), [mode, resolved, setMode]);
+  const value = useMemo(
+    () => ({ mode, resolved, setMode, accent, setAccent }),
+    [mode, resolved, setMode, accent, setAccent],
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

@@ -12,7 +12,7 @@
 .language-picker-search { display: flex; align-items: center; gap: 8px; padding-inline: 9px 4px; min-block-size: 34px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--fg-dim); }
 :where(html.kbd-nav) .language-picker-search:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 .language-picker-search > svg { flex: none; }
-.language-picker .language-picker-search input { appearance: none; min-inline-size: 0; inline-size: 100%; padding: 6px 0; border: 0; border-radius: 0; background: transparent; color: var(--fg); caret-color: var(--accent); font: inherit; font-size: 12px; outline: none; }
+.language-picker .language-picker-search input { appearance: none; min-inline-size: 0; inline-size: 100%; padding: 6px 0; border: 0; border-radius: 0; background: transparent; color: var(--fg); caret-color: var(--accent-text); font: inherit; font-size: 12px; outline: none; }
 :where(html.kbd-nav) .language-picker .language-picker-search input:focus-visible { outline: none; }
 .language-picker .language-picker-search input::placeholder { color: var(--fg-dim); opacity: 1; }
 .language-picker-clear { display: grid; place-items: center; flex: none; inline-size: 28px; block-size: 28px; padding: 0; border: 0; border-radius: 4px; color: var(--fg-dim); background: transparent; cursor: pointer; }
@@ -27,7 +27,7 @@
 .language-picker-names > span { font-size: 12px; line-height: 1.4; }
 .language-picker-names > small { color: var(--fg-dim); font-size: 11px; line-height: 1.4; }
 .language-picker-mark { grid-area: mark; min-inline-size: 0; text-align: right; white-space: nowrap; unicode-bidi: isolate; font-size: 11px; line-height: 1.4; color: var(--fg-dim); }
-.language-picker-check { grid-area: check; display: grid; place-items: center; inline-size: 16px; color: var(--accent); }
+.language-picker-check { grid-area: check; display: grid; place-items: center; inline-size: 16px; color: var(--accent-text); }
 /* Keep these visual identifiers on the physical right in RTL interfaces too,
    while letting the language names retain their own reading direction. */
 .language-picker-option:dir(rtl) { grid-template-columns: 16px 32px minmax(0, 1fr); grid-template-areas: "check mark names"; }
