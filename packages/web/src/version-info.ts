@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.25';
+export const APP_VERSION = '0.1.9-beta.26';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.26', date: '2026.10.17', note: {
+    en: 'The ViewCube bottom face, its lower edges and corners no longer respond to hover or clicks',
+    'zh': 'ViewCube 底面及下方的边和角不再响应悬停与点击。',
+    'zh-tw': 'ViewCube 底面與下方的邊和角不再回應游標懸停與點選。',
+    'cs': 'Spodní strana ViewCube ani její dolní hrany a rohy nereagují na přejetí kurzorem ani na kliknutí.',
+    'nl': 'De onderkant van de ViewCube en de onderste randen en hoeken reageren niet meer op aanwijzen of klikken.',
+    'fr': 'La face inférieure du ViewCube, ses arêtes et coins bas ne réagissent plus au survol ni aux clics.',
+    'he': 'החלק התחתון של ה-ViewCube, לרבות הקצוות והפינות התחתונים, כבר לא מגיב לריחוף או ללחיצות.',
+    'ja': 'ViewCube の底面と下側の辺・角は、ホバーにもクリックにも反応しなくなりました。',
+    'ko': 'ViewCube의 아랫면과 아래쪽 모서리·꼭짓점은 마우스 오버와 클릭에 더 이상 반응하지 않습니다.',
+    'pl': 'Dolna ściana ViewCube oraz jej dolne krawędzie i narożniki nie reagują już na najechanie kursorem ani kliknięcia.',
+    'pt-br': 'A face inferior do ViewCube, suas arestas e cantos inferiores não respondem mais à passagem do mouse nem a cliques.',
+    'es': 'La cara inferior del ViewCube, sus aristas y esquinas bajas ya no responden al pasar el cursor ni a los clics.',
+    'tr': 'ViewCube’un alt yüzü ile alt kenarları ve köşeleri artık üzerine gelmeye veya tıklamaya yanıt vermiyor.',
+    'ar': 'الوجه السفلي لـ ViewCube وحوافه وزواياه السفلية لم تعد تستجيب للتحويم أو النقر.',
+    'az': 'ViewCube-un alt üzü, alt küncləri və bucaqları artıq kursorun üzərinə gəlməsinə və kliklərə reaksiya vermir.',
+    'bg': 'Долната страна на ViewCube заедно с долните ѝ ръбове и ъгли вече не реагира на посочване с курсора или щракване.',
+    'bs': 'Donja strana ViewCube-a zajedno s donjim ivicama i uglovima više ne reaguje na prelazak kursorom ni na klikove.',
+    'da': 'ViewCube-undersiden samt de nederste kanter og hjørner reagerer ikke længere på musen eller klik.',
+    'de': 'Die Unterseite des ViewCube samt unterer Kanten und Ecken reagiert nicht mehr auf Hover oder Klicks.',
+    'el': 'Η κάτω πλευρά του ViewCube, μαζί με τα κάτω άκρα και τις γωνίες, δεν ανταποκρίνεται πλέον σε δείκτη ή κλικ.',
+    'fil': 'Hindi na tumutugon ang ilalim ng ViewCube, kasama ang mga ibabang gilid at sulok, sa pag-hover o pag-click.',
+    'hi': 'ViewCube का निचला फलक और उसके निचले किनारे व कोन अब होवर या क्लिक पर प्रतिक्रिया नहीं करते।',
+    'hr': 'Donja strana ViewCubea zajedno s donjim bridama i kutovima više ne reagira na prijelaz pokazivačem ni na klikove.',
+    'hu': 'A ViewCube alsó lapja, valamint az alsó élek és sarkok már nem reagálnak rámutatásra vagy kattintásra.',
+    'hy': 'ViewCube-ի ստորին երեսը, նրա ստորին կողերն ու անկյուններն այլևս չեն արձագանքում կուրսորի շարժմանն ու սեղմումներին։',
+    'id': 'Sisi bawah ViewCube beserta tepi dan sudut bawahnya tidak lagi merespons hover atau klik.',
+    'it': 'La faccia inferiore del ViewCube, con i suoi bordi e angoli inferiori, non risponde più al passaggio del mouse né ai clic.',
+    'mk': 'Долната страна на ViewCube заедно со долните рабови и агли повеќе не реагира на движење со покажувач или клик.',
+    'mr': 'ViewCube चा तळाचा चेहरा आणि त्याचे खालचे कडा व कोन आता होव्हर किंवा क्लिकला प्रतिसाद देत नाहीत.',
+    'ms': 'Bahagian bawah ViewCube bersama tepi dan penjuru bawahnya tidak lagi bertindak balas terhadap peluncuran kursor atau klik.',
+    'nb': 'Undersiden av ViewCube samt nedre kanter og hjørner reagerer ikke lenger på peker eller klikk.',
+    'nn': 'Undersida av ViewCube samt nedre kantar og hjørne reagerer ikkje lenger på peikar eller klikk.',
+    'ro': 'Fața inferioară a ViewCube, împreună cu marginile și colțurile inferioare, nu mai răspunde la survol sau clicuri.',
+    'rw': 'Urutare rwo hasi rwa ViewCube hamwe n’imipaka n’imfuruka zacyo ryo hasi rudakomeza gusubiza kujugunywa kw’indanga cyangwa gukanda.',
+    'sq': 'Ana e poshtme e ViewCube, bashkë me skajet dhe qoshet e poshtme, nuk përgjigjet më shmangien e kursorit apo klikimet.',
+    'sr': 'Donja strana ViewCube-a zajedno sa donjim ivicama i uglovima više ne reaguje na prelazak kursorom ni na klikove.',
+    'sv': 'ViewCube-undersidan samt nedre kanter och hörn svarar inte längre på muspekare eller klick.',
+    'ta': 'ViewCube-இன் அடிப்பக்கம் மற்றும் அதன் கீழ் விளிம்புகளும் மூலைகளும் இப்போது சுட்டி நகர்வுக்கு அல்லது சொடுக்கலுக்கு விடையளிப்பதில்லை.',
+    'uk': 'Нижня грань ViewCube разом із нижніми ребрами та кутами більше не реагує на наведення чи клацання.',
+    'vi': 'Mặt dưới của ViewCube cùng các cạnh và góc dưới không còn phản hồi khi di chuột hay nhấp chuột.',
+  } },
   { version: '0.1.9-beta.25', date: '2026.10.16', note: {
     en: "The About PathBlender menu item works again and follows the app icon style",
     'zh': '「关于 PathBlender」菜单项恢复正常，并跟随应用图标样式。',
