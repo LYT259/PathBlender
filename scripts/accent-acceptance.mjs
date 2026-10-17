@@ -76,12 +76,16 @@ const EXPECT = {
   'blue|light': { accent: '#007aff', text: '#007aff', fg: '#ffffff', ring: '#006cdb' },
   'red|dark': { accent: '#911d23', text: '#e8606a', fg: '#ffffff', ring: '#e0616b' },
   'red|light': { accent: '#911d23', text: '#911d23', fg: '#ffffff', ring: '#b0242d' },
+  'steel|dark': { accent: '#355c7d', text: '#85aecb', fg: '#ffffff', ring: '#85aecb' },
+  'steel|light': { accent: '#355c7d', text: '#355c7d', fg: '#ffffff', ring: '#355c7d' },
+  'bronze|dark': { accent: '#b08d57', text: '#b08d57', fg: '#1c1c1e', ring: '#b08d57' },
+  'bronze|light': { accent: '#b08d57', text: '#82632f', fg: '#1f2124', ring: '#82632f' },
   'silver|dark': { accent: '#b5b8bb', text: '#b5b8bb', fg: '#1c1c1e', ring: '#c3c6c9' },
   'silver|light': { accent: '#b5b8bb', text: '#676c70', fg: '#1f2124', ring: '#7a8085' },
 };
 
 // ---- 1. Token matrix on the welcome screen (restart restore) -------------
-for (const accent of ['blue', 'red', 'silver']) {
+for (const accent of ['blue', 'red', 'steel', 'bronze', 'silver']) {
   for (const theme of ['dark', 'light']) {
     await loadWith({ accent: accent === 'blue' ? null : accent, theme });
     const key = `${accent}|${theme}`;
@@ -136,33 +140,38 @@ check('welcome primary text is dark on silver (never white)', silverFg === 'rgb(
 await loadWith({ accent: 'blue', theme: 'dark' });
 await page.getByRole('button', { name: 'Preferences' }).click();
 await page.waitForSelector('.preferences-panel');
-const group = page.getByRole('group', { name: 'Accent color' });
-check('picker lists Blue/Red/Silver', (await group.getByRole('radio', { name: 'Blue' }).count()) === 1
-  && (await group.getByRole('radio', { name: 'Red' }).count()) === 1
-  && (await group.getByRole('radio', { name: 'Silver' }).count()) === 1);
-await group.getByRole('radio', { name: 'Red' }).click();
+const group = page.getByRole('group', { name: 'Accent Color' });
+check('picker lists all five accents in order', JSON.stringify(
+  await group.locator('input[type=radio]').evaluateAll((els) => els.map((e) => e.value)),
+) === JSON.stringify(['blue', 'red', 'steel', 'bronze', 'silver']));
+check('Azure label carries the localized Default tag',
+  (await group.getByRole('radio', { name: /Azure/ }).locator('..').textContent()).includes('Default'));
+await group.getByRole('radio', { name: 'Steel Blue' }).click();
 const beforeSave = await page.evaluate(() => document.documentElement.dataset.accent);
-check('red radio only stages — html still blue', beforeSave === 'blue');
+check('Steel Blue radio only stages — html still blue', beforeSave === 'blue');
 const saveEnabled = await page.getByRole('button', { name: 'Save', exact: true }).isEnabled();
 check('accent alone enables Save', saveEnabled);
 await page.screenshot({ path: `${SHOTS}/accent-picker-staging.png` });
 await page.getByRole('button', { name: 'Save', exact: true }).click();
-await page.waitForFunction(() => document.documentElement.dataset.accent === 'red');
-check('Save applies data-accent=red and persists', await page.evaluate(() => localStorage.getItem('pb.accent')) === 'red');
+await page.waitForFunction(() => document.documentElement.dataset.accent === 'steel');
+check('Save applies data-accent=steel and persists', await page.evaluate(() => localStorage.getItem('pb.accent')) === 'steel');
 await page.screenshot({ path: `${SHOTS}/accent-picker-applied.png` });
-// Cancel discards: stage silver, cancel, still red.
-await group.getByRole('radio', { name: 'Silver' }).click();
+// Cancel discards: stage bronze, cancel, still steel. (The panel stays open
+// after Save — persist-in-place — so no reopen here.)
+await group.getByRole('radio', { name: 'Bronze' }).click();
 await page.getByRole('button', { name: 'Cancel', exact: true }).click();
 await page.waitForSelector('.preferences-panel', { state: 'detached' });
-check('Cancel drops the silver draft', (await page.evaluate(() => document.documentElement.dataset.accent)) === 'red'
-  && (await page.evaluate(() => localStorage.getItem('pb.accent'))) === 'red');
-// Keyboard: reopen, focus Blue, ArrowRight twice → Silver checked.
+check('Cancel drops the bronze draft', (await page.evaluate(() => document.documentElement.dataset.accent)) === 'steel'
+  && (await page.evaluate(() => localStorage.getItem('pb.accent'))) === 'steel');
+// Keyboard: reopen, focus Azure, ArrowRight walks crimson → steel.
 await page.getByRole('button', { name: 'Preferences' }).click();
 await page.waitForSelector('.preferences-panel');
-await page.getByRole('radio', { name: 'Blue' }).focus();
+await page.getByRole('radio', { name: /Azure/ }).focus();
 await page.keyboard.press('ArrowRight');
-const afterArrow = await page.getByRole('radio', { name: 'Red' }).isChecked();
+const afterArrow = await page.getByRole('radio', { name: 'Crimson' }).isChecked();
 check('keyboard ArrowRight moves the accent selection', afterArrow);
+await page.keyboard.press('ArrowRight');
+check('keyboard reaches Steel Blue', await page.getByRole('radio', { name: 'Steel Blue' }).isChecked());
 await page.keyboard.press('Escape');
 
 // ---- 5. Data colors do not follow: 2D heatmap pixel invariance ------------
@@ -273,13 +282,13 @@ const cubeBlue = await cubeShot('blue-hover');
 // Switch accent through the real settings flow while paused.
 await page.getByRole('button', { name: 'Preferences' }).click();
 await page.waitForSelector('.preferences-panel');
-await page.getByRole('group', { name: 'Accent color' }).getByRole('radio', { name: 'Red' }).click();
+await page.getByRole('group', { name: 'Accent Color' }).getByRole('radio', { name: 'Steel Blue' }).click();
 await page.getByRole('button', { name: 'Save', exact: true }).click();
-await page.waitForFunction(() => document.documentElement.dataset.accent === 'red');
+await page.waitForFunction(() => document.documentElement.dataset.accent === 'steel');
 await page.waitForTimeout(600); // retint effect + a draw frame
 await page.mouse.move(cubeBox.x + cubeBox.width / 2, cubeBox.y + cubeBox.height * 0.28);
 await page.waitForTimeout(400);
-const cubeRed = await cubeShot('red-hover');
+const cubeRed = await cubeShot('steel-hover');
 const camAfter = await page.evaluate(() => {
   const p = window.__pb3d;
   return { pos: Array.from(p.camera.position.toArray()), tgt: Array.from(p.controls.target.toArray()) };

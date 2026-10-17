@@ -188,6 +188,56 @@
   --viewcube-hover-feature: #b3242d;
   --viewcube-hover-label: #5c1216;
 }
+:root[data-accent='steel'] {
+  --accent: #355c7d;
+  --accent-fg: #ffffff;
+  --accent-text: #85aecb;
+  --accent-hover: #42709a;
+  --accent-pressed: #2d4f6e;
+  --accent-dim: rgba(53, 92, 125, 0.28);
+  --focus-ring: #85aecb;
+  --viewcube-hover-face: #22374a;
+  --viewcube-hover-feature: #85aecb;
+  --viewcube-hover-label: #d8e5ef;
+}
+[data-theme='light'][data-accent='steel'] {
+  --accent: #355c7d;
+  --accent-fg: #ffffff;
+  --accent-text: #355c7d;
+  --accent-hover: #2c4e6a;
+  --accent-pressed: #244156;
+  --accent-dim: rgba(53, 92, 125, 0.10);
+  --focus-ring: #355c7d;
+  --viewcube-hover-face: #d2dde6;
+  --viewcube-hover-feature: #355c7d;
+  --viewcube-hover-label: #1d3347;
+}
+:root[data-accent='bronze'] {
+  --accent: #b08d57;
+  /* Bronze fill is light in BOTH modes — dark text, like silver. */
+  --accent-fg: #1c1c1e;
+  --accent-text: #b08d57;
+  --accent-hover: #c0a06c;
+  --accent-pressed: #9a7a49;
+  --accent-dim: rgba(176, 141, 87, 0.22);
+  --focus-ring: #b08d57;
+  --viewcube-hover-face: #3f3423;
+  --viewcube-hover-feature: #b08d57;
+  --viewcube-hover-label: #ecdfc8;
+}
+[data-theme='light'][data-accent='bronze'] {
+  --accent: #b08d57;
+  --accent-fg: #1f2124;
+  /* Light-mode bronze text darkens well past the base chip (2.8:1 → 5.1:1). */
+  --accent-text: #82632f;
+  --accent-hover: #9d7c48;
+  --accent-pressed: #86683a;
+  --accent-dim: rgba(176, 141, 87, 0.14);
+  --focus-ring: #82632f;
+  --viewcube-hover-face: #ecdfc8;
+  --viewcube-hover-feature: #82632f;
+  --viewcube-hover-label: #4a3818;
+}
 :root[data-accent='silver'] {
   --accent: #b5b8bb;
   /* Silver fill is light in BOTH modes — dark text, never white-on-silver. */

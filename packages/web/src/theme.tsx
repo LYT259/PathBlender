@@ -28,15 +28,22 @@ import {
 import { broadcastPref, listenPrefs } from './pref-sync';
 
 export type ThemeMode = 'system' | 'dark' | 'light';
-export type AccentColor = 'blue' | 'red' | 'silver';
+export type AccentColor = 'blue' | 'red' | 'steel' | 'bronze' | 'silver';
 
 const STORAGE_KEY = 'pb.theme';
 const ACCENT_STORAGE_KEY = 'pb.accent';
 
+/** Picker order (2026-10-17 user spec): azure, crimson, steel blue, bronze,
+ *  silver gray — also the single source of valid stored values. */
+export const ACCENT_CHOICES: readonly AccentColor[] = ['blue', 'red', 'steel', 'bronze', 'silver'];
+
+function parseAccent(v: string | null): AccentColor {
+  return (ACCENT_CHOICES as readonly string[]).includes(v ?? '') ? (v as AccentColor) : 'blue';
+}
+
 function readStoredAccent(): AccentColor {
   try {
-    const v = localStorage.getItem(ACCENT_STORAGE_KEY);
-    return v === 'red' || v === 'silver' ? v : 'blue'; // missing/invalid → blue
+    return parseAccent(localStorage.getItem(ACCENT_STORAGE_KEY)); // missing/invalid → blue
   } catch {
     return 'blue'; // storage unavailable — session-only accent
   }
@@ -132,7 +139,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             /* session-only */
           }
         } else if (key === 'accent') {
-          const a: AccentColor = v === 'red' || v === 'silver' ? v : 'blue';
+          const a = parseAccent(v);
           setAccentState(a);
           writeStoredAccent(a);
         }

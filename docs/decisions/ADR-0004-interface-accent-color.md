@@ -72,3 +72,25 @@ change (breaks camera/playback continuity).
 - The silver light-mode text variant (`--accent-text: #676c70`) and the red
   dark-mode text variant (`#e8606a`) are derived, not brand-fixed; they
   stay marked as pending-user-confirmation values.
+
+## Revision (2026-10-17, later the same day): five accents, renamed display labels
+
+User-confirmed follow-up spec, applied on top of the shipped three-accent
+system (no reimplementation):
+
+- **Five options in a fixed order**: azure (`blue`, default — the original
+  system blue), crimson (`red`), steel blue (`steel`, new, #355c7d), bronze
+  (`bronze`, new, #b08d57), silver gray (`silver`). Display names are product
+  vocabulary (zh: 蔚蓝/绛红/钢蓝/古铜/银灰 — deliberately no 色 suffix); the
+  EN settings title is "Accent Color". Stored ids are unchanged, so the
+  rename never resets an existing choice.
+- The default (azure) carries a localized Default tag beside its name
+  (`accent.default`, reusing each locale's own robots.bumperDefault wording).
+- Steel/bronze follow the same role-split matrix with per-mode derived
+  values: steel dark text `#85aecb` (7.45:1) over the base `#355c7d` fill
+  (white text 7.05:1); bronze is light-in-both-modes like silver — dark
+  on-fill text (`#1c1c1e`/`#1f2124` ≈5.5–8.1:1), light-mode text darkened to
+  `#82632f` (5.06:1; base chip is 2.81:1 on light). All values pending user
+  confirmation, same as round one.
+- de/fr/pt-BR legitimately spell "Bronze" as in English — allow-listed in
+  the i18n residue gate (same rationale as fil's borrowed "path").

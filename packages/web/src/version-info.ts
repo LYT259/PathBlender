@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.29';
+export const APP_VERSION = '0.1.9-beta.30';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.30', date: '2026.10.17', note: {
+    'en': 'Five interface accent colors: azure, crimson, steel blue, bronze and silver gray (data colors unchanged)',
+    'zh': '五种界面强调色：蔚蓝、绛红、钢蓝、古铜与银灰（数据颜色不变）',
+    'zh-tw': '五種介面強調色：蔚藍、絳紅、鋼藍、古銅與銀灰（資料顏色不變）',
+    'cs': 'Pět barev zvýraznění rozhraní: azurová, karmínová, ocelová modř, bronzová a stříbrošedá (barvy dat se nemění)',
+    'nl': 'Vijf accentkleuren in de interface: azuurblauw, karmozijn, staalblauw, brons en zilvergrijs (gegevenskleuren ongewijzigd)',
+    'fr': 'Cinq couleurs d’accentuation : azur, cramoisi, bleu acier, bronze et gris argent (couleurs des données inchangées)',
+    'he': 'חמישה צבעי הדגשה בממשק: תכלת, ארגמן, כחול פלדה, ארד ואפור כסף (צבעי הנתונים אינם משתנים)',
+    'ja': '5 種類のアクセント色：アズール、クリムゾン、スチールブルー、ブロンズ、シルバーグレー（データの色は変更なし）',
+    'ko': '다섯 가지 강조 색상: 아쥬르, 크림슨, 스틸 블루, 브론즈, 실버 그레이(데이터 색상은 변경 없음)',
+    'pl': 'Pięć kolorów akcentu interfejsu:azurowy, karmazynowy, stalowy błękit, brąz i srebrnoszary (kolory danych bez zmian)',
+    'pt-br': 'Cinco cores de destaque na interface: azul-celeste, carmim, azul-aço, bronze e cinza-prateado (cores dos dados inalteradas)',
+    'es': 'Cinco colores de acento en la interfaz: azul celeste, carmesí, azul acero, bronce y gris plata (los colores de los datos no cambian)',
+    'tr': 'Beş arayüz vurgu rengi: gök mavisi, kızıl, çelik mavisi, bronz ve gümüş gri (veri renkleri değişmez)',
+    'ar': 'خمسة ألوان تمييز للواجهة: أزرق سماوي وقرمزي وأزرق فولاذي وبرونزي ورمادي فضي (ألوان البيانات دون تغيير)',
+    'az': 'Beş interfeys vurğu rəngi: səma mavisi, al qırmızısı, polad mavisi, bürünc və gümüşü boz (veri rəngləri dəyişmir)',
+    'bg': 'Пет акцентни цвята за интерфейса: небесносиньо, алено, стоманеносиньо, бронзово и сребристосиво (цветовете на данните не се променят)',
+    'bs': 'Pet boja isticanja sučelja: nebesko plava, grizna, čelično plava, brončana i srebrno siva (boje podataka nepromijenjene)',
+    'da': 'Fem accentfarver i brugerfladen: azurblå, karmoisinrød, stålblå, bronce og sølvgrå (datafarver uændret)',
+    'de': 'Fünf Akzentfarben der Benutzeroberfläche: Azurblau, Karmesin, Stahlblau, Bronze und Silbergrau (Datenfarben unverändert)',
+    'el': 'Πέντε χρώματα έμφασης της διεπαφής: αζούρ, βυσσινί, μπλε ατσάλι, μπρονζέ και ασημί γκρι (τα χρώματα των δεδομένων δεν αλλάζουν)',
+    'fil': 'Limang kulay ng diin sa interface: asul na langit, karmesi, asul na bakal, bronse, at pilak na abo (walang pagbabago sa kulay ng datos)',
+    'hi': 'इंटरफ़ेस के पाँच एक्सेंट रंग: आसमानी, क्रिमसन, स्टील ब्लू, कांस्य और रुपहला स्लेटी (डेटा रंग अपरिवर्तित)',
+    'hr': 'Pet boja isticanja sučelja: nebesko plava, grizna, čelično plava, brončana i srebrno siva (boje podataka nepromijenjene)',
+    'hu': 'Öt kiemelőszín a felületen: azúrkék, karmazsin, acélkék, bronz és ezüstszürke (adatszínek változatlanok)',
+    'hy': 'Ինտերֆեյսի հինգ շեշտային գույն՝ ազուր, մուգ կարմիր, պողպատե կապույտ, բրոնզ և արծաթամոխրագույն (տվյալների գույները չեն փոխվում)',
+    'id': 'Lima warna aksen antarmuka: biru langit, krimson, biru baja, perunggu, dan abu keperakan (warna data tidak berubah)',
+    'it': 'Cinque colori d’accento dell’interfaccia: azzurro, cremisi, blu acciaio, bronzo e grigio argento (colori dei dati invariati)',
+    'mk': 'Пет акцентни бои за интерфејсот: небесно сина, гримизна, челична сина, бронзена и сребрено сива (боите на податоците не се менуваат)',
+    'mr': 'इंटरफेसचे पाच अ‍ॅसेंट रंग: आसमनी, किरमिजी, स्टील ब्लू, ब्राँझ आणि सिल्व्हर ग्रे (डेटा रंग अपरिवर्तित)',
+    'ms': 'Lima warna aksen antara muka: biru langit, krimson, biru keluli, gangsa dan kelabu perak (warna data tidak berubah)',
+    'nb': 'Fem aksentfarger i grensesnittet: asurblå, karminrød, stålblå, bronse og sølvgrå (datafarger uendret)',
+    'nn': 'Fem aksentfargar i grensesnittet: asurblå, karminraud, stålblå, bronse og sølvgrå (datafargar uendra)',
+    'ro': 'Cinci culori de accent ale interfeței: azuriu, stacojiu, albastru oțel, bronz și gri argintiu (culorile datelor rămân neschimbate)',
+    'rw': 'Amabara atanu y’ikinyurwa mu isura: bururu bw’ijuru, umutuku werurire, bururu bw’icyuma, ibara rya buronze n’ifeda n’ikijuju (amabara y’ibyatanzwe ntabwo ahinduka)',
+    'sq': 'Pesë ngjyra theksimi të ndërfaqes: blu e qiellit, karmezin, blu çeliku, bronzi dhe gri argjendi (ngjyrat e të dhënave pandryshuara)',
+    'sr': 'Pet boja isticanja interfejsa: nebesko plava, grizna, čelično plava, bronzana i srebrno siva (boje podataka nepromenjene)',
+    'sv': 'Fem accentfärger i gränssnittet: azurblå, karmosinröd, stålblå, brons och silvergrå (datafärger oförändrade)',
+    'ta': 'இடைமுகத்தின் ஐந்து அடுத்த நிறங்கள்: வான் நீலம், கருஞ்சிவப்பு, எஃகு நீலம், வெங்கலம் மற்றும் வெள்ளி சாம்பல் (தரவு நிறங்கள் மாறாதது)',
+    'uk': 'Пʼять кольорів акценту інтерфейсу: лазуровий, багряний, сталевий синій, бронзовий і сріблясто-сірий (кольори даних не змінюються)',
+    'vi': 'Năm màu nhấn của giao diện: xanh da trời, đỏ thẫm, xanh thép, đồng và xám bạc (màu dữ liệu không đổi)',
+  } },
   { version: '0.1.9-beta.29', date: '2026.10.17', note: {
     'en': 'Interface accent color setting: brand red and silver join system blue (data colors unchanged)',
     'zh': '界面强调色设置：品牌红与银灰加入系统蓝（数据颜色不变）',
