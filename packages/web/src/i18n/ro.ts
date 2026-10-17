@@ -6,6 +6,7 @@ export const ro = {
   'sequence.afterPrev': 'După precedenta',
   'sequence.beforeNext': 'Înainte de următoarea',
   'sequence.seconds': 's',
+  'sequence.moreActions': 'încă {n}',
   'sequence.count': '{n} segmente',
   'sequence.delay': 'Întârziere de start',
   'sequence.wait': 'Așteptare',

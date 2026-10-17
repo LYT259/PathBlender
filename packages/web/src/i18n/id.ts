@@ -6,6 +6,7 @@ export const id = {
   'sequence.afterPrev': 'Setelah sebelumnya',
   'sequence.beforeNext': 'Sebelum berikutnya',
   'sequence.seconds': 'dtk',
+  'sequence.moreActions': '+{n} lagi',
   'sequence.count': '{n} segmen',
   'sequence.delay': 'Jeda awal',
   'sequence.wait': 'Tunggu',

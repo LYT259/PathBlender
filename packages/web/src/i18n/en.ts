@@ -322,6 +322,7 @@ export const en = {
   'sequence.afterPrev': 'After previous',
   'sequence.beforeNext': 'Before next',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} more',
   'sequence.count': '{n} segments',
   'sequence.delay': 'Start delay',
   'sequence.wait': 'Wait',

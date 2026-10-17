@@ -6,6 +6,7 @@ export const ms = {
   'sequence.afterPrev': 'Selepas sebelumnya',
   'sequence.beforeNext': 'Sebelum seterusnya',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} lagi',
   'sequence.count': '{n} segmen',
   'sequence.delay': 'Kelewatan mula',
   'sequence.wait': 'Tunggu',

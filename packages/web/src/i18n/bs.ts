@@ -6,6 +6,7 @@ export const bs = {
   'sequence.afterPrev': 'Nakon prethodne',
   'sequence.beforeNext': 'Prije sljedeće',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} više',
   'sequence.count': '{n} segmenta',
   'sequence.delay': 'Početno kašnjenje',
   'sequence.wait': 'Čekanje',
