@@ -21,6 +21,8 @@ export const enGbOverrides: Partial<Record<MessageKey, string>> = {
   'prefs.unit.cm': 'Centimetres (cm)',
   // Accent colour (-our)
   'prefs.accent': 'Accent colour',
+  // Grey (-rey, Apple/Microsoft en-GB convention)
+  'accent.silver': 'Silver Grey',
   // Colour-blind (-our)
   'prefs.colorblind': 'Colour-blind palette',
   // unrecognised (-ise)

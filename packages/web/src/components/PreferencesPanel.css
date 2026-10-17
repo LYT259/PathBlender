@@ -184,7 +184,10 @@
    and icon groups — checked outline + label weight, never color alone. The
    fill comes inline from the fixed base chip (AccentPicker), so the swatch
    keeps a border for the light silver plate on light backgrounds. */
-.preferences-accent-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* Five options read best as a 2-column grid; the Default mark sits inline
+   after the azure label (localized, part of the radio's accessible name). */
+.preferences-accent-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.preferences-accent-default { margin-inline-start: 6px; font-size: 10px; color: var(--fg-dim); }
 .preferences-accent-swatch { display: block; width: 100%; height: 40px; border: 1px solid var(--border); border-radius: 7px; }
 .preferences-theme-choice input:checked + .preferences-accent-swatch { outline: 2px solid var(--accent-text); outline-offset: 3px; }
 :where(html.kbd-nav) .preferences-theme-choice input:focus-visible + .preferences-accent-swatch { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
