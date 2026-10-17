@@ -6,6 +6,7 @@ export const bg = {
   'sequence.afterPrev': 'След предишната',
   'sequence.beforeNext': 'Пред следващата',
   'sequence.seconds': 'с',
+  'sequence.moreActions': 'Още {n}',
   'sequence.count': '{n} сегмента',
   'sequence.delay': 'Начално закъснение',
   'sequence.wait': 'Изчакване',

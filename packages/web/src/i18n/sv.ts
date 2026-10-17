@@ -6,6 +6,7 @@ export const sv = {
   'sequence.afterPrev': 'Efter föregående',
   'sequence.beforeNext': 'Före nästa',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} till',
   'sequence.count': '{n} segment',
   'sequence.delay': 'Startfördröjning',
   'sequence.wait': 'Vänta',

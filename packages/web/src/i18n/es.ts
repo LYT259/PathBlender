@@ -13,6 +13,7 @@ export const es: Record<MessageKey, string> = {
   'sequence.afterPrev': 'Tras la anterior',
   'sequence.beforeNext': 'Antes de la siguiente',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} más',
   'sequence.count': '{n} segmentos',
   'sequence.delay': 'Retraso inicial',
   'sequence.wait': 'Espera',

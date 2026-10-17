@@ -6,6 +6,7 @@ export const hi = {
   'sequence.afterPrev': 'पिछले के बाद',
   'sequence.beforeNext': 'अगले से पहले',
   'sequence.seconds': 'से',
+  'sequence.moreActions': '+{n} और',
   'sequence.count': '{n} खंड',
   'sequence.delay': 'शुरुआती विलंब',
   'sequence.wait': 'प्रतीक्षा',
