@@ -17,6 +17,8 @@ export const VIEWCUBE_APPEARANCE = {
   edgeStart: 64,
   edgeHalfWidth: 18,
   labelSize: 128,
+  // Reuse the existing light face color; the plain underside has no theme variant.
+  bottomColor: '#f3f6f9',
 } as const;
 
 export type CubeDirection = readonly [number, number, number];
@@ -73,7 +75,7 @@ export function viewcubeGlyphUp(face: number): CubeDirection {
 /** An edge paints two adjoining faces; a corner paints three. */
 export function viewcubeFaceRegion(face: number, direction: CubeDirection | null): FaceRegion {
   const frame = FACE_FRAMES[face];
-  if (!frame || !direction || dot(frame.n, direction) !== 1) return null;
+  if (!frame || !direction || direction[1] < 0 || dot(frame.n, direction) !== 1) return null;
   const u = dot(frame.u, direction);
   const v = dot(frame.v, direction);
   return { kind: u && v ? 'corner' : u || v ? 'edge' : 'face', u, v };
@@ -109,7 +111,9 @@ export function viewcubeFlyAzimuth(dir: readonly number[]): number {
  * faces. `u`/`v` are the hit's 0..1 texture coordinates. */
 export function viewcubeDirectionAt(face: number, u: number, v: number): CubeDirection | null {
   const frame = FACE_FRAMES[face];
-  if (!frame) return null;
+  // Bottom face, its four edges and four corners are display-only, including
+  // hits on their adjoining side faces. A null pick means no hover or fly-to.
+  if (!frame || frame.n[1] < 0) return null;
   const { textureSize: s, faceInset: inset, faceRadius: radius } = VIEWCUBE_APPEARANCE;
   const half = s / 2 - inset; // panel straight-edge extent (208 px)
   const arc = half - radius; // rounded-corner arc center (136 px)
@@ -130,11 +134,12 @@ export function viewcubeDirectionAt(face: number, u: number, v: number): CubeDir
     su = Math.sign(px);
     sv = Math.sign(py);
   }
-  return [
+  const direction: CubeDirection = [
     frame.n[0] + su * frame.u[0] + sv * frame.v[0],
     frame.n[1] + su * frame.u[1] + sv * frame.v[1],
     frame.n[2] + su * frame.u[2] + sv * frame.v[2],
   ];
+  return direction[1] < 0 ? null : direction;
 }
 
 type TokenReader = (name: string, fallback: string) => string;
@@ -142,10 +147,20 @@ type TokenReader = (name: string, fallback: string) => string;
 /** Only the selected region changes color; the neutral rim is never tinted. */
 export function drawViewcubeFace(
   g: CanvasRenderingContext2D, label: string, region: FaceRegion, token: TokenReader,
-  glyphTurn = 0,
+  face: number, glyphTurn = 0,
 ): void {
   const { textureSize: s, faceInset: inset, faceRadius, cornerRadius, edgeStart, edgeHalfWidth, labelSize } = VIEWCUBE_APPEARANCE;
   g.clearRect(0, 0, s, s);
+  const frame = FACE_FRAMES[face];
+  if (frame?.n[1] === -1) {
+    // A plain solid face: no label, inset panel, strips, pads or hover paint.
+    g.fillStyle = VIEWCUBE_APPEARANCE.bottomColor;
+    g.fillRect(0, 0, s, s);
+    return;
+  }
+  const isBottomFeature = (u: number, v: number) =>
+    !!frame && frame.n[1] + u * frame.u[1] + v * frame.v[1] < 0;
+  if (region && isBottomFeature(region.u, region.v)) region = null;
   g.fillStyle = token('--viewcube-rim', '#878b90');
   g.fillRect(0, 0, s, s);
   const faceHot = region?.kind === 'face';
@@ -159,8 +174,9 @@ export function drawViewcubeFace(
 
   // Each strip wraps over a real bevel. Rounded ends stop before the corner
   // pads instead of a short floating cylinder in the middle of the edge.
-  // Keep all twelve strips visible at rest, with a separate hover highlight.
+  // Only active edges have strips; omit the bottom edge on adjoining sides too.
   for (const [u, v] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+    if (isBottomFeature(u!, v!)) continue;
     const hot = region?.kind === 'edge' && region.u === u && region.v === v;
     g.fillStyle = hot
       ? token('--viewcube-hover-feature', '#549dde')
@@ -171,8 +187,9 @@ export function drawViewcubeFace(
     g.fill();
   }
   // Quarter-discs meet across three faces to make one flush rounded corner.
-  // The same eight corner regions are present at rest and when highlighted.
+  // Bottom corners are plain on all adjoining faces.
   for (const u of [-1, 1]) for (const v of [-1, 1]) {
+    if (isBottomFeature(u, v)) continue;
     const hot = region?.kind === 'corner' && region.u === u && region.v === v;
     g.fillStyle = token(hot ? '--viewcube-hover-feature' : '--viewcube-feature', hot ? '#549dde' : '#34383d');
     g.beginPath();
@@ -223,13 +240,14 @@ export function createViewcubeAppearance(labels: readonly string[], token: Token
   let hovered: CubeDirection | null = null;
   let hoverKey = '';
   const redraw = () => faces.forEach((face, i) => {
-    drawViewcubeFace(face.context, face.label, viewcubeFaceRegion(i, hovered), token, VIEWCUBE_GLYPH_TURN[i] ?? 0);
+    drawViewcubeFace(face.context, face.label, viewcubeFaceRegion(i, hovered), token, i, VIEWCUBE_GLYPH_TURN[i] ?? 0);
     face.texture.needsUpdate = true;
   });
   redraw();
   return {
     mesh: new THREE.Mesh(geometry, faces.map(face => face.material)),
     setHover(direction: CubeDirection | null) {
+      if (direction && direction[1] < 0) direction = null;
       const key = direction?.join(',') ?? '';
       if (key === hoverKey) return;
       hoverKey = key;

@@ -28,7 +28,7 @@ const px = (face: number, xFromCenter: number, yFromCenter: number) =>
 
 const norm = (d: readonly number[]) => d.join(',');
 
-/** All 26 pickable directions: 6 faces, 12 edges, 8 corners. */
+/** All geometric directions; the nine bottom features are display-only. */
 const ALL_26 = (() => {
   const dirs: string[] = [];
   for (const x of [-1, 0, 1]) for (const y of [-1, 0, 1]) for (const z of [-1, 0, 1]) {
@@ -36,6 +36,7 @@ const ALL_26 = (() => {
   }
   return dirs;
 })();
+const ACTIVE_17 = ALL_26.filter(key => Number(key.split(',')[1]) >= 0);
 
 describe('viewcube region classifier', () => {
   it('returns only canonical ±1/0 directions across a dense grid', () => {
@@ -44,15 +45,14 @@ describe('viewcube region classifier', () => {
       for (let x = -S / 2; x <= S / 2; x += 8) {
         for (let y = -S / 2; y <= S / 2; y += 8) {
           const dir = px(face, x, y);
-          expect(dir, `face ${face} at (${x},${y})`).not.toBeNull();
-          const key = norm(dir!);
-          expect(ALL_26).toContain(key);
+          if (!dir) continue;
+          const key = norm(dir);
+          expect(ACTIVE_17).toContain(key);
           seen.add(key);
         }
       }
     }
-    // Every one of the 26 is reachable from at least one face/point.
-    expect([...seen].sort()).toEqual([...ALL_26].sort());
+    expect([...seen].sort()).toEqual([...ACTIVE_17].sort());
   });
 
   it('treats the panel interior as the face and stops at the inset', () => {
@@ -61,7 +61,7 @@ describe('viewcube region classifier', () => {
     expect(px(4, HALF - 1, 0)).toEqual([0, 0, 1]);
     expect(px(4, HALF + 1, 0)).toEqual([1, 0, 1]); // right–front edge
     expect(px(4, 0, -(HALF - 1))).toEqual([0, 0, 1]);
-    expect(px(4, 0, -(HALF + 1))).toEqual([0, -1, 1]); // bottom–front
+    expect(px(4, 0, -(HALF + 1))).toBeNull(); // bottom–front is passive
   });
 
   it('keeps the strip pick zone on the nearest feature past the corner arc', () => {
@@ -73,16 +73,32 @@ describe('viewcube region classifier', () => {
     expect(px(4, HALF - 8, HALF - 8)).toEqual([1, 1, 1]);
     // Deep in two rim bands → corner; texture corners too.
     expect(px(4, HALF + 40, HALF + 40)).toEqual([1, 1, 1]);
-    expect(px(4, -S / 2, -S / 2)).toEqual([-1, -1, 1]);
-    expect(px(4, S / 2 - 1, -S / 2 + 1)).toEqual([1, -1, 1]);
+    expect(px(4, -S / 2, -S / 2)).toBeNull();
+    expect(px(4, S / 2 - 1, -S / 2 + 1)).toBeNull();
     // Mid-bevel points (outermost 24 px band) pick edges, not faces.
     expect(px(4, S / 2 - 1, 0)).toEqual([1, 0, 1]);
     expect(px(4, 0, S / 2 - 1)).toEqual([0, 1, 1]);
   });
 
-  it('rejects invalid faces only', () => {
+  it('rejects invalid faces', () => {
     expect(viewcubeDirectionAt(-1, 0.5, 0.5)).toBeNull();
     expect(viewcubeDirectionAt(6, 0.5, 0.5)).toBeNull();
+  });
+
+  it('rejects the entire underside and lower features from every adjoining side', () => {
+    for (let x = 0; x <= S; x += 8) for (let y = 0; y <= S; y += 8) {
+      expect(viewcubeDirectionAt(3, x / S, y / S)).toBeNull();
+    }
+    for (const face of [0, 1, 4, 5]) {
+      for (const x of [-S / 2, -HALF + 8, 0, HALF - 8, S / 2]) {
+        expect(px(face, x, -S / 2), `bottom rim on face ${face}`).toBeNull();
+      }
+      for (const x of [-HALF + 8, HALF - 8]) {
+        expect(px(face, x, -HALF + 8), `rounded lower corner on face ${face}`).toBeNull();
+      }
+      expect(px(face, 0, -HALF + 1)).toEqual(FACE_FRAMES[face]!.n);
+      expect(px(face, 0, HALF + 1)).not.toBeNull();
+    }
   });
 });
 
@@ -92,7 +108,7 @@ describe('picker → painter round trip', () => {
       const dir = key.split(',').map(Number) as [number, number, number];
       const axisFaces = dir.filter((v) => v !== 0).length; // 1 face, 2 edge, 3 corner
       const lit = [0, 1, 2, 3, 4, 5].filter((f) => viewcubeFaceRegion(f, dir));
-      expect(lit.length, key).toBe(axisFaces);
+      expect(lit.length, key).toBe(dir[1] < 0 ? 0 : axisFaces);
       for (const f of lit) {
         expect(viewcubeFaceRegion(f, dir)!.kind, key).toBe(
           axisFaces === 1 ? 'face' : axisFaces === 2 ? 'edge' : 'corner',
@@ -111,7 +127,8 @@ describe('picker → painter round trip', () => {
     for (let face = 0; face < 6; face++) {
       for (let x = -S / 2; x <= S / 2; x += 16) {
         for (let y = -S / 2; y <= S / 2; y += 16) {
-          const dir = px(face, x, y)!;
+          const dir = px(face, x, y);
+          if (!dir) continue;
           const n = faceNormals[face]!;
           const along = dir[0] * n[0] + dir[1] * n[1] + dir[2] * n[2];
           expect(along, `face ${face} at (${x},${y})`).toBe(1);
@@ -176,7 +193,7 @@ describe('classifier vs real raycast geometry', () => {
           if (dx < 150 && dy < 150) {
             // Well inside the panel: must classify as the plain face.
             const want = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]][hit.face.materialIndex]!;
-            expect(viewcubeDirectionAt(hit.face.materialIndex, hit.uv.x, hit.uv.y)).toEqual(want);
+            expect(viewcubeDirectionAt(hit.face.materialIndex, hit.uv.x, hit.uv.y)).toEqual(want[1]! < 0 ? null : want);
             checked++;
           } else if (dx >= DEEP || dy >= DEEP) {
             // Deep bevel band. The painted rim also runs over the flat face
@@ -189,7 +206,14 @@ describe('classifier vs real raycast geometry', () => {
               if (Math.abs(v) > 0.68) truth[a] = Math.sign(v);
             }
             const got = viewcubeDirectionAt(hit.face.materialIndex, hit.uv.x, hit.uv.y);
-            if (got) {
+            // The painted bottom rim begins before the physical bevel does.
+            // In this deep-band branch, a side hit below the panel inset
+            // belongs to a bottom corner even if its physical Y is shallow.
+            const lowerSideRim = FACE_FRAMES[hit.face.materialIndex]!.n[1] === 0
+              && hit.uv.y < VIEWCUBE_APPEARANCE.faceInset / S;
+            if (truth[1] < 0 || lowerSideRim) {
+              expect(got, `bottom bevel on face ${hit.face.materialIndex}`).toBeNull();
+            } else if (got) {
               for (let a = 0; a < 3; a++) {
                 if (truth[a] !== 0 && got[a] !== truth[a]) {
                   mism.push(`face=${hit.face.materialIndex} uv=(${hit.uv.x.toFixed(3)},${hit.uv.y.toFixed(3)}) got=${got.join(',')} truth=${truth.join(',')}`);
