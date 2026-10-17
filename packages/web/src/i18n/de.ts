@@ -6,6 +6,7 @@ export const de = {
   'sequence.afterPrev': 'Nach vorheriger',
   'sequence.beforeNext': 'Vor nächster',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} weitere',
   'sequence.count': '{n} Segmente',
   'sequence.delay': 'Startverzögerung',
   'sequence.wait': 'Warten',

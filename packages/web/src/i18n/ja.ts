@@ -18,6 +18,7 @@ export const ja: Record<MessageKey, string> = {
   'sequence.afterPrev': '前のルートから',
   'sequence.beforeNext': '次のルートまで',
   'sequence.seconds': '秒',
+  'sequence.moreActions': '他 {n} 件',
   'sequence.count': '{n} セグメント',
   'sequence.delay': '開始遅延',
   'sequence.wait': '待機',

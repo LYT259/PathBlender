@@ -22,6 +22,7 @@ export const he: Record<MessageKey, string> = {
   'sequence.afterPrev': 'אחרי הקודם',
   'sequence.beforeNext': 'לפני הבא',
   'sequence.seconds': 'ש׳',
+  'sequence.moreActions': 'עוד {n}',
   'sequence.count': '{n} מקטעים',
   'sequence.delay': 'עיכוב התחלה',
   'sequence.wait': 'המתנה',

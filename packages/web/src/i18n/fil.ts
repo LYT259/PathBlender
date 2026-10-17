@@ -6,6 +6,7 @@ export const fil = {
   'sequence.afterPrev': 'Pagkatapos ng nauna',
   'sequence.beforeNext': 'Bago ang susunod',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} pa',
   'sequence.count': '{n} na segment',
   'sequence.delay': 'Pagkaantala sa simula',
   'sequence.wait': 'Maghintay',

@@ -6,6 +6,7 @@ export const mr = {
   'sequence.afterPrev': 'आधीच्यानंतर',
   'sequence.beforeNext': 'पुढीलआधी',
   'sequence.seconds': 'से',
+  'sequence.moreActions': '+{n} अजून',
   'sequence.count': '{n} भाग',
   'sequence.delay': 'सुरुवातीचा विलंब',
   'sequence.wait': 'प्रतीक्षा',
