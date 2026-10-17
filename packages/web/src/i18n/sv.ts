@@ -308,7 +308,6 @@ export const sv = {
   'accent.silver': 'Silvergrå',
   'accent.steel': 'Stålblå',
   'accent.bronze': 'Brons',
-  'accent.default': 'Standard',
   'prefs.done': 'Klart',
   'editor.back': 'Tillbaka till fusion',
   'editor.reset': 'Återställ ändringar',

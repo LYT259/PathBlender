@@ -340,7 +340,6 @@ export const zh: Record<MessageKey, string> = {
   'accent.silver': '银灰',
   'accent.steel': '钢蓝',
   'accent.bronze': '古铜',
-  'accent.default': '默认',
   'prefs.done': '完成',
   'editor.back': '返回融合视图',
   'editor.reset': '撤销修改',

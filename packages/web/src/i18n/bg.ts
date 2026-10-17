@@ -308,7 +308,6 @@ export const bg = {
   'accent.silver': 'Сребристосиво',
   'accent.steel': 'Стоманеносиньо',
   'accent.bronze': 'Бронзово',
-  'accent.default': 'По подразбиране',
   'prefs.done': 'Готово',
   'editor.back': 'Обратно към сливането',
   'editor.reset': 'Върни промените',

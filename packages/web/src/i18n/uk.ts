@@ -310,7 +310,6 @@ export const uk = {
   'accent.silver': 'Сріблясто-сірий',
   'accent.steel': 'Сталевий синій',
   'accent.bronze': 'Бронзовий',
-  'accent.default': 'Типовий',
   'prefs.done': "Готово",
   'editor.back': "Назад до злиття",
   'editor.reset': "Скасувати зміни",

@@ -14,7 +14,8 @@
  *    alliance toggle / danger stay untouched;
  *  - the ViewCube (canvas-baked) repaints on a saved accent switch while
  *    playback is paused, without resetting the camera;
- *  - the settings picker stages (Save applies, Cancel discards);
+ *  - the settings picker stages (Save applies, Cancel discards) and shows
+ *    no extra Default mark next to the default option;
  *  - RTL + long strings keep the settings/welcome inside the viewport.
  *
  * Usage: npm run build -w @pathblender/web && npm run preview -w @pathblender/web
@@ -144,8 +145,6 @@ const group = page.getByRole('group', { name: 'Accent Color' });
 check('picker lists all five accents in order', JSON.stringify(
   await group.locator('input[type=radio]').evaluateAll((els) => els.map((e) => e.value)),
 ) === JSON.stringify(['blue', 'red', 'steel', 'bronze', 'silver']));
-check('Azure label carries the localized Default tag',
-  (await group.getByRole('radio', { name: /Azure/ }).locator('..').textContent()).includes('Default'));
 await group.getByRole('radio', { name: 'Steel Blue' }).click();
 const beforeSave = await page.evaluate(() => document.documentElement.dataset.accent);
 check('Steel Blue radio only stages — html still blue', beforeSave === 'blue');

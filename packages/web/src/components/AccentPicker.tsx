@@ -15,9 +15,8 @@ export const ACCENT_SWATCH: Record<AccentColor, string> = {
 
 /**
  * Controlled picker for the interface accent color (theme.tsx, 2026-10-17).
- * Five named swatch radios in the user-fixed order (ACCENT_CHOICES): azure,
- * crimson, steel blue, bronze, silver gray. The default (azure) carries a
- * localized "Default" mark next to its name. Selection shows through the
+ * Five named swatch radios in the user-fixed order (ACCENT_CHOICES): azure
+ * (the default), crimson, steel blue, bronze, silver gray. Selection shows through the
  * radio's checked outline (an explicit border, never color alone) and works
  * with keyboard and screen readers via the native radio group. The parent
  * stages drafts; Save applies and persists, Cancel discards. Independent
@@ -36,9 +35,7 @@ export function AccentPicker({ value, onChange }: {
       {ACCENT_CHOICES.map((choice) => <label key={choice} className="preferences-theme-choice">
         <input type="radio" name={`${id}-accent`} value={choice} checked={value === choice} onChange={() => onChange(choice)} />
         <span className="preferences-accent-swatch" aria-hidden="true" style={{ background: ACCENT_SWATCH[choice] }} />
-        <span>{t(`accent.${choice}`)}
-          {choice === 'blue' && <span className="preferences-accent-default">{t('accent.default')}</span>}
-        </span>
+        <span>{t(`accent.${choice}`)}</span>
       </label>)}
     </div>
   </fieldset>;

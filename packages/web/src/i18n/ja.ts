@@ -353,7 +353,6 @@ export const ja: Record<MessageKey, string> = {
   'accent.silver': 'シルバーグレー',
   'accent.steel': 'スチールブルー',
   'accent.bronze': 'ブロンズ',
-  'accent.default': 'デフォルト',
   'prefs.done': '完了',
   'editor.back': 'フュージョンに戻る',
   'editor.reset': '変更を破棄',

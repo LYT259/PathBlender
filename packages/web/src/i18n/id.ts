@@ -333,7 +333,6 @@ export const id = {
   'accent.silver': 'Abu keperakan',
   'accent.steel': 'Biru baja',
   'accent.bronze': 'Perunggu',
-  'accent.default': 'Bawaan',
   'prefs.done': 'Selesai',
   'editor.back': 'Kembali ke fusi',
   'editor.reset': 'Kembalikan perubahan',

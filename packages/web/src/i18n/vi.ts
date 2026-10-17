@@ -333,7 +333,6 @@ export const vi = {
   'accent.silver': 'Xám bạc',
   'accent.steel': 'Xanh thép',
   'accent.bronze': 'Đồng',
-  'accent.default': 'Mặc định',
   'prefs.done': 'Xong',
   'editor.back': 'Quay lại hợp nhất',
   'editor.reset': 'Hoàn nguyên thay đổi',

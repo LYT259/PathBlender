@@ -333,7 +333,6 @@ export const ar = {
   'accent.silver': 'رمادي فضي',
   'accent.steel': 'أزرق فولاذي',
   'accent.bronze': 'برونزي',
-  'accent.default': 'افتراضي',
   'prefs.done': 'تم',
   'editor.back': 'العودة إلى الدمج',
   'editor.reset': 'تراجع عن التغييرات',

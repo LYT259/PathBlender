@@ -308,7 +308,6 @@ export const hu = {
   'accent.silver': 'Ezüstszürke',
   'accent.steel': 'Acélkék',
   'accent.bronze': 'Bronz',
-  'accent.default': 'Alapértelmezett',
   'prefs.done': 'Kész',
   'editor.back': 'Vissza az egyesítéshez',
   'editor.reset': 'Változtatások visszavonása',

@@ -350,7 +350,6 @@ export const cs: Record<MessageKey, string> = {
   'accent.silver': 'Stříbrošedá',
   'accent.steel': 'Ocelová modř',
   'accent.bronze': 'Bronzová',
-  'accent.default': 'Výchozí',
   'prefs.done': 'Hotovo',
   'editor.back': 'Zpět na fúzi',
   'editor.reset': 'Vrátit změny',
