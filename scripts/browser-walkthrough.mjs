@@ -16,7 +16,8 @@
  * robot removal through the context menu → PathPlanner batch → session
  * save/restore round trip through a real file → bulk stress over every valid
  * sample → GIF export → service worker → 3D (model, painted robots, sky tint,
- * viewcube picks, damped orbit, tag counts per season, in-3D season switch) →
+ * viewcube picks, passive underside, damped orbit, tag counts per season,
+ * in-3D season switch) →
  * session restore on reload. Keyboard-only flows live in
  * scripts/keyboard-walkthrough.mjs; the two are complements, not duplicates.
  *
@@ -791,13 +792,18 @@ check('viewcube present', (await page.locator('.viewcube canvas').count()) === 1
 // (asserted against the pick hook — headless rAF is sparse, so wait for the
 // value instead of a fixed delay). The cube's own home button retired with
 // the toolbar recenter (PR #202): one control resets 2D fit and 3D camera,
-// and the 3D home is the ViewCube top–front edge, az 0 / polar π/4.
+// and the 3D home is the ViewCube top–front edge, az π / polar π/4 — the
+// 2026-10-16 blue-left flip moved home from +Z (az 0) to −Z, and this
+// script's az-0 expectation had rotted on the vine. Azimuth comparisons go
+// through a wrapped difference everywhere: fly-to normalizes each tween to
+// the short way round, so a settled azimuth can sit outside (−π, π].
 const atHome = async () => {
   const ok = await page.waitForFunction(
     () => {
       const c = window.__pb3d?.controls;
       if (!c) return false;
-      return Math.abs(c.getAzimuthalAngle()) < 0.05 && Math.abs(c.getPolarAngle() - Math.PI / 4) < 0.05;
+      const d = Math.atan2(Math.sin(c.getAzimuthalAngle() - Math.PI), Math.cos(c.getAzimuthalAngle() - Math.PI));
+      return Math.abs(d) < 0.05 && Math.abs(c.getPolarAngle() - Math.PI / 4) < 0.05;
     },
     undefined,
     { timeout: 12000, polling: 100 },
@@ -812,6 +818,113 @@ const atHome = async () => {
   return ok;
 };
 const vcBox = await page.locator('.viewcube canvas').boundingBox();
+// Live hover sampling: pointermove drives the same pick the product uses, so
+// cubeHover() reports each canvas fraction's direction (null = passive or
+// off-cube). Hard-coding pixel→region fractions is exactly what made the old
+// sweep flaky — the cube's projection follows the camera pose, so the grid
+// is classified at runtime instead.
+const hoverAt = async (fx, fy) => {
+  await page.mouse.move(vcBox.x + vcBox.width * fx, vcBox.y + vcBox.height * fy);
+  return page.evaluate(() => {
+    const d = window.__pb3d.cubeHover();
+    return d ? [d[0], d[1], d[2]] : null;
+  });
+};
+// Bounding-box ray entry in the cube's local frame, in page context, against
+// the same constants the cube renderer uses (38° fov, camera 3.6 units out,
+// 1.55 cube; cubeQuat() is the live local→camera rotation). Plain math on
+// purpose: the preview build bundles three.js, so the probe cannot import
+// it. A null-hover sample whose entry sits on a flat face region with the
+// second coordinate in [0.635, 0.680] — between the panel inset (0.630) and
+// the bevel start (0.685) — is provably ON the painted rim band of the real
+// mesh, not just inside the bounding box.
+const cubeRayEntry = (fx, fy) => page.evaluate(([x, y]) => {
+  const q = window.__pb3d.cubeQuat();
+  const rot = (v) => {
+    const [qx, qy, qz, qw] = [-q[0], -q[1], -q[2], q[3]];
+    const t = [2 * (qy * v[2] - qz * v[1]), 2 * (qz * v[0] - qx * v[2]), 2 * (qx * v[1] - qy * v[0])];
+    return [
+      v[0] + qw * t[0] + (qy * t[2] - qz * t[1]),
+      v[1] + qw * t[1] + (qz * t[0] - qx * t[2]),
+      v[2] + qw * t[2] + (qx * t[1] - qy * t[0]),
+    ];
+  };
+  const tan = Math.tan((19 * Math.PI) / 180);
+  const dir = rot([(x * 2 - 1) * tan, (1 - y * 2) * tan, -1]);
+  const origin = rot([0, 0, 3.6]);
+  const half = 1.55 / 2;
+  let tmin = 0, tmax = Infinity;
+  for (let a = 0; a < 3; a++) {
+    if (Math.abs(dir[a]) < 1e-9) {
+      if (Math.abs(origin[a]) > half) return null;
+    } else {
+      let t1 = (-half - origin[a]) / dir[a], t2 = (half - origin[a]) / dir[a];
+      if (t1 > t2) [t1, t2] = [t2, t1];
+      tmin = Math.max(tmin, t1);
+      tmax = Math.min(tmax, t2);
+      if (tmin > tmax) return null;
+    }
+  }
+  if (tmax <= tmin) return null;
+  return dir.map((d, a) => origin[a] + d * tmin);
+}, [fx, fy]);
+const onRimBand = (entry) => {
+  if (!entry) return false;
+  const sorted = entry.map((v) => Math.abs(v)).sort((a, b) => a - b);
+  return sorted[1] >= 0.635 && sorted[1] <= 0.68;
+};
+// Scan from the home pose (recentered first so the classification target is
+// deterministic). Active samples must never name a bottom feature; passive
+// samples must exist on the real rim band.
+await page.locator('.canvas-recenter').click();
+const homeBeforeScan = await atHome();
+check('viewcube scan starts from the home pose', homeBeforeScan);
+const activeSamples = [];
+const passiveSamples = [];
+if (homeBeforeScan) {
+  for (let fy = 0.1; fy <= 0.9; fy += 0.05) {
+    for (let fx = 0.08; fx <= 0.92; fx += 0.05) {
+      const dir = await hoverAt(fx, fy);
+      if (dir) activeSamples.push({ fx, fy, dir });
+      else if (onRimBand(await cubeRayEntry(fx, fy))) passiveSamples.push({ fx, fy });
+    }
+  }
+  // Fine pass over the lower canvas: the projected rim band is only ~1.5% of
+  // the canvas tall at the home pose — thin enough for the coarse grid to
+  // step over it entirely.
+  for (const fx of [0.3, 0.5, 0.7]) {
+    for (let fy = 0.82; fy <= 0.95; fy += 0.01) {
+      const dir = await hoverAt(fx, fy);
+      if (dir) activeSamples.push({ fx, fy, dir });
+      else if (onRimBand(await cubeRayEntry(fx, fy))) passiveSamples.push({ fx, fy });
+    }
+  }
+}
+check('viewcube never hovers a bottom feature', activeSamples.every((p) => p.dir[1] >= 0),
+  `active=${activeSamples.length} rim-passive=${passiveSamples.length}`);
+check('viewcube scan finds on-mesh passive rim points', passiveSamples.length >= 3,
+  `passive=${passiveSamples.length}`);
+// Moving from a lit region into the band must clear the highlight and the
+// pointer cursor — the state the pointermove → setHover(null) path leaves.
+if (activeSamples.length && passiveSamples.length) {
+  const near = passiveSamples.reduce((best, p) => {
+    const d = Math.min(...activeSamples.map((a) => Math.hypot(a.fx - p.fx, a.fy - p.fy)));
+    return !best || d < best.d ? { ...p, d } : best;
+  }, null);
+  const partner = activeSamples.reduce((best, a) => {
+    const d = Math.hypot(a.fx - near.fx, a.fy - near.fy);
+    return !best || d < best.d ? a : best;
+  }, null);
+  const lit = await hoverAt(partner.fx, partner.fy);
+  const litCursor = await page.evaluate(() => document.querySelector('.viewcube canvas').style.cursor);
+  const gone = await hoverAt(near.fx, near.fy);
+  const goneCursor = await page.evaluate(() => document.querySelector('.viewcube canvas').style.cursor);
+  check('hover clears when the pointer enters the passive rim',
+    !!lit && lit[1] >= 0 && gone === null && litCursor === 'pointer' && goneCursor === 'default',
+    `lit=${JSON.stringify(lit)} at (${partner.fx.toFixed(2)},${partner.fy.toFixed(2)}) → passive (${near.fx.toFixed(2)},${near.fy.toFixed(2)})`);
+} else {
+  check('hover clears when the pointer enters the passive rim', false, 'no scan samples');
+}
 const clickCube = async (fx, fy) => {
   await page.locator('.canvas-recenter').click();
   if (!(await atHome())) return null;
@@ -836,12 +949,17 @@ const clickCube = async (fx, fy) => {
       ([x, y, z]) => {
         const c = window.__pb3d.controls;
         const n = Math.hypot(x, y, z); // pick dirs are unnormalized sign vectors
-        const tAz = Math.atan2(x, z);
-        // Straight overhead / straight below are picks too, but the orbit
-        // clamps polar to [0.15, 2.6] rad — the app's own limit, so the
-        // expected viewpoint is the clamped one, not acos(y/n) itself.
-        const tPol = Math.min(2.6, Math.max(0.15, Math.acos(Math.max(-1, Math.min(1, y / n)))));
-        return Math.abs(c.getAzimuthalAngle() - tAz) < 0.1 && Math.abs(c.getPolarAngle() - tPol) < 0.1;
+        // Poles carry no horizontal component, so the shared azimuth rule
+        // pins them to the home azimuth (blue-left plan view) instead of a
+        // bare atan2(0, 0) = 0; everything else keeps its own atan2.
+        const tAz = Math.hypot(x, z) < 1e-9 ? Math.PI : Math.atan2(x, z);
+        // Straight overhead is a pick too, but the orbit clamps polar to
+        // [0.02, π−0.02] rad — the app's own limit (widened from the old
+        // [0.15, 2.6] so Top lands as a true plan view), so the expected
+        // viewpoint is the clamped one, not acos(y/n) itself.
+        const tPol = Math.min(Math.PI - 0.02, Math.max(0.02, Math.acos(Math.max(-1, Math.min(1, y / n)))));
+        const dAz = Math.atan2(Math.sin(c.getAzimuthalAngle() - tAz), Math.cos(c.getAzimuthalAngle() - tAz));
+        return Math.abs(dAz) < 0.1 && Math.abs(c.getPolarAngle() - tPol) < 0.1;
       },
       lp,
       { timeout: 6000, polling: 100 },
@@ -858,25 +976,123 @@ const clickCube = async (fx, fy) => {
   if (!reached) return null;
   return lp;
 };
-// Which pixel is a face / edge / corner depends on the camera pose the cube is
-// drawing, so no fraction can be hard-coded here (guessing that mapping is
-// exactly what made these three checks fail). The harness sweeps the cube
-// instead: every pick must tween the camera onto the direction that was
-// picked, and the sweep has to cover all three kinds of feature.
-const sweep = [[0.2, 0.2], [0.5, 0.2], [0.8, 0.2], [0.2, 0.5], [0.8, 0.5], [0.2, 0.8], [0.5, 0.8], [0.8, 0.8]];
-const picks = [];
-for (const [fx, fy] of sweep) picks.push(await clickCube(fx, fy));
-const kinds = picks.filter(Boolean).map((p) => p.filter((v) => Math.abs(v) > 0.4).length);
-check('every viewcube pick tweens the camera onto the picked direction',
-  picks.every(Boolean), JSON.stringify(picks));
-check('viewcube sweep covers face, edge and corner picks',
-  [1, 2, 3].every((k) => kinds.includes(k)), `features=${JSON.stringify(kinds)}`);
+// Click sweep over scan-classified ACTIVE points, one per feature kind plus
+// a mid-list spare: every pick must tween the camera onto the picked
+// direction, and the sweep must still cover face, edge and corner features.
+// The underside points are exercised by the dedicated passive checks below.
+{
+  const byKind = new Map();
+  for (const p of activeSamples) {
+    const k = p.dir.filter((v) => Math.abs(v) > 0.4).length;
+    if (!byKind.has(k)) byKind.set(k, []);
+    byKind.get(k).push(p);
+  }
+  const chosen = [];
+  for (const k of [1, 2, 3]) {
+    const list = byKind.get(k) ?? [];
+    if (list[0]) chosen.push(list[0]);
+    if (list.length > 4) chosen.push(list[Math.floor(list.length / 2)]);
+  }
+  const picks = [];
+  for (const p of chosen) picks.push(await clickCube(p.fx, p.fy));
+  const kinds = picks.filter(Boolean).map((p) => p.filter((v) => Math.abs(v) > 0.4).length);
+  check('every viewcube pick tweens the camera onto the picked direction',
+    picks.length > 0 && picks.every(Boolean), JSON.stringify(picks));
+  check('viewcube sweep covers face, edge and corner picks',
+    [1, 2, 3].every((k) => kinds.includes(k)), `features=${JSON.stringify(kinds)}`);
+}
+// The passive rim must ignore clicks entirely: no pick hook, no hover, no
+// pointer cursor, and no camera motion of any kind (neither a tween nor a
+// drag passthrough) — sampled across the band.
+{
+  const stride = Math.max(1, Math.floor(passiveSamples.length / 3));
+  const sample = passiveSamples.filter((_, i) => i % stride === 0).slice(0, 3);
+  let allQuiet = sample.length > 0;
+  const detail = [];
+  for (const p of sample) {
+    await page.locator('.canvas-recenter').click();
+    if (!(await atHome())) { allQuiet = false; detail.push('lost home'); break; }
+    await page.evaluate(() => { window.__pb3d.lastPick = undefined; });
+    const before = await page.evaluate(() => ({
+      az: window.__pb3d.controls.getAzimuthalAngle(),
+      pol: window.__pb3d.controls.getPolarAngle(),
+    }));
+    await page.mouse.move(vcBox.x + vcBox.width * p.fx, vcBox.y + vcBox.height * p.fy);
+    const hover = await page.evaluate(() => window.__pb3d.cubeHover());
+    const cursor = await page.evaluate(() => document.querySelector('.viewcube canvas').style.cursor);
+    await page.mouse.down();
+    await page.mouse.up();
+    await page.waitForTimeout(450); // a tween, were one started, would be well underway
+    const after = await page.evaluate(() => ({
+      az: window.__pb3d.controls.getAzimuthalAngle(),
+      pol: window.__pb3d.controls.getPolarAngle(),
+      pick: window.__pb3d.lastPick ?? null,
+    }));
+    const dAz = Math.atan2(Math.sin(after.az - before.az), Math.cos(after.az - before.az));
+    const quiet = hover === null && cursor === 'default' && after.pick === null
+      && Math.abs(dAz) < 0.01 && Math.abs(after.pol - before.pol) < 0.01;
+    allQuiet = allQuiet && quiet;
+    detail.push(`(${p.fx.toFixed(2)},${p.fy.toFixed(2)}):${quiet ? 'quiet' : JSON.stringify({ hover, cursor, pick: after.pick, dAz: dAz.toFixed(3), dPol: (after.pol - before.pol).toFixed(3) })}`);
+  }
+  check('passive rim ignores hover, click and camera', allQuiet, detail.join(' '));
+}
+// Underside appearance evidence: park the camera below the field — the only
+// pose that shows the bottom face — and capture the cube across theme and
+// locale flips. The pixel comparison (fixed plain color, no label, identical
+// across all three) runs outside this harness; the shots are the record.
+{
+  await page.locator('.canvas-recenter').click();
+  await atHome();
+  await page.evaluate(() => {
+    const s = window.__pb3d;
+    s.controls.dispatchEvent({ type: 'start' });
+    const t = s.controls.target;
+    const r = s.camera.position.distanceTo(t);
+    const v = s.camera.position.clone().set(0, -1, -0.02).normalize().multiplyScalar(r);
+    s.camera.position.copy(t).add(v);
+    s.controls.update();
+  });
+  await page.waitForTimeout(700);
+  await page.locator('.viewcube').screenshot({ path: `${SHOTS}/14c-viewcube-bottom-dark.png` });
+  await (await prefsGear()).click();
+  await page.waitForSelector('.prefs-modal');
+  await page.locator('.preferences-theme-choice input[value=light]').check();
+  await saveBtn.click();
+  await page.waitForTimeout(800);
+  await cancelBtn.click();
+  await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+  await page.waitForTimeout(300);
+  await page.locator('.viewcube').screenshot({ path: `${SHOTS}/14c-viewcube-bottom-light.png` });
+  await (await prefsGear()).click();
+  await page.waitForSelector('.prefs-modal');
+  await pickCombobox(langSelect, 'zh');
+  await saveBtn.click();
+  await page.waitForTimeout(800);
+  await cancelBtn.click();
+  await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+  await page.waitForTimeout(300);
+  await page.locator('.viewcube').screenshot({ path: `${SHOTS}/14c-viewcube-bottom-light-zh.png` });
+  await (await prefsGear()).click();
+  await page.waitForSelector('.prefs-modal');
+  await pickCombobox(langSelect, 'en');
+  await page.locator('.preferences-theme-choice input[value=dark]').check();
+  await saveBtn.click();
+  await page.waitForTimeout(500);
+  await cancelBtn.click();
+  await page.waitForSelector('.prefs-modal', { state: 'detached', timeout: 5000 });
+  await page.waitForTimeout(200);
+  check('underside captured across theme and locale (pixel-checked offline)', true);
+}
 
 // Deliberate race (found by this sweep on 2026-10-06): a ViewCube click
 // tweens the camera for 300 ms, and a Fit pressed inside that window used to
 // be overwritten by the still-running tween — the camera stayed on the face
 // that was picked. Press Fit 50 ms after a pick and require it to win.
 {
+  // Recenter first: the underside block above parks the camera below the
+  // field, and the race needs an ACTIVE pick to put a tween in flight.
+  await page.locator('.canvas-recenter').click();
+  await atHome();
   const before = await page.evaluate(() => ({ az: window.__pb3d.controls.getAzimuthalAngle(), pol: window.__pb3d.controls.getPolarAngle() }));
   await page.mouse.move(vcBox.x + vcBox.width * 0.5, vcBox.y + vcBox.height * 0.2);
   await page.mouse.down();
