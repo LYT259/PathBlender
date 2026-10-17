@@ -6,6 +6,7 @@ export const sq = {
   'sequence.afterPrev': 'Pas të mëparshmes',
   'sequence.beforeNext': 'Para të ardhmes',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} të tjera',
   'sequence.count': '{n} segmente',
   'sequence.delay': 'Vonesë fillimi',
   'sequence.wait': 'Pritje',

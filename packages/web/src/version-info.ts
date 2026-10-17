@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.27';
+export const APP_VERSION = '0.1.9-beta.28';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,7 +40,7 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
-  { version: '0.1.9-beta.27', date: '2026.10.17', note: {
+  { version: '0.1.9-beta.28', date: '2026.10.17', note: {
     'en': 'Paths no longer turn gray after switching to the red side',
     'zh': '切换到红方后，路径不再变成灰色。',
     'zh-tw': '切換到紅方後，路徑不再變成灰色。',
@@ -81,6 +81,48 @@ export const VERSION_NOTES: VersionNote[] = [
     'ta': 'சிவப்பு பக்கத்திற்கு மாறிய பிறகு பாதைகள் இனி சாம்பல் நிறமாக மாறுவதில்லை.',
     'uk': 'Після переходу на червону сторону шляхи більше не сіріють.',
     'vi': 'Các đường đi không còn chuyển sang màu xám sau khi chuyển sang phía đỏ.',
+  } },
+  { version: '0.1.9-beta.27', date: '2026.10.17', note: {
+    en: 'The 3D view shows every visible robot on fixed-size plates with its current actions and remaining seconds',
+    'zh': '3D 视图以固定字号信息牌显示每台可见机器人的当前动作与剩余秒数。',
+    'zh-tw': '3D 檢視以固定字號資訊牌顯示每台可見機器人的目前動作與剩餘秒數。',
+    cs: '3D zobrazení ukazuje každého viditelného robota na pevně velkých štítcích s aktuálními akcemi a zbývajícími sekundami.',
+    nl: 'De 3D-weergave toont elke zichtbare robot op vaste informatiekaartjes met huidige acties en resterende seconden.',
+    fr: 'La vue 3D affiche chaque robot visible sur des plaques à taille fixe avec ses actions en cours et les secondes restantes.',
+    he: 'תצוגת ה־3D מציגה כל רובוט נראה על לוחיות בגודל קבוע עם הפעולות הנוכחיות והשניות שנותרו.',
+    ja: '3D 表示では、見えている各ロボットに固定サイズの情報プレートで現在のアクションと残り秒数を表示します。',
+    ko: '3D 보기에서 보이는 모든 로봇에 고정 크기 정보판으로 현재 동작과 남은 초를 표시합니다.',
+    pl: 'Widok 3D pokazuje każdy widoczny robot na stałej wielkości tabliczkach z bieżącymi akcjami i pozostałymi sekundami.',
+    'pt-br': 'A vista 3D mostra cada robô visível em placas de tamanho fixo com as ações atuais e os segundos restantes.',
+    es: 'La vista 3D muestra cada robot visible en placas de tamaño fijo con sus acciones actuales y los segundos restantes.',
+    tr: '3D görünüm, görünen her robotu güncel eylemleri ve kalan saniyeleriyle sabit boyutlu bilgi levhalarında gösterir.',
+    ar: 'تُظهر لوحة الرؤية ثلاثية الأبعاد كل روبوت مرئي على لوحات معلومات ثابتة الحجم مع إجراءاته الحالية والثواني المتبقية.',
+    az: '3D görüş görünən hər robotu sabit ölçülü informational lövhələrdə cari hərəkətləri və qalan saniyələri ilə göstərir.',
+    bg: '3D изгледът показва всеки видим робот върху плочи с фиксиран размер с текущите действия и оставащите секунди.',
+    bs: '3D prikaz prikazuje svaki vidljivi robot na pločama fiksne veličine s trenutnim akcijama i preostalim sekundama.',
+    da: '3D-visningen viser enhver synlig robot på faste infoplader med aktuelle handlinger og resterende sekunder.',
+    de: 'Die 3D-Ansicht zeigt jeden sichtbaren Roboter auf fix großen Infotafeln mit aktuellen Aktionen und verbleibenden Sekunden.',
+    el: 'Η προβολή 3D εμφανίζει κάθε ορατό ρομπότ σε πλάκες σταθερού μεγέθους με τις τρέχουσες ενέργειες και τα υπόλοιπα δευτερόλεπτα.',
+    fil: 'Ipinapakita ng 3D view ang bawat nakikitang robot sa fixed-size na plate na may kasalukuyang aksyon at natitirang segundo.',
+    hi: '3D दृश्य हर दिखने वाले रोबोट को निश्चित आकार की सूचना पट्टियों पर उसके वर्तमान क्रियाओं और शेष सेकंड के साथ दिखाता है।',
+    hr: '3D prikaz prikazuje svaki vidljivi robot na pločama fiksne veličine s trenutnim akcijama i preostalim sekundama.',
+    hu: 'A 3D nézet minden látható robotot rögzített méretű táblákon mutat az aktuális műveletekkel és a hátralévő másodpercekkel.',
+    hy: '3D տեսքը ցուցադրում է յուրաքանչյուր տեսանելի ռոբոտը հաստատուն չափի ինֆոթիթակների վրա՝ ընթացիկ գործողություններով և մնացած վայրկյաններով։',
+    id: 'Tampilan 3D menampilkan setiap robot yang terlihat pada pelat berukuran tetap dengan aksi saat ini dan detik tersisa.',
+    it: 'La vista 3D mostra ogni robot visibile su pannelli di dimensione fissa con le azioni correnti e i secondi rimanenti.',
+    mk: '3D-приказот покажува секој видлив робот на плочи со фиксна големина со тековните дејства и преостанатите секунди.',
+    mr: '3D दृश्य प्रत्येक दिसणाऱ्या रोबॉटला निश्चित आकाराच्या माहिती पट्टिकांवर त्याच्या सध्याच्या कृती आणि उर्वरित सेकंदांसह दर्शवते.',
+    ms: 'Paparan 3D menunjukkan setiap robot yang kelihatan pada plat saiz tetap dengan tindakan semasa dan baki saat.',
+    nb: '3D-visningen viser hver synlige robot på faste infoplater med gjeldende handlinger og gjenværende sekunder.',
+    nn: '3D-visninga viser kvar synleg robot på faste infoplater med gjeldande handlingar og gjenverande sekund.',
+    ro: 'Vizualizarea 3D arată fiecare robot vizibil pe plăcuțe de dimensiune fixă cu acțiunile curente și secundele rămase.',
+    rw: 'Igaragaza rya 3D rerekana buri robote iboneka ku mpapuro z’ingano ihoraho, zifite ibikorwa bikora ubu n’amasegonda asigaye',
+    sq: 'Pamja 3D shfaq çdo robot të dukshëm në pllaka me madhësi fikse me veprimet e tanishme dhe sekondat e mbetura.',
+    sr: '3D prikaz prikazuje svaki vidljivi robot na pločama fiksne veličine sa trenutnim akcijama i preostalim sekundama.',
+    sv: '3D-vyn visar varje synlig robot på fast stora informationsplattor med aktuella åtgärder och återstående sekunder.',
+    ta: '3D காட்சி காணக்கூடிய ஒவ்வொரு ரோபோவையும் நிலையான அளவிலான தகவல் பலகைகளில் அதன் தற்போதைய செயல்கள் மற்றும் மீதமுள்ள வினாடிகளுடன் காட்டுகிறது.',
+    uk: '3D-вид показує кожного видимого робота на табличках фіксованого розміру з поточними діями та секундами, що залишилися.',
+    vi: 'Chế độ xem 3D hiển thị mọi rô-bốt nhìn thấy được trên các bảng thông tin kích thước cố định với hành động hiện tại và số giây còn lại.',
   } },
   { version: '0.1.9-beta.26', date: '2026.10.17', note: {
     en: 'The ViewCube bottom face, its lower edges and corners no longer respond to hover or clicks',

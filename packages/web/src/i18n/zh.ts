@@ -8,6 +8,7 @@ export const zh: Record<MessageKey, string> = {
   'sequence.afterPrev': '距上一条',
   'sequence.beforeNext': '距下一条',
   'sequence.seconds': '秒',
+  'sequence.moreActions': '还有 {n} 项',
   'sequence.count': '{n} 段',
   'sequence.delay': '起步延迟',
   'sequence.wait': '等待',

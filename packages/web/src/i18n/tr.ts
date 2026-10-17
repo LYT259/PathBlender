@@ -12,6 +12,7 @@ export const tr: Record<MessageKey, string> = {
   'sequence.afterPrev': 'Öncekinden sonra',
   'sequence.beforeNext': 'Sonrakinden önce',
   'sequence.seconds': 'sn',
+  'sequence.moreActions': '+{n} daha',
   'sequence.count': '{n} segment',
   'sequence.delay': 'Başlangıç gecikmesi',
   'sequence.wait': 'Bekle',

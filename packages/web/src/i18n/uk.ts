@@ -6,6 +6,7 @@ export const uk = {
   'sequence.afterPrev': 'Після попередньої',
   'sequence.beforeNext': 'Перед наступною',
   'sequence.seconds': 'с',
+  'sequence.moreActions': 'Ще {n}',
   'sequence.count': 'Сегменти: {n}',
   'sequence.delay': 'Початкова затримка',
   'sequence.wait': 'Очікування',
