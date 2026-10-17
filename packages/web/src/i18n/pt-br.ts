@@ -351,7 +351,6 @@ export const ptBR: Record<MessageKey, string> = {
   'accent.silver': 'Cinza-prateado',
   'accent.steel': 'Azul-aço',
   'accent.bronze': 'Bronze',
-  'accent.default': 'Padrão',
   'prefs.done': 'Concluir',
   'editor.back': 'Voltar à fusão',
   'editor.reset': 'Reverter mudanças',

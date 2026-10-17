@@ -349,7 +349,6 @@ export const es: Record<MessageKey, string> = {
   'accent.silver': 'Gris plata',
   'accent.steel': 'Azul acero',
   'accent.bronze': 'Bronce',
-  'accent.default': 'Predeterminado',
   'prefs.done': 'Listo',
   'editor.back': 'Volver a la fusión',
   'editor.reset': 'Revertir cambios',

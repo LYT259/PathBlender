@@ -333,7 +333,6 @@ export const ta = {
   'accent.silver': 'வெள்ளி சாம்பல்',
   'accent.steel': 'எஃகு நீலம்',
   'accent.bronze': 'வெங்கலம்',
-  'accent.default': 'இயல்புநிலை',
   'prefs.done': 'முடிந்தது',
   'editor.back': 'இணைப்பிற்குத் திரும்பு',
   'editor.reset': 'மாற்றங்களை மீட்டமை',

@@ -333,7 +333,6 @@ export const ms = {
   'accent.silver': 'Kelabu perak',
   'accent.steel': 'Biru keluli',
   'accent.bronze': 'Gangsa',
-  'accent.default': 'Lalai',
   'prefs.done': 'Selesai',
   'editor.back': 'Kembali ke gabungan',
   'editor.reset': 'Balikkan perubahan',

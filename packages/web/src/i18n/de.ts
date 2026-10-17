@@ -333,7 +333,6 @@ export const de = {
   'accent.silver': 'Silbergrau',
   'accent.steel': 'Stahlblau',
   'accent.bronze': 'Bronze',
-  'accent.default': 'Standard',
   'prefs.done': 'Fertig',
   'editor.back': 'Zurück zur Fusion',
   'editor.reset': 'Änderungen zurücksetzen',

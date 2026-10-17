@@ -333,7 +333,6 @@ export const mr = {
   'accent.silver': 'सिल्व्हर ग्रे',
   'accent.steel': 'स्टील ब्लू',
   'accent.bronze': 'ब्राँझ',
-  'accent.default': 'डीफॉल्ट',
   'prefs.done': 'झाले',
   'editor.back': 'फ्युजनवर परत',
   'editor.reset': 'बदल पूर्ववत करा',

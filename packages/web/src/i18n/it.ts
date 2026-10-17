@@ -333,7 +333,6 @@ export const it = {
   'accent.silver': 'Grigio argento',
   'accent.steel': 'Blu acciaio',
   'accent.bronze': 'Bronzo',
-  'accent.default': 'Predefinito',
   'prefs.done': 'Fatto',
   'editor.back': 'Torna alla fusione',
   'editor.reset': 'Annulla modifiche',

@@ -333,7 +333,6 @@ export const fil = {
   'accent.silver': 'Pilak na abo',
   'accent.steel': 'Asul na bakal',
   'accent.bronze': 'Bronse',
-  'accent.default': 'Paunang-takda',
   'prefs.done': 'Tapos',
   'editor.back': 'Bumalik sa fusion',
   'editor.reset': 'Ibalik sa dati',

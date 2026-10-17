@@ -308,7 +308,6 @@ export const mk = {
   'accent.silver': 'Сребрено сива',
   'accent.steel': 'Челична сина',
   'accent.bronze': 'Бронзена',
-  'accent.default': 'Стандардно',
   'prefs.done': 'Готово',
   'editor.back': 'Назад до спојување',
   'editor.reset': 'Врати ги промените',

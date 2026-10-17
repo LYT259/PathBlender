@@ -306,7 +306,6 @@ export const en = {
   'accent.silver': 'Silver Gray',
   'accent.steel': 'Steel Blue',
   'accent.bronze': 'Bronze',
-  'accent.default': 'Default',
   'prefs.done': 'Done',
   'editor.back': 'Back to fusion',
   'editor.reset': 'Revert changes',

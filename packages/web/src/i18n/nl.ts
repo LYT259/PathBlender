@@ -350,7 +350,6 @@ export const nl: Record<MessageKey, string> = {
   'accent.silver': 'Zilvergrijs',
   'accent.steel': 'Staalblauw',
   'accent.bronze': 'Brons',
-  'accent.default': 'Standaard',
   'prefs.done': 'Gereed',
   'editor.back': 'Terug naar fusie',
   'editor.reset': 'Wijzigingen terugdraaien',

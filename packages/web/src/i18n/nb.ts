@@ -308,7 +308,6 @@ export const nb = {
   'accent.silver': 'Sølvgrå',
   'accent.steel': 'Stålblå',
   'accent.bronze': 'Bronse',
-  'accent.default': 'Standard',
   'prefs.done': "Ferdig",
   'editor.back': "Tilbake til sammenslåing",
   'editor.reset': "Angre endringer",

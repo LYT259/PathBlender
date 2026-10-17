@@ -345,7 +345,6 @@ export const zhTw: Record<MessageKey, string> = {
   'accent.silver': '銀灰',
   'accent.steel': '鋼藍',
   'accent.bronze': '古銅',
-  'accent.default': '預設',
   'prefs.done': '完成',
   'editor.back': '返回融合檢視',
   'editor.reset': '還原變更',
