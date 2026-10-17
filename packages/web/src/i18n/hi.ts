@@ -333,7 +333,6 @@ export const hi = {
   'accent.silver': 'रुपहला स्लेटी',
   'accent.steel': 'स्टील ब्लू',
   'accent.bronze': 'कांस्य',
-  'accent.default': 'डिफ़ॉल्ट',
   'prefs.done': 'हो गया',
   'editor.back': 'फ्यूज़न पर वापस',
   'editor.reset': 'बदलाव पूर्ववत करें',

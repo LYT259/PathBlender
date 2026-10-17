@@ -308,7 +308,6 @@ export const az = {
   'accent.silver': 'Gümüşü boz',
   'accent.steel': 'Polad mavisi',
   'accent.bronze': 'Bürünc',
-  'accent.default': 'Standart',
   'prefs.done': 'Hazır',
   'editor.back': 'Birləşməyə qayıt',
   'editor.reset': 'Dəyişiklikləri geri al',

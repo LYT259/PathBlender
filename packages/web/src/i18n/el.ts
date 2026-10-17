@@ -308,7 +308,6 @@ export const el = {
   'accent.silver': 'Ασημί γκρι',
   'accent.steel': 'Μπλε ατσάλι',
   'accent.bronze': 'Μπρονζέ',
-  'accent.default': 'Προεπιλογή',
   'prefs.done': 'Έγινε',
   'editor.back': 'Επιστροφή στη συγχώνευση',
   'editor.reset': 'Επαναφορά αλλαγών',

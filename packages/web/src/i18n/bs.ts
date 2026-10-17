@@ -308,7 +308,6 @@ export const bs = {
   'accent.silver': 'Srebrno siva',
   'accent.steel': 'Čelično plava',
   'accent.bronze': 'Brončana',
-  'accent.default': 'Zadano',
   'prefs.done': "Gotovo",
   'editor.back': "Nazad na fuziju",
   'editor.reset': "Poništi izmjene",

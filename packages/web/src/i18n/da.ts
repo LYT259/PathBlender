@@ -308,7 +308,6 @@ export const da = {
   'accent.silver': 'Sølvgrå',
   'accent.steel': 'Stålblå',
   'accent.bronze': 'Bronce',
-  'accent.default': 'Standard',
   'prefs.done': "Færdig",
   'editor.back': "Tilbage til fusion",
   'editor.reset': "Fortryd ændringer",

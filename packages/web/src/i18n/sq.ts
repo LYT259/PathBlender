@@ -309,7 +309,6 @@ export const sq = {
   'accent.silver': 'Gri argjendi',
   'accent.steel': 'Blu çeliku',
   'accent.bronze': 'Bronzi',
-  'accent.default': 'I parazgjedhur',
   'prefs.done': 'U krye',
   'editor.back': 'Kthehuni te shkrirja',
   'editor.reset': 'Zhbëni ndryshimet',

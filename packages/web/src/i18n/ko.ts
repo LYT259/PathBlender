@@ -351,7 +351,6 @@ export const ko: Record<MessageKey, string> = {
   'accent.silver': '실버 그레이',
   'accent.steel': '스틸 블루',
   'accent.bronze': '브론즈',
-  'accent.default': '기본값',
   'prefs.done': '완료',
   'editor.back': '퓨전으로 돌아가기',
   'editor.reset': '변경 사항 되돌리기',

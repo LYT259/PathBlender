@@ -353,7 +353,6 @@ export const pl: Record<MessageKey, string> = {
   'accent.silver': 'Srebrnoszary',
   'accent.steel': 'Stalowy błękit',
   'accent.bronze': 'Brąz',
-  'accent.default': 'Domyślny',
   'prefs.done': 'Gotowe',
   'editor.back': 'Wróć do fuzji',
   'editor.reset': 'Cofnij zmiany',

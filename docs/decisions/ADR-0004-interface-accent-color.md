@@ -94,3 +94,10 @@ system (no reimplementation):
   confirmation, same as round one.
 - de/fr/pt-BR legitimately spell "Bronze" as in English — allow-listed in
   the i18n residue gate (same rationale as fil's borrowed "path").
+
+## Amendment (2026-10-17, final): Default text mark removed
+
+The user removed the localized Default tag that sat next to the azure
+option's name — azure stays the default (checked when nothing is stored),
+it just carries no extra label. The `accent.default` key was dropped from
+all 40 dictionaries and the acceptance probe no longer asserts the mark.

@@ -348,7 +348,6 @@ export const tr: Record<MessageKey, string> = {
   'accent.silver': 'Gümüş gri',
   'accent.steel': 'Çelik mavisi',
   'accent.bronze': 'Bronz',
-  'accent.default': 'Varsayılan',
   'prefs.done': 'Bitti',
   'editor.back': 'Füzyona dön',
   'editor.reset': 'Değişiklikleri geri al',

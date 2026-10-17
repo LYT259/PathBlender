@@ -308,7 +308,6 @@ export const rw = {
   'accent.silver': "Ifeza",
   'accent.steel': "Bururu bw’icyuma",
   'accent.bronze': "Buronze",
-  'accent.default': "Isanzwe",
   'prefs.done': "Byarangiye",
   'editor.back': "Subira mu guhuriza",
   'editor.reset': "Garura impinduka",

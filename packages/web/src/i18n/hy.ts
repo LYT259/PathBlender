@@ -309,7 +309,6 @@ export const hy = {
   'accent.silver': 'Արծաթամոխրագույն',
   'accent.steel': 'Պողպատե կապույտ',
   'accent.bronze': 'Բրոնզ',
-  'accent.default': 'Լռելյայն',
   'prefs.done': 'Պատրաստ',
   'editor.back': 'Վերադառնալ միաձուլմանը',
   'editor.reset': 'Հետարկել փոփոխությունները',

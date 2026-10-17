@@ -5,7 +5,9 @@
  * only drafts; Save applies, persists and (on desktop) broadcasts;
  * Cancel/Escape/close drop the draft; switching settings sections keeps it.
  * Accent stays independent from the theme mode staged right above it, and
- * existing stored ids survive the display-name change untouched.
+ * existing stored ids survive the display-name change untouched. Azure is
+ * the default option (checked when nothing is stored) — without any extra
+ * Default text mark (removed at the user's request, 2026-10-17).
  */
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -62,16 +64,6 @@ describe('accent picker presentation', () => {
     }
   });
 
-  it('marks only the default (Azure) with a localized Default tag', () => {
-    mountPanel();
-    const azureName = screen.getByRole('radio', { name: /Azure/ }).closest('label')!.textContent;
-    expect(azureName).toContain('Default');
-    for (const name of ['Crimson', 'Steel Blue', 'Bronze', 'Silver Gray']) {
-      const label = screen.getByRole('radio', { name }).closest('label')!.textContent;
-      expect(label).not.toContain('Default');
-    }
-  });
-
   it('carries the localized labels (Simplified Chinese)', () => {
     localStorage.setItem('pb.lang', 'zh');
     mountPanel();
@@ -79,7 +71,8 @@ describe('accent picker presentation', () => {
     for (const name of ['蔚蓝', '绛红', '钢蓝', '古铜', '银灰']) {
       expect(screen.getByRole('radio', { name: new RegExp(name) })).toBeInTheDocument();
     }
-    expect(screen.getByRole('radio', { name: /蔚蓝/ }).closest('label')!.textContent).toContain('默认');
+    // No extra mark next to the default option's name (user request).
+    expect(screen.getByRole('radio', { name: /蔚蓝/ }).closest('label')!.textContent).toBe('蔚蓝');
   });
 
   it('navigates the radio group with the keyboard through all five', async () => {

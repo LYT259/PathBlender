@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.30';
+export const APP_VERSION = '0.1.9-beta.31';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.31', date: '2026.10.17', note: {
+    'en': 'No Default label beside the default accent color',
+    'zh': '默认强调色旁不再显示「默认」字样',
+    'zh-tw': '預設強調色旁不再顯示「預設」字樣',
+    'cs': 'U výchozí barvy zvýraznění se už nezobrazuje slovo Výchozí',
+    'nl': 'Geen label Standaard meer naast de standaard accentkleur',
+    'fr': 'Plus de mention Par défaut à côté de la couleur d’accentuation par défaut',
+    'he': 'לא מוצג יותר סימון «ברירת מחדל» לצד צבע ההדגשה המוגדר כברירת מחדל',
+    'ja': 'デフォルトのアクセント色の横に「デフォルト」表示を廃止',
+    'ko': '기본 강조 색상 옆의 「기본값」 표시를 제거',
+    'pl': 'Bez etykiety Domyślny obok domyślnego koloru akcentu',
+    'pt-br': 'Sem o rótulo Padrão ao lado da cor de destaque padrão',
+    'es': 'Sin la etiqueta Predeterminado junto al color de acento predeterminado',
+    'tr': 'Varsayılan vurgu renginin yanında artık Varsayılan etiketi yok',
+    'ar': 'لم تعد عبارة «افتراضي» تظهر بجانب لون التمييز الافتراضي',
+    'az': 'Standart vurğu rənginin yanında artıq Standart yazısı yoxdur',
+    'bg': 'Без надпис По подразбиране до акцентния цвят по подразбиране',
+    'bs': 'Bez oznake Zadano uz zadana boju isticanja',
+    'da': 'Ikke længere teksten Standard ved siden af standardaccentfarven',
+    'de': 'Kein Hinweis Standard mehr neben der Standard-Akzentfarbe',
+    'el': 'Χωρίς την ένδειξη Προεπιλογή δίπλα στο προεπιλεγμένο χρώμα έμφασης',
+    'fil': 'Wala nang markang Default sa tabi ng default na kulay ng diin',
+    'hi': 'डिफ़ॉल्ट एक्सेंट रंग के किनारे अब डिफ़ॉल्ट लेबल नहीं',
+    'hr': 'Bez oznake Zadano uz zadanu boju isticanja',
+    'hu': 'Nincs többé Alapértelmezett címke az alapértelmezett kiemelőszín mellett',
+    'hy': 'Սկզբնական շեշտային գույնի կողքին այլևս «Լռելյայն» մակագրություն չկա',
+    'id': 'Tidak ada lagi label Default di samping warna aksen bawaan',
+    'it': 'Niente più etichetta Predefinito accanto al colore d’accento predefinito',
+    'mk': 'Без ознаката Стандардно до стандардната акцентна боја',
+    'mr': 'मूलभूत अ‍ॅसेंट रंगाच्या बाजूला आता डीफॉल्ट लेबल नाही',
+    'ms': 'Tiada lagi label Lalai di sebelah warna aksen lalai',
+    'nb': 'Ikke lenger Standard-merket ved siden av standard aksentfargen',
+    'nn': 'Ikkje lenger Standard-merket ved sida av standard aksentfargen',
+    'ro': 'Fără eticheta Implicit lângă culoarea de accent implicită',
+    'rw': 'Nta mwandiko «Isanzwe» ugaragara ku mbere y’ibara ry’ikinyurwa isanzwe',
+    'sq': 'Pa shënimin I parazgjedhur pranë ngjyrës së theksimit parazgjedhje',
+    'sr': 'Bez oznake Podrazumevano pored podrazumevane boje isticanja',
+    'sv': 'Ingen Standard-etikett bredvid standardaccentfärgen längre',
+    'ta': 'இயல்புநிலை அடுத்த நிறத்தின் அருகில் இனி இயல்புநிலை வார்த்தை இல்லை',
+    'uk': 'Без позначки Типово біля типового кольору акценту',
+    'vi': 'Không còn nhãn Mặc định bên cạnh màu nhấn mặc định',
+  } },
   { version: '0.1.9-beta.30', date: '2026.10.17', note: {
     'en': 'Five interface accent colors: azure, crimson, steel blue, bronze and silver gray (data colors unchanged)',
     'zh': '五种界面强调色：蔚蓝、绛红、钢蓝、古铜与银灰（数据颜色不变）',

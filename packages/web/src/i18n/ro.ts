@@ -309,7 +309,6 @@ export const ro = {
   'accent.silver': 'Gri argintiu',
   'accent.steel': 'Albastru oțel',
   'accent.bronze': 'Bronz',
-  'accent.default': 'Implicit',
   'prefs.done': 'Gata',
   'editor.back': 'Înapoi la fuziune',
   'editor.reset': 'Anulează modificările',

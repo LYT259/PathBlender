@@ -355,7 +355,6 @@ export const he: Record<MessageKey, string> = {
   'accent.silver': 'אפור כסף',
   'accent.steel': 'כחול פלדה',
   'accent.bronze': 'ארד',
-  'accent.default': 'ברירת מחדל',
   'prefs.done': 'סיום',
   'editor.back': 'חזרה למיזוג',
   'editor.reset': 'ביטול שינויים',
