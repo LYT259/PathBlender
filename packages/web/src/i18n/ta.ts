@@ -6,6 +6,7 @@ export const ta = {
   'sequence.afterPrev': 'முந்தியதற்குப் பிறகு',
   'sequence.beforeNext': 'அடுத்ததற்கு முன்',
   'sequence.seconds': 'வி',
+  'sequence.moreActions': '+{n} மேலும்',
   'sequence.count': '{n} பகுதிகள்',
   'sequence.delay': 'தொடக்க தாமதம்',
   'sequence.wait': 'காத்திருப்பு',

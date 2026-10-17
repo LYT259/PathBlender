@@ -6,6 +6,7 @@ export const hu = {
   'sequence.afterPrev': 'Az előző után',
   'sequence.beforeNext': 'A következő előtt',
   'sequence.seconds': 'mp',
+  'sequence.moreActions': 'még {n}',
   'sequence.count': '{n} szakasz',
   'sequence.delay': 'Kezdési késleltetés',
   'sequence.wait': 'Várakozás',

@@ -6,6 +6,7 @@ export const hy = {
   'sequence.afterPrev': 'Նախորդից հետո',
   'sequence.beforeNext': 'Հաջորդից առաջ',
   'sequence.seconds': 'վ',
+  'sequence.moreActions': 'Եւս {n}',
   'sequence.count': '{n} հատված',
   'sequence.delay': 'Մեկնարկի ուշացում',
   'sequence.wait': 'Սպասում',

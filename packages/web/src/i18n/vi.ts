@@ -6,6 +6,7 @@ export const vi = {
   'sequence.afterPrev': 'Sau tuyến trước',
   'sequence.beforeNext': 'Trước tuyến sau',
   'sequence.seconds': 's',
+  'sequence.moreActions': '+{n} nữa',
   'sequence.count': '{n} đoạn',
   'sequence.delay': 'Độ trễ bắt đầu',
   'sequence.wait': 'Chờ',

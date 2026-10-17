@@ -6,6 +6,7 @@ export const az = {
   'sequence.afterPrev': 'Əvvəlkidən sonra',
   'sequence.beforeNext': 'Növbətidən əvvəl',
   'sequence.seconds': 'san',
+  'sequence.moreActions': '+{n} daha',
   'sequence.count': '{n} seqment',
   'sequence.delay': 'Başlanğıc gecikməsi',
   'sequence.wait': 'Gözləmə',
