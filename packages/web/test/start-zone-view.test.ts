@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { makeSession, type SessionTrajectory, type Trajectory } from '@pathblender/core';
+import { makeSession, type FieldPackage, type SessionTrajectory, type Trajectory } from '@pathblender/core';
 import { applySequenceSegments } from '../src/auto-sequence-state';
 import { dimmedPathRobotIds, previewDimsPath } from '../src/start-zone-view';
+import { robotsForAlliance } from '../src/session-alliance';
 
 /** Straight drive from (x,y) over 2 s — only the FIRST sample faces the
  * zone verdict. */
@@ -56,6 +57,19 @@ describe('dimmedPathRobotIds', () => {
 
     const illegalFirst = applySequenceSegments(first, [{ id: 's1', routeId: 'b', waitBeforeS: 0 }]);
     expect(dimmedPathRobotIds([illegalFirst], zone)).toEqual(new Set([illegalFirst.trajectory.id]));
+  });
+
+  it('keeps the verdict frame-invariant under the alliance view (2026-10-17 regression)', () => {
+    // What App feeds the field canvas: slots pushed through the alliance
+    // derivation, so under red every sample is 180°-flipped.
+    const field = { lengthM: 10, widthM: 10 } as FieldPackage;
+    const legal = makeSession(routeAt('ok', 0.5, 0.5));
+    const illegal = makeSession(routeAt('bad', 8, 8));
+    for (const alliance of ['red', 'blue'] as const) {
+      const view = robotsForAlliance([legal, illegal], alliance, field);
+      expect(view[0]!.trajectory.alliance).toBe(alliance);
+      expect(dimmedPathRobotIds(view, zone, field)).toEqual(new Set(['bad']));
+    }
   });
 });
 

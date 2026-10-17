@@ -373,7 +373,9 @@ function AppBody() {
   // first-leg gate, applied to paths that are already on the field
   // (imported files, restored sessions). A route preview grays only while
   // the picker would gate it too (target arrangement empty), so the field
-  // never disagrees with the row being hovered.
+  // never disagrees with the row being hovered. `visible` is the alliance
+  // VIEW (red-frame under red), so the field goes along and the predicate
+  // flips red samples back to blue — one verdict for both views.
   const dimPathIds = useMemo(() => {
     if (previewSource) {
       const target = previewRobotId
@@ -383,7 +385,7 @@ function AppBody() {
         ? new Set([previewSource.trajectory.id])
         : new Set<string>();
     }
-    return dimmedPathRobotIds(visible, field.startZone);
+    return dimmedPathRobotIds(visible, field.startZone, field);
   }, [previewSource, previewRobotId, sourceRobots, selectedId, visible, field]);
   useEffect(() => { setPreviewRouteId(null); setPreviewRobotId(undefined); setDragPreview(null); }, [composerOpen, selectedId]);
   // One transport end for BOTH modes (user 2026-10-07): editing used to

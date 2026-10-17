@@ -14,7 +14,7 @@
 import type { Pose2d, Trajectory, TrajectorySample } from './types';
 import { sampleTrajectory, wrapAngle } from './math';
 import type { SessionTrajectory } from './session';
-import { startsInAllianceZone, type StartZoneRect } from './field';
+import { startsInAllianceZone, type FieldPackage, type StartZoneRect } from './field';
 
 export interface AutoSequenceSegment {
   id: string;
@@ -341,8 +341,9 @@ export function checkSequenceTiming(
 export function sessionStartsInZone(
   st: SessionTrajectory,
   zone: readonly StartZoneRect[] | undefined,
+  field?: Pick<FieldPackage, 'lengthM' | 'widthM'>,
 ): boolean {
   if (!zone) return true;
   const first = resolveSequence(st)?.[0]?.trajectory ?? st.trajectory;
-  return startsInAllianceZone(first, zone);
+  return startsInAllianceZone(first, zone, field);
 }

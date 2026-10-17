@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.26';
+export const APP_VERSION = '0.1.9-beta.27';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.27', date: '2026.10.17', note: {
+    'en': 'Paths no longer turn gray after switching to the red side',
+    'zh': '切换到红方后，路径不再变成灰色。',
+    'zh-tw': '切換到紅方後，路徑不再變成灰色。',
+    'cs': 'Po přepnutí na rudou stranu se cesty už nezbarvují do šeda.',
+    'nl': 'Paden worden niet langer grijs na het overschakelen naar de rode kant.',
+    'fr': 'Les trajets ne deviennent plus gris après être passé du côté rouge.',
+    'he': 'המסלולים כבר לא הופכים אפורים לאחר המעבר לצד האדום.',
+    'ja': 'レッド側に切り替えても、パスはグレーにならなくなりました。',
+    'ko': '레드 쪽으로 전환한 후에도 경로가 더 이상 회색으로 표시되지 않습니다.',
+    'pl': 'Po przełączeniu na czerwoną stronę ścieżki nie szarzeją już.',
+    'pt-br': 'Os caminhos não ficam mais cinzas depois de mudar para o lado vermelho.',
+    'es': 'Las rutas ya no se ven grises después de cambiar al lado rojo.',
+    'tr': 'Kızıl tarafa geçtikten sonra yollar artık griye dönmüyor.',
+    'ar': 'لم تعد المسارات تتحول إلى اللون الرمادي بعد التبديل إلى الجانب الأحمر.',
+    'az': 'Qırmızı tərəfə keçdikdən sonra yollar artıq boz rəngə dönmür.',
+    'bg': 'След превключване към червената страна пътищата вече не посивяват.',
+    'bs': 'Nakon prelaska na crvenu stranu putanje više ne sive.',
+    'da': 'Stier bliver ikke længere grå efter skift til den røde side.',
+    'de': 'Pfade werden nach dem Wechsel auf die rote Seite nicht mehr grau dargestellt.',
+    'el': 'Μετά την εναλλαγή στην κόκκινη πλευρά, οι διαδρομές δεν γίνονται πλέον γκρι.',
+    'fil': 'Hindi na nagiging abo ang mga landas pagkatapos lumipat sa pula na bahagi.',
+    'hi': 'लाल पक्ष पर जाने के बाद पथ अब धूसर नहीं होते।',
+    'hr': 'Nakon prelaska na crvenu stranu putanje više ne sive.',
+    'hu': 'A vörös oldalra váltás után az útvonalak már nem szürkülnek el.',
+    'hy': 'Կարմիր կողմ անցնելուց հետո ուղիներն այլևս չեն դառնում մոխրագույն։',
+    'id': 'Jalur tidak lagi berubah menjadi abu-abu setelah beralih ke sisi merah.',
+    'it': 'I percorsi non diventano più grigi dopo il passaggio al lato rosso.',
+    'mk': 'По префрлањето на црвената страна патеките веќе не посивуваат.',
+    'mr': 'लाल बाजूकडे स्विच केल्यानंतर मार्ग आता करडे होत नाहीत.',
+    'ms': 'Laluan tidak lagi berubah kepada kelabu selepas bertukar ke bahagian merah.',
+    'nb': 'Stier blir ikke lenger grå etter bytte til den røde siden.',
+    'nn': 'Stiar blir ikkje lenger grå etter byte til den raude sida.',
+    'ro': 'Traseele nu mai devin gri după trecerea la partea roșie.',
+    'rw': 'Inzira ntizihindura ikara nyuma yo kujya ku ruhande rw’umutuku.',
+    'sq': 'Shtigjet nuk bëhen më gri pas kalimit në anën e kuqe.',
+    'sr': 'Putanje više ne sive nakon prelaska na crvenu stranu.',
+    'sv': 'Stier blir inte längre grå efter byte till den röda sidan.',
+    'ta': 'சிவப்பு பக்கத்திற்கு மாறிய பிறகு பாதைகள் இனி சாம்பல் நிறமாக மாறுவதில்லை.',
+    'uk': 'Після переходу на червону сторону шляхи більше не сіріють.',
+    'vi': 'Các đường đi không còn chuyển sang màu xám sau khi chuyển sang phía đỏ.',
+  } },
   { version: '0.1.9-beta.26', date: '2026.10.17', note: {
     en: 'The ViewCube bottom face, its lower edges and corners no longer respond to hover or clicks',
     'zh': 'ViewCube 底面及下方的边和角不再响应悬停与点击。',
