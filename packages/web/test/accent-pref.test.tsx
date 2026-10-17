@@ -66,15 +66,15 @@ describe('accent preference storage', () => {
     expect(document.documentElement.dataset.accent).toBe('blue');
   });
 
-  it('restores red and silver from pb.accent', () => {
-    localStorage.setItem('pb.accent', 'silver');
-    mount();
-    expect(accentOf()).toBe('silver');
-    expect(document.documentElement.dataset.accent).toBe('silver');
-    localStorage.setItem('pb.accent', 'red');
-    cleanup();
-    mount();
-    expect(accentOf()).toBe('red');
+  it('restores every saved accent id from pb.accent', () => {
+    for (const id of ['red', 'steel', 'bronze', 'silver']) {
+      cleanup();
+      localStorage.clear();
+      localStorage.setItem('pb.accent', id);
+      mount();
+      expect(accentOf()).toBe(id);
+      expect(document.documentElement.dataset.accent).toBe(id);
+    }
   });
 
   it('falls back to blue on an invalid stored value', () => {

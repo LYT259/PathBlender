@@ -1,15 +1,17 @@
 /**
- * Accent-color picker in Preferences (2026-10-17): three named swatch radios
- * that STAGE like every shared setting — a click only drafts; Save applies,
- * persists and (on desktop) broadcasts; Cancel/Escape/close drop the draft;
- * switching settings sections keeps it. Accent stays independent from the
- * theme mode staged right above it.
+ * Accent-color picker in Preferences (2026-10-17, five options): five named
+ * swatch radios in the user-fixed order — Azure (default), Crimson, Steel
+ * Blue, Bronze, Silver Gray — that STAGE like every shared setting: a click
+ * only drafts; Save applies, persists and (on desktop) broadcasts;
+ * Cancel/Escape/close drop the draft; switching settings sections keeps it.
+ * Accent stays independent from the theme mode staged right above it, and
+ * existing stored ids survive the display-name change untouched.
  */
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { PreferencesPanel } from '../src/components/PreferencesPanel';
-import { ThemeProvider } from '../src/theme';
+import { ThemeProvider, ACCENT_CHOICES } from '../src/theme';
 import { AppIconProvider } from '../src/app-icon';
 import { UpdateChannelProvider } from '../src/update-channel';
 import { I18nProvider } from '../src/i18n';
@@ -28,10 +30,13 @@ function mountPanel() {
   );
 }
 
+/** All five radios by their localized accessible names (en). */
 const radios = () => ({
-  blue: screen.getByRole('radio', { name: 'Blue' }),
-  red: screen.getByRole('radio', { name: 'Red' }),
-  silver: screen.getByRole('radio', { name: 'Silver' }),
+  azure: screen.getByRole('radio', { name: /Azure/ }),
+  crimson: screen.getByRole('radio', { name: 'Crimson' }),
+  steel: screen.getByRole('radio', { name: 'Steel Blue' }),
+  bronze: screen.getByRole('radio', { name: 'Bronze' }),
+  silver: screen.getByRole('radio', { name: 'Silver Gray' }),
 });
 
 beforeEach(() => {
@@ -46,29 +51,47 @@ afterEach(() => {
 });
 
 describe('accent picker presentation', () => {
-  it('shows three named radios under Accent color with Blue checked by default', () => {
+  it('shows five named radios under Accent Color with Azure checked by default', () => {
     mountPanel();
-    const group = screen.getByRole('group', { name: 'Accent color' });
-    expect(within(group).getByRole('radio', { name: 'Blue' })).toBeChecked();
-    expect(within(group).getByRole('radio', { name: 'Red' })).not.toBeChecked();
-    expect(within(group).getByRole('radio', { name: 'Silver' })).not.toBeChecked();
+    const group = screen.getByRole('group', { name: 'Accent Color' });
+    const all = within(group).getAllByRole('radio');
+    expect(all.map((r) => (r as HTMLInputElement).value)).toEqual([...ACCENT_CHOICES]);
+    expect(within(group).getByRole('radio', { name: /Azure/ })).toBeChecked();
+    for (const name of ['Crimson', 'Steel Blue', 'Bronze', 'Silver Gray']) {
+      expect(within(group).getByRole('radio', { name })).not.toBeChecked();
+    }
   });
 
-  it('carries the localized labels', () => {
+  it('marks only the default (Azure) with a localized Default tag', () => {
+    mountPanel();
+    const azureName = screen.getByRole('radio', { name: /Azure/ }).closest('label')!.textContent;
+    expect(azureName).toContain('Default');
+    for (const name of ['Crimson', 'Steel Blue', 'Bronze', 'Silver Gray']) {
+      const label = screen.getByRole('radio', { name }).closest('label')!.textContent;
+      expect(label).not.toContain('Default');
+    }
+  });
+
+  it('carries the localized labels (Simplified Chinese)', () => {
     localStorage.setItem('pb.lang', 'zh');
     mountPanel();
     expect(screen.getByRole('group', { name: '强调色' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: '蓝色' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: '红色' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: '银灰色' })).toBeInTheDocument();
+    for (const name of ['蔚蓝', '绛红', '钢蓝', '古铜', '银灰']) {
+      expect(screen.getByRole('radio', { name: new RegExp(name) })).toBeInTheDocument();
+    }
+    expect(screen.getByRole('radio', { name: /蔚蓝/ }).closest('label')!.textContent).toContain('默认');
   });
 
-  it('navigates the radio group with the keyboard', async () => {
+  it('navigates the radio group with the keyboard through all five', async () => {
     const user = userEvent.setup();
     mountPanel();
-    radios().blue.focus();
+    radios().azure.focus();
     await user.keyboard('{ArrowRight}');
-    expect(radios().red).toBeChecked();
+    expect(radios().crimson).toBeChecked();
+    await user.keyboard('{ArrowRight}');
+    expect(radios().steel).toBeChecked();
+    await user.keyboard('{ArrowRight}');
+    expect(radios().bronze).toBeChecked();
     await user.keyboard('{ArrowRight}');
     expect(radios().silver).toBeChecked();
     // The draft is live in the control; nothing applied yet.
@@ -77,32 +100,32 @@ describe('accent picker presentation', () => {
 });
 
 describe('accent picker staging', () => {
-  it('drafts without applying; Save applies and persists', () => {
+  it('drafts without applying; Save applies and persists the new ids', () => {
     mountPanel();
-    const save = screen.getByRole('button', { name: 'Save' });
+    const save = screen.getByRole('button', { name: 'Save', exact: true });
     expect(save).toBeDisabled();
-    fireEvent.click(radios().red);
+    fireEvent.click(radios().steel);
     expect(save).toBeEnabled(); // accent alone enables Save
     expect(document.documentElement.dataset.accent).toBe('blue'); // still applied blue
     expect(localStorage.getItem('pb.accent')).toBeNull();
     fireEvent.click(save);
-    expect(document.documentElement.dataset.accent).toBe('red');
-    expect(localStorage.getItem('pb.accent')).toBe('red');
+    expect(document.documentElement.dataset.accent).toBe('steel');
+    expect(localStorage.getItem('pb.accent')).toBe('steel');
     expect(save).toBeDisabled(); // draft consumed
   });
 
   it('Cancel drops the draft without applying or persisting', () => {
     mountPanel();
-    fireEvent.click(radios().silver);
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(radios().bronze);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
     expect(document.documentElement.dataset.accent).toBe('blue');
     expect(localStorage.getItem('pb.accent')).toBeNull();
   });
 
   it('Escape closes without applying the draft', () => {
     mountPanel();
-    fireEvent.click(radios().red);
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Save' }), { key: 'Escape' });
+    fireEvent.click(radios().crimson);
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Save', exact: true }), { key: 'Escape' });
     expect(document.documentElement.dataset.accent).toBe('blue');
     expect(localStorage.getItem('pb.accent')).toBeNull();
   });
@@ -118,19 +141,24 @@ describe('accent picker staging', () => {
 
   it('saving an accent draft leaves the theme mode and its key untouched', () => {
     mountPanel();
-    fireEvent.click(radios().red);
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(localStorage.getItem('pb.accent')).toBe('red');
+    fireEvent.click(radios().bronze);
+    fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
+    expect(localStorage.getItem('pb.accent')).toBe('bronze');
     expect(localStorage.getItem('pb.theme')).toBeNull();
     // The theme radios above still read Follow system — the two axes never
     // steered each other.
     expect(screen.getByRole('radio', { name: 'Follow system' })).toBeChecked();
   });
 
-  it('restores a saved accent on the next mount', () => {
-    localStorage.setItem('pb.accent', 'silver');
-    mountPanel();
-    expect(radios().silver).toBeChecked();
-    expect(document.documentElement.dataset.accent).toBe('silver');
+  it('restores every saved accent id on the next mount — old ids kept their meaning through the rename', () => {
+    for (const id of ['blue', 'red', 'steel', 'bronze', 'silver']) {
+      cleanup();
+      localStorage.clear();
+      localStorage.setItem('pb.accent', id);
+      mountPanel();
+      const checked = document.querySelector<HTMLInputElement>('.preferences-accent-options input:checked');
+      expect(checked?.value).toBe(id);
+      expect(document.documentElement.dataset.accent).toBe(id);
+    }
   });
 });

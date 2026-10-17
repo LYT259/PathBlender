@@ -121,7 +121,7 @@ describe('i18n dictionaries', () => {
     'sequence.startGroupHub'],
     'da': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","robots.alliance","timeline.pause","about.version","robots.driveDifferential","robots.timing","prefs.channel.beta","sequence.start",
     'sequence.startGroupHub'],
-    'de': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","about.version","prefs.section.updates","prefs.channel.beta","sequence.start",
+    'de': ["accent.bronze", "vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","about.version","prefs.section.updates","prefs.channel.beta","sequence.start",
     'sequence.startGroupHub', 'sequence.startGroupTrench'],
     'el': ["prefs.channel.beta",
     'sequence.startGroupHub'],
@@ -129,7 +129,7 @@ describe('i18n dictionaries', () => {
     'sequence.startGroupHub'],
     'fil': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.file","menu.window","workspace.details","robots.collision","robots.timing","prefs.channel.stable","prefs.channel.beta",
     'sequence.startGroupHub'],
-    'fr': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","robots.title","robots.collision","robots.alliance","timeline.pause","about.version","prefs.unit.yd","prefs.channel.stable","sequence.count",
+    'fr': ["accent.bronze", "prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","robots.title","robots.collision","robots.alliance","timeline.pause","about.version","prefs.unit.yd","prefs.channel.stable","sequence.count",
     'sequence.startGroupHub', 'sequence.startGroupTrench',
     // French spells "monochrome" exactly like English (same Greek-derived
     // word in both languages) — accepted loan, not a missed translation.
@@ -162,7 +162,7 @@ describe('i18n dictionaries', () => {
     'sequence.startGroupHub'],
     'pl': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.stable","prefs.channel.beta","sequence.start",
     'sequence.startGroupHub'],
-    'pt-BR': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.channel.beta", "sequence.startGroupHub"],
+    'pt-BR': ["accent.bronze", "prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.channel.beta", "sequence.startGroupHub"],
     'ro': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.section.general","workspace.details","prefs.channel.beta","sequence.start","field.style.schematic",
     'sequence.startGroupHub'],
     'rw': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","canvas.heatmap","canvas.overlays","prefs.channel.beta","actions.heatmapOn","field.style.rendered","prefs.channel.stable",
