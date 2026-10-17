@@ -57,15 +57,17 @@ export const HEATMAP_HEIGHT_M = 0.003;
  * uses — merged into one indexed geometry so a robot costs a single draw
  * call. Quads render in sample order with depthWrite off, so overlapping
  * footprints blend darker exactly like the 2D accumulation. Alliance tint
- * comes from heatmapColor; the theme tokens are injected by the caller so
- * the mesh color can be refreshed when the theme flips.
+ * comes from heatmapColor over the dedicated alliance tokens
+ * (--heatmap-blue/--heatmap-red — data colors, independent of the UI
+ * accent); the theme tokens are injected by the caller so the mesh color
+ * can be refreshed when the theme flips.
  */
 export function createGroundHeatmap(
   robot: SessionTrajectory,
   cx: number,
   cy: number,
-  accent: string,
-  danger: string,
+  blue: string,
+  red: string,
 ) {
   const resolved = resolveSequence(robot);
   const segments = resolved
@@ -96,7 +98,7 @@ export function createGroundHeatmap(
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
   const material = new THREE.MeshBasicMaterial({
-    color: heatmapColor(robot.trajectory.alliance, accent, danger),
+    color: heatmapColor(robot.trajectory.alliance, blue, red),
     transparent: true,
     opacity: 0.06,
     depthWrite: false,

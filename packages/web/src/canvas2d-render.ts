@@ -208,7 +208,7 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
     ctx.globalAlpha = 0.06;
     for (const r of robots) {
       // Alliance tint: blue keeps the accent, red pairs with the theme red.
-      ctx.fillStyle = heatmapColor(r.trajectory.alliance, cssVar('--accent', '#0a84ff'), cssVar('--danger', '#ff453a'));
+      ctx.fillStyle = heatmapColor(r.trajectory.alliance, cssVar('--heatmap-blue', '#0a84ff'), cssVar('--heatmap-red', '#ff453a'));
       // Composed robots contribute every segment; legacy robots their one route.
       const segmentSamples = pathSegments(r);
       const stride = Math.max(1, Math.ceil(segmentSamples.length / 120));

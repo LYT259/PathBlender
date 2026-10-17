@@ -1,7 +1,7 @@
 import { SelectControl } from './SelectControl';
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useI18n, type LangChoice } from '../i18n';
-import { useTheme, type ThemeMode } from '../theme';
+import { useTheme, type ThemeMode, type AccentColor } from '../theme';
 import { useAppIcon, ICON_STYLE_ARTWORK, type IconAppearanceMode, type IconStyle } from '../app-icon';
 import { readColorblind, writeColorblind } from '../pref-sync';
 import {
@@ -29,6 +29,7 @@ import { Icon } from './Icon';
 import { LanguagePicker } from './LanguagePicker';
 import { MouseControlsDiagram } from './MouseControlsDiagram';
 import { IconAppearancePicker } from './IconAppearancePicker';
+import { AccentPicker } from './AccentPicker';
 import './PreferencesPanel.css';
 
 type Section = 'general' | 'controls' | 'updates' | 'about';
@@ -72,7 +73,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved, initialS
   autoCheckUpdates?: boolean;
 }) {
   const { lang, langChoice, setLang, t } = useI18n();
-  const { mode, setMode } = useTheme();
+  const { mode, setMode, accent, setAccent } = useTheme();
   const { mode: iconMode, style: iconStyle, systemDark, setMode: setIconMode, setStyle: setIconStyle } = useAppIcon();
   const { channel, setChannel } = useUpdateChannel();
   const [mouseControls, setMouseControls] = useMouseControls();
@@ -84,6 +85,9 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved, initialS
   const [section, setSection] = useState<Section>(initialSection ?? 'general');
   const [languageDraft, setLanguageDraft] = useState<LangChoice | null>(null);
   const [themeDraft, setThemeDraft] = useState<ThemeMode | null>(null);
+  // Accent stages like the theme mode: the swatch only drafts; Save
+  // persists + broadcasts (2026-10-17).
+  const [accentDraft, setAccentDraft] = useState<AccentColor | null>(null);
   // Colorblind stages like every other shared setting (user request
   // 2026-10-04): the checkbox only drafts; Save persists + broadcasts.
   const [savedColorblind, setSavedColorblind] = useState(readColorblind);
@@ -107,6 +111,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved, initialS
   const sections: Section[] = desktop ? ['general', 'controls', 'updates', 'about'] : ['general', 'controls', 'about'];
   const language = languageDraft ?? langChoice;
   const theme = themeDraft ?? mode;
+  const accentValue = accentDraft ?? accent;
   const icon = iconDraft ?? iconMode;
   const iconStyleValue = iconStyleDraft ?? iconStyle;
   const updateChannel = channelDraft ?? channel;
@@ -117,7 +122,8 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved, initialS
   const constrained = constrainedDraft ?? defaultConstrained;
   const pen = penDraft ?? penAsMouse;
   const colorblind = colorblindDraft ?? savedColorblind;
-  const dirty = language !== langChoice || theme !== mode || icon !== iconMode ||
+  const dirty = language !== langChoice || theme !== mode || accentValue !== accent ||
+    icon !== iconMode ||
     iconStyleValue !== iconStyle ||
     updateChannel !== channel || mouse !== mouseControls || unit !== lengthUnit ||
     reverse !== reverseScroll || constrained !== defaultConstrained || pen !== penAsMouse ||
@@ -197,6 +203,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved, initialS
   function save() {
     if (language !== langChoice) setLang(language);
     if (theme !== mode) setMode(theme);
+    if (accentValue !== accent) setAccent(accentValue);
     // Style first, then appearance: both state updates land in the same
     // commit, so the provider re-syncs the Dock tile once with the final
     // pair — no intermediate wrong-artwork flash between the two.
@@ -261,6 +268,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved, initialS
               </label>)}
             </div>
           </fieldset>
+          <AccentPicker value={accentValue} onChange={setAccentDraft} />
           {desktop && <IconAppearancePicker value={icon} onChange={setIconDraft}
             style={iconStyleValue} onStyleChange={setIconStyleDraft} />}
           <label className="preferences-setting preferences-checkbox">

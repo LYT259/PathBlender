@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.28';
+export const APP_VERSION = '0.1.9-beta.29';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.29', date: '2026.10.17', note: {
+    'en': 'Interface accent color setting: brand red and silver join system blue (data colors unchanged)',
+    'zh': '界面强调色设置：品牌红与银灰加入系统蓝（数据颜色不变）',
+    'zh-tw': '介面強調色設定：品牌紅與銀灰加入系統藍（資料顏色不變）',
+    'cs': 'Nastavení barvy zvýraznění: firemní červená a stříbrná se přidávají k systémové modré (barvy dat se nemění)',
+    'nl': 'Instelling voor accentkleur: merkrood en zilver komen naast systeemblauw (gegevenskleuren ongewijzigd)',
+    'fr': 'Couleur d’accentuation réglable : le rouge de marque et l’argent rejoignent le bleu système (couleurs des données inchangées)',
+    'he': 'הגדרת צבע הדגשה: אדום המותג וכסף מצטרפים לכחול המערכת (צבעי הנתונים אינם משתנים)',
+    'ja': 'アクセント色設定：ブランドの赤とシルバーをシステムブルーに追加（データの色は変更なし）',
+    'ko': '강조 색상 설정: 브랜드 레드와 실버가 시스템 블루에 합류(데이터 색상은 변경 없음)',
+    'pl': 'Ustawienie koloru akcentu: markowa czerwień i srebro dołączają do systemowej niebieskiej (kolory danych bez zmian)',
+    'pt-br': 'Configuração de cor de destaque: vermelho da marca e prata juntam-se ao azul do sistema (cores dos dados inalteradas)',
+    'es': 'Ajuste de color de acento: el rojo de marca y el plata se suman al azul del sistema (los colores de los datos no cambian)',
+    'tr': 'Vurgu rengi ayarı: marka kırmızısı ve gümüş, sistem mavisine katılıyor (veri renkleri değişmez)',
+    'ar': 'إعداد لون التمييز: أحمر العلامة والفضي ينضمان إلى الأزرق النظامي (ألوان البيانات دون تغيير)',
+    'az': 'Vurğu rəngi tənzimi: brend qırmızısı və gümüşü sistem mavisinə qoşulur (veri rəngləri dəyişmir)',
+    'bg': 'Настройка на акцентния цвят: фирменото червено и сребърното се присъединяват към системното синьо (цветовете на данните не се променят)',
+    'bs': 'Postavka boje isticanja: brend crvena i srebrna pridružuju se sistemskoj plavoj (boje podataka nepromijenjene)',
+    'da': 'Indstilling af accentfarve: mærkerød og sølv slutter sig til systemblå (datafarver uændret)',
+    'de': 'Einstellung der Akzentfarbe: Markenrot und Silber ergänzen das Systemblau (Datenfarben unverändert)',
+    'el': 'Ρύθμιση χρώματος έμφασης: το κόκκινο της μάρκας και το ασημί προστίθενται στο μπλε του συστήματος (τα χρώματα των δεδομένων δεν αλλάζουν)',
+    'fil': 'Setting ng kulay ng diin: brand red at pilak kasama ng system blue (walang pagbabago sa kulay ng datos)',
+    'hi': 'एक्सेंट रंग सेटिंग: ब्रांड लाल और चांदी सिस्टम नीले में शामिल (डेटा रंग अपरिवर्तित)',
+    'hr': 'Postavka boje isticanja: crvena brenda i srebrna pridružuju se sustavskoj plavoj (boje podataka nepromijenjene)',
+    'hu': 'Kiemelőszín-beállítás: márkapiros és ezüst a rendszer kékjéhez csatlakozik (adatszínek változatlanok)',
+    'hy': 'Շեշտային գույնի կարգավորում. ապրանքանիշի կարմիրն ու արծաթագույնը միանում են համակարգային կապույտին (տվյալների գույները չեն փոխվում)',
+    'id': 'Pengaturan warna aksen: merah khas merek dan perak bergabung dengan biru sistem (warna data tidak berubah)',
+    'it': 'Impostazione del colore d’accento: il rosso del marchio e l’argento si aggiungono al blu di sistema (colori dei dati invariati)',
+    'mk': 'Поставување на акцентната боја: брендираната црвена и сребрената се придружуваат на системската сина (боите на податоците не се менуваат)',
+    'mr': 'अ‍ॅसेंट रंग सेटिंग: ब्रँड लाल आणि चंदेरी सिस्टम निळ्यात सामील (डेटा रंग अपरिवर्तित)',
+    'ms': 'Tetapan warna aksen: merah jenama dan perak menyertai biru sistem (warna data tidak berubah)',
+    'nb': 'Innstilling for aksentfarge: merkerødt og sølv slutter seg til systemblått (datafarger uendret)',
+    'nn': 'Innstilling for aksentfarge: merkeraudt og sølv sluttar seg til systemblått (datafargar uendra)',
+    'ro': 'Setare a culorii de accent: roșul brandului și argintul se alătură albastrului de sistem (culorile datelor rămân neschimbate)',
+    'rw': 'Igenamiterere ry’ibara ry’ikinyurwa: umutuku w’ikirango n’ifeza byinjira mu bururu bw’sisitemu (amabara y’ibyatanzwe ntabwo ahinduka)',
+    'sq': 'Rregullimi i ngjyrës së theksimit: e kuqja e markës dhe e argjendta i bashkohen blusë së sistemit (ngjyrat e të dhënave pandryshuara)',
+    'sr': 'Postavka boje isticanja: brendirana crvena i srebrna pridružuju se sistemskoj plavoj (boje podataka nepromenjene)',
+    'sv': 'Inställning för accentfärg: märkesrött och silver ansluter till systemblått (datafärger oförändrade)',
+    'ta': 'ஆக்சென்ட் நிற அமைப்பு: பிராண்ட் சிவப்பும் வெள்ளியும் கணினி நீலத்துடன் இணைகின்றன (தரவு நிறங்கள் மாறாதது)',
+    'uk': 'Налаштування кольору акценту: фірмовий червоний і сріблястий додаються до системного синього (кольори даних не змінюються)',
+    'vi': 'Cài đặt màu nhấn: đỏ thương hiệu và bạc cùng chung với xanh hệ thống (màu dữ liệu không đổi)',
+  } },
   { version: '0.1.9-beta.28', date: '2026.10.17', note: {
     'en': 'Paths no longer turn gray after switching to the red side',
     'zh': '切换到红方后，路径不再变成灰色。',

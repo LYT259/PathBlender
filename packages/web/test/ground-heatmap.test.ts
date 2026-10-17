@@ -8,9 +8,36 @@ import { heatmapColor } from '../src/robot-identity';
 const robot = () => makeSession(parseGhostAuto(readFileSync(resolve(__dirname, '../../../samples/ghostauto/straight_run.ghostauto'), 'utf8'), 'straight'));
 
 describe('alliance heatmap tint', () => {
-  it('keeps blue on the accent and gives red the theme red', () => {
+  it('maps each alliance to the injected pair, with no accent input at all', () => {
+    // The signature is the decoupling contract (2026-10-17): there is no
+    // accent parameter to misuse — the caller feeds the dedicated alliance
+    // tokens, and the UI accent cannot reach this function.
     expect(heatmapColor('blue', '#0a84ff', '#ff453a')).toBe('#0a84ff');
     expect(heatmapColor('red', '#0a84ff', '#ff453a')).toBe('#ff453a');
+  });
+
+  it('backs the alliance pair with dedicated tokens, byte-identical to the accent-era colors', () => {
+    const css = readFileSync(resolve(__dirname, '../src/app.css'), 'utf8');
+    const darkBlock = css.slice(0, css.indexOf("[data-theme='light']"));
+    const lightBlock = css.slice(css.indexOf("[data-theme='light']"), css.indexOf('html, body'));
+    // Blue keeps its former --accent values; red keeps --danger's.
+    expect(darkBlock).toContain('--heatmap-blue: #0a84ff;');
+    expect(darkBlock).toContain('--heatmap-red: #ff453a;');
+    expect(lightBlock).toContain('--heatmap-blue: #007aff;');
+    expect(lightBlock).toContain('--heatmap-red: #ff3b30;');
+  });
+
+  it('keeps the heatmap tokens outside every accent variant block', () => {
+    const css = readFileSync(resolve(__dirname, '../src/app.css'), 'utf8');
+    const variants = css.slice(css.indexOf("accent color variants"));
+    expect(variants).toMatch(/\[data-accent='red'\]/);
+    expect(variants).toMatch(/\[data-accent='silver'\]/);
+    expect(variants).not.toContain('--heatmap-blue');
+    expect(variants).not.toContain('--heatmap-red');
+    // …while the accent system provably moves --accent itself, so the
+    // separation is real, not vacuous.
+    expect(variants).toContain('--accent: #911d23;');
+    expect(variants).toContain('--accent: #b5b8bb;');
   });
 });
 

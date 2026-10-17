@@ -19,6 +19,8 @@ export const enGbOverrides: Partial<Record<MessageKey, string>> = {
   // Metres / Centimetres (-metre)
   'prefs.unit.m': 'Metres (m)',
   'prefs.unit.cm': 'Centimetres (cm)',
+  // Accent colour (-our)
+  'prefs.accent': 'Accent colour',
   // Colour-blind (-our)
   'prefs.colorblind': 'Colour-blind palette',
   // unrecognised (-ise)
