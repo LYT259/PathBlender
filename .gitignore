@@ -66,3 +66,10 @@ scripts/.probe-*.mjs
 .zcodeignore
 # matches build dirs AND worktree symlinks (slash-less)
 packages/desktop/src-tauri/target
+
+# Private local agent coordination (never publish code, state or harness config).
+.agent-board
+.codex/
+.zcode/
+.dsh/
+.kimi-code/
