@@ -1,6 +1,12 @@
 import { forwardRef, useImperativeHandle, useRef, type CSSProperties } from 'react';
 import type { ActionGroup } from '@pathblender/core';
-import { placeLabel, rectsIntersect, type LayoutRect } from '../callout-layout';
+import type { LayoutRect } from '../callout-layout';
+import { ROBOT_LABEL_STYLE, robotLabelCssVars } from '../robot-label-style';
+import {
+  ROBOT_LABEL_MARGIN, anchorClearRect, placeRobotLabel, plateHeightCap,
+  type RobotLabelFrame, type RobotLabelMemory,
+} from '../robot-label-layout';
+export { leaderGeometry } from '../robot-label-leader';
 import './RobotLabels3D.css';
 
 /** Presentation contract: time and action boundaries belong to the shared core. */
@@ -35,78 +41,21 @@ interface Props {
 }
 
 /* Reviewable UI proposal — screen-fixed sizes, independent of camera zoom.
-   The field's camera never scales this DOM layer. */
-const PLATE_WIDTH = 184;
-const PLATE_MARGIN = 12;
-const PLATE_GAP = 10;
-/** Keep-clear square half-size around each anchor dot; clamped so a zoomed-in
- *  robot's plate lifts above its body instead of covering it. */
-const ANCHOR_MIN_CLEAR = 22;
-const ANCHOR_MAX_CLEAR = 260;
-/** A plate taller than this fraction of the viewport folds its last action
- *  rows behind a visible "+n" count (2026-10-17: extreme stacks must not run
- *  past the canvas, and must never lose actions or countdowns silently). */
-const PLATE_MAX_H_FRACTION = 0.45;
-const PLATE_MIN_MAX_H = 132;
+   The field's camera never scales this DOM layer. Placement rules, margins
+   and the folding threshold live in robot-label-layout.ts, shared with 2D. */
+const PLATE_WIDTH = ROBOT_LABEL_STYLE.maxWidth;
+const PLATE_MARGIN = ROBOT_LABEL_MARGIN;
 /** .robot-label-3d-action + .robot-label-3d-action margin-top. */
-const ROW_GAP = 6;
-/** Leader corridor padding: the 1.5px ink + 4.5px underlay plus breathing room. */
-const LEADER_PAD = 4;
+const ROW_GAP = ROBOT_LABEL_STYLE.rowGap;
 
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-
-interface PlacementMemory {
-  side: 1 | -1;
-  /** Plate offset from the anchor, reused while the ideal spot is contested. */
-  dx: number;
-  dy: number;
-}
-
-export interface LeaderGeometry {
-  d: string;
-  /** Obstacle corridors for plates placed after this one. */
-  segments: LayoutRect[];
-}
-
-function segmentRect(a: { x: number; y: number }, b: { x: number; y: number }): LayoutRect {
-  return {
-    x: Math.min(a.x, b.x) - LEADER_PAD,
-    y: Math.min(a.y, b.y) - LEADER_PAD,
-    w: Math.abs(a.x - b.x) + 2 * LEADER_PAD,
-    h: Math.abs(a.y - b.y) + 2 * LEADER_PAD,
-  };
-}
-
-/**
- * Anchor dot → plate edge. When the plate sits straight above or below the
- * anchor, the line docks into the plate's horizontal edge (a mostly vertical
- * stroke); otherwise it leaves the nearest vertical edge via a short elbow.
- * The dot always marks the actual projected footprint center.
- */
-export function leaderGeometry(anchor: { x: number; y: number }, rect: LayoutRect): LeaderGeometry {
-  if (anchor.x >= rect.x - 1 && anchor.x <= rect.x + rect.w + 1) {
-    const dockX = clamp(anchor.x, rect.x + 12, rect.x + rect.w - 12);
-    const edgeY = anchor.y > rect.y + rect.h / 2 ? rect.y + rect.h : rect.y;
-    return {
-      d: `M ${anchor.x} ${anchor.y} L ${dockX} ${edgeY}`,
-      segments: [segmentRect(anchor, { x: dockX, y: edgeY })],
-    };
-  }
-  const edgeX = anchor.x < rect.x + rect.w / 2 ? rect.x : rect.x + rect.w;
-  const edgeY = clamp(anchor.y, rect.y + 12, rect.y + rect.h - 12);
-  const elbow = { x: edgeX + (anchor.x < edgeX ? -12 : 12), y: edgeY };
-  return {
-    d: `M ${anchor.x} ${anchor.y} L ${elbow.x} ${elbow.y} L ${edgeX} ${edgeY}`,
-    segments: [segmentRect(anchor, elbow), segmentRect(elbow, { x: edgeX, y: edgeY })],
-  };
-}
+type PlacementMemory = RobotLabelMemory;
 
 /** What a plate's height depends on: text and wrap, never the camera. The
  *  digit counts cover the one case where the countdown column widens. */
 function contentSignature(label: RobotLabel3D, currentT: number, secondsLabel: string): string {
-  const digits = (n: number) => String(Math.trunc(Math.max(0, n))).length;
+  const digits = (n: number) => Math.max(0, n).toFixed(1).length;
   return `${label.identity}\u0001${secondsLabel}\u0001${digits(currentT)}\u0001`
-    + label.actions.map((g) => `${g.actions.map((a) => a.name).join('\u0001')}@${digits(g.endsAt)}`).join('\u0002');
+    + label.actions.map((g) => `${g.actions.map((a) => a.name).join('\u0001')}@${digits(g.endsAt - currentT)}`).join('\u0002');
 }
 
 function applyFold(card: HTMLElement, k: number, count: number, moreLabel: (n: number) => string) {
@@ -158,23 +107,12 @@ export const RobotLabels3D = forwardRef<RobotLabels3DHandle, Props>(function Rob
       const anchorRects = new Map<string, LayoutRect>();
       for (const anchor of anchors) {
         if (!anchor.visible || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)) continue;
-        const r = clamp(anchor.radius ?? ANCHOR_MIN_CLEAR, ANCHOR_MIN_CLEAR, ANCHOR_MAX_CLEAR);
-        anchorRects.set(anchor.id, { x: anchor.x - r, y: anchor.y - r, w: 2 * r, h: 2 * r });
+        anchorRects.set(anchor.id, anchorClearRect(anchor, anchor.radius));
       }
       // Hard obstacles (bodies, plates, reserved areas) block everything; leader
-      // corridors only steer the search for a *new* spot — a plate returning to
-      // its remembered offset wins over a hairline corridor overlap, because a
-      // visible jump reads far worse than a line's tail grazing a plate edge.
-      const hard = [...reserved, ...anchorRects.values()];
-      const corridors: LayoutRect[] = [];
-      // Folding threshold: the gentler of 45% of the viewport and a 132px
-      // floor — but never more than the viewport can actually show, or a
-      // squeezed canvas (narrow windows wrap the toolbar/example notice)
-      // would clip folded plates again (browser finding 2026-10-17).
-      const cap = Math.min(
-        Math.max(PLATE_MIN_MAX_H, Math.round(viewport.h * PLATE_MAX_H_FRACTION)),
-        Math.max(60, viewport.h - 2 * PLATE_MARGIN),
-      );
+      // corridors only steer the search for a new spot (robot-label-layout.ts).
+      const frame: RobotLabelFrame = { hard: [...reserved, ...anchorRects.values()], corridors: [] };
+      const cap = plateHeightCap(viewport.h);
       const effW = Math.max(0, Math.min(PLATE_WIDTH, viewport.w - 2 * PLATE_MARGIN));
       const setShown = (id: string, card: HTMLElement, shown: boolean) => {
         card.style.visibility = shown ? 'visible' : 'hidden';
@@ -202,6 +140,7 @@ export const RobotLabels3D = forwardRef<RobotLabels3DHandle, Props>(function Rob
             foldedTo.current.set(id, 0);
             foldedH.current.delete(id);
           }
+          card.style.width = ''; // Measure natural content width before locking it for this content.
           stale.add(id);
         }
         plans.push({ id, card, anchor, w: 0, h: 0 });
@@ -213,7 +152,9 @@ export const RobotLabels3D = forwardRef<RobotLabels3DHandle, Props>(function Rob
         if (!card) continue;
         sizes.current.set(id, {
           key: `${sigs.get(id) ?? ''}|${effW}`,
-          w: card.offsetWidth,
+          // Round upward: offsetWidth rounds down some natural widths,
+          // forcing a final glyph onto another line when width is locked.
+          w: Math.ceil(card.getBoundingClientRect().width || card.offsetWidth),
           h: card.offsetHeight,
           rows: [...card.querySelectorAll<HTMLElement>('.robot-label-3d-action')].map((row) => row.offsetHeight),
         });
@@ -255,6 +196,9 @@ export const RobotLabels3D = forwardRef<RobotLabels3DHandle, Props>(function Rob
           foldedTo.current.set(plan.id, 0);
           foldedH.current.delete(plan.id);
         }
+        // Keep the unfolded width while folding; otherwise max-content would
+        // shrink behind the placement cache and move the leader off its edge.
+        plan.card.style.width = `${cached.w}px`;
         plan.w = cached.w;
         plan.h = h;
       }
@@ -262,10 +206,6 @@ export const RobotLabels3D = forwardRef<RobotLabels3DHandle, Props>(function Rob
       // Phase D — placement writes, in the same robots order every frame.
       const dpr = window.devicePixelRatio || 1;
       const snap = (n: number) => Math.round(n * dpr) / dpr;
-      const xMin = PLATE_MARGIN;
-      const xMax = Math.max(PLATE_MARGIN, viewport.w - PLATE_MARGIN);
-      const yMin = PLATE_MARGIN;
-      const yMax = Math.max(PLATE_MARGIN, viewport.h - PLATE_MARGIN);
       for (const plan of plans) {
         const { id, anchor, card, w, h } = plan;
         if (w <= 0 || h <= 0) {
@@ -274,42 +214,15 @@ export const RobotLabels3D = forwardRef<RobotLabels3DHandle, Props>(function Rob
         }
         setShown(id, card, true);
         const anchorRect = anchorRects.get(id)!;
-        const clear = (x: number, y: number, list: LayoutRect[]) =>
-          !list.some((o) => rectsIntersect({ x, y, w, h }, o));
-        const all = [...hard, ...corridors];
+        const placed = placeRobotLabel({
+          anchor, clear: anchorRect.w / 2, size: { w, h }, viewport,
+          remembered: memory.current.get(id), frame,
+        });
+        memory.current.set(id, placed.memory);
 
-        // Side stickiness (2026-10-17 browser finding): the side is chosen
-        // once, from the anchor's half at first sight, and then remembered —
-        // an orbiting camera walks every anchor across the midline, and a
-        // plate that swapped sides there was untrackable. Only real
-        // congestion (placeLabel's fallback below) may move a plate across.
-        const remembered = memory.current.get(id);
-        const prefer: 1 | -1 = remembered?.side ?? (anchor.x < viewport.w / 2 ? -1 : 1);
-        const offset = Math.max(30, anchorRect.w / 2 + 8);
-        const lift = Math.max(32, anchorRect.h / 2 + 10);
-        const y0 = anchor.y - h - lift;
-        const idealX = clamp(anchor.x + prefer * offset - (prefer < 0 ? w : 0), xMin, Math.max(xMin, xMax - w));
-        const idealY = clamp(y0, yMin, Math.max(yMin, yMax - h));
-
-        let placement: { x: number; y: number; side: 1 | -1 };
-        if (clear(idealX, idealY, all)) {
-          placement = { x: idealX, y: idealY, side: prefer };
-        } else {
-          const rx = remembered ? clamp(anchor.x + remembered.dx, xMin, Math.max(xMin, xMax - w)) : NaN;
-          const ry = remembered ? clamp(anchor.y + remembered.dy, yMin, Math.max(yMin, yMax - h)) : NaN;
-          placement = remembered && clear(rx, ry, hard)
-            ? { x: rx, y: ry, side: remembered.side }
-            : placeLabel({ anchor, offset, size: { w, h }, prefer, y0, canvas: viewport,
-              margin: PLATE_MARGIN, gap: PLATE_GAP, obstacles: all });
-        }
-        memory.current.set(id, { side: placement.side, dx: placement.x - anchor.x, dy: placement.y - anchor.y });
-
-        card.style.transform = `translate(${snap(placement.x)}px, ${snap(placement.y)}px)`;
-        hard.push({ x: placement.x, y: placement.y, w, h });
-        const geo = leaderGeometry(anchor, { x: placement.x, y: placement.y, w, h });
-        for (const segment of geo.segments) corridors.push(segment);
+        card.style.transform = `translate(${snap(placed.rect.x)}px, ${snap(placed.rect.y)}px)`;
         const leader = leaders.current.get(id);
-        leader?.querySelectorAll('path').forEach((node) => node.setAttribute('d', geo.d));
+        leader?.querySelectorAll('path').forEach((node) => node.setAttribute('d', placed.leader.d));
         leader?.querySelectorAll('circle').forEach((node) => {
           node.setAttribute('cx', String(snap(anchor.x)));
           node.setAttribute('cy', String(snap(anchor.y)));
@@ -318,13 +231,13 @@ export const RobotLabels3D = forwardRef<RobotLabels3DHandle, Props>(function Rob
     },
   }), []);
 
-  return <div className="robot-labels-3d">
+  return <div className="robot-labels-3d" style={robotLabelCssVars as CSSProperties}>
     <svg className="robot-labels-3d-leaders" aria-hidden="true">
       {labels.map((label) => <g key={label.id} className="robot-labels-3d-leader" data-alliance={label.alliance}
         ref={(el) => { if (el) leaders.current.set(label.id, el); else leaders.current.delete(label.id); }}>
         <path className="robot-labels-3d-leader-underlay" />
         <path className="robot-labels-3d-leader-ink" />
-        <circle r="4" className="robot-labels-3d-anchor" />
+        <circle r={ROBOT_LABEL_STYLE.anchorRadius} className="robot-labels-3d-anchor" />
       </g>)}
     </svg>
     {labels.map((label) => <div key={label.id} className="robot-label-3d" data-robot-id={label.id}

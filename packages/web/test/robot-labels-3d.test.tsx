@@ -178,6 +178,15 @@ describe('fixed-size 3D robot information plates', () => {
     expect(moreRow().hidden).toBe(false);
   });
 
+  it('rounds natural width upward so locking a fractional width cannot wrap its last glyph', () => {
+    mockMeasurements(80, 16);
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 91.4 } as DOMRect);
+    const ref = createRef<RobotLabels3DHandle>();
+    const { container } = render(<RobotLabels3D ref={ref} labels={labels} currentT={2} secondsLabel="s" moreLabel={more} />);
+    act(() => ref.current!.place([{ id: 'robot-a', x: 400, y: 300, visible: true }], { w: 800, h: 450 }));
+    expect(container.querySelector<HTMLElement>('.robot-label-3d')!.style.width).toBe('92px');
+  });
+
   it('routes leaders: vertical docking under the plate, elbow to a side edge', () => {
     // Straight below: docks into the bottom edge.
     const docked = leaderGeometry({ x: 150, y: 200 }, { x: 60, y: 60, w: 184, h: 100 });

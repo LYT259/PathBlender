@@ -2,8 +2,9 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffec
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { renderFieldFrame, fitViewFor, clampZoomView, type RenderView } from '../canvas2d-render';
+import type { RobotLabelMemory } from '../robot-label-layout';
 import { saveBytes } from '../download';
-import { useI18n } from '../i18n';
+import { isRtl, useI18n } from '../i18n';
 import { useTheme } from '../theme';
 import { MK5I_MODULE_TOP_URL } from '../robot-sprites';
 import {
@@ -49,6 +50,11 @@ interface Props {
   /** Robot (trajectory) ids whose path renders gray — illegal start zone
    * verdicts (user 2026-10-09). */
   dimPathIds?: ReadonlySet<string>;
+  /** Cross-frame card memory (side + offset per robot id). The app owns it
+   * so a 2D→3D→2D round trip, which unmounts this canvas, resumes every
+   * card where it was instead of re-deciding from scratch. Omitted: a
+   * private map for this mount. */
+  labelMemory?: Map<string, RobotLabelMemory>;
 }
 
 /** Season artwork decoded once and reused across switches. */
@@ -65,10 +71,11 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     showTrail = true,
     showHeatmap = false,
     dimPathIds,
+    labelMemory,
   },
   ref,
 ) {
-  const { t, n } = useI18n();
+  const { t, n, lang } = useI18n();
   const { resolved: theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -87,6 +94,10 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   // GIF capture draws at arbitrary t values; the override short-circuits
   // the prop while frames are being collected, then restores.
   const overrideTRef = useRef<number | null>(null);
+  // Cross-frame card memory for the live view: the app's map when given (it
+  // outlives this mount), else private. The renderer prunes robots that
+  // leave, and GIF export swaps in its own map for the duration of the take.
+  const labelMemoryRef = useRef(labelMemory ?? new Map<string, RobotLabelMemory>());
   const frameRef = useRef<number | null>(null);
   const requestDraw = useCallback(() => {
     if (frameRef.current != null) return;
@@ -397,6 +408,10 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const effT = overrideTRef.current ?? currentT;
       renderFieldFrame(ctx, {
+        secondsLabel: t('sequence.seconds'),
+        moreLabel: (count) => t('sequence.moreActions', { n: count }),
+        rtl: isRtl(lang),
+        labelMemory: labelMemoryRef.current,
         w,
         h,
         view: viewRef.current,
@@ -414,7 +429,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       });
     };
     requestDraw();
-  }, [field, robots, currentT, conflicts, bounds, showTrail, showHeatmap, dimPathIds, imgReady, spriteReady, theme, t, requestDraw]);
+  }, [field, robots, currentT, conflicts, bounds, showTrail, showHeatmap, dimPathIds, imgReady, spriteReady, theme, t, lang, requestDraw]);
 
   useImperativeHandle(ref, () => ({
     exportGif: (onDone?: (ok: boolean) => void) => {
@@ -423,6 +438,16 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         onDone?.(false);
         return;
       }
+      // The take scrubs the whole timeline through the live canvas: give it
+      // its own card memory so the cards the user is looking at never move
+      // because of an export, then put the live frame back when it is done.
+      const liveMemory = labelMemoryRef.current;
+      labelMemoryRef.current = new Map();
+      const restoreLive = () => {
+        overrideTRef.current = null;
+        labelMemoryRef.current = liveMemory;
+        drawRef.current();
+      };
       void import('gifenc').then(async ({ GIFEncoder, quantize, applyPalette }) => {
         try {
           const duration = robots.reduce((m, r) => Math.max(m, r.startDelayS + r.trajectory.durationS), 0);
@@ -457,7 +482,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
             const index = applyPalette(rgba, palette);
             gif.writeFrame(index, w, h, { palette, delay: Math.round(dt * 1000) });
           }
-          overrideTRef.current = null;
+          restoreLive();
           gif.finish();
           const bytes = gif.bytes();
           const ok = await saveBytes(
@@ -467,11 +492,11 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
           );
           onDone?.(ok);
         } catch {
-          overrideTRef.current = null;
+          restoreLive();
           onDone?.(false);
         }
       }).catch(() => {
-        overrideTRef.current = null;
+        restoreLive();
         onDone?.(false);
       });
     },

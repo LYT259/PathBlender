@@ -1,4 +1,4 @@
-/* Reviewable UI proposal: 184px plate; 14px identity/time; 13px actions.
+/* Reviewable compact UI proposal; metrics shared with the 2D canvas.
    The field's camera never scales this DOM layer. */
 .robot-labels-3d {
   position: absolute;
@@ -13,42 +13,46 @@
 .robot-labels-3d [data-alliance='red'] { --label-alliance: var(--seg-red-fg); }
 .robot-labels-3d-leader, .robot-label-3d { visibility: hidden; }
 .robot-labels-3d-leader path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.robot-labels-3d-leader-underlay { stroke: var(--bg-panel); stroke-width: 4.5px; }
-.robot-labels-3d-leader-ink { stroke: var(--label-alliance); stroke-width: 1.5px; }
+.robot-labels-3d-leader-underlay { stroke: var(--bg-panel); stroke-width: var(--label-leaderUnderlay); }
+.robot-labels-3d-leader-ink { stroke: var(--label-alliance); stroke-width: var(--label-leaderWidth); }
 .robot-labels-3d-anchor { fill: var(--label-alliance); stroke: var(--bg-panel); stroke-width: 2px; }
 .robot-label-3d {
   position: absolute;
   top: 0;
   left: 0;
-  width: 184px;
-  max-width: calc(100% - 24px);
-  padding: 9px 11px;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(var(--label-maxWidth), calc(100% - 24px));
+  padding: var(--label-paddingY) var(--label-paddingX);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--label-radius);
   background: var(--bg-panel);
   color: var(--fg);
-  line-height: 1.4;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  line-height: var(--label-actionLine);
   text-align: start;
 }
 .robot-label-3d-identity {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 14px;
+  gap: var(--label-dotGap);
+  font-size: var(--label-identitySize);
+  line-height: var(--label-identityLine);
   font-weight: 700;
   color: var(--label-alliance);
 }
 .robot-label-3d-identity bdi { min-width: 0; overflow-wrap: anywhere; }
-.robot-label-3d-path { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--robot-path-color); }
-.robot-label-3d-actions { border-top: 1px solid var(--border); margin-top: 7px; padding-top: 7px; }
-.robot-label-3d-action { display: flex; align-items: start; gap: 10px; }
+.robot-label-3d-path { width: var(--label-dotSize); height: var(--label-dotSize); flex: none; border-radius: 50%; background: var(--robot-path-color); }
+.robot-label-3d-actions { margin-top: var(--label-sectionGap); }
+.robot-label-3d-action { display: flex; align-items: start; gap: var(--label-columnGap); }
 /* Author `display: flex` would otherwise defeat the folded rows' `hidden`. */
 .robot-label-3d-action[hidden] { display: none; }
-.robot-label-3d-action + .robot-label-3d-action { margin-top: 6px; }
-/* Folded-overflow count row ("+n"): same row rhythm, secondary ink. */
-.robot-label-3d-more { margin-top: 6px; font-size: 12px; color: var(--fg-dim); }
+.robot-label-3d-action + .robot-label-3d-action { margin-top: var(--label-rowGap); }
+/* Folded-overflow count row ("+n"): same row rhythm, secondary ink. Wraps
+   inside the locked plate width rather than spilling past its border. */
+.robot-label-3d-more { margin-top: var(--label-rowGap); font-size: 12px; color: var(--fg-dim); overflow-wrap: anywhere; }
 .robot-label-3d-more[hidden] { display: none; }
-.robot-label-3d-action-names { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 13px; }
+.robot-label-3d-action-names { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: var(--label-actionSize); }
 .robot-label-3d-action-names bdi { overflow-wrap: anywhere; }
-.robot-label-3d-time { flex: none; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.robot-label-3d-unit { margin-inline-start: 3px; font-size: 11px; font-weight: 400; }
+.robot-label-3d-time { flex: none; font-size: var(--label-timeSize); font-weight: 600; font-variant-numeric: tabular-nums; }
+.robot-label-3d-unit { margin-inline-start: var(--label-unitGap); font-size: var(--label-unitSize); font-weight: 400; }

@@ -14,11 +14,9 @@ import { I18nProvider } from '../src/i18n';
  * square (0.889 m → L=W=35.56 px, bounding radius reach=25.1433 px) with
  * 4 in bumpers (0.1016 m → 4.064 px) — a literal value, independent of the
  * season rule-max default. A robot at (2, 2.5) heading 0 lands at
- * screen (100,120); the leader runs 45° up-right and the badge top-left
- * sits (reach+20)/√2 ≈ 31.9221 px from the center, snapped to device
- * pixels (132,76) at dpr 1, glyphs at (139,88). jsdom resolves no CSS
- * custom properties, so theme tokens fall back: alliance red #c8323e /
- * blue #2264cf, badge plate #ffffff.
+ * screen (100,120). Labels now use one content-sized card per robot;
+ * tests assert the anchor, visibility, colors and complete content rather
+ * than pinning the superseded two-badge pixel layout.
  */
 
 const field: FieldPackage = { id: 'test', name: 'Test field', year: 2026, lengthM: 10, widthM: 5 };
@@ -81,6 +79,8 @@ interface RobotOpts {
   heading?: number;
   offsetX?: number;
   offsetY?: number;
+  /** Stable id across rerenders (cross-frame memory keys on it). */
+  id?: string;
 }
 
 function robot(x: number, teamNumber = '11019', opts: RobotOpts = {}): SessionTrajectory {
@@ -88,7 +88,7 @@ function robot(x: number, teamNumber = '11019', opts: RobotOpts = {}): SessionTr
   const y = opts.y ?? 2.5;
   return {
     trajectory: {
-      id: `r-${x}`,
+      id: opts.id ?? `r-${x}`,
       name: 'Route',
       teamName: 'Test team',
       teamNumber,
@@ -119,11 +119,11 @@ function makeScene(robots: SessionTrajectory[], t = 0, showTrail = false) {
   );
 }
 
-function sizeWrap() {
+function sizeWrap(w = 440, h = 240) {
   expect(observed).toBeDefined();
   Object.defineProperties(observed!, {
-    clientWidth: { configurable: true, value: 440 },
-    clientHeight: { configurable: true, value: 240 },
+    clientWidth: { configurable: true, value: w },
+    clientHeight: { configurable: true, value: h },
   });
   act(() => notifyResize());
 }
@@ -165,16 +165,33 @@ function dotFill() {
   return { arc: calls[idx]!, fill: calls[idx + 2]! };
 }
 
-/**
- * Index of the leader's moveTo. The heading wedge also opens with moveTo,
- * so match the callout's exact shape: moveTo → lineTo → stroke (plate
- * under-stroke) → stroke (alliance line).
- */
+/** Match one leader with either a direct stroke or a short elbow. */
 function leaderIndex() {
-  const idx = calls.findIndex((c, i) =>
-    c.name === 'moveTo' && calls[i + 1]?.name === 'lineTo' && calls[i + 2]?.name === 'stroke');
+  const idx = calls.findIndex((c, i) => {
+    if (c.name !== 'moveTo' || calls[i + 1]?.name !== 'lineTo') return false;
+    let end = i + 1;
+    while (calls[end]?.name === 'lineTo') end++;
+    return calls[end]?.name === 'stroke' && calls[end + 1]?.name === 'stroke';
+  });
   expect(idx).toBeGreaterThanOrEqual(0);
   return idx;
+}
+
+function plate() {
+  const rects = calls.filter(c => c.name === 'roundRect');
+  expect(rects).toHaveLength(1);
+  const [x, y, w, h] = rects[0]!.args as number[];
+  expect(x).toBeGreaterThanOrEqual(12);
+  expect(y).toBeGreaterThanOrEqual(12);
+  expect(x! + w!).toBeLessThanOrEqual(428);
+  expect(y! + h!).toBeLessThanOrEqual(228);
+  return { x: x!, y: y!, w: w!, h: h! };
+}
+
+function text(value: string) {
+  const found = calls.find(c => c.name === 'fillText' && c.args[0] === value);
+  expect(found, value).toBeDefined();
+  return found!;
 }
 
 describe('2D robot bumper and team-number callout', () => {
@@ -203,70 +220,37 @@ describe('2D robot bumper and team-number callout', () => {
     expect(outline).toBeDefined();
   });
 
-  it('anchors the leader at the footprint center and badges the number up-right', () => {
+  it('anchors one leader at the footprint center with an opaque compact card', () => {
     paint([robot(2)]);
-    // Leader: robot center (100,120) → badge edge (132,88), drawn as a 1 px
-    // alliance line over a 3 px opaque plate under-stroke (legibility halo).
     const li = leaderIndex();
     expectArgs(calls[li]!, [100, 120]);
-    expect(calls[li + 1]!.name).toBe('lineTo');
-    expectArgs(calls[li + 1]!, [132, 88]);
-    expect(calls[li + 2]!.name).toBe('stroke');
-    expect(calls[li + 2]!.style.strokeStyle).toBe('#ffffff'); // plate under-stroke
-    expect(calls[li + 2]!.style.lineWidth).toBe(3);
-    expect(calls[li + 3]!.name).toBe('stroke');
-    expect(calls[li + 3]!.style.strokeStyle).toBe('#c8323e'); // alliance line
-    expect(calls[li + 3]!.style.lineWidth).toBe(1);
-    // Anchor dot on the footprint center, alliance-filled with a plate ring.
-    const { arc, fill } = dotFill();
-    expectArgs(arc, [100, 120, 3, 0, Math.PI * 2]);
-    expect(fill.style.fillStyle).toBe('#c8323e');
-    // Solid rounded badge: plate fill + hairline border, snapped integers.
-    const bi = calls.findIndex((c) => c.name === 'roundRect');
-    expect(bi).toBeGreaterThanOrEqual(0);
-    expectArgs(calls[bi]!, [132, 76, 54, 24, 6]);
-    expect(calls[bi + 1]!.name).toBe('fill');
-    expect(calls[bi + 1]!.style.fillStyle).toBe('#ffffff');
-    // One number, alliance-colored, pixel-aligned — and never strokeText
-    // outlines, which muddy the small glyph counters.
-    const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === '11019');
-    expect(texts).toHaveLength(1);
-    expect(texts[0]!.args[1]).toBe(139);
-    expect(texts[0]!.args[2]).toBe(88);
-    expect(texts[0]!.style.fillStyle).toBe('#c8323e');
-    expect(texts[0]!.style.textAlign).toBe('left');
-    expect(texts[0]!.style.textBaseline).toBe('middle');
-    expect(calls.some((c) => c.name === 'strokeText')).toBe(false);
+    const strokes = calls.slice(li).filter(c => c.name === 'stroke');
+    expect(strokes[0]!.style.strokeStyle).toBe('#ffffff');
+    expect(strokes[0]!.style.lineWidth).toBe(4.5);
+    expect(strokes[1]!.style.strokeStyle).toBe('#c8323e');
+    expect(strokes[1]!.style.lineWidth).toBe(1.5);
+    expectArgs(dotFill().arc, [100, 120, 3, 0, Math.PI * 2]);
+    const box = plate();
+    const number = text('11019');
+    expect(number.args[1] as number).toBeGreaterThan(box.x);
+    expect(number.args[1] as number).toBeLessThan(box.x + box.w);
+    expect(number.style.fillStyle).toBe('#c8323e');
+    expect(calls.some(c => c.name === 'strokeText')).toBe(false);
   });
 
-  it('mirrors the badge to up-left near the right canvas edge', () => {
+  it('keeps a right-edge robot card inside the viewport', () => {
     paint([robot(9)]);
-    // cx = 220+(9−5)·40 = 380; right side no longer fits → badge flips left.
-    const { arc, fill } = dotFill();
-    expectArgs(arc, [380, 120, 3, 0, Math.PI * 2]);
-    expect(fill.style.fillStyle).toBe('#c8323e');
-    const li = leaderIndex();
-    expectArgs(calls[li]!, [380, 120]);
-    expectArgs(calls[li + 1]!, [348, 88]); // badge right edge (294+54)
-    const bi = calls.findIndex((c) => c.name === 'roundRect');
-    expectArgs(calls[bi]!, [294, 76, 54, 24, 6]);
-    const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === '11019');
-    expect(texts).toHaveLength(1);
-    expect(texts[0]!.args[1]).toBe(301); // snapped badge x + padding
-    expect(texts[0]!.args[1] as number).toBeLessThan(380);
+    expectArgs(dotFill().arc, [380, 120, 3, 0, Math.PI * 2]);
+    expectArgs(calls[leaderIndex()]!, [380, 120]);
+    plate();
+    expect(text('11019').style.fillStyle).toBe('#c8323e');
   });
 
-  it('clamps the badge inside the canvas near the top edge', () => {
+  it('keeps a top-edge robot card inside the viewport', () => {
     paint([robot(9.9, '11019', { y: 4.9 })]);
-    // Center (416,24): the 45° slot would put the badge at y=−20 → clamped
-    // to the 6 px margin; the leader still lands on the badge edge.
-    const bi = calls.findIndex((c) => c.name === 'roundRect');
-    expectArgs(calls[bi]!, [330, 6, 54, 24, 6]);
-    const li = leaderIndex();
-    expectArgs(calls[li]!, [416, 24]);
-    expectArgs(calls[li + 1]!, [384, 18]);
-    const { arc } = dotFill();
-    expectArgs(arc, [416, 24, 3, 0, Math.PI * 2]);
+    plate();
+    expectArgs(calls[leaderIndex()]!, [416, 24]);
+    expectArgs(dotFill().arc, [416, 24, 3, 0, Math.PI * 2]);
   });
 
   it('anchors the dot at the rotated footprint center, not the trajectory origin', () => {
@@ -285,7 +269,7 @@ describe('2D robot bumper and team-number callout', () => {
     const { fill } = dotFill();
     expect(fill.style.fillStyle).toBe('#2264cf');
     const li = leaderIndex();
-    expect(calls[li + 3]!.style.strokeStyle).toBe('#2264cf');
+    expect(calls.slice(li).filter(c => c.name === 'stroke')[1]!.style.strokeStyle).toBe('#2264cf');
     const texts = calls.filter((c) => c.name === 'fillText' && c.args[0] === '11019');
     expect(texts[0]!.style.fillStyle).toBe('#2264cf');
   });
@@ -295,7 +279,7 @@ describe('2D robot bumper and team-number callout', () => {
     paint([robot(2), robot(6, '2468')]);
     expect(calls.filter((c) => c.name === 'fillText' && c.args[0] === '11019')).toHaveLength(1);
     expect(calls.filter((c) => c.name === 'fillText' && c.args[0] === '2468')).toHaveLength(1);
-    expect(calls.filter((c) => c.name === 'arc')).toHaveLength(2);
+    expect(calls.filter((c) => c.name === 'arc')).toHaveLength(4); // anchor + route-color dot per robot
   });
 
   it('repaints immediately when the alliance flips or the number is edited', () => {
@@ -318,11 +302,11 @@ describe('2D robot bumper and team-number callout', () => {
     expectArgs(dotFill().arc, [100, 120, 3, 0, Math.PI * 2]);
   });
 
-  it('draws no callout when the trajectory carries no team number', () => {
+  it('uses the route name when a robot has no team number, matching 3D', () => {
     paint([robot(2, '')]);
-    expect(calls.some((c) => c.name === 'arc')).toBe(false);
-    expect(calls.some((c) => c.name === 'roundRect')).toBe(false);
-    expect(calls.some((c) => (c.name === 'fillText' || c.name === 'strokeText') && c.args[0] === '')).toBe(false);
+    plate();
+    text('Route');
+    expect(calls.some(c => c.name === 'fillText' && c.args[0] === '')).toBe(false);
   });
 
   it('badges the display name instead of the team number when one is set', () => {
@@ -418,159 +402,120 @@ describe('2D robot bumper and team-number callout', () => {
   });
 });
 
-describe('current-action callout', () => {
-  /** robot() + trajectory event markers, so the fixture stays one source. */
+describe('current actions in the unified card', () => {
   function annotatedRobot(events: { name: string; t: number }[], x = 2): SessionTrajectory {
     const r = robot(x);
     r.trajectory.events = events;
     return r;
   }
 
-  /** The action badge is the SECOND leader/dot/badge of the frame — the
-   *  team number draws first, so take the second pattern match. */
-  function actionLeaderIndex() {
-    const idxs = calls.flatMap((c, i) =>
-      c.name === 'moveTo' && calls[i + 1]?.name === 'lineTo' && calls[i + 2]?.name === 'stroke' ? [i] : []);
-    expect(idxs.length).toBeGreaterThanOrEqual(2);
-    return idxs[1]!;
-  }
-
-  function actionArcIndex() {
-    const arcs = calls.map((c, i) => ({ c, i })).filter(({ c }) => c.name === 'arc');
-    expect(arcs.length).toBeGreaterThanOrEqual(2);
-    return arcs[1]!.i;
-  }
-
-  it('draws nothing for robots without annotations', () => {
+  it('keeps an identity-only card for robots without annotations', () => {
     paint([robot(2)], { currentT: 1 });
-    expect(calls.filter((c) => c.name === 'arc')).toHaveLength(1); // number dot only
-    expect(calls.filter((c) => c.name === 'roundRect')).toHaveLength(1);
+    plate();
+    text('11019');
+    expect(calls.filter(c => c.name === 'fillText')).toHaveLength(2); // identity + field clock
   });
 
-  it('draws nothing at t=0 — the enable instant — even with t=0 markers', () => {
+  it('does not invent active actions at t=0, even with t=0 markers', () => {
     paint([annotatedRobot([{ name: 'intake', t: 0 }])], { currentT: 0 });
-    expect(calls.filter((c) => c.name === 'arc')).toHaveLength(1); // number dot only
+    plate();
+    expect(calls.some(c => c.name === 'fillText' && c.args[0] === 'intake')).toBe(false);
   });
 
-  it('draws nothing before the first marker fires', () => {
-    paint([annotatedRobot([{ name: 'intake', t: 0.5 }])], { currentT: 0.49 });
-    expect(calls.filter((c) => c.name === 'arc')).toHaveLength(1);
+  it('does not show an action before its first marker fires', () => {
+    paint([annotatedRobot([{ name: 'intake', t: .5 }])], { currentT: .49 });
+    plate();
+    expect(calls.some(c => c.name === 'fillText' && c.args[0] === 'intake')).toBe(false);
   });
 
-  it('badges the fired action down-left with its countdown', () => {
-    // Same scene math as the number test: robot at screen (100,120), reach
-    // 25.1433 px, 45° offset (reach+20)/√2 ≈ 31.9221. Number goes up-right;
-    // the action badge takes the opposite diagonal — down-left. Open-ended
-    // intake counts down to the route end (1 s fixture) at t=0.5 →
-    // 'intake 0.5s' = 11×8 px + 12 padding → labelW 100, clamped to the
-    // margin; by = 120 + 31.9221 − 11 → snapped 141; glyphs at (12, 152).
-    paint([annotatedRobot([{ name: 'intake', t: 0.5 }])], { currentT: 0.5 });
-    const ai = actionArcIndex();
-    expectArgs(calls[ai]!, [100, 120, 3, 0, Math.PI * 2]);
-    expect(calls[ai + 2]!.style.fillStyle).toBe('#00E5FF'); // session color
-    // Shared anchor dot draws first, then the leader: (100,120) → badge
-    // right edge (106,152).
-    const li = actionLeaderIndex();
-    expect(li).toBeGreaterThan(ai);
-    expectArgs(calls[li]!, [100, 120]);
-    expectArgs(calls[li + 1]!, [106, 152]);
-    // Badge plate: second roundRect, two columns — name left, countdown
-    // right-aligned ('intake' 48 + gap 8 + '0.5s' 32 + padding 12 → 100).
-    const rects = calls.filter((c) => c.name === 'roundRect');
-    expect(rects).toHaveLength(2);
-    expectArgs(rects[1]!, [6, 141, 100, 22, 5]);
-    const name = calls.find((c) => c.name === 'fillText' && c.args[0] === 'intake')!;
-    expect(name.args[1]).toBe(12);
-    expect(name.args[2]).toBe(152);
-    expect(name.style.fillStyle).toBe('#00E5FF');
-    const sec = calls.find((c) => c.name === 'fillText' && c.args[0] === '0.5s')!;
-    expect(sec.args[1]).toBe(100);
-    expect(sec.args[2]).toBe(152);
-    expect(sec.style.textAlign).toBe('right');
+  it('shows the fired action and countdown below identity in one card', () => {
+    paint([annotatedRobot([{ name: 'intake', t: .5 }])], { currentT: .5 });
+    const box = plate();
+    expectArgs(calls[leaderIndex()]!, [100, 120]);
+    const name = text('intake');
+    const seconds = text('0.5');
+    expect(name.args[2] as number).toBeGreaterThan(text('11019').args[2] as number);
+    expect(seconds.args[1] as number).toBeGreaterThan(name.args[1] as number);
+    expect(seconds.args[2]).toBe(name.args[2]);
+    expect(name.style.fillStyle).toBe('#181617');
+    expect(seconds.args[1] as number).toBeLessThan(box.x + box.w);
   });
 
-  it('shows same-mechanism takeover: shoot replaces pre_aim, intake keeps running', () => {
-    const robot0 = annotatedRobot([{ name: 'pre_aim', t: 0.3 }, { name: 'shoot', t: 0.7 }]);
-    const ui = render(makeScene([robot0], 0.4));
-    sizeWrap();
-    runFrames();
-    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'pre_aim')).toBe(true);
-    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === '0.3s')).toBe(true);
+  it('shows same-mechanism takeover: shoot replaces pre_aim', () => {
+    const r = annotatedRobot([{ name: 'pre_aim', t: .3 }, { name: 'shoot', t: .7 }]);
+    const ui = render(makeScene([r], .4));
+    sizeWrap(); runFrames();
+    text('pre_aim'); text('0.3');
     calls = [];
-    ui.rerender(makeScene([robot0], 0.8));
-    runFrames();
-    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'shoot')).toBe(true);
-    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === '0.2s')).toBe(true);
-    expect(calls.some((c) => c.name === 'fillText' && c.args[0] === 'pre_aim')).toBe(false);
+    ui.rerender(makeScene([r], .8)); runFrames();
+    text('shoot'); text('0.2');
+    expect(calls.some(c => c.name === 'fillText' && c.args[0] === 'pre_aim')).toBe(false);
   });
 
-  it('packs same-ending actions into one multi-line box with a single countdown', () => {
-    // Machine-2 L1 shape: intake + pass + align all fire at t=0 and all
-    // run to the route end — one shared ending, so one box (user layout
-    // 2026-10-08): three stacked lines, one right-aligned countdown. Mock
-    // metrics: widest name 'intake' 48 + gap 8 + '0.5s' 32 + padding 12 →
-    // box 100×54 (22 + 2×16), leader to its right-edge middle.
-    paint([annotatedRobot([{ name: 'intake', t: 0 }, { name: 'pass', t: 0 }, { name: 'align', t: 0 }])], { currentT: 0.5 });
-    const rects = calls.filter((c) => c.name === 'roundRect');
-    expect(rects).toHaveLength(2); // number badge + ONE grouped action box
-    expectArgs(rects[1]!, [6, 141, 100, 54, 5]);
-    for (const [name, y] of [['intake', 152], ['pass', 168], ['align', 184]] as const) {
-      const text = calls.find((c) => c.name === 'fillText' && c.args[0] === name)!;
-      expect(text.args[1], name).toBe(12);
-      expect(text.args[2], name).toBe(y);
+  it('shows same-ending actions on separate lines with one countdown', () => {
+    paint([annotatedRobot([{ name: 'intake', t: 0 }, { name: 'pass', t: 0 }, { name: 'align', t: 0 }])], { currentT: .5 });
+    plate();
+    const y = ['intake', 'pass', 'align'].map(name => text(name).args[2] as number);
+    expect(y[0]).toBeLessThan(y[1]!);
+    expect(y[1]).toBeLessThan(y[2]!);
+    expect(calls.filter(c => c.name === 'fillText' && c.args[0] === '0.5')).toHaveLength(1);
+    expect(text('0.5').args[2]).toBe(y[0]);
+    expect(calls.filter(c => c.name === 'arc')).toHaveLength(2); // one anchor, one route-color dot
+  });
+
+  it('orders distinct endings soonest-first inside the same card', () => {
+    paint([annotatedRobot([{ name: 'intake', t: 0 }, { name: 'close_blocker', t: 0 }])], { currentT: .5 });
+    plate();
+    expect(text('intake').args[2] as number).toBeLessThan(text('close_blocker').args[2] as number);
+    expect(text('0.5').args[2]).toBe(text('intake').args[2]);
+    expect(text('1.5').args[2]).toBe(text('close_blocker').args[2]);
+  });
+
+  it('keeps identity and actions together near the right canvas edge', () => {
+    paint([annotatedRobot([{ name: 'shoot', t: 0 }], 9)], { currentT: .5 });
+    const box = plate();
+    for (const name of ['11019', 'shoot', '0.5']) {
+      expect(text(name).args[1] as number).toBeGreaterThan(box.x);
+      expect(text(name).args[1] as number).toBeLessThan(box.x + box.w);
     }
-    // The box's single countdown, right-aligned at its vertical middle.
-    const sec = calls.find((c) => c.name === 'fillText' && c.args[0] === '0.5s')!;
-    expect(sec.args[1]).toBe(100);
-    expect(sec.args[2]).toBe(168);
-    expect(sec.style.textAlign).toBe('right');
-    const leaders = calls.flatMap((c, i) =>
-      c.name === 'moveTo' && calls[i + 1]?.name === 'lineTo' && calls[i + 2]?.name === 'stroke' ? [i] : []);
-    expect(leaders).toHaveLength(2); // number leader + the one box leader
-    expectArgs(calls[leaders[1]! + 1]!, [106, 168]);
   });
 
-  it('stacks one box per distinct ending, soonest first', () => {
-    // intake runs to the route end (1 s); close_blocker flashes until 2 s —
-    // two distinct endings, two boxes, the sooner-ending one on top.
-    // The stack clamps at the left margin as ONE unit (collision layout
-    // 2026-10-14): boxes keep the anchor-side alignment they have when
-    // unclamped, so both leaders end on the stack's right edge (162).
-    paint([annotatedRobot([{ name: 'intake', t: 0 }, { name: 'close_blocker', t: 0 }])], { currentT: 0.5 });
-    const rects = calls.filter((c) => c.name === 'roundRect');
-    expect(rects).toHaveLength(3); // number + two action boxes
-    expectArgs(rects[1]!, [62, 141, 100, 22, 5]); // intake | 0.5s
-    expectArgs(rects[2]!, [6, 167, 156, 22, 5]); // close_blocker | 1.5s
-    const sec1 = calls.find((c) => c.name === 'fillText' && c.args[0] === '0.5s')!;
-    expect(sec1.args[1]).toBe(156);
-    const sec2 = calls.find((c) => c.name === 'fillText' && c.args[0] === '1.5s')!;
-    expect(sec2.args[1]).toBe(156);
-    expect(sec2.args[2]).toBe(178);
-    const fanEnds = calls.filter((c) => c.name === 'lineTo' && [152, 178].includes(c.args[1] as number));
-    expect(fanEnds.map((c) => c.args)).toEqual([[162, 152], [162, 178]]);
+  it('shows route identity and action even when the robot has no team number', () => {
+    const r = annotatedRobot([{ name: 'pass', t: 0 }]);
+    r.trajectory.teamNumber = '';
+    paint([r], { currentT: .5 });
+    plate(); text('Route'); text('pass');
   });
 
-  it('mirrors to down-right when the number badge flipped up-left', () => {
-    // Robot near the right edge: the number takes up-left, so the action
-    // badge takes the down-right diagonal (cx = 380, same offset).
-    paint([annotatedRobot([{ name: 'shoot', t: 0 }], 9)], { currentT: 0.5 });
-    const rects = calls.filter((c) => c.name === 'roundRect');
-    expectArgs(rects[0]!, [294, 76, 54, 24, 6]); // number, up-left
-    // 'shoot' 40 + gap 8 + '0.5s' 32 + padding 12 → box 92; dir = +1 →
-    // target 411.92 clamps inside the 6 px margin to 440−6−92 = 342.
-    expectArgs(rects[1]!, [342, 141, 92, 22, 5]);
-    const name = calls.find((c) => c.name === 'fillText' && c.args[0] === 'shoot')!;
-    expect(name.args[1]).toBe(348);
-    expect(name.args[2]).toBe(152);
-    const sec = calls.find((c) => c.name === 'fillText' && c.args[0] === '0.5s')!;
-    expect(sec.args[1]).toBe(428);
+  it('keeps the card on its first side while the robot crosses the canvas midline between frames', () => {
+    // 10 m field on a 440 px canvas: x = 4.9 m lands at screen 216 (left half),
+    // x = 5.3 m at 232 (right half). Without memory the card would flip to the
+    // right at the second frame; the live canvas remembers the side.
+    const ui = render(makeScene([robot(4.9, '11019', { id: 'mover' })], .5));
+    sizeWrap(); runFrames();
+    const first = plate();
+    expect(first.x + first.w).toBeLessThanOrEqual(216);
+    calls = [];
+    ui.rerender(makeScene([robot(5.3, '11019', { id: 'mover' })], .5)); runFrames();
+    const second = plate();
+    expect(second.x + second.w).toBeLessThanOrEqual(232);
+    // The anchor dot really did move to the right half.
+    expectArgs(calls[leaderIndex()]!, [232, 120]);
   });
 
-  it('shows the action even when the robot has no team number', () => {
-    const anon = annotatedRobot([{ name: 'pass', t: 0 }]);
-    anon.trajectory.teamNumber = '';
-    paint([anon], { currentT: 0.5 });
-    expect(calls.filter((c) => c.name === 'fillText' && c.args[0] === 'pass')).toHaveLength(1);
-    expect(calls.filter((c) => c.name === 'arc')).toHaveLength(1);
+  it('folds action rows behind the localized "+n more" count on a canvas too short for the card', () => {
+    // 70 px tall: the folding cap bottoms out at 60 px. Identity (30 px card)
+    // plus one three-line group (81 px) cannot fit, so every row folds and the
+    // UI-language count names all three — nothing is dropped silently.
+    render(makeScene([annotatedRobot([{ name: 'intake', t: 0 }, { name: 'pass', t: 0 }, { name: 'align', t: 0 }])], .5));
+    sizeWrap(440, 70); runFrames();
+    text('11019');
+    text('+3 more');
+    for (const name of ['intake', 'pass', 'align']) {
+      expect(calls.some(c => c.name === 'fillText' && c.args[0] === name), name).toBe(false);
+    }
+    expect(calls.some(c => c.name === 'fillText' && c.args[0] === '0.5')).toBe(false); // folded countdown goes with its rows
+    const [, y, , h] = calls.find(c => c.name === 'roundRect')!.args as number[];
+    expect(y! + h!).toBeLessThanOrEqual(70);
   });
 });

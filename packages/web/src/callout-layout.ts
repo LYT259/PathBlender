@@ -1,16 +1,19 @@
 /**
- * Label collision layout for the 2D field canvas (user report 2026-10-14:
- * robots bunched at a game piece pile drew their action stacks and number
- * badges on top of each other — later-drawn plates simply covered
- * earlier ones, leaving names unreadable).
+ * Label collision layout for the field views (user report 2026-10-14:
+ * robots bunched at a game piece pile drew their labels on top of each
+ * other — later-drawn plates simply covered earlier ones, leaving names
+ * unreadable).
  *
- * Every label (team-number badge, action-box stack) is placed through
- * placeLabel(): the preferred diagonal first, then the mirrored diagonal,
- * then a vertical slide past whatever is in the way. Robots are drawn in
- * list order, so each label treats everything already placed this frame
- * as immovable — deterministic by construction, and the leader lines
- * already running from each robot's anchor dot keep ownership readable
- * however far a label had to move.
+ * Every robot's single information card (identity, current actions and
+ * their countdowns — 2026-10-19, one card and one leader per robot in both
+ * 2D and 3D) is placed through placeLabel(): the preferred diagonal first,
+ * then the mirrored diagonal, then a vertical slide past whatever is in the
+ * way, then a sideways slide along the row. Robots are drawn in list order,
+ * so each card treats everything already placed this frame as immovable —
+ * deterministic by construction, and the leader line running from each
+ * robot's anchor dot keeps ownership readable however far a card had to
+ * move. Cross-frame memory and the shared 2D/3D rules live in
+ * robot-label-layout.ts.
  */
 
 /** Screen-space rectangle, CSS pixels. */
@@ -34,7 +37,7 @@ export interface PlaceLabelOptions {
   anchor: { x: number; y: number };
   /** Diagonal anchor→label distance; the side picks the direction. */
   offset: number;
-  /** Label extent — a multi-box stack passes its bounding box. */
+  /** Label extent — the card's measured width and height. */
   size: { w: number; h: number };
   /** Side the label would take with nothing in the way. */
   prefer: 1 | -1;
@@ -47,6 +50,11 @@ export interface PlaceLabelOptions {
   gap: number;
   /** Labels already placed this frame; placed labels never cover these. */
   obstacles: LayoutRect[];
+  /** Exhaust every candidate on the preferred side (slides included) before
+   *  trying the other side. For a label the viewer has already seen on one
+   *  side, a vertical slide reads as "the same card moved"; a side swap
+   *  reads as a different card (3D browser finding 2026-10-17). */
+  stickySide?: boolean;
 }
 
 export function rectsIntersect(a: LayoutRect, b: LayoutRect): boolean {
@@ -67,7 +75,9 @@ const flip = (side: 1 | -1): 1 | -1 => (side === 1 ? -1 : 1);
  * Place one label near its anchor, preferring the requested diagonal.
  * Candidate order: the preferred diagonal, the mirrored diagonal, then
  * slides above/below every obstacle (closest to the desired y first, ties
- * lower-first) on either side. The first candidate clear of every
+ * lower-first) on either side — or, with `stickySide`, every preferred-side
+ * candidate before any mirrored one — then sideways slides past each
+ * obstacle at the desired height. The first candidate clear of every
  * obstacle wins; when the screen is too crowded for any, the candidate
  * with the smallest total overlap is returned so extreme frames stay as
  * readable as geometry allows.
@@ -95,15 +105,35 @@ export function placeLabel(o: PlaceLabelOptions): LabelPlacement {
     (a, b) => Math.abs(a - desiredY) - Math.abs(b - desiredY) || a - b,
   );
 
-  const candidates: LabelPlacement[] = [
-    { x: xFor(prefer), y: desiredY, side: prefer },
-    { x: xFor(flip(prefer)), y: desiredY, side: flip(prefer) },
-  ];
-  for (const y of ordered) {
-    if (y === desiredY) continue;
+  const candidates: LabelPlacement[] = [];
+  if (o.stickySide) {
     for (const side of [prefer, flip(prefer)]) {
-      candidates.push({ x: xFor(side), y, side });
+      for (const y of ordered) candidates.push({ x: xFor(side), y, side });
     }
+  } else {
+    candidates.push(
+      { x: xFor(prefer), y: desiredY, side: prefer },
+      { x: xFor(flip(prefer)), y: desiredY, side: flip(prefer) },
+    );
+    for (const y of ordered) {
+      if (y === desiredY) continue;
+      for (const side of [prefer, flip(prefer)]) {
+        candidates.push({ x: xFor(side), y, side });
+      }
+    }
+  }
+  // Last resort before overlapping: slide sideways past each obstacle at the
+  // desired height, nearest the preferred diagonal first. A canvas too short
+  // for any vertical slide (a squeezed window) still has room along the row.
+  const clampX = (x: number) => clamp(x, margin, Math.max(margin, canvas.w - margin - size.w));
+  const xs = new Set<number>();
+  for (const r of obstacles) {
+    xs.add(clampX(r.x + r.w + gap));
+    xs.add(clampX(r.x - gap - size.w));
+  }
+  const xPreferred = xFor(prefer);
+  for (const x of [...xs].sort((a, b) => Math.abs(a - xPreferred) - Math.abs(b - xPreferred) || a - b)) {
+    candidates.push({ x, y: desiredY, side: x + size.w / 2 < anchor.x ? -1 : 1 });
   }
   for (const c of candidates) {
     const rect = { x: c.x, y: c.y, w: size.w, h: size.h };
