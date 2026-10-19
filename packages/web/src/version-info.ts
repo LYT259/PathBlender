@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.31';
+export const APP_VERSION = '0.1.9-beta.32';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.32', date: '2026.10.19', note: {
+    en: 'Compact robot info cards now match in 2D and 3D: one card and leader per robot, steady across frames, with long action lists folded and exports in the UI language',
+    zh: '2D 与 3D 统一为紧凑的机器人信息牌：每台一张牌、一根引线，跨帧位置稳定，过长动作列表折叠显示，导出沿用界面语言。',
+    'zh-tw': '2D 與 3D 統一為緊湊的機器人資訊牌：每台一張牌、一條引線，跨影格位置穩定，過長動作清單折疊顯示，匯出沿用介面語言。',
+    cs: 'Kompaktní informační štítky robotů jsou teď ve 2D i 3D stejné: jeden štítek a jedna spojnice na robota, stabilní mezi snímky, dlouhé seznamy akcí se sbalují a export používá jazyk rozhraní.',
+    nl: 'Compacte robot-informatiekaartjes zijn nu gelijk in 2D en 3D: één kaartje en één verbindingslijn per robot, stabiel tussen frames, lange actielijsten worden ingevouwen en exports gebruiken de interfacetaal.',
+    fr: 'Les plaques d’information compactes des robots sont désormais identiques en 2D et en 3D : une plaque et une ligne de rappel par robot, stables d’une image à l’autre, les longues listes d’actions se replient et les exports gardent la langue de l’interface.',
+    he: 'לוחיות המידע הקומפקטיות של הרובוטים זהות כעת ב־2D וב־3D: לוחית אחת וקו מוביל אחד לכל רובוט, יציבים בין פריימים, רשימות פעולות ארוכות מתקפלות והייצוא נשאר בשפת הממשק.',
+    ja: 'コンパクトなロボット情報プレートを 2D と 3D で統一：ロボットごとにプレートと引き出し線を 1 つずつ、フレーム間で位置が安定し、長いアクション一覧は折りたたみ、書き出しは UI の言語を使います。',
+    ko: '간결한 로봇 정보판을 2D와 3D에서 통일: 로봇마다 정보판과 지시선 하나씩, 프레임 간 위치가 안정적이며, 긴 동작 목록은 접어서 표시하고 내보내기는 UI 언어를 따릅니다.',
+    pl: 'Kompaktowe tabliczki informacyjne robotów są teraz takie same w 2D i 3D: jedna tabliczka i jedna linia odniesienia na robota, stabilne między klatkami, długie listy akcji są zwijane, a eksport używa języka interfejsu.',
+    'pt-br': 'As placas de informação compactas dos robôs agora são iguais em 2D e 3D: uma placa e uma linha-guia por robô, estáveis entre quadros, listas longas de ações são recolhidas e as exportações mantêm o idioma da interface.',
+    es: 'Las placas de información compactas de los robots ahora coinciden en 2D y 3D: una placa y una línea guía por robot, estables entre fotogramas, las listas largas de acciones se pliegan y las exportaciones conservan el idioma de la interfaz.',
+    tr: 'Kompakt robot bilgi levhaları artık 2D ve 3D’de aynı: robot başına bir levha ve bir kılavuz çizgi, kareler arasında sabit, uzun eylem listeleri katlanır ve dışa aktarmalar arayüz dilini kullanır.',
+    ar: 'لوحات معلومات الروبوتات المدمجة متطابقة الآن في العرض ثنائي وثلاثي الأبعاد: لوحة واحدة وخط إشارة واحد لكل روبوت، ثابتة بين الإطارات، وتُطوى قوائم الإجراءات الطويلة، ويستخدم التصدير لغة الواجهة.',
+    az: 'Kompakt robot məlumat lövhələri indi 2D və 3D-də eynidir: hər robot üçün bir lövhə və bir göstərici xətt, kadrlar arasında sabit, uzun hərəkət siyahıları qatlanır və ixrac interfeys dilindən istifadə edir.',
+    bg: 'Компактните информационни плочи на роботите вече са еднакви в 2D и 3D: по една плоча и една водеща линия на робот, стабилни между кадрите, дългите списъци с действия се свиват, а експортът използва езика на интерфейса.',
+    bs: 'Kompaktne informativne ploče robota sada su iste u 2D i 3D: jedna ploča i jedna vodeća linija po robotu, stabilne između kadrova, dugi popisi akcija se sklapaju, a izvoz koristi jezik interfejsa.',
+    da: 'Kompakte robotinfoplader er nu ens i 2D og 3D: én plade og én henvisningslinje pr. robot, stabile mellem billeder, lange handlingslister foldes sammen, og eksport bruger grænsefladesproget.',
+    de: 'Kompakte Roboter-Infotafeln sind jetzt in 2D und 3D gleich: eine Tafel und eine Hinweislinie pro Roboter, stabil über Frames hinweg, lange Aktionslisten werden eingeklappt und Exporte verwenden die Oberflächensprache.',
+    el: 'Οι συμπαγείς πλάκες πληροφοριών των ρομπότ είναι πλέον ίδιες σε 2D και 3D: μία πλάκα και μία γραμμή οδηγός ανά ρομπότ, σταθερές μεταξύ καρέ, οι μεγάλες λίστες ενεργειών διπλώνονται και οι εξαγωγές χρησιμοποιούν τη γλώσσα της διεπαφής.',
+    fil: 'Pare-pareho na ngayon ang compact na info plate ng mga robot sa 2D at 3D: isang plate at isang leader line bawat robot, matatag sa pagitan ng mga frame, nakatiklop ang mahahabang listahan ng aksyon, at gumagamit ng wika ng interface ang mga export.',
+    hi: 'रोबोट की संक्षिप्त सूचना पट्टियाँ अब 2D और 3D में समान हैं: प्रति रोबोट एक पट्टी और एक संकेत रेखा, फ़्रेमों के बीच स्थिर, लंबी क्रिया सूचियाँ मोड़ दी जाती हैं और निर्यात इंटरफ़ेस की भाषा में होता है।',
+    hr: 'Kompaktne informativne ploče robota sada su iste u 2D i 3D: jedna ploča i jedna vodeća linija po robotu, stabilne između kadrova, dugi popisi akcija se sklapaju, a izvoz koristi jezik sučelja.',
+    hu: 'A robotok kompakt információs táblái most 2D-ben és 3D-ben azonosak: egy tábla és egy mutatóvonal robotonként, képkockák között stabilan, a hosszú műveletlisták összecsukódnak, az exportok pedig a felület nyelvét használják.',
+    hy: 'Ռոբոտների կոմպակտ ինֆոթիթակները այժմ նույնն են 2D-ում և 3D-ում՝ մեկ թիթակ և մեկ ցուցիչ գիծ յուրաքանչյուր ռոբոտի համար, կայուն շրջանակների միջև, գործողությունների երկար ցանկերը ծալվում են, իսկ արտահանումն օգտագործում է միջերեսի լեզուն։',
+    id: 'Pelat informasi robot yang ringkas kini sama di 2D dan 3D: satu pelat dan satu garis penunjuk per robot, stabil antar bingkai, daftar aksi yang panjang dilipat, dan ekspor memakai bahasa antarmuka.',
+    it: 'I pannelli informativi compatti dei robot ora coincidono in 2D e 3D: un pannello e una linea guida per robot, stabili tra i fotogrammi, gli elenchi di azioni lunghi vengono ripiegati e le esportazioni usano la lingua dell’interfaccia.',
+    mk: 'Компактните информативни плочи на роботите сега се исти во 2D и 3D: една плоча и една водечка линија по робот, стабилни меѓу кадрите, долгите списоци со дејства се склопуваат, а извозот го користи јазикот на интерфејсот.',
+    mr: 'रोबोटच्या संक्षिप्त माहिती पट्टिका आता 2D आणि 3D मध्ये सारख्या आहेत: प्रत्येक रोबोटसाठी एक पट्टिका व एक निर्देश रेषा, फ्रेमदरम्यान स्थिर, लांब कृती सूची घडी करून दाखवल्या जातात आणि निर्यात इंटरफेसच्या भाषेत होते.',
+    ms: 'Plat maklumat robot yang padat kini sama dalam 2D dan 3D: satu plat dan satu garis penunjuk bagi setiap robot, stabil antara bingkai, senarai tindakan yang panjang dilipat, dan eksport menggunakan bahasa antara muka.',
+    nb: 'Kompakte robotinfoplater er nå like i 2D og 3D: én plate og én henvisningslinje per robot, stabile mellom bilder, lange handlingslister foldes sammen, og eksport bruker grensesnittspråket.',
+    nn: 'Kompakte robotinfoplater er no like i 2D og 3D: éi plate og éi tilvisingslinje per robot, stabile mellom bilete, lange handlingslister vert falda saman, og eksport brukar grensesnittspråket.',
+    ro: 'Plăcuțele compacte de informații ale roboților sunt acum identice în 2D și 3D: o plăcuță și o linie indicatoare pe robot, stabile între cadre, listele lungi de acțiuni se pliază, iar exporturile folosesc limba interfeței.',
+    rw: 'Impapuro z’amakuru za robote zoroheje ubu zihuje muri 2D na 3D: urupapuro rumwe n’umurongo umwe uyobora kuri buri robote, zihagaze neza hagati y’amashusho, urutonde rurerure rw’ibikorwa ruzingwa, kandi kohereza hanze bikoresha ururimi rw’imikoreshereze',
+    sq: 'Pllakat kompakte të informacionit të robotëve tani janë të njëjta në 2D dhe 3D: një pllakë dhe një vijë udhëzuese për robot, të qëndrueshme mes kuadrove, listat e gjata të veprimeve palosen dhe eksportet përdorin gjuhën e ndërfaqes.',
+    sr: 'Kompaktne informativne ploče robota sada su iste u 2D i 3D: jedna ploča i jedna vodeća linija po robotu, stabilne između kadrova, dugi spiskovi akcija se sklapaju, a izvoz koristi jezik interfejsa.',
+    sv: 'Kompakta informationsplattor för robotar är nu lika i 2D och 3D: en platta och en hänvisningslinje per robot, stabila mellan bildrutor, långa åtgärdslistor fälls ihop och exporter använder gränssnittets språk.',
+    ta: 'ரோபோக்களின் சுருக்கமான தகவல் பலகைகள் இப்போது 2D மற்றும் 3D இல் ஒரே மாதிரி: ஒவ்வொரு ரோபோவுக்கும் ஒரு பலகை மற்றும் ஒரு வழிகாட்டிக் கோடு, பிரேம்களுக்கு இடையே நிலையானவை, நீண்ட செயல் பட்டியல்கள் மடிக்கப்படுகின்றன, ஏற்றுமதிகள் இடைமுகத்தின் மொழியைப் பயன்படுத்துகின்றன.',
+    uk: 'Компактні інформаційні таблички роботів тепер однакові у 2D та 3D: одна табличка й одна виносна лінія на робота, стабільні між кадрами, довгі списки дій згортаються, а експорт використовує мову інтерфейсу.',
+    vi: 'Bảng thông tin rô-bốt gọn nhẹ nay thống nhất giữa 2D và 3D: mỗi rô-bốt một bảng và một đường dẫn, ổn định giữa các khung hình, danh sách hành động dài được thu gọn và bản xuất dùng ngôn ngữ giao diện.',
+  } },
   { version: '0.1.9-beta.31', date: '2026.10.17', note: {
     'en': 'No Default label beside the default accent color',
     'zh': '默认强调色旁不再显示「默认」字样',

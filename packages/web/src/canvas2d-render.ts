@@ -31,7 +31,14 @@ import {
 import { TRAIL_WIDTH_M } from './ground-trail';
 import { bumperColor, heatmapColor, robotAnnotation } from './robot-identity';
 import { MK5I_MODULE_TOP_WORLD_M } from './robot-sprites';
-import { placeLabel, type LayoutRect } from './callout-layout';
+import type { LayoutRect } from './callout-layout';
+import { measureRobotLabel, drawRobotLabel } from './robot-label-canvas';
+import { ROBOT_LABEL_STYLE } from './robot-label-style';
+import { leaderGeometry } from './robot-label-leader';
+import {
+  ROBOT_LABEL_MARGIN, anchorClearHalf, anchorClearRect, placeRobotLabel, plateHeightCap, pruneRobotLabelMemory,
+  type RobotLabelFrame, type RobotLabelMemory,
+} from './robot-label-layout';
 
 export interface RenderView {
   /** Screen pixels per meter. */
@@ -142,10 +149,38 @@ export interface FieldFrameParams {
   dimPathIds?: ReadonlySet<string>;
   /** Clock overlay text; undefined draws the standard t-label, null draws none. */
   clockLabel?: string | null;
+  /** Localized time unit, shared by live canvas and its export consumers. */
+  secondsLabel?: string;
+  /** Formats the folded action count ("+n more") — the localized
+   *  `sequence.moreActions`; the fallback is a bare "+n". */
+  moreLabel?: (n: number) => string;
+  /** Right-to-left UI: mirror the cards like the 3D DOM cards under html[dir=rtl]. */
+  rtl?: boolean;
+  /** Caller-owned cross-frame plate memory (side + offset per robot id), so
+   *  playback, scrubbing and zoom never flip a card to the other side. The
+   *  live canvas keeps one map; a video take keeps its own; a single-frame
+   *  export passes none and gets the deterministic first-sight layout. The
+   *  renderer prunes entries for robots no longer in `robots`. */
+  labelMemory?: Map<string, RobotLabelMemory>;
+}
+
+/** Per-frame label context handed to each robot as it draws. */
+interface LabelPass {
+  frame: RobotLabelFrame;
+  memory: Map<string, RobotLabelMemory> | undefined;
+  viewport: { w: number; h: number };
+  secondsLabel: string;
+  moreLabel: ((n: number) => string) | undefined;
+  rtl: boolean;
 }
 
 export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFrameParams): void {
   const { w, h, view, field, robots, conflicts, bounds } = p;
+  // A canvas that has no size yet (first layout pass) shows nothing, and
+  // must not seed the card memory with clamped garbage either — a 2D
+  // walkthrough found a card parked 250 px off its robot for seconds
+  // because the 0×0 first frame had remembered an offset into the corner.
+  if (w <= 0 || h <= 0) return;
   const currentT = p.currentT;
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
@@ -287,21 +322,51 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
 
   // Tolerance-conflict ghosts: the slipped robot drawn faded (dashed bumper
   // edge) at its worst-case clock pose, under the solid robots — the plan
-  // stays ground truth, the hypothetical collision reads on the field.
+  // stays ground truth, the hypothetical collision reads on the field. The
+  // ghost's faded identity card places against nothing and registers
+  // nothing (the old behavior): solid cards never move for a hypothetical,
+  // and paint over it where they meet.
+  const viewport = { w, h };
+  const secondsLabel = p.secondsLabel ?? 's';
+  const rtl = p.rtl === true;
   for (const g of toleranceGhostsAt(conflicts, robots, currentT)) {
     const vis = robotVisualGeometry(g.robot.trajectory, field.year);
     const modules = chassisModules(g.robot.trajectory, vis.chassis);
     ctx.save();
     ctx.globalAlpha = 0.35;
-    drawRobot(ctx, sx, sy, g.pose, g.robot, vis, modules, p.sprite, view.scale, false, false, null, currentT, w, h, [], true);
+    drawRobot(ctx, sx, sy, g.pose, g.robot, vis, modules, p.sprite, view.scale, false, false, null, currentT,
+      { frame: { hard: [], corridors: [] }, memory: undefined, viewport, secondsLabel, moreLabel: p.moreLabel, rtl }, true);
     ctx.restore();
   }
 
-  // Robots at currentT. Label plates (number badges, action stacks)
-  // register into this shared list as each robot draws, so every label
-  // placed later avoids everything already on screen — bunched robots
-  // no longer stack their callouts over each other (2026-10-14).
-  const labelRects: LayoutRect[] = [];
+  // Robots at currentT. Every robot body claims a keep-clear square up front
+  // and the clock reserves its corner, so each card placed in robot order
+  // avoids every body, every earlier card and (softly) every earlier
+  // leader — bunched robots no longer stack their callouts over each other
+  // (2026-10-14). Side/offset memory, when the caller holds one, keeps each
+  // card where the eye learned it across frames (robot-label-layout.ts).
+  const frame: RobotLabelFrame = {
+    hard: robots.map((r) => {
+      const pose = samplePoseAt(r, currentT);
+      const { outer } = robotVisualGeometry(r.trajectory, field.year);
+      const cos = Math.cos(pose.heading);
+      const sin = Math.sin(pose.heading);
+      const anchor = {
+        x: sx(pose.x + outer.offsetX * cos - outer.offsetY * sin),
+        y: sy(pose.y + outer.offsetX * sin + outer.offsetY * cos),
+      };
+      return anchorClearRect(anchor, Math.hypot(outer.lengthM, outer.widthM) * view.scale / 2);
+    }),
+    corridors: [],
+  };
+  if (p.clockLabel !== null && robots.length > 0) {
+    ctx.save();
+    ctx.font = '13px ui-monospace, monospace';
+    frame.hard.push({ x: 6, y: 4, w: ctx.measureText(p.clockLabel ?? t_defaultClock(currentT)).width + 12, h: 24 });
+    ctx.restore();
+  }
+  if (p.labelMemory) pruneRobotLabelMemory(p.labelMemory, robots.map((r) => r.trajectory.id));
+  const pass: LabelPass = { frame, memory: p.labelMemory, viewport, secondsLabel, moreLabel: p.moreLabel, rtl };
   for (const r of robots) {
     const state = sampleStateAt(r, currentT);
     const pose = state
@@ -313,9 +378,8 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
     // mechanism groups still open plus one-shot moves inside their flash
     // window (action-words.ts). Empty before anything fires and for
     // unannotated routes — the callout then draws nothing.
-    // One box per distinct ending time (user layout 2026-10-08): same
-    // enders share a box, boxes stack soonest-ending first, the box's one
-    // countdown counts to their shared end — pairs and successors exact,
+    // One row group per distinct ending time: same enders share a
+    // countdown, groups stack soonest-ending first — pairs and successors exact,
     // open-ended to the route end, flashes to their window.
     const actionGroups = groupedActionsAt(r, currentT);
     const action = actionGroups.length ? actionGroups : null;
@@ -333,9 +397,7 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
       outOfBoundsNow.has(r.trajectory.id),
       action,
       currentT,
-      w,
-      h,
-      labelRects,
+      pass,
     );
   }
 
@@ -371,12 +433,10 @@ function drawRobot(
   outOfBounds: boolean,
   actions: import('@pathblender/core').ActionGroup[] | null,
   currentT: number,
-  canvasW: number,
-  canvasH: number,
-  /** Labels already placed this frame — this robot's badges avoid them
-   *  and register themselves for the robots drawn after (2026-10-14:
-   *  bunched robots drew stacks and number plates over each other). */
-  labelRects: LayoutRect[],
+  /** This frame's label pass: obstacles placed so far (this robot's card
+   *  avoids them and registers itself for the robots drawn after), the
+   *  caller's cross-frame memory, viewport and localized strings. */
+  labels: LabelPass,
   ghost = false,
 ) {
   const { outer, chassis } = vis;
@@ -481,208 +541,72 @@ function drawRobot(
   ctx.fill();
   ctx.restore();
 
-  // Team number callout (user request 2026-10-04, replacing the
-  // on-bumper print — unreadable once the whole field fits on screen):
-  // a leader line + anchor dot like the Preferences mouse diagram, the
-  // number itself at the leader tip. Screen-space throughout: the
-  // number stays upright and constant-size at any heading and zoom.
-  const num = robotAnnotation(r.trajectory);
-  // Horizontal side the number badge took (1 right, -1 left, 1 when it
-  // never drew) — the action badge mirrors onto the other side.
-  let numDir: 1 | -1 = 1;
-  if (num) {
-    // The visible footprint can be offset from the trajectory origin.
-    // Rotate that local offset exactly as the bumper/chassis above.
-    const cos = Math.cos(pose.heading);
-    const sin = Math.sin(pose.heading);
-    const cx = sx(pose.x + outer.offsetX * cos - outer.offsetY * sin);
-    const cy = sy(pose.y + outer.offsetX * sin + outer.offsetY * cos);
-    const reach = Math.hypot(L, W) / 2;
-    ctx.save();
-    ctx.font = 'bold 13px ui-sans-serif, system-ui, sans-serif';
-    const tw = ctx.measureText(num).width;
-    // Reuse the theme-aware alliance control colors, including their
-    // lighter dark-theme variants, rather than a white number or accent dot.
-    const color = cssVar(
-      r.trajectory.alliance === 'red' ? '--seg-red-fg' : '--seg-blue-fg',
-      bumperColor(r.trajectory.alliance),
-    );
-    const plate = cssVar('--bg-panel', '#ffffff');
-    const pad = 7;
-    const labelW = tw + pad * 2;
-    const labelH = 24;
-    const margin = 6;
-    const leader = 20;
-    const offset = Math.SQRT1_2 * (reach + leader);
-    const prefer = cx + offset + labelW + margin <= canvasW ? 1 : -1;
-    // Collision layout (2026-10-14): the badge keeps its preferred
-    // diagonal when clear, flips or slides past labels earlier robots
-    // placed this frame, and registers itself for everyone after.
-    const place = placeLabel({
-      anchor: { x: cx, y: cy },
-      offset,
-      size: { w: labelW, h: labelH },
-      prefer,
-      y0: cy - offset - labelH / 2,
-      canvas: { w: canvasW, h: canvasH },
-      margin,
-      gap: 4,
-      obstacles: labelRects,
-    });
-    numDir = place.side;
-    // Keep the badge inside the viewport and align its text to backing
-    // pixels. Font size remains in CSS pixels; the existing DPR transform
-    // rasterizes it directly at display resolution, independent of zoom.
-    const dpr = window.devicePixelRatio || 1;
-    const snap = (value: number) => Math.round(value * dpr) / dpr;
-    const bx = snap(place.x);
-    const by = snap(place.y);
-    if (!ghost) labelRects.push({ x: bx, y: by, w: labelW, h: labelH });
-    const dir = place.side;
-    const lx = dir > 0 ? bx : bx + labelW;
-    const ly = by + labelH / 2;
-    // An opaque under-stroke keeps the fine leader legible over artwork.
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(lx, ly);
-    ctx.strokeStyle = plate;
-    ctx.lineWidth = 3;
-    ctx.stroke();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
-    ctx.strokeStyle = plate;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fill();
-
-    // A solid, compact badge isolates the glyphs from field textures.
-    // Avoid thick strokeText outlines, which muddy small letter counters.
-    ctx.beginPath();
-    ctx.roundRect(bx, by, labelW, labelH, 6);
-    ctx.fillStyle = plate;
-    ctx.fill();
-    ctx.strokeStyle = cssVar('--border', 'rgba(0, 0, 0, 0.10)');
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = color;
-    ctx.fillText(num, snap(bx + pad), snap(ly));
-    ctx.restore();
-  }
-
-  // Current-action callout (user request 2026-10-08, stacked per action the
-  // same day): the same leader-line language on the diagonal opposite the
-  // team number — ONE badge per active action, each on its own line fanning
-  // from a shared anchor dot, stacked downward (user: "两个动作就是两条线
-  // 拉出来两个框，要分开的"). The active set comes from the vocabulary table
-  // in core/action-words.ts (pairs resolve to exact intervals;
-  // same-mechanism events replace; one-shot moves flash and fade) — empty
-  // before anything fires and for unannotated routes, drawing nothing.
-  // Names render verbatim in mono (the annotations' own identifiers, not
-  // UI copy) in the robot's session color, distinct from the
-  // alliance-colored number badge above.
-  if (actions) {
-    const cos = Math.cos(pose.heading);
-    const sin = Math.sin(pose.heading);
-    const cx = sx(pose.x + outer.offsetX * cos - outer.offsetY * sin);
-    const cy = sy(pose.y + outer.offsetX * sin + outer.offsetY * cos);
-    const reach = Math.hypot(L, W) / 2;
-    ctx.save();
-    ctx.font = '12px ui-monospace, monospace';
-    const color = r.color;
-    const plate = cssVar('--bg-panel', '#ffffff');
-    const pad = 6;
-    const lineH = 16;
-    const colGap = 8;
-    const margin = 6;
-    const gap = 4;
-    const leader = 20;
-    const offset = Math.SQRT1_2 * (reach + leader);
-    const dpr = window.devicePixelRatio || 1;
-    const snap = (value: number) => Math.round(value * dpr) / dpr;
-    // Pre-measure every box: names stack left, the one countdown sits
-    // right-aligned at the box's vertical middle.
-    const boxes = actions.map((group) => {
-      const sec = `${Math.max(0, group.endsAt - currentT).toFixed(1)}s`;
-      const nameW = Math.max(...group.actions.map((a) => ctx.measureText(a.name).width));
-      const secW = ctx.measureText(sec).width;
-      const h = 22 + (group.actions.length - 1) * lineH;
-      const w = pad + nameW + colGap + secW + pad;
-      return { group, sec, secW, h, w };
-    });
-    const stackH = boxes.reduce((m, b) => m + b.h, 0) + (boxes.length - 1) * gap;
-    const stackW = Math.max(...boxes.map((b) => b.w));
-    // Collision layout (2026-10-14): the whole stack is one unit — placed
-    // on the diagonal opposite the number badge when clear, flipped or
-    // slid vertically past labels earlier robots (or this robot's own
-    // number) placed this frame, then registered as an obstacle itself.
-    const place = placeLabel({
-      anchor: { x: cx, y: cy },
-      offset,
-      size: { w: stackW, h: stackH },
-      prefer: numDir === 1 ? -1 : 1,
-      y0: cy + offset - 11,
-      canvas: { w: canvasW, h: canvasH },
-      margin,
-      gap,
-      obstacles: labelRects,
-    });
-    const dir = place.side;
-    const stackX = snap(place.x);
-    labelRects.push({ x: stackX, y: snap(place.y), w: stackW, h: stackH });
-    const y0 = snap(place.y);
-    ctx.lineCap = 'round';
-    // Shared anchor dot at the footprint center, robot-colored.
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
-    ctx.strokeStyle = plate;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fill();
-    let byCursor = y0;
-    for (const box of boxes) {
-      const bx = snap(dir > 0 ? stackX : stackX + stackW - box.w);
-      const ly = byCursor + box.h / 2;
-      const lx = dir > 0 ? bx : bx + box.w;
-      // Leader from the anchor to this badge's robot-facing edge — the
-      // stack fans out without any line crossing a badge above it.
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(lx, ly);
-      ctx.strokeStyle = plate;
-      ctx.lineWidth = 3;
-      ctx.stroke();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.roundRect(bx, byCursor, box.w, box.h, 5);
-      ctx.fillStyle = plate;
-      ctx.fill();
-      ctx.strokeStyle = cssVar('--border', 'rgba(0, 0, 0, 0.10)');
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = color;
-      box.group.actions.forEach((a, i) => {
-        ctx.fillText(a.name, snap(bx + pad), snap(byCursor + 11 + i * lineH));
-      });
-      // The box's single countdown, right-aligned mid-box.
-      ctx.textAlign = 'right';
-      ctx.fillText(box.sec, snap(bx + box.w - pad), snap(ly));
-      ctx.textAlign = 'left';
-      byCursor += box.h + gap;
-    }
-    ctx.restore();
-  }
+  // One screen-space card and one leader for the entire robot, matching 3D.
+  // Core still owns the active groups and countdown boundaries; the shared
+  // layout module owns where the card lands and how it is remembered.
+  const identity = robotAnnotation(r.trajectory) || r.trajectory.name;
+  const cos = Math.cos(pose.heading);
+  const sin = Math.sin(pose.heading);
+  const anchor = {
+    x: sx(pose.x + outer.offsetX * cos - outer.offsetY * sin),
+    y: sy(pose.y + outer.offsetX * sin + outer.offsetY * cos),
+  };
+  const { viewport, frame, memory } = labels;
+  // Same visibility rule as the 3D overlay (projectLabelAnchor): a robot
+  // whose footprint center is off the canvas gets no card and no leader to
+  // nowhere, and its memory waits untouched for it to come back.
+  if (anchor.x < 0 || anchor.x > viewport.w || anchor.y < 0 || anchor.y > viewport.h) return;
+  const clear = anchorClearHalf(Math.hypot(L, W) / 2);
+  ctx.save();
+  const label = measureRobotLabel(ctx, identity, actions ?? [], currentT, {
+    secondsLabel: labels.secondsLabel,
+    moreLabel: labels.moreLabel,
+    maxWidth: Math.max(1, Math.min(ROBOT_LABEL_STYLE.maxWidth, viewport.w - 2 * ROBOT_LABEL_MARGIN)),
+    maxHeight: plateHeightCap(viewport.h),
+  });
+  const id = r.trajectory.id;
+  const placed = placeRobotLabel({
+    anchor, clear, size: label, viewport,
+    remembered: ghost ? undefined : memory?.get(id),
+    frame, register: !ghost,
+  });
+  if (!ghost) memory?.set(id, placed.memory);
+  const dpr = window.devicePixelRatio || 1;
+  const snap = (v: number) => Math.round(v * dpr) / dpr;
+  // Draw on the device grid; the leader docks to the drawn edge.
+  const rect = { x: snap(placed.rect.x), y: snap(placed.rect.y), w: label.w, h: label.h };
+  const colors = {
+    background: cssVar('--bg-panel', '#ffffff'),
+    border: cssVar('--border', 'rgba(0, 0, 0, 0.10)'),
+    foreground: cssVar('--fg', '#181617'),
+    dim: cssVar('--fg-dim', '#8e8e93'),
+    alliance: cssVar(r.trajectory.alliance === 'red' ? '--seg-red-fg' : '--seg-blue-fg', bumperColor(r.trajectory.alliance)),
+    path: r.color,
+  };
+  const leader = leaderGeometry(anchor, rect);
+  // Use the same docking geometry as SVG, with ordinary canvas commands
+  // so off-screen exports need no DOM overlay or Path2D support.
+  const points = leader.points;
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (const point of points.slice(1)) ctx.lineTo(point.x, point.y);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = colors.background;
+  ctx.lineWidth = ROBOT_LABEL_STYLE.leaderUnderlay;
+  ctx.stroke();
+  ctx.strokeStyle = colors.alliance;
+  ctx.lineWidth = ROBOT_LABEL_STYLE.leaderWidth;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(anchor.x, anchor.y, ROBOT_LABEL_STYLE.anchorRadius, 0, Math.PI * 2);
+  ctx.fillStyle = colors.alliance;
+  ctx.strokeStyle = colors.background;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fill();
+  drawRobotLabel(ctx, rect, label, colors, { rtl: labels.rtl });
+  ctx.restore();
 }
 
 function hexAlpha(hex: string, alpha: number): string {

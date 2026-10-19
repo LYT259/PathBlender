@@ -50,6 +50,23 @@ describe('placeLabel', () => {
     expect(rectsIntersect({ ...p, w: 100, h: 24 }, blocked)).toBe(false);
   });
 
+  it('with stickySide, slides on the preferred side before ever mirroring', () => {
+    // Same blocked preferred diagonal; the mirrored diagonal is free, but a
+    // remembered card slides on its own side instead (above and below are
+    // equidistant here; ties resolve to the upper slot).
+    const blocked: LayoutRect = { x: 220, y: 146, w: 120, h: 44 };
+    const p = placeLabel({ ...base, obstacles: [blocked], stickySide: true });
+    expect(p.side).toBe(1);
+    expect(p.x).toBe(232);
+    expect(p.y).toBe(blocked.y - 4 - 24);
+    expect(rectsIntersect({ ...p, w: 100, h: 24 }, blocked)).toBe(false);
+    // Only when the whole preferred side is taken does it cross over.
+    const wall: LayoutRect = { x: 232, y: 0, w: 168, h: 400 };
+    const crossed = placeLabel({ ...base, obstacles: [wall], stickySide: true });
+    expect(crossed.side).toBe(-1);
+    expect(rectsIntersect({ ...crossed, w: 100, h: 24 }, wall)).toBe(false);
+  });
+
   it('slides below the obstacle when both diagonals are blocked', () => {
     // One wide obstacle covering both diagonals at the desired height.
     const blocked: LayoutRect = { x: 0, y: 130, w: 400, h: 50 };
@@ -100,5 +117,22 @@ describe('placeLabel', () => {
     // Desired y 156..180 already clears the obstacle (starts at 182) —
     // the diagonal itself is free, no movement at all.
     expect(p).toEqual({ x: 232, y: 156, side: 1 });
+  });
+
+  it('slides sideways along the row when a short canvas leaves no vertical room', () => {
+    // A 40 px tall strip: a 24 px label fits one row only (y 6 or 10, which
+    // overlap). Two labels already occupy both diagonals of a shared anchor;
+    // the third must step past them along the row rather than cover one
+    // (2D walkthrough: an 84 px canvas with three bunched robots).
+    const strip = { ...base, canvas: { w: 800, h: 40 }, anchor: { x: 400, y: 20 }, y0: -60 };
+    const first = placeLabel({ ...strip, obstacles: [] });
+    const second = placeLabel({ ...strip, obstacles: [{ ...first, w: 100, h: 24 }] });
+    const third = placeLabel({ ...strip, obstacles: [{ ...first, w: 100, h: 24 }, { ...second, w: 100, h: 24 }] });
+    expect(first).toEqual({ x: 432, y: 6, side: 1 });
+    expect(second).toEqual({ x: 268, y: 6, side: -1 });
+    expect(third.y).toBe(6);
+    for (const taken of [first, second]) expect(rectsIntersect({ ...third, w: 100, h: 24 }, { ...taken, w: 100, h: 24 })).toBe(false);
+    expect(third.x).toBe(432 + 100 + 4); // snug past the right-hand label
+    expect(third.side).toBe(1);
   });
 });

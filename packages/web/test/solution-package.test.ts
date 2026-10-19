@@ -280,4 +280,26 @@ describe('buildSolutionPackage', () => {
     expect(stages).toContain('rendering');
     expect(stages).toContain('saving');
   });
+
+  it('hands the UI-language card strings to both the still and the video scene', async () => {
+    // The workspace shows "秒" and "还有 n 项"; the package must not quietly
+    // revert to "s" / "+n" (the renderer's fallbacks) just because it draws
+    // off-screen.
+    const o = baseOptions();
+    const seen: { secondsLabel?: string; more?: string }[] = [];
+    const moreLabel = (n: number) => `还有 ${n} 项`;
+    await buildSolutionPackage({
+      ...o,
+      secondsLabel: '秒',
+      moreLabel,
+      capture: {
+        renderPng: async (scene) => { seen.push({ secondsLabel: scene.secondsLabel, more: scene.moreLabel?.(2) }); return PNG_BYTES; },
+        recordVideo: async (scene) => {
+          seen.push({ secondsLabel: scene.secondsLabel, more: scene.moreLabel?.(2) });
+          return { bytes: MP4_BYTES, mime: 'video/mp4;codecs=avc1.42E01E', ext: 'mp4' };
+        },
+      },
+    });
+    expect(seen).toEqual([{ secondsLabel: '秒', more: '还有 2 项' }, { secondsLabel: '秒', more: '还有 2 项' }]);
+  });
 });

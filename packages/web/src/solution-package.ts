@@ -26,6 +26,7 @@ import type {
 } from '@pathblender/core';
 import { serializeSession } from '@pathblender/core';
 import { renderFieldFrame, fitViewFor } from './canvas2d-render';
+import type { RobotLabelMemory } from './robot-label-layout';
 import { MK5I_MODULE_TOP_URL } from './robot-sprites';
 import { buildZip, type ZipEntry } from './zip';
 
@@ -56,6 +57,12 @@ interface ExportScene {
   bounds: OutOfBoundsInterval[];
   width: number;
   height: number;
+  /** Localized card strings so the package matches the on-screen workspace
+   *  ("秒" stays "秒"; a folded count reads in the UI language). */
+  secondsLabel?: string;
+  moreLabel?: (n: number) => string;
+  /** Right-to-left UI: the cards mirror as they do on screen. */
+  rtl?: boolean;
 }
 
 export interface SolutionPackageOptions {
@@ -75,6 +82,12 @@ export interface SolutionPackageOptions {
   conflicts: CollisionInterval[];
   bounds: OutOfBoundsInterval[];
   appVersion: string;
+  /** UI-language time unit for the robot cards (defaults to "s"). */
+  secondsLabel?: string;
+  /** UI-language "+n more" for folded card rows (defaults to "+n"). */
+  moreLabel?: (n: number) => string;
+  /** Right-to-left UI language (cards mirror like the on-screen canvas). */
+  rtl?: boolean;
   now?: Date;
   onProgress?: (stage: 'rendering' | 'recording' | 'saving') => void;
   capture?: SolutionCapture;
@@ -242,7 +255,15 @@ function makeSceneCanvas(width: number, height: number): { canvas: HTMLCanvasEle
   return { canvas, ctx };
 }
 
-function drawScene(ctx: CanvasRenderingContext2D, scene: ExportScene, t: number, clockLabel: string | null): void {
+function drawScene(
+  ctx: CanvasRenderingContext2D,
+  scene: ExportScene,
+  t: number,
+  clockLabel: string | null,
+  /** One map per video take keeps every card on its side across frames;
+   *  the single still frame passes none. */
+  labelMemory?: Map<string, RobotLabelMemory>,
+): void {
   renderFieldFrame(ctx, {
     w: scene.width,
     h: scene.height,
@@ -257,6 +278,10 @@ function drawScene(ctx: CanvasRenderingContext2D, scene: ExportScene, t: number,
     showTrail: true,
     showHeatmap: false,
     clockLabel,
+    secondsLabel: scene.secondsLabel,
+    moreLabel: scene.moreLabel,
+    rtl: scene.rtl,
+    labelMemory,
   });
 }
 
@@ -281,7 +306,8 @@ async function defaultRecordTake(scene: ExportScene, mime: string, seconds: numb
   const made = makeSceneCanvas(scene.width, scene.height);
   if (!made || typeof made.canvas.captureStream !== 'function' || typeof MediaRecorder === 'undefined') return nothing;
 
-  drawScene(made.ctx, scene, 0, 't = 0.00 s'); // frame 0 before the stream opens
+  const memory = new Map<string, RobotLabelMemory>();
+  drawScene(made.ctx, scene, 0, 't = 0.00 s', memory); // frame 0 before the stream opens
   let stream: MediaStream;
   try {
     stream = made.canvas.captureStream(30);
@@ -313,13 +339,13 @@ async function defaultRecordTake(scene: ExportScene, mime: string, seconds: numb
       const now = performance.now();
       const elapsed = (now - started) / 1000;
       if (elapsed >= seconds) {
-        drawScene(made.ctx, scene, seconds, `t = ${seconds.toFixed(2)} s`);
+        drawScene(made.ctx, scene, seconds, `t = ${seconds.toFixed(2)} s`, memory);
         resolve();
         return;
       }
       if (now - lastDraw >= FRAME_INTERVAL_MS - 4) { // small catch-up slack
         lastDraw = now;
-        drawScene(made.ctx, scene, elapsed, `t = ${elapsed.toFixed(2)} s`);
+        drawScene(made.ctx, scene, elapsed, `t = ${elapsed.toFixed(2)} s`, memory);
       }
       requestAnimationFrame(step);
     };
@@ -441,6 +467,9 @@ export async function buildSolutionPackage(o: SolutionPackageOptions): Promise<S
     bounds: o.bounds,
     width: VIDEO_WIDTH,
     height: VIDEO_HEIGHT,
+    secondsLabel: o.secondsLabel,
+    moreLabel: o.moreLabel,
+    rtl: o.rtl,
   };
 
   const png = capture.renderPng

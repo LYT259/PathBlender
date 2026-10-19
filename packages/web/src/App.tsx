@@ -49,6 +49,7 @@ import { APP_VERSION } from './version-info';
 import { fieldImageFor } from './field-images';
 import { FIELD3D_MODELS } from './field3d-models';
 import { FieldCanvas, type FieldCanvasHandle } from './components/FieldCanvas';
+import type { RobotLabelMemory } from './robot-label-layout';
 import type { FieldCanvas3DHandle } from './components/FieldCanvas3D';
 const FieldCanvas3D = lazy(() => import('./components/FieldCanvas3D').then((module) => ({ default: module.FieldCanvas3D })));
 import { Timeline } from './components/Timeline';
@@ -62,7 +63,7 @@ import { ConflictPanel } from './components/ConflictPanel';
 import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
 import { playbackEnd, usePlaybackRange } from './playback-range';
-import { I18nProvider, useI18n } from './i18n';
+import { I18nProvider, isRtl, useI18n } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
@@ -248,6 +249,9 @@ function AppBody() {
   const sessionInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<FieldCanvasHandle>(null);
   const canvas3DRef = useRef<FieldCanvas3DHandle>(null);
+  // 2D card memory lives here because the 2D canvas unmounts while 3D is
+  // shown; the 3D overlay keeps its own (it stays mounted, merely inactive).
+  const labelMemory2D = useRef(new Map<string, RobotLabelMemory>());
   const baseField = fieldId === CUSTOM_FIELD_ID && customField ? customField : fieldById(fieldId);
   // The 2D artwork, its calibration, the tag overlay and the 3D beacons all
   // follow the selected field construction.
@@ -1253,6 +1257,9 @@ function AppBody() {
           conflicts,
           bounds,
           appVersion: APP_VERSION,
+          secondsLabel: tr('sequence.seconds'),
+          moreLabel: (count) => tr('sequence.moreActions', { n: count }),
+          rtl: isRtl(lang),
           onProgress: (stage) => flash(
             tr(stage === 'recording' ? 'toast.pkgRecording' : stage === 'rendering' ? 'toast.pkgRendering' : 'toast.pkgSaving'),
             'ok',
@@ -1587,7 +1594,7 @@ function AppBody() {
                     <FieldCanvas3D active={view3D} showTrail={showTrail} showHeatmap={showHeatmap} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} dimPathIds={dimPathIds} />
                   </Suspense>
                 </div>}
-                {!view3D && <FieldCanvas ref={canvasRef} showTrail={showTrail} showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} dimPathIds={dimPathIds} />}
+                {!view3D && <FieldCanvas ref={canvasRef} showTrail={showTrail} showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} dimPathIds={dimPathIds} labelMemory={labelMemory2D.current} />}
               </>}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span>{/* A pure indicator, not a control — no ring, no click (user 2026-10-07). */}
