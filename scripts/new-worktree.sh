@@ -105,3 +105,13 @@ echo "Worktree ready:"
 echo "  cd $WT_DIR"
 echo "Branch: $BRANCH  (base: $BASE_REF @ $BASE_SHA)"
 echo "The main tree stays parked on beta — commit and work only inside this directory."
+
+# Privacy-gate readiness (2026-10-22): hooks and the shared private rules
+# live in the COMMON git dir, so this worktree inherits them automatically —
+# but say so explicitly, and surface a NOT READY state instead of letting the
+# first push discover it. Never fails the worktree creation itself.
+if [[ -f "$WT_DIR/scripts/pre-push-check.mjs" ]]; then
+  if ! (cd "$WT_DIR" && node scripts/pre-push-check.mjs --doctor); then
+    echo "warning: privacy gate NOT READY in this worktree — follow the NOT READY lines above before pushing" >&2
+  fi
+fi
