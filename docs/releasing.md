@@ -4,7 +4,7 @@
 
 ## 构建与质量
 
-- [ ] **推送前门禁**：`scripts/pre-push-check.mjs`（git pre-push 钩子自动执行；新克隆后先跑 `scripts/install-hooks.sh`）——待推提交命中敏感词（账号/工单/内网 IP/真实姓名/密钥材料）一律中止。2026-09-02 教训：一次性扫描会随日志追加失效，门禁是唯一可靠形态。
+- [ ] **推送前门禁**：`scripts/pre-push-check.mjs`（git pre-push 钩子自动执行；新克隆后先跑 `scripts/install-hooks.sh`——它安装共享钩子、迁移/创建共享私有匹配规则（`.git/info/pathblender-privacy-rules`，全工作树共用），并以 `--doctor` 报告 READY / NOT READY）。门禁按对象扫描全部待推引用：提交/附注标签的作者、提交者与 tagger 身份和消息、树路径、软链目标、文件内容，外加「绕过 .gitignore 强加的私有文件」检测；命中一律中止，输出只给类别与定位、不回显敏感值；规则缺失/损坏或对象读取失败同样中止而不是放行。2026-09-02 教训：一次性扫描会随日志追加失效，门禁是唯一可靠形态。
 
 - [ ] `npm run typecheck` 零错误
 - [ ] `npm run version:check`（七处版本号同源：root / core / web / desktop 的 package.json + tauri.conf.json + Cargo.toml + web `version-info.ts`；SW 缓存名取 root 值）
