@@ -56,15 +56,18 @@ SDS export does not — SDS never ships motors).
   frcdesign/FRCDesignApp#61 as COMPLETED. Keep the full license text in
   `licenses/FRCDesignApp-MIT.txt` and the source attribution in `NOTICE.md`
   with every distributed app and repository.
-  **Scope facts, not separate confirmations:** the source geometry lives
-  in the public Onshape Swerve V235 document rather than the GitHub repo;
-  the requested CAD export/distribution terms and the Kraken X60 motor
-  geometry received no separate textual answer. Distribution therefore
-  relies on the existing upstream MIT license and completed license issue,
-  not on an additional written confirmation for those two scopes. Do not
-  describe either as independently confirmed. If either is ever disputed,
-  the fallback remains replacing the module geometry (procedural fallback
-  exists in `chassis3d.ts`).
+  **Additional written evidence (Discord, shared by the user on
+  2026-10-31):**
+  > I've pushed the MIT license to the GitHub repo. The actual models live in Onshape, not GitHub/the repo, but we don't have any issues with using them for educational purposes. Licensing would ultimately be up to SDS and WCP, but I can't imagine they'd have any issues, either
+
+  This is FRC Designs' direct statement that it does not object to the
+  Onshape models being used for educational purposes, which covers this
+  free FRC strategy tool's use case. It is not a license from SDS or WCP:
+  the reply explicitly leaves their licensing to them, and "I can't
+  imagine…" is expectation, not permission. Do not describe the Kraken
+  X60 geometry or other third-party rights as confirmed by this message.
+  If any rights are disputed, the fallback remains replacing the module
+  geometry (procedural fallback exists in `chassis3d.ts`).
 - **Reference geometry kept for audit** — the official SDS Parasolid
   `mk5i.x_t` (product page → "CAD Model" Google Drive link;
   `attachment; filename="MK5i.x_t"`), sha256
