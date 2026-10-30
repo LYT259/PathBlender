@@ -49,21 +49,22 @@ SDS export does not — SDS never ships motors).
   It is a community re-creation, not SDS's own geometry; core
   dimensions match the official layout drawing (module height
   6.16–6.17 in both; 18 named parts incl. 2× Kraken X60, turret,
-  molded wheel, L plate, fasteners). **License: MIT — verified
-  2026-10-09** (release checklist item resolved): the frcdesign team
-  responded to the license request (frcdesign/FRCDesignApp#61, filed
-  2026-10-05) by adding a standard MIT license to FRCDesignApp
-  ("MIT License, Copyright (c) 2026 FRCDesign.org",
-  commit 2026-10-09T15:06Z) and closing the issue as COMPLETED.
-  Attribution: keep the MIT notice + FRCDesign.org credit with the
-  asset. Caveats on record (not refusals, just not textually confirmed):
-  ① the source geometry lives in an Onshape document, not in the GitHub
-  repo — MIT nominally covers the repo contents, and the team's action
-  (adding MIT + closing as completed) is taken as covering the requested
-  uses, which named that document; ② the Kraken X60 motor geometry's
-  provenance was asked about and received no textual answer. If either
-  is ever disputed, the fallback remains replacing the module geometry
-  (procedural fallback exists in `chassis3d.ts`).
+  molded wheel, L plate, fasteners). **License basis: the upstream
+  FRCDesignApp MIT license** — verified 2026-10-09. The frcdesign team
+  added a standard MIT license to FRCDesignApp ("MIT License, Copyright
+  (c) 2026 FRCDesign.org", commit 2026-10-09T15:06Z) and closed
+  frcdesign/FRCDesignApp#61 as COMPLETED. Keep the full license text in
+  `licenses/FRCDesignApp-MIT.txt` and the source attribution in `NOTICE.md`
+  with every distributed app and repository.
+  **Scope facts, not separate confirmations:** the source geometry lives
+  in the public Onshape Swerve V235 document rather than the GitHub repo;
+  the requested CAD export/distribution terms and the Kraken X60 motor
+  geometry received no separate textual answer. Distribution therefore
+  relies on the existing upstream MIT license and completed license issue,
+  not on an additional written confirmation for those two scopes. Do not
+  describe either as independently confirmed. If either is ever disputed,
+  the fallback remains replacing the module geometry (procedural fallback
+  exists in `chassis3d.ts`).
 - **Reference geometry kept for audit** — the official SDS Parasolid
   `mk5i.x_t` (product page → "CAD Model" Google Drive link;
   `attachment; filename="MK5i.x_t"`), sha256

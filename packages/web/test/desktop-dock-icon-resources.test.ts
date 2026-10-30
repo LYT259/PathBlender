@@ -40,7 +40,7 @@ describe('dock icon packaging contract', () => {
       // directory the shell joins itself).
       expect(rustSource, `${target} not in the Rust whitelist`).toContain(`"${target.split('/').pop()}"`);
     }
-    expect(Object.keys(conf.bundle.resources)).toHaveLength(Object.keys(EXPECTED).length);
+    expect(Object.keys(conf.bundle.resources).filter((source) => source.startsWith('icons/dock/'))).toHaveLength(Object.keys(EXPECTED).length);
   });
 
   it('the Rust whitelist maps only the four fixed resource names', () => {

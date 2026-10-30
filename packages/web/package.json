@@ -1,11 +1,11 @@
 {
   "name": "@pathblender/web",
-  "version": "0.1.9-beta.32",
+  "version": "0.1.9-beta.33",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node ../../scripts/set-sw-version.mjs && tsc -p tsconfig.json --noEmit && vite build",
+    "build": "node ../../scripts/set-sw-version.mjs && tsc -p tsconfig.json --noEmit && vite build && node ../../scripts/copy-legal-files.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "preview": "vite preview",
     "test": "vitest run"
