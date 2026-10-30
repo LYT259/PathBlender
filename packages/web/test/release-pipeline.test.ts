@@ -58,6 +58,18 @@ describe('third-party legal notices', () => {
     expect(license).toContain('Copyright (c) 2026 FRCDesign.org');
     expect(license).toContain('Permission is hereby granted, free of charge');
   });
+
+  it('separates the repository license from the Onshape educational-use evidence', () => {
+    const notice = readFileSync(resolve(ROOT, 'NOTICE.md'), 'utf8');
+    const cad = readFileSync(resolve(ROOT, 'scripts/cad/README.md'), 'utf8');
+    expect(notice).not.toContain('MK5i swerve module** (MIT)');
+    expect(notice).toContain('The FRCDesignApp GitHub repository is MIT-licensed.');
+    expect(notice).toContain("this is the project's interpretation, not an itemized confirmation");
+    expect(notice).toContain('SDS, WCP, the Kraken X60 geometry, and other third-party rights are not\n  confirmed by that reply.');
+    expect(cad).toContain('exact reply date unknown');
+    expect(cad).toContain('does not separately confirm public-repository distribution, GLB conversion,');
+    expect(cad).not.toContain("which covers this free FRC strategy tool's use case");
+  });
 });
 
 describe('shipped-artifact verification gates', () => {

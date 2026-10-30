@@ -19,7 +19,7 @@
 ## 许可证与素材
 
 - [ ] NOTICE.md 归属清单与当前代码一致（PathPlanner / Choreo / 103 fork / WPILib / FRC Designs）
-- [ ] **MK5i 模组许可与分发文件**：保留 FRCDesignApp 的 MIT 归属、Onshape Swerve V235 来源和 GLB/2D 转换说明；`licenses/FRCDesignApp-MIT.txt` 含完整 MIT 正文及 `Copyright (c) 2026 FRCDesign.org`。Web 构建须把 `LICENSE`、`NOTICE.md`、`licenses/` 复制进 `packages/web/dist`；Tauri 资源与最终 DMG 查验须含同样文件。FRC Designs 已在 Discord 明确对教育用途不持异议（原文见 `scripts/cad/README.md`）；SDS/WCP 及其电机几何许可仍未确认，不得把「I can't imagine…」写成授权
+- [ ] **MK5i 模组许可与分发文件**：FRCDesignApp GitHub 仓库采用 MIT，`licenses/FRCDesignApp-MIT.txt` 保存该仓库的完整许可证及 `Copyright (c) 2026 FRCDesign.org`，不得把整个 Onshape 模组直接概括成已明确适用 MIT。NOTICE 保留 Onshape Swerve V235 来源和 GLB/2D 转换说明；Discord 原回复仅表示对模型用于教育目的不持异议，项目方认为当前用途相符属于自身理解，免费不当然等于教育用途，公开仓库、GLB 转换、安装包再分发及下游条件未逐项确认。SDS/WCP、Kraken X60 及其他第三方权利仍未确认，「I can't imagine…」不得写成授权。Web 构建须把 `LICENSE`、`NOTICE.md`、`licenses/` 复制进 `packages/web/dist`；Tauri 资源与最终 DMG 查验须含同样文件
 - [ ] PathPlanner 轨迹生成移植说明保留在发布说明中（MIT 要求注明）
 - [ ] **FIRST 场地素材条款复查**：核对当赛季（当前：2026 REBUILT）Game Manual / Official Field Drawings 的素材使用条款是否仍允许工具内置场地图片（AdvantageScope / PathPlanner 先例）；若收紧 → 停发内置场地、改走已就位的用户自导入场地路径
   - **2026-08-26 复查记录**（依据：FIRST《Policy on the Use of FIRST® Trademarks and Copyrighted Materials》rev. 04/19/25，官方 PDF）：①注册 FIRST 队伍可非商业使用 FIRST 版权材料（**明文含 field designs**）开展 FIRST 项目相关活动，条件是展示 §IV 标准 disclaimer（已落入 NOTICE.md 与 README）；②**「copyrighted materials may never be used in any modified form」**——本项目场地图为裁剪/缩放标定版，处于该条款灰区；社区先例（AdvantageScope / PathPlanner 内置场地多年）支持继续内置，但若 FIRST 收紧执法：立即停发内置场地、启用用户自导入场地路径（已就位）；③FIRST 保留随时终止许可的权利——每次发版重新核对本条；④Logos（图形商标）不可用，仅 word marks 可提及。
