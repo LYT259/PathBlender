@@ -49,25 +49,31 @@ SDS export does not — SDS never ships motors).
   It is a community re-creation, not SDS's own geometry; core
   dimensions match the official layout drawing (module height
   6.16–6.17 in both; 18 named parts incl. 2× Kraken X60, turret,
-  molded wheel, L plate, fasteners). **License basis: the upstream
-  FRCDesignApp MIT license** — verified 2026-10-09. The frcdesign team
-  added a standard MIT license to FRCDesignApp ("MIT License, Copyright
-  (c) 2026 FRCDesign.org", commit 2026-10-09T15:06Z) and closed
-  frcdesign/FRCDesignApp#61 as COMPLETED. Keep the full license text in
-  `licenses/FRCDesignApp-MIT.txt` and the source attribution in `NOTICE.md`
-  with every distributed app and repository.
-  **Additional written evidence (Discord, shared by the user on
+  molded wheel, L plate, fasteners). **Upstream repository license: MIT** —
+  verified 2026-10-09. The frcdesign team added a standard MIT license to
+  FRCDesignApp ("MIT License, Copyright (c) 2026 FRCDesign.org", commit
+  2026-10-09T15:06Z) and closed frcdesign/FRCDesignApp#61 as COMPLETED.
+  Keep that repository's full license text in `licenses/FRCDesignApp-MIT.txt`
+  and the source attribution in `NOTICE.md` with every distributed app and
+  repository. This does not by itself establish that the separate Onshape
+  geometry is MIT-licensed.
+  **Additional written evidence (Discord reply received during the original
+  LICENSE request; exact reply date unknown; transcribed by the user on
   2026-10-31):**
   > I've pushed the MIT license to the GitHub repo. The actual models live in Onshape, not GitHub/the repo, but we don't have any issues with using them for educational purposes. Licensing would ultimately be up to SDS and WCP, but I can't imagine they'd have any issues, either
 
   This is FRC Designs' direct statement that it does not object to the
-  Onshape models being used for educational purposes, which covers this
-  free FRC strategy tool's use case. It is not a license from SDS or WCP:
-  the reply explicitly leaves their licensing to them, and "I can't
-  imagine…" is expectation, not permission. Do not describe the Kraken
-  X60 geometry or other third-party rights as confirmed by this message.
-  If any rights are disputed, the fallback remains replacing the module
-  geometry (procedural fallback exists in `chassis3d.ts`).
+  Onshape models being used for educational purposes. The project considers
+  its current use consistent with that statement; this is the project's
+  interpretation, not an itemized confirmation by FRC Designs. The reply
+  does not separately confirm public-repository distribution, GLB conversion,
+  installer redistribution, or downstream terms. "Free" alone is not treated
+  as proof of educational use. It is not a license from SDS or WCP: the reply
+  explicitly leaves their licensing to them, and "I can't imagine…" is
+  expectation, not permission. Do not describe the Kraken X60 geometry or
+  other third-party rights as confirmed by this message. If any rights are
+  disputed, the fallback remains replacing the module geometry (procedural
+  fallback exists in `chassis3d.ts`).
 - **Reference geometry kept for audit** — the official SDS Parasolid
   `mk5i.x_t` (product page → "CAD Model" Google Drive link;
   `attachment; filename="MK5i.x_t"`), sha256

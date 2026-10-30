@@ -37,14 +37,23 @@ works; each remains under its own license:
   bit layout reproduced in `packages/web/src/april-tag-texture.ts` are
   that project's published reference tables, used to render authentic
   tag faces in the 3D view.
-- **FRC Designs / FRCDesignApp — MK5i swerve module** (MIT) —
+- **FRC Designs / FRCDesignApp — MK5i swerve module** —
   https://github.com/frcdesign/FRCDesignApp
+  The FRCDesignApp GitHub repository is MIT-licensed. Its complete MIT license
+  text is preserved in `licenses/FRCDesignApp-MIT.txt`, with copyright (c) 2026
+  FRCDesign.org.
   The bundled MK5i module geometry (`packages/web/public/models/mk5i-module.glb`)
   and its 2D top-view rendering (`assets/robots/mk5i-module-top.png`) derive
   from FRC Designs' public Onshape SDS MK5i assembly in the Swerve document,
   version V235, with Kraken X60 motors. The geometry was exported and adapted
-  to GLB and rendered for 2D display. Copyright (c) 2026 FRCDesign.org. The
-  complete MIT license text is included in `licenses/FRCDesignApp-MIT.txt`.
+  to GLB and rendered for 2D display. For that Onshape model, FRC Designs
+  separately stated in Discord that it does not object to use for educational
+  purposes. The project interprets its current use as consistent with that
+  statement; this is the project's interpretation, not an itemized confirmation
+  of public-repository distribution, GLB conversion, installer redistribution,
+  or downstream terms. "Free" alone is not treated as proof of educational use.
+  SDS, WCP, the Kraken X60 geometry, and other third-party rights are not
+  confirmed by that reply.
 
 ## Bundled third-party libraries
 
