@@ -37,6 +37,14 @@ works; each remains under its own license:
   bit layout reproduced in `packages/web/src/april-tag-texture.ts` are
   that project's published reference tables, used to render authentic
   tag faces in the 3D view.
+- **FRC Designs / FRCDesignApp — MK5i swerve module** (MIT) —
+  https://github.com/frcdesign/FRCDesignApp
+  The bundled MK5i module geometry (`packages/web/public/models/mk5i-module.glb`)
+  and its 2D top-view rendering (`assets/robots/mk5i-module-top.png`) derive
+  from FRC Designs' public Onshape SDS MK5i assembly in the Swerve document,
+  version V235, with Kraken X60 motors. The geometry was exported and adapted
+  to GLB and rendered for 2D display. Copyright (c) 2026 FRCDesign.org. The
+  complete MIT license text is included in `licenses/FRCDesignApp-MIT.txt`.
 
 ## Bundled third-party libraries
 

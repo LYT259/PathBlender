@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.32';
+export const APP_VERSION = '0.1.9-beta.33';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.33', date: '2026.10.31', note: {
+    en: 'FRC Designs attribution and MIT license now ship with the app',
+    zh: '应用现在附带 FRC Designs 归属说明和 MIT 许可证',
+    'zh-tw': '應用程式現在附上 FRC Designs 歸屬說明與 MIT 授權條款',
+    cs: 'Aplikace nyní obsahuje atribuci FRC Designs a licenci MIT',
+    nl: 'De app bevat nu FRC Designs-attributie en de MIT-licentie',
+    fr: 'L’application inclut désormais l’attribution FRC Designs et la licence MIT',
+    he: 'האפליקציה כוללת כעת ייחוס ל־FRC Designs ורישיון MIT',
+    ja: 'アプリに FRC Designs の帰属表示と MIT ライセンスが同梱されるようになりました',
+    ko: '이제 앱에 FRC Designs 저작자 표시와 MIT 라이선스가 포함됩니다',
+    pl: 'Aplikacja zawiera teraz informacje o autorstwie FRC Designs i licencję MIT',
+    'pt-br': 'O aplicativo agora inclui a atribuição à FRC Designs e a licença MIT',
+    es: 'La aplicación ahora incluye la atribución a FRC Designs y la licencia MIT',
+    tr: 'Uygulama artık FRC Designs atıfını ve MIT lisansını içeriyor',
+    ar: 'يتضمن التطبيق الآن نسب FRC Designs ورخصة MIT',
+    az: 'Tətbiqə indi FRC Designs atributu və MIT lisenziyası daxildir',
+    bg: 'Приложението вече включва приписването на FRC Designs и лиценза MIT',
+    bs: 'Aplikacija sada uključuje FRC Designs atribuciju i MIT licencu',
+    da: 'Appen indeholder nu FRC Designs-attribution og MIT-licensen',
+    de: 'Die App enthält jetzt die FRC Designs-Attribution und die MIT-Lizenz',
+    el: 'Η εφαρμογή περιλαμβάνει πλέον την απόδοση FRC Designs και την άδεια MIT',
+    fil: 'Kasama na sa app ngayon ang FRC Designs attribution at MIT license',
+    hi: 'ऐप में अब FRC Designs श्रेय और MIT लाइसेंस शामिल है',
+    hr: 'Aplikacija sada uključuje FRC Designs atribuciju i MIT licencu',
+    hu: 'Az alkalmazás mostantól tartalmazza a FRC Designs attribúciót és az MIT-licencet',
+    hy: 'Հավելվածը այժմ ներառում է FRC Designs վերագրումը և MIT արտոնագիրը',
+    id: 'Aplikasi kini menyertakan atribusi FRC Designs dan lisensi MIT',
+    it: 'L’app ora include l’attribuzione a FRC Designs e la licenza MIT',
+    mk: 'Апликацијата сега вклучува FRC Designs атрибуција и MIT лиценца',
+    mr: 'अ‍ॅपमध्ये आता FRC Designs श्रेय आणि MIT परवाना समाविष्ट आहे',
+    ms: 'Aplikasi kini mengandungi atribusi FRC Designs dan lesen MIT',
+    nb: 'Appen inneholder nå FRC Designs-attribusjon og MIT-lisensen',
+    nn: 'Appen inneheld no FRC Designs-attribusjon og MIT-lisensen',
+    ro: 'Aplicația include acum atribuirea FRC Designs și licența MIT',
+    rw: 'Porogaramu ubu irimo izina rya FRC Designs n’uruhushya rwa MIT',
+    sq: 'Aplikacioni tani përfshin atribuimin e FRC Designs dhe licencën MIT',
+    sr: 'Aplikacija sada uključuje FRC Designs atribuciju i MIT licencu',
+    sv: 'Appen innehåller nu FRC Designs-attribution och MIT-licensen',
+    ta: 'பயன்பாட்டில் இப்போது FRC Designs பங்களிப்பு மற்றும் MIT உரிமம் சேர்க்கப்பட்டுள்ளது',
+    uk: 'Застосунок тепер містить атрибуцію FRC Designs і ліцензію MIT',
+    vi: 'Ứng dụng hiện bao gồm ghi công FRC Designs và giấy phép MIT',
+  } },
   { version: '0.1.9-beta.32', date: '2026.10.19', note: {
     en: 'Compact robot info cards now match in 2D and 3D: one card and leader per robot, steady across frames, with long action lists folded and exports in the UI language',
     zh: '2D 与 3D 统一为紧凑的机器人信息牌：每台一张牌、一根引线，跨帧位置稳定，过长动作列表折叠显示，导出沿用界面语言。',
