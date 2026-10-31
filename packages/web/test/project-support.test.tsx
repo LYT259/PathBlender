@@ -39,25 +39,34 @@ describe('public repository invitations', () => {
     render(<I18nProvider><ProjectSupport /></I18nProvider>);
     expect(screen.getByRole('link', { name: 'Star on GitHub' })).toBeInTheDocument();
   });
-  it('can dismiss when invitation storage is unavailable', () => {
-    // The test environment supplies an instance-level Storage stub. Spying
-    // on Storage.prototype would miss it and silently skip the failure path.
+  it('can dismiss when invitation storage is unavailable', async () => {
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM('', { url: 'https://localhost/' });
+    vi.stubGlobal('localStorage', dom.window.localStorage);
+    vi.stubGlobal('Storage', dom.window.Storage);
     const originalRead = localStorage.getItem.bind(localStorage);
     const originalWrite = localStorage.setItem.bind(localStorage);
-    const read = vi.spyOn(localStorage, 'getItem').mockImplementation((key) => {
+    const readOwner = Object.hasOwn(localStorage, 'getItem') ? localStorage : Storage.prototype;
+    const writeOwner = Object.hasOwn(localStorage, 'setItem') ? localStorage : Storage.prototype;
+    const read = vi.spyOn(readOwner, 'getItem').mockImplementation((key) => {
       if (key === 'pb.support-invitation.dismissed.v1') throw new Error('unavailable');
       return originalRead(key);
     });
-    const write = vi.spyOn(localStorage, 'setItem').mockImplementation((key, value) => {
+    const write = vi.spyOn(writeOwner, 'setItem').mockImplementation((key, value) => {
       if (key === 'pb.support-invitation.dismissed.v1') throw new Error('unavailable');
       return originalWrite(key, value);
     });
-    render(<I18nProvider><ProjectSupport dismissible /></I18nProvider>);
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss this invitation' }));
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
-    expect(read).toHaveBeenCalledWith('pb.support-invitation.dismissed.v1');
-    expect(write).toHaveBeenCalledWith('pb.support-invitation.dismissed.v1', '1');
-    read.mockRestore();
-    write.mockRestore();
+    try {
+      render(<I18nProvider><ProjectSupport dismissible /></I18nProvider>);
+      fireEvent.click(screen.getByRole('button', { name: 'Dismiss this invitation' }));
+      expect(screen.queryByRole('link')).not.toBeInTheDocument();
+      expect(read).toHaveBeenCalledWith('pb.support-invitation.dismissed.v1');
+      expect(write).toHaveBeenCalledWith('pb.support-invitation.dismissed.v1', '1');
+    } finally {
+      read.mockRestore();
+      write.mockRestore();
+      vi.unstubAllGlobals();
+      dom.window.close();
+    }
   });
 });
