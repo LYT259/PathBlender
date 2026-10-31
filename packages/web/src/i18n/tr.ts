@@ -282,6 +282,7 @@ export const tr: Record<MessageKey, string> = {
   'prefs.languageSearchClear': 'Aramayı temizle',
   'prefs.languageSearchEmpty': 'Eşleşen dil yok',
   'prefs.languageSearchEmptyHint': 'Başka bir ad deneyin ya da aramayı temizleyin.',
+  'about.sdsPermission': 'SDS MK5i CAD türevi görselleştirme varlıkları, Swerve Drive Specialties’in açık yazılı izniyle PathBlender ile kullanılır ve dağıtılır.',
   'about.version': 'Sürüm',
   'about.copy': 'Sürüm bilgisini kopyala',
   'about.copyDone': 'Sürüm bilgisi kopyalandı',

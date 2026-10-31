@@ -183,8 +183,9 @@ Ctrl/Cmd+S 快捷键）。改动界面或导出入口时，请在同一个 PR �
 **Own code: Apache-2.0** — see [LICENSE](./LICENSE).
 Third-party models, field artwork, example routes, and trademarks have separate
 terms; the code license does not automatically cover them. Read
-[NOTICE.md](./NOTICE.md), especially the MK5i educational-use evidence and its
-unresolved third-party scope, before reusing assets. See the
+[NOTICE.md](./NOTICE.md), especially SDS's express permission for SDS MK5i
+CAD-derived visualization assets and the separate remaining third-party scope,
+before reusing assets. See the
 [asset licensing guide](./docs/asset-licensing.md) for provenance and rights concerns.
 PathPlanner (MIT), Choreo (BSD-3), AdvantageScope assets (BSD-3), and
 WPILib (BSD-3) each remain under their own licenses and are credited in

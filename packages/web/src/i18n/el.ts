@@ -243,6 +243,7 @@ export const el = {
   'prefs.languageSearchClear': 'Απαλοιφή αναζήτησης',
   'prefs.languageSearchEmpty': 'Καμία αντιστοίχιση γλωσσών',
   'prefs.languageSearchEmptyHint': 'Δοκιμάστε άλλο όνομα ή απαλείψτε την αναζήτηση.',
+  'about.sdsPermission': 'Τα οπτικά στοιχεία που προέρχονται από το CAD SDS MK5i χρησιμοποιούνται και διανέμονται με το PathBlender με ρητή γραπτή άδεια της Swerve Drive Specialties.',
   'about.version': 'Έκδοση',
   'about.copy': 'Αντιγραφή πληροφοριών έκδοσης',
   'about.copyDone': 'Οι πληροφορίες έκδοσης αντιγράφηκαν',

@@ -267,6 +267,7 @@ export const hi = {
   'prefs.languageSearchClear': 'खोज साफ़ करें',
   'prefs.languageSearchEmpty': 'कोई मेल खाती भाषा नहीं',
   'prefs.languageSearchEmptyHint': 'दूसरा नाम आज़माएँ या खोज साफ़ करें।',
+  'about.sdsPermission': 'SDS MK5i CAD-व्युत्पन्न दृश्य संपत्तियों का उपयोग और वितरण Swerve Drive Specialties की स्पष्ट लिखित अनुमति के साथ PathBlender में किया जाता है।',
   'about.version': 'संस्करण',
   'about.copy': 'संस्करण जानकारी कॉपी करें',
   'about.copyDone': 'संस्करण जानकारी कॉपी की गई',

@@ -370,6 +370,10 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved, initialS
             }}>{t('about.copy')}</button>
             <p className="preferences-copy-status" role="status">{copyStatus}</p>
           </div>
+          <aside aria-label="SDS MK5i">
+            <h3>SDS MK5i</h3>
+            <p>{t('about.sdsPermission')}</p>
+          </aside>
           <ProjectSupport />
           {CYCLE_NOTES.length > 0 && <div className="preferences-history"><h3>{t('prefs.releaseNotes')}</h3>
             {/* Resolved `lang`, not the raw choice: 'system' hits no note

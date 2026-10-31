@@ -243,6 +243,7 @@ export const hu = {
   'prefs.languageSearchClear': 'Keresés törlése',
   'prefs.languageSearchEmpty': 'Nincs egyező nyelv',
   'prefs.languageSearchEmptyHint': 'Próbáljon más nevet, vagy törölje a keresést.',
+  'about.sdsPermission': 'Az SDS MK5i CAD-származtatott vizualizációs eszközök a Swerve Drive Specialties kifejezett írásbeli engedélyével használatosak és terjesztettek a PathBlenderben.',
   'about.version': 'Verzió',
   'about.copy': 'Verzióinformáció másolása',
   'about.copyDone': 'Verzióinformáció másolva',

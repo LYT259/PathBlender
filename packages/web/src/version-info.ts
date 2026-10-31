@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.33';
+export const APP_VERSION = '0.1.9-beta.34';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.34', date: '2026.10.31', note: {
+    en: 'SDS MK5i attribution and written permission',
+    zh: 'SDS MK5i 署名和书面许可说明',
+    'zh-tw': 'SDS MK5i 署名與書面許可說明',
+    cs: 'Uvedení SDS MK5i a poznámka o písemném povolení',
+    nl: 'Vermelding van SDS MK5i en toelichting op de schriftelijke toestemming',
+    fr: 'Crédit pour SDS MK5i et mention de l’autorisation écrite',
+    he: 'מתן קרדיט ל-SDS MK5i וציון האישור בכתב',
+    ja: 'SDS MK5i の帰属表示と書面による許可の説明',
+    ko: 'SDS MK5i 출처 표기 및 서면 허가 안내',
+    pl: 'Atrybucja SDS MK5i i informacja o pisemnym zezwoleniu',
+    'pt-br': 'Atribuição do SDS MK5i e nota sobre a permissão por escrito',
+    es: 'Atribución del SDS MK5i y nota sobre el permiso escrito',
+    tr: 'SDS MK5i atfı ve yazılı izin açıklaması',
+    ar: 'إضافة نسب SDS MK5i وبيان الإذن الكتابي',
+    az: 'SDS MK5i-yə istinad və yazılı icazə qeydi',
+    bg: 'Атрибуция за SDS MK5i и бележка за писменото разрешение',
+    bs: 'Atribucija za SDS MK5i i napomena o pisanoj dozvoli',
+    da: 'SDS MK5i-kreditering og note om skriftlig tilladelse',
+    de: 'Nennung von SDS MK5i und Hinweis auf die schriftliche Genehmigung',
+    el: 'Απόδοση πίστωσης στο SDS MK5i και σημείωση για τη γραπτή άδεια',
+    fil: 'Pagkilala sa SDS MK5i at tala ng nakasulat na pahintulot',
+    hi: 'SDS MK5i का श्रेय और लिखित अनुमति का उल्लेख',
+    hr: 'Atribucija za SDS MK5i i napomena o pismenom dopuštenju',
+    hu: 'Az SDS MK5i megnevezése és az írásbeli engedély feltüntetése',
+    hy: 'SDS MK5i-ի հիշատակում և գրավոր թույլտվության նշում',
+    id: 'Atribusi SDS MK5i dan keterangan izin tertulis',
+    it: 'Attribuzione di SDS MK5i e nota sull’autorizzazione scritta',
+    mk: 'Атрибуција на SDS MK5i и забелешка за писмената дозвола',
+    mr: 'SDS MK5i श्रेय नोंद आणि लिखित परवानगीची टीप',
+    ms: 'Pengiktirafan SDS MK5i dan nota kebenaran bertulis',
+    nb: 'SDS MK5i-kreditering og merknad om skriftlig tillatelse',
+    nn: 'SDS MK5i-kreditering og merknad om skriftleg løyve',
+    ro: 'Atribuirea pentru SDS MK5i și nota privind permisiunea scrisă',
+    rw: 'Kwongeraho izina rya SDS MK5i n’amakuru ku ruhushya rwanditse',
+    sq: 'Atribuimi i SDS MK5i dhe shënimi për lejen me shkrim',
+    sr: 'Atribucija za SDS MK5i i napomena o pisanoj dozvoli',
+    sv: 'SDS MK5i-kreditering och notering om skriftligt tillstånd',
+    ta: 'SDS MK5i பங்களிப்புக் குறிப்பு மற்றும் எழுத்து அனுமதி பற்றிய விளக்கம்',
+    uk: 'Атрибуція SDS MK5i та примітка про письмовий дозвіл',
+    vi: 'Ghi công cho SDS MK5i và ghi chú về sự cho phép bằng văn bản',
+  } },
   { version: '0.1.9-beta.33', date: '2026.10.31', note: {
     en: 'FRC Designs attribution and MIT license now ship with the app',
     zh: '应用现在附带 FRC Designs 归属说明和 MIT 许可证',

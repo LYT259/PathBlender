@@ -267,6 +267,7 @@ export const id = {
   'prefs.languageSearchClear': 'Hapus pencarian',
   'prefs.languageSearchEmpty': 'Tidak ada bahasa yang cocok',
   'prefs.languageSearchEmptyHint': 'Coba nama lain, atau hapus pencarian.',
+  'about.sdsPermission': 'Aset visualisasi turunan CAD SDS MK5i digunakan dan didistribusikan dengan PathBlender dengan izin tertulis tegas dari Swerve Drive Specialties.',
   'about.version': 'Versi',
   'about.copy': 'Salin info versi',
   'about.copyDone': 'Info versi disalin',

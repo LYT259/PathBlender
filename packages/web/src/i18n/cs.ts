@@ -284,6 +284,7 @@ export const cs: Record<MessageKey, string> = {
   'prefs.languageSearchClear': 'Vymazat hledání',
   'prefs.languageSearchEmpty': 'Žádné odpovídající jazyky',
   'prefs.languageSearchEmptyHint': 'Zkuste jiný název nebo hledání vymažte.',
+  'about.sdsPermission': 'Vizualizace odvozené z CAD SDS MK5i jsou s výslovným písemným povolením Swerve Drive Specialties používány a šířeny v PathBlender.',
   'about.version': 'Verze',
   'about.copy': 'Kopírovat informace o verzi',
   'about.copyDone': 'Informace o verzi zkopírovány',

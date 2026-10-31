@@ -267,6 +267,7 @@ export const fil = {
   'prefs.languageSearchClear': 'I-clear ang paghahanap',
   'prefs.languageSearchEmpty': 'Walang tumugmang wika',
   'prefs.languageSearchEmptyHint': 'Sumubok ng ibang pangalan, o i-clear ang paghahanap.',
+  'about.sdsPermission': 'Ang mga asset ng CAD-derived visualization ng SDS MK5i ay ginagamit at ipinamamahagi kasama ng PathBlender nang may tahasang nakasulat na pahintulot mula sa Swerve Drive Specialties.',
   'about.version': 'Bersyon',
   'about.copy': 'Kopyahin ang info ng bersyon',
   'about.copyDone': 'Na-kopya ang info ng bersyon',

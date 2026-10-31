@@ -289,6 +289,7 @@ export const he: Record<MessageKey, string> = {
   'prefs.languageSearchClear': 'ניקוי החיפוש',
   'prefs.languageSearchEmpty': 'אין שפות תואמות',
   'prefs.languageSearchEmptyHint': 'נסו שם אחר או נקו את החיפוש.',
+  'about.sdsPermission': 'נכסי ההדמיה הנגזרים של CAD SDS MK5i משמשים ומופצים עם PathBlender ברשות מפורשת בכתב של Swerve Drive Specialties.',
   'about.version': 'גרסה',
   'about.copy': 'העתקת פרטי גרסה',
   'about.copyDone': 'פרטי הגרסה הועתקו',

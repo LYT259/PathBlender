@@ -267,6 +267,7 @@ export const vi = {
   'prefs.languageSearchClear': 'Xóa tìm kiếm',
   'prefs.languageSearchEmpty': 'Không có ngôn ngữ phù hợp',
   'prefs.languageSearchEmptyHint': 'Thử tên khác hoặc xóa tìm kiếm.',
+  'about.sdsPermission': 'Các tài nguyên trực quan hóa bắt nguồn từ CAD SDS MK5i được sử dụng và phân phối với PathBlender theo sự cho phép bằng văn bản rõ ràng của Swerve Drive Specialties.',
   'about.version': 'Phiên bản',
   'about.copy': 'Sao chép thông tin phiên bản',
   'about.copyDone': 'Đã sao chép thông tin phiên bản',

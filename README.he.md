@@ -89,6 +89,7 @@ PathBlender סוגר את הפער הזה:
 
 **Apache-2.0** — ראו [LICENSE](./LICENSE) ו-[NOTICE.md](./NOTICE.md).‏
 PathPlanner (MIT),‏ Choreo (BSD-3),‏ נכסי AdvantageScope (BSD-3) ו-WPILib (BSD-3) נשארים תחת הרישיונות שלהם ומוכרים ב-NOTICE.
+Swerve Drive Specialties (SDS) נתנה רשות מפורשת בכתב להשתמש ולהפיץ עם PathBlender את נכסי ההדמיה הנגזרים מ-CAD של SDS MK5i; הרשות זו אינה מכסה את גאומטריית Kraken X60 של WCP או את השלדה שתכנן המשתמש. פרטים נוספים ב-NOTICE.
 
 אמנות המגרש ושמות המשחקים שייכים ל-FIRST ומשמשים למטרות אסטרטגיה לא-מסחריות של קבוצות בהתאם למדיניות הסימנים המסחריים והחומרים המוגנים של FIRST, הנבדקת מחדש לפני כל פרסום ציבורי:
 

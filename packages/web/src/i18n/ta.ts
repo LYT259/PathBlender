@@ -267,6 +267,7 @@ export const ta = {
   'prefs.languageSearchClear': 'தேடலை அழி',
   'prefs.languageSearchEmpty': 'பொருந்தும் மொழிகள் இல்லை',
   'prefs.languageSearchEmptyHint': 'வேறு பெயரை முயற்சிக்கவும் அல்லது தேடலை அழிக்கவும்.',
+  'about.sdsPermission': 'SDS MK5i CAD-இலிருந்து பெறப்பட்ட காட்சி வளங்கள் Swerve Drive Specialties-ன் தெளிவான எழுத்து அனுமதியுடன் PathBlender-இல் பயன்படுத்தப்பட்டு விநியோகிக்கப்படுகின்றன.',
   'about.version': 'பதிப்பு',
   'about.copy': 'பதிப்பு தகவலை நகலெடு',
   'about.copyDone': 'பதிப்பு தகவல் நகலெடுக்கப்பட்டது',

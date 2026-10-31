@@ -243,6 +243,7 @@ export const az = {
   'prefs.languageSearchClear': 'Axtarışı təmizlə',
   'prefs.languageSearchEmpty': 'Uyğun dil yoxdur',
   'prefs.languageSearchEmptyHint': 'Başqa ad sınayın ya da axtarışı təmizləyin.',
+  'about.sdsPermission': 'SDS MK5i CAD-dan törədilmiş vizualizasiya aktivləri Swerve Drive Specialties-in açıq yazılı icazəsi ilə PathBlender-də istifadə olunur və paylanılır.',
   'about.version': 'Versiya',
   'about.copy': 'Versiya məlumatını kopyala',
   'about.copyDone': 'Versiya məlumatı kopyalandı',

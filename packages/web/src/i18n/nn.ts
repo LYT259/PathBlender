@@ -245,6 +245,7 @@ export const nn = {
   'prefs.languageSearchClear': 'Tøm søket',
   'prefs.languageSearchEmpty': 'Ingen samsvarande språk',
   'prefs.languageSearchEmptyHint': 'Prøv eit anna namn, eller tøm søket.',
+  'about.sdsPermission': 'CAD-avleidde visualiseringsressursar från SDS MK5i blir brukt og distribuert med PathBlender med uttrykkjeleg skriftleg løyve från Swerve Drive Specialties.',
   'about.version': "Versjon",
   'about.copy': "Kopier versjonsinfo",
   'about.copyDone': "Versjonsinfo kopiert",

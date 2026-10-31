@@ -240,6 +240,7 @@ export const en = {
   'prefs.languageSearchClear': 'Clear search',
   'prefs.languageSearchEmpty': 'No matching languages',
   'prefs.languageSearchEmptyHint': 'Try another name, or clear the search.',
+  'about.sdsPermission': 'SDS MK5i CAD-derived visualization assets are used and distributed with PathBlender with express permission from Swerve Drive Specialties.',
   'about.version': 'Version',
   'about.copy': 'Copy version info',
   'about.copyDone': 'Version info copied',

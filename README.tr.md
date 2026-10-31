@@ -91,6 +91,7 @@ Yukarıda anlatılan görüntüleyici kapsamı uygulanmış ve regresyon testler
 
 **Apache-2.0** — bkz. [LICENSE](./LICENSE) ve [NOTICE.md](./NOTICE.md).
 PathPlanner (MIT), Choreo (BSD-3), AdvantageScope varlıkları (BSD-3) ve WPILib (BSD-3) kendi lisansları altında kalır ve NOTICE'te ayrı ayrı anılır.
+Swerve Drive Specialties (SDS), SDS MK5i CAD türevi görselleştirme varlıklarının PathBlender ile kullanılması ve dağıtılması için açık yazılı izin vermiştir; bu izin WCP/Kraken X60 geometrisini veya kullanıcı tarafından tasarlanan şasiyi kapsamaz. Ayrıntılar için NOTICE'e bakın.
 
 Saha görselleri ve oyun adları FIRST'e aittir; FIRST'in marka ve telifli materyal politikası uyarınca, ticari olmayan takım stratejisi amaçlarıyla kullanılır ve her genel sürümden önce yeniden denetlenir:
 

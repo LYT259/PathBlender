@@ -46,6 +46,11 @@ describe('About identity', () => {
     expect(icon()).toHaveAttribute('width', '72');
     expect(icon()).toHaveAttribute('height', '72');
   });
+  it('shows the SDS MK5i name and express permission in About', () => {
+    mount(); about();
+    expect(screen.getByText('SDS MK5i')).toBeInTheDocument();
+    expect(screen.getByText(/express permission from Swerve Drive Specialties/)).toBeInTheDocument();
+  });
   it('shows no Cancel/Save footer on About — nothing there to stage', () => {
     mount(); about();
     expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();

@@ -243,6 +243,7 @@ export const mk = {
   'prefs.languageSearchClear': 'Исчистете пребарување',
   'prefs.languageSearchEmpty': 'Нема соодветни јазици',
   'prefs.languageSearchEmptyHint': 'Обидете се со друго име или исчистете го пребарувањето.',
+  'about.sdsPermission': 'Визуелизациските средства изведени од CAD SDS MK5i се користат и дистрибуираат со PathBlender со изрична писмена дозвола од Swerve Drive Specialties.',
   'about.version': 'Верзија',
   'about.copy': 'Копирај информации за верзијата',
   'about.copyDone': 'Информациите за верзијата се копирани',

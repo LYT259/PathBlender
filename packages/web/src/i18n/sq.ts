@@ -244,6 +244,7 @@ export const sq = {
   'prefs.languageSearchClear': 'Pastro kërkimin',
   'prefs.languageSearchEmpty': 'Nuk ka gjuhë përputhëse',
   'prefs.languageSearchEmptyHint': 'Provoni një emër tjetër ose pastro kërkimin.',
+  'about.sdsPermission': 'Asetet e vizualizimit të nxjerrë nga CAD SDS MK5i përdoren dhe shpërndahen me PathBlender me lejen e shprehur shkrimore të Swerve Drive Specialties.',
   'about.version': 'Versioni',
   'about.copy': 'Kopjo informacionin e versionit',
   'about.copyDone': 'Informacioni i versionit u kopjua',

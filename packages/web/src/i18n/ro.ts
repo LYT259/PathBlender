@@ -244,6 +244,7 @@ export const ro = {
   'prefs.languageSearchClear': 'Șterge căutarea',
   'prefs.languageSearchEmpty': 'Nicio limbă potrivită',
   'prefs.languageSearchEmptyHint': 'Încearcă alt nume sau șterge căutarea.',
+  'about.sdsPermission': 'Resursele de vizualizare derivate din CAD SDS MK5i sunt utilizate și distribuite cu PathBlender cu permisiunea scrisă explicită a Swerve Drive Specialties.',
   'about.version': 'Versiune',
   'about.copy': 'Copiază informația de versiune',
   'about.copyDone': 'Informația de versiune a fost copiată',

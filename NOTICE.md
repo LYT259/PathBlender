@@ -79,6 +79,14 @@ they are not a representation that every bundled asset is open source:
   The separately maintained frame files `mk5i-frame.glb` and
   `mk5i-frame-30.glb` are recorded as the maintainer's own frame assemblies;
   they are not attributed to FRC Designs by this entry.
+- **Swerve Drive Specialties (SDS) — SDS MK5i CAD-derived visualization assets** —
+  SDS MK5i CAD-derived visualization assets are used and distributed with PathBlender with express permission from Swerve Drive Specialties.
+  This project-specific written permission covers the SDS MK5i portions of the
+  module GLB and derived 2D visualization. It does not relicense these assets under Apache-2.0, MIT, CC0, or any other standard open-source license, and
+  does not cover the Kraken X60 geometry or the maintainer-built frame assemblies.
+  The FRCDesignLib and FRCDesignApp attribution above is retained. Naming assets
+  "SDS MK5i" follows SDS's attribution preference, not a license requirement,
+  and does not imply SDS sponsorship, certification, or endorsement.
 - **Example autonomous routes — FRC Teams 8814 (BLACKHOLE) and 11019 (OffSeason)** —
   Files under `packages/web/src/assets/welcome-example/8814/`, `11019/`, and
   `11019-champs/` are included on the basis of the maintainer's record of the

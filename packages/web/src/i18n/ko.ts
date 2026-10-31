@@ -285,6 +285,7 @@ export const ko: Record<MessageKey, string> = {
   'prefs.languageSearchClear': '검색 지우기',
   'prefs.languageSearchEmpty': '일치하는 언어 없음',
   'prefs.languageSearchEmptyHint': '다른 이름으로 시도하거나 검색을 지우세요.',
+  'about.sdsPermission': 'SDS MK5i CAD 파생 시각화 자산은 Swerve Drive Specialties의 명시적인 서면 허가를 받아 PathBlender에서 사용 및 배포됩니다.',
   'about.version': '버전',
   'about.copy': '버전 정보 복사',
   'about.copyDone': '버전 정보를 복사했습니다',

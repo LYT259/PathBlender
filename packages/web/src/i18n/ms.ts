@@ -267,6 +267,7 @@ export const ms = {
   'prefs.languageSearchClear': 'Kosongkan carian',
   'prefs.languageSearchEmpty': 'Tiada bahasa yang sepadan',
   'prefs.languageSearchEmptyHint': 'Cuba nama lain, atau kosongkan carian.',
+  'about.sdsPermission': 'Aset visualisasi terbitan CAD SDS MK5i digunakan dan diedarkan dengan PathBlender dengan kebenaran bertulis yang jelas daripada Swerve Drive Specialties.',
   'about.version': 'Versi',
   'about.copy': 'Salin maklumat versi',
   'about.copyDone': 'Maklumat versi disalin',
