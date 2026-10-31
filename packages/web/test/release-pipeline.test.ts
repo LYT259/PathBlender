@@ -125,5 +125,6 @@ describe('Windows smoke installation contract', () => {
     const join = smoke.indexOf('Join-Path $installDir "pathblender-desktop.exe"');
     expect(normalize).toBeGreaterThan(-1);
     expect(join).toBeGreaterThan(normalize);
+    expect(smoke).toContain('Get-Process -Name "pathblender-desktop"');
   });
 });

@@ -107,7 +107,7 @@ jobs:
 
           Start-Process -FilePath $exe
           Start-Sleep -Seconds 15
-          $proc = Get-Process -Name "PathBlender" -ErrorAction SilentlyContinue | Select-Object -First 1
+          $proc = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Select-Object -First 1
           if (-not $proc) { Write-Host "::error::PathBlender process not running 15s after launch"; exit 1 }
           $proc.Refresh()
           if (-not $proc.MainWindowTitle) { Write-Host "::error::PathBlender running but has no main window"; exit 1 }
