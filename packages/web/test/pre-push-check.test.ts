@@ -422,6 +422,30 @@ describe('e2e: multi-ref, deletions, remote exclusion', () => {
     rmSync(base, { recursive: true, force: true });
   });
 
+  it('keeps every live remote tip excluded when several refs are present', () => {
+    const base = mkdtempSync(join(tmpdir(), 'pb-prepush-bare-'));
+    const r = makeRepo();
+    execFileSync('git', ['init', '-q', '--bare', 'bare.git'], { cwd: base, encoding: 'utf8', env: GITENV });
+    const url = join(base, 'bare.git');
+    r.g('remote', 'add', 'origin', url);
+    commitFile(r, 'a.txt', 'clean\n', 'published clean base');
+    const cleanBase = r.g('rev-parse', 'HEAD');
+    r.g('push', '-q', 'origin', 'HEAD:refs/heads/a-main');
+    r.g('switch', '-qc', 'z-private');
+    commitFile(r, 'b.txt', 'clean\n', `historical ${lanLine()}`);
+    r.g('push', '-q', 'origin', 'HEAD:refs/heads/z-private');
+    r.g('switch', '-qc', 'feature', cleanBase);
+    commitFile(r, 'c.txt', 'clean docs\n', 'clean docs commit');
+    const res = r.run([url], {
+      stdin: `${refLine('refs/heads/feature', r.g('rev-parse', 'HEAD'), ZERO)}\n`,
+    });
+    expect(res.code).toBe(0);
+    expect(res.out).toContain('live remote tip(s)');
+    expect(res.out).not.toContain('generic:lan-ip');
+    r.clean();
+    rmSync(base, { recursive: true, force: true });
+  });
+
   it('scans in full when the advertised remote tip is unknown locally (forced update case)', () => {
     const r = makeRepo();
     commitFile(r, 'a.txt', `secret ${FAKE_EMAIL}\n`, 'old dirty commit');
