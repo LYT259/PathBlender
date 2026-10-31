@@ -97,7 +97,7 @@ jobs:
           $exe = Join-Path $installDir "PathBlender.exe"
           if (-not (Test-Path $exe)) {
             Write-Host "::error::PathBlender.exe not found at $exe"
-            Get-ChildItem "$env:LOCALAPPDATA" -Directory | ForEach-Object { Write-Host $_.Name }
+            Get-ChildItem -Path $installDir -Recurse -File | ForEach-Object { Write-Host $_.FullName }
             exit 1
           }
           $expected = (Get-Content package.json | ConvertFrom-Json).version
