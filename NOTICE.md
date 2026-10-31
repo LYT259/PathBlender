@@ -131,10 +131,13 @@ terms before every public release.
 Per FIRST's Policy on the Use of FIRST® Trademarks and Copyrighted Materials
 (rev. 04/19/25, §IV), the required disclaimer for this project is:
 
-> FIRST®, FIRST® Robotics Competition, and FIRST® Tech Challenge, are
-> registered trademarks of FIRST® (www.firstinspires.org) which is not
-> overseeing, involved with, or responsible for this activity, product, or
-> service.
+> FIRST®, FIRST® Robotics Competition, and FIRST® Tech Challenge, are registered trademarks of FIRST® (www.firstinspires.org) which is not overseeing, involved with, or responsible for this activity, product, or service.
+
+## FIRST copyrighted-material disclaimer
+
+For the FIRST copyrighted materials included in PathBlender:
+
+> ©2025 For Inspiration and Recognition of Science and Technology (FIRST). Used by special permission. All rights reserved. FIRST is not overseeing, involved with, or responsible for this activity, product, or service.
 
 Terms recheck record (2026-08-30, pre-release): the governing policy is
 unchanged — the Policy on the Use of FIRST Trademarks and Copyrighted

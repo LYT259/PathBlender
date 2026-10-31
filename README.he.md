@@ -94,3 +94,9 @@ Swerve Drive Specialties (SDS) נתנה רשות מפורשת בכתב להשת�
 אמנות המגרש ושמות המשחקים שייכים ל-FIRST ומשמשים למטרות אסטרטגיה לא-מסחריות של קבוצות בהתאם למדיניות הסימנים המסחריים והחומרים המוגנים של FIRST, הנבדקת מחדש לפני כל פרסום ציבורי:
 
 > ‏FIRST®‏, FIRST® Robotics Competition ו-FIRST® Tech Challenge הם סימנים מסחריים רשומים של FIRST®‏ (www.firstinspires.org), שאינה מפקחת, מעורבת או אחראית לפעילות, למוצר או לשירות זה.
+
+> FIRST®, FIRST® Robotics Competition, and FIRST® Tech Challenge, are registered trademarks of FIRST® (www.firstinspires.org) which is not overseeing, involved with, or responsible for this activity, product, or service.
+
+For the FIRST copyrighted materials included in PathBlender:
+
+> ©2025 For Inspiration and Recognition of Science and Technology (FIRST). Used by special permission. All rights reserved. FIRST is not overseeing, involved with, or responsible for this activity, product, or service.

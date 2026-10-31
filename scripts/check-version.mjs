@@ -30,9 +30,10 @@ const SOURCES = [
   // there is just as fatal, so the reader refuses to report a single value
   // unless every workspace entry agrees.
   ['package-lock.json', (t) => {
-    const stamps = new Set(Object.entries(JSON.parse(t).packages ?? {})
+    const lock = JSON.parse(t);
+    const stamps = new Set([lock.version, ...Object.entries(lock.packages ?? {})
       .filter(([key, pkg]) => (key === '' || key.startsWith('packages/')) && typeof pkg.version === 'string')
-      .map(([, pkg]) => pkg.version));
+      .map(([, pkg]) => pkg.version)]);
     return stamps.size === 1 ? [...stamps][0] : `<drift inside: ${[...stamps].sort().join(' / ')}>`;
   }],
 ];

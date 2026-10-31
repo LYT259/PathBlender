@@ -83,7 +83,9 @@ describe('shipped-artifact verification gates', () => {
   it('builds and verifies Universal Mac binaries before collecting the version-matched image', () => {
     expect(workflow).toContain('npx tauri build --target universal-apple-darwin --bundles app');
     expect(workflow).toContain('target/universal-apple-darwin/release/bundle');
-    expect(script).toContain('lipo -verify_arch arm64 x86_64');
+    expect(script).toContain('verify_arch arm64');
+    expect(script).toContain('verify_arch x86_64');
+    expect(script).toContain('lipo -verify_arch "$1"');
     expect(script).toContain('verify_architectures "$MNT/PathBlender.app"');
   });
 
@@ -113,5 +115,29 @@ describe('shipped-artifact verification gates', () => {
 
   it('the updater archive is regenerated from the sealed bundle (never tauri’s pre-seal wrap)', () => {
     expect(script).toContain('rm -f "$UPDATER" "$UPDATER.sig"');
+  });
+});
+
+describe('Windows smoke installation contract', () => {
+  it('removes registry path quotes before joining the installed executable path', () => {
+    const smoke = readFileSync(resolve(ROOT, '.github/workflows/windows-smoke.yml'), 'utf8');
+    const normalize = smoke.indexOf(String.raw`$installDir = $installDir.Trim(`);
+    const join = smoke.indexOf('Join-Path $installDir "pathblender-desktop.exe"');
+    expect(normalize).toBeGreaterThan(-1);
+    expect(join).toBeGreaterThan(normalize);
+    expect(smoke).toContain('Get-Process -Name "pathblender-desktop"');
+    expect(smoke).toContain('pathblender-desktop.exe not found at $exe');
+  });
+});
+
+describe('FIRST copyright disclaimers', () => {
+  it('carries both required English disclaimers in the packaged notice and every README', () => {
+    const trademark = 'FIRST®, FIRST® Robotics Competition, and FIRST® Tech Challenge, are registered trademarks of FIRST® (www.firstinspires.org) which is not overseeing, involved with, or responsible for this activity, product, or service.';
+    const copyright = '©2025 For Inspiration and Recognition of Science and Technology (FIRST). Used by special permission. All rights reserved. FIRST is not overseeing, involved with, or responsible for this activity, product, or service.';
+    for (const file of ['NOTICE.md', 'README.md', 'README.zh-CN.md', 'README.zh-Hant.md', 'README.es.md', 'README.fr.md', 'README.he.md', 'README.pt-BR.md', 'README.tr.md']) {
+      const text = readFileSync(resolve(ROOT, file), 'utf8');
+      expect(text, `${file}: trademark disclaimer`).toContain(trademark);
+      expect(text, `${file}: copyright disclaimer`).toContain(copyright);
+    }
   });
 });

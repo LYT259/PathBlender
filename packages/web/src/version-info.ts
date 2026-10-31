@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.34';
+export const APP_VERSION = '0.1.9-beta.35';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.35', date: '2026.10.31', note: {
+    en: 'Universal Mac, Windows and Linux installers',
+    zh: 'Mac 通用安装包，以及 Windows 和 Linux 安装包',
+    'zh-tw': 'Mac 通用安裝程式，以及 Windows 和 Linux 安裝程式',
+    cs: 'Univerzální instalátor pro Mac a instalátory pro Windows a Linux',
+    nl: 'Universeel installatieprogramma voor Mac en installatieprogramma’s voor Windows en Linux',
+    fr: 'Programme d’installation universel pour Mac et programmes d’installation pour Windows et Linux',
+    he: 'תוכנת התקנה אוניברסלית ל־Mac ותוכנות התקנה ל-Windows ול-Linux',
+    ja: 'Mac用ユニバーサルインストーラー、およびWindows・Linux用インストーラー',
+    ko: 'Mac용 유니버설 설치 프로그램 및 Windows·Linux용 설치 프로그램',
+    pl: 'Uniwersalny instalator na Maca oraz instalatory dla systemów Windows i Linux',
+    'pt-br': 'Instalador universal para Mac e instaladores para Windows e Linux',
+    es: 'Instalador universal para Mac e instaladores para Windows y Linux',
+    tr: 'Mac için evrensel yükleyici ve Windows ile Linux için yükleyiciler',
+    ar: 'مثبّت Universal لأجهزة Mac ومثبّتات لنظامي Windows وLinux',
+    az: 'Mac üçün universal quraşdırıcı və Windows və Linux üçün quraşdırıcılar',
+    bg: 'Универсален инсталатор за Mac и инсталатори за Windows и Linux',
+    bs: 'Univerzalni instalater za Mac i instalateri za Windows i Linux',
+    da: 'Universelt installationsprogram til Mac og installationsprogrammer til Windows og Linux',
+    de: 'Universelles Installationsprogramm für Mac sowie Installationsprogramme für Windows und Linux',
+    el: 'Καθολικό πρόγραμμα εγκατάστασης για Mac και προγράμματα εγκατάστασης για Windows και Linux',
+    fil: 'Universal na installer para sa Mac at mga installer para sa Windows at Linux',
+    hi: 'Mac के लिए यूनिवर्सल इंस्टॉलर, साथ ही Windows और Linux के लिए इंस्टॉलर',
+    hr: 'Univerzalni instalacijski programi za Mac te instalacijski programi za Windows i Linux',
+    hu: 'Univerzális Mac-telepítők, valamint Windows- és Linux-telepítők',
+    hy: 'Mac-ի համար ունիվերսալ տեղադրիչներ, ինչպես նաև Windows-ի և Linux-ի համար տեղադրիչներ',
+    id: 'Penginstal universal untuk Mac serta penginstal untuk Windows dan Linux',
+    it: 'Installer universali per Mac e installer per Windows e Linux',
+    mk: 'Универзални инсталери за Mac, како и инсталери за Windows и Linux',
+    mr: 'Mac साठी युनिव्हर्सल इंस्टॉलर, तसेच Windows आणि Linux साठी इंस्टॉलर',
+    ms: 'Pemasang universal untuk Mac serta pemasang untuk Windows dan Linux',
+    nb: 'Universelle installasjonsprogrammer for Mac samt installasjonsprogrammer for Windows og Linux',
+    nn: 'Universelle installasjonsprogram for Mac samt installasjonsprogram for Windows og Linux',
+    ro: 'Programe de instalare universale pentru Mac și programe de instalare pentru Windows și Linux',
+    rw: 'Porogaramu « Universal » zo gushyira kuri Mac, hamwe na porogaramu zo gushyira kuri Windows na Linux',
+    sq: 'Instalues universalë për Mac, si dhe instalues për Windows dhe Linux',
+    sr: 'Универзални инсталери за Mac, као и инсталери за Windows и Linux',
+    sv: 'Universella installationsprogram för Mac samt installationsprogram för Windows och Linux',
+    ta: 'Mac-க்கான யுனிவர்சல் நிறுவிகள், அத்துடன் Windows மற்றும் Linux-க்கான நிறுவிகள்',
+    uk: 'Універсальні інсталятори для Mac, а також інсталятори для Windows і Linux',
+    vi: 'Trình cài đặt Universal cho Mac, cùng trình cài đặt cho Windows và Linux',
+  } },
   { version: '0.1.9-beta.34', date: '2026.10.31', note: {
     en: 'SDS MK5i attribution and written permission',
     zh: 'SDS MK5i 署名和书面许可说明',

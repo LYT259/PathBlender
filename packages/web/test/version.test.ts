@@ -47,4 +47,14 @@ describe('version arithmetic', () => {
     expect(APP_VERSION).toBe(root.version);
     expect(parseVersion(APP_VERSION)).not.toBeNull();
   });
+
+  it('keeps the npm lockfile root version in sync with the package manifest', () => {
+    const root = JSON.parse(readFileSync(resolve(__dirname, '../../../package.json'), 'utf8'));
+    const lock = JSON.parse(readFileSync(resolve(__dirname, '../../../package-lock.json'), 'utf8'));
+    expect(lock.version).toBe(root.version);
+    const bump = readFileSync(resolve(__dirname, '../../../scripts/bump-version.mjs'), 'utf8');
+    expect(bump).toContain('npmLock.version = next');
+    const checker = readFileSync(resolve(__dirname, '../../../scripts/check-version.mjs'), 'utf8');
+    expect(checker).toContain('new Set([lock.version,');
+  });
 });
