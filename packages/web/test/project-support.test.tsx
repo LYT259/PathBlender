@@ -39,21 +39,23 @@ describe('public repository invitations', () => {
     render(<I18nProvider><ProjectSupport /></I18nProvider>);
     expect(screen.getByRole('link', { name: 'Star on GitHub' })).toBeInTheDocument();
   });
-  it('can dismiss when invitation storage is unavailable', () => {
-    // Real jsdom Storage and the fallback stub differ in method ownership;
-    // install the test doubles as explicit own properties on either form.
+  it('can dismiss when invitation storage is unavailable', async () => {
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM('', { url: 'https://localhost/' });
+    vi.stubGlobal('localStorage', dom.window.localStorage);
+    vi.stubGlobal('Storage', dom.window.Storage);
     const originalRead = localStorage.getItem.bind(localStorage);
     const originalWrite = localStorage.setItem.bind(localStorage);
-    const read = vi.fn((key: string) => {
+    const readOwner = Object.hasOwn(localStorage, 'getItem') ? localStorage : Storage.prototype;
+    const writeOwner = Object.hasOwn(localStorage, 'setItem') ? localStorage : Storage.prototype;
+    const read = vi.spyOn(readOwner, 'getItem').mockImplementation((key) => {
       if (key === 'pb.support-invitation.dismissed.v1') throw new Error('unavailable');
       return originalRead(key);
     });
-    const write = vi.fn((key: string, value: string) => {
+    const write = vi.spyOn(writeOwner, 'setItem').mockImplementation((key, value) => {
       if (key === 'pb.support-invitation.dismissed.v1') throw new Error('unavailable');
       return originalWrite(key, value);
     });
-    Object.defineProperty(localStorage, 'getItem', { configurable: true, value: read });
-    Object.defineProperty(localStorage, 'setItem', { configurable: true, value: write });
     try {
       render(<I18nProvider><ProjectSupport dismissible /></I18nProvider>);
       fireEvent.click(screen.getByRole('button', { name: 'Dismiss this invitation' }));
@@ -61,8 +63,10 @@ describe('public repository invitations', () => {
       expect(read).toHaveBeenCalledWith('pb.support-invitation.dismissed.v1');
       expect(write).toHaveBeenCalledWith('pb.support-invitation.dismissed.v1', '1');
     } finally {
-      Object.defineProperty(localStorage, 'getItem', { configurable: true, value: originalRead });
-      Object.defineProperty(localStorage, 'setItem', { configurable: true, value: originalWrite });
+      read.mockRestore();
+      write.mockRestore();
+      vi.unstubAllGlobals();
+      dom.window.close();
     }
   });
 });
