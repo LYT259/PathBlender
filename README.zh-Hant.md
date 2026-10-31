@@ -61,9 +61,9 @@ PathBlender 補上這個空缺：
 
 ## 取得方式
 
-- **macOS**（macOS 13+；Apple Silicon 與 Intel 一個通用包）——從 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 下載 `PathBlender_<版本號>_universal.dmg`，打開後把 PathBlender 拖入「應用程式」。
-- **Windows**（x86_64）——同一發布頁的 `*_x64-setup.exe` 安裝包。
-- **Linux**（x86_64）——同一發布頁的 DEB / AppImage / RPM 包。應用內更新走 AppImage；DEB/RPM 使用者下載新套件覆蓋安裝即可更新。
+- **macOS**（macOS 13+；目前僅支援 Apple Silicon）——從 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 下載 `*_aarch64.dmg`，打開後把 PathBlender 拖入「應用程式」。Apple Silicon 與 Intel 通用包計劃後續提供。
+- **Windows**（x86_64）——安裝包尚未發布，計劃後續提供 `*_x64-setup.exe`。
+- **Linux**（x86_64）——DEB / AppImage / RPM 包尚未發布。發布後，應用內更新走 AppImage；DEB/RPM 使用者下載新套件覆蓋安裝即可更新。
 - 更新：選單 **PathBlender → 檢查更新…**（Beta 版先在 **偏好設定 → 更新** 開啟 Beta 通道）。發布頁上的其它檔案（`.tar.gz`、`.sig`、`.json`）是更新器內部檔案，無需下載。
 - **網頁版**（檢視器建構：與桌面版相同的匯入——單一檔案或整個資料夾——加上回放與檢查；無工作階段儲存/開啟、GIF 回放與方案包匯出）——[pathblender.pages.dev](https://pathblender.pages.dev)。
 

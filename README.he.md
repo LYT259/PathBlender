@@ -61,9 +61,9 @@ PathBlender סוגר את הפער הזה:
 
 ## מאיפה משיגים
 
-- **macOS**‏ (macOS 13+; הורדת Universal אחת ל-Apple Silicon ול-Intel) — `PathBlender_<גרסה>_universal.dmg` מ-[GitHub Releases](https://github.com/LYT259/pathblender/releases): פתחו וגררו את PathBlender אל Applications.
-- **Windows**‏ (x86_64) — המתקין `*_x64-setup.exe` מאותו עמוד.
-- **Linux**‏ (x86_64) — חבילות DEB, AppImage ו-RPM מאותו עמוד. עדכונים מובנים פועלים דרך ה-AppImage; משתמשי DEB/RPM מעדכנים על ידי התקנת החבילה החדשה על הישנה.
+- **macOS**‏ (macOS 13+; כרגע Apple Silicon בלבד) — הורידו את הקובץ `*_aarch64.dmg` מ-[GitHub Releases](https://github.com/LYT259/pathblender/releases), פתחו וגררו את PathBlender אל Applications. חבילת Universal ל-Apple Silicon ול-Intel מתוכננת לגרסה עתידית.
+- **Windows**‏ (x86_64) — עדיין לא פורסם מתקין; `*_x64-setup.exe` מתוכנן לגרסה עתידית.
+- **Linux**‏ (x86_64) — חבילות DEB, AppImage ו-RPM עדיין לא פורסמו. כשייפורסמו, עדכונים מובנים ישתמשו ב-AppImage; משתמשי DEB/RPM יעדכנו על ידי התקנת החבילה החדשה על הישנה.
 - עדכונים: תפריט **PathBlender → בדיקת עדכונים…** (בבניות בטא: הפעילו קודם את ערוץ הבטא ב-**העדפות → עדכונים**). שאר הקבצים בעמוד ההפצה (`.tar.gz`, `.sig`, `.json`) שייכים למנגנון העדכון — אינכם צריכים אותם.
 - **אפליקציית הרשת** (גרסת מציג: אותן יבוא יבוא כמו באפליקציה — קבצים ותיקיות שלמות — בתוספת השמעה ובדיקה; בלי שמירת הפעלה / ייצוא GIF וחבילת פתרון) — [pathblender.pages.dev](https://pathblender.pages.dev).
 

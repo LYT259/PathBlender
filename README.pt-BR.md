@@ -61,9 +61,9 @@ Campos: FRC 2022–2026 embutidos, além da importação de campos personalizado
 
 ## Onde obter
 
-- **macOS** (macOS 13+; um único download Universal para Apple Silicon e Intel) — `PathBlender_<versão>_universal.dmg` do [GitHub Releases](https://github.com/LYT259/pathblender/releases): abra e arraste o PathBlender para os Aplicativos.
-- **Windows** (x86_64) — o instalador `*_x64-setup.exe` da mesma página.
-- **Linux** (x86_64) — pacotes DEB, AppImage e RPM da mesma página. As atualizações dentro do app usam o AppImage; usuários de DEB/RPM atualizam instalando o pacote novo por cima do antigo.
+- **macOS** (macOS 13+; atualmente somente Apple Silicon) — baixe o arquivo `*_aarch64.dmg` do [GitHub Releases](https://github.com/LYT259/pathblender/releases), abra e arraste o PathBlender para os Aplicativos. Um download Universal para Apple Silicon e Intel está planejado para uma futura release.
+- **Windows** (x86_64) — nenhum instalador foi publicado ainda; `*_x64-setup.exe` está planejado para uma futura release.
+- **Linux** (x86_64) — pacotes DEB, AppImage e RPM ainda não foram publicados. Quando estiverem disponíveis, as atualizações dentro do app usarão o AppImage; usuários de DEB/RPM atualizarão instalando o pacote novo por cima do antigo.
 - Atualizações: menu **PathBlender → Buscar atualizações…** (em betas: antes ative o canal beta em **Preferências → Atualizações**). Os demais arquivos da página de releases (`.tar.gz`, `.sig`, `.json`) são internos do atualizador — você não precisa deles.
 - **Web app** (build visualizador: as mesmas importações do aplicativo — arquivos e pastas inteiras — mais reprodução e verificação; sem salvar sessão nem exportar GIF ou pacote de solução) — [pathblender.pages.dev](https://pathblender.pages.dev).
 

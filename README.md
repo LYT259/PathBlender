@@ -102,15 +102,16 @@ any other season or a practice field).
 
 ## Where to get it
 
-- **macOS** (macOS 13+; one Universal download for Apple Silicon and
-  Intel) — `PathBlender_<version>_universal.dmg` from
-  [GitHub Releases](https://github.com/LYT259/pathblender/releases): open
-  it and drag PathBlender to Applications.
-- **Windows** (x86_64) — the `*_x64-setup.exe` installer from the same
-  Releases page.
-- **Linux** (x86_64) — DEB, AppImage and RPM packages from the same
-  Releases page. In-app updates use the AppImage; DEB/RPM users update by
-  installing the new package over the old one.
+- **macOS** (macOS 13+; currently Apple Silicon only) — download the
+  `*_aarch64.dmg` asset from
+  [GitHub Releases](https://github.com/LYT259/pathblender/releases), open
+  it and drag PathBlender to Applications. A Universal download for Apple
+  Silicon and Intel is planned for a future release.
+- **Windows** (x86_64) — no installer is provided yet; `*_x64-setup.exe`
+  is planned for a future release.
+- **Linux** (x86_64) — DEB, AppImage and RPM packages are not provided
+  yet. When available, in-app updates will use the AppImage; DEB/RPM users
+  will update by installing the new package over the old one.
 - Updates: menu **PathBlender → Check for Updates…** (beta builds: enable
   the beta channel in **Preferences → Updates** first). The release page's
   other assets (`.tar.gz`, `.sig`, `.json`) are updater internals — you
