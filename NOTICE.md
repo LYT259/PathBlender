@@ -54,6 +54,11 @@ works; each remains under its own license:
   or downstream terms. "Free" alone is not treated as proof of educational use.
   SDS, WCP, the Kraken X60 geometry, and other third-party rights are not
   confirmed by that reply.
+- **Example autonomous routes — FRC Teams 8814 (BLACKHOLE) and 11019 (OffSeason)** —
+  Route files bundled under `packages/web/src/assets/welcome-example/8814/`,
+  `11019/`, and `11019-champs/` are used with the teams' permission for
+  non-commercial demonstration within PathBlender. Team numbers and route
+  attribution are retained.
 
 ## Bundled third-party libraries
 
