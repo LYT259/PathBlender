@@ -287,6 +287,7 @@ export const ja: Record<MessageKey, string> = {
   'prefs.languageSearchClear': '検索をクリア',
   'prefs.languageSearchEmpty': '一致する言語はありません',
   'prefs.languageSearchEmptyHint': '別の名前を試すか、検索をクリアしてください。',
+  'about.sdsPermission': 'SDS MK5i の CAD 由来の可視化アセットは、Swerve Drive Specialties の明示的な書面による許可を得て、PathBlender で使用および配布されています。',
   'about.version': 'バージョン',
   'about.copy': 'バージョン情報をコピー',
   'about.copyDone': 'バージョン情報をコピーしました',

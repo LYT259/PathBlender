@@ -244,6 +244,7 @@ export const hy = {
   'prefs.languageSearchClear': 'Մաքրել որոնումը',
   'prefs.languageSearchEmpty': 'Համապատասխան լեզու չկա',
   'prefs.languageSearchEmptyHint': 'Փորձեք այլ անուն կամ մաքրեք որոնումը։',
+  'about.sdsPermission': 'SDS MK5i CAD-ից ստացված վիզուալ ակտիվները Swerve Drive Specialties-ի հստակ գրավոր թույլտվությամբ օգտագործվում և տարածվում են PathBlender-ում։',
   'about.version': 'Տարբերակ',
   'about.copy': 'Պատճենել տարբերակի տեղեկությունը',
   'about.copyDone': 'Տարբերակի տեղեկությունը պատճենվեց',

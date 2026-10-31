@@ -267,6 +267,7 @@ export const it = {
   'prefs.languageSearchClear': 'Cancella la ricerca',
   'prefs.languageSearchEmpty': 'Nessuna lingua corrispondente',
   'prefs.languageSearchEmptyHint': 'Prova con un altro nome o cancella la ricerca.',
+  'about.sdsPermission': 'Le risorse di visualizzazione derivate dal CAD di SDS MK5i sono utilizzate e distribuite con PathBlender con esplicita autorizzazione scritta di Swerve Drive Specialties.',
   'about.version': 'Versione',
   'about.copy': 'Copia info versione',
   'about.copyDone': 'Info versione copiate',

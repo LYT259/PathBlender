@@ -274,6 +274,7 @@ export const zh: Record<MessageKey, string> = {
   'prefs.languageSearchClear': '清空搜索',
   'prefs.languageSearchEmpty': '未找到匹配的语言',
   'prefs.languageSearchEmptyHint': '试试其他名称，或清空搜索。',
+  'about.sdsPermission': 'SDS MK5i CAD 衍生可视化素材已获 Swerve Drive Specialties 明确书面许可，可随 PathBlender 使用并分发。',
   'about.version': '版本',
   'about.copy': '复制版本信息',
   'about.copyDone': '版本信息已复制',

@@ -65,10 +65,17 @@ describe('third-party legal notices', () => {
     expect(notice).not.toContain('MK5i swerve module** (MIT)');
     expect(notice).toContain('The FRCDesignApp GitHub repository is MIT-licensed.');
     expect(notice).toContain("this is the project's interpretation, not an itemized confirmation");
-    expect(notice).toContain('SDS, WCP, the Kraken X60 geometry, and other third-party rights are not\n  confirmed by that reply.');
+    expect(notice).toContain('the reply expressly leaves their licensing to them');
     expect(cad).toContain('screenshot displays 2026-10-09, timezone unverified');
     expect(cad).toContain('does not separately confirm public-repository distribution, GLB conversion,');
     expect(cad).not.toContain("which covers this free FRC strategy tool's use case");
+  });
+
+  it('records SDS permission only for its CAD-derived visualization assets', () => {
+    const notice = readFileSync(resolve(ROOT, 'NOTICE.md'), 'utf8');
+    expect(notice).toContain('SDS MK5i CAD-derived visualization assets are used and distributed with PathBlender with express permission from Swerve Drive Specialties.');
+    expect(notice).toContain('does not relicense these assets under Apache-2.0, MIT, CC0, or any other standard open-source license');
+    expect(notice).toContain('does not cover the Kraken X60 geometry or the maintainer-built frame assemblies');
   });
 });
 

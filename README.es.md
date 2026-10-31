@@ -91,6 +91,7 @@ El alcance de visor descrito arriba está implementado y cubierto por pruebas de
 
 **Apache-2.0** — ver [LICENSE](./LICENSE) y [NOTICE.md](./NOTICE.md).
 PathPlanner (MIT), Choreo (BSD-3), los recursos de AdvantageScope (BSD-3) y WPILib (BSD-3) conservan cada uno su propia licencia y se acreditan en NOTICE.
+Swerve Drive Specialties (SDS) ha dado permiso expreso por escrito para usar y distribuir con PathBlender los recursos de visualización derivados del CAD de SDS MK5i; este permiso no cubre la geometría de Kraken X60 de WCP ni el chasis construido por el usuario. Consulta NOTICE para más detalles.
 
 El arte de los campos y los nombres de los juegos pertenecen a FIRST y se usan con fines no comerciales de estrategia de equipos conforme a la política de marcas y materiales de FIRST, revisada antes de cada publicación pública:
 

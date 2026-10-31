@@ -243,6 +243,7 @@ export const rw = {
   'prefs.languageSearchClear': 'Siba gushakisha',
   'prefs.languageSearchEmpty': 'Nta ururimi ryabonetse',
   'prefs.languageSearchEmptyHint': 'Gerageza irindi zina, cyangwa usibe gushakisha.',
+  'about.sdsPermission': 'Ibikoresho by’ibishusho bivuye kuri CAD SDS MK5i bikoreshwa kandi bigakwirakwizwa hamwe na PathBlender, hakoreshejwe uruhushya rwanditse rweruye rwa Swerve Drive Specialties.',
   'about.version': "Verisiyo",
   'about.copy': "Kopa amakuru ya verisiyo",
   'about.copyDone': "Amakuru ya verisiyo byakopiwe",

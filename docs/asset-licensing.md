@@ -27,6 +27,22 @@ export checksum, conversion process, and distinction from official reference CAD
 Keep full screenshots and correspondence privately; do not publish personal
 information or imply that a transcription alone independently authenticates them.
 
+## SDS written permission
+
+SDS MK5i CAD-derived visualization assets are used and distributed with
+PathBlender with express permission from Swerve Drive Specialties. This is a
+project-specific written permission for the SDS MK5i portions of the module GLB
+and derived 2D visualization, not an Apache-2.0, MIT, CC0, or other standard
+open-source grant. It does not cover the Kraken X60 geometry or the
+maintainer-built frame assemblies. FRCDesignLib and FRCDesignApp source
+attribution is retained. Naming the assets "SDS MK5i" follows SDS's attribution
+preference, not a license requirement, and does not imply sponsorship,
+certification, or endorsement.
+
+The reply was recorded from the maintainer's supplied authorization on
+2026-10-31. Full correspondence and personal contact details remain private;
+only the permission and its scope are published.
+
 ## Distributing and reusing assets
 
 Follow each asset's actual terms and retain applicable notices. Do not describe
@@ -41,5 +57,12 @@ confidential evidence in a public issue.
 项目自有代码采用 Apache-2.0，第三方模型、场地素材、示例路线和商标另有边界。
 FRCDesignApp 的 MIT 不能直接扩大为全部 Onshape 几何的 MIT。现有 Discord
 回复是在公开分发请求的上下文中对教育用途表示不反对，但明确保留 SDS/WCP
-的许可问题；本项目没有据此确认这些第三方权利。详细来源、用途说明、再利用
-边界和权利异议处理入口统一见随分发携带的 NOTICE.md。补充声明不等于补发授权。
+的许可问题；本项目没有据此确认这些第三方权利。
+
+Swerve Drive Specialties（SDS）已明确书面许可 PathBlender 使用并随项目分发
+SDS MK5i 的 CAD 衍生可视化素材。这是针对本项目的书面许可，不是 Apache-2.0、
+MIT、CC0 或其他标准开源许可证，也不覆盖 Kraken X60 电机几何或用户自建车架。
+保留 FRCDesignLib 与 FRCDesignApp 的来源署名。将素材称为“SDS MK5i”是落实
+SDS 的署名偏好，不是强制许可条件，也不表示 SDS 赞助、认证或背书本软件。
+详细来源、用途说明、再利用边界和权利异议处理入口统一见随分发携带的
+NOTICE.md。补充声明不等于补发授权，完整邮件与个人联系方式仍私有保存。

@@ -267,6 +267,7 @@ export const ar = {
   'prefs.languageSearchClear': 'مسح البحث',
   'prefs.languageSearchEmpty': 'لا توجد لغات مطابقة',
   'prefs.languageSearchEmptyHint': 'جرّب اسمًا آخر أو امسح البحث.',
+  'about.sdsPermission': 'تُستخدم أصول التصور المشتقة من SDS MK5i CAD وتوزع مع PathBlender بإذن كتابي صريح من Swerve Drive Specialties.',
   'about.version': 'الإصدار',
   'about.copy': 'نسخ معلومات الإصدار',
   'about.copyDone': 'تم نسخ معلومات الإصدار',

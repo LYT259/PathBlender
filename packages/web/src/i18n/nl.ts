@@ -284,6 +284,7 @@ export const nl: Record<MessageKey, string> = {
   'prefs.languageSearchClear': 'Zoekopdracht wissen',
   'prefs.languageSearchEmpty': 'Geen overeenkomende talen',
   'prefs.languageSearchEmptyHint': 'Probeer een andere naam of wis de zoekopdracht.',
+  'about.sdsPermission': 'De van SDS MK5i afgeleide CAD-visualisatie-assets worden met uitdrukkelijke schriftelijke toestemming van Swerve Drive Specialties in PathBlender gebruikt en verspreid.',
   'about.version': 'Versie',
   'about.copy': 'Versiegegevens kopiëren',
   'about.copyDone': 'Versiegegevens gekopieerd',

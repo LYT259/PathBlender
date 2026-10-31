@@ -88,6 +88,7 @@ Bug、格式漂移報告、賽季場地問題正是我們需要的回饋。請�
 ## 授權與歸因
 
 **Apache-2.0**——見 [LICENSE](./LICENSE) 與 [NOTICE.md](./NOTICE.md)。PathPlanner（MIT）、Choreo（BSD-3）、AdvantageScope 素材（BSD-3）、WPILib（BSD-3）各自保持原有授權，在 NOTICE 中逐一致謝。
+SDS 已明確書面許可 PathBlender 使用並分發 SDS MK5i 的 CAD 衍生視覺化素材；該許可不涵蓋 WCP/Kraken X60 或使用者自建車架，詳見 NOTICE。
 
 場地美術與賽事名稱歸 FIRST 所有，按 FIRST 商標與版權材料政策用於非商業隊伍策略用途，每次公開發版前複查：
 

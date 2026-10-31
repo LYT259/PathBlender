@@ -279,6 +279,7 @@ export const zhTw: Record<MessageKey, string> = {
   'prefs.languageSearchClear': '清除搜尋',
   'prefs.languageSearchEmpty': '找不到符合的語言',
   'prefs.languageSearchEmptyHint': '試試其他名稱，或清除搜尋。',
+  'about.sdsPermission': 'SDS MK5i CAD 衍生視覺化素材已獲 Swerve Drive Specialties 明確書面許可，可隨 PathBlender 使用並分發。',
   'about.version': '版本',
   'about.copy': '複製版本資訊',
   'about.copyDone': '版本資訊已複製',

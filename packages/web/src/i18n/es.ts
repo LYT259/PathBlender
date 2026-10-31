@@ -283,6 +283,7 @@ export const es: Record<MessageKey, string> = {
   'prefs.languageSearchClear': 'Borrar la búsqueda',
   'prefs.languageSearchEmpty': 'No hay idiomas coincidentes',
   'prefs.languageSearchEmptyHint': 'Prueba con otro nombre o borra la búsqueda.',
+  'about.sdsPermission': 'Los recursos de visualización derivados del CAD de SDS MK5i se usan y distribuyen con PathBlender con permiso expreso por escrito de Swerve Drive Specialties.',
   'about.version': 'Versión',
   'about.copy': 'Copiar información de versión',
   'about.copyDone': 'Información de versión copiada',

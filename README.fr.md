@@ -91,6 +91,7 @@ Le périmètre de visionneuse décrit ci-dessus est implémenté et couvert par 
 
 **Apache-2.0** — voir [LICENSE](./LICENSE) et [NOTICE.md](./NOTICE.md).
 PathPlanner (MIT), Choreo (BSD-3), les ressources AdvantageScope (BSD-3) et WPILib (BSD-3) restent sous leurs licences respectives et sont crédités dans NOTICE.
+Swerve Drive Specialties (SDS) a donné son autorisation écrite expresse pour utiliser et distribuer avec PathBlender les ressources de visualisation dérivées du CAD de SDS MK5i ; cette autorisation ne couvre ni la géométrie Kraken X60 de WCP ni le châssis construit par l’utilisateur. Voir NOTICE pour plus de détails.
 
 Les illustrations de terrains et les noms de jeux appartiennent à FIRST et sont utilisés à des fins non commerciales de stratégie d’équipe conformément à la politique de marques et de documents protégés de FIRST, revérifiée avant chaque publication publique :
 

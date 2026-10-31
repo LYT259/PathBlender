@@ -86,6 +86,17 @@ SDS export does not — SDS never ships motors).
   other third-party rights as confirmed by this message. If any rights are
   disputed, the fallback remains replacing the module geometry (procedural
   fallback exists in `chassis3d.ts`).
+- **SDS written permission (recorded from the maintainer's supplied reply on
+  2026-10-31; full correspondence and personal contact details remain private)** —
+  SDS MK5i CAD-derived visualization assets are used and distributed with
+  PathBlender with express permission from Swerve Drive Specialties. This
+  project-specific written permission covers the SDS MK5i portions of the module
+  GLB and derived 2D visualization. It does not relicense these assets under
+  Apache-2.0, MIT, CC0, or any other standard open-source license, and does not
+  cover the Kraken X60 geometry or the maintainer-built frame assemblies.
+  FRCDesignLib and FRCDesignApp source attribution is retained. Naming assets
+  "SDS MK5i" follows SDS's attribution preference, not a license requirement,
+  and does not imply SDS sponsorship, certification, or endorsement.
 - **Reference geometry kept for audit** — the official SDS Parasolid
   `mk5i.x_t` (product page → "CAD Model" Google Drive link;
   `attachment; filename="MK5i.x_t"`), sha256
