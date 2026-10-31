@@ -131,10 +131,7 @@ terms before every public release.
 Per FIRST's Policy on the Use of FIRST® Trademarks and Copyrighted Materials
 (rev. 04/19/25, §IV), the required disclaimer for this project is:
 
-> FIRST®, FIRST® Robotics Competition, and FIRST® Tech Challenge, are
-> registered trademarks of FIRST® (www.firstinspires.org) which is not
-> overseeing, involved with, or responsible for this activity, product, or
-> service.
+> FIRST®, FIRST® Robotics Competition, and FIRST® Tech Challenge, are registered trademarks of FIRST® (www.firstinspires.org) which is not overseeing, involved with, or responsible for this activity, product, or service.
 
 ## FIRST copyrighted-material disclaimer
 

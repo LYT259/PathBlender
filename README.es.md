@@ -97,6 +97,8 @@ El arte de los campos y los nombres de los juegos pertenecen a FIRST y se usan c
 
 > FIRST®, FIRST® Robotics Competition y FIRST® Tech Challenge son marcas registradas de FIRST® (www.firstinspires.org), que no supervisa, ni participa en, ni es responsable de esta actividad, producto o servicio.
 
+> FIRST®, FIRST® Robotics Competition, and FIRST® Tech Challenge, are registered trademarks of FIRST® (www.firstinspires.org) which is not overseeing, involved with, or responsible for this activity, product, or service.
+
 For the FIRST copyrighted materials included in PathBlender:
 
 > ©2025 For Inspiration and Recognition of Science and Technology (FIRST). Used by special permission. All rights reserved. FIRST is not overseeing, involved with, or responsible for this activity, product, or service.

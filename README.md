@@ -195,10 +195,7 @@ Field artwork and game names are owned by FIRST and used for
 non-commercial team strategy purposes following FIRST's trademark &
 copyrighted-materials policy, rechecked before each public release:
 
-> FIRST®, FIRST® Robotics Competition, and FIRST® Tech Challenge, are
-> registered trademarks of FIRST® (www.firstinspires.org) which is not
-> overseeing, involved with, or responsible for this activity, product,
-> or service.
+> FIRST®, FIRST® Robotics Competition, and FIRST® Tech Challenge, are registered trademarks of FIRST® (www.firstinspires.org) which is not overseeing, involved with, or responsible for this activity, product, or service.
 
 For the FIRST copyrighted materials included in PathBlender:
 
