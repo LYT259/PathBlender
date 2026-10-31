@@ -18,6 +18,12 @@
 
 ## 许可证与素材
 
+- [ ] Read `NOTICE.md` and `docs/asset-licensing.md`: distinguish own-code
+  licensing from asset permissions and preserve unresolved scope in every release.
+  Verify the actual packaged NOTICE against the source, not just its presence.
+  New notices do not retrospectively update historical assets or old installers.
+
+
 - [ ] NOTICE.md 归属清单与当前代码一致（PathPlanner / Choreo / 103 fork / WPILib / FRC Designs）
 - [ ] **MK5i 模组许可与分发文件**：FRCDesignApp GitHub 仓库采用 MIT，`licenses/FRCDesignApp-MIT.txt` 保存该仓库的完整许可证及 `Copyright (c) 2026 FRCDesign.org`，不得把整个 Onshape 模组直接概括成已明确适用 MIT。NOTICE 保留 Onshape Swerve V235 来源和 GLB/2D 转换说明；Discord 原回复仅表示对模型用于教育目的不持异议，项目方认为当前用途相符属于自身理解，免费不当然等于教育用途，公开仓库、GLB 转换、安装包再分发及下游条件未逐项确认。SDS/WCP、Kraken X60 及其他第三方权利仍未确认，「I can't imagine…」不得写成授权。Web 构建须把 `LICENSE`、`NOTICE.md`、`licenses/` 复制进 `packages/web/dist`；Tauri 资源与最终 DMG 查验须含同样文件
 - [ ] PathPlanner 轨迹生成移植说明保留在发布说明中（MIT 要求注明）
@@ -36,6 +42,7 @@
       纪律。唯一出站通道 = Rust 原生 updater（tauri-plugin-updater 原生网络栈，不受页面 CSP 约束）。
 
 - [ ] README 隐私声明与实际行为一致（文件本地解析）
+- [ ] **历史隐私独立核查**：pre-push 只扫描本次实际待推对象，不证明既有提交、GitHub PR/缓存引用、其他克隆或旧 Release 附件已清理。公开前单独记录脱敏核查范围、已知残留与接受/处置决定；未核查或仍有残留的不得写成已清理。
 
 ## GitHub（发布操作纪律）
 
@@ -45,14 +52,14 @@
       `npx wrangler pages deploy packages/web/dist --project-name=pathblender --branch=stable`（本机直传，零 Actions 额度）；
       β 预览站 `pathblender-preview` 仍弃用不动（`--branch=beta` + `VITE_SITE_PREVIEW=1` 的旧条款仅存档；**2026-10-07 起 UI 侧的预览站交叉入口与横幅已随 `VITE_SITE_PREVIEW` 构建开关一并删除——网站本身即 beta 通道，构建不再区分站点 flavor**）。
       **部署后核对线上版本与树内一致**（回读 `https://pathblender.pages.dev/sw.js` 的缓存名 `pb-<版本>-<时间戳>`；2026-10-02 审计曾发现线上挂着转型前旧构建，此条为常规核对项）。
-- [ ] GitHub Pages 工作流已于 2026-10-02 移除：私有 Free 仓库无法启用 Pages，deploy.yml 在每次 stable 推送上稳定失败（5/5）。**2026-10-04 用户定稿：弃 Cloudflare，转公开后全用 GitHub Pages——重建 deploy.yml 自动部署（viewer 构建），wrangler 直传条款届时退役**。**2026-10-06 用户定稿（取代「push stable 触发」）：转公开后每次分支合并到 beta 就重新部署 Pages——deploy.yml 届时按 push beta 触发重建**。
+- [ ] GitHub Pages：保留现有 `.github/workflows/deploy.yml`（`push beta` 触发、`VITE_VIEWER_ONLY=1` viewer 构建、私有仓库期间由 `github.event.repository.private == false` 休眠）。转公开后核实该工作流实际运行与线上版本；不要重复重建或覆盖现有配置，Cloudflare 直传渠道届时退役。
 - [ ] **转公开日清单（用户决定 2026-10-02：仓库暂不转公开；转公开之后才有 Demo 网站；2026-10-05 增补 Windows 项；2026-10-31 增补社区协作与 PR 审核项）**——按序执行，防止 README 的站点链接先于 Demo 上线：
       ① 给 `stable`（主分支）与 `beta` 打分支保护（禁强推 + 禁删除 + 含管理员）；两者均开启 `Require a pull request before merging` 与 `Require approvals`（至少 1 个批准）；外部贡献者的 PR 必须由用户本人人工审核批准；用户自有任务经独立 reviewer agent 复核通过后，可按用户常设委托以 `LYT259` 提交 `Approve` 并自动合入 `beta`；`stable` 仍按双端验证和发版门槛，不自动合并；禁止未经相应审批直接推送或合并；
       ② 检查 `Settings → General → Features` 中的 `Discussions` 已启用，并在转公开后实测大家可查看、发起和参与 Discussion；
       ③ 检查 `Settings → General → Features` 中的 `Issues` 已启用，并在转公开后实测大家可新建 Issue；
       ④ 确认外部贡献者可通过 fork 向 `stable` / `beta` 提交 PR；分支保护只限制直接推送与合并，不得阻止创建 PR；外部 PR 未经用户本人人工审核批准，不得合并到 `stable` 或 `beta`（自有任务的委托自动审批按①执行）；
       ⑤ **Windows 验证（2026-10-05 PR #198 落地，此前无法真机验证）**：手动 dispatch `.github/workflows/windows-smoke.yml`（公开仓标准 runner 免费），下载 artifact 截图人工核对——原生标题栏无红绿灯让位空隙、暗色渲染正常；然后打当期 `v*` tag，release.yml 的 build-windows 自动产出 NSIS 安装包，Release 资产含 `*-setup.exe`(+`.sig`)、更新器 feed 含 `windows-x86_64` 条目；
-      ⑥ Demo 站（2026-10-04 起走 Pages）：重建 deploy.yml（**push beta 即自动部署——2026-10-06 用户定稿：每次分支合并到 beta 就重新部署**）+ `VITE_VIEWER_ONLY=1` viewer 构建，部署后核对线上版本串与树内一致（Cloudflare 渠道届时退役）；
+      ⑥ Demo 站（2026-10-04 起走 Pages）：使用并核验现有 deploy.yml（**push beta 即自动部署——2026-10-06 用户定稿：每次分支合并到 beta 就重新部署**）+ `VITE_VIEWER_ONLY=1` viewer 构建，部署后核对线上版本串与树内一致（Cloudflare 渠道届时退役）；
       ⑦ 核对 README 三语的「获取方式」链接与真实可达状态一致（补充 Windows 下载说明）；更新 feed / Release 资产对未认证用户转可达（无需改动——端点本就是 GitHub 公网 URL）；
       ⑧ 反馈渠道=GitHub Issues（转公开即活；README/指南/模板已指向 issues 链接）；Chief Delphi 发布帖由用户本人发（用户决定 2026-10-03）。
 

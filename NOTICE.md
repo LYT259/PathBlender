@@ -1,10 +1,21 @@
 # NOTICE — Attribution
 
 PathBlender is an independent project. It is not affiliated with FIRST,
-Choreo, PathPlanner, or Team 103.
+Choreo, PathPlanner, Team 103, FRC Designs, Swerve Drive Specialties (SDS),
+or WestCoast Products (WCP). Product names identify the source or depicted
+product; they do not imply endorsement, certification, or sponsorship.
 
-This project references (and, where noted, ports) the following open-source
-works; each remains under its own license:
+## License scope and asset boundaries
+
+Apache-2.0 applies to PathBlender's own code made available under that license.
+It does not grant rights in third-party models, artwork, trademarks, or route
+files beyond the permissions actually held. Third-party material remains subject
+to its applicable terms. A public repository, a download, a conversion to GLB,
+or this notice does not by itself establish an unrestricted asset license.
+
+This project references, adapts, or bundles the following works and assets.
+The entries distinguish published licenses from limited statements or permissions;
+they are not a representation that every bundled asset is open source:
 
 - **PathPlanner / PathPlannerLib** (MIT) — https://github.com/mjansen4857/pathplanner
   Trajectory generation algorithms ported to TypeScript in Phase 2 must carry
@@ -54,11 +65,26 @@ works; each remains under its own license:
   or downstream terms. "Free" alone is not treated as proof of educational use.
   SDS, WCP, the Kraken X60 geometry, and other third-party rights are not
   confirmed by that reply.
+  Source document: https://cad.onshape.com/documents/698e922b5304f1d6a2b06339/v/7815f8c0be3f57e66c7598ce/e/a9dfc0b156f7686b0772ad5c
+  The request in https://github.com/frcdesign/FRCDesignApp/issues/61#issuecomment-6033731974 explicitly
+  described GLB conversion, 2D rendering, website/desktop distribution, and
+  a public Git repository including historical commits and tags. The Discord
+  screenshot supplied by the maintainer shows Alex Kempen directly replying
+  to that request on 2026-10-09 (displayed date; timezone unverified).
+  This context supports the project's interpretation of the educational-use
+  statement. It is not an MIT grant for all model geometry or permission from
+  SDS/WCP; the reply expressly leaves their licensing to them.
+  The library is FRCDesignLib; FRCDesignApp is its insertion tool. Obtaining
+  geometry through that tool does not establish who authored every component.
+  The separately maintained frame files `mk5i-frame.glb` and
+  `mk5i-frame-30.glb` are recorded as the maintainer's own frame assemblies;
+  they are not attributed to FRC Designs by this entry.
 - **Example autonomous routes — FRC Teams 8814 (BLACKHOLE) and 11019 (OffSeason)** —
-  Route files bundled under `packages/web/src/assets/welcome-example/8814/`,
-  `11019/`, and `11019-champs/` are used with the teams' permission for
-  non-commercial demonstration within PathBlender. Team numbers and route
-  attribution are retained.
+  Files under `packages/web/src/assets/welcome-example/8814/`, `11019/`, and
+  `11019-champs/` are included on the basis of the maintainer's record of the
+  teams' oral permission for non-commercial demonstration in this free tool,
+  retaining team attribution. This is not a grant of unrestricted rights to
+  redistribute the route collection separately or for other purposes.
 
 ## Bundled third-party libraries
 
@@ -117,3 +143,35 @@ activities, conditioned on displaying the disclaimer above and on the
 are cropped/scaled for coordinate calibration, which is a gray zone under the
 modified-form rule; the user-imported custom-field path is the ready fallback
 (see docs/releasing.md) should FIRST ever tighten enforcement.
+
+## Reuse, historical copies, and rights concerns
+
+For the MK5i geometry and its derived renders, this project does not purport to
+sublicense third-party rights it has not established. Before extracting or
+redistributing those assets, check the applicable permission with the relevant
+rights holder; do not infer a blanket Apache-2.0 or MIT grant from this repository.
+The educational-use statement is not represented as an unrestricted commercial
+license. This notice neither narrows rights actually granted by an applicable
+license nor creates additional rights in third-party material. Any maintainer
+decision to accept residual legal or privacy risk is not authorization from a
+rights holder and is not a representation that historical material has been cleaned.
+
+Historical commits, tags, screenshots, and older release packages may contain
+these assets and earlier notices. Adding this notice does not retroactively
+obtain permission or change those artifacts. Future distributions must carry
+current attribution and the applicable license texts; unresolved asset scope
+must not be described as fully cleared.
+
+Rights holders may contact the maintainer through
+https://github.com/LYT259/PathBlender/issues with the affected file or release,
+the claimed rights, and the requested correction. Do not post private documents,
+personal contact details, or confidential evidence publicly; request a private
+follow-up channel where necessary. The maintainer will review substantiated
+concerns and determine appropriate correction, restriction, removal, or
+replacement. This process and any later removal are not substitutes for permission.
+
+PathBlender is a visualization and planning aid, not a certified engineering or
+safety assessment. Model dimensions and simplified geometry are not a substitute
+for manufacturer documentation or physical verification. The warranty and
+liability provisions of applicable licenses remain as written; this notice does
+not waive anyone else's rights or create a new license for their work.

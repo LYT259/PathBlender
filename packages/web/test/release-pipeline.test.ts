@@ -66,7 +66,7 @@ describe('third-party legal notices', () => {
     expect(notice).toContain('The FRCDesignApp GitHub repository is MIT-licensed.');
     expect(notice).toContain("this is the project's interpretation, not an itemized confirmation");
     expect(notice).toContain('SDS, WCP, the Kraken X60 geometry, and other third-party rights are not\n  confirmed by that reply.');
-    expect(cad).toContain('exact reply date unknown');
+    expect(cad).toContain('screenshot displays 2026-10-09, timezone unverified');
     expect(cad).toContain('does not separately confirm public-repository distribution, GLB conversion,');
     expect(cad).not.toContain("which covers this free FRC strategy tool's use case");
   });
