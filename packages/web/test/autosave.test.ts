@@ -71,29 +71,34 @@ describe('saveAutosave / loadAutosave', () => {
       })),
     }];
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    // jsdom's localStorage owns its setItem (it shadows Storage.prototype), so
-    // the spy has to sit on the instance — a prototype spy here is a no-op,
-    // which is why the quota test this one replaces never actually fired.
+    // Real jsdom Storage and the fallback stub differ in method ownership;
+    // install the test double as an explicit own property on either form.
     const real = localStorage.setItem.bind(localStorage);
     // Refuse the first shape only: the retry must be the library-stripped one.
     let refusals = 1;
-    vi.spyOn(localStorage, 'setItem').mockImplementation((k, v) => {
-      if (refusals-- > 0) throw new DOMException('quota', 'QuotaExceededError');
-      real(k, v);
+    Object.defineProperty(localStorage, 'setItem', {
+      configurable: true,
+      value: (k: string, v: string) => {
+        if (refusals-- > 0) throw new DOMException('quota', 'QuotaExceededError');
+        real(k, v);
+      },
     });
-    expect(() => saveAutosave(withLibrary, 'rebuilt-2026')).not.toThrow();
-    const stored = JSON.parse(localStorage.getItem('pb.autosave.v1')!) as { robots: Record<string, unknown>[] };
-    expect(stored.robots[0]!.samples).toBeDefined();
-    expect(stored.robots[0]!.routeOptions).toBeUndefined();
-    expect(warn).not.toHaveBeenCalled();
+    try {
+      expect(() => saveAutosave(withLibrary, 'rebuilt-2026')).not.toThrow();
+      const stored = JSON.parse(localStorage.getItem('pb.autosave.v1')!) as { robots: Record<string, unknown>[] };
+      expect(stored.robots[0]!.samples).toBeDefined();
+      expect(stored.robots[0]!.routeOptions).toBeUndefined();
+      expect(warn).not.toHaveBeenCalled();
 
-    // Nothing fits: the user hears about it instead of losing the session in
-    // silence — the exact failure that went unnoticed for three days.
-    refusals = 99;
-    expect(() => saveAutosave(withLibrary, 'rebuilt-2026')).not.toThrow();
-    expect(warn).toHaveBeenCalledTimes(1);
-    warn.mockRestore();
-    vi.restoreAllMocks();
+      // Nothing fits: the user hears about it instead of losing the session in
+      // silence — the exact failure that went unnoticed for three days.
+      refusals = 99;
+      expect(() => saveAutosave(withLibrary, 'rebuilt-2026')).not.toThrow();
+      expect(warn).toHaveBeenCalledTimes(1);
+    } finally {
+      Object.defineProperty(localStorage, 'setItem', { configurable: true, value: real });
+      vi.restoreAllMocks();
+    }
   });
 
   it('stores the compact autosave shape, not the shareable file shape', () => {

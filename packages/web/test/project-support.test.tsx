@@ -40,24 +40,29 @@ describe('public repository invitations', () => {
     expect(screen.getByRole('link', { name: 'Star on GitHub' })).toBeInTheDocument();
   });
   it('can dismiss when invitation storage is unavailable', () => {
-    // The test environment supplies an instance-level Storage stub. Spying
-    // on Storage.prototype would miss it and silently skip the failure path.
+    // Real jsdom Storage and the fallback stub differ in method ownership;
+    // install the test doubles as explicit own properties on either form.
     const originalRead = localStorage.getItem.bind(localStorage);
     const originalWrite = localStorage.setItem.bind(localStorage);
-    const read = vi.spyOn(localStorage, 'getItem').mockImplementation((key) => {
+    const read = vi.fn((key: string) => {
       if (key === 'pb.support-invitation.dismissed.v1') throw new Error('unavailable');
       return originalRead(key);
     });
-    const write = vi.spyOn(localStorage, 'setItem').mockImplementation((key, value) => {
+    const write = vi.fn((key: string, value: string) => {
       if (key === 'pb.support-invitation.dismissed.v1') throw new Error('unavailable');
       return originalWrite(key, value);
     });
-    render(<I18nProvider><ProjectSupport dismissible /></I18nProvider>);
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss this invitation' }));
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
-    expect(read).toHaveBeenCalledWith('pb.support-invitation.dismissed.v1');
-    expect(write).toHaveBeenCalledWith('pb.support-invitation.dismissed.v1', '1');
-    read.mockRestore();
-    write.mockRestore();
+    Object.defineProperty(localStorage, 'getItem', { configurable: true, value: read });
+    Object.defineProperty(localStorage, 'setItem', { configurable: true, value: write });
+    try {
+      render(<I18nProvider><ProjectSupport dismissible /></I18nProvider>);
+      fireEvent.click(screen.getByRole('button', { name: 'Dismiss this invitation' }));
+      expect(screen.queryByRole('link')).not.toBeInTheDocument();
+      expect(read).toHaveBeenCalledWith('pb.support-invitation.dismissed.v1');
+      expect(write).toHaveBeenCalledWith('pb.support-invitation.dismissed.v1', '1');
+    } finally {
+      Object.defineProperty(localStorage, 'getItem', { configurable: true, value: originalRead });
+      Object.defineProperty(localStorage, 'setItem', { configurable: true, value: originalWrite });
+    }
   });
 });
