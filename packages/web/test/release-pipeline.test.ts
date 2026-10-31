@@ -122,7 +122,7 @@ describe('Windows smoke installation contract', () => {
   it('removes registry path quotes before joining the installed executable path', () => {
     const smoke = readFileSync(resolve(ROOT, '.github/workflows/windows-smoke.yml'), 'utf8');
     const normalize = smoke.indexOf(String.raw`$installDir = $installDir.Trim(`);
-    const join = smoke.indexOf('Join-Path $installDir "PathBlender.exe"');
+    const join = smoke.indexOf('Join-Path $installDir "pathblender-desktop.exe"');
     expect(normalize).toBeGreaterThan(-1);
     expect(join).toBeGreaterThan(normalize);
   });
