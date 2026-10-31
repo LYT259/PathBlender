@@ -302,7 +302,7 @@ export function rangeToPosNeg(range) {
  */
 function listNewObjects(git, positives, negatives) {
   const args = ['rev-list', '--objects', '--no-object-names', ...positives];
-  for (const n of negatives) args.push('--not', n);
+  if (negatives.length > 0) args.push('--not', ...negatives);
   let out;
   try {
     out = git(...args);
