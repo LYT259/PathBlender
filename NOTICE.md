@@ -66,7 +66,7 @@ they are not a representation that every bundled asset is open source:
   SDS, WCP, the Kraken X60 geometry, and other third-party rights are not
   confirmed by that reply.
   Source document: https://cad.onshape.com/documents/698e922b5304f1d6a2b06339/v/7815f8c0be3f57e66c7598ce/e/a9dfc0b156f7686b0772ad5c
-  The request in https://github.com/frcdesign/FRCDesignApp/issues/61 explicitly
+  The request in https://github.com/frcdesign/FRCDesignApp/issues/61#issuecomment-6033731974 explicitly
   described GLB conversion, 2D rendering, website/desktop distribution, and
   a public Git repository including historical commits and tags. The Discord
   screenshot supplied by the maintainer shows Alex Kempen directly replying
@@ -152,7 +152,9 @@ redistributing those assets, check the applicable permission with the relevant
 rights holder; do not infer a blanket Apache-2.0 or MIT grant from this repository.
 The educational-use statement is not represented as an unrestricted commercial
 license. This notice neither narrows rights actually granted by an applicable
-license nor creates additional rights in third-party material.
+license nor creates additional rights in third-party material. Any maintainer
+decision to accept residual legal or privacy risk is not authorization from a
+rights holder and is not a representation that historical material has been cleaned.
 
 Historical commits, tags, screenshots, and older release packages may contain
 these assets and earlier notices. Adding this notice does not retroactively

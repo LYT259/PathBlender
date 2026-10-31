@@ -1,4 +1,8 @@
-# CAD/asset pipeline scripts (private; not shipped)
+# CAD/asset pipeline scripts and provenance
+
+This tracked development record is not an app resource or a private store; it
+becomes publicly visible if the repository is made public. Full screenshots and
+correspondence remain separate and private.
 
 ## 2026 field artwork top-down render (2026-10-11)
 

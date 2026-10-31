@@ -14,7 +14,7 @@ A repository-wide code license is not a blanket license for its third-party asse
 - Published MIT text: applies to the FRCDesignApp GitHub repository; retained
   at [licenses/FRCDesignApp-MIT.txt](../licenses/FRCDesignApp-MIT.txt).
 - The maintainer's request explicitly described conversion and public distribution,
-  including historical commits/tags: https://github.com/frcdesign/FRCDesignApp/issues/61
+  including historical commits/tags: https://github.com/frcdesign/FRCDesignApp/issues/61#issuecomment-6033731974
 - The supplied Discord screenshot displays 2026-10-09 and a direct reply by
   Alex Kempen. He expressed no objection to educational use while expressly
   leaving SDS/WCP licensing to those parties. Screenshot timezone is unverified.
