@@ -47,10 +47,10 @@
       **部署后核对线上版本与树内一致**（回读 `https://pathblender.pages.dev/sw.js` 的缓存名 `pb-<版本>-<时间戳>`；2026-10-02 审计曾发现线上挂着转型前旧构建，此条为常规核对项）。
 - [ ] GitHub Pages 工作流已于 2026-10-02 移除：私有 Free 仓库无法启用 Pages，deploy.yml 在每次 stable 推送上稳定失败（5/5）。**2026-10-04 用户定稿：弃 Cloudflare，转公开后全用 GitHub Pages——重建 deploy.yml 自动部署（viewer 构建），wrangler 直传条款届时退役**。**2026-10-06 用户定稿（取代「push stable 触发」）：转公开后每次分支合并到 beta 就重新部署 Pages——deploy.yml 届时按 push beta 触发重建**。
 - [ ] **转公开日清单（用户决定 2026-10-02：仓库暂不转公开；转公开之后才有 Demo 网站；2026-10-05 增补 Windows 项；2026-10-31 增补社区协作与 PR 审核项）**——按序执行，防止 README 的站点链接先于 Demo 上线：
-      ① 给 `stable`（主分支）与 `beta` 打分支保护（禁强推 + 禁删除 + 含管理员）；两者均开启 `Require a pull request before merging` 与 `Require approvals`（至少 1 个批准），所有 PR 必须由用户本人审核批准后才能合并，禁止未经审批直接推送或合并；
+      ① 给 `stable`（主分支）与 `beta` 打分支保护（禁强推 + 禁删除 + 含管理员）；两者均开启 `Require a pull request before merging` 与 `Require approvals`（至少 1 个批准）；外部贡献者的 PR 必须由用户本人人工审核批准；用户自有任务经独立 reviewer agent 复核通过后，可按用户常设委托以 `LYT259` 提交 `Approve` 并自动合入 `beta`；`stable` 仍按双端验证和发版门槛，不自动合并；禁止未经相应审批直接推送或合并；
       ② 检查 `Settings → General → Features` 中的 `Discussions` 已启用，并在转公开后实测大家可查看、发起和参与 Discussion；
       ③ 检查 `Settings → General → Features` 中的 `Issues` 已启用，并在转公开后实测大家可新建 Issue；
-      ④ 确认外部贡献者可通过 fork 向 `stable` / `beta` 提交 PR；分支保护只限制直接推送与合并，不得阻止创建 PR；未经用户本人审核批准，PR 不得合并到 `stable` 或 `beta`；
+      ④ 确认外部贡献者可通过 fork 向 `stable` / `beta` 提交 PR；分支保护只限制直接推送与合并，不得阻止创建 PR；外部 PR 未经用户本人人工审核批准，不得合并到 `stable` 或 `beta`（自有任务的委托自动审批按①执行）；
       ⑤ **Windows 验证（2026-10-05 PR #198 落地，此前无法真机验证）**：手动 dispatch `.github/workflows/windows-smoke.yml`（公开仓标准 runner 免费），下载 artifact 截图人工核对——原生标题栏无红绿灯让位空隙、暗色渲染正常；然后打当期 `v*` tag，release.yml 的 build-windows 自动产出 NSIS 安装包，Release 资产含 `*-setup.exe`(+`.sig`)、更新器 feed 含 `windows-x86_64` 条目；
       ⑥ Demo 站（2026-10-04 起走 Pages）：重建 deploy.yml（**push beta 即自动部署——2026-10-06 用户定稿：每次分支合并到 beta 就重新部署**）+ `VITE_VIEWER_ONLY=1` viewer 构建，部署后核对线上版本串与树内一致（Cloudflare 渠道届时退役）；
       ⑦ 核对 README 三语的「获取方式」链接与真实可达状态一致（补充 Windows 下载说明）；更新 feed / Release 资产对未认证用户转可达（无需改动——端点本就是 GitHub 公网 URL）；
