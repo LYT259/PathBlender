@@ -93,6 +93,7 @@ jobs:
             Where-Object { $_.DisplayName -eq "PathBlender" } |
             Select-Object -First 1
           $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $installDir = $installDir.Trim('"', "'")
           $exe = Join-Path $installDir "PathBlender.exe"
           if (-not (Test-Path $exe)) {
             Write-Host "::error::PathBlender.exe not found at $exe"

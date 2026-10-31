@@ -83,7 +83,9 @@ describe('shipped-artifact verification gates', () => {
   it('builds and verifies Universal Mac binaries before collecting the version-matched image', () => {
     expect(workflow).toContain('npx tauri build --target universal-apple-darwin --bundles app');
     expect(workflow).toContain('target/universal-apple-darwin/release/bundle');
-    expect(script).toContain('lipo -verify_arch arm64 x86_64');
+    expect(script).toContain('verify_arch arm64');
+    expect(script).toContain('verify_arch x86_64');
+    expect(script).toContain('lipo -verify_arch "$1"');
     expect(script).toContain('verify_architectures "$MNT/PathBlender.app"');
   });
 
@@ -113,5 +115,15 @@ describe('shipped-artifact verification gates', () => {
 
   it('the updater archive is regenerated from the sealed bundle (never tauri’s pre-seal wrap)', () => {
     expect(script).toContain('rm -f "$UPDATER" "$UPDATER.sig"');
+  });
+});
+
+describe('Windows smoke installation contract', () => {
+  it('removes registry path quotes before joining the installed executable path', () => {
+    const smoke = readFileSync(resolve(ROOT, '.github/workflows/windows-smoke.yml'), 'utf8');
+    const normalize = smoke.indexOf(String.raw`$installDir = $installDir.Trim(`);
+    const join = smoke.indexOf('Join-Path $installDir "PathBlender.exe"');
+    expect(normalize).toBeGreaterThan(-1);
+    expect(join).toBeGreaterThan(normalize);
   });
 });

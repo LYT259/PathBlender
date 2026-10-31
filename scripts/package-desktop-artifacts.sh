@@ -73,9 +73,12 @@ verify_architectures() {
   [[ "$TARGET" == universal-apple-darwin ]] || return 0
   local app="$1" executable
   executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")
-  lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/$executable" || {
-    echo "package-desktop-artifacts.sh: Universal bundle is missing an architecture" >&2; return 1
+  verify_arch() {
+    lipo -verify_arch "$1" "$app/Contents/MacOS/$executable" || {
+      echo "package-desktop-artifacts.sh: Universal bundle is missing $1" >&2; return 1
+    }
   }
+  verify_arch arm64 && verify_arch x86_64
 }
 verify_architectures "$APP"
 
