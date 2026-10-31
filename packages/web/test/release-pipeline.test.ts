@@ -85,7 +85,7 @@ describe('shipped-artifact verification gates', () => {
     expect(workflow).toContain('target/universal-apple-darwin/release/bundle');
     expect(script).toContain('verify_arch arm64');
     expect(script).toContain('verify_arch x86_64');
-    expect(script).toContain('lipo -verify_arch "$1"');
+    expect(script).toContain('lipo "$app/Contents/MacOS/$executable" -verify_arch "$1"');
     expect(script).toContain('verify_architectures "$MNT/PathBlender.app"');
   });
 

@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.35';
+export const APP_VERSION = '0.1.9-beta.36';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.36', date: '2026.11.01', note: {
+    en: 'Fix Universal Mac package verification',
+    zh: '修复 Mac 通用安装包验证',
+    'zh-tw': '修復 Mac 通用安裝程式驗證',
+    cs: 'Oprava ověření univerzálního instalačního balíčku pro Mac',
+    nl: 'Herstel van de verificatie van het universele Mac-installatiepakket',
+    fr: 'Correction de la vérification du paquet d’installation universel pour Mac',
+    he: 'תיקון אימות חבילת ההתקנה האוניברסלית ל־Mac',
+    ja: 'Mac用ユニバーサルインストーラーの検証を修正',
+    ko: 'Mac용 유니버설 설치 패키지 검증 수정',
+    pl: 'Poprawa weryfikacji uniwersalnego pakietu instalacyjnego na Maca',
+    'pt-br': 'Correção da verificação do pacote de instalação universal para Mac',
+    es: 'Corrección de la verificación del paquete de instalación universal para Mac',
+    tr: 'Evrensel Mac yükleme paketi doğrulaması düzeltildi',
+    ar: 'إصلاح التحقق من حزمة تثبيت Mac الشاملة',
+    az: 'Mac üçün universal quraşdırma paketinin yoxlanılması düzəldildi',
+    bg: 'Коригирана е проверката на универсалния инсталационен пакет за Mac',
+    bs: 'Ispravljena provjera univerzalnog instalacijskog paketa za Mac',
+    da: 'Rettelse af verificeringen af den universelle Mac-installationspakke',
+    de: 'Fehler bei der Prüfung des universellen Mac-Installationspakets behoben',
+    el: 'Διόρθωση της επαλήθευσης του καθολικού πακέτου εγκατάστασης για Mac',
+    fil: 'Naayos ang beripikasyon ng universal na package ng installer para sa Mac',
+    hi: 'Mac के लिए यूनिवर्सल इंस्टॉलर पैकेज के सत्यापन में सुधार',
+    hr: 'Ispravljena provjera univerzalnog instalacijskog paketa za Mac',
+    hu: 'A univerzális Mac-telepítőcsomag ellenőrzésének javítása',
+    hy: 'Universal Mac տեղադրման փաթեթի ստուգումը շտկված է',
+    id: 'Perbaikan verifikasi paket penginstal universal untuk Mac',
+    it: 'Correzione della verifica del pacchetto di installazione universale per Mac',
+    mk: 'Коригирана проверка на универзалниот инсталациски пакет за Mac',
+    mr: 'Mac साठी युनिव्हर्सल इंस्टॉलर पैकेजच्या पडताळणीतील दुरुस्ती',
+    ms: 'Pembetulan pengesahan pakej pemasang universal untuk Mac',
+    nb: 'Rettet verifiseringen av den universelle Mac-installasjonspakken',
+    nn: 'Retta verifiseringa av den universelle Mac-installasjonspakken',
+    ro: 'Corectarea verificării pachetului de instalare universal pentru Mac',
+    rw: 'Gukosora igenzura ry’ipaki rusange yo gushyira kuri Mac',
+    sq: 'Korrigjim i verifikimit të paketës universale të instalimit për Mac',
+    sr: 'Ispravljena provera univerzalnog instalacionog paketa za Mac',
+    sv: 'Korrigering av verifieringen av det universella installationspaketet för Mac',
+    ta: 'Mac-க்கான யுனிவர்சல் நிறுவல் தொகுப்பின் சரிபார்ப்பு சரி செய்யப்பட்டது',
+    uk: 'Виправлення перевірки універсального інсталяційного пакета для Mac',
+    vi: 'Sửa việc xác minh gói cài đặt Universal cho Mac',
+  } },
   { version: '0.1.9-beta.35', date: '2026.10.31', note: {
     en: 'Universal Mac, Windows and Linux installers',
     zh: 'Mac 通用安装包，以及 Windows 和 Linux 安装包',

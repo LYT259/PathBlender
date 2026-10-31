@@ -74,7 +74,7 @@ verify_architectures() {
   local app="$1" executable
   executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")
   verify_arch() {
-    lipo -verify_arch "$1" "$app/Contents/MacOS/$executable" || {
+    lipo "$app/Contents/MacOS/$executable" -verify_arch "$1" || {
       echo "package-desktop-artifacts.sh: Universal bundle is missing $1" >&2; return 1
     }
   }
