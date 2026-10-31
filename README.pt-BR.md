@@ -96,3 +96,7 @@ A Swerve Drive Specialties (SDS) deu permissão expressa por escrito para usar e
 As artes dos campos e os nomes dos jogos pertencem à FIRST e são usados para fins não comerciais de estratégia de equipes conforme a política de marcas e materiais protegidos da FIRST, verificada novamente antes de cada lançamento público:
 
 > FIRST®, FIRST® Robotics Competition e FIRST® Tech Challenge são marcas registradas da FIRST® (www.firstinspires.org), que não supervisiona, não participa e não é responsável por esta atividade, produto ou serviço.
+
+For the FIRST copyrighted materials included in PathBlender:
+
+> ©2025 For Inspiration and Recognition of Science and Technology (FIRST). Used by special permission. All rights reserved. FIRST is not overseeing, involved with, or responsible for this activity, product, or service.

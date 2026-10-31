@@ -93,3 +93,7 @@ SDS 已明确书面许可 PathBlender 使用并分发 SDS MK5i 的 CAD 衍生可
 场地美术与赛事名称归 FIRST 所有，按 FIRST 商标与版权材料政策用于非商业队伍策略用途，每次公开发版前复查：
 
 > FIRST®、FIRST® Robotics Competition 和 FIRST® Tech Challenge 是 FIRST®（www.firstinspires.org）的注册商标，FIRST® 未监督、未参与、也不对本活动、产品或服务负责。
+
+For the FIRST copyrighted materials included in PathBlender:
+
+> ©2025 For Inspiration and Recognition of Science and Technology (FIRST). Used by special permission. All rights reserved. FIRST is not overseeing, involved with, or responsible for this activity, product, or service.

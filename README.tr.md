@@ -96,3 +96,7 @@ Swerve Drive Specialties (SDS), SDS MK5i CAD türevi görselleştirme varlıklar
 Saha görselleri ve oyun adları FIRST'e aittir; FIRST'in marka ve telifli materyal politikası uyarınca, ticari olmayan takım stratejisi amaçlarıyla kullanılır ve her genel sürümden önce yeniden denetlenir:
 
 > FIRST®, FIRST® Robotics Competition ve FIRST® Tech Challenge, FIRST®'in (www.firstinspires.org) tescilli markalarıdır; FIRST® bu etkinliği, ürünü veya hizmeti denetlememekte, katılımamakta ve ondan sorumlu değildir.
+
+For the FIRST copyrighted materials included in PathBlender:
+
+> ©2025 For Inspiration and Recognition of Science and Technology (FIRST). Used by special permission. All rights reserved. FIRST is not overseeing, involved with, or responsible for this activity, product, or service.

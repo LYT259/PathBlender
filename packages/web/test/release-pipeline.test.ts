@@ -126,5 +126,16 @@ describe('Windows smoke installation contract', () => {
     expect(normalize).toBeGreaterThan(-1);
     expect(join).toBeGreaterThan(normalize);
     expect(smoke).toContain('Get-Process -Name "pathblender-desktop"');
+    expect(smoke).toContain('pathblender-desktop.exe not found at $exe');
+  });
+});
+
+describe('FIRST copyright disclaimers', () => {
+  it('carries the required English copyright disclaimer in the packaged notice and README', () => {
+    const disclaimer = '©2025 For Inspiration and Recognition of Science and Technology (FIRST). Used by special permission. All rights reserved. FIRST is not overseeing, involved with, or responsible for this activity, product, or service.';
+    const notice = readFileSync(resolve(ROOT, 'NOTICE.md'), 'utf8');
+    const readme = readFileSync(resolve(ROOT, 'README.md'), 'utf8');
+    expect(notice).toContain(disclaimer);
+    expect(readme).toContain(disclaimer);
   });
 });

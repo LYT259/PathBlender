@@ -199,3 +199,7 @@ copyrighted-materials policy, rechecked before each public release:
 > registered trademarks of FIRST® (www.firstinspires.org) which is not
 > overseeing, involved with, or responsible for this activity, product,
 > or service.
+
+For the FIRST copyrighted materials included in PathBlender:
+
+> ©2025 For Inspiration and Recognition of Science and Technology (FIRST). Used by special permission. All rights reserved. FIRST is not overseeing, involved with, or responsible for this activity, product, or service.

@@ -95,6 +95,7 @@ write(LOCK, read(LOCK).replace(
 // for this file, verified before switching from text surgery to JSON.
 {
   const npmLock = JSON.parse(read(NPM_LOCK));
+  npmLock.version = next;
   const workspaceKeys = Object.entries(npmLock.packages ?? {})
     .filter(([key, entry]) => (key === '' || key.startsWith('packages/')) && entry.version === current)
     .map(([key]) => key);

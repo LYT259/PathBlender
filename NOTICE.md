@@ -136,6 +136,12 @@ Per FIRST's Policy on the Use of FIRST® Trademarks and Copyrighted Materials
 > overseeing, involved with, or responsible for this activity, product, or
 > service.
 
+## FIRST copyrighted-material disclaimer
+
+For the FIRST copyrighted materials included in PathBlender:
+
+> ©2025 For Inspiration and Recognition of Science and Technology (FIRST). Used by special permission. All rights reserved. FIRST is not overseeing, involved with, or responsible for this activity, product, or service.
+
 Terms recheck record (2026-08-30, pre-release): the governing policy is
 unchanged — the Policy on the Use of FIRST Trademarks and Copyrighted
 Materials (Brand & Assets page, rev. 04/19/25) still governs; 2026 REBUILT

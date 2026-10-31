@@ -96,7 +96,7 @@ jobs:
           $installDir = $installDir.Trim('"', "'")
           $exe = Join-Path $installDir "pathblender-desktop.exe"
           if (-not (Test-Path $exe)) {
-            Write-Host "::error::PathBlender.exe not found at $exe"
+            Write-Host "::error::pathblender-desktop.exe not found at $exe"
             Get-ChildItem -Path $installDir -Recurse -File | ForEach-Object { Write-Host $_.FullName }
             exit 1
           }
