@@ -46,7 +46,10 @@ SDS export does not — SDS never ships motors).
 - **Shipped geometry** — "MK5i DesignApp.step" (FRC Designs Onshape
   module, exported 2026-10-02):
   sha256 `8ee3d6af0843d0a62502dc38c04e0d80b0dd948d36a2f0d9cb4dbf2cc9deac1a`.
-  It is a community re-creation, not SDS's own geometry; core
+  It was exported from the community library; the upstream origin of each
+  component has not been independently established. The export differs from
+  the separately downloaded SDS assembly, which does not establish independent
+  authorship of all its parts. Core
   dimensions match the official layout drawing (module height
   6.16–6.17 in both; 18 named parts incl. 2× Kraken X60, turret,
   molded wheel, L plate, fasteners). **Upstream repository license: MIT** —
@@ -58,12 +61,17 @@ SDS export does not — SDS never ships motors).
   repository. This does not by itself establish that the separate Onshape
   geometry is MIT-licensed.
   **Additional written evidence (Discord reply received during the original
-  LICENSE request; exact reply date unknown; transcribed by the user on
-  2026-10-31):**
+  LICENSE request; screenshot displays 2026-10-09, timezone unverified;
+  supplied to this project on 2026-10-31):**
   > I've pushed the MIT license to the GitHub repo. The actual models live in Onshape, not GitHub/the repo, but we don't have any issues with using them for educational purposes. Licensing would ultimately be up to SDS and WCP, but I can't imagine they'd have any issues, either
 
   This is FRC Designs' direct statement that it does not object to the
-  Onshape models being used for educational purposes. The project considers
+  Onshape models being used for educational purposes. The screenshot shows
+  a direct reply to a request explicitly describing public redistribution and
+  historical assets and linking issue #61, which details GLB/2D and app use.
+  This context supports, but does not turn the statement into an unrestricted
+  license or remove its express reservation of SDS/WCP licensing. The project
+  considers
   its current use consistent with that statement; this is the project's
   interpretation, not an itemized confirmation by FRC Designs. The reply
   does not separately confirm public-repository distribution, GLB conversion,

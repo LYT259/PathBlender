@@ -18,6 +18,12 @@
 
 ## 许可证与素材
 
+- [ ] Read `NOTICE.md` and `docs/asset-licensing.md`: distinguish own-code
+  licensing from asset permissions and preserve unresolved scope in every release.
+  Verify the actual packaged NOTICE against the source, not just its presence.
+  New notices do not retrospectively update historical assets or old installers.
+
+
 - [ ] NOTICE.md 归属清单与当前代码一致（PathPlanner / Choreo / 103 fork / WPILib / FRC Designs）
 - [ ] **MK5i 模组许可与分发文件**：FRCDesignApp GitHub 仓库采用 MIT，`licenses/FRCDesignApp-MIT.txt` 保存该仓库的完整许可证及 `Copyright (c) 2026 FRCDesign.org`，不得把整个 Onshape 模组直接概括成已明确适用 MIT。NOTICE 保留 Onshape Swerve V235 来源和 GLB/2D 转换说明；Discord 原回复仅表示对模型用于教育目的不持异议，项目方认为当前用途相符属于自身理解，免费不当然等于教育用途，公开仓库、GLB 转换、安装包再分发及下游条件未逐项确认。SDS/WCP、Kraken X60 及其他第三方权利仍未确认，「I can't imagine…」不得写成授权。Web 构建须把 `LICENSE`、`NOTICE.md`、`licenses/` 复制进 `packages/web/dist`；Tauri 资源与最终 DMG 查验须含同样文件
 - [ ] PathPlanner 轨迹生成移植说明保留在发布说明中（MIT 要求注明）
