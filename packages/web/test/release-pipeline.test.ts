@@ -199,6 +199,19 @@ describe('shipped-artifact verification gates', () => {
     expect(workflow).toContain('needs: [build-macos, build-windows, build-linux]');
     expect(workflow).toContain('node scripts/prepare-release-artifacts.mjs');
   });
+  it('mirrors the same viewer build to Cloudflare Pages and verifies both sites', () => {
+    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8');
+    expect(deploy).toContain('name: viewer-dist');
+    expect(deploy).toContain('path: packages/web/dist');
+    expect(deploy).toContain('actions/download-artifact@v4');
+    expect(deploy).toContain('wrangler@4.147.0 pages deploy viewer-dist');
+    expect(deploy).toContain('--project-name=pathblender');
+    expect(deploy).toContain('--branch=stable');
+    expect(deploy).toContain('secrets.CLOUDFLARE_API_TOKEN');
+    expect(deploy).toContain('https://lyt259.github.io/PathBlender/sw.js');
+    expect(deploy).toContain('https://pathblender.pages.dev/sw.js');
+    expect(deploy).toContain('"$version" = "$expected"');
+  });
   it('installs locked Node dependencies before composing release notes in the publish job', () => {
     const publish = workflow.slice(workflow.indexOf('  publish:'));
     const setupNode = publish.indexOf('actions/setup-node@v4');
