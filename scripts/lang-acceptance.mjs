@@ -20,9 +20,10 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`);
 };
 
-// The 41 selectable UI languages (zh-tw withdrew from the picker 2026-10-07;
-// zh-hant joined as the region-neutral Traditional row 2026-10-10).
-const LANGS = ['en','zh','zh-hant','zh-hk','ar','az','bg','bs','cs','da','de','el','es','fil','fr',
+// The 43 selectable UI languages (the region-neutral Traditional row withdrew
+// 2026-10-11: Hong Kong, Macau and Taiwan are the three region-named
+// Traditional rows; en-GB is the second English row).
+const LANGS = ['en','en-GB','zh','zh-hk','zh-mo','zh-tw','ar','az','bg','bs','cs','da','de','el','es','fil','fr',
   'he','hi','hr','hu','hy','id','it','ja','ko','mk','mr','ms','nb','nl','nn','pl','pt-BR','ro',
   'rw','sq','sr','sv','ta','tr','uk','vi'];
 /** comma-decimal languages where runtime numbers must use the comma. */
@@ -56,13 +57,15 @@ for (const lang of LANGS) {
     // welcome.title is the start screen's accessible name (aria-label, not
     // visible text): en must carry it verbatim, every other language must
     // carry its own translation — doubles as the AT-name localization check.
+    // en-GB is English too: its override table only respells 8 keys, so it
+    // shares en's welcome.title by design and is held to the en assertion.
     const ariaTitle = await page.evaluate(() =>
       document.querySelector('.start-screen')?.getAttribute('aria-label') ?? '');
     const enTitle = 'Import paths to get started';
-    if (lang !== 'en') {
+    if (lang !== 'en' && lang !== 'en-GB') {
       check(`${lang}: start-screen AT name translated`, ariaTitle !== enTitle && ariaTitle !== '', ariaTitle.slice(0, 40));
     } else {
-      check('en: start-screen AT name', ariaTitle === enTitle, ariaTitle.slice(0, 40));
+      check(`${lang}: start-screen AT name`, ariaTitle === enTitle, ariaTitle.slice(0, 40));
     }
 
     // No horizontal overflow on the welcome screen.

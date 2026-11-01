@@ -2,13 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { LANGUAGES, SYSTEM_LABELS, type Lang } from '../src/i18n';
 import { LANGUAGE_NAMES } from '../src/i18n/language-names';
 import { foldLanguageName, searchLanguages } from '../src/i18n/language-search';
+import { zh } from '../src/i18n/zh';
+import { zhHk } from '../src/i18n/zh-hk';
+import { zhMo } from '../src/i18n/zh-mo';
+import { zhTw } from '../src/i18n/zh-tw';
+import { enGb } from '../src/i18n/en-gb';
 
 /**
  * The language-search contract (LanguagePicker + language-search.ts): a query
- * written in ANY of the 40 UI languages finds the language it names —
+ * written in ANY of the 43 UI languages finds the language it names —
  * 德语, German, Deutsch, allemand all reach German — independent of which
  * language the UI itself is showing, with folded case/accents/width and
- * partial matches, and never resurrecting the withdrawn zh-tw row.
+ * partial matches, and never resurrecting the withdrawn zh-hant row.
  */
 
 describe('language search', () => {
@@ -45,6 +50,19 @@ describe('language search', () => {
     expect(searchLanguages('跟隨系統')).toContain('system');
   });
 
+  it('the system row matches the label each override-table dictionary inherits', () => {
+    // SYSTEM_LABELS is built from DICTS at module load (i18n/index.tsx), and
+    // the override tables inherit their carrier's label verbatim — zh-hk and
+    // zh-mo read zh-tw's 跟隨系統 (the Macau table is empty on purpose),
+    // en-GB reads en's "Follow system". Set-deduped or not, each dictionary's
+    // own label must still reach the pinned mode row. Looping the
+    // dictionaries rather than SYSTEM_LABELS pins the DICTS → aliases wiring
+    // itself.
+    for (const dict of [zh, zhTw, zhHk, zhMo, enGb]) {
+      expect(searchLanguages(dict['prefs.langSystem' as keyof typeof dict])).toContain('system');
+    }
+  });
+
   it('blank queries are not searches: the full picker list comes back', () => {
     expect(searchLanguages('')).toEqual(LANGUAGES);
     expect(searchLanguages('   ')).toEqual(LANGUAGES);
@@ -55,7 +73,7 @@ describe('language search', () => {
   });
 
   it('results keep the picker order — never re-sorted per query', () => {
-    expect(searchLanguages('chinese')).toEqual(['zh', 'zh-hant', 'zh-hk']);
+    expect(searchLanguages('chinese')).toEqual(['zh', 'zh-hk', 'zh-mo', 'zh-tw']);
   });
 
   it('folding: case, accents, width, whitespace and partials all match', () => {
@@ -93,20 +111,54 @@ describe('language search', () => {
   });
 
   it('a language the app does not ship (Russian) finds nothing', () => {
-    // 41 languages ship; Russian is not one of them. Its names in every
+    // 43 languages ship; Russian is not one of them. Its names in every
     // script must surface no row — the list only offers real choices.
     expect(searchLanguages('Russian')).toEqual([]);
     expect(searchLanguages('русский')).toEqual([]);
     expect(searchLanguages('רוסית')).toEqual([]);
+    // The regional rows keep the same promise: Russian names for Hong Kong /
+    // Macau / Taiwan / UK English surface nothing, even though the shipped
+    // Cyrillic-script languages (bg/mk/sr/uk) name the same targets.
+    expect(searchLanguages('китайский (Гонконг [САР])')).toEqual([]);
+    expect(searchLanguages('китайский (Макао [САР])')).toEqual([]);
+    expect(searchLanguages('китайский (Тайвань)')).toEqual([]);
+    expect(searchLanguages('британский английский')).toEqual([]);
   });
 
-  it('the withdrawn Taiwan row stays unreachable', () => {
-    // zh-tw ships as a dictionary but has no picker row (2026-10-07) — no
+  it('the withdrawn region-neutral Traditional row stays unreachable', () => {
+    // The generic 繁體中文（通用） row was withdrawn 2026-10-11 (it shipped for
+    // one day as a byte-identical snapshot of the Taiwan dictionary) — no
     // alias, code or endonym may resurface it through the search.
-    for (const q of ['zh-tw', 'Taiwan', '台灣', '台湾', '繁體中文（台灣）']) {
-      expect(searchLanguages(q).join(','), q).not.toContain('zh-tw');
+    for (const q of ['zh-hant', '通用', '繁體中文（通用）', '繁体中文（通用）']) {
+      expect(searchLanguages(q), q).toEqual([]);
     }
-    expect(searchLanguages('zh-tw')).toEqual([]);
+  });
+
+  it('the Traditional region rows are findable by their region names', () => {
+    // The reversal of the old withdrawal test: Taiwan is a selectable row
+    // again, and Macau ships alongside Hong Kong.
+    for (const q of ['zh-tw', 'Taiwan', '台灣', '台湾', '臺灣', '繁體中文（台灣）']) {
+      expect(searchLanguages(q), q).toContain('zh-tw');
+    }
+    for (const q of ['zh-mo', 'Macau', 'Macao', '澳門', '澳门', '繁體中文（澳門）']) {
+      expect(searchLanguages(q), q).toContain('zh-mo');
+    }
+    for (const q of ['zh-hk', 'Hong Kong', '香港', '繁體中文（香港）']) {
+      expect(searchLanguages(q), q).toContain('zh-hk');
+    }
+    // A bare Traditional-Chinese query finds all three region rows.
+    for (const q of ['繁體中文', '繁体中文']) {
+      expect(searchLanguages(q), q).toEqual(expect.arrayContaining(['zh-hk', 'zh-mo', 'zh-tw']));
+    }
+  });
+
+  it('the UK English row is findable by its region names', () => {
+    for (const q of ['en-GB', 'British', 'United Kingdom', '英國英語', '英国英语']) {
+      expect(searchLanguages(q), q).toContain('en-GB');
+    }
+    // The bare country code is also the Ukrainian language code — both rows
+    // may surface; the UK row must be among them.
+    expect(searchLanguages('UK')).toContain('en-GB');
   });
 
   it('folding strips Latin/Greek/Cyrillic accents but leaves other scripts intact', () => {

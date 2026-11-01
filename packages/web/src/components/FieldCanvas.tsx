@@ -1,9 +1,10 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
-import { renderFieldFrame, fitViewFor, type RenderView } from '../canvas2d-render';
+import { renderFieldFrame, fitViewFor, clampZoomView, type RenderView } from '../canvas2d-render';
+import type { RobotLabelMemory } from '../robot-label-layout';
 import { saveBytes } from '../download';
-import { useI18n } from '../i18n';
+import { isRtl, useI18n } from '../i18n';
 import { useTheme } from '../theme';
 import { MK5I_MODULE_TOP_URL } from '../robot-sprites';
 import {
@@ -49,6 +50,11 @@ interface Props {
   /** Robot (trajectory) ids whose path renders gray — illegal start zone
    * verdicts (user 2026-10-09). */
   dimPathIds?: ReadonlySet<string>;
+  /** Cross-frame card memory (side + offset per robot id). The app owns it
+   * so a 2D→3D→2D round trip, which unmounts this canvas, resumes every
+   * card where it was instead of re-deciding from scratch. Omitted: a
+   * private map for this mount. */
+  labelMemory?: Map<string, RobotLabelMemory>;
 }
 
 /** Season artwork decoded once and reused across switches. */
@@ -65,10 +71,11 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     showTrail = true,
     showHeatmap = false,
     dimPathIds,
+    labelMemory,
   },
   ref,
 ) {
-  const { t, n } = useI18n();
+  const { t, n, lang } = useI18n();
   const { resolved: theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -87,6 +94,10 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   // GIF capture draws at arbitrary t values; the override short-circuits
   // the prop while frames are being collected, then restores.
   const overrideTRef = useRef<number | null>(null);
+  // Cross-frame card memory for the live view: the app's map when given (it
+  // outlives this mount), else private. The renderer prunes robots that
+  // leave, and GIF export swaps in its own map for the duration of the take.
+  const labelMemoryRef = useRef(labelMemory ?? new Map<string, RobotLabelMemory>());
   const frameRef = useRef<number | null>(null);
   const requestDraw = useCallback(() => {
     if (frameRef.current != null) return;
@@ -199,12 +210,27 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     // field below what it looks like on open ("缩到刚打开时的样子，不能
     // 再小了"). The static 8 px/m term is only an unreachable safety net.
     const MAX_SCALE = 6000;
-    const clampScale = (s: number) =>
-      Math.min(MAX_SCALE, Math.max(Math.max(8, fitScaleRef.current), s));
+    // Reaching the fit floor re-homes the view onto the field centre
+    // (clampZoomView): zooming all the way out lands exactly on the Fit / `0`
+    // view instead of leaving the field stuck off-centre.
+    const zoomRange = () => ({
+      minScale: Math.max(8, fitScaleRef.current),
+      maxScale: MAX_SCALE,
+      homeCx: field.lengthM / 2,
+      homeCy: field.widthM / 2,
+    });
     const zoomAt = (sx: number, sy: number, factor: number) => {
       const v = viewRef.current;
       const before = world(sx, sy);
-      v.scale = clampScale(v.scale * factor);
+      const next = clampZoomView({ scale: v.scale * factor, cx: v.cx, cy: v.cy }, zoomRange());
+      if (next.cx !== v.cx || next.cy !== v.cy) {
+        // Snapped home at the floor — the cursor anchor is moot.
+        v.scale = next.scale;
+        v.cx = next.cx;
+        v.cy = next.cy;
+        return;
+      }
+      v.scale = next.scale;
       const after = world(sx, sy);
       v.cx += before.x - after.x;
       v.cy += before.y - after.y;
@@ -228,8 +254,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       const { w, h } = sizeRef.current;
       const wx = v.cx + (sx - w / 2) / v.scale;
       const wy = v.cy - (sy - h / 2) / v.scale;
-      const scale = clampScale(v.scale * factor);
-      return { scale, cx: wx - (sx - w / 2) / scale, cy: wy + (sy - h / 2) / scale };
+      const next = clampZoomView({ scale: v.scale * factor, cx: v.cx, cy: v.cy }, zoomRange());
+      if (next.cx !== v.cx || next.cy !== v.cy) return next; // fit floor: re-home, anchor moot
+      return { scale: next.scale, cx: wx - (sx - w / 2) / next.scale, cy: wy + (sy - h / 2) / next.scale };
     };
     const chaseStepFrame = () => {
       chaseRaf = 0;
@@ -381,6 +408,10 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const effT = overrideTRef.current ?? currentT;
       renderFieldFrame(ctx, {
+        secondsLabel: t('sequence.seconds'),
+        moreLabel: (count) => t('sequence.moreActions', { n: count }),
+        rtl: isRtl(lang),
+        labelMemory: labelMemoryRef.current,
         w,
         h,
         view: viewRef.current,
@@ -398,7 +429,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       });
     };
     requestDraw();
-  }, [field, robots, currentT, conflicts, bounds, showTrail, showHeatmap, dimPathIds, imgReady, spriteReady, theme, t, requestDraw]);
+  }, [field, robots, currentT, conflicts, bounds, showTrail, showHeatmap, dimPathIds, imgReady, spriteReady, theme, t, lang, requestDraw]);
 
   useImperativeHandle(ref, () => ({
     exportGif: (onDone?: (ok: boolean) => void) => {
@@ -407,6 +438,16 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         onDone?.(false);
         return;
       }
+      // The take scrubs the whole timeline through the live canvas: give it
+      // its own card memory so the cards the user is looking at never move
+      // because of an export, then put the live frame back when it is done.
+      const liveMemory = labelMemoryRef.current;
+      labelMemoryRef.current = new Map();
+      const restoreLive = () => {
+        overrideTRef.current = null;
+        labelMemoryRef.current = liveMemory;
+        drawRef.current();
+      };
       void import('gifenc').then(async ({ GIFEncoder, quantize, applyPalette }) => {
         try {
           const duration = robots.reduce((m, r) => Math.max(m, r.startDelayS + r.trajectory.durationS), 0);
@@ -441,7 +482,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
             const index = applyPalette(rgba, palette);
             gif.writeFrame(index, w, h, { palette, delay: Math.round(dt * 1000) });
           }
-          overrideTRef.current = null;
+          restoreLive();
           gif.finish();
           const bytes = gif.bytes();
           const ok = await saveBytes(
@@ -451,11 +492,11 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
           );
           onDone?.(ok);
         } catch {
-          overrideTRef.current = null;
+          restoreLive();
           onDone?.(false);
         }
       }).catch(() => {
-        overrideTRef.current = null;
+        restoreLive();
         onDone?.(false);
       });
     },

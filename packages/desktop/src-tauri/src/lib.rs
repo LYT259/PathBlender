@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use base64::Engine as _;
 use tauri::menu::{
-    AboutMetadata, AboutMetadataBuilder, CheckMenuItem, Menu, MenuBuilder, MenuItem,
+    CheckMenuItem, Menu, MenuBuilder, MenuItem,
     PredefinedMenuItem, Submenu, SubmenuBuilder,
 };
 use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
@@ -135,6 +135,12 @@ struct MenuItemIn {
 /// Ids the shell handles itself and never forwards to the page.
 const SHELL_OWNED_IDS: [&str; 2] = ["preferences", "import"];
 
+/// Last dock artwork the web side pushed through set_dock_icon (bundled
+/// resource name + resolved darkness). The About panel reads it so its icon
+/// is exactly what the Dock tile shows; before the first push it falls back
+/// to the classic day artwork.
+static LAST_DOCK_ICON: Mutex<(String, bool)> = Mutex::new((String::new(), false));
+
 struct MenuState {
     /// Dispatchable ids present in the current menu — on_menu_event only
     /// forwards ids the spec actually declared.
@@ -149,18 +155,73 @@ enum Built {
     Submenu(Submenu<tauri::Wry>),
 }
 
-fn about_metadata() -> AboutMetadata<'static> {
-    AboutMetadataBuilder::new()
-        .name(Some("PathBlender".to_string()))
-        .version(Some(env!("CARGO_PKG_VERSION").to_string()))
-        // The standard macOS About panel appends the build number in
-        // parentheses after the version; we show the git commit the
-        // build came from there (PB_GIT_HASH, set by build.rs via
-        // `git rev-parse --short HEAD`), so any installed copy is
-        // traceable to its exact code. Empty means "no hash" and the
-        // panel omits the parenthetical. Only macOS consumes this field.
-        .short_version(Some(env!("PB_GIT_HASH").to_string()))
-        .build()
+/// Present the standard About panel with the CURRENT dock artwork as its
+/// icon. The predefined about item (previous implementation) lets AppKit
+/// build the panel once from the bundle icon; the runtime icon override is
+/// never re-read, so after an app-icon style switch the panel kept showing
+/// the stale classic art even when re-opened from the menu (user report
+/// 2026-10-16). Passing the icon (plus name/version) in the options on
+/// every open makes the panel content follow the choice. The version keys
+/// mirror the old metadata: CARGO_PKG_VERSION plus the PB_GIT_HASH build
+/// stamp in the parenthetical slot. Only macOS consumes this panel.
+#[cfg(target_os = "macos")]
+fn show_about_panel(app: &AppHandle) {
+    use objc2::runtime::AnyObject;
+    use objc2::{ClassType, MainThreadMarker};
+    use objc2_app_kit::{
+        NSAboutPanelOptionApplicationIcon, NSAboutPanelOptionApplicationName,
+        NSAboutPanelOptionApplicationVersion, NSAboutPanelOptionVersion, NSApplication, NSImage,
+    };
+    use objc2_foundation::{NSDictionary, NSString};
+
+    let Some(mtm) = MainThreadMarker::new() else {
+        return;
+    };
+    let icon_name = LAST_DOCK_ICON
+        .lock()
+        .ok()
+        .map(|last| last.0.clone())
+        .filter(|name| !name.is_empty())
+        .unwrap_or_else(|| "icon-day.png".to_string());
+    let icon = app
+        .path()
+        .resource_dir()
+        .ok()
+        .map(|dir| dir.join("icons").join(&icon_name))
+        .and_then(|path| {
+            let allocated = mtm.alloc::<NSImage>();
+            let ns_path = NSString::from_str(&path.to_string_lossy());
+            NSImage::initWithContentsOfFile(allocated, &ns_path)
+        });
+    let name = NSString::from_str("PathBlender");
+    let version = NSString::from_str(env!("CARGO_PKG_VERSION"));
+    let short_version = NSString::from_str(env!("PB_GIT_HASH"));
+    // Extern statics (the AppKit option-key constants) read under one block.
+    let (key_icon, key_name, key_version, key_short) = unsafe {
+        (
+            NSAboutPanelOptionApplicationIcon,
+            NSAboutPanelOptionApplicationName,
+            NSAboutPanelOptionApplicationVersion,
+            NSAboutPanelOptionVersion,
+        )
+    };
+    let mut keys: Vec<&NSString> = Vec::new();
+    let mut values: Vec<&AnyObject> = Vec::new();
+    if let Some(icon) = icon.as_ref() {
+        keys.push(key_icon);
+        values.push(icon.as_super().as_super());
+    }
+    keys.push(key_name);
+    values.push(name.as_super().as_super());
+    keys.push(key_version);
+    values.push(version.as_super().as_super());
+    keys.push(key_short);
+    values.push(short_version.as_super().as_super());
+    let options = NSDictionary::from_slices(&keys, &values);
+    unsafe {
+        NSApplication::sharedApplication(mtm)
+            .orderFrontStandardAboutPanelWithOptions(&options);
+    }
 }
 
 fn build_entry(app: &AppHandle, e: &MenuItemIn, ids: &mut Vec<String>) -> tauri::Result<Option<Built>> {
@@ -173,7 +234,18 @@ fn build_entry(app: &AppHandle, e: &MenuItemIn, ids: &mut Vec<String>) -> tauri:
     if !e.role.is_empty() {
         return Ok(Some(match e.role.as_str() {
             "separator" => Built::Separator,
-            "about" => Built::Predefined(PredefinedMenuItem::about(app, Some(&e.label), Some(about_metadata()))?),
+            // About is a plain item the shell handles itself (macOS is the
+            // only platform where the role entry is built — the app menu is
+            // mac_only): the predefined variant caches the bundle icon in
+            // its panel forever, so it cannot follow the runtime icon
+            // override (show_about_panel). Role entries carry no `enabled`
+            // in the web spec (they were predefined one-shots) — the serde
+            // default is false, which would gray the item out and swallow
+            // the click, so it is forced enabled here.
+            "about" => {
+                ids.push("about".to_string());
+                Built::Item(MenuItem::with_id(app, "about", &e.label, true, None::<&str>)?)
+            }
             "hide" => Built::Predefined(PredefinedMenuItem::hide(app, Some(&e.label))?),
             "hideOthers" => Built::Predefined(PredefinedMenuItem::hide_others(app, Some(&e.label))?),
             "quit" => Built::Predefined(PredefinedMenuItem::quit(app, Some(&e.label))?),
@@ -241,25 +313,42 @@ fn build_menu_from_spec(app: &AppHandle, payload: &MenuPayload, ids: &mut Vec<St
 }
 
 /// Minimal fallback until the page pushes the real (localized) menu — the
-/// app menu needs About/Quit roles to stay usable during page load.
+/// app menu needs About/Quit roles to stay usable during page load. About
+/// is a plain id'd item handled like the spec-built one (show_about_panel
+/// on macOS; the page's About tab elsewhere) — the predefined variant
+/// would pin the bundle icon in its panel forever.
 fn startup_menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
     let sub = SubmenuBuilder::new(app, "PathBlender")
-        .about_with_text("About PathBlender", Some(about_metadata()))
+        .item(&MenuItem::with_id(app, "about", "About PathBlender", true, None::<&str>)?)
         .quit_with_text("Quit PathBlender")
         .build()?;
     MenuBuilder::new(app).item(&sub).build()
 }
 
-fn open_prefs(app: &AppHandle) {
+/// `updates` steers the window at the Updates section and starts a check
+/// there (menu "Check for Updates", user request 2026-10-16): an
+/// already-open window gets a `pb-prefs-go-updates` DOM CustomEvent — the
+/// same eval channel as menu commands (ADR-0003), stashed on `window` in
+/// case the page is still loading — while a fresh window is created with
+/// `?go=updates`, which its mount path reads (an eval into a webview that
+/// hasn't navigated yet would be lost).
+fn open_prefs(app: &AppHandle, updates: bool) {
     if let Some(win) = app.get_webview_window(PREFS_WINDOW) {
+        if updates {
+            let _ = win.eval(
+                "window.__pbGoUpdates=1;\
+                 window.dispatchEvent(new CustomEvent('pb-prefs-go-updates'))",
+            );
+        }
         let _ = win.set_focus();
         return;
     }
-    let builder = WebviewWindowBuilder::new(
-        app,
-        PREFS_WINDOW,
-        WebviewUrl::App("index.html?window=prefs".into()),
-    )
+    let url = if updates {
+        "index.html?window=prefs&go=updates"
+    } else {
+        "index.html?window=prefs"
+    };
+    let builder = WebviewWindowBuilder::new(app, PREFS_WINDOW, WebviewUrl::App(url.into()))
     .title("Preferences")
     .inner_size(780.0, 580.0)
     .min_inner_size(640.0, 480.0)
@@ -353,8 +442,8 @@ fn open_external(url: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn open_preferences(app: AppHandle) {
-    open_prefs(&app);
+fn open_preferences(app: AppHandle, updates: Option<bool>) {
+    open_prefs(&app, updates.unwrap_or(false));
 }
 
 /// (file name, base64 bytes) pairs — the payload shape of the web side's
@@ -404,19 +493,34 @@ fn push_menu_event<R: tauri::Runtime>(app: &AppHandle<R>, name: &str) {
     }
 }
 
-/// Apply the app-icon appearance choice (web-side app-icon.tsx, independent
-/// from the UI theme) to the running app's Dock tile (macOS only). The
-/// bundle's icon catalog already tracks the OS appearance; this runtime
-/// override (`setApplicationIconImage` with explicit artwork) pins the tile
-/// to the choice — in 'system' mode the web side re-pushes the OS-matching
+/// Apply the app-icon preferences (web-side app-icon.tsx, independent from
+/// the UI theme) to the running app's Dock tile (macOS only). The bundle's
+/// icon catalog already tracks the OS appearance; this runtime override
+/// (`setApplicationIconImage` with explicit artwork) pins the tile to the
+/// choice — in 'system' mode the web side re-pushes the OS-matching
 /// artwork on every appearance flip, so no Dock re-render behavior is
-/// relied upon. Missing artwork or a non-macOS host is a quiet no-op — the
-/// catalog remains the fallback there.
+/// relied upon. `style` selects the artwork family (classic red/black vs
+/// monochrome white/black); the mapping below is a fixed whitelist of
+/// bundled resource names — a caller-provided path is never accepted.
+/// Missing artwork or a non-macOS host is a quiet no-op — the catalog
+/// remains the fallback there.
+fn dock_icon_resource(style: &str, dark: bool) -> &'static str {
+    match (style, dark) {
+        ("monochrome", false) => "icon-mono-day.png",
+        ("monochrome", true) => "icon-mono-night.png",
+        (_, false) => "icon-day.png",
+        (_, true) => "icon-night.png",
+    }
+}
+
 #[tauri::command]
-fn set_dock_icon(app: AppHandle, dark: bool) -> Result<(), String> {
+fn set_dock_icon(app: AppHandle, dark: bool, style: Option<String>) -> Result<(), String> {
+    let name = dock_icon_resource(style.as_deref().unwrap_or("classic"), dark);
+    if let Ok(mut last) = LAST_DOCK_ICON.lock() {
+        *last = (name.to_string(), dark);
+    }
     #[cfg(target_os = "macos")]
     {
-        let name = if dark { "icon-night.png" } else { "icon-day.png" };
         let path = app
             .path()
             .resource_dir()
@@ -430,7 +534,7 @@ fn set_dock_icon(app: AppHandle, dark: bool) -> Result<(), String> {
             .map_err(|e| e.to_string())?;
     }
     #[cfg(not(target_os = "macos"))]
-    let _ = (app, dark);
+    let _ = app;
     Ok(())
 }
 
@@ -507,7 +611,20 @@ pub fn run() {
         .on_menu_event(|app, event| {
             let id = event.id().as_ref();
             match id {
-                "preferences" => open_prefs(app),
+                // About panel with the current dock artwork (macOS); other
+                // platforms have no native panel — the page's About tab
+                // serves the same purpose and already follows the icon
+                // preference.
+                "about" => {
+                    #[cfg(target_os = "macos")]
+                    {
+                        let handle = app.clone();
+                        let _ = app.run_on_main_thread(move || show_about_panel(&handle));
+                    }
+                    #[cfg(not(target_os = "macos"))]
+                    push_menu_event(app, "about");
+                }
+                "preferences" => open_prefs(app, false),
                 "import" => {
                     // The shell owns the picker and pushes the chosen files
                     // through the open-with channel — the web-side hidden
@@ -595,5 +712,25 @@ async fn save_file(
             std::fs::write(&path, &data).map_err(|e| e.to_string())?;
             Ok(Some(path.to_string_lossy().into_owned()))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::dock_icon_resource;
+
+    /// The whitelist is the whole contract: every (style, dark) pair maps to
+    /// one of the four bundled dock resources, and anything unexpected falls
+    /// back to the classic pair — never a caller-controlled path.
+    #[test]
+    fn dock_icon_resource_is_a_fixed_whitelist() {
+        assert_eq!(dock_icon_resource("classic", false), "icon-day.png");
+        assert_eq!(dock_icon_resource("classic", true), "icon-night.png");
+        assert_eq!(dock_icon_resource("monochrome", false), "icon-mono-day.png");
+        assert_eq!(dock_icon_resource("monochrome", true), "icon-mono-night.png");
+        assert_eq!(dock_icon_resource("", false), "icon-day.png");
+        assert_eq!(dock_icon_resource("neon", true), "icon-night.png");
+        // Path-like input is just an unknown style: classic fallback.
+        assert_eq!(dock_icon_resource("../../etc/passwd", false), "icon-day.png");
     }
 }

@@ -1,32 +1,44 @@
 # PathBlender
 
-**English** | [简体中文](README.zh-CN.md) | [繁體中文（中國香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
+**English** | [简体中文](README.zh-CN.md) | [繁體中文（香港）](README.zh-Hant.md) | [Español](README.es.md) | [Français](README.fr.md) | [Türkçe](README.tr.md) | [Português (Brasil)](README.pt-BR.md) | [עברית](README.he.md)
 
-**Multi-source autonomous path fusion viewer for FRC alliance strategy.**
+**See your alliance’s autonomous routes together. Find conflicts before the match.**
 
-> **Before a match: put every alliance partner’s auto on one field, replay them together, and catch robot-to-robot conflicts while there is still time to change the plan.**
+[**Try it in your browser**](https://pathblender.pages.dev) ·
+[Download the desktop app](https://github.com/LYT259/pathblender/releases) ·
+[First path check](docs/user-guide.en.md#try-it-without-files) ·
+[Star on GitHub](https://github.com/LYT259/pathblender)
 
-Blend autonomous path files exported from different toolchains onto one
-field: unified-timeline playback and collision checking, built for
-**alliance strategy groups** — not just the programming team. It is a
-**viewer**: analyze the autos you have, find the conflicts, fix them in
-the tool that owns the path, re-import, and check again.
+PathBlender brings Choreo and PathPlanner routes onto one field and one clock
+for FRC alliance strategy. Replay the robots together, find a conflict, and
+compare a different start time before agreeing on a plan.
 
-![3D field view](docs/screenshots/field3d.png)
+![A synthetic practice session: locate an overlap, delay B, and replay the changed plan](docs/screenshots/first-check.gif)
+
+*Original teaching routes on a practice field, not a real match. Try your own
+check from the welcome screen — no files, installation, or account needed.*
+
+- **Bring different tools together:** import Choreo, PathPlanner and
+  Collaborative `.ghostauto` files.
+- **Make the timing visible:** shared playback, collision checks and
+  session-level start-time comparisons.
+- **Keep paths on your machine:** parsing and analysis happen locally.
+
+If this is useful or interesting to you, **Star the repository** to support
+PathBlender and find it again later.
 
 ## Why
 
 In FRC qualification and playoff matches, all three robots in an alliance
 run their autonomous programs on the same field at the same time. Teams
-plan paths in different tools (Choreo, PathPlanner), and nobody can see
-whether the resulting autos will collide until they actually do — in a
-match.
+plan paths in different tools (Choreo, PathPlanner), and comparing separate exports makes it harder to spot overlaps
+before the match.
 
 PathBlender fills that gap:
 
 - **Multi-toolchain import** — Choreo `.traj`, Team 103 Collaborative fork
   `.ghostauto`, and native PathPlanner `.path` / `.auto` (trajectory
-  generation ported to TypeScript — no other browser tool does this);
+  generation ported to TypeScript);
 - **Unified timeline playback** — every robot on one shared autonomous
   clock (15 s; 20 s for the 2026 season), play / pause / scrub / speed
   control (0.25×–1×);
@@ -43,20 +55,18 @@ PathBlender fills that gap:
   library, and a picker beside each robot switches its active auto live.
   PathPlanner `settings.json` files apply real bumper dimensions;
 
-- **Zero install, zero upload (web)** — a pure static web app: files are
-  parsed locally in your browser, and the web build makes **no network
-  requests at all**;
+- **Zero install, zero upload (web)** — a static web app: path files are
+  parsed and checked locally in your browser;
 - **Also a desktop app** — the same UI in a lightweight Tauri shell for
   macOS, Windows and Linux, adding session save/open, GIF replay and
   solution-package export, and in-app updates (stable or beta channel).
-  Its only network activity is the update check you trigger, which
-  contacts GitHub Releases.
+  Desktop update checks contact GitHub Releases.
 
 ## Quick start
 
-1. Get the app (see below) — or, with no files at hand, press **Try the
-   example** on the welcome screen to load a built-in multi-robot session
-   and see playback and collision checking immediately.
+1. Get the app (see below) — or press **Try your first path check** on the
+   welcome screen for a guided exercise with three synthetic routes.
+   **Try an example** opens the separate built-in multi-robot session.
 2. Import path files from every alliance partner — `.traj`, `.ghostauto`,
    `.path`, `.auto`, mixed freely (one file or a whole folder, on the web
    app as well as the desktop;
@@ -92,15 +102,16 @@ any other season or a practice field).
 
 ## Where to get it
 
-- **macOS** (macOS 13+; one Universal download for Apple Silicon and
-  Intel) — `PathBlender_<version>_universal.dmg` from
-  [GitHub Releases](https://github.com/LYT259/pathblender/releases): open
-  it and drag PathBlender to Applications.
-- **Windows** (x86_64) — the `*_x64-setup.exe` installer from the same
-  Releases page.
-- **Linux** (x86_64) — DEB, AppImage and RPM packages from the same
-  Releases page. In-app updates use the AppImage; DEB/RPM users update by
-  installing the new package over the old one.
+- **macOS** (macOS 13+; currently Apple Silicon only) — download the
+  `*_aarch64.dmg` asset from
+  [GitHub Releases](https://github.com/LYT259/pathblender/releases), open
+  it and drag PathBlender to Applications. A Universal download for Apple
+  Silicon and Intel is planned for a future release.
+- **Windows** (x86_64) — no installer is provided yet; `*_x64-setup.exe`
+  is planned for a future release.
+- **Linux** (x86_64) — DEB, AppImage and RPM packages are not provided
+  yet. When available, in-app updates will use the AppImage; DEB/RPM users
+  will update by installing the new package over the old one.
 - Updates: menu **PathBlender → Check for Updates…** (beta builds: enable
   the beta channel in **Preferences → Updates** first). The release page's
   other assets (`.tar.gz`, `.sig`, `.json`) are updater internals — you
@@ -113,14 +124,15 @@ any other season or a practice field).
 ## Privacy
 
 Path files are parsed **entirely on your machine**. There is no backend,
-no account, no telemetry, and no analytics. The web build ships zero
-network calls; the desktop app contacts the network only for the update
-check you trigger (GitHub Releases) — path files never leave the app.
+no account, no telemetry, and no analytics. The browser fetches the app and
+its assets; desktop update checks contact GitHub Releases. Path files are
+not uploaded. External links open their named destinations when you select them.
 
 Also included: a session-level red/blue alliance view, per-robot team
 number annotations, the season fields above with official AprilTag
-overlays, and a **40-language** UI — English / 简体中文 /
-繁體中文（中國香港） / Français / Español / Deutsch / Italiano / Português
+overlays, and a **43-language** UI — English (United States) /
+English (United Kingdom) / 简体中文 / 繁體中文（香港）/ 繁體中文（澳門）/
+繁體中文（台灣）/ Français / Español / Deutsch / Italiano / Português
 (Brasil) / Nederlands / Polski / Čeština / Türkçe / Ελληνικά / עברית /
 العربية / हिन्दी / 日本語 / 한국어, with the full list in the language menu —
 in light and dark themes (follows the system).
@@ -150,7 +162,7 @@ Four checks, all run locally — none of them ships with the app:
 | Layer | Command | What it proves |
 | --- | --- | --- |
 | Unit + jsdom suites | `npm test` (or `-w @pathblender/core` / `-w @pathblender/web`) | Parsers, geometry, fusion and collision maths, and component behaviour in a simulated DOM. |
-| Pointer walkthrough | `npm run build -w @pathblender/web && npm run preview -w @pathblender/web`, then `node scripts/browser-walkthrough.mjs` | The production build driven with a real mouse and real files: folder import, the composer's click-and-drag placement, save/restore through an actual download, all 40 languages including RTL, artwork repaints, service worker, and 3D (model, lit robots, ViewCube picks, season switches). |
+| Pointer walkthrough | `npm run build -w @pathblender/web && npm run preview -w @pathblender/web`, then `node scripts/browser-walkthrough.mjs` | The production build driven with a real mouse and real files: folder import, the composer's click-and-drag placement, save/restore through an actual download, all 43 languages including RTL, artwork repaints, service worker, and 3D (model, lit robots, ViewCube picks, season switches). |
 | Keyboard walkthrough | same preview server, then `node scripts/keyboard-walkthrough.mjs` | The same app driven with the keyboard only — every main workflow has to be completable without a mouse. |
 | Website gate check | `VITE_VIEWER_ONLY=1 npm run build -w @pathblender/web`, then `node scripts/serve-dist.mjs 4179` and `VIEWER_BASE=http://localhost:4179/ node scripts/viewer-check.mjs` | The hosted viewer build keeps import, playback, collision checking and timeline arranging, asks nothing outside its own origin on load, follows the OS language on first visit — and cannot write a file out through any route, including the Ctrl/Cmd+S accelerators that have no button at all. Re-run it whenever a save or export affordance moves. |
 
@@ -168,7 +180,13 @@ Ctrl/Cmd+S 快捷键）。改动界面或导出入口时，请在同一个 PR �
 
 ## License & attribution
 
-**Apache-2.0** — see [LICENSE](./LICENSE) and [NOTICE.md](./NOTICE.md).
+**Own code: Apache-2.0** — see [LICENSE](./LICENSE).
+Third-party models, field artwork, example routes, and trademarks have separate
+terms; the code license does not automatically cover them. Read
+[NOTICE.md](./NOTICE.md), especially SDS's express permission for SDS MK5i
+CAD-derived visualization assets and the separate remaining third-party scope,
+before reusing assets. See the
+[asset licensing guide](./docs/asset-licensing.md) for provenance and rights concerns.
 PathPlanner (MIT), Choreo (BSD-3), AdvantageScope assets (BSD-3), and
 WPILib (BSD-3) each remain under their own licenses and are credited in
 NOTICE.
@@ -177,7 +195,8 @@ Field artwork and game names are owned by FIRST and used for
 non-commercial team strategy purposes following FIRST's trademark &
 copyrighted-materials policy, rechecked before each public release:
 
-> FIRST®, FIRST® Robotics Competition, and FIRST® Tech Challenge, are
-> registered trademarks of FIRST® (www.firstinspires.org) which is not
-> overseeing, involved with, or responsible for this activity, product,
-> or service.
+> FIRST®, FIRST® Robotics Competition, and FIRST® Tech Challenge, are registered trademarks of FIRST® (www.firstinspires.org) which is not overseeing, involved with, or responsible for this activity, product, or service.
+
+For the FIRST copyrighted materials included in PathBlender:
+
+> ©2025 For Inspiration and Recognition of Science and Technology (FIRST). Used by special permission. All rights reserved. FIRST is not overseeing, involved with, or responsible for this activity, product, or service.

@@ -21,8 +21,10 @@
  * The channel row is desktop-only (IS_DESKTOP at import time), so the Tauri
  * marker is stubbed before the lazy App import; the Tauri core module is
  * mocked. Menu commands arrive as shell-dispatched `pb-menu-*` DOM
- * CustomEvents (ADR-0003) — dispatching one drives the real check→toast
- * chain (the pref bridge itself is a web no-op in jsdom).
+ * CustomEvents (ADR-0003) — the menu's "Check for Updates" opens the
+ * settings window on its Updates section instead of running a one-shot
+ * check from the main window (user request 2026-10-16; the pref bridge
+ * itself is a web no-op in jsdom).
  */
 import { act, fireEvent, render, screen, waitFor, cleanup, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -109,7 +111,7 @@ describe('shared desktop preferences', () => {
     expect(within(icons()).getByRole('radio', { name: 'Follow system' })).toBeChecked();
     // Default 'system' mirrors the OS appearance with matching artwork
     // (matchMedia stubbed to light above).
-    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false }));
+    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false, style: 'classic' }));
     // The preview-only note is gone; the scope hint was removed too
     // (user request 2026-10-03).
     expect(screen.queryByText(/Dock icon/)).not.toBeInTheDocument();
@@ -130,7 +132,7 @@ describe('shared desktop preferences', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(localStorage.getItem('pb.appIcon')).toBe('dark'));
     expect(localStorage.getItem('pb.theme')).toBeNull();
-    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true }));
+    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true, style: 'classic' }));
     expect(native.close).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
 
@@ -139,7 +141,7 @@ describe('shared desktop preferences', () => {
     native.invoke.mockClear();
     await renderPreferences();
     expect(within(icons()).getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
-    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true }));
+    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true, style: 'classic' }));
   });
 
   it('discards an unsaved app icon choice on Cancel', async () => {
@@ -163,11 +165,11 @@ describe('shared desktop preferences', () => {
     // Let the mount-time Dock apply land before drafting: under vitest 4 its
     // promise settles after these back-to-back clicks, so Save is still
     // disabled when the click fires and the draft never gets applied.
-    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false }));
+    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: false, style: 'classic' }));
     // Pin the icon first…
     fireEvent.click(within(icons()).getByRole('radio', { name: 'Dark', exact: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true }));
+    await waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_dock_icon', { dark: true, style: 'classic' }));
 
     // …then move the interface theme: the icon must not follow.
     native.invoke.mockClear();
@@ -323,19 +325,53 @@ describe('shared desktop preferences', () => {
     expect(native.close).not.toHaveBeenCalled();
   });
 
-  it('a failed update check shows the error toast, not the green success box', async () => {
+  it('menu "Check for Updates" opens the settings window on Updates — no one-shot check', async () => {
     await renderApp();
     await waitFor(() => expect(document.querySelector('header')).toBeTruthy());
-    // The native menu's "Check for Updates…" now arrives as a shell-dispatched
-    // DOM event (ADR-0003): dispatch it to drive the real chain
-    // checkForUpdates → (mocked) runUpdateCheck emits failed → toast.
+    // The command arrives as a shell-dispatched DOM event (ADR-0003); it now
+    // asks the shell for the prefs window with updates=true (user request
+    // 2026-10-16) instead of the old check→toast chain from the main window.
     window.dispatchEvent(new CustomEvent('pb-menu-check-update'));
-
     await waitFor(() => {
-      const toast = document.querySelector('.toast');
-      if (!toast) throw new Error('no toast');
-      expect(toast.classList.contains('error')).toBe(true);
-      expect(toast.textContent).toMatch(/failed|网络|網絡|network/i);
+      const call = native.invoke.mock.calls.find((args) => args[0] === 'open_preferences');
+      if (!call) throw new Error('open_preferences not invoked');
+      expect(call[1]).toEqual({ updates: true });
     });
+    // Nothing checked or installed from the main window — the check belongs
+    // to the settings window it just opened.
+    expect(emit.checks).toEqual([]);
+    expect(prefsCheck.calls).toEqual([]);
+    expect(prefsCheck.install).not.toHaveBeenCalled();
+  });
+
+  it('a ?go=updates prefs window lands on Updates with the check already running', async () => {
+    window.history.pushState({}, '', '/?window=prefs&go=updates');
+    try {
+      await renderPreferences();
+      expect(screen.getByRole('tab', { name: 'Updates' })).toHaveAttribute('aria-selected', 'true');
+      // The check started on mount: native request out on the saved channel,
+      // button mid-flight, "checking…" status visible.
+      expect(prefsCheck.calls).toEqual(['stable']);
+      expect(screen.getByRole('button', { name: 'Check for updates' })).toBeDisabled();
+      expect(screen.getByText('Checking for updates…')).toBeInTheDocument();
+    } finally {
+      window.history.pushState({}, '', '/');
+    }
+  });
+
+  it('an already-open prefs window is re-targeted by pb-prefs-go-updates', async () => {
+    await renderPreferences();
+    expect(screen.getByRole('tab', { name: 'General' })).toHaveAttribute('aria-selected', 'true');
+    act(() => { window.dispatchEvent(new CustomEvent('pb-prefs-go-updates')); });
+    expect(screen.getByRole('tab', { name: 'Updates' })).toHaveAttribute('aria-selected', 'true');
+    expect(prefsCheck.calls).toEqual(['stable']);
+  });
+
+  it('a __pbGoUpdates stash (eval raced mount) still lands on Updates', async () => {
+    (window as unknown as Record<string, unknown>).__pbGoUpdates = 1;
+    await renderPreferences();
+    expect(screen.getByRole('tab', { name: 'Updates' })).toHaveAttribute('aria-selected', 'true');
+    expect(prefsCheck.calls).toEqual(['stable']);
+    expect((window as unknown as Record<string, unknown>).__pbGoUpdates).toBeUndefined();
   });
 });

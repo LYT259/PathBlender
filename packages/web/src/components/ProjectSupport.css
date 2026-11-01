@@ -1,0 +1,11 @@
+.project-star { display: inline-flex; align-items: center; justify-content: center; gap: 6px; color: var(--fg-dim); font: inherit; text-decoration: none; overflow-wrap: anywhere; }
+.project-star:hover { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
+:where(html.kbd-nav) .project-star:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; border-radius: 6px; }
+.project-star svg { flex-shrink: 0; }
+.project-support { display: flex; align-items: flex-start; gap: 8px; padding-block: 12px; border-top: 1px solid var(--border); font-size: 12px; line-height: 1.5; }
+.project-support > div { flex: 1; min-width: 0; }
+.project-support strong { font-weight: 600; }
+.project-support p { color: var(--fg-dim); margin: 4px 0 8px; }
+.toolbar .project-star { flex-shrink: 1; min-width: 0; font-size: 12px; padding: 6px 8px; }
+.start-guide { flex-wrap: wrap; align-items: center; gap: 4px; }
+.start-guide .project-star { padding: 6px 14px; font-size: 13px; }

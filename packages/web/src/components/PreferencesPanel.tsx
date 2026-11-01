@@ -1,8 +1,8 @@
 import { SelectControl } from './SelectControl';
-import { useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useI18n, type LangChoice } from '../i18n';
-import { useTheme, type ThemeMode } from '../theme';
-import { useAppIcon, type IconAppearanceMode } from '../app-icon';
+import { useTheme, type ThemeMode, type AccentColor } from '../theme';
+import { useAppIcon, ICON_STYLE_ARTWORK, type IconAppearanceMode, type IconStyle } from '../app-icon';
 import { readColorblind, writeColorblind } from '../pref-sync';
 import {
   CUSTOM_MOUSE_BUTTONS,
@@ -21,18 +21,30 @@ import {
 import { LENGTH_UNITS, useLengthUnit, type LengthUnit } from '../length-units';
 import { useUpdateChannel, type UpdateChannel } from '../update-channel';
 import { checkForUpdate, installPendingUpdate } from '../update-check';
-import { noteText, VERSION_NOTES } from '../version-info';
-import dayIcon from '../assets/app-icon-day.png';
-import nightIcon from '../assets/app-icon-night.png';
+import { APP_VERSION, noteText, VERSION_NOTES } from '../version-info';
 import { BUILD_VERSION } from '../build-version';
+import { ProjectSupport } from './ProjectSupport';
 import { copyText } from '../download';
 import { Icon } from './Icon';
 import { LanguagePicker } from './LanguagePicker';
 import { MouseControlsDiagram } from './MouseControlsDiagram';
 import { IconAppearancePicker } from './IconAppearancePicker';
+import { AccentPicker } from './AccentPicker';
 import './PreferencesPanel.css';
 
 type Section = 'general' | 'controls' | 'updates' | 'about';
+
+/**
+ * The About history lists the running version's whole cycle — its first
+ * beta through its final release (user request 2026-10-16) — not the old
+ * fixed five-entry window, which cut a long cycle off mid-run. When the
+ * next cycle's first beta ships, the list resets to that cycle; older
+ * releases stay readable in the GitHub release notes.
+ */
+const CYCLE_BASE = APP_VERSION.replace(/-.*$/, '');
+const CYCLE_NOTES = VERSION_NOTES.filter(
+  (note) => note.version === CYCLE_BASE || note.version.startsWith(`${CYCLE_BASE}-`),
+);
 
 /**
  * The settings-window update check is a two-step flow (unlike the native
@@ -49,16 +61,20 @@ type UpdateCheck =
   | { kind: 'failed' };
 
 /** Shared settings; changes only reach other windows after Save. */
-export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
+export function PreferencesPanel({ desktop, onClose, onColorblindSaved, initialSection, autoCheckUpdates }: {
   desktop: boolean;
   onClose: () => void;
   /** Fired on Save so the hosting window applies the new palette at once —
    * the Tauri broadcast only reaches windows on desktop shells. */
   onColorblindSaved?: (on: boolean) => void;
+  /** Landing section — the prefs window created for updates starts there. */
+  initialSection?: Section;
+  /** Start the update check once on mount (the ?go=updates window). */
+  autoCheckUpdates?: boolean;
 }) {
-  const { langChoice, setLang, t } = useI18n();
-  const { mode, setMode } = useTheme();
-  const { mode: iconMode, systemDark, setMode: setIconMode } = useAppIcon();
+  const { lang, langChoice, setLang, t } = useI18n();
+  const { mode, setMode, accent, setAccent } = useTheme();
+  const { mode: iconMode, style: iconStyle, systemDark, setMode: setIconMode, setStyle: setIconStyle } = useAppIcon();
   const { channel, setChannel } = useUpdateChannel();
   const [mouseControls, setMouseControls] = useMouseControls();
   const [customMouse, setCustomMouse] = useCustomMouseControls();
@@ -66,14 +82,18 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   const [reverseScroll, setReverseScroll] = useReverseScrollZoom();
   const [defaultConstrained, setDefaultConstrained] = useDefaultConstrained();
   const [penAsMouse, setPenAsMouse] = usePenAsMouse();
-  const [section, setSection] = useState<Section>('general');
+  const [section, setSection] = useState<Section>(initialSection ?? 'general');
   const [languageDraft, setLanguageDraft] = useState<LangChoice | null>(null);
   const [themeDraft, setThemeDraft] = useState<ThemeMode | null>(null);
+  // Accent stages like the theme mode: the swatch only drafts; Save
+  // persists + broadcasts (2026-10-17).
+  const [accentDraft, setAccentDraft] = useState<AccentColor | null>(null);
   // Colorblind stages like every other shared setting (user request
   // 2026-10-04): the checkbox only drafts; Save persists + broadcasts.
   const [savedColorblind, setSavedColorblind] = useState(readColorblind);
   const [colorblindDraft, setColorblindDraft] = useState<boolean | null>(null);
   const [iconDraft, setIconDraft] = useState<IconAppearanceMode | null>(null);
+  const [iconStyleDraft, setIconStyleDraft] = useState<IconStyle | null>(null);
   const [channelDraft, setChannelDraft] = useState<UpdateChannel | null>(null);
   const [mouseDraft, setMouseDraft] = useState<MouseControlsScheme | null>(null);
   const [customDraft, setCustomDraft] = useState<CustomMouseMap | null>(null);
@@ -91,7 +111,9 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   const sections: Section[] = desktop ? ['general', 'controls', 'updates', 'about'] : ['general', 'controls', 'about'];
   const language = languageDraft ?? langChoice;
   const theme = themeDraft ?? mode;
+  const accentValue = accentDraft ?? accent;
   const icon = iconDraft ?? iconMode;
+  const iconStyleValue = iconStyleDraft ?? iconStyle;
   const updateChannel = channelDraft ?? channel;
   const mouse = mouseDraft ?? mouseControls;
   const customEffective = customDraft ?? customMouse;
@@ -100,7 +122,9 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   const constrained = constrainedDraft ?? defaultConstrained;
   const pen = penDraft ?? penAsMouse;
   const colorblind = colorblindDraft ?? savedColorblind;
-  const dirty = language !== langChoice || theme !== mode || icon !== iconMode ||
+  const dirty = language !== langChoice || theme !== mode || accentValue !== accent ||
+    icon !== iconMode ||
+    iconStyleValue !== iconStyle ||
     updateChannel !== channel || mouse !== mouseControls || unit !== lengthUnit ||
     reverse !== reverseScroll || constrained !== defaultConstrained || pen !== penAsMouse ||
     colorblind !== savedColorblind ||
@@ -142,6 +166,34 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
     });
   }
 
+  // Landing on Updates from outside (menu "Check for Updates", user request
+  // 2026-10-16). The desktop shell has two delivery paths: it creates this
+  // window with ?go=updates (→ initialSection + autoCheckUpdates props) or
+  // re-targets an already-open one with a shell-eval'd pb-prefs-go-updates
+  // CustomEvent. The listener must survive re-renders with a fresh check
+  // closure, hence the ref (same pattern as App's menuHandlersRef).
+  const startUpdateCheckRef = useRef(startUpdateCheck);
+  startUpdateCheckRef.current = startUpdateCheck;
+  const goUpdates = useCallback(() => {
+    setSection('updates');
+    startUpdateCheckRef.current();
+  }, []);
+  useEffect(() => {
+    window.addEventListener('pb-prefs-go-updates', goUpdates);
+    return () => window.removeEventListener('pb-prefs-go-updates', goUpdates);
+  }, [goUpdates]);
+  useEffect(() => {
+    // The freshly created ?go=updates window starts its check on mount…
+    if (autoCheckUpdates) goUpdates();
+    // …and if the shell eval'd the event into a window whose page was still
+    // loading, the dispatch was lost — the __pbGoUpdates stash survives it.
+    const w = window as { __pbGoUpdates?: unknown };
+    if (w.__pbGoUpdates) {
+      delete w.__pbGoUpdates;
+      goUpdates();
+    }
+  }, [autoCheckUpdates, goUpdates]);
+
   function startInstall() {
     if (updateCheck.kind !== 'found') return;
     setUpdateCheck({ kind: 'installing', version: updateCheck.version });
@@ -151,6 +203,11 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
   function save() {
     if (language !== langChoice) setLang(language);
     if (theme !== mode) setMode(theme);
+    if (accentValue !== accent) setAccent(accentValue);
+    // Style first, then appearance: both state updates land in the same
+    // commit, so the provider re-syncs the Dock tile once with the final
+    // pair — no intermediate wrong-artwork flash between the two.
+    if (iconStyleValue !== iconStyle) setIconStyle(iconStyleValue);
     if (icon !== iconMode) setIconMode(icon);
     if (updateChannel !== channel) {
       setChannel(updateChannel);
@@ -211,7 +268,9 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
               </label>)}
             </div>
           </fieldset>
-          {desktop && <IconAppearancePicker value={icon} onChange={setIconDraft} />}
+          <AccentPicker value={accentValue} onChange={setAccentDraft} />
+          {desktop && <IconAppearancePicker value={icon} onChange={setIconDraft}
+            style={iconStyleValue} onStyleChange={setIconStyleDraft} />}
           <label className="preferences-setting preferences-checkbox">
             <span>{t('prefs.colorblind')}</span>
             <input type="checkbox" checked={colorblind} onChange={(e) => setColorblindDraft(e.target.checked)} />
@@ -219,20 +278,20 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
         </>}
         {section === 'controls' && <>
           <div className="preferences-group preferences-units-group">
-            <label className="preferences-setting"><span>{t('prefs.units')}</span>
-              <SelectControl aria-label={t('prefs.units')} value={unit} onValueChange={(value) => setUnitDraft(value as LengthUnit)}>
+            <div className="preferences-setting"><span id={`${id}-units-label`}>{t('prefs.units')}</span>
+              <SelectControl aria-labelledby={`${id}-units-label`} value={unit} onValueChange={(value) => setUnitDraft(value as LengthUnit)}>
                 {lengthUnit === 'ftin' && <option value="ftin" hidden disabled>{t('prefs.unit.ftin')}</option>}
                 {LENGTH_UNITS.map((choice) => <option key={choice} value={choice}>{t(`prefs.unit.${choice}`)}</option>)}
               </SelectControl>
-            </label>
+            </div>
           </div>
           <div className="preferences-group preferences-mouse-group">
-            <label className="preferences-setting"><span>{t('prefs.mouseControls')}</span>
-              <SelectControl aria-label={t('prefs.mouseControls')} value={mouse} onValueChange={(value) => setMouseDraft(value as MouseControlsScheme)}>
+            <div className="preferences-setting"><span id={`${id}-mouse-label`}>{t('prefs.mouseControls')}</span>
+              <SelectControl aria-labelledby={`${id}-mouse-label`} value={mouse} onValueChange={(value) => setMouseDraft(value as MouseControlsScheme)}>
                 {MOUSE_SCHEMES.map((choice) => <option key={choice} value={choice}>{t(`prefs.mouse.${choice}`)}</option>)}
               </SelectControl>
-            </label>
-            <MouseControlsDiagram scheme={mouse} iconMode={icon} constrained={constrained} custom={customEffective} />
+            </div>
+            <MouseControlsDiagram scheme={mouse} iconMode={icon} iconStyle={iconStyleValue} constrained={constrained} custom={customEffective} />
             {mouse === 'custom'
               ? <CustomMouseEditor
                   map={customEffective}
@@ -282,11 +341,11 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
 
         </>}
         {section === 'updates' && <div className="preferences-group">
-          <label className="preferences-setting"><span>{t('prefs.channel')}</span>
-            <SelectControl aria-label={t('prefs.channel')} value={updateChannel} onValueChange={(value) => setChannelDraft(value as UpdateChannel)}>
+          <div className="preferences-setting"><span id={`${id}-channel-label`}>{t('prefs.channel')}</span>
+            <SelectControl aria-labelledby={`${id}-channel-label`} value={updateChannel} onValueChange={(value) => setChannelDraft(value as UpdateChannel)}>
               <option value="stable">{t('prefs.channel.stable')}</option><option value="beta">{t('prefs.channel.beta')}</option>
             </SelectControl>
-          </label>
+          </div>
           <div className="preferences-update-check">
             <div className="update-actions">
               <button type="button" className="btn accent" disabled={updateCheck.kind === 'checking' || updateCheck.kind === 'installing'}
@@ -299,19 +358,28 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved }: {
           </div>
         </div>}
         {section === 'about' && <>
-          <div className="preferences-product"><div className="preferences-product-title"><strong>PathBlender</strong><img
+          <div className="preferences-product"><div className="preferences-product-title"><div className="preferences-product-text"><strong>PathBlender</strong><span className="preferences-version" dir="ltr">{BUILD_VERSION}</span></div><img
             className="preferences-product-icon" alt="" width="72" height="72"
-            src={(icon === 'system' ? systemDark : icon === 'dark') ? nightIcon : dayIcon} />
-          </div><span className="preferences-version" dir="ltr">{BUILD_VERSION}</span>
+            src={(icon === 'system' ? systemDark : icon === 'dark')
+              ? ICON_STYLE_ARTWORK[iconStyleValue].dark
+              : ICON_STYLE_ARTWORK[iconStyleValue].light} />
+          </div>
             <button className="btn" type="button" onClick={() => {
               void copyText(BUILD_VERSION)
                 .then((ok) => setCopyStatus(t(ok ? 'about.copyDone' : 'about.copyFailed')));
             }}>{t('about.copy')}</button>
             <p className="preferences-copy-status" role="status">{copyStatus}</p>
           </div>
-          {VERSION_NOTES.length > 0 && <div className="preferences-history"><h3>{t('prefs.releaseNotes')}</h3>
-            <ol>{VERSION_NOTES.slice(0, 5).map((note) => <li key={note.version}>
-              <div><strong dir="ltr">Version {note.version}</strong><time>{note.date}</time></div><p>{noteText(note.note, langChoice)}</p>
+          <aside aria-label="SDS MK5i">
+            <h3>SDS MK5i</h3>
+            <p>{t('about.sdsPermission')}</p>
+          </aside>
+          <ProjectSupport />
+          {CYCLE_NOTES.length > 0 && <div className="preferences-history"><h3>{t('prefs.releaseNotes')}</h3>
+            {/* Resolved `lang`, not the raw choice: 'system' hits no note
+                key, so Follow-system readers would fall to the zh default. */}
+            <ol>{CYCLE_NOTES.map((note) => <li key={note.version}>
+              <div><strong dir="ltr">Version {note.version}</strong><time>{note.date}</time></div><p>{noteText(note.note, lang)}</p>
             </li>)}</ol>
           </div>}
         </>}

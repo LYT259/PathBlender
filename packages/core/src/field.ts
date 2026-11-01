@@ -31,6 +31,20 @@ export interface FieldImageCalibration {
 }
 
 /**
+ * Artwork orientation contract: every shipped PNG is authored in the WPILib
+ * blue-origin frame as displayed — blue alliance at LOW x (left), +y up —
+ * matching the schematics, the tag overlay and every community tool. The
+ * AdvantageScope Field2d render family ships its sheets drawn from the RED
+ * end (alliance colours on the wrong ends; found for 2022–2025 in the
+ * 2026-10-14 orientation audit — 2026's community sheet had the same defect
+ * and was replaced earlier), so those PNGs are rotated 180° in-repo before
+ * committing. packages/web/test/field-artwork-orientation.test.ts enforces
+ * the blue-left/red-right colour order (and calibration↔PNG size agreement)
+ * on every artwork file — a rotationally symmetric tag layout cannot catch
+ * this class of flip on its own.
+ */
+
+/**
  * World-space rectangle covered by a field image (meters, blue frame):
  * left/right along x, bottom/top along y. Derived from whichever
  * calibration style the package carries.
@@ -394,16 +408,21 @@ export const REBUILT_2026: FieldPackage = {
   { id: 31, x: 0.0081, y: 3.7457, z: 0.5524, rotRad: 0, quat: [0, 0, 0, 1] },
   { id: 32, x: 0.0081, y: 4.1775, z: 0.5524, rotRad: 0, quat: [0, 0, 0, 1] },
   ],
-  // Rendered artwork (AdvantageScopeAssets Field2d_2026FRCFieldV2, BSD-3;
-  // source render: Chief Delphi high-resolution field image), 3902×1584.
-  // Corner calibration from its config (topLeft [524,95], bottomRight
-  // [3378,1489] over 651.22″×317.677″) mapped onto this package's 16.54×8.07
-  // constants → 2854 px of length at 172.55 px/m, blue corner 524 px from
-  // the left edge, 95 px from the bottom edge. Tag-decal probe vs the
-  // AndyMark layout: median 15 px (≈ 9 cm), no systematic bias; the
-  // welded/AndyMark deltas (≤ 34 mm ≈ 6 px) are below the artwork's own
-  // scatter, so one sheet serves both variants.
-  imageRendered: { pixelWidth: 3902, pixelHeight: 1584, ppm: 172.55, ppmY: 172.74, marginM: 0, originPx: { x: 524, y: 95 } },
+  // Rendered artwork: re-rendered 2026-10-11 from the bundled AdvantageScope
+  // Field3d GLB (packages/web/public/fields3d/2026-rebuilt/model.glb, BSD-3;
+  // untextured solid-colour meshes from the official Onshape CAD) via
+  // scripts/cad/render-field-topdown.mjs, at exactly 2× the previous sheet
+  // (7804×3168) so deep 2D zooms stay sharp. It replaces the community
+  // Fusion render (AdvantageScopeAssets Field2d_2026FRCFieldV2), which had
+  // the two hubs' alliance colours MIRRORED — the GLB follows the official
+  // CAD (HUB tags 18–21 at x≈4.6 m mark the BLUE hub, 2026 manual §5.4).
+  // Calibration is exactly 2× the previous corner calibration: blue corner
+  // 1048 px from the left edge, 190 px from the bottom edge. Registration is
+  // validated by construction — the script re-renders with magenta markers
+  // at all 32 official welded tag positions above and requires every
+  // centroid within 2 px of this calibration's prediction (measured 2026-10-11:
+  // median 0.70 px, max 0.92 px; 1 px ≈ 2.9 mm) before writing the PNG.
+  imageRendered: { pixelWidth: 7804, pixelHeight: 3168, ppm: 345.10, ppmY: 345.48, marginM: 0, originPx: { x: 1048, y: 190 } },
   aprilTagsAndyMark: TAGS_2026_ANDYMARK,
 };
 
@@ -424,12 +443,21 @@ export const FIELDS: readonly FieldPackage[] = [
     image: { pixelWidth: 3240, pixelHeight: 1620, ppm: 196.85, marginM: 0 },
     // Rendered artwork (AdvantageScopeAssets Field2d_2022FRCFieldV3, BSD-3;
     // source render: Chief Delphi 2022 top-down field renders), 7045×2934.
-    // Corner calibration from its config (topLeft [884,148], bottomRight
-    // [6160,2786] over 648″×324″ — exactly this package's constants). The
-    // render draws the WPILib 2022 offseason tag set: decal probe vs
-    // TAGS_2022 gives median 7.7 px (≈ 2.4 cm), no systematic bias; the
-    // four hangar-ring decals scatter ±33 px (≈ 10 cm, drawn loose).
-    imageRendered: { pixelWidth: 7045, pixelHeight: 2934, ppm: 320.55, ppmY: 320.55, marginM: 0, originPx: { x: 884, y: 148 } },
+    // Upstream ships the sheet drawn from the RED end — the whole AS
+    // Field2d family does (2026-10-14 orientation audit); this file is
+    // that PNG rotated 180° in-repo so blue sits at low x like every
+    // schematic. Corner calibration from its config (topLeft [884,148],
+    // bottomRight [6160,2786] over 648″×324″ — exactly this package's
+    // constants), mirrored to the opposite corner by the rotation: blue
+    // corner 885 px from the left edge, 148 px from the bottom edge
+    // (upstream margins are symmetric, 884/885 and 148/148). The 2022
+    // layout is rotationally symmetric, so the rotation moves no
+    // structure — only the alliance colours return to their own ends —
+    // and the tag-decal SET is likewise rotation-invariant, which is why
+    // an id-free decal probe passed on the flipped sheet (median 7.7 px
+    // then, and the same numbers hold after rotation). Post-rotation
+    // check: alliance-colour centroid order matches the schematic.
+    imageRendered: { pixelWidth: 7045, pixelHeight: 2934, ppm: 320.55, ppmY: 320.55, marginM: 0, originPx: { x: 885, y: 148 } },
     aprilTags: TAGS_2022,
     // START_ZONE 2022 — the hub-flanking TARMAC pair, sample-fit union rect
     // (derivation in the FieldPackage.startZone comment): three teams' real
@@ -446,13 +474,18 @@ export const FIELDS: readonly FieldPackage[] = [
     widthM: 1578 / 196.85,
     image: { pixelWidth: 3256, pixelHeight: 1578, ppm: 196.85, marginM: 0 },
     // Rendered artwork (AdvantageScopeAssets Field2d_2023FRCFieldV4, BSD-3;
-    // source render: Chief Delphi top-down field renders). Corner calibration
-    // from its config (topLeft [482,89], bottomRight [3126,1373] over the
-    // 651.25″×315.5″ span) mapped onto this package's constants → 2644 px of
+    // source render: Chief Delphi top-down field renders). Upstream ships
+    // the sheet drawn from the RED end (2026-10-14 orientation audit);
+    // this file is that PNG rotated 180° in-repo. Corner calibration from
+    // its config (topLeft [482,89], bottomRight [3126,1373] over the
+    // 651.25″×315.5″ span) — margins are exactly symmetric (482/482,
+    // 89/89), so the rotation leaves the numbers unchanged: 2644 px of
     // field length at 159.85 px/m, blue corner 482 px from the left edge,
-    // 89 px from the bottom edge. Tag-decal probe: residuals up to ±35 px in
-    // a symmetric bow (mid-wall decals drawn inset on both walls) — artwork
-    // looseness, no global bias.
+    // 89 px from the bottom edge. Post-rotation checks: alliance-colour
+    // centroid order matches the schematic, and each end-zone colour
+    // height profile correlates with the schematic's (NCC +0.69) while
+    // the y-flipped variant anti-correlates (−0.40) — the double
+    // substation is back on the schematic's wall.
     imageRendered: { pixelWidth: 3608, pixelHeight: 1462, ppm: 159.85, ppmY: 160.16, marginM: 0, originPx: { x: 482, y: 89 } },
     aprilTags: TAGS_2023,
     // START_ZONE 2023 — the COMMUNITY (H309-D): 18 ft wide, centered; 11 ft ⅜ in
@@ -473,12 +506,20 @@ export const FIELDS: readonly FieldPackage[] = [
     widthM: 1616 / 196.85,
     image: { pixelWidth: 3256, pixelHeight: 1616, ppm: 196.85, marginM: 0 },
     // Rendered artwork (AdvantageScopeAssets Field2d_2024FRCFieldV3, BSD-3;
-    // source render: Chief Delphi). Corner calibration from its config
-    // (topLeft [513,78], bottomRight [3327,1475] over 651.25″×323.25″)
-    // mapped onto this package's constants. Tag-decal probe: median 26 px
-    // scatter grouped per structure (same-wall decals disagree) — artwork
-    // looseness, no consistent global bias.
-    imageRendered: { pixelWidth: 3840, pixelHeight: 1554, ppm: 158.96, ppmY: 159.42, marginM: 0, originPx: { x: 513, y: 79 } },
+    // source render: Chief Delphi). Upstream ships the sheet drawn from the
+    // RED end (2026-10-14 orientation audit); this file is that PNG rotated
+    // 180° in-repo. Corner calibration re-derived from its config (topLeft
+    // [513,78], bottomRight [3327,1475] over 651.25″×323.25″): 2814 px over
+    // 16.5418 m → 170.10 px/m, y 1397 px over 8.2045 m → 170.26; margins are
+    // symmetric, so the rotation keeps the blue corner at 513 px from the
+    // left edge, 79 px from the bottom. The pre-fix entry carried ppm
+    // 158.96/159.42 — inconsistent with the config it cited, drawing the
+    // sheet ~7 % small; corrected here together with the rotation.
+    // Post-rotation checks: both AMP structures sit on the y-max side
+    // (tags 5/6 at y=8.204) and both SOURCE zones on the y-min side
+    // (tags 1/2/9/10), with the blue community left of red, matching the
+    // schematic exactly.
+    imageRendered: { pixelWidth: 3840, pixelHeight: 1554, ppm: 170.1, ppmY: 170.26, marginM: 0, originPx: { x: 513, y: 79 } },
     aprilTags: TAGS_2024,
     // START_ZONE 2024 — the ROBOT STARTING ZONE: 6 ft 4⅛ in deep × 23 ft 8⅛ in
     // along the wall, between the AMP ZONE strip (1 ft 5¾ in, y-max side —
@@ -519,20 +560,24 @@ export const FIELDS: readonly FieldPackage[] = [
     // (AdvantageScopeAssets Field2d_2025FRCFieldWeldedV3 / AndyMarkV3,
     // BSD-3; 3773×1528 each — the two artworks are pixel-identical except
     // each coral station, drawn 12 px ≈ 7 cm toward centre on the AndyMark
-    // sheet, matching the tag deltas). Calibration (one set serves both
-    // sheets; AM enclosure 8.042 vs 8.052 is 0.6 % of ppmY, below the
-    // artwork's own noise): carpet edges at columns 420/3351 and rows
-    // 73/1454 measured on the shipped PNGs map to the 17.548 × 8.052 frame
-    // → ppm 167.08, ppmY 171.49, blue corner 420 px from the left edge,
-    // 74 px from the bottom edge. Validated against all 22 AprilTag decals
-    // in each artwork: median offset (−0.5, +1.2) px — no systematic bias;
-    // per-tag scatter rms ≈ 12 px (≈ 7 cm) is the artwork's structure
-    // looseness (reef tag ring drawn ~8 cm large in radius, barge posts
-    // ±21 px, DS walls ~17 px inset), not calibration error. The AndyMark
-    // sheet's coral-station decals sit on the AndyMark tag coordinates
-    // to ≤ 1 px.
-    imageRendered: { pixelWidth: 3773, pixelHeight: 1528, ppm: 167.08, ppmY: 171.49, marginM: 0, originPx: { x: 420, y: 74 } },
-    imageRenderedAndyMark: { pixelWidth: 3773, pixelHeight: 1528, ppm: 167.08, ppmY: 171.49, marginM: 0, originPx: { x: 420, y: 74 } },
+    // sheet, matching the tag deltas). Upstream ships both sheets drawn
+    // from the RED end (2026-10-14 orientation audit); these files are
+    // those PNGs rotated 180° in-repo. The 2025 layout is rotationally
+    // symmetric, so the rotation moves no structure — post-rotation, a
+    // pixel diff of the two sheets puts the coral stations 22/37 px from
+    // the columns this calibration predicts for them (1421/2351) — but the
+    // alliance colours return to their own ends. The earlier 22-decal
+    // registration had passed on the flipped sheets because the tag set is
+    // rotation-invariant and was matched id-free (median offset
+    // (−0.5, +1.2) px, scatter rms ≈ 12 px — those numbers survive the
+    // rotation unchanged). Calibration (one set serves both sheets):
+    // carpet edges at columns 420/3351 and rows 73/1454 on the upstream
+    // PNGs map to the 17.548 × 8.052 frame → ppm 167.08, ppmY 171.49;
+    // after rotation the blue corner is 422 px from the left edge, 73 px
+    // from the bottom edge. AndyMark enclosure 8.042 vs 8.052 is 0.6 % of
+    // ppmY, below the artwork's own noise.
+    imageRendered: { pixelWidth: 3773, pixelHeight: 1528, ppm: 167.08, ppmY: 171.49, marginM: 0, originPx: { x: 422, y: 73 } },
+    imageRenderedAndyMark: { pixelWidth: 3773, pixelHeight: 1528, ppm: 167.08, ppmY: 171.49, marginM: 0, originPx: { x: 422, y: 73 } },
     aprilTags: TAGS_2025_WELDED,
     aprilTagsAndyMark: TAGS_2025_ANDYMARK,
     // START_ZONE 2025 — BUMPERS overlap the ROBOT STARTING LINE (G303-D), a
@@ -616,8 +661,12 @@ export function makeCustomField(cal: {
   };
 }
 
-/** Flip a pose from the red frame into the blue frame (180° about center). */
-export function flipPoseToBlue(pose: Pose2d, field: FieldPackage): Pose2d {
+/**
+ * Flip a pose from the red frame into the blue frame (180° about center).
+ * Only the field dimensions are read, so any object carrying lengthM/widthM
+ * (a full FieldPackage, or the pared pick the zone predicate passes) fits.
+ */
+export function flipPoseToBlue(pose: Pose2d, field: Pick<FieldPackage, 'lengthM' | 'widthM'>): Pose2d {
   return {
     x: field.lengthM - pose.x,
     y: field.widthM - pose.y,
@@ -627,20 +676,32 @@ export function flipPoseToBlue(pose: Pose2d, field: FieldPackage): Pose2d {
 
 /**
  * Whether a trajectory's first sample starts inside the season's legal auto
- * starting region (FieldPackage.startZone, a union of rectangles). The
- * trajectory is the blue-frame SOURCE sample (sourceRobots stay blue;
- * `robotsForAlliance` derives the red view), and the red view's region is
- * the mirror of the blue one — so on the source frame the predicate is the
- * same for both alliances and the alliance never enters it. Zone boundaries
+ * starting region (FieldPackage.startZone, a union of rectangles). Zone rects
+ * are blue-frame (the red view's region is the 180° flip of the blue one),
+ * so the natural callers pass the blue-frame SOURCE sample (sourceRobots
+ * stay blue; `robotsForAlliance` derives the red view) and the alliance
+ * never enters the predicate. With `field` supplied a red-frame trajectory
+ * is accepted too: its first sample is flipped back to blue before the
+ * comparison, making the verdict frame-invariant — the alliance view the
+ * renderer consumes may be judged directly (2026-10-17: the red view fed
+ * flipped samples to the blue-frame rects and grayed EVERY path). Without
+ * `field` the caller vouches the samples are already blue. Zone boundaries
  * are inclusive (tape belongs to the zone); no samples means nothing to
  * gate.
  */
-export function startsInAllianceZone(trajectory: Trajectory, zone: readonly StartZoneRect[]): boolean {
+export function startsInAllianceZone(
+  trajectory: Trajectory,
+  zone: readonly StartZoneRect[],
+  field?: Pick<FieldPackage, 'lengthM' | 'widthM'>,
+): boolean {
   const first = trajectory.samples[0];
   if (!first) return true;
+  const pose = field && trajectory.alliance === 'red'
+    ? flipPoseToBlue(first, field)
+    : first;
   return zone.some((r) =>
-    first.x >= r.xMinM - 1e-9 && first.x <= r.xMaxM + 1e-9 &&
-    first.y >= r.yMinM - 1e-9 && first.y <= r.yMaxM + 1e-9);
+    pose.x >= r.xMinM - 1e-9 && pose.x <= r.xMaxM + 1e-9 &&
+    pose.y >= r.yMinM - 1e-9 && pose.y <= r.yMaxM + 1e-9);
 }
 
 /**

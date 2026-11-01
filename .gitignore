@@ -24,7 +24,9 @@ coverage/
 # Tauri desktop build artifacts (packages/desktop)
 packages/desktop/src-tauri/target/
 
-# local-only pre-push gate patterns
+# local-only pre-push gate patterns (legacy per-worktree file; the shared
+# rules now live in <git-common-dir>/info/pathblender-privacy-rules — see
+# scripts/install-hooks.sh — and are never inside a worktree)
 .pre-push-patterns
 
 # 私有文件（2026-09-07 用户指令：研究报告/工程日志不上 GitHub）
@@ -66,3 +68,73 @@ scripts/.probe-*.mjs
 .zcodeignore
 # matches build dirs AND worktree symlinks (slash-less)
 packages/desktop/src-tauri/target
+
+# Private local agent coordination (never publish code, state or harness config).
+.agent-board
+.codex/
+.zcode/
+.dsh/
+.kimi-code/
+
+# 本地 AI 助手 / MCP 服务器配置（可能含 API Key、本机绝对路径；任何目录层级都不入库）。
+# 公开示例配置请放到 docs/ 之类的目录并使用不同文件名，不要用这些保留名。
+.agents/
+.mcp/
+.mcp.json
+mcp.json
+.gemini/
+.windsurf/
+.continue/
+.aider*
+
+# 私钥与凭证——只挡私有材料；公开证书/公钥（*.crt、*.cer、*.pub）不在此列。
+# *.pem 既可能是公钥证书也可能是私钥，默认按私有处理：确需跟踪的公开 .pem
+# 用 `!path/to/file.pem` 显式放行。*.key 同时是 Keynote 文稿后缀，同样显式放行。
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_rsa.*
+id_dsa
+id_dsa.*
+id_ecdsa
+id_ecdsa.*
+id_ed25519
+id_ed25519.*
+*service-account*.json
+*credentials*.json
+.netrc
+.htpasswd
+
+# 崩溃转储与堆快照（本机诊断产物，不入库）
+*.dmp
+*.hprof
+*.heapsnapshot
+*.stackdump
+
+# 通用缓存目录（产品必需资源不放这些目录；node_modules/dist/target 另有规则）
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+.stylelintcache
+__pycache__/
+*.pyc
+
+# 临时文件与运行日志（engineering-log/ 工程日志另有规则；samples/ 回归夹具不用这些后缀）
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

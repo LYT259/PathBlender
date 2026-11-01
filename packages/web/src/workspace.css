@@ -41,7 +41,11 @@ body { font: 13px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 button, input, select, textarea { font-family: inherit; }
 button, summary, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button, a, input, select, textarea, summary { outline-offset: 3px; }
-:focus-visible { outline: 2px solid var(--focus-ring); }
+:where(html.kbd-nav) :focus-visible { outline: 2px solid var(--focus-ring); }
+/* Pointer mode must also silence the UA's native ring: browsers apply
+   :focus-visible to text inputs unconditionally, so without this the user
+   agent's 1px `outline: auto` shows through under the gated author rules. */
+:where(html:not(.kbd-nav)) :focus-visible { outline: none; }
 button { touch-action: manipulation; }
 button:disabled { cursor: default; }
 .ui-icon { flex-shrink: 0; vertical-align: middle; }
@@ -114,7 +118,7 @@ body.desktop.desktop-macos .workspace-toolbar { padding-left: 100px; }
 .conflict-jump { padding: 11px 12px; border-radius: 8px; background: var(--bg-panel); border-left-width: 2px; gap: 6px; }
 .conflict-pair { font-size: 12px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
 .conflict-when { font-size: 10px; line-height: 1.6; font-variant-numeric: tabular-nums; }
-.issue-action { color: var(--accent); font-size: 10px; margin-top: 3px; }
+.issue-action { color: var(--accent-text); font-size: 10px; margin-top: 3px; }
 .issue-robot-actions { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 0 12px; }
 .issue-robot-actions > span { width: 100%; color: var(--fg-dim); font-size: 10px; }
 .issue-robot-actions .btn { min-width: 0; font-size: 10px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }

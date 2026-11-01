@@ -4,23 +4,31 @@
 
 ## 构建与质量
 
-- [ ] **推送前门禁**：`scripts/pre-push-check.mjs`（git pre-push 钩子自动执行；新克隆后先跑 `scripts/install-hooks.sh`）——待推提交命中敏感词（账号/工单/内网 IP/真实姓名/密钥材料）一律中止。2026-09-02 教训：一次性扫描会随日志追加失效，门禁是唯一可靠形态。
+- [ ] **推送前门禁**：`scripts/pre-push-check.mjs`（git pre-push 钩子自动执行；新克隆后先跑 `scripts/install-hooks.sh`——它安装共享钩子、迁移/创建共享私有匹配规则（`.git/info/pathblender-privacy-rules`，全工作树共用），并以 `--doctor` 报告 READY / NOT READY）。门禁按对象扫描全部待推引用：提交/附注标签的作者、提交者与 tagger 身份和消息、树路径、软链目标、文件内容，外加「绕过 .gitignore 强加的私有文件」检测；命中一律中止，输出只给类别与定位、不回显敏感值；规则缺失/损坏或对象读取失败同样中止而不是放行。2026-09-02 教训：一次性扫描会随日志追加失效，门禁是唯一可靠形态。
 
 - [ ] `npm run typecheck` 零错误
 - [ ] `npm run version:check`（七处版本号同源：root / core / web / desktop 的 package.json + tauri.conf.json + Cargo.toml + web `version-info.ts`；SW 缓存名取 root 值）
 - [ ] 版本号生命周期（2026-10-01 定稿）：每次合 beta 经 `scripts/bump-version.mjs beta "说明"` 抬 `-beta.N`（附用户可懂说明，偏好设置「关于」展示/一键复制）；发版时 `bump-version.mjs release` 去后缀得正式号，再打 `v*` tag；**同一版本号永不对应两种内容**——有问题需重发时用新号，旧版安装包留在 Release 里可回退
 - [ ] `npm test` 全绿（core + web e2e）
 - [ ] `npm run build` 成功；`packages/web/dist` 体积合理（gzip JS < 300 KB 量级）
-- [ ] 本地 `npm run build -w @pathblender/web && npm run preview -w @pathblender/web` 后跑两个真实浏览器走查脚本并全绿：`node scripts/browser-walkthrough.mjs`（鼠标 + 真实文件：四格式导入 → 回放 → 碰撞 → 路线库编排 → 40 语言与 RTL → 会话存/取 → GIF 与方案包导出 → 服务工作者 → 3D）、`node scripts/keyboard-walkthrough.mjs`（纯键盘走通同一成品）。界面一改，脚本同步改在同一个 PR 里，别留下指向已删控件的断言
+- [ ] 本地 `npm run build -w @pathblender/web && npm run preview -w @pathblender/web` 后跑两个真实浏览器走查脚本并全绿：`node scripts/browser-walkthrough.mjs`（鼠标 + 真实文件：四格式导入 → 回放 → 碰撞 → 路线库编排 → 43 语言与 RTL → 会话存/取 → GIF 与方案包导出 → 服务工作者 → 3D）、`node scripts/keyboard-walkthrough.mjs`（纯键盘走通同一成品）。界面一改，脚本同步改在同一个 PR 里，别留下指向已删控件的断言
 - [ ] 网站门控自查 `scripts/viewer-check.mjs` 全绿（26 项）：`VITE_VIEWER_ONLY=1 npm run build -w @pathblender/web` + `node scripts/serve-dist.mjs <端口>`，再 `VIEWER_BASE=http://localhost:<端口>/ node scripts/viewer-check.mjs`；查的是发布出去的查看器构建留住导入/回放/检查/编排、首屏零跨域请求、首访跟随系统语言，且任何入口（含没有按钮的 Ctrl/Cmd+S 快捷键）都写不出文件。改动保存/导出类入口时必须重跑
 - [ ] 桌面版：`npm run tauri build -w packages/desktop` 出 .app/.dmg；ad-hoc 签名保留（`codesign -dv` 核对）；启动冒烟（进程存活）
 - [ ] **深浅色应用图标**：`packages/desktop/src-tauri/icons/AppIcon.icon`（日间红底 / 夜间黑底，第 14 轮定稿）经 `scripts/apply-dark-icon.sh` 注入 Assets.car + `CFBundleIconName`——本地 install-desktop.sh 与 release.yml 均已内置该步；抽查安装包 `Contents/Resources/Assets.car` 存在且 `assetutil --info` 含 `NSAppearanceNameDarkAqua`
 
 ## 许可证与素材
 
-- [ ] NOTICE.md 归属清单与当前代码一致（PathPlanner / Choreo / 103 fork / WPILib）
+- [ ] Read `NOTICE.md` and `docs/asset-licensing.md`: distinguish own-code
+  licensing from asset permissions and preserve unresolved scope in every release.
+  Verify the actual packaged NOTICE against the source, not just its presence.
+  New notices do not retrospectively update historical assets or old installers.
+
+
+- [ ] NOTICE.md 归属清单与当前代码一致（PathPlanner / Choreo / 103 fork / WPILib / FRC Designs）
+- [ ] **MK5i 模组许可与分发文件**：FRCDesignApp GitHub 仓库采用 MIT，`licenses/FRCDesignApp-MIT.txt` 保存该仓库的完整许可证及 `Copyright (c) 2026 FRCDesign.org`，不得把整个 Onshape 模组直接概括成已明确适用 MIT。NOTICE 保留 Onshape Swerve V235 来源和 GLB/2D 转换说明；Discord 原回复仅表示对模型用于教育目的不持异议，项目方认为当前用途相符属于自身理解，免费不当然等于教育用途，公开仓库、GLB 转换、安装包再分发及下游条件未逐项确认。SDS 已明确书面许可本项目使用并分发 SDS MK5i 的 CAD 衍生可视化素材，这是针对本项目的许可，不是标准开源许可证，不覆盖 Kraken X60 电机几何或用户自建车架，也不构成 SDS 赞助、认证或背书；WCP 及其他第三方权利仍未确认。Web 构建须把 `LICENSE`、`NOTICE.md`、`licenses/` 复制进 `packages/web/dist`；Tauri 资源与最终 DMG 查验须含同样文件
 - [ ] PathPlanner 轨迹生成移植说明保留在发布说明中（MIT 要求注明）
 - [ ] **FIRST 场地素材条款复查**：核对当赛季（当前：2026 REBUILT）Game Manual / Official Field Drawings 的素材使用条款是否仍允许工具内置场地图片（AdvantageScope / PathPlanner 先例）；若收紧 → 停发内置场地、改走已就位的用户自导入场地路径
+  - **2026-10-31 复查记录**：FIRST 官方 [Policy on the Use of FIRST Trademarks and Copyrighted Materials](https://www.firstinspires.org/hubfs/web/about/policy/ip-policy-trademarks-copyrighted-materials-first-lego.pdf?hsLang=en) 仍为 rev 04/19/25。§II.2 的适用主体是已注册 FIRST 队伍或参与者，限于 FIRST 项目相关非商业活动，相关收入须用于支付 FIRST 参与成本；§III 仍禁止以修改形式使用版权材料。§IV.A 的商标免责声明与 §IV.B 的英文版权免责声明是两项不同要求，NOTICE 与各语言 README 现已同时保留这两段原文。2026 REBUILT 的 [Playing Field](https://www.firstinspires.org/resources/library/frc/playing-field) 页面列出 Field Manual（updated Mar 24）及 REBUILT specific drawings，[Season Materials](https://www.firstinspires.org/resources/library/frc/season-materials) 提供官方 Game Manual 入口；本次查阅未见单独的修改／再分发许可，场地裁剪/缩放标定仍按灰区处理，不把社区先例写成官方许可。直接访问 `frc-manual.usfirst.org` 在本环境未能解析，未将该项记为已核查；若条款收紧，继续使用用户自导入场地回退路径。
   - **2026-08-26 复查记录**（依据：FIRST《Policy on the Use of FIRST® Trademarks and Copyrighted Materials》rev. 04/19/25，官方 PDF）：①注册 FIRST 队伍可非商业使用 FIRST 版权材料（**明文含 field designs**）开展 FIRST 项目相关活动，条件是展示 §IV 标准 disclaimer（已落入 NOTICE.md 与 README）；②**「copyrighted materials may never be used in any modified form」**——本项目场地图为裁剪/缩放标定版，处于该条款灰区；社区先例（AdvantageScope / PathPlanner 内置场地多年）支持继续内置，但若 FIRST 收紧执法：立即停发内置场地、启用用户自导入场地路径（已就位）；③FIRST 保留随时终止许可的权利——每次发版重新核对本条；④Logos（图形商标）不可用，仅 word marks 可提及。
 - [ ] 场地图来源与标定记录与 `docs/formats/format-facts.md` 一致
 
@@ -35,6 +43,7 @@
       纪律。唯一出站通道 = Rust 原生 updater（tauri-plugin-updater 原生网络栈，不受页面 CSP 约束）。
 
 - [ ] README 隐私声明与实际行为一致（文件本地解析）
+- [ ] **历史隐私独立核查**：pre-push 只扫描本次实际待推对象，不证明既有提交、GitHub PR/缓存引用、其他克隆或旧 Release 附件已清理。公开前单独记录脱敏核查范围、已知残留与接受/处置决定；未核查或仍有残留的不得写成已清理。
 
 ## GitHub（发布操作纪律）
 
@@ -44,13 +53,16 @@
       `npx wrangler pages deploy packages/web/dist --project-name=pathblender --branch=stable`（本机直传，零 Actions 额度）；
       β 预览站 `pathblender-preview` 仍弃用不动（`--branch=beta` + `VITE_SITE_PREVIEW=1` 的旧条款仅存档；**2026-10-07 起 UI 侧的预览站交叉入口与横幅已随 `VITE_SITE_PREVIEW` 构建开关一并删除——网站本身即 beta 通道，构建不再区分站点 flavor**）。
       **部署后核对线上版本与树内一致**（回读 `https://pathblender.pages.dev/sw.js` 的缓存名 `pb-<版本>-<时间戳>`；2026-10-02 审计曾发现线上挂着转型前旧构建，此条为常规核对项）。
-- [ ] GitHub Pages 工作流已于 2026-10-02 移除：私有 Free 仓库无法启用 Pages，deploy.yml 在每次 stable 推送上稳定失败（5/5）。**2026-10-04 用户定稿：弃 Cloudflare，转公开后全用 GitHub Pages——重建 deploy.yml 自动部署（viewer 构建），wrangler 直传条款届时退役**。**2026-10-06 用户定稿（取代「push stable 触发」）：转公开后每次分支合并到 beta 就重新部署 Pages——deploy.yml 届时按 push beta 触发重建**。
-- [ ] **转公开日清单（用户决定 2026-10-02：仓库暂不转公开；转公开之后才有 Demo 网站；2026-10-05 增补 Windows 项）**——按序执行，防止 README 的站点链接先于 Demo 上线：
-      ① 给 stable 打分支保护（禁强推 + 禁删除 + 含管理员；不开 status checks/PR 门，避免打断自动发版的直推）；
-      ② **Windows 验证（2026-10-05 PR #198 落地，此前无法真机验证）**：手动 dispatch `.github/workflows/windows-smoke.yml`（公开仓标准 runner 免费），下载 artifact 截图人工核对——原生标题栏无红绿灯让位空隙、暗色渲染正常；然后打当期 `v*` tag，release.yml 的 build-windows 自动产出 NSIS 安装包，Release 资产含 `*-setup.exe`(+`.sig`)、更新器 feed 含 `windows-x86_64` 条目；
-      ③ Demo 站（2026-10-04 起走 Pages）：重建 deploy.yml（**push beta 即自动部署——2026-10-06 用户定稿：每次分支合并到 beta 就重新部署**）+ `VITE_VIEWER_ONLY=1` viewer 构建，部署后核对线上版本串与树内一致（Cloudflare 渠道届时退役）；
-      ④ 核对 README 三语的「获取方式」链接与真实可达状态一致（补充 Windows 下载说明）；更新 feed / Release 资产对未认证用户转可达（无需改动——端点本就是 GitHub 公网 URL）；
-      ⑤ 反馈渠道=GitHub Issues（转公开即活；README/指南/模板已指向 issues 链接）；Chief Delphi 发布帖由用户本人发（用户决定 2026-10-03）。
+- [ ] GitHub Pages：保留现有 `.github/workflows/deploy.yml`（`push beta` 触发、`VITE_VIEWER_ONLY=1` viewer 构建、私有仓库期间由 `github.event.repository.private == false` 休眠）。转公开后核实该工作流实际运行与线上版本；不要重复重建或覆盖现有配置，Cloudflare 直传渠道届时退役。
+- [ ] **转公开日清单（用户决定 2026-10-02：仓库暂不转公开；转公开之后才有 Demo 网站；2026-10-05 增补 Windows 项；2026-10-31 增补社区协作与 PR 审核项）**——按序执行，防止 README 的站点链接先于 Demo 上线：
+      ① 给 `stable`（主分支）与 `beta` 打分支保护（禁强推 + 禁删除 + 含管理员）；两者均开启 `Require a pull request before merging` 与 `Require approvals`（至少 1 个批准）；外部贡献者的 PR 必须由用户本人人工审核批准；用户自有任务经独立 reviewer agent 复核通过后，可按用户常设委托以 `LYT259` 提交 `Approve` 并自动合入 `beta`；`stable` 仍按双端验证和发版门槛，不自动合并；禁止未经相应审批直接推送或合并；
+      ② 检查 `Settings → General → Features` 中的 `Discussions` 已启用，并在转公开后实测大家可查看、发起和参与 Discussion；
+      ③ 检查 `Settings → General → Features` 中的 `Issues` 已启用，并在转公开后实测大家可新建 Issue；
+      ④ 确认外部贡献者可通过 fork 向 `stable` / `beta` 提交 PR；分支保护只限制直接推送与合并，不得阻止创建 PR；外部 PR 未经用户本人人工审核批准，不得合并到 `stable` 或 `beta`（自有任务的委托自动审批按①执行）；
+      ⑤ **Windows 验证（2026-10-05 PR #198 落地，此前无法真机验证）**：手动 dispatch `.github/workflows/windows-smoke.yml`（公开仓标准 runner 免费），下载 artifact 截图人工核对——原生标题栏无红绿灯让位空隙、暗色渲染正常；然后打当期 `v*` tag，release.yml 的 build-windows 自动产出 NSIS 安装包，Release 资产含 `*-setup.exe`(+`.sig`)、更新器 feed 含 `windows-x86_64` 条目；
+      ⑥ Demo 站（2026-10-04 起走 Pages）：使用并核验现有 deploy.yml（**push beta 即自动部署——2026-10-06 用户定稿：每次分支合并到 beta 就重新部署**）+ `VITE_VIEWER_ONLY=1` viewer 构建，部署后核对线上版本串与树内一致（Cloudflare 渠道届时退役）；
+      ⑦ 核对 README 三语的「获取方式」链接与真实可达状态一致（补充 Windows 下载说明）；更新 feed / Release 资产对未认证用户转可达（无需改动——端点本就是 GitHub 公网 URL）；
+      ⑧ 反馈渠道=GitHub Issues（转公开即活；README/指南/模板已指向 issues 链接）；Chief Delphi 发布帖由用户本人发（用户决定 2026-10-03）。
 
 - [ ] 发布帖（Chief Delphi）中注明：PathPlanner 移植关系与 MIT 来源、Choreo 互操作定位、零上传承诺
 

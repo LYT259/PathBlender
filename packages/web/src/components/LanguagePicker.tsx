@@ -6,7 +6,7 @@ import './LanguagePicker.css';
 
 /**
  * The settings language control: a trigger plus a searchable listbox. The
- * search matches the target language's name in any of the 40 UI languages
+ * search matches the target language's name in any of the 43 UI languages
  * (language-search.ts), the result order is the registry's stable order, and
  * picking a row only reports through `onChange` — the panel's draft/save
  * semantics decide when it takes effect.
@@ -55,8 +55,11 @@ export function LanguagePicker({ value, onChange, labelledBy }: {
     if (!results.length) return;
     setActive((current) => {
       if (current === null) {
-        const anchor = step === 1 ? selectedIndex : results.length - 1;
-        return anchor >= 0 ? anchor : 0;
+        // The first arrow anchors on the current choice, whichever way it
+        // points; only when the choice is filtered out does Down start at the
+        // top and Up at the end (SelectControl's expand() keeps this contract).
+        if (selectedIndex >= 0) return selectedIndex;
+        return step === 1 ? 0 : results.length - 1;
       }
       return Math.min(results.length - 1, Math.max(0, current + step));
     });
@@ -78,7 +81,7 @@ export function LanguagePicker({ value, onChange, labelledBy }: {
 
   // On open: keep the popover inside the viewport — flip above the trigger
   // when only there is room, otherwise shrink the scrolling list by exactly
-  // the deficit — and bring the current choice into view (it can be 40 rows
+  // the deficit — and bring the current choice into view (it can be 43 rows
   // down). Runs once per open; query changes only shrink the list, never
   // grow it past the capped height, so the placement stays valid.
   useLayoutEffect(() => {
@@ -168,6 +171,7 @@ export function LanguagePicker({ value, onChange, labelledBy }: {
             {choice !== 'system' && LANG_META[choice].englishName !== label(choice) &&
               <small dir="ltr">{LANG_META[choice].englishName}</small>}
           </span>
+          {choice !== 'system' && <span className="language-picker-mark" aria-hidden="true">{LANG_META[choice].mark}</span>}
           <span className="language-picker-check">{choice === value && <Icon name="check" size={16} />}</span>
         </button>)}
       </div> : <div className="language-picker-empty" role="status">

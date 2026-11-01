@@ -32,7 +32,9 @@ if (typeof HTMLCanvasElement !== 'undefined') {
       set: () => true,
     },
   ) as unknown as CanvasRenderingContext2D;
-  HTMLCanvasElement.prototype.getContext = (() => ctxStub) as unknown as HTMLCanvasElement['getContext'];
+  // Only 2D is stubbed. Advertising a fake WebGL context makes the idle 3D
+  // prewarm fetch GLB files in jsdom, causing timing-dependent rejections.
+  HTMLCanvasElement.prototype.getContext = ((kind: string) => kind === '2d' ? ctxStub : null) as unknown as HTMLCanvasElement['getContext'];
 }
 
 // jsdom in vitest may not provide storage; use a plain map when absent.

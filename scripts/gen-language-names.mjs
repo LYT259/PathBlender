@@ -45,20 +45,44 @@ const OUT_TS = resolve(ROOT, 'packages/web/src/i18n/language-names.ts');
  * - rw/zh-hk "Igishinwa (HK)": CLDR rw composes "zh (HK)" when the base name
  *   is missing; recomposed from the attested base with CLDR's own
  *   "name (REGION)" pattern.
- * - rw/zh-hant "Igishinwa (Hant)": same composition, script subtag instead of
- *   a region — CLDR rw composes "zh (Hant)" here, so the fill keeps CLDR's
- *   own parenthetical on the attested base.
+ * - rw/zh-tw "Igishinwa (Taiwan)", rw/zh-mo "Igishinwa (Macau)": same
+ *   composition on the attested base (2026-10-11). CLDR rw carries no
+ *   territory names at all (its raw fallback is the bare region code, as in
+ *   the zh-hk fill), so the parentheticals use the English CLDR territory
+ *   names Taiwan / Macau.
  */
 const CURATED = {
-  rw: { zh: 'Igishinwa', nb: 'Ikinoruveji', 'zh-hk': 'Igishinwa (HK)', 'zh-hant': 'Igishinwa (Hant)' },
+  rw: {
+    zh: 'Igishinwa',
+    nb: 'Ikinoruveji',
+    'zh-hk': 'Igishinwa (HK)',
+    'zh-tw': 'Igishinwa (Taiwan)',
+    'zh-mo': 'Igishinwa (Macau)',
+  },
+};
+
+/**
+ * Hand-owned aliases folded in on top of the CLDR names (2026-10-11): CLDR
+ * supplies most native-script region names, but these guarantee the
+ * region-only and short-code queries — "Macau" for zh-mo, "Taiwan" for
+ * zh-tw, "US"/"UK" for the two English rows — always match, whatever the
+ * ICU build happened to carry. Han aliases get the same script folding as
+ * everything else (澳门 also indexes 澳門).
+ */
+const EXTRA_ALIASES = {
+  en: ['US', 'USA', 'American English'],
+  'en-GB': ['UK', 'GB', 'British English'],
+  'zh-tw': ['Taiwan', '台湾', '臺灣'],
+  'zh-mo': ['Macau', 'Macao', '澳门'],
+  'zh-hk': ['Hong Kong', '香港'],
 };
 
 async function registryCodes() {
   const source = await readFile(INDEX_TS, 'utf8');
   const block = source.match(/export const LANG_META[\s\S]*?\{\n([\s\S]*?)\n\};/);
   if (!block) throw new Error('LANG_META not found in src/i18n/index.tsx');
-  const rows = [...block[1].matchAll(/^\s{2}'?([\w-]+)'?:\s*\{ englishName: '([^']+)', endonym: '([^']+)' \},?\s*$/gm)];
-  if (rows.length < 40) throw new Error(`suspiciously short registry read: ${rows.length} codes`);
+  const rows = [...block[1].matchAll(/^\s{2}'?([\w-]+)'?:\s*\{ englishName: '([^']+)', endonym: '([^']+)', mark: '[^']+' \},?\s*$/gm)];
+  if (rows.length < 43) throw new Error(`suspiciously short registry read: ${rows.length} codes`);
   return rows.map(([, code, englishName, endonym]) => ({ code, englishName, endonym }));
 }
 
@@ -113,6 +137,7 @@ const matrix = new Map(registry.map(({ code: target, englishName, endonym }) => 
   }
   add(englishName);
   add(endonym);
+  for (const alias of EXTRA_ALIASES[target] ?? []) add(alias);
   return [target, names];
 }));
 
@@ -133,7 +158,8 @@ const file = `/**
  * other script, so a Traditional query matches a Simplified name and back.
  * Curated CLDR-hole fills: ${curatedNote}. Query-language order follows the
  * LANG_META registry; the registry's English sort name and endonym are folded
- * in (with their Han variants); exact duplicates dropped. The picker search
+ * in (with their Han variants), plus the hand-owned EXTRA_ALIASES region
+ * names and short codes (US/UK/Taiwan/Macau…); exact duplicates dropped. The picker search
  * (language-search.ts) adds only the language code on top at runtime — this
  * file is only names, so regenerating it never touches hand-owned data.
  */

@@ -13,6 +13,7 @@
 #   2. strip foreign xattrs, ad-hoc codesign, strict-verify (hard gate)
 #   3. regenerate PathBlender.app.tar.gz + .sig from the sealed bundle
 #   4. regenerate the dmg from the sealed bundle
+#   5. verify the app + mounted dmg carry the seal, icons and legal notices
 #
 # Usage: scripts/package-desktop-artifacts.sh <version> [options]
 #   --dmg required|best-effort   dmg failure aborts (CI) or warns (local:
@@ -57,13 +58,27 @@ esac
 APP="$BUNDLE/macos/PathBlender.app"
 [[ -d "$APP" ]] || { echo "package-desktop-artifacts.sh: bundle not found: $APP" >&2; exit 1; }
 
+verify_legal_notices() {
+  local app="$1" relative
+  for relative in LICENSE NOTICE.md licenses/FRCDesignApp-MIT.txt; do
+    [[ -f "$app/Contents/Resources/$relative" ]] || {
+      echo "package-desktop-artifacts.sh: missing legal notice: $app/Contents/Resources/$relative" >&2
+      return 1
+    }
+  done
+}
+verify_legal_notices "$APP"
+
 verify_architectures() {
   [[ "$TARGET" == universal-apple-darwin ]] || return 0
   local app="$1" executable
   executable=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")
-  lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/$executable" || {
-    echo "package-desktop-artifacts.sh: Universal bundle is missing an architecture" >&2; return 1
+  verify_arch() {
+    lipo "$app/Contents/MacOS/$executable" -verify_arch "$1" || {
+      echo "package-desktop-artifacts.sh: Universal bundle is missing $1" >&2; return 1
+    }
   }
+  verify_arch arm64 && verify_arch x86_64
 }
 verify_architectures "$APP"
 
@@ -135,9 +150,9 @@ fi
 
 # --- 5. Verify the dmg that will actually be downloaded ----------------------
 # The beta.22 release looked green because nothing ever OPENED the uploaded
-# image. Mount the finished dmg and hard-gate on the seal and the dark-mode
-# icon catalog before anyone can collect it (same checks the local install
-# gate runs on /Applications).
+# image. Mount the finished dmg and hard-gate on the seal, dark-mode icon
+# catalog and legal notices before anyone can collect it (same checks the
+# local install gate runs on /Applications).
 if [[ -f "$DMG" ]]; then
   MNT="$(mktemp -d)/pb-dmg-verify"
   if ! hdiutil attach -nobrowse -readonly -mountpoint "$MNT" "$DMG" >/dev/null 2>&1; then
@@ -151,6 +166,8 @@ if [[ -f "$DMG" ]]; then
   ICON_RC=$?
   verify_architectures "$MNT/PathBlender.app"
   ARCH_RC=$?
+  verify_legal_notices "$MNT/PathBlender.app"
+  LEGAL_RC=$?
   set -e
   hdiutil detach "$MNT" >/dev/null 2>&1 || true
   if (( SEAL_RC != 0 )); then
@@ -163,6 +180,10 @@ if [[ -f "$DMG" ]]; then
   fi
   if (( ARCH_RC != 0 )); then
     echo "package-desktop-artifacts.sh: dmg content is not Universal" >&2
+    exit 1
+  fi
+  if (( LEGAL_RC != 0 )); then
+    echo "package-desktop-artifacts.sh: dmg content is missing required legal notices" >&2
     exit 1
   fi
 fi

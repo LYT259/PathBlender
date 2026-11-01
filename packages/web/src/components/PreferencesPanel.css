@@ -8,7 +8,7 @@
 .preferences-nav button[aria-selected='true'] { background: var(--accent); color: var(--accent-fg); font-weight: 500; }
 .preferences-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg); }
 .preferences-content { flex: 1; min-height: 0; overflow: auto; padding: 28px 28px 20px; border-radius: 12px; }
-.preferences-content:focus { outline-offset: -3px; }
+:where(html.kbd-nav) .preferences-content:focus { outline-offset: -3px; }
 .preferences-heading { margin-bottom: 24px; }
 .preferences-heading h2 { font-size: 22px; font-weight: 650; line-height: 1.3; letter-spacing: -.025em; margin: 0 0 8px; }
 .preferences-heading p { font-size: 12px; color: var(--fg-dim); line-height: 1.6; margin: 0; }
@@ -24,7 +24,7 @@
 .preferences-theme-choice input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
 /* The overlay radio paints no ring of its own — the sibling preview carries
    the focus ring (focus-audit 2026-10-07: square ghost ring on the input). */
-.preferences-theme-choice input:focus-visible { outline: none; }
+:where(html.kbd-nav) .preferences-theme-choice input:focus-visible { outline: none; }
 .preferences-theme-choice > span { pointer-events: none; }
 .preferences-theme-preview { display: block; position: relative; width: 100%; height: 72px; overflow: hidden; border: 1px solid #c8c8cf; border-radius: 7px; background: #fff; }
 .preferences-theme-preview i { position: absolute; inset: 0 auto 0 0; width: 25%; background: #e8e8ed; border-right: 1px solid #d6d6dc; }
@@ -34,16 +34,19 @@
 .preferences-theme-preview.dark i, .preferences-theme-preview.dark b { background: #414148; border-color: #55555e; }
 .preferences-theme-preview.system { background: linear-gradient(90deg, #fff 50%, #232326 50%); }
 .preferences-theme-preview.system b { background: #a1a1aa; }
-.preferences-theme-choice input:checked + .preferences-theme-preview { outline: 2px solid var(--accent); outline-offset: 3px; }
+.preferences-theme-choice input:checked + .preferences-theme-preview { outline: 2px solid var(--accent-text); outline-offset: 3px; }
 .preferences-theme-choice input:checked ~ span:last-child { color: var(--fg); font-weight: 500; }
-.preferences-theme-choice input:focus-visible + .preferences-theme-preview { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+:where(html.kbd-nav) .preferences-theme-choice input:focus-visible + .preferences-theme-preview { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 .preferences-product { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 /* About header (user request 2026-10-07): the name stays left, the app icon
-   sits at the far right of the content row and runs larger than the old 48px. */
-.preferences-product-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
+   sits at the far right of the content row and runs larger than the old 48px.
+   The row is top-aligned so the name starts at the row top instead of
+   centering against the 72px icon (spacing fix 2026-10-16). */
+.preferences-product-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; width: 100%; }
+.preferences-product-text { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .preferences-product-icon { display: block; object-fit: contain; flex-shrink: 0; }
-.preferences-product-title > strong { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
-.preferences-product > span { font-size: 13px; color: var(--fg); }
+.preferences-product-text > strong { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+.preferences-product-text > span { font-size: 13px; color: var(--fg); }
 .preferences-product .btn { margin-top: 8px; }
 .preferences-copy-status { min-height: 18px; margin: 0; color: var(--fg-dim); font-size: 11px; }
 .preferences-history { margin-top: 22px; }
@@ -96,13 +99,19 @@
 
 /* App-icon previews use the same radio affordance as interface appearance. */
 .preferences-icon-appearance { margin-bottom: 24px; }
+.preferences-icon-subgroup { min-width: 0; margin: 0; padding: 0; border: 0; }
+.preferences-icon-subgroup + .preferences-icon-subgroup { margin-block-start: 20px; }
+.preferences-icon-subgroup legend { font-size: 12px; color: var(--fg-dim); font-weight: 400; }
+.preferences-icon-style-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* A neutral stage keeps both the white and black tile silhouettes visible. */
+.preferences-icon-subgroup .preferences-icon-preview { background: var(--hover); }
 .preferences-icon-preview { display: grid; place-items: center; position: relative; width: 100%; height: 80px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg-panel); }
 .preferences-icon-preview img { display: block; object-fit: contain; }
 .preferences-icon-pair { position: relative; width: 78px; height: 60px; }
 .preferences-icon-pair img { position: absolute; inset-block-start: 0; inset-inline-start: 0; }
 .preferences-icon-pair img:last-child { inset-block-start: 12px; inset-inline-start: 30px; }
-.preferences-theme-choice input:checked + .preferences-icon-preview { outline: 2px solid var(--accent); outline-offset: 3px; }
-.preferences-theme-choice input:focus-visible + .preferences-icon-preview { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+.preferences-theme-choice input:checked + .preferences-icon-preview { outline: 2px solid var(--accent-text); outline-offset: 3px; }
+:where(html.kbd-nav) .preferences-theme-choice input:focus-visible + .preferences-icon-preview { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 .preferences-icon-hint { margin: 12px 0 0; font-size: 12px; line-height: 1.65; color: var(--fg-dim); }
 
 .preferences-units-group { margin-bottom: 16px; }
@@ -117,7 +126,7 @@
 .preferences-mouse-custom-row + .preferences-mouse-custom-row { border-top: 1px solid var(--border); }
 .preferences-mouse-custom-row > span { color: var(--fg-dim); }
 .preferences-mouse-custom-select { max-width: 100%; width: 100%; min-height: 30px; padding: 3px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--btn-bg); color: var(--fg); font: inherit; font-size: 12px; }
-.preferences-mouse-custom-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:where(html.kbd-nav) .preferences-mouse-custom-select:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 .preferences-mouse-custom .preferences-setting-description { padding: 0; }
 .preferences-mouse-custom-reset { min-height: 30px; font-size: 12px; }
 .mouse-controls-diagram { position: relative; width: calc(100% - 32px); max-width: 400px; margin: 0 auto 12px; aspect-ratio: 2 / 1; }
@@ -129,7 +138,7 @@
 .mouse-wheel { fill: var(--seg-bg); stroke: var(--fg-dim); stroke-width: 1.2; }
 .mouse-wheel-grooves { fill: none; stroke: var(--fg-dim); stroke-width: 1; }
 .mouse-leaders { fill: none; stroke: var(--fg-dim); stroke-width: 1; }
-.mouse-anchors { fill: var(--accent); }
+.mouse-anchors { fill: var(--accent-text); }
 .mouse-callout { position: absolute; width: 29%; display: flex; flex-direction: column; gap: 5px; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 .mouse-callout span { color: var(--fg-dim); font-size: 11px; }
 .mouse-callout strong { color: var(--fg); font-weight: 500; }
@@ -140,7 +149,7 @@
 .preferences-mouse-details { border-top: 1px solid var(--border); padding: 0 16px; font-size: 12px; }
 .preferences-mouse-details summary { padding-block: 11px; color: var(--fg-dim); cursor: pointer; }
 .preferences-mouse-details summary:hover { color: var(--fg); }
-.preferences-mouse-details summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:where(html.kbd-nav) .preferences-mouse-details summary:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 .preferences-mouse-table { display: grid; padding-bottom: 12px; }
 .preferences-mouse-row { display: grid; grid-template-columns: minmax(90px, .8fr) minmax(0, 2fr); gap: 16px; padding-block: 8px; font-size: 12px; line-height: 1.5; }
 .preferences-mouse-row + .preferences-mouse-row { border-top: 1px solid var(--border); }
@@ -154,8 +163,11 @@
 .preferences-checkbox input::after { content: ''; position: absolute; width: 13px; height: 13px; top: 2px; left: 2px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px #0003; }
 .preferences-checkbox input:checked { background: var(--accent); }
 .preferences-checkbox input:checked::after { left: 13px; }
-.preferences-checkbox input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.preferences-update-check { margin: 0 16px 16px; padding-top: 14px; }
+:where(html.kbd-nav) .preferences-checkbox input:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 3px; }
+/* No top padding here: the setting row above already carries 14px of bottom
+   padding, and this block lost its border-top divider (7e55bcf) — extra
+   padding would just reopen the dead band between row and button. */
+.preferences-update-check { margin: 0 16px 16px; }
 .preferences-update-check .btn { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; }
 .preferences-update-check p:empty { display: none; }
 .preferences-update-check p { margin: 10px 0 0; color: var(--fg-dim); font-size: 12px; line-height: 1.6; }
@@ -166,4 +178,14 @@
 }
 .preferences-update-check .update-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-.mouse-scroll-arrows { fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.mouse-scroll-arrows { fill: none; stroke: var(--accent-text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Accent swatches (2026-10-17): the same radio affordance as the appearance
+   and icon groups — checked outline + label weight, never color alone. The
+   fill comes inline from the fixed base chip (AccentPicker), so the swatch
+   keeps a border for the light silver plate on light backgrounds. */
+/* Five options read best as a 2-column grid. */
+.preferences-accent-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.preferences-accent-swatch { display: block; width: 100%; height: 40px; border: 1px solid var(--border); border-radius: 7px; }
+.preferences-theme-choice input:checked + .preferences-accent-swatch { outline: 2px solid var(--accent-text); outline-offset: 3px; }
+:where(html.kbd-nav) .preferences-theme-choice input:focus-visible + .preferences-accent-swatch { outline: 3px solid var(--focus-ring); outline-offset: 3px; }

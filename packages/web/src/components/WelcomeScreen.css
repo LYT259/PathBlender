@@ -1,18 +1,19 @@
+/* Primary-card accents ride the interface accent (2026-10-17): the tokens
+   below carry blue's exact former values in blue mode, and red/silver take
+   over from the [data-accent] variant blocks in app.css — the brand icon
+   plates stay untouched above them. */
 .workspace-empty.start-screen {
-  --start-blue: #0a84ff;
+  --start-blue: var(--accent);
+  --start-blue-hover: var(--accent-hover);
+  --start-blue-pressed: var(--accent-pressed);
   --start-secondary-fg: #b4b4bd;
-  --start-blue-hover: #2994ff;
-  --start-blue-pressed: #0070df;
   justify-content: flex-start;
   padding: 24px 32px;
   background: var(--bg);
 }
 
 [data-theme='light'] .start-screen {
-  --start-blue: #007aff;
   --start-secondary-fg: #4b4b54;
-  --start-blue-hover: #006ee6;
-  --start-blue-pressed: #0062cc;
 }
 
 .start-content {
@@ -49,7 +50,7 @@
   line-height: 1.4;
   cursor: pointer;
 }
-.start-action:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 5px; }
+:where(html.kbd-nav) .start-action:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 5px; }
 .start-action:disabled { cursor: default; opacity: .6; }
 .start-action-title { min-width: 0; overflow-wrap: anywhere; }
 .start-icon { flex-shrink: 0; }
@@ -64,7 +65,7 @@
   border-radius: 14px;
   background: var(--bg-panel);
   box-shadow: 0 3px 12px rgb(0 0 0 / 5%);
-  color: var(--start-blue);
+  color: var(--accent-text);
   font-size: 16px;
   font-weight: 400;
   text-align: center;
@@ -79,7 +80,7 @@
   padding: 10px 11px;
   border-radius: 10px;
   background: var(--start-blue);
-  color: #fff;
+  color: var(--accent-fg);
 }
 .start-action-primary:hover:not(:disabled) .start-action-title { background: var(--start-blue-hover); }
 .start-action-primary:active:not(:disabled) .start-action-title { background: var(--start-blue-pressed); }
@@ -154,4 +155,4 @@
 .start-guide-link { padding: 6px 14px; border: 0; border-radius: 8px; background: transparent; color: var(--start-secondary-fg); font: inherit; font-size: 13px; cursor: pointer; }
 .start-guide-link:hover { color: var(--fg); }
 .start-guide-link:active { background: var(--hover); }
-.start-guide-link:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
+:where(html.kbd-nav) .start-guide-link:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }

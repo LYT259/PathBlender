@@ -60,7 +60,11 @@ describe('saveAutosave / loadAutosave', () => {
     expect(loadAutosave()).toBeNull();
   });
 
-  it('quota overflow never throws: it sheds libraries, then warns', () => {
+  it('quota overflow never throws: it sheds libraries, then warns', async () => {
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM('', { url: 'https://localhost/' });
+    vi.stubGlobal('localStorage', dom.window.localStorage);
+    vi.stubGlobal('Storage', dom.window.Storage);
     // A user robot with a route library, so "the smaller shape" is observable.
     const withLibrary: SessionTrajectory[] = [{
       ...robots()[0]!,
@@ -71,29 +75,32 @@ describe('saveAutosave / loadAutosave', () => {
       })),
     }];
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    // jsdom's localStorage owns its setItem (it shadows Storage.prototype), so
-    // the spy has to sit on the instance — a prototype spy here is a no-op,
-    // which is why the quota test this one replaces never actually fired.
     const real = localStorage.setItem.bind(localStorage);
+    const owner = Object.hasOwn(localStorage, 'setItem') ? localStorage : Storage.prototype;
     // Refuse the first shape only: the retry must be the library-stripped one.
     let refusals = 1;
-    vi.spyOn(localStorage, 'setItem').mockImplementation((k, v) => {
+    const setItem = vi.spyOn(owner, 'setItem').mockImplementation((k, v) => {
       if (refusals-- > 0) throw new DOMException('quota', 'QuotaExceededError');
       real(k, v);
     });
-    expect(() => saveAutosave(withLibrary, 'rebuilt-2026')).not.toThrow();
-    const stored = JSON.parse(localStorage.getItem('pb.autosave.v1')!) as { robots: Record<string, unknown>[] };
-    expect(stored.robots[0]!.samples).toBeDefined();
-    expect(stored.robots[0]!.routeOptions).toBeUndefined();
-    expect(warn).not.toHaveBeenCalled();
+    try {
+      expect(() => saveAutosave(withLibrary, 'rebuilt-2026')).not.toThrow();
+      const stored = JSON.parse(localStorage.getItem('pb.autosave.v1')!) as { robots: Record<string, unknown>[] };
+      expect(stored.robots[0]!.samples).toBeDefined();
+      expect(stored.robots[0]!.routeOptions).toBeUndefined();
+      expect(warn).not.toHaveBeenCalled();
 
-    // Nothing fits: the user hears about it instead of losing the session in
-    // silence — the exact failure that went unnoticed for three days.
-    refusals = 99;
-    expect(() => saveAutosave(withLibrary, 'rebuilt-2026')).not.toThrow();
-    expect(warn).toHaveBeenCalledTimes(1);
-    warn.mockRestore();
-    vi.restoreAllMocks();
+      // Nothing fits: the user hears about it instead of losing the session in
+      // silence — the exact failure that went unnoticed for three days.
+      refusals = 99;
+      expect(() => saveAutosave(withLibrary, 'rebuilt-2026')).not.toThrow();
+      expect(warn).toHaveBeenCalledTimes(1);
+    } finally {
+      setItem.mockRestore();
+      warn.mockRestore();
+      vi.unstubAllGlobals();
+      dom.window.close();
+    }
   });
 
   it('stores the compact autosave shape, not the shareable file shape', () => {

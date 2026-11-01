@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { createElement } from 'react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { en, type MessageKey } from '../src/i18n/en';
+import { enGb, enGbOverrides } from '../src/i18n/en-gb';
 import { ar } from '../src/i18n/ar';
 import { az } from '../src/i18n/az';
 import { bg } from '../src/i18n/bg';
@@ -43,25 +44,23 @@ import { tr } from '../src/i18n/tr';
 import { uk } from '../src/i18n/uk';
 import { vi } from '../src/i18n/vi';
 import { zh } from '../src/i18n/zh';
-import { zhHant } from '../src/i18n/zh-hant';
 import { zhHk, zhHkOverrides } from '../src/i18n/zh-hk';
+import { zhMo } from '../src/i18n/zh-mo';
 import { zhTw } from '../src/i18n/zh-tw';
 import { I18nProvider, isRtl, LANGUAGES, LANG_META, langLabel, langFromTags, type Lang } from '../src/i18n';
 
 /**
- * Every shipped dictionary — including zh-tw, which ships as the base under the
- * zh-hk override table but has had no picker row since the 2026-10-07
- * withdrawal (fifth batch pending). Adding a *selectable* language means
- * adding one row here (plus `DICTS`, a `LANG_META` row and a `langFromTags`
- * branch in `src/i18n/index.tsx`, and a menu table in `packages/desktop`);
- * these tests then hold it to the same bar as English. Each full dictionary is
- * typed `Record<MessageKey, string>`, so a missing key is a compile error too —
+ * Every shipped dictionary. Adding a *selectable* language means adding one
+ * row here (plus `DICTS`, a `LANG_META` row and a `langFromTags` branch in
+ * `src/i18n/index.tsx`, and a menu table in `packages/desktop`); these tests
+ * then hold it to the same bar as English. Each full dictionary is typed
+ * `Record<MessageKey, string>`, so a missing key is a compile error too —
  * the runtime checks below cover the blanks and the placeholders a type cannot.
  */
 const DICTS: Record<string, Record<string, string>> = {
-  en, ar, az, bg, bs, cs, da, de, el, es, fil, fr, he, hi, hr, hu, hy, id, it: itDict,
+  en, 'en-GB': enGb, ar, az, bg, bs, cs, da, de, el, es, fil, fr, he, hi, hr, hu, hy, id, it: itDict,
   ja, ko, mk, mr, ms, nb, nl, nn, pl, 'pt-BR': ptBR, ro, rw, sq, sr, sv, ta,
-  tr, uk, vi, zh, 'zh-hant': zhHant, 'zh-hk': zhHk, 'zh-tw': zhTw,
+  tr, uk, vi, zh, 'zh-hk': zhHk, 'zh-mo': zhMo, 'zh-tw': zhTw,
 };
 const CODES = Object.keys(DICTS) as (keyof typeof DICTS)[];
 const KEYS = Object.keys(en);
@@ -122,7 +121,7 @@ describe('i18n dictionaries', () => {
     'sequence.startGroupHub'],
     'da': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","robots.alliance","timeline.pause","about.version","robots.driveDifferential","robots.timing","prefs.channel.beta","sequence.start",
     'sequence.startGroupHub'],
-    'de': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","about.version","prefs.section.updates","prefs.channel.beta","sequence.start",
+    'de': ["accent.bronze", "vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","about.version","prefs.section.updates","prefs.channel.beta","sequence.start",
     'sequence.startGroupHub', 'sequence.startGroupTrench'],
     'el': ["prefs.channel.beta",
     'sequence.startGroupHub'],
@@ -130,8 +129,11 @@ describe('i18n dictionaries', () => {
     'sequence.startGroupHub'],
     'fil': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.file","menu.window","workspace.details","robots.collision","robots.timing","prefs.channel.stable","prefs.channel.beta",
     'sequence.startGroupHub'],
-    'fr': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","robots.title","robots.collision","robots.alliance","timeline.pause","about.version","prefs.unit.yd","prefs.channel.stable","sequence.count",
-    'sequence.startGroupHub', 'sequence.startGroupTrench'],
+    'fr': ["accent.bronze", "prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","workspace.details","robots.title","robots.collision","robots.alliance","timeline.pause","about.version","prefs.unit.yd","prefs.channel.stable","sequence.count",
+    'sequence.startGroupHub', 'sequence.startGroupTrench',
+    // French spells "monochrome" exactly like English (same Greek-derived
+    // word in both languages) — accepted loan, not a missed translation.
+    'prefs.iconStyle.monochrome'],
     'he': ["prefs.channel.stable","prefs.channel.beta",
     'sequence.startGroupHub'],
     'hi': ['sequence.startGroupHub'],
@@ -160,7 +162,7 @@ describe('i18n dictionaries', () => {
     'sequence.startGroupHub'],
     'pl': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","workspace.details","prefs.channel.stable","prefs.channel.beta","sequence.start",
     'sequence.startGroupHub'],
-    'pt-BR': ["prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.channel.beta", "sequence.startGroupHub"],
+    'pt-BR': ["accent.bronze", "prefs.mouse.onshape.wheel","prefs.mouse.solidworks.wheel","prefs.mouse.zoom","vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.channel.beta", "sequence.startGroupHub"],
     'ro': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","menu.zoom","prefs.section.general","workspace.details","prefs.channel.beta","sequence.start","field.style.schematic",
     'sequence.startGroupHub'],
     'rw': ["vc.top","vc.bottom","vc.front","vc.back","vc.left","vc.right","canvas.heatmap","canvas.overlays","prefs.channel.beta","actions.heatmapOn","field.style.rendered","prefs.channel.stable",
@@ -180,15 +182,16 @@ describe('i18n dictionaries', () => {
     'zh': ['sequence.startGroupHub',
     'sequence.startGroupTrench'],
     'zh-hk': ["sequence.startGroupHub","sequence.startGroupTrench"],
-    // zh-hant is a snapshot of zh-tw (its own picker row since 2026-10-10);
-    // zh-tw ships as the zh-hk base, still without a picker row.
-    'zh-hant': ['sequence.startGroupHub',
-    'sequence.startGroupTrench'],
+    'zh-mo': ["sequence.startGroupHub","sequence.startGroupTrench"],
     'zh-tw': ['sequence.startGroupHub',
     'sequence.startGroupTrench'],
-  } satisfies Record<Exclude<Lang, 'en'> | 'zh-tw', readonly MessageKey[]>;
+    // en-GB is English by construction (an 8-row override table over en), so
+    // the residue gate is meaningless for it and it is skipped below; its own
+    // suite ("English (United Kingdom) dictionary") pins the override shape.
+    'en-GB': [],
+  } satisfies Record<Exclude<Lang, 'en'>, readonly MessageKey[]>;
 
-  function englishResidue(code: Exclude<Lang, 'en'> | 'zh-tw', dictionary: Record<string, string>): string[] {
+  function englishResidue(code: Exclude<Lang, 'en'>, dictionary: Record<string, string>): string[] {
     const allowed: readonly string[] = KEEP_VERBATIM[code];
     return Object.entries(en)
       .filter(([key, source]) => !UNIVERSAL_VERBATIM.has(key as MessageKey) && !allowed.includes(key) && dictionary[key] === source)
@@ -197,7 +200,8 @@ describe('i18n dictionaries', () => {
 
   it('nothing is left sitting on the English text', () => {
     for (const code of CODES) {
-      if (code === 'en') continue;
+      // en-GB inherits en verbatim on purpose — its gate is the override suite.
+      if (code === 'en' || code === 'en-GB') continue;
       expect(englishResidue(code, DICTS[code]!), code).toEqual([]);
     }
   });
@@ -227,37 +231,34 @@ describe('language picker', () => {
   /**
    * Order comes from the registry's ASCII English sort key, not from a
    * collator — see the comment on LANGUAGES (report §7.2 v1.20). 'system' is a
-   * mode and stays pinned first; Chinese sorts first, so the two Chinese
-   * names head the list and the rest keep their own alphabetical order.
+   * mode and stays pinned first; Chinese sorts first, so the four Chinese
+   * names head the list and the rest keep their own alphabetical order. The
+   * two English rows sort UK before US ('United Kingdom' < 'United States').
    */
   it('offers the languages in a fixed alphabetical order after “system”', () => {
     expect([...LANGUAGES]).toEqual([
       'system',
       // English-name sort of the shipped registry — the stable, engine-
       // independent order the picker promises (2026-10-04, batch 3+4;
-      // 2026-10-07 dropped the zh-tw row).
-      'sq', 'ar', 'hy', 'az', 'bs', 'bg', 'zh', 'zh-hant', 'zh-hk', 'hr', 'cs',
-      'da', 'nl', 'en', 'fil', 'fr', 'de', 'el', 'he', 'hi', 'hu', 'id', 'it',
-      'ja', 'rw', 'ko', 'mk', 'ms', 'mr', 'nb', 'nn', 'pl', 'pt-BR', 'ro', 'sr',
-      'es', 'sv', 'ta', 'tr', 'uk', 'vi',
+      // 2026-10-11 region versions: zh-hk/zh-mo/zh-tw selectable, en-GB added).
+      'sq', 'ar', 'hy', 'az', 'bs', 'bg', 'zh', 'zh-hk', 'zh-mo', 'zh-tw', 'hr',
+      'cs', 'da', 'nl', 'en-GB', 'en', 'fil', 'fr', 'de', 'el', 'he', 'hi', 'hu',
+      'id', 'it', 'ja', 'rw', 'ko', 'mk', 'ms', 'mr', 'nb', 'nn', 'pl', 'pt-BR',
+      'ro', 'sr', 'es', 'sv', 'ta', 'tr', 'uk', 'vi',
     ]);
   });
 
   it('lists every selectable dictionary, and nothing the picker cannot honour', () => {
     for (const code of CODES) {
-      if (code === 'zh-tw') continue;
       expect(LANGUAGES).toContain(code);
     }
-    // zh-tw still ships as the zh-hk base but must not be selectable
-    // (withdrawn 2026-10-07, fifth batch pending).
-    expect(LANGUAGES).not.toContain('zh-tw');
-    expect(LANGUAGES).toHaveLength(CODES.length); // 41 selectable + the 'system' mode
+    expect(LANGUAGES).toHaveLength(CODES.length + 1); // 43 dictionaries + the 'system' mode
   });
 
 it('labels each language in its own language', () => {
     // Self-maintaining: every selectable code must render its own endonym
     // (no English fallthrough in the picker) — the shipped set order is
-    // pinned by the dedicated ordering test above. zh-tw has no registry row.
+    // pinned by the dedicated ordering test above.
     for (const code of LANGUAGES) {
       if (code === 'system') continue;
       const meta = LANG_META[code];
@@ -285,7 +286,7 @@ describe('system language detection', () => {
     expect(langFromTags(['fr-CA', 'en'])).toBe('fr');
     expect(langFromTags(['tr-TR'])).toBe('tr');
     expect(langFromTags(['zh-CN'])).toBe('zh');
-    expect(langFromTags(['en-GB'])).toBe('en');
+    expect(langFromTags(['en-GB'])).toBe('en-GB');
     expect(langFromTags(['pt-BR'])).toBe('pt-BR');
     expect(langFromTags(['he-IL'])).toBe('he');
     // Anything unsupported still lands on English rather than undefined.
@@ -400,24 +401,58 @@ describe('system language detection', () => {
     expect(langFromTags(['tl'])).toBe('fil');
   });
 
-  it('routes Traditional readers by region: HK/MO to Hong Kong, the rest to generic', () => {
-    // Report §7.2 v1.23 routed TW and a bare `zh-Hant` to zh-tw; the Taiwan
-    // picker row was withdrawn on 2026-10-07 (public-round decision, fifth
-    // batch pending). Since 2026-10-10 the region-neutral zh-hant row ships,
-    // so HK/MO keep the Hong Kong dictionary while TW and region-less Hant
-    // read the generic Traditional dictionary (zh-tw wording, no HK pins).
+  it('routes Traditional readers to their region dictionary: HK, Macau and Taiwan each read their own', () => {
+    // Region versions (2026-10-11): the three Traditional rows are selectable
+    // and each region tag reads its own dictionary. The region-neutral generic
+    // row (zh-hant) was withdrawn the same day — it was a byte-identical
+    // snapshot of the Taiwan dictionary, so bare `zh-Hant` tags land on zh-tw
+    // with identical wording.
     expect(langFromTags(['zh-HK'])).toBe('zh-hk');
     expect(langFromTags(['zh-Hant-HK'])).toBe('zh-hk');
-    expect(langFromTags(['zh-MO'])).toBe('zh-hk');
-    expect(langFromTags(['zh-Hant-MO'])).toBe('zh-hk');
-    expect(langFromTags(['zh-TW'])).toBe('zh-hant');
-    expect(langFromTags(['zh-Hant-TW'])).toBe('zh-hant');
-    expect(langFromTags(['zh-Hant'])).toBe('zh-hant');
+    expect(langFromTags(['zh-MO'])).toBe('zh-mo');
+    expect(langFromTags(['zh-Hant-MO'])).toBe('zh-mo');
+    expect(langFromTags(['zh-TW'])).toBe('zh-tw');
+    expect(langFromTags(['zh-Hant-TW'])).toBe('zh-tw');
+    expect(langFromTags(['zh-Hant'])).toBe('zh-tw');
     // Hans always wins over the region: a Simplified-Chrome install in Hong
     // Kong (`zh-Hans-HK`) must not open in Traditional.
     expect(langFromTags(['zh-Hans-HK'])).toBe('zh');
     expect(langFromTags(['zh-Hans-MO'])).toBe('zh');
-    expect(langFromTags(['en-GB', 'zh-HK'])).toBe('en');
+    expect(langFromTags(['en-GB', 'zh-HK'])).toBe('en-GB');
+  });
+
+  it('routes English tags to their region dictionary, script subtags included', () => {
+    // Only an explicit GB tag reads the UK dictionary — and a script subtag
+    // does not hide the region: macOS/Windows can send `en-Latn-GB`.
+    expect(langFromTags(['en-GB'])).toBe('en-GB');
+    expect(langFromTags(['en-Latn-GB'])).toBe('en-GB');
+    expect(langFromTags(['en-latn-gb'])).toBe('en-GB');
+    // Every other English region — and bare English — reads US English.
+    expect(langFromTags(['en-US'])).toBe('en');
+    expect(langFromTags(['en-AU'])).toBe('en');
+    expect(langFromTags(['en-Latn-US'])).toBe('en');
+    expect(langFromTags(['en'])).toBe('en');
+    expect(langFromTags([])).toBe('en');
+  });
+
+  it('matches region tags case-insensitively, extension subtags included', () => {
+    // Every region branch carries /i — casing must never be load-bearing
+    // (lowercase tags do arrive, e.g. from POSIX-style locale ids).
+    expect(langFromTags(['zh-hant'])).toBe('zh-tw');
+    expect(langFromTags(['zh-hk'])).toBe('zh-hk');
+    expect(langFromTags(['zh-mo'])).toBe('zh-mo');
+    expect(langFromTags(['zh-tw'])).toBe('zh-tw');
+    expect(langFromTags(['ZH-Hant-MO'])).toBe('zh-mo');
+    expect(langFromTags(['en-gb'])).toBe('en-GB');
+    // Variant and private-use subtags qualify the tag, not the region: an
+    // extended Hong Kong tag still reads the Hong Kong dictionary.
+    expect(langFromTags(['zh-Hant-HK-x-private'])).toBe('zh-hk');
+    expect(langFromTags(['zh-Hant-MO-x-private'])).toBe('zh-mo');
+    // en-GB-oed (Oxford-spelling variant) is British English all the same.
+    expect(langFromTags(['en-GB-oed'])).toBe('en-GB');
+    // A Traditional reader in an unlisted region follows the script, like
+    // bare zh-Hant: zh-Hant-CN lands on zh-tw, never on 简体.
+    expect(langFromTags(['zh-Hant-CN'])).toBe('zh-tw');
   });
 
   it('honours the browser preference order instead of scanning for a favourite', () => {
@@ -433,7 +468,7 @@ describe('RTL (Arabic and Hebrew)', () => {
     expect(isRtl('he')).toBe(true);
     expect(isRtl('ar')).toBe(true);
     for (const code of CODES) {
-      if (code === 'he' || code === 'ar' || code === 'zh-tw') continue;
+      if (code === 'he' || code === 'ar') continue;
       expect(isRtl(code), code).toBe(false);
     }
   });
@@ -450,18 +485,65 @@ describe('RTL (Arabic and Hebrew)', () => {
     expect(document.documentElement.getAttribute('lang')).toBe('en');
   });
 
-  it('migrates a stored zh-tw choice to the generic Traditional dictionary, in place', () => {
-    // The Taiwan row was withdrawn (2026-10-07, fifth batch pending). A user
-    // who had picked it must relaunch into Traditional Chinese — not a blank
-    // dictionary, not English, and not a silent 'system' that starts
-    // following the OS language instead of the choice they made. Since the
-    // generic zh-hant row ships (2026-10-10) it is the migration target: it
-    // carries the same wording the Taiwan row had.
-    localStorage.setItem('pb.lang', 'zh-tw');
+  it('migrates a stored zh-hant choice to the Taiwan dictionary, in place', () => {
+    // The region-neutral generic Traditional row was withdrawn (2026-10-11) —
+    // its dictionary was a byte-identical snapshot of zh-tw. A user who had
+    // picked it must relaunch into Traditional Chinese with identical wording:
+    // not a blank dictionary, not English, and not a silent 'system' that
+    // starts following the OS language instead of the choice they made. The
+    // stored value is rewritten so the migration runs once.
+    localStorage.setItem('pb.lang', 'zh-hant');
     render(createElement(I18nProvider, null, createElement('div')));
-    expect(document.documentElement.getAttribute('lang')).toBe('zh-hant');
-    expect(localStorage.getItem('pb.lang')).toBe('zh-hant');
+    expect(document.documentElement.getAttribute('lang')).toBe('zh-tw');
+    expect(localStorage.getItem('pb.lang')).toBe('zh-tw');
     localStorage.clear();
+  });
+});
+
+describe('stored choice (savedChoice)', () => {
+  afterEach(() => {
+    localStorage.clear();
+    // Drop the own-property mock so the Navigator prototype getter shows again.
+    delete (navigator as { languages?: readonly string[] }).languages;
+  });
+
+  const renderWithChoice = () => render(createElement(I18nProvider, null, createElement('div')));
+  const langAttr = () => document.documentElement.getAttribute('lang');
+  const mockSystemLang = (tags: string[]) =>
+    Object.defineProperty(navigator, 'languages', { configurable: true, get: () => tags });
+
+  it('keeps a valid stored code, the region rows included', () => {
+    // The region codes are ordinary Lang values in storage — a user who picked
+    // 繁體中文（香港） or UK English must relaunch into exactly that row.
+    for (const code of ['zh-hk', 'zh-mo', 'zh-tw', 'en-GB']) {
+      localStorage.setItem('pb.lang', code);
+      renderWithChoice();
+      expect(langAttr(), code).toBe(code);
+      localStorage.clear();
+    }
+  });
+
+  it('follows the OS again when nothing is stored', () => {
+    mockSystemLang(['fr']);
+    renderWithChoice();
+    expect(langAttr()).toBe('fr');
+  });
+
+  it('treats an unreadable stored value as no choice at all', () => {
+    // Junk can only arrive from a hand-edited or version-skewed store; the
+    // contract is a read-time fallback to 'system'. 'toString' and
+    // 'constructor' are the sharp cases: inherited Object.prototype keys must
+    // not masquerade as language codes (the `includes` comment on
+    // savedChoice) — and the empty string is not a code either.
+    mockSystemLang(['fr']);
+    for (const junk of ['klingon', '', 'toString', 'constructor']) {
+      localStorage.setItem('pb.lang', junk);
+      renderWithChoice();
+      // 'fr' can only come from systemLang() — a junk value kept as the
+      // language would paint itself into the attribute instead.
+      expect(langAttr(), JSON.stringify(junk)).toBe('fr');
+      localStorage.clear();
+    }
   });
 });
 
@@ -484,7 +566,8 @@ describe('Hong Kong dictionary (override table)', () => {
       );
     }
     // Growing past this needs a real HK-vs-TW term behind it, not a preference.
-    expect(overrideKeys.length).toBeLessThan(40);
+    // (40 rows today: 28 機械人 keys, the unit spellings, 網絡/網上/詳細資料.)
+    expect(overrideKeys.length).toBeLessThan(50);
   });
 
   /**
@@ -495,7 +578,7 @@ describe('Hong Kong dictionary (override table)', () => {
    * divergences by name (these three are what a Hong Kong reader notices first)
    * and keep a floor under the total. GHPaths sees 32 of its 412 keys differ
    * because that UI carries media vocabulary (影片/軟體); ours is a field tool,
-   * so 7 today with the floor at 5.
+   * so 40 today with the floor far below.
    */
   it('pins the named HK/TW divergences', () => {
     // The bumper title dropped its unit (2026-10-05), so the 米/公尺 split
@@ -508,6 +591,72 @@ describe('Hong Kong dictionary (override table)', () => {
     expect(zhTw['robots.selectPrompt' as MessageKey]).toContain('詳細資訊');
     expect(zhHk['robots.selectPrompt']).toContain('詳細資料');
     expect(overrideKeys.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('every zh-tw 機器人 string has a 機械人 override — inheritance cannot leak the TW term', () => {
+    // HK government/competition/press standard is 機械人; TW writes 機器人.
+    // zh-hk inherits zh-tw verbatim outside its override table, so a new
+    // 機器人 string added to zh-tw.ts without a matching row below would
+    // silently ship the Taiwan term to Hong Kong readers. Pin the pairing.
+    for (const key of KEYS) {
+      if (!zhTw[key as keyof typeof zhTw].includes('機器人')) continue;
+      expect(zhHkOverrides[key as keyof typeof zhHkOverrides], `${key} (zh-tw has 機器人)`).toBeDefined();
+      expect(zhHkOverrides[key as keyof typeof zhHkOverrides], key).toContain('機械人');
+    }
+  });
+});
+
+describe('English (United Kingdom) dictionary (override table)', () => {
+  const overrideKeys = Object.keys(enGbOverrides);
+
+  it('inherits everything except its own rows', () => {
+    // Same contract as zh-hk over zh-tw: US and UK English differ on exactly
+    // these keys, so a wording change in en reaches the UK without a second edit.
+    const differing = KEYS.filter((k) => enGb[k as MessageKey] !== en[k as MessageKey]);
+    expect(differing.sort()).toEqual([...overrideKeys].sort());
+  });
+
+  it('every override is a real message key that changes the US wording', () => {
+    // A row that restates en — or names a key that does not exist — is dead
+    // weight that reads like a difference (the key half is also pinned at
+    // type level: enGbOverrides is Partial<Record<MessageKey, string>>).
+    for (const key of overrideKeys) {
+      expect(KEYS, key).toContain(key);
+      expect(enGbOverrides[key as keyof typeof enGbOverrides]).not.toBe(en[key as MessageKey]);
+    }
+    // The whole point of the row is that it is nearly all US English — if the
+    // table grows into a second dictionary, the residue gate comes back.
+    expect(overrideKeys.length).toBeLessThan(20);
+  });
+
+  it('pins the named US/UK divergences', () => {
+    expect(enGb['prefs.unit.m']).toContain('Metres');
+    expect(en['prefs.unit.m']).toContain('Meters');
+    expect(enGb['prefs.colorblind']).toContain('Colour');
+    expect(en['prefs.colorblind']).toContain('Color');
+    expect(enGb['menu.minimize']).toBe('Minimise');
+    expect(en['menu.minimize']).toBe('Minimize');
+  });
+});
+
+describe('picker language marks', () => {
+  it('every registry row carries a non-empty mark', () => {
+    // The mark is the short script/region cue the picker renders beside the
+    // check icon (LanguagePicker.tsx); an empty one would paint a blank chip.
+    for (const [code, meta] of Object.entries(LANG_META)) {
+      expect(meta.mark.trim(), code).not.toBe('');
+    }
+  });
+
+  it('pins the script/region cue for the multi-row families', () => {
+    // All three Traditional rows share 繁 — the mark names the script, not the
+    // region (the endonym already names the region); both English rows are EN.
+    expect(LANG_META['zh-hk'].mark).toBe('繁');
+    expect(LANG_META['zh-mo'].mark).toBe('繁');
+    expect(LANG_META['zh-tw'].mark).toBe('繁');
+    expect(LANG_META.zh.mark).toBe('简');
+    expect(LANG_META.en.mark).toBe('EN');
+    expect(LANG_META['en-GB'].mark).toBe('EN');
   });
 });
 

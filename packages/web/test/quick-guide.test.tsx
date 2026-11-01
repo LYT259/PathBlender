@@ -80,9 +80,10 @@ describe('guide dialog body follows the script family', () => {
   });
 
   it('Traditional Chinese reads the zh-Hant body', () => {
-    // zh-tw is the pre-withdrawal choice (migrates to zh-hant on load);
-    // zh-hant is the selectable generic row — both must read the Hant body.
-    for (const code of ['zh-tw', 'zh-hant', 'zh-hk']) {
+    // All three Traditional region rows read the Hant body; a stored zh-hant
+    // choice (the generic row withdrawn 2026-10-11) migrates to zh-tw on load
+    // (pinned in i18n.test.ts) and so lands on the same body.
+    for (const code of ['zh-tw', 'zh-mo', 'zh-hk', 'zh-hant']) {
       localStorage.setItem('pb.lang', code);
       mount();
       expect(screen.getByText('聯盟切換與左右鏡像'), code).toBeInTheDocument();

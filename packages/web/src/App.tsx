@@ -49,20 +49,21 @@ import { APP_VERSION } from './version-info';
 import { fieldImageFor } from './field-images';
 import { FIELD3D_MODELS } from './field3d-models';
 import { FieldCanvas, type FieldCanvasHandle } from './components/FieldCanvas';
+import type { RobotLabelMemory } from './robot-label-layout';
 import type { FieldCanvas3DHandle } from './components/FieldCanvas3D';
 const FieldCanvas3D = lazy(() => import('./components/FieldCanvas3D').then((module) => ({ default: module.FieldCanvas3D })));
 import { Timeline } from './components/Timeline';
 import { SequenceTimelineComposer } from './components/SequenceTimelineComposer';
 import { RobotList, RobotInspector } from './components/RobotList';
 import { applySequenceSegments, sequenceViewFor, type AutoSequenceSegment } from './auto-sequence-state';
-import { clipsFor, sameClipLayout } from './sequence-timeline-clips';
+import { clipsFor, sameClipLayout, segmentsFromClips, type TimelineClip } from './sequence-timeline-clips';
 import { applyUploadedProfile } from './robot-profile-ui';
 import { checkSequenceJoins } from '@pathblender/core';
 import { ConflictPanel } from './components/ConflictPanel';
 import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
 import { playbackEnd, usePlaybackRange } from './playback-range';
-import { I18nProvider, useI18n } from './i18n';
+import { I18nProvider, isRtl, useI18n } from './i18n';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
@@ -70,16 +71,16 @@ import { listenPrefs, readColorblind } from './pref-sync';
 import { effectiveReverseScroll, useMouseControls, useReverseScrollZoom } from './mouse-controls';
 import { setReverseScrollZoom } from './zoom';
 import { VIEWER_ONLY } from './viewer';
+import { StarLink, ProjectSupport } from './components/ProjectSupport';
+import { SHOW_PROJECT_SUPPORT, GITHUB_URL } from './project-support';
+import { FirstCheckGuide } from './components/FirstCheckGuide';
+import { createFirstCheck, delayPracticeB, isFirstCheckSession, PRACTICE_B_ID, PRACTICE_FIELD } from './first-check';
 
 const SESSION_EXT = '.pb';
 // Sessions saved before the 2026-10-03 rename carry the legacy double
 // extension; they must keep opening (naming-is-contract: files on disk).
 const LEGACY_SESSION_EXT = '.ghpb.json';
 const isSessionFileName = (name: string) => name.endsWith(SESSION_EXT) || name.endsWith(LEGACY_SESSION_EXT);
-// The project's public home — the repo is private today; the link simply
-// starts resolving once it goes public.
-const GITHUB_URL = 'https://github.com/LYT259/pathblender';
-
 // The field + variant survive refreshes (a custom field is not persisted —
 // its definition lives only in the session payload).
 const FIELD_PREF_KEY = 'pb.field';
@@ -163,6 +164,20 @@ function AppBody() {
   // while editing one team, hovering another team's placed leg previews that
   // team's route. Undefined = the robot being edited (library hover/keys).
   const [previewRobotId, setPreviewRobotId] = useState<string | undefined>(undefined);
+  // Live drag what-if (user 2026-10-11): the composer's in-lane drag
+  // candidate as (robotId, candidate arrangement). Render-only rehearsal —
+  // injected downstream of the committed store, so history, autosave and
+  // exports never see it; release commits through the normal onChange path.
+  const [dragPreview, setDragPreview] = useState<{ robotId: string; clips: TimelineClip[] } | null>(null);
+  // The composer already dedupes emissions; this guard keeps an identical
+  // re-report from re-rendering the field anyway.
+  const onComposerDragPreview = useCallback((robotId: string, clips: TimelineClip[] | null) => {
+    setDragPreview((prev) => {
+      if (clips === null) return prev === null ? prev : null;
+      if (prev && prev.robotId === robotId && sameClipLayout(prev.clips, clips)) return prev;
+      return { robotId, clips };
+    });
+  }, []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Bumped by Edit ▸ Rename Selected Team — RobotList opens the inline editor.
   const [renameSignal, setRenameSignal] = useState(0);
@@ -189,6 +204,17 @@ function AppBody() {
     if (!IS_DESKTOP) { setShowPrefs(true); return; }
     void import('@tauri-apps/api/core')
       .then(({ invoke }) => invoke('open_preferences'))
+      .catch(() => setShowPrefs(true));
+  }
+  /** Menu "Check for Updates" (user request 2026-10-16): land the settings
+   * window on its Updates section with the check already running — visible
+   * "checking…" feedback at once (the old one-shot menu check showed nothing
+   * until the network answered), and a found update becomes the explicit
+   * two-step install flow instead of a silent download+relaunch. */
+  function openPreferencesOnUpdates() {
+    if (!IS_DESKTOP) { setShowPrefs(true); return; }
+    void import('@tauri-apps/api/core')
+      .then(({ invoke }) => invoke('open_preferences', { updates: true }))
       .catch(() => setShowPrefs(true));
   }
   /** External links: the desktop shell owns the default browser, the web opens a tab. */
@@ -223,6 +249,9 @@ function AppBody() {
   const sessionInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<FieldCanvasHandle>(null);
   const canvas3DRef = useRef<FieldCanvas3DHandle>(null);
+  // 2D card memory lives here because the 2D canvas unmounts while 3D is
+  // shown; the 3D overlay keeps its own (it stays mounted, merely inactive).
+  const labelMemory2D = useRef(new Map<string, RobotLabelMemory>());
   const baseField = fieldId === CUSTOM_FIELD_ID && customField ? customField : fieldById(fieldId);
   // The 2D artwork, its calibration, the tag overlay and the 3D beacons all
   // follow the selected field construction.
@@ -233,6 +262,18 @@ function AppBody() {
   // Keep source paths in their original blue-side frame. Both renderers,
   // analysis, inspectors and session exports consume the same alliance view.
   const robots = useMemo(() => robotsForAlliance(sourceRobots, alliance, field), [sourceRobots, alliance, field]);
+  // Live drag what-if injection (user 2026-10-11): the candidate replaces
+  // the dragged robot's arrangement DOWNSTREAM of the committed store on
+  // purpose — autosave, session save, exports, the timeline and the robot
+  // list all keep reading `robots`, while rendering and checks
+  // (seasonRobots → visible → conflicts/bounds/dimPathIds/canvases) follow
+  // `liveRobots`. Nothing persists mid-drag.
+  const liveRobots = useMemo(() => {
+    if (!dragPreview) return robots;
+    return robots.map((robot) => robot.trajectory.id === dragPreview.robotId
+      ? applySequenceSegments(robot, segmentsFromClips(dragPreview.clips))
+      : robot);
+  }, [robots, dragPreview]);
   const hasRobots = robots.length > 0;
   // Keyboard landing (2026-10-06 keyboard pass): the welcome button that
   // loaded the example is unmounted by the very action it triggered, which
@@ -262,8 +303,8 @@ function AppBody() {
   // robots are re-resolved against the selected field's season, so checks
   // and rendering follow the season switch; file-provided sizes always win.
   const seasonRobots = useMemo(
-    () => robots.map((r) => withSeasonGeometry(r, field.year)),
-    [robots, field],
+    () => liveRobots.map((r) => withSeasonGeometry(r, field.year)),
+    [liveRobots, field],
   );
   // 3D exists only where an official model does (2022+). Model-less seasons
   // (2018–2020) and custom fields offer no 3D at all — the hand-built
@@ -336,7 +377,9 @@ function AppBody() {
   // first-leg gate, applied to paths that are already on the field
   // (imported files, restored sessions). A route preview grays only while
   // the picker would gate it too (target arrangement empty), so the field
-  // never disagrees with the row being hovered.
+  // never disagrees with the row being hovered. `visible` is the alliance
+  // VIEW (red-frame under red), so the field goes along and the predicate
+  // flips red samples back to blue — one verdict for both views.
   const dimPathIds = useMemo(() => {
     if (previewSource) {
       const target = previewRobotId
@@ -346,9 +389,9 @@ function AppBody() {
         ? new Set([previewSource.trajectory.id])
         : new Set<string>();
     }
-    return dimmedPathRobotIds(visible, field.startZone);
+    return dimmedPathRobotIds(visible, field.startZone, field);
   }, [previewSource, previewRobotId, sourceRobots, selectedId, visible, field]);
-  useEffect(() => { setPreviewRouteId(null); setPreviewRobotId(undefined); }, [composerOpen, selectedId]);
+  useEffect(() => { setPreviewRouteId(null); setPreviewRobotId(undefined); setDragPreview(null); }, [composerOpen, selectedId]);
   // One transport end for BOTH modes (user 2026-10-07): editing used to
   // force the full auto period; the playback-range choice now governs
   // inside the composer too, with a synced selector in its control bar.
@@ -965,10 +1008,12 @@ function AppBody() {
     canvasRef.current?.exportGif((ok) => flash(tr(ok ? 'toast.gifSaved' : 'toast.gifFailed'), ok ? 'ok' : 'error'));
   }, [view3D, flash, tr]);
 
-  // Native "Check for Updates…" and channel switches. The Rust shell owns
-  // the channel→feed mapping (check_update); feed unreachable (offline, or
-  // no release assets yet) reports 'failed' → the honest toast, not a fake
-  // "up to date". Install + relaunch are one hop: the user asked for it.
+  // Channel-switch checks (the menu's "Check for Updates" no longer routes
+  // here — it opens the settings window's Updates section instead, see
+  // openPreferencesOnUpdates). The Rust shell owns the channel→feed mapping
+  // (check_update); feed unreachable (offline, or no release assets yet)
+  // reports 'failed' → the honest toast, not a fake "up to date". Install +
+  // relaunch are one hop: the user asked for it.
   const checkForUpdates = useCallback(
     (ch: UpdateChannel = updateChannel) => {
       if (!IS_DESKTOP) return;
@@ -1054,6 +1099,7 @@ function AppBody() {
   // the labels, so the shell needs no language tables of its own).
 
   const hasExample = robots.some(isExampleRobot);
+  const hasFirstCheck = fieldId === CUSTOM_FIELD_ID && isFirstCheckSession(sourceRobots);
 
   // Play detection for the tour (plan §3): needs hasExample, so it lives
   // here rather than with the tour hook — deps arrays evaluate eagerly.
@@ -1109,6 +1155,33 @@ function AppBody() {
     } finally {
       if (request === exampleRequest.current) setExampleLoading(false);
     }
+  };
+  const startFirstCheck = () => {
+    exampleRequest.current += 1;
+    setExampleLoading(false);
+    playback.setPlaying(false);
+    const practice = withColorblindPalette(createFirstCheck(), colorblindRef.current);
+    setScene({ robots: practice, alliance: 'blue', fieldId: CUSTOM_FIELD_ID,
+      customField: PRACTICE_FIELD, customImageUrl: undefined, fieldStyle: 'schematic',
+      drafts: {}, composerOpen: false });
+    importedFileStoreRef.current.clear();
+    settingsFilesRef.current.clear();
+    pathTextsRef.current.clear();
+    pendingProfilesRef.current = [];
+    setSelectedId(practice[0]!.trajectory.id);
+    setInspectorMode('checks');
+    setView3D(false);
+    setToleranceS(0);
+    setErrors([]);
+    setT(0);
+  };
+  const exitFirstCheck = () => {
+    playback.setPlaying(false);
+    setScene({ robots: [], fieldId: initialFieldPref.id, fieldVariant: initialFieldPref.variant,
+      fieldStyle: initialFieldPref.style, customField: undefined, customImageUrl: undefined,
+      drafts: {}, composerOpen: false });
+    setSelectedId(null);
+    setT(0);
   };
   const exitExample = () => {
     // Ending the example always lands on the welcome page (user 2026-10-04:
@@ -1184,6 +1257,9 @@ function AppBody() {
           conflicts,
           bounds,
           appVersion: APP_VERSION,
+          secondsLabel: tr('sequence.seconds'),
+          moreLabel: (count) => tr('sequence.moreActions', { n: count }),
+          rtl: isRtl(lang),
           onProgress: (stage) => flash(
             tr(stage === 'recording' ? 'toast.pkgRecording' : stage === 'rendering' ? 'toast.pkgRendering' : 'toast.pkgSaving'),
             'ok',
@@ -1326,7 +1402,7 @@ function AppBody() {
     'range-paths': () => setPlaybackRange('paths'),
     'jump-first-issue': jumpFirstIssue,
     preferences: openPreferences,
-    'check-update': () => void checkForUpdates(),
+    'check-update': openPreferencesOnUpdates,
     'open-guide': () => setShowGuide(true),
     'open-shortcuts': () => setShowHelp(true),
     // Tour entry (plan §3): opens the example when none is running and
@@ -1430,7 +1506,7 @@ function AppBody() {
           <button className="tool-btn square" data-session-history="undo" title={tr('workspace.undo')} aria-label={tr('workspace.undo')} disabled={!canUndo} onClick={undoSession}><Icon name="undo" /></button>
           <button className="tool-btn square" data-session-history="redo" title={tr('workspace.redo')} aria-label={tr('workspace.redo')} disabled={!canRedo} onClick={redoSession}><Icon name="redo" /></button>
         </div>}
-        {hasRobots && <a className="tool-btn square toolbar-github" href={GITHUB_URL} target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub" onClick={openGithub}><Icon name="github" size={18} /></a>}
+        {hasRobots && (SHOW_PROJECT_SUPPORT ? <StarLink className="tool-btn toolbar-github" /> : <a className="tool-btn square toolbar-github" href={GITHUB_URL} target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub" onClick={openGithub}><Icon name="github" size={18} /></a>)}
         <span className="toolbar-spacer" data-tauri-drag-region="" />
         {/* Save moved to the File menu (2026-10-06): the menu bar is the
             complete entry point, so the workspace keeps only controls that
@@ -1443,11 +1519,18 @@ function AppBody() {
       </header>
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
-        <main className={`app-body workspace-body ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
+        <main className={`app-body workspace-body ${hasFirstCheck ? 'is-first-check' : ''} ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
           {leftOpen && <RobotList teamOrder={teamOrder} robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={openSequenceFor} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} header={
-            hasExample && !tour.dismissed ? <OnboardingTasks done={tour.done} expanded={tour.expanded} onToggle={tour.toggle} onDismiss={tour.dismiss} /> : undefined
+            hasExample && !tour.dismissed ? <><OnboardingTasks done={tour.done} expanded={tour.expanded} onToggle={tour.toggle} onDismiss={tour.dismiss} />{Object.values(tour.done).every(Boolean) && <ProjectSupport dismissible />}</> : undefined
           } />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
+            {hasFirstCheck && <FirstCheckGuide conflict={conflicts[0]}
+              clear={sourceRobots.every((r) => r.visible && !hasEmptyArrangement(r)) && conflicts.length === 0 && bounds.length === 0}
+              delayed={(sourceRobots.find((r) => r.trajectory.id === PRACTICE_B_ID)?.startDelayS ?? 0) > 0}
+              onPlay={() => { setT(0); playback.setPlaying(true); }}
+              onLocate={(issue) => { setInspectorMode('checks'); jumpToIssue(issue.closestT, [issue.aId, issue.bId]); }}
+              onDelay={() => { playback.setPlaying(false); setComposerOpen(false); setRobots(delayPracticeB); setT(0); }}
+              onRestart={startFirstCheck} onExit={exitFirstCheck} />}
             {hasExample && <div className="example-notice"><strong>{tr('welcome.exampleBadge')}</strong><span>{tr('welcome.exampleNotice')}</span><button className="btn small" onClick={exitExample}>{tr('welcome.exitExample')}</button></div>}
             <div className="canvas-slot">
               {/* The import page stays clean: the field picker, its construction
@@ -1495,7 +1578,7 @@ function AppBody() {
                     above now guarantees. */}
                 <button className="tool-btn canvas-recenter" aria-label={tr('canvas.fit')} title={tr('canvas.fit')} aria-keyshortcuts="0" onClick={resetView}><Icon name="recenter" size={17} /></button>
               </div>}
-              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={() => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} onOpenGuide={() => setShowGuide(true)} /> : <>
+              {!hasRobots ? <WelcomeScreen onImport={openImport} onImportFolder={() => folderInputRef.current?.click()} onOpenSession={() => sessionInputRef.current?.click()} onTryExample={() => void tryExample()} exampleLoading={exampleLoading} onOpenGuide={() => setShowGuide(true)} onFirstCheck={startFirstCheck} /> : <>
                 {/* Parked 3D: mounted at the first 3D entry — or earlier,
                     prewarmed hidden once robots exist (see prewarm3D above) —
                     then hidden (not unmounted) while 2D shows: scene, models
@@ -1511,7 +1594,7 @@ function AppBody() {
                     <FieldCanvas3D active={view3D} showTrail={showTrail} showHeatmap={showHeatmap} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} dimPathIds={dimPathIds} />
                   </Suspense>
                 </div>}
-                {!view3D && <FieldCanvas ref={canvasRef} showTrail={showTrail} showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} dimPathIds={dimPathIds} />}
+                {!view3D && <FieldCanvas ref={canvasRef} showTrail={showTrail} showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} dimPathIds={dimPathIds} labelMemory={labelMemory2D.current} />}
               </>}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span>{/* A pure indicator, not a control — no ring, no click (user 2026-10-07). */}
@@ -1528,7 +1611,7 @@ function AppBody() {
         </main>
         {/* Playback spans the full workspace, below both side panels. */}
 {hasRobots && !composerOpen && <footer className="app-footer"><Timeline teamOrder={teamOrder} composeAction={<button ref={composeButtonRef} className="btn small" aria-keyshortcuts="e" onClick={() => { const id = (selectedRobot ?? robots[0])?.trajectory.id; if (id) openSequenceFor(id); }}>{tr('sequence.arrange')}</button>} robots={robots} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
-        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} startZone={field.startZone} startRegions={field.startRegions} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={(routeId, robotId) => { setPreviewRouteId(routeId); setPreviewRobotId(routeId ? robotId : undefined); }} joins={sequenceJoins} playback={playback} playbackEndS={playbackEndS} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} onJump={jumpToSeam} />}
+        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} startZone={field.startZone} startRegions={field.startRegions} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={(routeId, robotId) => { setPreviewRouteId(routeId); setPreviewRobotId(routeId ? robotId : undefined); }} onDragPreview={onComposerDragPreview} joins={sequenceJoins} playback={playback} playbackEndS={playbackEndS} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} onJump={jumpToSeam} />}
 
       {cfOpen && <CustomFieldPanel
         open

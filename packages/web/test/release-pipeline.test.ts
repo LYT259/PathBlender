@@ -33,11 +33,59 @@ describe('dmg artifact path contract', () => {
   });
 });
 
+describe('third-party legal notices', () => {
+  it('ships the project notices and FRC Designs MIT license as desktop resources', () => {
+    const config = JSON.parse(readFileSync(resolve(ROOT, 'packages/desktop/src-tauri/tauri.conf.json'), 'utf8'));
+    expect(config.bundle.resources).toMatchObject({
+      '../../../LICENSE': 'LICENSE',
+      '../../../NOTICE.md': 'NOTICE.md',
+      '../../../licenses/FRCDesignApp-MIT.txt': 'licenses/FRCDesignApp-MIT.txt',
+    });
+  });
+
+  it('copies the same legal files into the web distribution after Vite empties it', () => {
+    const pkg = JSON.parse(readFileSync(resolve(ROOT, 'packages/web/package.json'), 'utf8'));
+    const copyScript = readFileSync(resolve(ROOT, 'scripts/copy-legal-files.mjs'), 'utf8');
+    expect(pkg.scripts.build).toContain('vite build && node ../../scripts/copy-legal-files.mjs');
+    for (const file of ['LICENSE', 'NOTICE.md', 'licenses']) expect(copyScript).toContain(`'${file}'`);
+  });
+
+  it('keeps the upstream copyright and permission notice with the MK5i assets', () => {
+    const notice = readFileSync(resolve(ROOT, 'NOTICE.md'), 'utf8');
+    const license = readFileSync(resolve(ROOT, 'licenses/FRCDesignApp-MIT.txt'), 'utf8');
+    expect(notice).toContain('version V235, with Kraken X60 motors');
+    expect(notice).toContain('packages/web/public/models/mk5i-module.glb');
+    expect(license).toContain('Copyright (c) 2026 FRCDesign.org');
+    expect(license).toContain('Permission is hereby granted, free of charge');
+  });
+
+  it('separates the repository license from the Onshape educational-use evidence', () => {
+    const notice = readFileSync(resolve(ROOT, 'NOTICE.md'), 'utf8');
+    const cad = readFileSync(resolve(ROOT, 'scripts/cad/README.md'), 'utf8');
+    expect(notice).not.toContain('MK5i swerve module** (MIT)');
+    expect(notice).toContain('The FRCDesignApp GitHub repository is MIT-licensed.');
+    expect(notice).toContain("this is the project's interpretation, not an itemized confirmation");
+    expect(notice).toContain('the reply expressly leaves their licensing to them');
+    expect(cad).toContain('screenshot displays 2026-10-09, timezone unverified');
+    expect(cad).toContain('does not separately confirm public-repository distribution, GLB conversion,');
+    expect(cad).not.toContain("which covers this free FRC strategy tool's use case");
+  });
+
+  it('records SDS permission only for its CAD-derived visualization assets', () => {
+    const notice = readFileSync(resolve(ROOT, 'NOTICE.md'), 'utf8');
+    expect(notice).toContain('SDS MK5i CAD-derived visualization assets are used and distributed with PathBlender with express permission from Swerve Drive Specialties.');
+    expect(notice).toContain('does not relicense these assets under Apache-2.0, MIT, CC0, or any other standard open-source license');
+    expect(notice).toContain('does not cover the Kraken X60 geometry or the maintainer-built frame assemblies');
+  });
+});
+
 describe('shipped-artifact verification gates', () => {
   it('builds and verifies Universal Mac binaries before collecting the version-matched image', () => {
     expect(workflow).toContain('npx tauri build --target universal-apple-darwin --bundles app');
     expect(workflow).toContain('target/universal-apple-darwin/release/bundle');
-    expect(script).toContain('lipo -verify_arch arm64 x86_64');
+    expect(script).toContain('verify_arch arm64');
+    expect(script).toContain('verify_arch x86_64');
+    expect(script).toContain('lipo "$app/Contents/MacOS/$executable" -verify_arch "$1"');
     expect(script).toContain('verify_architectures "$MNT/PathBlender.app"');
   });
 
@@ -50,6 +98,16 @@ describe('shipped-artifact verification gates', () => {
     expect(workflow).toContain('needs: [build-macos, build-windows, build-linux]');
     expect(workflow).toContain('node scripts/prepare-release-artifacts.mjs');
   });
+  it('installs locked Node dependencies before composing release notes in the publish job', () => {
+    const publish = workflow.slice(workflow.indexOf('  publish:'));
+    const setupNode = publish.indexOf('actions/setup-node@v4');
+    const install = publish.indexOf('run: npm ci');
+    const compose = publish.indexOf('name: Compose user-facing release notes');
+    expect(setupNode).toBeGreaterThan(-1);
+    expect(install).toBeGreaterThan(setupNode);
+    expect(compose).toBeGreaterThan(install);
+  });
+
   it('the finished dmg is mounted and its content seal-checked before staging', () => {
     expect(script).toContain('hdiutil attach');
     expect(script).toMatch(/codesign --verify --deep --strict "\$MNT\/PathBlender\.app"/);
@@ -59,7 +117,37 @@ describe('shipped-artifact verification gates', () => {
     expect(script).toContain('Assets.car');
   });
 
+  it('the app and mounted dmg must carry the legal notices', () => {
+    expect(script).toContain('verify_legal_notices "$APP"');
+    expect(script).toContain('verify_legal_notices "$MNT/PathBlender.app"');
+    expect(script).toContain('licenses/FRCDesignApp-MIT.txt');
+  });
+
   it('the updater archive is regenerated from the sealed bundle (never tauri’s pre-seal wrap)', () => {
     expect(script).toContain('rm -f "$UPDATER" "$UPDATER.sig"');
+  });
+});
+
+describe('Windows smoke installation contract', () => {
+  it('removes registry path quotes before joining the installed executable path', () => {
+    const smoke = readFileSync(resolve(ROOT, '.github/workflows/windows-smoke.yml'), 'utf8');
+    const normalize = smoke.indexOf(String.raw`$installDir = $installDir.Trim(`);
+    const join = smoke.indexOf('Join-Path $installDir "pathblender-desktop.exe"');
+    expect(normalize).toBeGreaterThan(-1);
+    expect(join).toBeGreaterThan(normalize);
+    expect(smoke).toContain('Get-Process -Name "pathblender-desktop"');
+    expect(smoke).toContain('pathblender-desktop.exe not found at $exe');
+  });
+});
+
+describe('FIRST copyright disclaimers', () => {
+  it('carries both required English disclaimers in the packaged notice and every README', () => {
+    const trademark = 'FIRST®, FIRST® Robotics Competition, and FIRST® Tech Challenge, are registered trademarks of FIRST® (www.firstinspires.org) which is not overseeing, involved with, or responsible for this activity, product, or service.';
+    const copyright = '©2025 For Inspiration and Recognition of Science and Technology (FIRST). Used by special permission. All rights reserved. FIRST is not overseeing, involved with, or responsible for this activity, product, or service.';
+    for (const file of ['NOTICE.md', 'README.md', 'README.zh-CN.md', 'README.zh-Hant.md', 'README.es.md', 'README.fr.md', 'README.he.md', 'README.pt-BR.md', 'README.tr.md']) {
+      const text = readFileSync(resolve(ROOT, file), 'utf8');
+      expect(text, `${file}: trademark disclaimer`).toContain(trademark);
+      expect(text, `${file}: copyright disclaimer`).toContain(copyright);
+    }
   });
 });

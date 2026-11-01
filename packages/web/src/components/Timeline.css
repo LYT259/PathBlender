@@ -59,8 +59,8 @@
 }
 .timeline-scrubber::-webkit-slider-runnable-track { height: 2px; background: var(--border); border: 0; }
 .timeline-scrubber::-moz-range-track { height: 2px; background: var(--border); border: 0; }
-.timeline-scrubber::-webkit-slider-thumb { -webkit-appearance: none; box-sizing: border-box; width: 14px; height: 14px; margin-top: -6px; border: 2px solid var(--bg-panel); border-radius: 50%; background: var(--accent); }
-.timeline-scrubber::-moz-range-thumb { box-sizing: border-box; width: 14px; height: 14px; border: 2px solid var(--bg-panel); border-radius: 50%; background: var(--accent); }
+.timeline-scrubber::-webkit-slider-thumb { -webkit-appearance: none; box-sizing: border-box; width: 14px; height: 14px; margin-top: -6px; border: 2px solid var(--bg-panel); border-radius: 50%; background: var(--accent-text); }
+.timeline-scrubber::-moz-range-thumb { box-sizing: border-box; width: 14px; height: 14px; border: 2px solid var(--bg-panel); border-radius: 50%; background: var(--accent-text); }
 .timeline-rows { display: flex; flex-direction: column; gap: 2px; }
 .timeline-row { min-height: 29px; align-items: center; border-radius: 5px; }
 .timeline-row.is-selected { background: var(--accent-dim); }
@@ -79,23 +79,23 @@
 .timeline-activity { position: absolute; top: 7px; height: 12px; min-width: 2px; opacity: .4; border-radius: 3px; }
 .timeline-event { position: absolute; top: 8px; width: 9px; height: 9px; border: 1px solid var(--bg-panel); border-radius: 2px; padding: 0; background: var(--fg); transform: translateX(-50%) rotate(45deg); cursor: pointer; z-index: 2; }
 .timeline-playhead-plane { position: absolute; top: 0; bottom: 0; left: calc(var(--timeline-label-width) + var(--timeline-column-gap)); right: var(--timeline-end-inset); pointer-events: none; z-index: 2; }
-.timeline-playhead { position: absolute; top: 0; bottom: 0; width: 1px; transform: translateX(-.5px); background: var(--accent); }
-.timeline-workspace button:focus-visible, .timeline-scrubber:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.timeline-playhead { position: absolute; top: 0; bottom: 0; width: 1px; transform: translateX(-.5px); background: var(--accent-text); }
+:where(html.kbd-nav) .timeline-workspace button:focus-visible, :where(html.kbd-nav) .timeline-scrubber:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 /* Selecting is by ROW — the label sits at the front of the robot's whole
    strip, so its focus ring wraps the entire row from the label to the 20 s
    end instead of the label alone (user 2026-10-07). Event dots ring the row
    the same way; neither paints a ring of its own. */
-.timeline-row:has(.timeline-robot:focus-visible),
-.timeline-row:has(.timeline-event:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-.timeline-row .timeline-robot:focus-visible, .timeline-row .timeline-event:focus-visible { outline: none; }
+:where(html.kbd-nav) .timeline-row:has(.timeline-robot:focus-visible),
+:where(html.kbd-nav) .timeline-row:has(.timeline-event:focus-visible) { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+:where(html.kbd-nav) .timeline-row .timeline-robot:focus-visible, :where(html.kbd-nav) .timeline-row .timeline-event:focus-visible { outline: none; }
 /* Speed pills sit shoulder to shoulder — an outside ring slides under the
    next pill's background, so draw it inside (focus-audit 2026-10-07). */
-.timeline-speeds button:focus-visible { outline-offset: -2px; }
+:where(html.kbd-nav) .timeline-speeds button:focus-visible { outline-offset: -2px; }
 /* The scrubber's ring must read as ONE strip covering the ruler numbers
    0–20 and the track below them, not a thin band under the digits
    (user 2026-10-07): the ruler carries the ring, the input paints none. */
-.timeline-axis .timeline-ruler:has(.timeline-scrubber:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
-.timeline-scrubber:focus-visible { outline: none; }
+:where(html.kbd-nav) .timeline-axis .timeline-ruler:has(.timeline-scrubber:focus-visible) { outline: 2px solid var(--accent-text); outline-offset: 2px; border-radius: 8px; }
+:where(html.kbd-nav) .timeline-scrubber:focus-visible { outline: none; }
 
 @media (max-width: 780px) {
   .timeline.timeline-workspace { padding: 10px 12px 12px; --timeline-label-width: 112px; --timeline-column-gap: 10px; }
@@ -108,4 +108,4 @@
 }
 
 .timeline-range { max-width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--border); border-radius: 7px; color: var(--fg); background: var(--btn-bg); font: inherit; font-size: 11px; cursor: pointer; }
-.timeline-range:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:where(html.kbd-nav) .timeline-range:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }

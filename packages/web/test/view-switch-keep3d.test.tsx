@@ -99,11 +99,14 @@ describe('3D home view = ViewCube top–front edge', () => {
     expect(r).toBeCloseTo(CAM_HOME_R, 9);
   });
   it('points 45° over the front face, square to it — the cube edge direction', () => {
-    // Azimuth 0: directly over the front face (+Z), no sideways drift.
+    // Azimuth π: directly over the front face, which is −Z since the home
+    // moved for blue-left (2026-10-16; the cube's "front" label moved with
+    // it, so home is still the top–front edge). No sideways drift.
     expect(CAM_HOME[0]).toBe(0);
-    expect(Math.atan2(CAM_HOME[0], CAM_HOME[2])).toBe(0);
+    expect(Math.atan2(CAM_HOME[0], CAM_HOME[2])).toBe(Math.PI);
+    expect(CAM_HOME[2]).toBeLessThan(0);
     // Equal up/front shares: the top–front edge is exactly 45° elevation.
-    expect(CAM_HOME[1]).toBeCloseTo(CAM_HOME[2], 12);
+    expect(CAM_HOME[1]).toBeCloseTo(Math.abs(CAM_HOME[2]), 12);
     expect(Math.acos(Math.min(1, CAM_HOME[1] / r))).toBeCloseTo(Math.PI / 4, 9);
   });
 });

@@ -4,7 +4,7 @@
 > 本表让全部随包字典的术语保持一致——各份字典已各自取舍，没有一张表就会各说各话。
 > **规矩：新术语先补本表，再往字典里写。** 表里没定的词不要由某一份字典单独决定。
 
-字典位置：`packages/web/src/i18n/*.ts`（`en.ts` 是键源与源文案；`zh-hk.ts` 是覆盖表不是完整字典——见第 6 节）。共 41 份字典文件、40 种可选界面语言（第三、四批 2026-10-04 落地）。`zh-tw.ts` 自 2026-10-07 起不再出现在语言选择器（撤下，计划归第五批恢复），但仍作为 `zh-hk` 的底表随包发布，本表的 zh-tw 列继续约束这份底表。
+字典位置：`packages/web/src/i18n/*.ts`（`en.ts` 是键源与源文案；`zh-hk.ts`、`zh-mo.ts`、`en-gb.ts` 是覆盖表不是完整字典——见第 6 节）。共 43 份字典文件、43 种可选界面语言（第三、四批 2026-10-04 落地；地区版本改造 2026-10-11 落地：繁體中文分香港/澳门/台湾三行，English 分 United States / United Kingdom 两行）。本表的 zh-tw 列约束台湾字典——它同时是港澳两份覆盖表的底表。
 完整性/占位符/漏翻三道门禁在 `packages/web/test/i18n.test.ts`。
 
 ## 1. 核心术语对照
@@ -58,23 +58,29 @@
 - 省略号统一用 `…`（U+2026），不用三个句点。
 - 插值保持朴素 `{name}` 替换，不做复数形态（西/法/土复数形态简单，可接受）。
 
-## 6. 港台分工（`zh-hk` 是覆盖表，不是第二份字典）
+## 6. 地区变体是覆盖表，不是整份字典（zh-hk / zh-mo / en-gb）
 
-`packages/web/src/i18n/zh-hk.ts` 只导出 `zhHkOverrides`，运行时 `{ ...zhTw, ...zhHkOverrides }` 合成。**规矩**：两岸共读同一写法的键一律不开覆盖——两份完整繁體必然随文案迭代互相漂移，而本工具的文案面差异本来就小。`i18n.test.ts` 的 `inherits everything except its own rows` 把"两边只允许在这些键上不同"钉成测试，加一个没有理由的覆盖键会直接红。
+繁體中文是一条三段继承链：`zh-tw.ts` 是全量底表（`scripts/gen-zh-hant.mjs` 生成，OpenCC 簡→繁 + FRC 術語表——术语校正改 TERMS 后重新生成，勿手改）；`zh-hk.ts` 只导出 `zhHkOverrides`，运行时 `{ ...zhTw, ...zhHkOverrides }` 合成；`zh-mo.ts` 只导出 `zhMoOverrides`（当前为空表），运行时 `{ ...zhHk, ...zhMoOverrides }` 合成——分层与 CLDR parentLocales（zh-Hant-MO → zh-Hant-HK）一致，台湾措辞的改进自动流到港澳。English 同理：`en-gb.ts` 的 `enGbOverrides`（8 键）覆盖在 `en` 上。**规矩**：跨区域共读同一写法的键一律不开覆盖——多份完整字典必然随文案迭代互相漂移，而本工具的文案面差异本来就小。`i18n.test.ts` 的 `inherits everything except its own rows` 把"两边只允许在这些键上不同"钉成测试，加一个没有理由的覆盖键会直接红；澳门行的空表是刻意的，不是遗漏——没有澳门出处（政府/报纸/教材）的键不进 `zhMoOverrides`。
 
-当前覆盖（7 键）与理由：
+当前 `zh-hk` 覆盖（40 键）与理由：
 
 | 键 | zh-tw | zh-hk | 为什么 |
 |---|---|---|---|
-| `robots.bumper`、`robots.profileEntry`、`customField.margin`、`customField.length`、`customField.width` | 公尺 | **米** | 米是国际单位名，港澳教科书与政府文件都用；`公尺` 是台湾说法（生成器 `scripts/gen-zh-hant.mjs` 的 TERMS 专门把 米→公尺） |
+| `robots.profileEntry`、`customField.margin`、`customField.length`、`customField.width`、`prefs.unit.m` | 公尺 | **米** | 米是国际单位名，港澳教科书与政府文件都用；`公尺` 是台湾说法（生成器 `scripts/gen-zh-hant.mjs` 的 TERMS 专门把 米→公尺） |
+| `prefs.unit.cm` | 公分 | **厘米** | HK 教育署课程标准是 厘米；TW 用 公分 |
+| `prefs.unit.ft`、`prefs.unit.in`、`prefs.unit.ftin` | 英尺／英吋 | **呎／吋** | 香港海关度量衡用法是 呎/吋；TW 写 英尺/英吋 |
 | `updates.failed` | 網路 | **網絡** | TERMS 里 `網絡→網路` 就是台式改写，HK 保留 網絡 |
 | `robots.selectPrompt` | 詳細資訊 | **詳細資料** | HK 界面（Microsoft zh-HK）用 詳細資料，TW 用 詳細資訊 |
+| `guide.fullOnline` | 線上 | **網上** | HK 政府用法是 網上（GovHK 網上服務）；TW 用 線上 |
+| 28 个含「機器人／台」的键（`tour.*`、`welcome.*`、`workspace.*`、`checks.*`、`robots.*`、`library.*`、`timeline.empty`、`canvas.*`、`actions.*`、`help.*` 等） | 機器人／台 | **機械人／部** | HK 政府/赛事/媒体标准是 機械人，量词用 部（一台→一部，{n} 台→{n} 部）；zh-tw 新增含 機器人 的文案必须在 zh-hk 同步补行 |
 
-**澳门读 `zh-hk`**，不单开 locale（「区域就近回退」判定）：`langFromTags()` 把 `zh-HK`/`zh-MO`/`zh-Hant-HK`/`zh-Hant-MO` 都指到这里；`zh-Hans-HK`/`zh-Hans-MO` 仍走简体（Hans 压过地区——HK、澳门的 Chrome 常报 `zh-Hans-HK`，不写这条会把简体用户丢進繁體）。2026-10-07 起 `zh-TW` 与裸 `zh-Hant`（无地区）也指到 `zh-hk`——台湾入口撤下（计划归第五批恢复）后，`zh-hk` 是唯一随包可选的繁體字典。
+`en-gb` 覆盖（8 键）：`tour.task.mirror.hint`（centreline）、`prefs.mouse.defaultConstrained`（behaviour）、`prefs.mouse.custom.editor`（Customise）、`prefs.unit.m`/`prefs.unit.cm`（Metres/Centimetres）、`prefs.colorblind`（Colour-blind）、`import.unrecognized`（unrecognised）、`menu.minimize`（Minimise）——遵循 Apple/Microsoft en-GB 消费者拼写惯例（-ise、-our、centre-/metre）；文件格式名、品牌名、占位符与标点与 `en` 逐字节保持一致。
+
+**`langFromTags()` 按地区分派三份繁體字典**：`zh-HK`/`zh-Hant-HK` → `zh-hk`，`zh-MO`/`zh-Hant-MO` → `zh-mo`，`zh-TW`/`zh-Hant-TW` 与裸 `zh-Hant`（无地区）→ `zh-tw`；`zh-Hans-HK`/`zh-Hans-MO` 仍走简体（Hans 压过地区——HK、澳门的 Chrome 常报 `zh-Hans-HK`，不写这条会把简体用户丢進繁體）。英文只认显式 `en-GB` 标签进 UK 字典，其余 `en-*`（`en-US`/`en-AU`/`en-CA`…）一律读 US 字典。
 
 **门禁**：只比"差异条数 > 0"不够——有人删掉几条覆盖，那条断言还是绿的。所以 `i18n.test.ts` 另钉三条**具名分歧**（公尺↔米、網路↔網絡、詳細資訊↔詳細資料）+ 覆盖条数下限 5，并保留"两边只允许在覆盖表那几条上不同"。**加覆盖键时同步补一条具名断言。**
 
-**为什么不做成"共享层 + 两个分区层"**（GHPaths 的三层结构）：本项目 `zh-tw.ts` 是手写包、不是 OpenCC 输出，台港一致的书面词本来就直接写在这份底里，分区差异只剩 7 条，再拆一层共享包只多一次跳转；等覆盖表长到几十条（接近 GHPaths 的 32/412）再考虑改结构。附带印证：GHPaths 实测 `cn→hk` 字形转换**只给字形不给词**（照样输出 默認/導出/文件/在線），这正说明本项目 `scripts/gen-zh-hant.mjs` 为什么必须带一张 TERMS 表（默認→預設、導入→匯入、文件→檔案……）——同一形态，我们早已如此。
+**为什么是"全量底表 + 覆盖表链"而不是多份整包**（对照 GHPaths 的三层结构）：`zh-tw.ts` 本身就是 OpenCC+TERMS 的生成产物，台港澳一致的书面词直接写在底表里，分叉键集中在 `zh-hk` 的 40 条与 `zh-mo` 的空表；再拆一层独立共享包只多一次跳转，而覆盖表链已经让台湾的措辞改动自动到达港澳。等 `zh-hk` 覆盖表长到近百条再评估是否改结构。附带印证：GHPaths 实测 `cn→hk` 字形转换**只给字形不给词**（照样输出 默認/導出/文件/在線），这正说明本项目 `scripts/gen-zh-hant.mjs` 为什么必须带一张 TERMS 表（默認→預設、導入→匯入、文件→檔案……）——同一形态，我们早已如此。
 
 **已核过但故意不动的候选差异**（缺可靠依据，等港方使用者点名再补）：
 
@@ -84,10 +90,10 @@
 
 ## 7. 语言列表
 
-注册表在 `packages/web/src/i18n/index.tsx` 的 `LANG_META`：每语言一行 `{ englishName（排序键，纯 ASCII）, endonym（显示名） }`。
+注册表在 `packages/web/src/i18n/index.tsx` 的 `LANG_META`：每语言一行 `{ englishName（排序键，纯 ASCII）, endonym（显示名）, mark（选择器行右的短文字标识：简/繁/EN/あ/한…，不用旗帜） }`。
 显示用自称，**排序用英文键**，「跟随系统」钉顶不参与排序；不用 `Intl.Collator`（V8 与 WebKit 对 CJK 的排序表版本不一致，会让开发服务器与桌面壳排出不同顺序）。
-新增语言 = 加一行 `LANG_META` + 一份 `Record<MessageKey, string>` 字典（同区域变体走第 6 节的覆盖表，不复制整份）+ `langFromTags()` 一条分支 + 桌面 `lib.rs` 一张菜单表（`i18n.test.ts` 会逐个断言，漏菜单表就红）。
-当前有 41 个界面语言码，连同「跟随系统」共 42 个选项；精确顺序以 `LANGUAGES` 注册表与 `i18n.test.ts` 的排序断言为准。早期十五个选项的列表是历史快照，不作当前范围。
+新增语言 = 加一行 `LANG_META` + 一份 `Record<MessageKey, string>` 字典（同区域变体走第 6 节的覆盖表，不复制整份）+ `langFromTags()` 一条分支。桌面原生菜单自 2026-10-06 起改为 spec-driven：标签随 web 字典经 `set_menu` 下推，Rust 侧无按语言菜单表（`i18n.test.ts` 钉住这一方向）。
+当前有 43 个界面语言码，连同「跟随系统」共 44 个选项；精确顺序以 `LANGUAGES` 注册表与 `i18n.test.ts` 的排序断言为准。早期十五个选项的列表是历史快照，不作当前范围。
 
 
 ## 8. rw / hy 的术语复核（2026-10-07）

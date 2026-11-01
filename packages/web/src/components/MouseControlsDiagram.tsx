@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
-import type { IconAppearanceMode } from '../app-icon';
-import dayIcon from '../assets/app-icon-day.png';
-import nightIcon from '../assets/app-icon-night.png';
+import { ICON_STYLE_ARTWORK, type IconAppearanceMode, type IconStyle } from '../app-icon';
 import { useI18n } from '../i18n';
 import { resolveMouseAction, type CustomMouseMap, type MouseControlsScheme } from '../mouse-controls';
 
 type MouseCallout = { button: 'left' | 'right' | 'middle' | 'wheel'; action: 'rotate' | 'constrained' | 'pan' | 'zoom' | 'roll' };
 
 /** Flat mouse illustration; leader lines remain physically left/right in RTL. */
-export function MouseControlsDiagram({ scheme, iconMode = 'system', constrained = false, custom }: { scheme: MouseControlsScheme; iconMode?: IconAppearanceMode; constrained?: boolean; custom?: CustomMouseMap }) {
+export function MouseControlsDiagram({ scheme, iconMode = 'system', iconStyle = 'classic', constrained = false, custom }: { scheme: MouseControlsScheme; iconMode?: IconAppearanceMode; iconStyle?: IconStyle; constrained?: boolean; custom?: CustomMouseMap }) {
   const { t } = useI18n();
   const [systemDark, setSystemDark] = useState(() => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true);
   useEffect(() => {
@@ -38,6 +36,9 @@ export function MouseControlsDiagram({ scheme, iconMode = 'system', constrained 
   };
   const anchors = { left: [215, 60], right: [265, 60], middle: [240, 70.5] };
   const darkIcon = iconMode === 'dark' || (iconMode === 'system' && systemDark);
+  // The pad the mouse drags around is the app icon itself, so it mirrors the
+  // icon preference (mode + style), not the interface theme.
+  const artwork = ICON_STYLE_ARTWORK[iconStyle];
   return <figure className="mouse-controls-diagram" aria-label={t('prefs.mouse.table')}>
     <svg className="mouse-controls-drawing" viewBox="0 0 480 240" aria-hidden="true" focusable="false">
       <path className="mouse-shell" d="M240 18 C207 18 186 41 184 76 L181 157 C180 198 203 222 240 222 C277 222 300 198 299 157 L296 76 C294 41 273 18 240 18Z" />
@@ -49,7 +50,7 @@ export function MouseControlsDiagram({ scheme, iconMode = 'system', constrained 
         {button !== 'wheel' && <circle className="mouse-anchors" cx={anchors[button][0]} cy={anchors[button][1]} r="3" />}
       </g>)}
       <path className="mouse-scroll-arrows" d="M237 60l3-3 3 3 M237 81l3 3 3-3" />
-      <image href={darkIcon ? nightIcon : dayIcon} x="221" y="145" width="38" height="38" />
+      <image href={darkIcon ? artwork.dark : artwork.light} x="221" y="145" width="38" height="38" />
     </svg>
     {buttons.map(({ button, action }) => <div key={button} className={`mouse-callout mouse-callout-${button}`}>
       <span>{t(`prefs.mouse.btn.${button}`)}</span>

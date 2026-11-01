@@ -11,10 +11,35 @@ happens in the tool that owns the path. An in-app **quick guide** ships
 with the app (Help menu → Quick guide, or the link on the welcome screen)
 and reads offline.
 
+## Try it without files
+
+From the welcome screen, choose **Try your first path check**. It opens
+three original synthetic routes (A, B and C) on a practice field. These are
+teaching data, not a real team's autonomous programs or official field geometry.
+
+1. Choose **Play the routes** to see the robots move on a shared clock.
+2. Choose **Show the conflict**. The playhead jumps to A and B's overlap;
+   the field and checks panel show the actual collision calculation.
+3. Choose **Start B two seconds later**. The session timing changes and
+   the checks recalculate. The original route samples are unchanged.
+4. Choose **Replay the changed plan**. In the unmodified exercise all
+   three robots remain visible and the check finds no collisions or
+   out-of-bounds paths. This result describes these teaching data; it is
+   not a guarantee about a real robot run.
+
+You can **Hide the guide** and explore freely, **Restart this exercise**, or
+**End practice** to return to the welcome screen. Undo/redo and session save/open
+use the same workflow as your own paths (saving requires the desktop app).
+The existing **Try an example** entry opens the separate route-library example.
+
+If the exercise helped, [Star PathBlender on GitHub](https://github.com/LYT259/pathblender).
+For a problem, [open an issue](https://github.com/LYT259/pathblender/issues) —
+you do not have to share your private route files.
+
 ## Your first alliance path check
 
 Seven steps from zero to a finished check. No files yet? Every step can be
-practised first on the built-in **Try the example** session.
+practised first on the built-in **Try an example** session.
 
 ### 1. Collect each team's files
 
@@ -168,12 +193,14 @@ rest of the alliance.
 - **Keyboard shortcuts**: press `?` anywhere (Help menu → Keyboard
   shortcuts);
 - **Appearance & languages**: light/dark/follow-system in Preferences
-  (⌘, on desktop); the UI ships in 40 languages — English, 简体中文,
-  繁體中文（中國香港）, Français, Español, Deutsch,
+  (⌘, on desktop); the UI ships in 43 languages — English (United States),
+  English (United Kingdom), 简体中文, 繁體中文（香港）, 繁體中文（澳門）,
+  繁體中文（台灣）, Français, Español, Deutsch,
   Italiano, Português (Brasil), Nederlands, Polski, Čeština, Türkçe,
   Ελληνικά, עברית, العربية, हिन्दी, 日本語, 한국어 among them — the full
-  list is in the language menu, and the app follows your system language
-  until you pick one;
+  list is in the language menu, where every row carries a short text mark
+  on the right (简 / 繁 / EN / あ / 한 …) instead of a flag, and the app
+  follows your system language until you pick one;
 - **Updates** (desktop): menu **PathBlender → Check for Updates…**;
   Preferences → Updates switches between the stable and beta channels.
   On Linux, in-app updates use the AppImage; DEB/RPM installs update by

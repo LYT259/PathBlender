@@ -93,10 +93,11 @@ jobs:
             Where-Object { $_.DisplayName -eq "PathBlender" } |
             Select-Object -First 1
           $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
-          $exe = Join-Path $installDir "PathBlender.exe"
+          $installDir = $installDir.Trim('"', "'")
+          $exe = Join-Path $installDir "pathblender-desktop.exe"
           if (-not (Test-Path $exe)) {
-            Write-Host "::error::PathBlender.exe not found at $exe"
-            Get-ChildItem "$env:LOCALAPPDATA" -Directory | ForEach-Object { Write-Host $_.Name }
+            Write-Host "::error::pathblender-desktop.exe not found at $exe"
+            Get-ChildItem -Path $installDir -Recurse -File | ForEach-Object { Write-Host $_.FullName }
             exit 1
           }
           $expected = (Get-Content package.json | ConvertFrom-Json).version
@@ -106,7 +107,7 @@ jobs:
 
           Start-Process -FilePath $exe
           Start-Sleep -Seconds 15
-          $proc = Get-Process -Name "PathBlender" -ErrorAction SilentlyContinue | Select-Object -First 1
+          $proc = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Select-Object -First 1
           if (-not $proc) { Write-Host "::error::PathBlender process not running 15s after launch"; exit 1 }
           $proc.Refresh()
           if (-not $proc.MainWindowTitle) { Write-Host "::error::PathBlender running but has no main window"; exit 1 }
