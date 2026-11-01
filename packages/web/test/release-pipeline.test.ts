@@ -359,14 +359,21 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     // RPM: metadata version + rpm2cpio/cpio payload expansion, run from the tree.
     expect(run).toContain('rpm -qp --nosignature --qf "%{version}"');
     expect(run).toContain('rpm2cpio "../$RPM" | cpio -idm --quiet');
-    // Each launch must survive 15s, expose a PathBlender window and capture it.
+    // Each launch must survive 15s and expose a PathBlender window; the
+    // screenshot captures the X ROOT screen, not the window id — window-id
+    // grabs fail on Xvfb with MIT-SHM EAGAIN ("Resource temporarily
+    // unavailable", real run 41266701676), root grabs do not.
     expect((run.match(/sleep 15/g) ?? []).length).toBe(3);
     expect((run.match(/pgrep -f "pathblender-desktop"/g) ?? []).length).toBe(3);
     expect((run.match(/xdotool search --name "PathBlender"/g) ?? []).length).toBe(3);
-    expect((run.match(/import -window "\$WIN" (\S+\.png)/g) ?? []).length).toBe(3);
-    expect(run).toContain('import -window "$WIN" deb-window.png');
-    expect(run).toContain('import -window "$WIN" appimage-window.png');
-    expect(run).toContain('import -window "$WIN" rpm-window.png');
+    expect(run).not.toContain('import -window "$WIN"');
+    expect((run.match(/import -window root (\S+-screen\.png)/g) ?? []).length).toBe(3);
+    expect(run).toContain('import -window root deb-screen.png');
+    expect(run).toContain('import -window root appimage-screen.png');
+    expect(run).toContain('import -window root rpm-screen.png');
+    // Screenshot evidence is validated: full root geometry via identify.
+    expect((run.match(/identify -format "%wx%h" (\S+-screen\.png)/g) ?? []).length).toBe(3);
+    expect((run.match(/expected the 1600x900 root screen/g) ?? []).length).toBe(3);
     // The verification tools themselves never guess runtime library names.
     expect(run).toContain('sudo apt-get install -y xvfb xdotool imagemagick rpm rpm2cpio cpio');
     expect(run).not.toContain('libwebkit2gtk');
@@ -376,7 +383,7 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     for (const [job, shots] of [
       [windows, ['windows-screenshot.png']],
       [macos, ['mac-screenshot.png']],
-      [linux, ['deb-window.png', 'appimage-window.png', 'rpm-window.png']],
+      [linux, ['deb-screen.png', 'appimage-screen.png', 'rpm-screen.png']],
     ] as [any, string[]][]) {
       const upload = job.steps.find((step: any) => step.uses === 'actions/upload-artifact@v4');
       expect(upload).toBeDefined();
