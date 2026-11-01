@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.36';
+export const APP_VERSION = '0.1.9-beta.37';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9-beta.37', date: '2026.11.01', note: {
+    en: 'Fix Release publishing dependencies',
+    zh: '修复发布流程的依赖安装',
+    'zh-tw': '修復發佈流程的依賴安裝',
+    cs: 'Oprava instalace závislostí při publikování vydání',
+    nl: 'Herstel van de installatie van afhankelijkheden bij publicatie',
+    fr: 'Correction de l’installation des dépendances lors de la publication',
+    he: 'תיקון התקנת התלויות בתהליך הפרסום',
+    ja: 'リリース公開時の依存関係インストールを修正',
+    ko: '릴리스 게시 종속성 설치 수정',
+    pl: 'Poprawa instalacji zależności podczas publikowania wydania',
+    'pt-br': 'Correção da instalação de dependências durante a publicação',
+    es: 'Corrección de la instalación de dependencias durante la publicación',
+    tr: 'Yayınlama sırasında bağımlılık kurulumu düzeltildi',
+    ar: 'إصلاح تثبيت التبعيات أثناء نشر الإصدار',
+    az: 'Nəşr zamanı asılılıqların quraşdırılması düzəldildi',
+    bg: 'Коригирано е инсталирането на зависимости при публикуване',
+    bs: 'Ispravljena instalacija zavisnosti prilikom objavljivanja',
+    da: 'Rettelse af installation af afhængigheder under udgivelse',
+    de: 'Installation von Abhängigkeiten beim Veröffentlichen behoben',
+    el: 'Διόρθωση της εγκατάστασης εξαρτήσεων κατά τη δημοσίευση',
+    fil: 'Naayos ang pag-install ng mga dependency sa paglalathala',
+    hi: 'रिलीज़ प्रकाशन में निर्भरताओं की स्थापना में सुधार',
+    hr: 'Ispravljena instalacija ovisnosti prilikom objavljivanja',
+    hu: 'A kiadás során használt függőségek telepítésének javítása',
+    hy: 'Հրապարակման ընթացքում կախվածությունների տեղադրումը շտկված է',
+    id: 'Perbaikan pemasangan dependensi saat publikasi rilis',
+    it: 'Correzione dell’installazione delle dipendenze durante la pubblicazione',
+    mk: 'Коригирана инсталација на зависности при објавување',
+    mr: 'प्रकाशनादरम्यान डिपेन्डेन्सीज़ स्थापनेतील दुरुस्ती',
+    ms: 'Pembetulan pemasangan kebergantungan semasa penerbitan',
+    nb: 'Rettet installasjonen av avhengigheter under publisering',
+    nn: 'Retta installasjonen av avhengigheiter under publisering',
+    ro: 'Corectarea instalării dependențelor în timpul publicării',
+    rw: 'Gukosora kwishyiraho dependencies mu gihe cyo gutangaza',
+    sq: 'Korrigjim i instalimit të varësive gjatë publikimit',
+    sr: 'Ispravljena instalacija zavisnosti prilikom objavljivanja',
+    sv: 'Korrigering av installationen av beroenden vid publicering',
+    ta: 'வெளியீட்டின் போது சார்புகளை நிறுவுவதில் சரி செய்யப்பட்டது',
+    uk: 'Виправлення встановлення залежностей під час публікації',
+    vi: 'Sửa việc cài đặt các phụ thuộc khi xuất bản bản phát hành',
+  } },
   { version: '0.1.9-beta.36', date: '2026.11.01', note: {
     en: 'Fix Universal Mac package verification',
     zh: '修复 Mac 通用安装包验证',
