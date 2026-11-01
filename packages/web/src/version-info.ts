@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9';
+export const APP_VERSION = '0.1.10-beta.1';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.10-beta.1', date: '2026.11.01', note: {
+    en: 'Fix the core library npm package so it installs and loads under Node',
+    zh: '修复 core 核心库 npm 包在 Node 下的安装与加载',
+    'zh-tw': '修復 core 核心庫 npm 套件在 Node 下的安裝與載入',
+    cs: 'Oprava instalace a načítání balíčku core knihovny na npm v Node',
+    nl: 'Herstel het installeren en laden van het core-bibliotheekpakket op npm onder Node',
+    fr: 'Correction de l’installation et du chargement du paquet npm de la bibliothèque core sous Node',
+    he: 'תיקון התקנה וטעינה של חבילת ספריית הליבה ב-npm תחת Node',
+    ja: 'core ライブラリの npm パッケージが Node でインストール・読み込みされるよう修正',
+    ko: 'Node에서 core 라이브러리 npm 패키지 설치 및 로드 수정',
+    pl: 'Poprawka instalacji i ładowania pakietu npm biblioteki core w Node',
+    'pt-br': 'Correção da instalação e do carregamento do pacote npm da biblioteca core no Node',
+    es: 'Corrección de la instalación y la carga del paquete npm de la biblioteca core en Node',
+    tr: 'core kitaplığı npm paketinin Node altında kurulması ve yüklenmesi düzeltildi',
+    ar: 'إصلاح تثبيت حزمة npm لمكتبة core وتحميلها في Node',
+    az: 'core kitabxanasının npm paketinin Node altında quraşdırılması və yüklənməsi düzəldildi',
+    bg: 'Поправка на инсталирането и зареждането на npm пакета на библиотеката core в Node',
+    bs: 'Ispravka instalacije i učitavanja npm paketa core biblioteke u Node',
+    da: 'Ret installation og indlæsning af core-bibliotekets npm-pakke under Node',
+    de: 'Installation und Laden des npm-Pakets der core-Bibliothek unter Node korrigiert',
+    el: 'Διόρθωση εγκατάστασης και φόρτωσης του πακέτου npm της βιβλιοθήκης core στο Node',
+    fil: 'Ayusin ang pag-install at pag-load ng npm package ng core library sa Node',
+    hi: 'Node में core लाइब्रेरी npm पैकेज के इंस्टॉल और लोड की सुधार',
+    hr: 'Ispravak instalacije i učitavanja npm paketa core biblioteke u Nodeu',
+    hu: 'A core könyvtár npm csomagjának telepítése és betöltése Node alatt javítva',
+    hy: 'Ուղղվել է core գրադարանի npm փաթեթի տեղադրումն ու բեռնումը Node-ում',
+    id: 'Perbaikan instalasi dan pemuatan paket npm pustaka core di Node',
+    it: 'Correzione dell’installazione e del caricamento del pacchetto npm della libreria core in Node',
+    mk: 'Поправка на инсталацијата и вчитувањето на npm пакетот на core библиотеката во Node',
+    mr: 'Node अंतर्गत core लायब्ररीच्या npm पॅकेजची स्थापना आणि लोडिंग दुरुस्ती',
+    ms: 'Pembaikan pemasangan dan pemuatan pakej npm pustaka core dalam Node',
+    nb: 'Retter installering og lasting av npm-pakken til core-biblioteket i Node',
+    nn: 'Rettar installering og lasting av npm-pakken til core-biblioteket i Node',
+    ro: 'Corectarea instalării și încărcării pachetului npm al bibliotecii core în Node',
+    rw: 'Guhindura iyinjizwa no gutunganya paketi ya npm y’ububiko bwa core muri Node',
+    sq: 'Rregullimi i instalimit dhe ngarkimit të paketës npm të bibliotekës core në Node',
+    sr: 'Исправка инсталације и учитавања npm пакета core библиотеке у Node-у',
+    sv: 'Korrigerar installation och inläsning av core-bibliotekets npm-paket under Node',
+    ta: 'Node-இல் core நூலகத்தின் npm தொகுப்பை நிறுவுதல் மற்றும் ஏற்றுதல் திருத்தம்',
+    uk: 'Виправлено встановлення та завантаження npm-пакета бібліотеки core у Node',
+    vi: 'Sửa cài đặt và tải gói npm của thư viện core trên Node',
+  } },
   { version: '0.1.9', date: '2026.11.01', note: {
     en: 'Desktop installers for Mac, Windows and Linux',
     zh: 'Mac、Windows 和 Linux 桌面安装包',

@@ -1,6 +1,6 @@
 {
   "name": "@pathblender/core",
-  "version": "0.1.9",
+  "version": "0.1.10-beta.1",
   "description": "Pure-function core: path file parsers, unified trajectory model, fusion & OBB-SAT collision detection. Zero DOM.",
   "license": "Apache-2.0",
   "type": "module",
@@ -17,7 +17,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node ../../scripts/fix-core-esm-imports.mjs dist",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "prepack": "npm run build"
