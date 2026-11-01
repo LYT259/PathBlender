@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.9-beta.37';
+export const APP_VERSION = '0.1.9';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.9', date: '2026.11.01', note: {
+    en: 'Desktop installers for Mac, Windows and Linux',
+    zh: 'Mac、Windows 和 Linux 桌面安装包',
+    'zh-tw': 'Mac、Windows 和 Linux 桌面安裝程式',
+    cs: 'Instalační balíčky desktopové aplikace pro Mac, Windows a Linux',
+    nl: 'Desktopinstallatieprogramma’s voor Mac, Windows en Linux',
+    fr: 'Programmes d’installation de bureau pour Mac, Windows et Linux',
+    he: 'תוכנות התקנה לשולחן העבודה עבור Mac, Windows ו-Linux',
+    ja: 'Mac・Windows・Linux用デスクトップインストーラー',
+    ko: 'Mac, Windows, Linux용 데스크톱 설치 프로그램',
+    pl: 'Instalatory aplikacji komputerowych dla systemów Mac, Windows i Linux',
+    'pt-br': 'Instaladores do aplicativo de desktop para Mac, Windows e Linux',
+    es: 'Instaladores de escritorio para Mac, Windows y Linux',
+    tr: 'Mac, Windows ve Linux için masaüstü yükleyicileri',
+    ar: 'مثبّتات سطح المكتب لأجهزة Mac وأنظمة Windows وLinux',
+    az: 'Mac, Windows və Linux üçün masaüstü quraşdırıcıları',
+    bg: 'Инсталатори на настолното приложение за Mac, Windows и Linux',
+    bs: 'Instalateri desktop aplikacije za Mac, Windows i Linux',
+    da: 'Skrivebordsinstallationsprogrammer til Mac, Windows og Linux',
+    de: 'Desktop-Installationsprogramme für Mac, Windows und Linux',
+    el: 'Προγράμματα εγκατάστασης επιτραπέζιης εφαρμογής για Mac, Windows και Linux',
+    fil: 'Mga installer ng desktop application para sa Mac, Windows at Linux',
+    hi: 'Mac, Windows और Linux के लिए डेस्कटॉप इंस्टॉलर',
+    hr: 'Instalacijski programi za radnu površinu za Mac, Windows i Linux',
+    hu: 'Asztali telepítők Mac, Windows és Linux rendszerre',
+    hy: 'Desktop տեղադրիչներ Mac-ի, Windows-ի և Linux-ի համար',
+    id: 'Penginstal desktop untuk Mac, Windows, dan Linux',
+    it: 'Programmi di installazione desktop per Mac, Windows e Linux',
+    mk: 'Инсталери за десктоп апликација за Mac, Windows и Linux',
+    mr: 'Mac, Windows आणि Linux साठी डेस्कटॉप इंस्टॉलर',
+    ms: 'Pemasang desktop untuk Mac, Windows dan Linux',
+    nb: 'Skrivebordsinstallasjonsprogrammer for Mac, Windows og Linux',
+    nn: 'Skrivebordsinstallasjonsprogram for Mac, Windows og Linux',
+    ro: 'Programe de instalare pentru desktop pe Mac, Windows și Linux',
+    rw: 'Porogaramu zo gushyira desktop kuri Mac, Windows na Linux',
+    sq: 'Instalues desktop për Mac, Windows dhe Linux',
+    sr: 'Инсталери десктоп апликације за Mac, Windows и Linux',
+    sv: 'Skrivbordsinstallationsprogram för Mac, Windows och Linux',
+    ta: 'Mac, Windows மற்றும் Linux-க்கான டெஸ்க்டாப் நிறுவிகள்',
+    uk: 'Інсталятори настільної програми для Mac, Windows і Linux',
+    vi: 'Trình cài đặt bản desktop cho Mac, Windows và Linux',
+  } },
   { version: '0.1.9-beta.37', date: '2026.11.01', note: {
     en: 'Fix Release publishing dependencies',
     zh: '修复发布流程的依赖安装',
