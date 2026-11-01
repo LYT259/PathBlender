@@ -98,6 +98,16 @@ describe('shipped-artifact verification gates', () => {
     expect(workflow).toContain('needs: [build-macos, build-windows, build-linux]');
     expect(workflow).toContain('node scripts/prepare-release-artifacts.mjs');
   });
+  it('installs locked Node dependencies before composing release notes in the publish job', () => {
+    const publish = workflow.slice(workflow.indexOf('  publish:'));
+    const setupNode = publish.indexOf('actions/setup-node@v4');
+    const install = publish.indexOf('run: npm ci');
+    const compose = publish.indexOf('name: Compose user-facing release notes');
+    expect(setupNode).toBeGreaterThan(-1);
+    expect(install).toBeGreaterThan(setupNode);
+    expect(compose).toBeGreaterThan(install);
+  });
+
   it('the finished dmg is mounted and its content seal-checked before staging', () => {
     expect(script).toContain('hdiutil attach');
     expect(script).toMatch(/codesign --verify --deep --strict "\$MNT\/PathBlender\.app"/);
