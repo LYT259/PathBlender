@@ -120,7 +120,24 @@
 - **会话文件与导出**（桌面版）：保存/打开 `.pb` 会话（更名前的 `.ghpb.json` 旧会话仍可打开），把准确的场地交给下一场策略会；导出当前 2D 视图的 GIF 回放，或把路径、会话与回放打包成方案包发联盟群。桌面版一切功能都在 PathBlender 菜单里；
 - **键盘快捷键**：任意位置按 `?`（帮助菜单 → 键盘快捷键）；
 - **外观与语言**：偏好设置里深色/浅色/跟随系统（桌面 ⌘,）；界面支持 43 种语言——English (United States)、English (United Kingdom)、简体中文、繁體中文（香港）、繁體中文（澳門）、繁體中文（台灣）、Français、Español、Deutsch、Italiano、Português (Brasil)、Nederlands、Polski、Čeština、Türkçe、Ελληνικά、עברית、العربية、हिन्दी、日本語、한국어 等，完整清单见语言菜单（每行右侧带 简/繁/EN/あ/한 等短文字标识，不用旗帜）；未手动选择时跟随系统语言；
-- **更新**（桌面版）：菜单 **PathBlender → 检查更新…**；偏好设置 → 更新 可切换 stable / beta 通道。Linux 上应用内更新走 AppImage；DEB/RPM 安装的用户下载新包覆盖安装即可更新。
+- **更新**（桌面版）：菜单 **PathBlender → 检查更新…**；偏好设置 → 更新 可切换 stable / beta 通道。
+
+## 安装桌面版
+
+桌面版各平台的下载都在 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 页：macOS Universal DMG（Apple Silicon 与 Intel 一份通用包，macOS 13+）、Windows x86_64 安装包 `*_x64-setup.exe`、Linux x86_64 的 DEB / AppImage / RPM。Linux 下载好安装包后在终端安装——下面以 0.1.9 为例，文件名中的版本号以 Releases 页为准：
+
+```bash
+# DEB（Debian/Ubuntu 示例）
+sudo apt install ./PathBlender_0.1.9_amd64.deb
+
+# AppImage（免安装，直接运行）
+chmod +x PathBlender_0.1.9_amd64.AppImage && ./PathBlender_0.1.9_amd64.AppImage
+
+# RPM（Fedora 示例——各发行版包管理器命令不同）
+sudo dnf install ./PathBlender-0.1.9-1.x86_64.rpm
+```
+
+应用内更新走 AppImage；DEB/RPM 安装的用户下载新包覆盖安装即可更新。
 
 ## 网页版与桌面版
 

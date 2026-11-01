@@ -61,9 +61,9 @@ Sahalar: FRC 2022–2026 yerleşik; ayrıca kalibrasyonlu özel saha içe aktarm
 
 ## Nereden edinilir
 
-- **macOS** (macOS 13+; şu anda yalnızca Apple Silicon) — [GitHub Releases](https://github.com/LYT259/pathblender/releases) sayfasından `*_aarch64.dmg` dosyasını indirin, açın ve PathBlender'ı Uygulamalar'a sürükleyin. Apple Silicon ve Intel için Universal indirme gelecekteki bir sürüm için planlanıyor.
-- **Windows** (x86_64) — henüz bir kurulum yayımlanmadı; `*_x64-setup.exe` gelecekteki bir sürüm için planlanıyor.
-- **Linux** (x86_64) — DEB, AppImage ve RPM paketleri henüz yayımlanmadı. Yayımlandığında, uygulama içi güncellemeler AppImage'ı kullanacak; DEB/RPM kullanıcıları yeni paketi eskisinin üzerine kurarak güncelleyecek.
+- **macOS** (macOS 13+) — [GitHub Releases](https://github.com/LYT259/pathblender/releases) sayfasından Universal DMG'yi (`*_universal.dmg`; Apple Silicon ve Intel için tek indirme) indirin, açın ve PathBlender'ı Uygulamalar'a sürükleyin.
+- **Windows** (x86_64) — sürüm sayfasından NSIS kurulum dosyasını (`*_x64-setup.exe`) indirin ve çalıştırın.
+- **Linux** (x86_64) — sürüm sayfasından DEB, AppImage veya RPM paketini indirin (terminalle kurulum örnekleri kullanıcı kılavuzunda). Uygulama içi güncellemeler AppImage'ı kullanacak; DEB/RPM kullanıcıları yeni paketi eskisinin üzerine kurarak güncelleyecek.
 - Güncellemeler: menü **PathBlender → Güncellemeleri Denetle…** (beta sürümlerde önce **Tercihler → Güncellemeler**'den beta kanalını açın). Sürüm sayfasındaki diğer dosyalar (`.tar.gz`, `.sig`, `.json`) güncelleyiciye aittir — onlara ihtiyacınız yok.
 - **Web uygulaması** (görüntüleyici yapımı: uygulama ile aynı içe aktarmalar — dosyalar ve bütün klasörler — artı oynatma ve denetim; oturum kaydetme / GIF ve çözüm paketi dışa aktarma yok) — [pathblender.pages.dev](https://pathblender.pages.dev).
 
