@@ -21,7 +21,9 @@
 #   the three launches runs under Xvfb with GDK_BACKEND=x11 and
 #   WEBKIT_DISABLE_COMPOSITING_MODE=1, must stay alive for 15s, expose a
 #   PathBlender window (asserted) and produce a validated root-screen
-#   capture per package, plus the packaged NOTICE and published version.
+#   capture per package, plus the packaged NOTICE; the AppImage carries no
+#   text version at all, so its version proof is binary + NOTICE hash
+#   identity with the apt-installed DEB (whose dpkg metadata pins the tag).
 #
 # Anonymous download is the point: the repo must be public for this to pass,
 # so every job is guarded like deploy.yml. Read-only permissions only.
@@ -478,6 +480,14 @@ jobs:
             dpkg -L "$PKG"
             exit 1
           fi
+          # Cross-format identity anchor: the installed DEB binary and NOTICE
+          # hashes are recorded here (dpkg metadata above already pins the
+          # version) and must match the AppImage payload in the next step.
+          BIN_SHA=$(sha256sum "$BIN" | cut -d" " -f1)
+          NOTICE_SHA=$(sha256sum "$NOTICE" | cut -d" " -f1)
+          printf '%s  %s\n' "$BIN_SHA" "$BIN" > deb-binary.sha256
+          printf '%s  %s\n' "$NOTICE_SHA" "$NOTICE" > deb-notice.sha256
+          echo "deb binary sha256 $BIN_SHA / notice sha256 $NOTICE_SHA (cross-format anchor)" | tee -a linux-results.log
           mkdir -p "$RUNNER_TEMP/deb-home"
           HOME="$RUNNER_TEMP/deb-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 "$BIN" > deb-app.log 2>&1 &
           sleep 15
@@ -531,18 +541,29 @@ jobs:
             echo "::error::pathblender-desktop not found inside the AppImage"
             exit 1
           fi
-          # The stripped Tauri binary carries no version literal (run
-          # 41267274881: grepping the binary found nothing), so the version
-          # anchor is a bundled TEXT web asset: at least one *.js anywhere in
-          # the extracted tree must carry the exact version string.
-          JS_HITS=$(find squashfs-root -type f -name "*.js" -print0 | xargs -0 -r grep -lF "$VER" || true)
-          if [[ -z "$JS_HITS" ]]; then
-            echo "::error::no bundled *.js asset carries the version string $VER"
-            find squashfs-root -type f -name "*.js" | head -10
+          # No text version anchor exists in the AppImage at all (run
+          # 41267886164: no bundled *.js carries the version; the stripped
+          # binary carries no literal either). Version proof is therefore
+          # CROSS-FORMAT IDENTITY: the AppImage's pathblender-desktop and
+          # NOTICE must hash identically to the apt-installed DEB files whose
+          # dpkg metadata already pins the tag version.
+          APPBIN_SHA=$(sha256sum "$BIN" | cut -d" " -f1)
+          APPNOTICE_SHA=$(sha256sum "$NOTICE" | cut -d" " -f1)
+          DEB_BIN_SHA=$(cut -d" " -f1 ../deb-binary.sha256)
+          DEB_NOTICE_SHA=$(cut -d" " -f1 ../deb-notice.sha256)
+          echo "AppImage binary sha256: $APPBIN_SHA"
+          echo "DEB      binary sha256: $DEB_BIN_SHA"
+          echo "AppImage NOTICE sha256: $APPNOTICE_SHA"
+          echo "DEB      NOTICE sha256: $DEB_NOTICE_SHA"
+          if [[ "$APPBIN_SHA" != "$DEB_BIN_SHA" ]]; then
+            echo "::error::AppImage binary differs from the installed DEB binary"
             exit 1
           fi
-          echo "version $VER found in bundled web assets:"
-          echo "$JS_HITS"
+          if [[ "$APPNOTICE_SHA" != "$DEB_NOTICE_SHA" ]]; then
+            echo "::error::AppImage NOTICE differs from the installed DEB NOTICE"
+            exit 1
+          fi
+          echo "cross-format identity: AppImage binary + NOTICE match the installed DEB ($VER via deb metadata)"
           cd ..
           mkdir -p "$RUNNER_TEMP/appimage-home"
           HOME="$RUNNER_TEMP/appimage-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 "$APPIMG" --appimage-extract-and-run > appimage-app.log 2>&1 &
@@ -567,7 +588,7 @@ jobs:
             echo "::error::appimage screenshot is ${GEO}px, expected the 1600x900 root screen"
             exit 1
           fi
-          echo "appimage: NOTICE ok, version $VER in bundled web assets, process alive, root-screen capture ${GEO}px (window $WIN)" | tee -a linux-results.log
+          echo "appimage: NOTICE ok, binary identical to installed DEB ($VER via deb metadata), process alive, root-screen capture ${GEO}px (window $WIN)" | tee -a linux-results.log
           pkill -f "pathblender-desktop" || true
           sleep 3
       - name: RPM — unpack the payload and run it from the expanded tree
@@ -636,6 +657,8 @@ jobs:
             deb-screen.png
             appimage-screen.png
             rpm-screen.png
+            deb-binary.sha256
+            deb-notice.sha256
             linux-results.log
             deb-app.log
             appimage-app.log

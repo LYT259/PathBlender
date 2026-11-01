@@ -355,11 +355,19 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     expect(run).toContain('--appimage-extract > /dev/null');
     expect(run).toContain('--appimage-extract-and-run');
     expect(run).toContain('chmod +x "$APPIMG"');
-    // Version anchor = a bundled TEXT web asset, NOT the stripped binary (run
-    // 41267274881: the AppImage binary carries no version literal at all).
+    // Version anchor = cross-format binary identity (run 41267886164: the
+    // AppImage carries no *.js and no text version anywhere; the DEB step's
+    // dpkg metadata already pins the tag version): the AppImage's
+    // pathblender-desktop and NOTICE must hash identically to the
+    // apt-installed DEB files.
+    expect(run).not.toContain('grep -lF "$VER"');
     expect(run).not.toContain('grep -aqF "$VER" "$BIN"');
-    expect(run).toContain('find squashfs-root -type f -name "*.js" -print0 | xargs -0 -r grep -lF "$VER"');
-    expect(run).toContain('no bundled *.js asset carries the version string');
+    expect(run).toContain('deb-binary.sha256');
+    expect(run).toContain('deb-notice.sha256');
+    expect((run.match(/sha256sum "\$BIN" \| cut -d" " -f1/g) ?? []).length).toBe(2);
+    expect((run.match(/sha256sum "\$NOTICE"/g) ?? []).length).toBe(2);
+    expect(run).toContain('AppImage binary differs from the installed DEB binary');
+    expect(run).toContain('AppImage NOTICE differs from the installed DEB NOTICE');
     // RPM: metadata version + rpm2cpio/cpio payload expansion, run from the tree.
     expect(run).toContain('rpm -qp --nosignature --qf "%{version}"');
     expect(run).toContain('rpm2cpio "../$RPM" | cpio -idm --quiet');
@@ -387,7 +395,7 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     for (const [job, shots] of [
       [windows, ['windows-screenshot.png']],
       [macos, ['mac-screenshot.png']],
-      [linux, ['deb-screen.png', 'appimage-screen.png', 'rpm-screen.png']],
+      [linux, ['deb-screen.png', 'appimage-screen.png', 'rpm-screen.png', 'deb-binary.sha256', 'deb-notice.sha256']],
     ] as [any, string[]][]) {
       const upload = job.steps.find((step: any) => step.uses === 'actions/upload-artifact@v4');
       expect(upload).toBeDefined();
