@@ -284,13 +284,25 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     for (const job of [windows, macos, linux]) {
       expect(job.steps.some((step: any) => step.uses === 'actions/checkout@v4')).toBe(false);
     }
-    for (const banned of ['npx tauri build', 'npm ci', 'cargo ', 'tauri signer generate', 'secrets.', 'GITHUB_TOKEN', 'GH_TOKEN', 'Authorization']) {
+    // The built-in read-only github.token IS allowed (metadata lookups only);
+    // repo secrets and token-bearing downloads stay banned. 'Authorization'
+    // is deliberately absent here — its only legal use is the metadata
+    // Bearer header, asserted separately below.
+    for (const banned of ['npx tauri build', 'npm ci', 'cargo ', 'tauri signer generate', 'secrets.', 'GITHUB_TOKEN', 'GH_TOKEN']) {
       expect(verifyText, `must not contain ${banned}`).not.toContain(banned);
     }
   });
 
   it('downloads anonymously and pins every asset against the server-side sha256 digest', () => {
-    expect(verifyText).toContain('https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/');
+    // Metadata lookups go through the built-in read-only github.token — the
+    // anonymous API hit shared-runner-IP 403 rate limits in the Windows job.
+    // The ASSET download itself stays strictly anonymous (browser URL, no
+    // Authorization header), which is what a real user's download proves.
+    expect((verifyText.match(/GH_METADATA_TOKEN: \$\{\{ github\.token \}\}/g) ?? []).length).toBe(3);
+    expect((verifyText.match(/-H "Authorization: Bearer \$GH_METADATA_TOKEN" "https:\/\/api\.github\.com\/repos\/\$GITHUB_REPOSITORY\/releases\/tags\//g) ?? []).length).toBe(3);
+    const downloadLine = verifyText.split('\n').find((l) => l.includes('curl -fL --retry 3'));
+    expect(downloadLine).toBeDefined();
+    expect(downloadLine).not.toContain('Authorization');
     for (const job of [windows, macos, linux]) {
       const run = runText(job);
       expect(run).toContain('^v[0-9]+\\.[0-9]+\\.[0-9]+');
@@ -369,9 +381,18 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     expect(run).toContain('deb-notice.sha256');
     expect((run.match(/sha256sum "\$NOTICE"/g) ?? []).length).toBe(2);
     expect(run).toContain('AppImage NOTICE differs from the installed DEB NOTICE');
-    // RPM: metadata version + rpm2cpio/cpio payload expansion, run from the tree.
+    // RPM: metadata version + staged payload expansion (run from the tree).
     expect(run).toContain('rpm -qp --nosignature --qf "%{version}"');
-    expect(run).toContain('rpm2cpio "../$RPM" | cpio -idm --quiet');
+    // rpm2cpio may exit nonzero AFTER emitting a complete payload (run
+    // 41269273195: the pipe died under set -o pipefail with no cpio error,
+    // while the same command succeeded without pipefail on the Linux host),
+    // so the payload is captured to a file first — empty payload fails
+    // loudly — and cpio's own exit status is the authoritative check.
+    expect(run).not.toContain('rpm2cpio "../$RPM" | cpio -idm --quiet');
+    expect(run).toContain('rpm2cpio "../$RPM" > rpm-payload.cpio 2> rpm2cpio.log || true');
+    expect(run).toContain('[[ ! -s rpm-payload.cpio ]]');
+    expect(run).toContain('::error::rpm2cpio produced no payload');
+    expect(run).toContain('cpio -idm --quiet < rpm-payload.cpio');
     // Each launch must survive 15s and expose a PathBlender window; the
     // screenshot captures the X ROOT screen, not the window id — window-id
     // grabs fail on Xvfb with MIT-SHM EAGAIN ("Resource temporarily
@@ -396,7 +417,7 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     for (const [job, shots] of [
       [windows, ['windows-screenshot.png']],
       [macos, ['mac-screenshot.png']],
-      [linux, ['deb-screen.png', 'appimage-screen.png', 'rpm-screen.png', 'deb-notice.sha256']],
+      [linux, ['deb-screen.png', 'appimage-screen.png', 'rpm-screen.png', 'deb-notice.sha256', 'rpm-tree/rpm2cpio.log']],
     ] as [any, string[]][]) {
       const upload = job.steps.find((step: any) => step.uses === 'actions/upload-artifact@v4');
       expect(upload).toBeDefined();
