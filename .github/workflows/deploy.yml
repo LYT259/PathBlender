@@ -33,6 +33,12 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: packages/web/dist
+      - name: Upload viewer dist for the Cloudflare mirror
+        uses: actions/upload-artifact@v4
+        with:
+          name: viewer-dist
+          path: packages/web/dist
+          if-no-files-found: error
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -46,3 +52,77 @@ jobs:
       - name: Deploy viewer
         id: deployment
         uses: actions/deploy-pages@v4
+  deploy-cloudflare:
+    needs: build
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download viewer dist
+        uses: actions/download-artifact@v4
+        with:
+          name: viewer-dist
+          path: viewer-dist
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - name: Report skipped mirror deploy
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN == '' }}
+        run: >-
+          echo "::warning::CLOUDFLARE_API_TOKEN is not configured; skipping the
+          Cloudflare mirror deploy. Create an API token with the
+          Cloudflare Pages: Edit permission and add it as the
+          CLOUDFLARE_API_TOKEN repository secret."
+      - name: Deploy Cloudflare mirror
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 3ead0c685117a2d82b3bded63ccf47d9
+        run: npx --yes wrangler@4.147.0 pages deploy viewer-dist --project-name=pathblender --branch=stable
+  verify:
+    needs: [deploy, deploy-cloudflare]
+    if: always() && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - name: Read tree version
+        run: echo "EXPECTED_VERSION=$(node -p \"require('./package.json').version\")" >> "$GITHUB_ENV"
+      - name: Verify both sites serve the tree version
+        env:
+          CHECK_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          expected="$EXPECTED_VERSION"
+          check_site() {
+            local url="$1" label="$2"
+            local attempt body cache version
+            for attempt in 1 2 3 4 5 6; do
+              if body="$(curl -fsSL --max-time 30 "${url}?sync=${GITHUB_RUN_ID}-${attempt}")"; then
+                cache="$(printf '%s' "$body" | sed -nE "s/^.*const CACHE = '(pb-[^']+)'.*$/\1/p" | head -1)"
+                if [ -n "$cache" ]; then
+                  version="${cache%-*}"
+                  version="${version#pb-}"
+                  if [ "$version" = "$expected" ]; then
+                    echo "$label OK: $cache"
+                    return 0
+                  fi
+                  echo "$label stale (attempt $attempt): $cache, expected pb-$expected-*"
+                else
+                  echo "$label: CACHE line missing (attempt $attempt)"
+                fi
+              else
+                echo "$label: fetch failed (attempt $attempt)"
+              fi
+              sleep 15
+            done
+            echo "::error::$label never served the tree version $expected"
+            return 1
+          }
+          check_site "https://lyt259.github.io/PathBlender/sw.js" "github-pages"
+          if [ "$CHECK_CLOUDFLARE" = "true" ]; then
+            check_site "https://pathblender.pages.dev/sw.js" "cloudflare-pages"
+          else
+            echo "::warning::CLOUDFLARE_API_TOKEN not configured; Cloudflare mirror not verified this run."
+          fi
