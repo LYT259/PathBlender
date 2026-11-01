@@ -61,9 +61,9 @@ PathBlender סוגר את הפער הזה:
 
 ## מאיפה משיגים
 
-- **macOS**‏ (macOS 13+; כרגע Apple Silicon בלבד) — הורידו את הקובץ `*_aarch64.dmg` מ-[GitHub Releases](https://github.com/LYT259/pathblender/releases), פתחו וגררו את PathBlender אל Applications. חבילת Universal ל-Apple Silicon ול-Intel מתוכננת לגרסה עתידית.
-- **Windows**‏ (x86_64) — עדיין לא פורסם מתקין; `*_x64-setup.exe` מתוכנן לגרסה עתידית.
-- **Linux**‏ (x86_64) — חבילות DEB, AppImage ו-RPM עדיין לא פורסמו. כשייפורסמו, עדכונים מובנים ישתמשו ב-AppImage; משתמשי DEB/RPM יעדכנו על ידי התקנת החבילה החדשה על הישנה.
+- **macOS**‏ (macOS 13+) — הורידו את ה-DMG האוניברסלי (`*_universal.dmg`; הורדה אחת ל-Apple Silicon ול-Intel) מ-[GitHub Releases](https://github.com/LYT259/pathblender/releases), פתחו וגררו את PathBlender אל Applications.
+- **Windows**‏ (x86_64) — הורידו את מתקין ה-NSIS `*_x64-setup.exe` מעמוד ההפצה והריצו אותו.
+- **Linux**‏ (x86_64) — הורידו חבילת DEB, AppImage או RPM מעמוד ההפצה (במדריך המשתמש יש דוגמאות להתקנה מהטרמינל). עדכונים מובנים ישתמשו ב-AppImage; משתמשי DEB/RPM יעדכנו על ידי התקנת החבילה החדשה על הישנה.
 - עדכונים: תפריט **PathBlender → בדיקת עדכונים…** (בבניות בטא: הפעילו קודם את ערוץ הבטא ב-**העדפות → עדכונים**). שאר הקבצים בעמוד ההפצה (`.tar.gz`, `.sig`, `.json`) שייכים למנגנון העדכון — אינכם צריכים אותם.
 - **אפליקציית הרשת** (גרסת מציג: אותן יבוא יבוא כמו באפליקציה — קבצים ותיקיות שלמות — בתוספת השמעה ובדיקה; בלי שמירת הפעלה / ייצוא GIF וחבילת פתרון) — [pathblender.pages.dev](https://pathblender.pages.dev).
 

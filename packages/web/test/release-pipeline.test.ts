@@ -16,6 +16,107 @@ const ROOT = resolve(__dirname, '../../..');
 const script = readFileSync(resolve(ROOT, 'scripts/package-desktop-artifacts.sh'), 'utf-8');
 const workflow = readFileSync(resolve(ROOT, '.github/workflows/release.yml'), 'utf-8');
 
+/**
+ * Assertion-oriented YAML subset parser for GitHub workflow files (2026-11-01,
+ * release-verify contract tests). The repo deliberately ships no YAML
+ * dependency (toolchain freeze), so this parses the subset the workflows
+ * actually use: nested mappings, sequences of inline mappings or scalars,
+ * `|` block scalars, quoted plain scalars and full-line comments. Flow
+ * collections, `>` blocks, anchors and tags throw — the parser doubles as a
+ * style constraint on the files it covers.
+ */
+type WorkflowNode = string | { [key: string]: WorkflowNode } | WorkflowNode[];
+
+function parseWorkflowYaml(text: string): { [key: string]: WorkflowNode } {
+  const raw = text.split(/\r?\n/);
+  let cursor = 0;
+  const fail = (line: number, why: string): never => {
+    throw new Error(`workflow YAML subset parser: line ${line}: ${why}`);
+  };
+  const indentOf = (s: string) => s.length - s.trimStart().length;
+  const isBlank = (s: string) => s.trim() === '';
+  const isComment = (s: string) => s.trimStart().startsWith('#');
+  const KEY_VALUE = /^([^:#]+?):(?:\s+(.*))?$/;
+  const peek = (): { index: number; indent: number; content: string } | null => {
+    let i = cursor;
+    while (i < raw.length && (isBlank(raw[i]) || isComment(raw[i]))) i++;
+    return i >= raw.length ? null : { index: i, indent: indentOf(raw[i]), content: raw[i].trim() };
+  };
+  const unquote = (v: string) =>
+    v.length > 1 && ((v[0] === "'" && v.endsWith("'")) || (v[0] === '"' && v.endsWith('"'))) ? v.slice(1, -1) : v;
+
+  const readBlockScalar = (from: number, keyIndent: number, key: string): string => {
+    let end = from;
+    while (end < raw.length && (isBlank(raw[end]) || indentOf(raw[end]) > keyIndent)) end++;
+    while (end > from && isBlank(raw[end - 1])) end--;
+    if (end === from) fail(from + 1, `empty block scalar for key: ${key}`);
+    const first = raw.slice(from, end).findIndex((l) => !isBlank(l));
+    const base = indentOf(raw[from + first]);
+    const text = raw.slice(from, end).map((l) => l.slice(base)).join('\n');
+    cursor = end;
+    return text;
+  };
+
+  const parseMapping = (indent: number): { [key: string]: WorkflowNode } => {
+    const out: { [key: string]: WorkflowNode } = {};
+    for (
+      let next = peek();
+      next && next.indent === indent && next.content !== '-' && !next.content.startsWith('- ');
+      next = peek()
+    ) {
+      const match = KEY_VALUE.exec(next.content);
+      if (!match) fail(next.index + 1, `cannot parse mapping entry: ${next.content}`);
+      const [, key, value = ''] = match;
+      if (key in out) fail(next.index + 1, `duplicate key: ${key}`);
+      cursor = next.index + 1;
+      if (value === '|') {
+        out[key] = readBlockScalar(next.index + 1, indent, key);
+      } else if (value === '') {
+        const nested = peek();
+        out[key] = nested && nested.indent > indent ? parseBlock(nested.indent) : '';
+      } else if (value.startsWith('|') || value.startsWith('>') || value.startsWith('{') || value.startsWith('[')) {
+        fail(next.index + 1, `unsupported YAML feature on the right of ${key}: ${value}`);
+      } else {
+        out[key] = unquote(value);
+      }
+    }
+    return out;
+  };
+
+  const parseSequence = (indent: number): WorkflowNode[] => {
+    const items: WorkflowNode[] = [];
+    for (
+      let next = peek();
+      next && next.indent === indent && (next.content === '-' || next.content.startsWith('- '));
+      next = peek()
+    ) {
+      const rest = next.content === '-' ? '' : next.content.slice(2);
+      cursor = next.index;
+      if (rest === '') {
+        cursor = next.index + 1;
+        const nested = peek();
+        items.push(nested && nested.indent > indent ? parseBlock(nested.indent) : '');
+      } else if (KEY_VALUE.test(rest)) {
+        // "- key: value" begins an inline mapping whose first key sits at indent + 2.
+        raw[next.index] = ' '.repeat(indent + 2) + rest;
+        items.push(parseMapping(indent + 2));
+      } else {
+        cursor = next.index + 1;
+        items.push(unquote(rest));
+      }
+    }
+    return items;
+  };
+
+  const parseBlock = (indent: number): WorkflowNode => {
+    const next = peek();
+    if (!next) return '';
+    return next.content === '-' || next.content.startsWith('- ') ? parseSequence(indent) : parseMapping(indent);
+  };
+
+  return parseMapping(0);
+}
+
 describe('dmg artifact path contract', () => {
   it('the packaging script writes the dmg into bundle/dmg — the path the workflow collects from', () => {
     expect(script).toContain('DMG_DIR="$(dirname "$(dirname "$APP")")/dmg"');
@@ -149,5 +250,148 @@ describe('FIRST copyright disclaimers', () => {
       expect(text, `${file}: trademark disclaimer`).toContain(trademark);
       expect(text, `${file}: copyright disclaimer`).toContain(copyright);
     }
+  });
+});
+
+describe('published-release verification workflow (release-verify.yml)', () => {
+  const verifyText = readFileSync(resolve(ROOT, '.github/workflows/release-verify.yml'), 'utf-8');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const verify = parseWorkflowYaml(verifyText) as any;
+  const jobs = verify.jobs as Record<string, any>;
+  const windows = jobs['windows-installer'];
+  const macos = jobs['macos-intel-dmg'];
+  const linux = jobs['linux-packages'];
+  const runText = (job: any) => job.steps.map((step: any) => step.run ?? '').join('\n');
+
+  it('dispatches manually with the stable tag as default and read-only permissions', () => {
+    expect(verify.on.workflow_dispatch.inputs.tag).toMatchObject({ default: 'v0.1.9', required: 'true' });
+    expect(verify.permissions).toEqual({ contents: 'read' });
+  });
+
+  it('runs on the official Intel macOS and ubuntu runners, public-repo guarded like deploy.yml', () => {
+    expect(windows['runs-on']).toBe('windows-latest');
+    expect(macos['runs-on']).toBe('macos-15-intel');
+    expect(linux['runs-on']).toBe('ubuntu-24.04');
+    for (const job of [windows, macos, linux]) {
+      expect(job.if).toBe('github.event.repository.private == false');
+    }
+    expect(windows['timeout-minutes']).toBe('30');
+    expect(macos['timeout-minutes']).toBe('25');
+    expect(linux['timeout-minutes']).toBe('40');
+  });
+
+  it('verifies published assets only — no checkout, no rebuild, no secrets', () => {
+    for (const job of [windows, macos, linux]) {
+      expect(job.steps.some((step: any) => step.uses === 'actions/checkout@v4')).toBe(false);
+    }
+    for (const banned of ['npx tauri build', 'npm ci', 'cargo ', 'tauri signer generate', 'secrets.', 'GITHUB_TOKEN', 'GH_TOKEN', 'Authorization']) {
+      expect(verifyText, `must not contain ${banned}`).not.toContain(banned);
+    }
+  });
+
+  it('downloads anonymously and pins every asset against the server-side sha256 digest', () => {
+    expect(verifyText).toContain('https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/');
+    for (const job of [windows, macos, linux]) {
+      const run = runText(job);
+      expect(run).toContain('^v[0-9]+\\.[0-9]+\\.[0-9]+');
+      expect(run).toContain('browser_download_url');
+      expect(run).toContain('/^sha256:[0-9a-f]{64}$/');
+      expect(run).toContain('sha256 mismatch');
+      expect(run).toContain('size mismatch');
+      expect(run).toContain('curl -fL --retry 3 -o "dl/$WANT" "$URL"');
+    }
+    expect(runText(windows)).toContain('sha256sum "dl/$WANT"');
+    expect(runText(linux)).toContain('sha256sum "dl/$WANT"');
+    expect(runText(macos)).toContain('shasum -a 256 "dl/$WANT"');
+    expect(runText(macos)).toContain('hdiutil verify');
+    expect(runText(linux)).toContain('fetch_asset "_amd64.deb"');
+    expect(runText(linux)).toContain('fetch_asset "_amd64.AppImage"');
+    expect(runText(linux)).toContain('fetch_asset ".x86_64.rpm"');
+  });
+
+  it('macOS: proves a native Intel runner, then a Universal, sealed, legal DMG that really launches', () => {
+    const run = runText(macos);
+    expect(run).toContain('uname -m');
+    expect(run).toContain('"x86_64"');
+    expect(run).toContain('sysctl.proc_translated');
+    expect(run).toContain('-verify_arch x86_64');
+    expect(run).toContain('-verify_arch arm64');
+    expect(run).toContain('codesign --verify --deep --strict');
+    expect(run).toContain('CFBundleShortVersionString');
+    expect(run).toContain('hdiutil attach -readonly -mountpoint');
+    expect(run).toContain('NOTICE.md');
+    expect(run).toContain('licenses/FRCDesignApp-MIT.txt');
+    expect(run).toContain('Assets.car');
+    expect(run).toContain('open "$APP"');
+    expect(run).toContain('pgrep -f "$MNT/PathBlender.app/Contents/MacOS/$EXE"');
+    expect(run).toContain('screencapture -x "$PWD/mac-screenshot.png"');
+  });
+
+  it('Windows: silently installs, launches and screenshots the published installer with the tag version', () => {
+    const run = runText(windows);
+    expect(run).toContain('-ArgumentList "/S"');
+    expect(run).toContain('HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall');
+    expect(run).toContain('$installDir.Trim(');
+    expect(run).toContain('Join-Path $installDir "pathblender-desktop.exe"');
+    expect(run).toContain('Get-Process -Name "pathblender-desktop"');
+    expect(run).toContain('MainWindowTitle');
+    expect(run).toContain('VersionInfo.ProductVersion');
+    expect(run).toContain('$env:RELEASE_TAG -replace "^v", ""');
+    expect(run).toContain('CopyFromScreen');
+  });
+
+  it('Linux: apt-installs the DEB, runs the AppImage FUSE-free and unpacks the RPM payload', () => {
+    const run = runText(linux);
+    // Virtual display + WebKit-under-Xvfb runtime guards, shared by all three launches.
+    expect(run).toContain('Xvfb :99 -screen 0 1600x900x24');
+    expect(linux.env.DISPLAY).toBe(':99');
+    expect((run.match(/GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1/g) ?? []).length).toBe(3);
+    // DEB: a real system install, with version/NOTICE/binary from package metadata.
+    expect(run).toContain('sudo apt-get install -y "./$DEB"');
+    expect(run).toContain('dpkg-deb -f "$DEB" Version');
+    expect(run).toContain('dpkg -L "$PKG" | grep -E "NOTICE\\.md$"');
+    expect(run).toContain('bin/pathblender-desktop$');
+    // AppImage: no FUSE on hosted runners — extract to inspect, extract-and-run to launch.
+    expect(run).toContain('--appimage-extract > /dev/null');
+    expect(run).toContain('--appimage-extract-and-run');
+    expect(run).toContain('chmod +x "$APPIMG"');
+    expect(run).toContain('grep -aqF "$VER" "$BIN"');
+    // RPM: metadata version + rpm2cpio/cpio payload expansion, run from the tree.
+    expect(run).toContain('rpm -qp --nosignature --qf "%{version}"');
+    expect(run).toContain('rpm2cpio "../$RPM" | cpio -idm --quiet');
+    // Each launch must survive 15s, expose a PathBlender window and capture it.
+    expect((run.match(/sleep 15/g) ?? []).length).toBe(3);
+    expect((run.match(/pgrep -f "pathblender-desktop"/g) ?? []).length).toBe(3);
+    expect((run.match(/xdotool search --name "PathBlender"/g) ?? []).length).toBe(3);
+    expect((run.match(/import -window "\$WIN" (\S+\.png)/g) ?? []).length).toBe(3);
+    expect(run).toContain('import -window "$WIN" deb-window.png');
+    expect(run).toContain('import -window "$WIN" appimage-window.png');
+    expect(run).toContain('import -window "$WIN" rpm-window.png');
+    // The verification tools themselves never guess runtime library names.
+    expect(run).toContain('sudo apt-get install -y xvfb xdotool imagemagick rpm rpm2cpio cpio');
+    expect(run).not.toContain('libwebkit2gtk');
+  });
+
+  it('uploads screenshot and evidence artifacts that must exist', () => {
+    for (const [job, shots] of [
+      [windows, ['windows-screenshot.png']],
+      [macos, ['mac-screenshot.png']],
+      [linux, ['deb-window.png', 'appimage-window.png', 'rpm-window.png']],
+    ] as [any, string[]][]) {
+      const upload = job.steps.find((step: any) => step.uses === 'actions/upload-artifact@v4');
+      expect(upload).toBeDefined();
+      expect(upload.with['if-no-files-found']).toBe('error');
+      for (const shot of shots) expect(upload.with.path).toContain(shot);
+      expect(upload.with.path).toContain('sha256.log');
+      expect(upload.with.path).toContain('release.json');
+    }
+  });
+
+  it('the subset parser also handles the repo’s other real workflow (parser sanity)', () => {
+    const smoke = parseWorkflowYaml(readFileSync(resolve(ROOT, '.github/workflows/windows-smoke.yml'), 'utf-8')) as any;
+    expect(smoke.jobs.smoke['runs-on']).toBe('windows-latest');
+    expect(smoke.jobs.smoke.steps.length).toBeGreaterThanOrEqual(10);
+    expect(smoke.jobs.smoke.steps.some((step: any) => (step.run ?? '').includes('-ArgumentList "/S"'))).toBe(true);
+    expect(smoke.jobs.smoke.steps.some((step: any) => (step.run ?? '').includes('CopyFromScreen'))).toBe(true);
   });
 });

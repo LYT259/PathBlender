@@ -1,0 +1,616 @@
+# Published-release verification: a manual dispatch that verifies the REAL
+# assets of an existing GitHub Release (default: stable v0.1.9) exactly the
+# way an anonymous user gets them — no checkout, no rebuild, no secret
+# material is read anywhere.
+# Both jobs resolve the release through the unauthenticated public API,
+# download the browser-facing asset URL, and compare the local SHA-256 with
+# the server-side `digest` GitHub computes for every release asset.
+#
+# - windows-installer: silently installs the published NSIS setup, launches
+#   pathblender-desktop.exe and asserts process/window/version, then uploads
+#   a full-screen screenshot for human inspection.
+# - macos-intel-dmg: runs on the official Intel x64 macOS runner
+#   (`macos-15-intel`, per the actions/runner-images README), proves the
+#   runner is native x86_64 (not Rosetta), mounts the Universal DMG and
+#   checks the x86_64 slice, the strict codesign seal, the legal files and
+#   the bundle version, then really launches the app and captures a
+#   screenshot.
+# - linux-packages: on an ubuntu runner, apt-installs the published DEB for
+#   real, runs the AppImage with --appimage-extract-and-run (hosted runners
+#   have no FUSE) and unpacks the RPM payload with rpm2cpio + cpio; each of
+#   the three launches runs under Xvfb with GDK_BACKEND=x11 and
+#   WEBKIT_DISABLE_COMPOSITING_MODE=1, must stay alive for 15s, expose a
+#   PathBlender window (captured per package) and carry the packaged NOTICE
+#   plus the published version.
+#
+# Anonymous download is the point: the repo must be public for this to pass,
+# so every job is guarded like deploy.yml. Read-only permissions only.
+name: Release verify
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to verify (e.g. v0.1.9)'
+        required: true
+        default: 'v0.1.9'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-verify
+  cancel-in-progress: false
+
+jobs:
+  windows-installer:
+    if: github.event.repository.private == false
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - name: Resolve and anonymously download the published installer
+        # No token anywhere: the API call and the asset download both go out
+        # unauthenticated, proving the public download path a real user hits.
+        # Integrity anchor = the server-side sha256 digest of the asset.
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="$RELEASE_TAG"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::invalid tag: $TAG"
+            exit 1
+          fi
+          VER="${TAG#v}"
+          WANT="PathBlender_${VER}_x64-setup.exe"
+          export TAG WANT
+          curl -fsSL "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG" -o release.json
+          # Metadata as three plain lines (url / sha256 / size): the macOS
+          # runner's default bash is 3.2, so no mapfile/readarray anywhere.
+          node -e '
+            const fs = require("fs");
+            const rel = JSON.parse(fs.readFileSync("release.json", "utf8"));
+            if (rel.tag_name !== process.env.TAG) {
+              console.error(`::error::release tag_name ${rel.tag_name} != ${process.env.TAG}`);
+              process.exit(1);
+            }
+            const asset = (rel.assets || []).find((a) => a.name === process.env.WANT);
+            if (!asset) {
+              console.error(`::error::asset not found: ${process.env.WANT}; assets: ${(rel.assets || []).map((a) => a.name).join(", ")}`);
+              process.exit(1);
+            }
+            if (!/^sha256:[0-9a-f]{64}$/.test(asset.digest || "")) {
+              console.error(`::error::${asset.name} has no server-side sha256 digest`);
+              process.exit(1);
+            }
+            console.log(asset.browser_download_url);
+            console.log(asset.digest.slice("sha256:".length));
+            console.log(asset.size);
+          ' > meta.txt
+          if [[ "$(wc -l < meta.txt | tr -d " ")" != "3" ]]; then
+            echo "::error::failed to resolve release asset metadata"
+            cat meta.txt
+            exit 1
+          fi
+          URL=$(sed -n 1p meta.txt)
+          EXPECTED=$(sed -n 2p meta.txt)
+          SIZE=$(sed -n 3p meta.txt)
+          mkdir -p dl
+          curl -fL --retry 3 -o "dl/$WANT" "$URL"
+          ACTUAL=$(sha256sum "dl/$WANT" | cut -d" " -f1)
+          GOT=$(wc -c < "dl/$WANT" | tr -d " ")
+          {
+            echo "tag: $TAG"
+            echo "asset: $WANT"
+            echo "expected sha256 (GitHub server-side digest): $EXPECTED"
+            echo "actual   sha256 (locally computed): $ACTUAL"
+            echo "size: $GOT bytes (GitHub: $SIZE)"
+          } | tee sha256.log
+          if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+            echo "::error::sha256 mismatch for $WANT"
+            exit 1
+          fi
+          if [[ "$GOT" != "$SIZE" ]]; then
+            echo "::error::size mismatch for $WANT"
+            exit 1
+          fi
+      - name: Silently install the downloaded installer
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem "dl/*_x64-setup.exe" | Select-Object -First 1
+          if (-not $setup) { Write-Host "::error::no setup.exe found"; exit 1 }
+          Write-Host "Installing $($setup.Name)"
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Host "::error::installer exit code $($p.ExitCode)"; exit 1 }
+      - name: Locate, launch and assert the installed app
+        # Same per-user install discovery as windows-smoke.yml (HKCU uninstall
+        # entry, quotes trimmed); the expected version comes from the release
+        # tag because this workflow never checks out the tree.
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $installDir = $installDir.Trim('"', "'")
+          $exe = Join-Path $installDir "pathblender-desktop.exe"
+          if (-not (Test-Path $exe)) {
+            Write-Host "::error::pathblender-desktop.exe not found at $exe"
+            Get-ChildItem -Path $installDir -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+          }
+          $expected = $env:RELEASE_TAG -replace "^v", ""
+          $actual = (Get-Item $exe).VersionInfo.ProductVersion
+          Write-Host "Installed version: $actual (release tag: $env:RELEASE_TAG)"
+          if ($actual -ne $expected) { Write-Host "::error::installed version $actual != release version $expected"; exit 1 }
+
+          Start-Process -FilePath $exe
+          Start-Sleep -Seconds 15
+          $proc = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $proc) { Write-Host "::error::PathBlender process not running 15s after launch"; exit 1 }
+          $proc.Refresh()
+          if (-not $proc.MainWindowTitle) { Write-Host "::error::PathBlender running but has no main window"; exit 1 }
+          Write-Host "Window title: '$($proc.MainWindowTitle)'"
+          "running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath launch-result.txt -Encoding utf8
+      - name: Screenshot the running app
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms
+          Add-Type -AssemblyName System.Drawing
+          $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+          $bmp.Save("$PWD/windows-screenshot.png")
+          $g.Dispose(); $bmp.Dispose()
+          Write-Host "Screenshot saved: $PWD/windows-screenshot.png"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-verify-windows
+          path: |
+            windows-screenshot.png
+            launch-result.txt
+            sha256.log
+            release.json
+          if-no-files-found: error
+
+  macos-intel-dmg:
+    if: github.event.repository.private == false
+    # Official Intel x64 macOS runner label (actions/runner-images README);
+    # the first step fails the job if it is anything but native x86_64.
+    runs-on: macos-15-intel
+    timeout-minutes: 25
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - name: Assert a native Intel runner (not Rosetta)
+        run: |
+          set -euo pipefail
+          ARCH=$(uname -m)
+          echo "uname -m: $ARCH"
+          if [[ "$ARCH" != "x86_64" ]]; then
+            echo "::error::runner arch is $ARCH, expected native x86_64"
+            exit 1
+          fi
+          TRANSLATED=$(sysctl -n sysctl.proc_translated 2>/dev/null || echo 0)
+          echo "sysctl.proc_translated: $TRANSLATED"
+          if [[ "$TRANSLATED" != "0" ]]; then
+            echo "::error::running under Rosetta (proc_translated=$TRANSLATED)"
+            exit 1
+          fi
+      - name: Resolve and anonymously download the published Universal DMG
+        # Same anonymous + server-side sha256 digest contract as the Windows
+        # job, plus hdiutil's own image verification before mounting.
+        run: |
+          set -euo pipefail
+          TAG="$RELEASE_TAG"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::invalid tag: $TAG"
+            exit 1
+          fi
+          VER="${TAG#v}"
+          WANT="PathBlender_${VER}_universal.dmg"
+          export TAG WANT
+          curl -fsSL "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG" -o release.json
+          # Metadata as three plain lines (url / sha256 / size): the macOS
+          # runner's default bash is 3.2, so no mapfile/readarray anywhere.
+          node -e '
+            const fs = require("fs");
+            const rel = JSON.parse(fs.readFileSync("release.json", "utf8"));
+            if (rel.tag_name !== process.env.TAG) {
+              console.error(`::error::release tag_name ${rel.tag_name} != ${process.env.TAG}`);
+              process.exit(1);
+            }
+            const asset = (rel.assets || []).find((a) => a.name === process.env.WANT);
+            if (!asset) {
+              console.error(`::error::asset not found: ${process.env.WANT}; assets: ${(rel.assets || []).map((a) => a.name).join(", ")}`);
+              process.exit(1);
+            }
+            if (!/^sha256:[0-9a-f]{64}$/.test(asset.digest || "")) {
+              console.error(`::error::${asset.name} has no server-side sha256 digest`);
+              process.exit(1);
+            }
+            console.log(asset.browser_download_url);
+            console.log(asset.digest.slice("sha256:".length));
+            console.log(asset.size);
+          ' > meta.txt
+          if [[ "$(wc -l < meta.txt | tr -d " ")" != "3" ]]; then
+            echo "::error::failed to resolve release asset metadata"
+            cat meta.txt
+            exit 1
+          fi
+          URL=$(sed -n 1p meta.txt)
+          EXPECTED=$(sed -n 2p meta.txt)
+          SIZE=$(sed -n 3p meta.txt)
+          mkdir -p dl
+          curl -fL --retry 3 -o "dl/$WANT" "$URL"
+          ACTUAL=$(shasum -a 256 "dl/$WANT" | cut -d" " -f1)
+          GOT=$(wc -c < "dl/$WANT" | tr -d " ")
+          {
+            echo "tag: $TAG"
+            echo "asset: $WANT"
+            echo "expected sha256 (GitHub server-side digest): $EXPECTED"
+            echo "actual   sha256 (locally computed): $ACTUAL"
+            echo "size: $GOT bytes (GitHub: $SIZE)"
+          } | tee sha256.log
+          if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+            echo "::error::sha256 mismatch for $WANT"
+            exit 1
+          fi
+          if [[ "$GOT" != "$SIZE" ]]; then
+            echo "::error::size mismatch for $WANT"
+            exit 1
+          fi
+          hdiutil verify "dl/$WANT"
+      - name: Mount the DMG and verify architecture, seal and legal files
+        # The same gates scripts/package-desktop-artifacts.sh enforces before
+        # a release ships, replayed against the published artifact: both
+        # Universal slices, the strict codesign seal, the legal notices and
+        # the version users will actually run.
+        run: |
+          set -euo pipefail
+          VER="${RELEASE_TAG#v}"
+          DMG="dl/PathBlender_${VER}_universal.dmg"
+          MNT="$RUNNER_TEMP/pb-verify-mount"
+          hdiutil attach -readonly -mountpoint "$MNT" "$DMG"
+          APP="$MNT/PathBlender.app"
+          EXE=$(plutil -extract CFBundleExecutable raw "$APP/Contents/Info.plist")
+          lipo "$APP/Contents/MacOS/$EXE" -verify_arch x86_64
+          lipo "$APP/Contents/MacOS/$EXE" -verify_arch arm64
+          echo "Universal binary verified: x86_64 + arm64"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          PLIST_VER=$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")
+          echo "Mounted app version: $PLIST_VER (release tag: $RELEASE_TAG)"
+          if [[ "$PLIST_VER" != "$VER" ]]; then
+            echo "::error::app version $PLIST_VER != release version $VER"
+            exit 1
+          fi
+          for f in LICENSE NOTICE.md "licenses/FRCDesignApp-MIT.txt" Assets.car; do
+            if [[ ! -e "$APP/Contents/Resources/$f" ]]; then
+              echo "::error::missing $f in the mounted app"
+              exit 1
+            fi
+          done
+          echo "Legal notices and icon catalog present"
+      - name: Launch the mounted app and capture evidence
+        # Runs the app straight from the read-only DMG volume — the exact
+        # bytes a user gets before dragging to Applications — waits for the
+        # process, then takes a full-screen screenshot for human inspection.
+        run: |
+          set -euo pipefail
+          MNT="$RUNNER_TEMP/pb-verify-mount"
+          APP="$MNT/PathBlender.app"
+          EXE=$(plutil -extract CFBundleExecutable raw "$APP/Contents/Info.plist")
+          open "$APP"
+          sleep 20
+          if ! pgrep -f "$MNT/PathBlender.app/Contents/MacOS/$EXE" > /dev/null; then
+            echo "::error::PathBlender process not running 20s after launch"
+            ps ax -o pid,comm
+            exit 1
+          fi
+          PID=$(pgrep -f "$MNT/PathBlender.app/Contents/MacOS/$EXE" | head -1)
+          echo "PathBlender process pid: $PID"
+          sleep 10
+          screencapture -x "$PWD/mac-screenshot.png"
+          {
+            echo "tag: $RELEASE_TAG"
+            echo "process: pid $PID ($MNT/PathBlender.app/Contents/MacOS/$EXE)"
+          } | tee launch-result.txt
+          # Cleanup only — every verification above is already recorded, so a
+          # stubborn quit/detach must not fail the job after the evidence is in.
+          pkill -f "$MNT/PathBlender.app/Contents/MacOS/$EXE" || true
+          sleep 3
+          if ! hdiutil detach "$MNT"; then
+            echo "::warning::could not detach $MNT"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-verify-macos-intel
+          path: |
+            mac-screenshot.png
+            launch-result.txt
+            sha256.log
+            release.json
+          if-no-files-found: error
+
+  linux-packages:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      DISPLAY: ':99'
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - name: Install verification tools and start a virtual display
+        # Only stable tool packages here: the WebKitGTK/GTK runtime the app
+        # needs is pulled in later by the DEB's own dependency closure, so
+        # this job never guesses at runtime library package names.
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y xvfb xdotool imagemagick rpm rpm2cpio cpio
+          Xvfb :99 -screen 0 1600x900x24 &
+          for _ in $(seq 1 20); do
+            if [ -S /tmp/.X11-unix/X99 ]; then break; fi
+            sleep 1
+          done
+          if [ ! -S /tmp/.X11-unix/X99 ]; then
+            echo "::error::Xvfb did not start on :99"
+            exit 1
+          fi
+          echo "Xvfb ready on :99 (1600x900x24)"
+      - name: Resolve and anonymously download the three published Linux packages
+        # Same anonymous + server-side sha256 digest contract as the other
+        # jobs, applied to DEB, AppImage and RPM. Suffix matching keeps this
+        # correct even if the rpm release number inside the filename changes.
+        run: |
+          set -euo pipefail
+          TAG="$RELEASE_TAG"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::invalid tag: $TAG"
+            exit 1
+          fi
+          export TAG
+          curl -fsSL "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG" -o release.json
+          mkdir -p dl
+          fetch_asset() {
+            local SUFFIX="$1"
+            export SUFFIX
+            node -e '
+              const fs = require("fs");
+              const rel = JSON.parse(fs.readFileSync("release.json", "utf8"));
+              if (rel.tag_name !== process.env.TAG) {
+                console.error(`::error::release tag_name ${rel.tag_name} != ${process.env.TAG}`);
+                process.exit(1);
+              }
+              const matches = (rel.assets || []).filter((a) => a.name.endsWith(process.env.SUFFIX));
+              if (matches.length !== 1) {
+                console.error(`::error::expected exactly one asset matching ${process.env.SUFFIX}, found ${matches.length}: ${(rel.assets || []).map((a) => a.name).join(", ")}`);
+                process.exit(1);
+              }
+              const asset = matches[0];
+              if (!/^sha256:[0-9a-f]{64}$/.test(asset.digest || "")) {
+                console.error(`::error::${asset.name} has no server-side sha256 digest`);
+                process.exit(1);
+              }
+              console.log(asset.name);
+              console.log(asset.browser_download_url);
+              console.log(asset.digest.slice("sha256:".length));
+              console.log(asset.size);
+            ' > meta.txt
+            if [[ "$(wc -l < meta.txt | tr -d " ")" != "4" ]]; then
+              echo "::error::failed to resolve release asset metadata for $SUFFIX"
+              cat meta.txt
+              exit 1
+            fi
+            local WANT URL EXPECTED SIZE
+            WANT=$(sed -n 1p meta.txt)
+            URL=$(sed -n 2p meta.txt)
+            EXPECTED=$(sed -n 3p meta.txt)
+            SIZE=$(sed -n 4p meta.txt)
+            curl -fL --retry 3 -o "dl/$WANT" "$URL"
+            local ACTUAL GOT
+            ACTUAL=$(sha256sum "dl/$WANT" | cut -d" " -f1)
+            GOT=$(wc -c < "dl/$WANT" | tr -d " ")
+            {
+              echo "tag: $TAG"
+              echo "asset: $WANT"
+              echo "expected sha256 (GitHub server-side digest): $EXPECTED"
+              echo "actual   sha256 (locally computed): $ACTUAL"
+              echo "size: $GOT bytes (GitHub: $SIZE)"
+              echo
+            } | tee -a sha256.log
+            if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+              echo "::error::sha256 mismatch for $WANT"
+              exit 1
+            fi
+            if [[ "$GOT" != "$SIZE" ]]; then
+              echo "::error::size mismatch for $WANT"
+              exit 1
+            fi
+          }
+          fetch_asset "_amd64.deb"
+          fetch_asset "_amd64.AppImage"
+          fetch_asset ".x86_64.rpm"
+          ls -l dl
+      - name: DEB — really install with apt, launch and capture the window
+        # A true system install (sudo apt resolves the DEB's own dependency
+        # closure, which also provides the WebKitGTK runtime for the later
+        # extracted-format runs). Version and NOTICE come from the package
+        # metadata and file list, not from assumptions.
+        run: |
+          set -euo pipefail
+          VER="${RELEASE_TAG#v}"
+          set -- dl/*_amd64.deb
+          if [ "$#" -ne 1 ]; then echo "::error::expected one deb, found $#: $*"; exit 1; fi
+          DEB="$1"
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get install -y "./$DEB"
+          PKG=$(dpkg-deb -f "$DEB" Package)
+          DEB_VER=$(dpkg-deb -f "$DEB" Version)
+          echo "deb package: $PKG, version: $DEB_VER (release tag: $RELEASE_TAG)"
+          if [[ "$DEB_VER" != "$VER" ]]; then
+            echo "::error::deb version $DEB_VER != release version $VER"
+            exit 1
+          fi
+          NOTICE=$(dpkg -L "$PKG" | grep -E "NOTICE\.md$" | head -1)
+          if [[ -z "$NOTICE" || ! -f "$NOTICE" ]]; then
+            echo "::error::NOTICE.md not found in the installed deb"
+            dpkg -L "$PKG"
+            exit 1
+          fi
+          echo "installed NOTICE: $NOTICE"
+          BIN=$(dpkg -L "$PKG" | grep -E "bin/pathblender-desktop$" | head -1)
+          if [[ -z "$BIN" || ! -x "$BIN" ]]; then
+            echo "::error::pathblender-desktop not found in the installed deb"
+            dpkg -L "$PKG"
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/deb-home"
+          HOME="$RUNNER_TEMP/deb-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 "$BIN" > deb-app.log 2>&1 &
+          sleep 15
+          if ! pgrep -f "pathblender-desktop" > /dev/null; then
+            echo "::error::DEB app process not running 15s after launch"
+            cat deb-app.log
+            exit 1
+          fi
+          WIN=$(xdotool search --name "PathBlender" | head -1)
+          if [[ -z "$WIN" ]]; then
+            echo "::error::no PathBlender window for the DEB app"
+            cat deb-app.log
+            exit 1
+          fi
+          echo "DEB app window id: $WIN"
+          import -window "$WIN" deb-window.png
+          echo "deb: $PKG $DEB_VER, NOTICE ok, process + window captured" | tee -a linux-results.log
+          pkill -f "pathblender-desktop" || true
+          sleep 3
+      - name: AppImage — extract, verify content and run without FUSE
+        # Hosted runners have no FUSE, so the AppImage runs through its own
+        # --appimage-extract-and-run path. Content checks (NOTICE, embedded
+        # version string) use an explicit --appimage-extract tree.
+        run: |
+          set -euo pipefail
+          VER="${RELEASE_TAG#v}"
+          set -- dl/*_amd64.AppImage
+          if [ "$#" -ne 1 ]; then echo "::error::expected one AppImage, found $#: $*"; exit 1; fi
+          APPIMG="$(pwd)/$1"
+          chmod +x "$APPIMG"
+          mkdir -p appimage-check
+          cd appimage-check
+          "$APPIMG" --appimage-extract > /dev/null
+          NOTICE=$(find squashfs-root -name NOTICE.md | head -1)
+          if [[ -z "$NOTICE" ]]; then
+            echo "::error::NOTICE.md not found inside the AppImage"
+            find squashfs-root -maxdepth 4 -type d
+            exit 1
+          fi
+          echo "AppImage NOTICE: $NOTICE"
+          BIN=$(find squashfs-root -type f -path "*/bin/pathblender-desktop" | head -1)
+          if [[ -z "$BIN" ]]; then
+            echo "::error::pathblender-desktop not found inside the AppImage"
+            exit 1
+          fi
+          if ! grep -aqF "$VER" "$BIN"; then
+            echo "::error::version string $VER not found in the AppImage binary"
+            exit 1
+          fi
+          echo "AppImage binary embeds version $VER: $BIN"
+          cd ..
+          mkdir -p "$RUNNER_TEMP/appimage-home"
+          HOME="$RUNNER_TEMP/appimage-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 "$APPIMG" --appimage-extract-and-run > appimage-app.log 2>&1 &
+          sleep 15
+          if ! pgrep -f "pathblender-desktop" > /dev/null; then
+            echo "::error::AppImage app process not running 15s after launch"
+            cat appimage-app.log
+            exit 1
+          fi
+          WIN=$(xdotool search --name "PathBlender" | head -1)
+          if [[ -z "$WIN" ]]; then
+            echo "::error::no PathBlender window for the AppImage app"
+            cat appimage-app.log
+            exit 1
+          fi
+          echo "AppImage app window id: $WIN"
+          import -window "$WIN" appimage-window.png
+          echo "appimage: NOTICE ok, version $VER embedded, process + window captured" | tee -a linux-results.log
+          pkill -f "pathblender-desktop" || true
+          sleep 3
+      - name: RPM — unpack the payload and run it from the expanded tree
+        # No alien/rpm -i on this Debian-family runner: rpm2cpio + cpio
+        # expand the payload exactly the way the Linux verification host
+        # did, and the binary runs from a tree that mirrors the installed
+        # layout (usr/bin + usr/lib resources).
+        run: |
+          set -euo pipefail
+          VER="${RELEASE_TAG#v}"
+          set -- dl/*.x86_64.rpm
+          if [ "$#" -ne 1 ]; then echo "::error::expected one rpm, found $#: $*"; exit 1; fi
+          RPM="$1"
+          RPM_VER=$(rpm -qp --nosignature --qf "%{version}" "$RPM" 2>/dev/null | tr -d "[:space:]")
+          echo "rpm version: $RPM_VER (release tag: $RELEASE_TAG)"
+          if [[ "$RPM_VER" != "$VER" ]]; then
+            echo "::error::rpm version $RPM_VER != release version $VER"
+            exit 1
+          fi
+          mkdir -p rpm-tree
+          cd rpm-tree
+          rpm2cpio "../$RPM" | cpio -idm --quiet
+          cd ..
+          NOTICE=$(find rpm-tree -name NOTICE.md | head -1)
+          if [[ -z "$NOTICE" ]]; then
+            echo "::error::NOTICE.md not found in the rpm payload"
+            find rpm-tree -maxdepth 4 -type d
+            exit 1
+          fi
+          echo "RPM payload NOTICE: $NOTICE"
+          BIN=$(find rpm-tree -type f -path "*/bin/pathblender-desktop" | head -1)
+          if [[ -z "$BIN" || ! -x "$BIN" ]]; then
+            echo "::error::pathblender-desktop not found in the rpm payload"
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/rpm-home"
+          HOME="$RUNNER_TEMP/rpm-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 "$BIN" > rpm-app.log 2>&1 &
+          sleep 15
+          if ! pgrep -f "pathblender-desktop" > /dev/null; then
+            echo "::error::RPM app process not running 15s after launch"
+            cat rpm-app.log
+            exit 1
+          fi
+          WIN=$(xdotool search --name "PathBlender" | head -1)
+          if [[ -z "$WIN" ]]; then
+            echo "::error::no PathBlender window for the RPM app"
+            cat rpm-app.log
+            exit 1
+          fi
+          echo "RPM app window id: $WIN"
+          import -window "$WIN" rpm-window.png
+          echo "rpm: version $RPM_VER, NOTICE ok, process + window captured" | tee -a linux-results.log
+          pkill -f "pathblender-desktop" || true
+          sleep 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-verify-linux
+          path: |
+            deb-window.png
+            appimage-window.png
+            rpm-window.png
+            linux-results.log
+            deb-app.log
+            appimage-app.log
+            rpm-app.log
+            sha256.log
+            release.json
+          if-no-files-found: error

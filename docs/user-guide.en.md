@@ -203,8 +203,30 @@ rest of the alliance.
   follows your system language until you pick one;
 - **Updates** (desktop): menu **PathBlender → Check for Updates…**;
   Preferences → Updates switches between the stable and beta channels.
-  On Linux, in-app updates use the AppImage; DEB/RPM installs update by
-  installing the new package.
+
+## Installing the desktop app
+
+Downloads for every platform are on the
+[GitHub Releases](https://github.com/LYT259/pathblender/releases) page:
+the macOS Universal DMG (one download for Apple Silicon and Intel,
+macOS 13+), the Windows x86_64 installer `*_x64-setup.exe`, and Linux
+x86_64 DEB / AppImage / RPM packages. On Linux, after downloading the
+package — the examples use version 0.1.9; file names follow the version
+on the Releases page:
+
+```bash
+# DEB (Debian/Ubuntu example)
+sudo apt install ./PathBlender_0.1.9_amd64.deb
+
+# AppImage (runs without installation)
+chmod +x PathBlender_0.1.9_amd64.AppImage && ./PathBlender_0.1.9_amd64.AppImage
+
+# RPM (Fedora example — package-manager commands vary by distribution)
+sudo dnf install ./PathBlender-0.1.9-1.x86_64.rpm
+```
+
+In-app updates use the AppImage; DEB/RPM installs update by installing
+the new package over the old one.
 
 ## Web app vs desktop app
 
