@@ -2,9 +2,11 @@
 # assets of an existing GitHub Release (default: stable v0.1.9) exactly the
 # way an anonymous user gets them — no checkout, no rebuild, no secret
 # material is read anywhere.
-# Both jobs resolve the release through the unauthenticated public API,
-# download the browser-facing asset URL, and compare the local SHA-256 with
-# the server-side `digest` GitHub computes for every release asset.
+# Every job resolves the release through the public API using the built-in
+# read-only github.token (anonymous API calls hit shared-runner-IP 403 rate
+# limits), downloads the browser-facing asset URL anonymously — the path a
+# real user hits — and compares the local SHA-256 with the server-side
+# `digest` GitHub computes for every release asset.
 #
 # - windows-installer: silently installs the published NSIS setup, launches
 #   pathblender-desktop.exe and asserts process/window/version, then uploads
@@ -53,14 +55,17 @@ jobs:
     timeout-minutes: 30
     env:
       RELEASE_TAG: ${{ inputs.tag }}
+      GH_METADATA_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/setup-node@v4
         with:
           node-version: 23
       - name: Resolve and anonymously download the published installer
-        # No token anywhere: the API call and the asset download both go out
-        # unauthenticated, proving the public download path a real user hits.
-        # Integrity anchor = the server-side sha256 digest of the asset.
+        # Release METADATA goes through the built-in read-only github.token:
+        # the anonymous API hit shared-runner-IP 403 rate limits. The ASSET
+        # download itself carries no token — that anonymous browser URL is
+        # the public download path being verified. Integrity anchor = the
+        # server-side sha256 digest of the asset.
         shell: bash
         run: |
           set -euo pipefail
@@ -72,7 +77,7 @@ jobs:
           VER="${TAG#v}"
           WANT="PathBlender_${VER}_x64-setup.exe"
           export TAG WANT
-          curl -fsSL "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG" -o release.json
+          curl -fsSL -H "Authorization: Bearer $GH_METADATA_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG" -o release.json
           # Metadata as three plain lines (url / sha256 / size): the macOS
           # runner's default bash is 3.2, so no mapfile/readarray anywhere.
           node -e '
@@ -192,6 +197,7 @@ jobs:
     timeout-minutes: 25
     env:
       RELEASE_TAG: ${{ inputs.tag }}
+      GH_METADATA_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/setup-node@v4
         with:
@@ -224,7 +230,7 @@ jobs:
           VER="${TAG#v}"
           WANT="PathBlender_${VER}_universal.dmg"
           export TAG WANT
-          curl -fsSL "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG" -o release.json
+          curl -fsSL -H "Authorization: Bearer $GH_METADATA_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG" -o release.json
           # Metadata as three plain lines (url / sha256 / size): the macOS
           # runner's default bash is 3.2, so no mapfile/readarray anywhere.
           node -e '
@@ -352,6 +358,7 @@ jobs:
     timeout-minutes: 40
     env:
       RELEASE_TAG: ${{ inputs.tag }}
+      GH_METADATA_TOKEN: ${{ github.token }}
       DISPLAY: ':99'
     steps:
       - uses: actions/setup-node@v4
@@ -387,7 +394,7 @@ jobs:
             exit 1
           fi
           export TAG
-          curl -fsSL "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG" -o release.json
+          curl -fsSL -H "Authorization: Bearer $GH_METADATA_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG" -o release.json
           mkdir -p dl
           fetch_asset() {
             local SUFFIX="$1"
@@ -607,7 +614,24 @@ jobs:
           fi
           mkdir -p rpm-tree
           cd rpm-tree
-          rpm2cpio "../$RPM" | cpio -idm --quiet
+          # rpm2cpio can exit nonzero AFTER writing a complete payload (run
+          # 41269273195: the pipeline died under set -o pipefail with no cpio
+          # error, while the same command succeeded without pipefail on the
+          # Linux verification host). So: capture the payload first, tolerate
+          # the nonzero exit ONLY when a non-empty cpio file exists, keep the
+          # rpm2cpio log as evidence, and let cpio's own exit status be the
+          # authoritative expansion check below.
+          rpm2cpio "../$RPM" > rpm-payload.cpio 2> rpm2cpio.log || true
+          if [[ ! -s rpm-payload.cpio ]]; then
+            echo "::error::rpm2cpio produced no payload for $RPM"
+            cat rpm2cpio.log
+            exit 1
+          fi
+          if [[ -s rpm2cpio.log ]]; then
+            echo "rpm2cpio warnings:"
+            cat rpm2cpio.log
+          fi
+          cpio -idm --quiet < rpm-payload.cpio
           cd ..
           NOTICE=$(find rpm-tree -name NOTICE.md | head -1)
           if [[ -z "$NOTICE" ]]; then
@@ -655,6 +679,7 @@ jobs:
             appimage-screen.png
             rpm-screen.png
             deb-notice.sha256
+            rpm-tree/rpm2cpio.log
             linux-results.log
             deb-app.log
             appimage-app.log
