@@ -20,8 +20,8 @@
 #   have no FUSE) and unpacks the RPM payload with rpm2cpio + cpio; each of
 #   the three launches runs under Xvfb with GDK_BACKEND=x11 and
 #   WEBKIT_DISABLE_COMPOSITING_MODE=1, must stay alive for 15s, expose a
-#   PathBlender window (captured per package) and carry the packaged NOTICE
-#   plus the published version.
+#   PathBlender window (asserted) and produce a validated root-screen
+#   capture per package, plus the packaged NOTICE and published version.
 #
 # Anonymous download is the point: the repo must be public for this to pass,
 # so every job is guarded like deploy.yml. Read-only permissions only.
@@ -445,7 +445,7 @@ jobs:
           fetch_asset "_amd64.AppImage"
           fetch_asset ".x86_64.rpm"
           ls -l dl
-      - name: DEB — really install with apt, launch and capture the window
+      - name: DEB — really install with apt, launch and capture the screen
         # A true system install (sudo apt resolves the DEB's own dependency
         # closure, which also provides the WebKitGTK runtime for the later
         # extracted-format runs). Version and NOTICE come from the package
@@ -493,8 +493,16 @@ jobs:
             exit 1
           fi
           echo "DEB app window id: $WIN"
-          import -window "$WIN" deb-window.png
-          echo "deb: $PKG $DEB_VER, NOTICE ok, process + window captured" | tee -a linux-results.log
+          # Window-id grabs fail on Xvfb (run 41266701676: XGetImage "Resource
+          # temporarily unavailable"); capture the ROOT screen instead — the
+          # app window is the only mapped window on it — then validate it.
+          import -window root deb-screen.png
+          GEO=$(identify -format "%wx%h" deb-screen.png)
+          if [[ "$GEO" != "1600x900" ]]; then
+            echo "::error::deb screenshot is ${GEO}px, expected the 1600x900 root screen"
+            exit 1
+          fi
+          echo "deb: $PKG $DEB_VER, NOTICE ok, process alive, root-screen capture ${GEO}px (window $WIN)" | tee -a linux-results.log
           pkill -f "pathblender-desktop" || true
           sleep 3
       - name: AppImage — extract, verify content and run without FUSE
@@ -544,8 +552,15 @@ jobs:
             exit 1
           fi
           echo "AppImage app window id: $WIN"
-          import -window "$WIN" appimage-window.png
-          echo "appimage: NOTICE ok, version $VER embedded, process + window captured" | tee -a linux-results.log
+          # Same Xvfb window-id grab limitation as the DEB step: capture the
+          # ROOT screen and validate it instead.
+          import -window root appimage-screen.png
+          GEO=$(identify -format "%wx%h" appimage-screen.png)
+          if [[ "$GEO" != "1600x900" ]]; then
+            echo "::error::appimage screenshot is ${GEO}px, expected the 1600x900 root screen"
+            exit 1
+          fi
+          echo "appimage: NOTICE ok, version $VER embedded, process alive, root-screen capture ${GEO}px (window $WIN)" | tee -a linux-results.log
           pkill -f "pathblender-desktop" || true
           sleep 3
       - name: RPM — unpack the payload and run it from the expanded tree
@@ -596,17 +611,24 @@ jobs:
             exit 1
           fi
           echo "RPM app window id: $WIN"
-          import -window "$WIN" rpm-window.png
-          echo "rpm: version $RPM_VER, NOTICE ok, process + window captured" | tee -a linux-results.log
+          # Same Xvfb window-id grab limitation as the DEB step: capture the
+          # ROOT screen and validate it instead.
+          import -window root rpm-screen.png
+          GEO=$(identify -format "%wx%h" rpm-screen.png)
+          if [[ "$GEO" != "1600x900" ]]; then
+            echo "::error::rpm screenshot is ${GEO}px, expected the 1600x900 root screen"
+            exit 1
+          fi
+          echo "rpm: version $RPM_VER, NOTICE ok, process alive, root-screen capture ${GEO}px (window $WIN)" | tee -a linux-results.log
           pkill -f "pathblender-desktop" || true
           sleep 3
       - uses: actions/upload-artifact@v4
         with:
           name: release-verify-linux
           path: |
-            deb-window.png
-            appimage-window.png
-            rpm-window.png
+            deb-screen.png
+            appimage-screen.png
+            rpm-screen.png
             linux-results.log
             deb-app.log
             appimage-app.log
