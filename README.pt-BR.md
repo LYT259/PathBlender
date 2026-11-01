@@ -4,7 +4,7 @@
 
 **Veja juntos as trajetórias autônomas da sua aliança. Encontre os conflitos antes do jogo.**
 
-[**Experimente no navegador**](https://pathblender.pages.dev) ·
+[**Experimente no navegador**](https://lyt259.github.io/PathBlender/) ·
 [Baixe o aplicativo de desktop](https://github.com/LYT259/pathblender/releases) ·
 [Primeira checagem de trajetórias](docs/user-guide.en.md#try-it-without-files) ·
 [Star no GitHub](https://github.com/LYT259/pathblender)
@@ -65,7 +65,7 @@ Campos: FRC 2022–2026 embutidos, além da importação de campos personalizado
 - **Windows** (x86_64) — baixe o instalador NSIS `*_x64-setup.exe` da página de releases e execute-o.
 - **Linux** (x86_64) — baixe o pacote DEB, AppImage ou RPM da página de releases (o guia do usuário traz exemplos de instalação pelo terminal). As atualizações dentro do app usarão o AppImage; usuários de DEB/RPM atualizarão instalando o pacote novo por cima do antigo.
 - Atualizações: menu **PathBlender → Buscar atualizações…** (em betas: antes ative o canal beta em **Preferências → Atualizações**). Os demais arquivos da página de releases (`.tar.gz`, `.sig`, `.json`) são internos do atualizador — você não precisa deles.
-- **Web app** (build visualizador: as mesmas importações do aplicativo — arquivos e pastas inteiras — mais reprodução e verificação; sem salvar sessão nem exportar GIF ou pacote de solução) — [pathblender.pages.dev](https://pathblender.pages.dev).
+- **Web app** (build visualizador: as mesmas importações do aplicativo — arquivos e pastas inteiras — mais reprodução e verificação; sem salvar sessão nem exportar GIF ou pacote de solução) — site oficial em [lyt259.github.io/PathBlender](https://lyt259.github.io/PathBlender/), com [pathblender.pages.dev](https://pathblender.pages.dev) como espelho de backup.
 
 ## Privacidade
 

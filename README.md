@@ -4,7 +4,7 @@
 
 **See your alliance’s autonomous routes together. Find conflicts before the match.**
 
-[**Try it in your browser**](https://pathblender.pages.dev) ·
+[**Try it in your browser**](https://lyt259.github.io/PathBlender/) ·
 [Download the desktop app](https://github.com/LYT259/pathblender/releases) ·
 [First path check](docs/user-guide.en.md#try-it-without-files) ·
 [Star on GitHub](https://github.com/LYT259/pathblender)
@@ -119,7 +119,9 @@ any other season or a practice field).
 - **Web app** (viewer build: the same imports as the app — files and whole
   folders — plus playback and checking; no session
   save / GIF and solution-package export) —
-  [pathblender.pages.dev](https://pathblender.pages.dev).
+  [lyt259.github.io/PathBlender](https://lyt259.github.io/PathBlender/)
+  (official site), with
+  [pathblender.pages.dev](https://pathblender.pages.dev) as a backup mirror.
 
 ## Privacy
 

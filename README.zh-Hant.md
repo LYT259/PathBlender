@@ -4,7 +4,7 @@
 
 **把聯盟各隊的自動路徑放到同一塊場地一起看。在比賽前發現衝突。**
 
-[**在瀏覽器裡試試**](https://pathblender.pages.dev) ·
+[**在瀏覽器裡試試**](https://lyt259.github.io/PathBlender/) ·
 [下載桌面版](https://github.com/LYT259/pathblender/releases) ·
 [第一次路徑檢查](docs/user-guide.zh.md#无需文件试做一次检查) ·
 [在 GitHub 上點 Star](https://github.com/LYT259/pathblender)
@@ -65,7 +65,7 @@ PathBlender 補上這個空缺：
 - **Windows**（x86_64）——從發布頁下載 NSIS 安裝包 `*_x64-setup.exe` 並執行。
 - **Linux**（x86_64）——從發布頁下載 DEB / AppImage / RPM 套件（終端機安裝示例見使用指南）。應用內更新走 AppImage；DEB/RPM 使用者下載新套件覆蓋安裝即可更新。
 - 更新：選單 **PathBlender → 檢查更新…**（Beta 版先在 **偏好設定 → 更新** 開啟 Beta 通道）。發布頁上的其它檔案（`.tar.gz`、`.sig`、`.json`）是更新器內部檔案，無需下載。
-- **網頁版**（檢視器建構：與桌面版相同的匯入——單一檔案或整個資料夾——加上回放與檢查；無工作階段儲存/開啟、GIF 回放與方案包匯出）——[pathblender.pages.dev](https://pathblender.pages.dev)。
+- **網頁版**（檢視器建構：與桌面版相同的匯入——單一檔案或整個資料夾——加上回放與檢查；無工作階段儲存/開啟、GIF 回放與方案包匯出）——官方網站 [lyt259.github.io/PathBlender](https://lyt259.github.io/PathBlender/)，另提供備用鏡像 [pathblender.pages.dev](https://pathblender.pages.dev)。
 
 ## 隱私
 
