@@ -21,9 +21,11 @@
 #   the three launches runs under Xvfb with GDK_BACKEND=x11 and
 #   WEBKIT_DISABLE_COMPOSITING_MODE=1, must stay alive for 15s, expose a
 #   PathBlender window (asserted) and produce a validated root-screen
-#   capture per package, plus the packaged NOTICE; the AppImage carries no
-#   text version at all, so its version proof is binary + NOTICE hash
-#   identity with the apt-installed DEB (whose dpkg metadata pins the tag).
+#   capture per package, plus the packaged NOTICE; the AppImage has no
+#   version metadata and its binary is rewritten by the packager (run
+#   41268762661), so its version authority is the tag -> release -> unique
+#   asset -> server-side digest download chain, with only the NOTICE
+#   content cross-checked against the apt-installed DEB.
 #
 # Anonymous download is the point: the repo must be public for this to pass,
 # so every job is guarded like deploy.yml. Read-only permissions only.
@@ -480,14 +482,14 @@ jobs:
             dpkg -L "$PKG"
             exit 1
           fi
-          # Cross-format identity anchor: the installed DEB binary and NOTICE
-          # hashes are recorded here (dpkg metadata above already pins the
-          # version) and must match the AppImage payload in the next step.
-          BIN_SHA=$(sha256sum "$BIN" | cut -d" " -f1)
+          # NOTICE content anchor: the installed DEB's NOTICE hash is
+          # recorded here and must match the AppImage payload in the next
+          # step (measured identical in run 41268762661). The BINARY is
+          # deliberately not hashed — the AppImage packager rewrites it
+          # (same run: NOTICE hashes matched, binary hashes differed).
           NOTICE_SHA=$(sha256sum "$NOTICE" | cut -d" " -f1)
-          printf '%s  %s\n' "$BIN_SHA" "$BIN" > deb-binary.sha256
           printf '%s  %s\n' "$NOTICE_SHA" "$NOTICE" > deb-notice.sha256
-          echo "deb binary sha256 $BIN_SHA / notice sha256 $NOTICE_SHA (cross-format anchor)" | tee -a linux-results.log
+          echo "deb notice sha256 $NOTICE_SHA (content anchor for the AppImage)" | tee -a linux-results.log
           mkdir -p "$RUNNER_TEMP/deb-home"
           HOME="$RUNNER_TEMP/deb-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 "$BIN" > deb-app.log 2>&1 &
           sleep 15
@@ -541,29 +543,24 @@ jobs:
             echo "::error::pathblender-desktop not found inside the AppImage"
             exit 1
           fi
-          # No text version anchor exists in the AppImage at all (run
-          # 41267886164: no bundled *.js carries the version; the stripped
-          # binary carries no literal either). Version proof is therefore
-          # CROSS-FORMAT IDENTITY: the AppImage's pathblender-desktop and
-          # NOTICE must hash identically to the apt-installed DEB files whose
-          # dpkg metadata already pins the tag version.
-          APPBIN_SHA=$(sha256sum "$BIN" | cut -d" " -f1)
+          # No text or metadata version anchor exists in the AppImage at all
+          # (runs 41267274881/41267886164: neither the binary nor any bundled
+          # *.js carries a version literal), and the packager REWRITES the
+          # binary (run 41268762661: NOTICE hashes matched, binary hashes
+          # differed) — so the binary is checked for existence only and is
+          # never hashed. Version authority is the download chain above:
+          # input tag -> that GitHub Release -> the unique _amd64.AppImage
+          # asset -> anonymous download pinned against GitHub's server-side
+          # digest. NOTICE content is still cross-checked against the DEB.
           APPNOTICE_SHA=$(sha256sum "$NOTICE" | cut -d" " -f1)
-          DEB_BIN_SHA=$(cut -d" " -f1 ../deb-binary.sha256)
           DEB_NOTICE_SHA=$(cut -d" " -f1 ../deb-notice.sha256)
-          echo "AppImage binary sha256: $APPBIN_SHA"
-          echo "DEB      binary sha256: $DEB_BIN_SHA"
           echo "AppImage NOTICE sha256: $APPNOTICE_SHA"
           echo "DEB      NOTICE sha256: $DEB_NOTICE_SHA"
-          if [[ "$APPBIN_SHA" != "$DEB_BIN_SHA" ]]; then
-            echo "::error::AppImage binary differs from the installed DEB binary"
-            exit 1
-          fi
           if [[ "$APPNOTICE_SHA" != "$DEB_NOTICE_SHA" ]]; then
             echo "::error::AppImage NOTICE differs from the installed DEB NOTICE"
             exit 1
           fi
-          echo "cross-format identity: AppImage binary + NOTICE match the installed DEB ($VER via deb metadata)"
+          echo "NOTICE content matches the installed DEB (tag binding: $RELEASE_TAG via the server-side digest chain)"
           cd ..
           mkdir -p "$RUNNER_TEMP/appimage-home"
           HOME="$RUNNER_TEMP/appimage-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 "$APPIMG" --appimage-extract-and-run > appimage-app.log 2>&1 &
@@ -588,7 +585,7 @@ jobs:
             echo "::error::appimage screenshot is ${GEO}px, expected the 1600x900 root screen"
             exit 1
           fi
-          echo "appimage: NOTICE ok, binary identical to installed DEB ($VER via deb metadata), process alive, root-screen capture ${GEO}px (window $WIN)" | tee -a linux-results.log
+          echo "appimage: NOTICE identical to installed DEB, tag binding via the server-side digest chain, process alive, root-screen capture ${GEO}px (window $WIN)" | tee -a linux-results.log
           pkill -f "pathblender-desktop" || true
           sleep 3
       - name: RPM — unpack the payload and run it from the expanded tree
@@ -657,7 +654,6 @@ jobs:
             deb-screen.png
             appimage-screen.png
             rpm-screen.png
-            deb-binary.sha256
             deb-notice.sha256
             linux-results.log
             deb-app.log

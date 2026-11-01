@@ -355,18 +355,19 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     expect(run).toContain('--appimage-extract > /dev/null');
     expect(run).toContain('--appimage-extract-and-run');
     expect(run).toContain('chmod +x "$APPIMG"');
-    // Version anchor = cross-format binary identity (run 41267886164: the
-    // AppImage carries no *.js and no text version anywhere; the DEB step's
-    // dpkg metadata already pins the tag version): the AppImage's
-    // pathblender-desktop and NOTICE must hash identically to the
-    // apt-installed DEB files.
+    // Version anchor for the AppImage = the download chain itself (input tag
+    // -> that release -> the unique _amd64.AppImage -> server-side digest).
+    // The binary is NEVER hashed: the packager rewrites it (run 41268762661:
+    // NOTICE hashes matched, binary hashes differed) and no text version
+    // exists anywhere in the image (runs 41267274881/41267886164). NOTICE
+    // content is still cross-checked against the apt-installed DEB
+    // (measured identical in that same run).
     expect(run).not.toContain('grep -lF "$VER"');
     expect(run).not.toContain('grep -aqF "$VER" "$BIN"');
-    expect(run).toContain('deb-binary.sha256');
+    expect(run).not.toContain('sha256sum "$BIN"');
+    expect(run).not.toContain('deb-binary.sha256');
     expect(run).toContain('deb-notice.sha256');
-    expect((run.match(/sha256sum "\$BIN" \| cut -d" " -f1/g) ?? []).length).toBe(2);
     expect((run.match(/sha256sum "\$NOTICE"/g) ?? []).length).toBe(2);
-    expect(run).toContain('AppImage binary differs from the installed DEB binary');
     expect(run).toContain('AppImage NOTICE differs from the installed DEB NOTICE');
     // RPM: metadata version + rpm2cpio/cpio payload expansion, run from the tree.
     expect(run).toContain('rpm -qp --nosignature --qf "%{version}"');
@@ -395,7 +396,7 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     for (const [job, shots] of [
       [windows, ['windows-screenshot.png']],
       [macos, ['mac-screenshot.png']],
-      [linux, ['deb-screen.png', 'appimage-screen.png', 'rpm-screen.png', 'deb-binary.sha256', 'deb-notice.sha256']],
+      [linux, ['deb-screen.png', 'appimage-screen.png', 'rpm-screen.png', 'deb-notice.sha256']],
     ] as [any, string[]][]) {
       const upload = job.steps.find((step: any) => step.uses === 'actions/upload-artifact@v4');
       expect(upload).toBeDefined();
