@@ -48,19 +48,19 @@
 ## GitHub（发布操作纪律）
 
 - [ ] 推送 / PR / Pages 配置一律手动单发，不写自动重试循环；失败间隔 ≥60 秒再评估
-- [ ] 网站上线（2026-09-09 起实际走 Cloudflare Pages 直传；**2026-10-04 已定弃用、转公开后退役**；**2026-10-06 用户定稿：转公开前为试用演示恢复本渠道为常设——每次分支合并到 beta 后重部署 `pathblender.pages.dev`，直至转公开**）：
-      `VITE_VIEWER_ONLY=1 npm run build -w packages/web` 然后
+- [ ] **网站双端同步部署（2026-11-01 用户定稿：双站点常设，取代此前「转公开后 Cloudflare 退役」与「转公开前临时恢复」口径）**：每次分支合并到 `beta` 后，对外 viewer 必须用**同一提交**（即刚推送的 beta 尖端）的 `VITE_VIEWER_ONLY=1` viewer 构建部署到两端，与「本机桌面 App 跟随更新」同属合并后收尾链——
+      ① **GitHub Pages＝官方主入口** `https://lyt259.github.io/PathBlender/`：由现有 `.github/workflows/deploy.yml` 按 **push beta** 自动构建部署（公开仓由 `github.event.repository.private == false` 门控，私有期间休眠）；不手工干预、不重复重建或覆盖现有配置，每次合并后确认该工作流本次实际运行成功即可；
+      ② **Cloudflare Pages＝备份镜像** `https://pathblender.pages.dev`（2026-09-09 起走本机直传，保留为常设）：同一提交下 `VITE_VIEWER_ONLY=1 npm run build -w packages/web` 然后
       `npx wrangler pages deploy packages/web/dist --project-name=pathblender --branch=stable`（本机直传，零 Actions 额度）；
-      β 预览站 `pathblender-preview` 仍弃用不动（`--branch=beta` + `VITE_SITE_PREVIEW=1` 的旧条款仅存档；**2026-10-07 起 UI 侧的预览站交叉入口与横幅已随 `VITE_SITE_PREVIEW` 构建开关一并删除——网站本身即 beta 通道，构建不再区分站点 flavor**）。
-      **部署后核对线上版本与树内一致**（回读 `https://pathblender.pages.dev/sw.js` 的缓存名 `pb-<版本>-<时间戳>`；2026-10-02 审计曾发现线上挂着转型前旧构建，此条为常规核对项）。
-- [ ] GitHub Pages：保留现有 `.github/workflows/deploy.yml`（`push beta` 触发、`VITE_VIEWER_ONLY=1` viewer 构建、私有仓库期间由 `github.event.repository.private == false` 休眠）。转公开后核实该工作流实际运行与线上版本；不要重复重建或覆盖现有配置，Cloudflare 直传渠道届时退役。
+      β 预览站 `pathblender-preview` 仍保持不动（`--branch=beta` + `VITE_SITE_PREVIEW=1` 的旧条款仅存档；**2026-10-07 起 UI 侧的预览站交叉入口与横幅已随 `VITE_SITE_PREVIEW` 构建开关一并删除——网站本身即 beta 通道，构建不再区分站点 flavor**）。
+- [ ] **双端回读与失败边界**：两端部署动作都完成后，分别匿名回读 `curl -s https://lyt259.github.io/PathBlender/sw.js` 与 `curl -s https://pathblender.pages.dev/sw.js`，两个缓存名 `pb-<版本>-<时间戳>` 的**版本部分都必须与树内版本一致**才算网站收尾完成（2026-10-02 审计曾发现线上挂着转型前旧构建，此条为常规核对项）；任一端部署失败、回读失败或版本落后（含「仅主站可用」）都不得宣称「网站已更新」，排障或重传后重新两端核对。README 等对外入口以 GitHub Pages 为主链接、Cloudflare 明确标注为 mirror/backup。
 - [ ] **转公开日清单（用户决定 2026-10-02：仓库暂不转公开；转公开之后才有 Demo 网站；2026-10-05 增补 Windows 项；2026-10-31 增补社区协作与 PR 审核项）**——按序执行，防止 README 的站点链接先于 Demo 上线：
       ① 给 `stable`（主分支）与 `beta` 打分支保护（禁强推 + 禁删除 + 含管理员）；两者均开启 `Require a pull request before merging` 与 `Require approvals`（至少 1 个批准）；外部贡献者的 PR 必须由用户本人人工审核批准；用户自有任务经独立 reviewer agent 复核通过后，可按用户常设委托以 `LYT259` 提交 `Approve` 并自动合入 `beta`；`stable` 仍按双端验证和发版门槛，不自动合并；禁止未经相应审批直接推送或合并；
       ② 检查 `Settings → General → Features` 中的 `Discussions` 已启用，并在转公开后实测大家可查看、发起和参与 Discussion；
       ③ 检查 `Settings → General → Features` 中的 `Issues` 已启用，并在转公开后实测大家可新建 Issue；
       ④ 确认外部贡献者可通过 fork 向 `stable` / `beta` 提交 PR；分支保护只限制直接推送与合并，不得阻止创建 PR；外部 PR 未经用户本人人工审核批准，不得合并到 `stable` 或 `beta`（自有任务的委托自动审批按①执行）；
       ⑤ **Windows 验证（2026-10-05 PR #198 落地，此前无法真机验证）**：手动 dispatch `.github/workflows/windows-smoke.yml`（公开仓标准 runner 免费），下载 artifact 截图人工核对——原生标题栏无红绿灯让位空隙、暗色渲染正常；然后打当期 `v*` tag，release.yml 的 build-windows 自动产出 NSIS 安装包，Release 资产含 `*-setup.exe`(+`.sig`)、更新器 feed 含 `windows-x86_64` 条目；
-      ⑥ Demo 站（2026-10-04 起走 Pages）：使用并核验现有 deploy.yml（**push beta 即自动部署——2026-10-06 用户定稿：每次分支合并到 beta 就重新部署**）+ `VITE_VIEWER_ONLY=1` viewer 构建，部署后核对线上版本串与树内一致（Cloudflare 渠道届时退役）；
+      ⑥ Demo 站（2026-11-01 用户定稿：双站点常设同步部署）：GitHub Pages 主入口核验现有 deploy.yml（push beta 自动部署）以 `VITE_VIEWER_ONLY=1` viewer 构建产出，Cloudflare 备份镜像用**同一提交**构建本机 wrangler 直传；随后按双端回读核对 `https://lyt259.github.io/PathBlender/sw.js` 与 `https://pathblender.pages.dev/sw.js` 两个缓存名的版本部分均与树内一致，任一端失败或落后不得视为完成；
       ⑦ 核对 README 三语的「获取方式」链接与真实可达状态一致（补充 Windows 下载说明）；更新 feed / Release 资产对未认证用户转可达（无需改动——端点本就是 GitHub 公网 URL）；
       ⑧ 反馈渠道=GitHub Issues（转公开即活；README/指南/模板已指向 issues 链接）；Chief Delphi 发布帖由用户本人发（用户决定 2026-10-03）。
 

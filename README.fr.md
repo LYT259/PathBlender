@@ -4,7 +4,7 @@
 
 **Voyez ensemble les parcours autonomes de votre alliance. Trouvez les conflits avant le match.**
 
-[**Essayez-le dans votre navigateur**](https://pathblender.pages.dev) ·
+[**Essayez-le dans votre navigateur**](https://lyt259.github.io/PathBlender/) ·
 [Téléchargez l’application de bureau](https://github.com/LYT259/pathblender/releases) ·
 [Premier contrôle de parcours](docs/user-guide.en.md#try-it-without-files) ·
 [Star sur GitHub](https://github.com/LYT259/pathblender)
@@ -65,7 +65,7 @@ Terrains : FRC 2022–2026 intégrés, plus l’import de terrains personnalis�
 - **Windows** (x86_64) — téléchargez l’installateur NSIS `*_x64-setup.exe` depuis la page des releases et exécutez-le.
 - **Linux** (x86_64) — téléchargez le paquet DEB, AppImage ou RPM depuis la page des releases (le guide utilisateur contient des exemples d’installation en terminal). Les mises à jour intégrées passeront par l’AppImage ; les utilisateurs de DEB/RPM mettront à jour en installant le nouveau paquet par-dessus l’ancien.
 - Mises à jour : menu **PathBlender → Rechercher des mises à jour…** (en bêta : activez d’abord le canal bêta dans **Préférences → Mises à jour**). Les autres fichiers de la page (`.tar.gz`, `.sig`, `.json`) relèvent du moteur de mise à jour — vous n’en avez pas besoin.
-- **Application web** (build visionneuse : les mêmes imports que l’application — fichiers et dossiers entiers — plus lecture et détection ; sans enregistrement de session ni export GIF ou paquet de solution) — [pathblender.pages.dev](https://pathblender.pages.dev).
+- **Application web** (build visionneuse : les mêmes imports que l’application — fichiers et dossiers entiers — plus lecture et détection ; sans enregistrement de session ni export GIF ou paquet de solution) — site officiel sur [lyt259.github.io/PathBlender](https://lyt259.github.io/PathBlender/), avec [pathblender.pages.dev](https://pathblender.pages.dev) en miroir de secours.
 
 ## Confidentialité
 

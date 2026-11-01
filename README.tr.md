@@ -4,7 +4,7 @@
 
 **İttifakınızın otonom yollarını birlikte görün. Çakışmaları maçtan önce bulun.**
 
-[**Tarayıcınızda deneyin**](https://pathblender.pages.dev) ·
+[**Tarayıcınızda deneyin**](https://lyt259.github.io/PathBlender/) ·
 [Masaüstü uygulamasını indirin](https://github.com/LYT259/pathblender/releases) ·
 [İlk yol denetimi](docs/user-guide.en.md#try-it-without-files) ·
 [GitHub’da Star verin](https://github.com/LYT259/pathblender)
@@ -65,7 +65,7 @@ Sahalar: FRC 2022–2026 yerleşik; ayrıca kalibrasyonlu özel saha içe aktarm
 - **Windows** (x86_64) — sürüm sayfasından NSIS kurulum dosyasını (`*_x64-setup.exe`) indirin ve çalıştırın.
 - **Linux** (x86_64) — sürüm sayfasından DEB, AppImage veya RPM paketini indirin (terminalle kurulum örnekleri kullanıcı kılavuzunda). Uygulama içi güncellemeler AppImage'ı kullanacak; DEB/RPM kullanıcıları yeni paketi eskisinin üzerine kurarak güncelleyecek.
 - Güncellemeler: menü **PathBlender → Güncellemeleri Denetle…** (beta sürümlerde önce **Tercihler → Güncellemeler**'den beta kanalını açın). Sürüm sayfasındaki diğer dosyalar (`.tar.gz`, `.sig`, `.json`) güncelleyiciye aittir — onlara ihtiyacınız yok.
-- **Web uygulaması** (görüntüleyici yapımı: uygulama ile aynı içe aktarmalar — dosyalar ve bütün klasörler — artı oynatma ve denetim; oturum kaydetme / GIF ve çözüm paketi dışa aktarma yok) — [pathblender.pages.dev](https://pathblender.pages.dev).
+- **Web uygulaması** (görüntüleyici yapımı: uygulama ile aynı içe aktarmalar — dosyalar ve bütün klasörler — artı oynatma ve denetim; oturum kaydetme / GIF ve çözüm paketi dışa aktarma yok) — resmî site [lyt259.github.io/PathBlender](https://lyt259.github.io/PathBlender/); [pathblender.pages.dev](https://pathblender.pages.dev) yedek ayna site olarak hizmet verir.
 
 ## Gizlilik
 
