@@ -531,11 +531,18 @@ jobs:
             echo "::error::pathblender-desktop not found inside the AppImage"
             exit 1
           fi
-          if ! grep -aqF "$VER" "$BIN"; then
-            echo "::error::version string $VER not found in the AppImage binary"
+          # The stripped Tauri binary carries no version literal (run
+          # 41267274881: grepping the binary found nothing), so the version
+          # anchor is a bundled TEXT web asset: at least one *.js anywhere in
+          # the extracted tree must carry the exact version string.
+          JS_HITS=$(find squashfs-root -type f -name "*.js" -print0 | xargs -0 -r grep -lF "$VER" || true)
+          if [[ -z "$JS_HITS" ]]; then
+            echo "::error::no bundled *.js asset carries the version string $VER"
+            find squashfs-root -type f -name "*.js" | head -10
             exit 1
           fi
-          echo "AppImage binary embeds version $VER: $BIN"
+          echo "version $VER found in bundled web assets:"
+          echo "$JS_HITS"
           cd ..
           mkdir -p "$RUNNER_TEMP/appimage-home"
           HOME="$RUNNER_TEMP/appimage-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 "$APPIMG" --appimage-extract-and-run > appimage-app.log 2>&1 &
@@ -560,7 +567,7 @@ jobs:
             echo "::error::appimage screenshot is ${GEO}px, expected the 1600x900 root screen"
             exit 1
           fi
-          echo "appimage: NOTICE ok, version $VER embedded, process alive, root-screen capture ${GEO}px (window $WIN)" | tee -a linux-results.log
+          echo "appimage: NOTICE ok, version $VER in bundled web assets, process alive, root-screen capture ${GEO}px (window $WIN)" | tee -a linux-results.log
           pkill -f "pathblender-desktop" || true
           sleep 3
       - name: RPM — unpack the payload and run it from the expanded tree

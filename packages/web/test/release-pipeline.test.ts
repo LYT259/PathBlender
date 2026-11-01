@@ -355,7 +355,11 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     expect(run).toContain('--appimage-extract > /dev/null');
     expect(run).toContain('--appimage-extract-and-run');
     expect(run).toContain('chmod +x "$APPIMG"');
-    expect(run).toContain('grep -aqF "$VER" "$BIN"');
+    // Version anchor = a bundled TEXT web asset, NOT the stripped binary (run
+    // 41267274881: the AppImage binary carries no version literal at all).
+    expect(run).not.toContain('grep -aqF "$VER" "$BIN"');
+    expect(run).toContain('find squashfs-root -type f -name "*.js" -print0 | xargs -0 -r grep -lF "$VER"');
+    expect(run).toContain('no bundled *.js asset carries the version string');
     // RPM: metadata version + rpm2cpio/cpio payload expansion, run from the tree.
     expect(run).toContain('rpm -qp --nosignature --qf "%{version}"');
     expect(run).toContain('rpm2cpio "../$RPM" | cpio -idm --quiet');
