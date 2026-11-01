@@ -354,10 +354,17 @@ describe('published-release verification workflow (release-verify.yml)', () => {
 
   it('Linux: apt-installs the DEB, runs the AppImage FUSE-free and unpacks the RPM payload', () => {
     const run = runText(linux);
-    // Virtual display + WebKit-under-Xvfb runtime guards, shared by all three launches.
+    // Virtual display with a real WM + session bus, and software-rendering
+    // guards for WebKit under Xvfb — without them the capture is all-black
+    // (run 41269941209: three 1600x900 screenshots with PIL mean=stddev=0
+    // while the process and the window both existed).
     expect(run).toContain('Xvfb :99 -screen 0 1600x900x24');
     expect(linux.env.DISPLAY).toBe(':99');
-    expect((run.match(/GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1/g) ?? []).length).toBe(3);
+    expect(run).toContain('sudo apt-get install -y xvfb xdotool imagemagick rpm rpm2cpio cpio openbox dbus-x11');
+    expect(run).toContain('dbus-launch --sh-syntax');
+    expect(run).toContain('openbox > openbox.log 2>&1 &');
+    expect(run).toContain('pgrep -x openbox');
+    expect((run.match(/GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 LIBGL_ALWAYS_SOFTWARE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1/g) ?? []).length).toBe(3);
     // DEB: a real system install, with version/NOTICE/binary from package metadata.
     expect(run).toContain('sudo apt-get install -y "./$DEB"');
     expect(run).toContain('dpkg-deb -f "$DEB" Version');
@@ -399,15 +406,20 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     // unavailable", real run 41266701676), root grabs do not.
     expect((run.match(/sleep 15/g) ?? []).length).toBe(3);
     expect((run.match(/pgrep -f "pathblender-desktop"/g) ?? []).length).toBe(3);
-    expect((run.match(/xdotool search --name "PathBlender"/g) ?? []).length).toBe(3);
+    expect((run.match(/xdotool search --onlyvisible --name "PathBlender"/g) ?? []).length).toBe(3);
+    expect(run).not.toContain('xdotool search --name "PathBlender" | head -1');
     expect(run).not.toContain('import -window "$WIN"');
     expect((run.match(/import -window root (\S+-screen\.png)/g) ?? []).length).toBe(3);
     expect(run).toContain('import -window root deb-screen.png');
     expect(run).toContain('import -window root appimage-screen.png');
     expect(run).toContain('import -window root rpm-screen.png');
-    // Screenshot evidence is validated: full root geometry via identify.
+    // Screenshot evidence is validated: full root geometry via identify…
     expect((run.match(/identify -format "%wx%h" (\S+-screen\.png)/g) ?? []).length).toBe(3);
     expect((run.match(/expected the 1600x900 root screen/g) ?? []).length).toBe(3);
+    // …AND not all-black: gray mean/standard deviation on the 0-255 scale
+    // must both exceed 1, or the step fails explicitly.
+    expect((run.match(/-colorspace gray -format/g) ?? []).length).toBe(3);
+    expect((run.match(/screenshot looks black \(mean=\$MEAN stddev=\$STD/g) ?? []).length).toBe(3);
     // The verification tools themselves never guess runtime library names.
     expect(run).toContain('sudo apt-get install -y xvfb xdotool imagemagick rpm rpm2cpio cpio');
     expect(run).not.toContain('libwebkit2gtk');
@@ -417,7 +429,7 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     for (const [job, shots] of [
       [windows, ['windows-screenshot.png']],
       [macos, ['mac-screenshot.png']],
-      [linux, ['deb-screen.png', 'appimage-screen.png', 'rpm-screen.png', 'deb-notice.sha256', 'rpm-tree/rpm2cpio.log']],
+      [linux, ['deb-screen.png', 'appimage-screen.png', 'rpm-screen.png', 'deb-notice.sha256', 'rpm-tree/rpm2cpio.log', 'openbox.log']],
     ] as [any, string[]][]) {
       const upload = job.steps.find((step: any) => step.uses === 'actions/upload-artifact@v4');
       expect(upload).toBeDefined();

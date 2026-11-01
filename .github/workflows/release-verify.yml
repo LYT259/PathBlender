@@ -20,10 +20,12 @@
 # - linux-packages: on an ubuntu runner, apt-installs the published DEB for
 #   real, runs the AppImage with --appimage-extract-and-run (hosted runners
 #   have no FUSE) and unpacks the RPM payload with rpm2cpio + cpio; each of
-#   the three launches runs under Xvfb with GDK_BACKEND=x11 and
-#   WEBKIT_DISABLE_COMPOSITING_MODE=1, must stay alive for 15s, expose a
-#   PathBlender window (asserted) and produce a validated root-screen
-#   capture per package, plus the packaged NOTICE; the AppImage has no
+#   the three launches runs under Xvfb with openbox + dbus and software GL
+#   (GDK_BACKEND=x11, WEBKIT_DISABLE_COMPOSITING_MODE=1,
+#   LIBGL_ALWAYS_SOFTWARE=1, WEBKIT_DISABLE_DMABUF_RENDERER=1), must stay
+#   alive for 15s, expose a visible PathBlender window and produce a
+#   root-screen capture per package that is geometry-checked AND
+#   non-black-checked, plus the packaged NOTICE; the AppImage has no
 #   version metadata and its binary is rewritten by the packager (run
 #   41268762661), so its version authority is the tag -> release -> unique
 #   asset -> server-side digest download chain, with only the NOTICE
@@ -367,11 +369,13 @@ jobs:
       - name: Install verification tools and start a virtual display
         # Only stable tool packages here: the WebKitGTK/GTK runtime the app
         # needs is pulled in later by the DEB's own dependency closure, so
-        # this job never guesses at runtime library package names.
+        # this job never guesses at runtime library package names. openbox +
+        # dbus-x11 give WebKit a real WM and session bus — without them the
+        # capture is all-black (run 41269941209).
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y xvfb xdotool imagemagick rpm rpm2cpio cpio
+          sudo apt-get install -y xvfb xdotool imagemagick rpm rpm2cpio cpio openbox dbus-x11
           Xvfb :99 -screen 0 1600x900x24 &
           for _ in $(seq 1 20); do
             if [ -S /tmp/.X11-unix/X99 ]; then break; fi
@@ -381,7 +385,16 @@ jobs:
             echo "::error::Xvfb did not start on :99"
             exit 1
           fi
-          echo "Xvfb ready on :99 (1600x900x24)"
+          eval "$(dbus-launch --sh-syntax)"
+          echo "DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >> "$GITHUB_ENV"
+          openbox > openbox.log 2>&1 &
+          sleep 2
+          if ! pgrep -x openbox > /dev/null; then
+            echo "::error::openbox did not start on :99"
+            cat openbox.log
+            exit 1
+          fi
+          echo "Xvfb ready on :99 (1600x900x24) with openbox + dbus"
       - name: Resolve and anonymously download the three published Linux packages
         # Same anonymous + server-side sha256 digest contract as the other
         # jobs, applied to DEB, AppImage and RPM. Suffix matching keeps this
@@ -498,14 +511,14 @@ jobs:
           printf '%s  %s\n' "$NOTICE_SHA" "$NOTICE" > deb-notice.sha256
           echo "deb notice sha256 $NOTICE_SHA (content anchor for the AppImage)" | tee -a linux-results.log
           mkdir -p "$RUNNER_TEMP/deb-home"
-          HOME="$RUNNER_TEMP/deb-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 "$BIN" > deb-app.log 2>&1 &
+          HOME="$RUNNER_TEMP/deb-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 LIBGL_ALWAYS_SOFTWARE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 "$BIN" > deb-app.log 2>&1 &
           sleep 15
           if ! pgrep -f "pathblender-desktop" > /dev/null; then
             echo "::error::DEB app process not running 15s after launch"
             cat deb-app.log
             exit 1
           fi
-          WIN=$(xdotool search --name "PathBlender" | head -1)
+          WIN=$(xdotool search --onlyvisible --name "PathBlender" | head -1)
           if [[ -z "$WIN" ]]; then
             echo "::error::no PathBlender window for the DEB app"
             cat deb-app.log
@@ -519,6 +532,12 @@ jobs:
           GEO=$(identify -format "%wx%h" deb-screen.png)
           if [[ "$GEO" != "1600x900" ]]; then
             echo "::error::deb screenshot is ${GEO}px, expected the 1600x900 root screen"
+            exit 1
+          fi
+          read -r MEAN STD <<< "$(convert deb-screen.png -colorspace gray -format '%[fx:int(mean*255)] %[fx:int(standard_deviation*255)]' info:)"
+          echo "deb screenshot: ${GEO}px, mean=$MEAN stddev=$STD (0-255)"
+          if [[ "$MEAN" -le 1 || "$STD" -le 1 ]]; then
+            echo "::error::deb screenshot looks black (mean=$MEAN stddev=$STD on 0-255, need both >1)"
             exit 1
           fi
           echo "deb: $PKG $DEB_VER, NOTICE ok, process alive, root-screen capture ${GEO}px (window $WIN)" | tee -a linux-results.log
@@ -570,14 +589,14 @@ jobs:
           echo "NOTICE content matches the installed DEB (tag binding: $RELEASE_TAG via the server-side digest chain)"
           cd ..
           mkdir -p "$RUNNER_TEMP/appimage-home"
-          HOME="$RUNNER_TEMP/appimage-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 "$APPIMG" --appimage-extract-and-run > appimage-app.log 2>&1 &
+          HOME="$RUNNER_TEMP/appimage-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 LIBGL_ALWAYS_SOFTWARE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 "$APPIMG" --appimage-extract-and-run > appimage-app.log 2>&1 &
           sleep 15
           if ! pgrep -f "pathblender-desktop" > /dev/null; then
             echo "::error::AppImage app process not running 15s after launch"
             cat appimage-app.log
             exit 1
           fi
-          WIN=$(xdotool search --name "PathBlender" | head -1)
+          WIN=$(xdotool search --onlyvisible --name "PathBlender" | head -1)
           if [[ -z "$WIN" ]]; then
             echo "::error::no PathBlender window for the AppImage app"
             cat appimage-app.log
@@ -590,6 +609,12 @@ jobs:
           GEO=$(identify -format "%wx%h" appimage-screen.png)
           if [[ "$GEO" != "1600x900" ]]; then
             echo "::error::appimage screenshot is ${GEO}px, expected the 1600x900 root screen"
+            exit 1
+          fi
+          read -r MEAN STD <<< "$(convert appimage-screen.png -colorspace gray -format '%[fx:int(mean*255)] %[fx:int(standard_deviation*255)]' info:)"
+          echo "appimage screenshot: ${GEO}px, mean=$MEAN stddev=$STD (0-255)"
+          if [[ "$MEAN" -le 1 || "$STD" -le 1 ]]; then
+            echo "::error::appimage screenshot looks black (mean=$MEAN stddev=$STD on 0-255, need both >1)"
             exit 1
           fi
           echo "appimage: NOTICE identical to installed DEB, tag binding via the server-side digest chain, process alive, root-screen capture ${GEO}px (window $WIN)" | tee -a linux-results.log
@@ -646,14 +671,14 @@ jobs:
             exit 1
           fi
           mkdir -p "$RUNNER_TEMP/rpm-home"
-          HOME="$RUNNER_TEMP/rpm-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 "$BIN" > rpm-app.log 2>&1 &
+          HOME="$RUNNER_TEMP/rpm-home" GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 LIBGL_ALWAYS_SOFTWARE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 "$BIN" > rpm-app.log 2>&1 &
           sleep 15
           if ! pgrep -f "pathblender-desktop" > /dev/null; then
             echo "::error::RPM app process not running 15s after launch"
             cat rpm-app.log
             exit 1
           fi
-          WIN=$(xdotool search --name "PathBlender" | head -1)
+          WIN=$(xdotool search --onlyvisible --name "PathBlender" | head -1)
           if [[ -z "$WIN" ]]; then
             echo "::error::no PathBlender window for the RPM app"
             cat rpm-app.log
@@ -668,6 +693,12 @@ jobs:
             echo "::error::rpm screenshot is ${GEO}px, expected the 1600x900 root screen"
             exit 1
           fi
+          read -r MEAN STD <<< "$(convert rpm-screen.png -colorspace gray -format '%[fx:int(mean*255)] %[fx:int(standard_deviation*255)]' info:)"
+          echo "rpm screenshot: ${GEO}px, mean=$MEAN stddev=$STD (0-255)"
+          if [[ "$MEAN" -le 1 || "$STD" -le 1 ]]; then
+            echo "::error::rpm screenshot looks black (mean=$MEAN stddev=$STD on 0-255, need both >1)"
+            exit 1
+          fi
           echo "rpm: version $RPM_VER, NOTICE ok, process alive, root-screen capture ${GEO}px (window $WIN)" | tee -a linux-results.log
           pkill -f "pathblender-desktop" || true
           sleep 3
@@ -680,6 +711,7 @@ jobs:
             rpm-screen.png
             deb-notice.sha256
             rpm-tree/rpm2cpio.log
+            openbox.log
             linux-results.log
             deb-app.log
             appimage-app.log
