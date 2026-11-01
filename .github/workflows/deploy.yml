@@ -56,6 +56,8 @@ jobs:
     needs: build
     if: github.event.repository.private == false
     runs-on: ubuntu-latest
+    env:
+      CF_TOKEN_SET: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
     steps:
       - name: Download viewer dist
         uses: actions/download-artifact@v4
@@ -66,14 +68,14 @@ jobs:
         with:
           node-version: 23
       - name: Report skipped mirror deploy
-        if: ${{ secrets.CLOUDFLARE_API_TOKEN == '' }}
+        if: env.CF_TOKEN_SET != 'true'
         run: >-
           echo "::warning::CLOUDFLARE_API_TOKEN is not configured; skipping the
           Cloudflare mirror deploy. Create an API token with the
           Cloudflare Pages: Edit permission and add it as the
           CLOUDFLARE_API_TOKEN repository secret."
       - name: Deploy Cloudflare mirror
-        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        if: env.CF_TOKEN_SET == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: 3ead0c685117a2d82b3bded63ccf47d9
@@ -82,6 +84,8 @@ jobs:
     needs: [deploy, deploy-cloudflare]
     if: always() && github.event.repository.private == false
     runs-on: ubuntu-latest
+    env:
+      CHECK_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -90,8 +94,6 @@ jobs:
       - name: Read tree version
         run: echo "EXPECTED_VERSION=$(node -p \"require('./package.json').version\")" >> "$GITHUB_ENV"
       - name: Verify both sites serve the tree version
-        env:
-          CHECK_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
         run: |
           set -euo pipefail
           expected="$EXPECTED_VERSION"

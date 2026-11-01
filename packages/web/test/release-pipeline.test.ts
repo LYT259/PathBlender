@@ -208,6 +208,8 @@ describe('shipped-artifact verification gates', () => {
     expect(deploy).toContain('--project-name=pathblender');
     expect(deploy).toContain('--branch=stable');
     expect(deploy).toContain('secrets.CLOUDFLARE_API_TOKEN');
+    expect(deploy).toContain("if: env.CF_TOKEN_SET == 'true'");
+    expect(deploy).not.toMatch(/if:[^\n]*secrets\./);
     expect(deploy).toContain('https://lyt259.github.io/PathBlender/sw.js');
     expect(deploy).toContain('https://pathblender.pages.dev/sw.js');
     expect(deploy).toContain('"$version" = "$expected"');
