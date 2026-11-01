@@ -152,10 +152,14 @@ describe('About section localizes the update notes', () => {
     const cycle = VERSION_NOTES.filter(
       (n) => n.version === base || n.version.startsWith(`${base}-`),
     );
-    expect(cycle.length).toBeGreaterThan(5);
+    // A freshly opened cycle (first beta just landed) legitimately holds a
+    // single entry; the regression guard is "never truncated to a fixed
+    // window", which the equality below proves for cycles of any length.
+    expect(cycle.length).toBeGreaterThan(0);
     const rendered = [...document.querySelectorAll('.preferences-history ol strong')]
       .map((el) => el.textContent?.replace('Version ', ''));
     expect(rendered).toEqual(cycle.map((n) => n.version));
+    if (cycle.length > 5) expect(rendered.length).toBeGreaterThan(5);
     // Newest first, and the cycle's first beta (not a previous release)
     // closes the list.
     expect(rendered[0]).toBe(APP_VERSION);
