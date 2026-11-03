@@ -201,6 +201,8 @@ export const hu = {
   'import.folderNotExpanded': 'A választó magát a mappát adta vissza, de a fájljait nem — húzd a mappát az ablakra a rekurzív olvasáshoz',
   'import.folderNoRoutes': 'ebben a mappában nincsenek feldolgozható útvonalfájlok (.traj / .path / .auto / .ghostauto / .chor)',
   'wpilog.title': 'Robotnaplók importálása (.wpilog)',
+  'wpilog.stillReading': 'még olvasás alatt volt az Import megnyomásakor',
+  'wpilog.nothingSelected': 'nincs pózaadat ebben a naplóban — semmi sincs kiválasztva',
   'wpilog.queued': 'Naplófájlok',
   'wpilog.inspecting': '{name} olvasása…',
   'wpilog.inspectFailed': 'A(z) {name} nem olvasható: {message}',

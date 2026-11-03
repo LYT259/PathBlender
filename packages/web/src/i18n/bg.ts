@@ -201,6 +201,8 @@ export const bg = {
   'import.folderNotExpanded': 'Селекторът върна самата папка, но не и файловете ѝ — прехвърлете папката върху прозореца, за да бъде прочетена рекурсивно',
   'import.folderNoRoutes': 'няма разбираеми файлове с маршрути (.traj / .path / .auto / .ghostauto / .chor) в тази папка',
   'wpilog.title': 'Импортиране на журнали на робота (.wpilog)',
+  'wpilog.stillReading': 'все още се четеше при натискане на Импортиране',
+  'wpilog.nothingSelected': 'няма данни за поза в този лог — нищо не е избрано',
   'wpilog.queued': 'Файлове с журнали',
   'wpilog.inspecting': 'Чете се {name}…',
   'wpilog.inspectFailed': 'Не може да се прочете {name}: {message}',

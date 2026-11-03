@@ -240,6 +240,8 @@ export const fr: Record<MessageKey, string> = {
   'import.folderNotExpanded': 'Le sélecteur a renvoyé le dossier mais aucun de ses fichiers — glissez le dossier sur la fenêtre pour le lire intégralement',
   'import.folderNoRoutes': 'aucun fichier de parcours analysable (.traj / .path / .auto / .ghostauto / .chor) dans ce dossier',
   'wpilog.title': 'Importer des journaux robot (.wpilog)',
+  'wpilog.stillReading': 'encore en cours de lecture au moment de l’import',
+  'wpilog.nothingSelected': 'aucune donnée de pose dans ce journal — rien de sélectionné',
   'wpilog.queued': 'Fichiers journaux',
   'wpilog.inspecting': 'Lecture de {name}…',
   'wpilog.inspectFailed': 'Impossible de lire {name} : {message}',

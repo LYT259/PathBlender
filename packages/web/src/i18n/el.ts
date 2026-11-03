@@ -201,6 +201,8 @@ export const el = {
   'import.folderNotExpanded': 'Ο επιλογέας επέστρεψε τον ίδιο τον φάκελο αλλά κανένα από τα αρχεία του — σύρετε τον φάκελο στο παράθυρο για να διαβαστεί αναδρομικά',
   'import.folderNoRoutes': 'δεν υπάρχουν αναγνώσιμα αρχεία διαδρομών (.traj / .path / .auto / .ghostauto / .chor) σε αυτόν τον φάκελο',
   'wpilog.title': 'Εισαγωγή καταγραφών ρομπότ (.wpilog)',
+  'wpilog.stillReading': 'διαβαζόταν ακόμα όταν πατήθηκε η Εισαγωγή',
+  'wpilog.nothingSelected': 'κανένα δεδομένο πόζας σε αυτό το log — τίποτα επιλεγμένο',
   'wpilog.queued': 'Αρχεία καταγραφής',
   'wpilog.inspecting': 'Ανάγνωση {name}…',
   'wpilog.inspectFailed': 'Αδύνατη η ανάγνωση {name}: {message}',

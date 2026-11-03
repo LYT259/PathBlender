@@ -225,6 +225,8 @@ export const vi = {
   'import.folderNotExpanded': 'Bộ chọn chỉ trả về chính thư mục, không kèm các tệp bên trong — kéo thư mục vào cửa sổ để đọc đệ quy',
   'import.folderNoRoutes': 'không có tệp tuyến đọc được (.traj / .path / .auto / .ghostauto / .chor) trong thư mục này',
   'wpilog.title': 'Nhập nhật ký robot (.wpilog)',
+  'wpilog.stillReading': 'vẫn đang đọc khi Nhập được nhấn',
+  'wpilog.nothingSelected': 'không có dữ liệu tư thế trong nhật ký — chưa chọn gì',
   'wpilog.queued': 'Tệp nhật ký',
   'wpilog.inspecting': 'Đang đọc {name}…',
   'wpilog.inspectFailed': 'Không thể đọc {name}: {message}',

@@ -225,6 +225,8 @@ export const ms = {
   'import.folderNotExpanded': 'Pemilih mengembalikan folder itu sendiri tanpa fail di dalamnya — seret folder ke tetingkap untuk membacanya secara rekursif',
   'import.folderNoRoutes': 'tiada fail laluan yang boleh dihurai (.traj / .path / .auto / .ghostauto / .chor) dalam folder ini',
   'wpilog.title': 'Import log robot (.wpilog)',
+  'wpilog.stillReading': 'masih dibaca apabila Import ditekan',
+  'wpilog.nothingSelected': 'tiada data pose dalam log ini — tiada apa dipilih',
   'wpilog.queued': 'Fail log',
   'wpilog.inspecting': 'Membaca {name}…',
   'wpilog.inspectFailed': 'Tidak dapat membaca {name}: {message}',

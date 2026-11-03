@@ -191,6 +191,8 @@ export const en = {
   'import.folderNotExpanded': 'The picker returned the folder itself but none of its files — drag the folder onto the window to read it recursively',
   'import.folderNoRoutes': 'no parseable route files (.traj / .path / .auto / .ghostauto / .chor) in this folder',
   'wpilog.title': 'Import robot logs (.wpilog)',
+  'wpilog.stillReading': 'still being read when Import was pressed',
+  'wpilog.nothingSelected': 'no pose data in this log — nothing selected',
   'wpilog.queued': 'Log files',
   'wpilog.inspecting': 'Reading {name}…',
   'wpilog.inspectFailed': 'Could not read {name}: {message}',

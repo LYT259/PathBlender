@@ -201,6 +201,8 @@ export const bs = {
   'import.folderNotExpanded': "Izbor je vratio sam folder, ali ne i njegove datoteke — prevucite folder na prozor za rekurzivno čitanje",
   'import.folderNoRoutes': "nema čitljivih datoteka ruta (.traj / .path / .auto / .ghostauto / .chor) u ovom folderu",
   'wpilog.title': 'Uvezi logove robota (.wpilog)',
+  'wpilog.stillReading': 'još se čitao kada je pritisnut Uvezi',
+  'wpilog.nothingSelected': 'nema podataka o pozi u ovom logu — ništa nije odabrano',
   'wpilog.queued': 'Datoteke logova',
   'wpilog.inspecting': 'Čitanje {name}…',
   'wpilog.inspectFailed': 'Nije moguće pročitati {name}: {message}',

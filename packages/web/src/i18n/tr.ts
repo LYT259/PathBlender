@@ -239,6 +239,8 @@ export const tr: Record<MessageKey, string> = {
   'import.folderNotExpanded': 'Seçici klasörün kendisini döndürdü ama dosyalarını döndürmedi — klasörü pencereye sürükleyince tümüyle okunur',
   'import.folderNoRoutes': 'bu klasörde ayrıştırılabilir rota dosyası yok (.traj / .path / .auto / .ghostauto / .chor)',
   'wpilog.title': 'Robot kayıtlarını içe aktar (.wpilog)',
+  'wpilog.stillReading': 'İçe aktar’a basıldığında hâlâ okunuyordu',
+  'wpilog.nothingSelected': 'bu kayıtta poz verisi yok — hiçbir şey seçilmedi',
   'wpilog.queued': 'Kayıt dosyaları',
   'wpilog.inspecting': '{name} okunuyor…',
   'wpilog.inspectFailed': '{name} okunamadı: {message}',

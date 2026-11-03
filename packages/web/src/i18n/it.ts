@@ -225,6 +225,8 @@ export const it = {
   'import.folderNotExpanded': 'Il selettore ha restituito la cartella stessa ma nessuno dei suoi file — trascina la cartella sulla finestra per leggerla ricorsivamente',
   'import.folderNoRoutes': 'nessun file di percorso leggibile (.traj / .path / .auto / .ghostauto / .chor) in questa cartella',
   'wpilog.title': 'Importa log del robot (.wpilog)',
+  'wpilog.stillReading': 'era ancora in lettura quando Import è stato premuto',
+  'wpilog.nothingSelected': 'nessun dato di posa in questo log — nulla di selezionato',
   'wpilog.queued': 'File di log',
   'wpilog.inspecting': 'Lettura di {name}…',
   'wpilog.inspectFailed': 'Impossibile leggere {name}: {message}',

@@ -201,6 +201,8 @@ export const mk = {
   'import.folderNotExpanded': 'Избирачот ја врати самата папка, но не и нејзините датотеки — повлечете ја папката во прозорецот за рекурзивно читање',
   'import.folderNoRoutes': 'нема читливи датотеки со рути (.traj / .path / .auto / .ghostauto / .chor) во оваа папка',
   'wpilog.title': 'Увези логови од роботот (.wpilog)',
+  'wpilog.stillReading': 'сè уште се читаше кога беше притиснато Импортирај',
+  'wpilog.nothingSelected': 'нема податоци за поза во овој лог — ништо не е избрано',
   'wpilog.queued': 'Датотеки со логови',
   'wpilog.inspecting': 'Се чита {name}…',
   'wpilog.inspectFailed': 'Не може да се прочита {name}: {message}',

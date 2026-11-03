@@ -241,6 +241,8 @@ export const cs: Record<MessageKey, string> = {
   'import.folderNotExpanded': 'Výběr vrátil samotnou složku, ale žádné její soubory — přetáhněte složku na okno pro rekurzivní načtení',
   'import.folderNoRoutes': 'v této složce nejsou žádné čitelné soubory tras (.traj / .path / .auto / .ghostauto / .chor)',
   'wpilog.title': 'Importovat logy robota (.wpilog)',
+  'wpilog.stillReading': 'při stisku Importovat se stále četl',
+  'wpilog.nothingSelected': 'v tomto logu nejsou data pózy — nic nevybráno',
   'wpilog.queued': 'Soubory logů',
   'wpilog.inspecting': 'Čtení {name}…',
   'wpilog.inspectFailed': '{name} nelze přečíst: {message}',

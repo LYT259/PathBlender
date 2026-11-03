@@ -225,6 +225,8 @@ export const ar = {
   'import.folderNotExpanded': 'أرجع المنتقي المجلد نفسه ولكن دون أيٍّ من ملفاته — اسحب المجلد إلى النافذة لقراءته بشكل تكراري',
   'import.folderNoRoutes': 'لا ملفات مسارات قابلة للتحليل (.traj / .path / .auto / .ghostauto / .chor) في هذا المجلد',
   'wpilog.title': 'استيراد سجلات الروبوت (.wpilog)',
+  'wpilog.stillReading': 'كان لا يزال قيد القراءة عند الضغط على استيراد',
+  'wpilog.nothingSelected': 'لا توجد بيانات وضعية في هذا السجل — لم يتم اختيارأي شيء',
   'wpilog.queued': 'ملفات السجل',
   'wpilog.inspecting': 'جارٍ قراءة {name}…',
   'wpilog.inspectFailed': 'تعذّرت قراءة {name}: {message}',

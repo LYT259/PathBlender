@@ -225,6 +225,8 @@ export const fil = {
   'import.folderNotExpanded': 'Ibinigay ng picker ang folder mismo pero hindi ang mga file sa loob nito — i-drag ang folder sa window para mabasa ito nang recursive',
   'import.folderNoRoutes': 'walang parseable route files (.traj / .path / .auto / .ghostauto / .chor) sa folder na ito',
   'wpilog.title': 'I-import ang mga log ng robot (.wpilog)',
+  'wpilog.stillReading': 'binababa pa rin noong pinindot ang I-import',
+  'wpilog.nothingSelected': 'walang datos ng pose sa log — walang napili',
   'wpilog.queued': 'Mga file ng log',
   'wpilog.inspecting': 'Binabasa ang {name}…',
   'wpilog.inspectFailed': 'Hindi mabasa ang {name}: {message}',

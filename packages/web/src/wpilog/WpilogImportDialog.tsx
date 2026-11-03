@@ -214,11 +214,11 @@ export function WpilogImportDialog({
         continue;
       }
       if (slot.state.status === 'inspecting') {
-        failures.push({ relPath: slot.relPath, message: 'still being read when Import was pressed' });
+        failures.push({ relPath: slot.relPath, message: t('wpilog.stillReading') });
         continue;
       }
       if (!slot.selection) {
-        failures.push({ relPath: slot.relPath, message: 'no pose data in this log — nothing selected' });
+        failures.push({ relPath: slot.relPath, message: t('wpilog.nothingSelected') });
         continue;
       }
       const selection = slot.selection;

@@ -241,6 +241,8 @@ export const nl: Record<MessageKey, string> = {
   'import.folderNotExpanded': 'De kiezer gaf de map zelf terug maar geen van de bestanden erin — sleep de map naar het venster om deze recursief te lezen',
   'import.folderNoRoutes': 'geen leesbare routebestanden (.traj / .path / .auto / .ghostauto / .chor) in deze map',
   'wpilog.title': 'Robotlogs importeren (.wpilog)',
+  'wpilog.stillReading': 'was nog lezing bij het drukken op Importeren',
+  'wpilog.nothingSelected': 'geen posegegevens in dit log — niets geselecteerd',
   'wpilog.queued': 'Logbestanden',
   'wpilog.inspecting': '{name} wordt gelezen…',
   'wpilog.inspectFailed': 'Kan {name} niet lezen: {message}',

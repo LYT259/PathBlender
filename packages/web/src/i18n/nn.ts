@@ -203,6 +203,8 @@ export const nn = {
   'import.folderNotExpanded': "Veljaren returnerte sjølve mappa, men ingen av filene — dra mappa til vindauget for å lesa ho rekursivt",
   'import.folderNoRoutes': "ingen lesbare rutefiler (.traj / .path / .auto / .ghostauto / .chor) i denne mappa",
   'wpilog.title': 'Importer robotloggar (.wpilog)',
+  'wpilog.stillReading': 'ble fortsatt lesen da Importer vart trykt',
+  'wpilog.nothingSelected': 'ingen posedata i loggen — ingenting valt',
   'wpilog.queued': 'Loggfiler',
   'wpilog.inspecting': 'Les {name}…',
   'wpilog.inspectFailed': 'Klarte ikkje lese {name}: {message}',

@@ -246,6 +246,8 @@ export const he: Record<MessageKey, string> = {
   'import.folderNotExpanded': 'הבוחר החזיר את התיקייה עצמה אבל לא את הקבצים שלה — גררו את התיקייה אל החלון לקריאה רקורסיבית',
   'import.folderNoRoutes': 'אין קבצי מסלול קריאים (.traj / .path / .auto / .ghostauto / .chor) בתיקייה הזו',
   'wpilog.title': 'ייבוא יומני רובוט (.wpilog)',
+  'wpilog.stillReading': 'עדיין נקרא בעת הלחיצה על ייבוא',
+  'wpilog.nothingSelected': 'אין נתוני פוזה ביומן זה — לא נבחר דבר',
   'wpilog.queued': 'קובצי יומן',
   'wpilog.inspecting': 'קורא את {name}…',
   'wpilog.inspectFailed': 'לא ניתן לקרוא את {name}: {message}',

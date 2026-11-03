@@ -225,6 +225,8 @@ export const mr = {
   'import.folderNotExpanded': 'पिकरने फोल्डर परत केले पण त्यातील कोणत्याही फाइली नाही — पुनरावर्ती वाचण्यासाठी फोल्डर विंडोवर ड्रॅग करा',
   'import.folderNoRoutes': 'या फोल्डरमध्ये कोणत्याही पार्सेबल मार्ग फाइली नाहीत (.traj / .path / .auto / .ghostauto / .chor)',
   'wpilog.title': 'रोबर्ट लॉग आयात करा (.wpilog)',
+  'wpilog.stillReading': 'इंपोर्ट दाबताना अजून वाचले जात होते',
+  'wpilog.nothingSelected': 'या लॉगमध्ये मुद्रेचा डेटा नाही — काहीही निवडले नाही',
   'wpilog.queued': 'लॉग फाइल्स',
   'wpilog.inspecting': '{name} वाचत आहे…',
   'wpilog.inspectFailed': '{name} वाचता आले नाही: {message}',

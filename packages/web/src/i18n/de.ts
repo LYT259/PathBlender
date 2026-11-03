@@ -225,6 +225,8 @@ export const de = {
   'import.folderNotExpanded': 'Der Auswahldialog gab den Ordner selbst zurück, aber keine seiner Dateien — ziehen Sie den Ordner auf das Fenster, um ihn rekursiv zu lesen',
   'import.folderNoRoutes': 'keine lesbaren Routendateien (.traj / .path / .auto / .ghostauto / .chor) in diesem Ordner',
   'wpilog.title': 'Robotter-Logs importieren (.wpilog)',
+  'wpilog.stillReading': 'wurde beim Klicken auf Importieren noch gelesen',
+  'wpilog.nothingSelected': 'keine Posedaten in diesem Log — nichts ausgewählt',
   'wpilog.queued': 'Logdateien',
   'wpilog.inspecting': '{name} wird gelesen…',
   'wpilog.inspectFailed': '{name} konnte nicht gelesen werden: {message}',

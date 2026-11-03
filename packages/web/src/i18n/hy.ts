@@ -202,6 +202,8 @@ export const hy = {
   'import.folderNotExpanded': 'Ընտրիչը վերադարձրեց հենց թղթապանակը, բայց ոչ նրա ֆայլերը — ռեկուրսիվ կարդալու համար թղթապանակը քաշեք պատուհանի վրա',
   'import.folderNoRoutes': 'այս թղթապանակում վերլուծելի երթուղիների ֆայլեր չկան (.traj / .path / .auto / .ghostauto / .chor)',
   'wpilog.title': 'Ներմուծել ռոբոտի տեղեկամատյանները (.wpilog)',
+  'wpilog.stillReading': 'Ներմուծելը սեղմելիս դեռ կարդացվում էր',
+  'wpilog.nothingSelected': 'այս տեղեկամատյանում դիրքի տվյալներ չկան — ոչինչ ընտրված չէ',
   'wpilog.queued': 'Տեղեկամատյանի ֆայլեր',
   'wpilog.inspecting': 'Կարդացվում է {name}…',
   'wpilog.inspectFailed': 'Հնարավոր չեղավ կարդալ {name}-ը՝ {message}',

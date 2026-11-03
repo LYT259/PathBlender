@@ -242,6 +242,8 @@ export const ko: Record<MessageKey, string> = {
   'import.folderNotExpanded': '선택기가 폴더만 반환하고 안의 파일을 반환하지 않았습니다 — 폴더를 창으로 드래그하면 하위까지 읽습니다',
   'import.folderNoRoutes': '이 폴더에 읽을 수 있는 경로 파일 (.traj / .path / .auto / .ghostauto / .chor)이 없습니다',
   'wpilog.title': '로봇 로그 가져오기(.wpilog)',
+  'wpilog.stillReading': '가져오기를 누를 때 읽는 중이었습니다',
+  'wpilog.nothingSelected': '이 로그에 포즈 데이터가 없습니다 — 아무것도 선택되지 않았습니다',
   'wpilog.queued': '로그 파일',
   'wpilog.inspecting': '{name} 읽는 중…',
   'wpilog.inspectFailed': '{name}을(를) 읽을 수 없습니다: {message}',

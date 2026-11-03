@@ -203,6 +203,8 @@ export const uk = {
   'import.folderNotExpanded': "Вибір повернув саму теку, але жодного її файлу — перетягніть теку у вікно, щоб прочитати рекурсивно",
   'import.folderNoRoutes': "немає розбірних файлів маршрутів (.traj / .path / .auto / .ghostauto / .chor) у цій теці",
   'wpilog.title': 'Імпорт журналів робота (.wpilog)',
+  'wpilog.stillReading': 'щойно читався під час натискання Імпортувати',
+  'wpilog.nothingSelected': 'немає даних пози в цьому журналі — нічого не вибрано',
   'wpilog.queued': 'Файли журналів',
   'wpilog.inspecting': 'Читання {name}…',
   'wpilog.inspectFailed': 'Не вдалося прочитати {name}: {message}',

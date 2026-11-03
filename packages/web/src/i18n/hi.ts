@@ -225,6 +225,8 @@ export const hi = {
   'import.folderNotExpanded': 'पिकर ने फ़ोल्डर लौटाया लेकिन उसकी कोई फ़ाइल नहीं — इसे पुनरावर्ती रूप से पढ़ने के लिए विंडो पर खींचें',
   'import.folderNoRoutes': 'इस फ़ोल्डर में कोई पार्स करने योग्य मार्ग फ़ाइलें (.traj / .path / .auto / .ghostauto / .chor) नहीं',
   'wpilog.title': 'रोबोट लॉग आयात करें (.wpilog)',
+  'wpilog.stillReading': 'इंपोर्ट दबाए जाने के समय अभी पढ़ा जा रहा था',
+  'wpilog.nothingSelected': 'इस लॉग में कोई मुद्रा डेटा नहीं — कुछ भी चयनित नहीं',
   'wpilog.queued': 'लॉग फ़ाइलें',
   'wpilog.inspecting': '{name} पढ़ा जा रहा है…',
   'wpilog.inspectFailed': '{name} नहीं पढ़ा जा सका: {message}',

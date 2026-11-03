@@ -225,6 +225,8 @@ export const id = {
   'import.folderNotExpanded': 'Pemilih mengembalikan folder itu sendiri tanpa berkas di dalamnya — seret folder ke jendela untuk membacanya secara rekursif',
   'import.folderNoRoutes': 'tidak ada berkas rute yang dapat diurai (.traj / .path / .auto / .ghostauto / .chor) di folder ini',
   'wpilog.title': 'Impor log robot (.wpilog)',
+  'wpilog.stillReading': 'masih dibaca saat Impor ditekan',
+  'wpilog.nothingSelected': 'tidak ada data pose di log ini — tidak ada yang dipilih',
   'wpilog.queued': 'Berkas log',
   'wpilog.inspecting': 'Membaca {name}…',
   'wpilog.inspectFailed': 'Tidak dapat membaca {name}: {message}',

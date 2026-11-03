@@ -201,6 +201,8 @@ export const hr = {
   'import.folderNotExpanded': 'Izbornik je vratio samu mapu, ali ne i njezine datoteke — povucite mapu u prozor da je pročitate rekurzivno',
   'import.folderNoRoutes': 'nema obradivih datoteka ruta (.traj / .path / .auto / .ghostauto / .chor) u ovoj mapi',
   'wpilog.title': 'Uvezi zapise robota (.wpilog)',
+  'wpilog.stillReading': 'još se čitao kada je pritisnut Uvezi',
+  'wpilog.nothingSelected': 'nema podataka o pozi u ovom zapisu — ništa nije odabrano',
   'wpilog.queued': 'Datoteke zapisa',
   'wpilog.inspecting': 'Čitanje {name}…',
   'wpilog.inspectFailed': 'Nije moguće pročitati {name}: {message}',

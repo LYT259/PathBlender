@@ -201,6 +201,8 @@ export const sv = {
   'import.folderNotExpanded': 'Väljaren returnerade själva mappen men inga av dess filer — dra mappen till fönstret för att läsa den rekursivt',
   'import.folderNoRoutes': 'inga läsbara ruttfiler (.traj / .path / .auto / .ghostauto / .chor) i den här mappen',
   'wpilog.title': 'Importera robotloggar (.wpilog)',
+  'wpilog.stillReading': 'lästes fortfarande när Import trycktes',
+  'wpilog.nothingSelected': 'inga posedata i loggen — inget valt',
   'wpilog.queued': 'Loggfiler',
   'wpilog.inspecting': 'Läser {name}…',
   'wpilog.inspectFailed': 'Kunde inte läsa {name}: {message}',

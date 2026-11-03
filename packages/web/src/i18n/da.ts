@@ -201,6 +201,8 @@ export const da = {
   'import.folderNotExpanded': "Vælgeren returnerede selve mappen, men ingen af dens filer — træk mappen ind i vinduet for at læse den rekursivt",
   'import.folderNoRoutes': "ingen læsbare rutefiler (.traj / .path / .auto / .ghostauto / .chor) i denne mappe",
   'wpilog.title': 'Importér robotlogge (.wpilog)',
+  'wpilog.stillReading': 'blev stadig læst, da Importér blev trykket',
+  'wpilog.nothingSelected': 'ingen posedata i loggen — intet valgt',
   'wpilog.queued': 'Logfiler',
   'wpilog.inspecting': 'Læser {name}…',
   'wpilog.inspectFailed': 'Kunne ikke læse {name}: {message}',

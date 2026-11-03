@@ -236,6 +236,8 @@ export const zhTw: Record<MessageKey, string> = {
   'import.folderNotExpanded': '選擇器只回傳了資料夾本身、沒有裡面的檔案——請把資料夾直接拖進視窗以遞迴讀取',
   'import.folderNoRoutes': '這個資料夾裡沒有可解析的路線檔案（.traj / .path / .auto / .ghostauto / .chor）',
   'wpilog.title': '匯入機器人日誌（.wpilog）',
+  'wpilog.stillReading': '按下匯入時仍在讀取',
+  'wpilog.nothingSelected': '日誌中沒有位姿資料——未選擇任何內容',
   'wpilog.queued': '日誌檔案',
   'wpilog.inspecting': '正在讀取 {name}…',
   'wpilog.inspectFailed': '無法讀取 {name}：{message}',

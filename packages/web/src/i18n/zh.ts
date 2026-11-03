@@ -231,6 +231,8 @@ export const zh: Record<MessageKey, string> = {
   'import.folderNotExpanded': '选择器只返回了文件夹本身、没有里面的文件——请把文件夹直接拖进窗口以递归读取',
   'import.folderNoRoutes': '这个文件夹里没有可解析的路线文件（.traj / .path / .auto / .ghostauto / .chor）',
   'wpilog.title': '导入机器人日志（.wpilog）',
+  'wpilog.stillReading': '按下导入时仍在读取',
+  'wpilog.nothingSelected': '日志中没有位姿数据——未选择任何内容',
   'wpilog.queued': '日志文件',
   'wpilog.inspecting': '正在读取 {name}…',
   'wpilog.inspectFailed': '无法读取 {name}：{message}',

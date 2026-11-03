@@ -244,6 +244,8 @@ export const ja: Record<MessageKey, string> = {
   'import.folderNotExpanded': 'ピッカーはフォルダ自体を返しましたが、中のファイルは返されませんでした — フォルダをウィンドウへドラッグすると再帰的に読み込めます',
   'import.folderNoRoutes': 'このフォルダには読み込めるルートファイル (.traj / .path / .auto / .ghostauto / .chor) がありません',
   'wpilog.title': 'ロボットログの読み込み（.wpilog）',
+  'wpilog.stillReading': 'インポート押下時も読み込み中でした',
+  'wpilog.nothingSelected': 'このログに位姿データがありません——何も選択されていません',
   'wpilog.queued': 'ログファイル',
   'wpilog.inspecting': '{name} を読み込み中…',
   'wpilog.inspectFailed': '{name} を読み込めませんでした：{message}',

@@ -201,6 +201,8 @@ export const rw = {
   'import.folderNotExpanded': "Ihitamo ryagaruye ububiko ubwako ariko nta dosiye yabwo — kurura ububiko mu idirishya kugira ngo ubusome hamwe n’ububiko bw’imbere",
   'import.folderNoRoutes': "nta dosiye y’inzira zisomwa (.traj / .path / .auto / .ghostauto / .chor) muri ubu bubiko",
   'wpilog.title': 'Kuzana amabiko ya robote (.wpilog)',
+  'wpilog.stillReading': 'ikibazo gisigaye mu gusoma igihe Import yakanditse',
+  'wpilog.nothingSelected': 'nta makuru y’imyanya muri ibi biko — nta n’imwe yatoranijwe',
   'wpilog.queued': 'Dosiye z’ibiko',
   'wpilog.inspecting': 'Gusoma {name}…',
   'wpilog.inspectFailed': '{name} ntibyashobotse gusomwa: {message}',

@@ -240,6 +240,8 @@ export const es: Record<MessageKey, string> = {
   'import.folderNotExpanded': 'El selector devolvió la carpeta pero no sus archivos — arrastra la carpeta sobre la ventana para leerla por completo',
   'import.folderNoRoutes': 'no hay archivos de ruta legibles (.traj / .path / .auto / .ghostauto / .chor) en esta carpeta',
   'wpilog.title': 'Importar registros del robot (.wpilog)',
+  'wpilog.stillReading': 'aún se estaba leyendo al pulsar Importar',
+  'wpilog.nothingSelected': 'sin datos de posición en este registro — nada seleccionado',
   'wpilog.queued': 'Archivos de registro',
   'wpilog.inspecting': 'Leyendo {name}…',
   'wpilog.inspectFailed': 'No se pudo leer {name}: {message}',

@@ -202,6 +202,8 @@ export const sq = {
   'import.folderNotExpanded': 'Zgjedhësi ktheu vetë dosjen por jo skedarët e saj — tërhiqni dosjen në dritare për ta lexuar në mënyrë rekursive',
   'import.folderNoRoutes': 'nuk ka skedarë rrugësh të lexueshëm (.traj / .path / .auto / .ghostauto / .chor) në këtë dosje',
   'wpilog.title': 'Importo regjistrat e robotit (.wpilog)',
+  'wpilog.stillReading': 'po lexohej ende kur u shtyp Importo',
+  'wpilog.nothingSelected': 'pa të dhëna pose në këtë regjistër — asgjë e zgjedhur',
   'wpilog.queued': 'Skedarë regjistri',
   'wpilog.inspecting': 'Po lexohet {name}…',
   'wpilog.inspectFailed': 'S’u lexua dot {name}: {message}',

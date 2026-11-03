@@ -225,6 +225,8 @@ export const ta = {
   'import.folderNotExpanded': 'தேர்வி கோப்புறையைத் திருப்பியது ஆனால் அதன் கோப்புகள் எதுவும் இல்லை — மறுநிகழ்வு முறையில் படிக்க சாளரத்தில் கோப்புறையை இழுக்கவும்',
   'import.folderNoRoutes': 'இந்த கோப்புறையில் பாகுபடுத்தக்கூடிய வழித்தட கோப்புகள் இல்லை (.traj / .path / .auto / .ghostauto / .chor)',
   'wpilog.title': 'ரோபோ பதிவுகளை இறக்குமதி செய் (.wpilog)',
+  'wpilog.stillReading': 'இறக்குமதி அழுத்தியபோது இன்னும் படிக்கப்பட்டுக் கொண்டிருந்தது',
+  'wpilog.nothingSelected': 'இந்த பதிவில் நிலை தரவு இல்லை — எதுவும் தேர்ந்தெடுக்கப்படவில்லை',
   'wpilog.queued': 'பதிவுக் கோப்புகள்',
   'wpilog.inspecting': '{name} படிக்கப்படுகிறது…',
   'wpilog.inspectFailed': '{name} படிக்க முடியவில்லை: {message}',

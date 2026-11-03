@@ -201,6 +201,8 @@ export const az = {
   'import.folderNotExpanded': 'Seçici qovluğun özünü qaytardı, lakin fayllarını yox — rekursiv oxumaq üçün qovluğu pəncərəyə sürüşdürün',
   'import.folderNoRoutes': 'bu qovluqda oxuna bilən marşrut faylları yoxdur (.traj / .path / .auto / .ghostauto / .chor)',
   'wpilog.title': 'Robot jurnallarını idxal et (.wpilog)',
+  'wpilog.stillReading': 'İdxal basılanda hələ oxunurdu',
+  'wpilog.nothingSelected': 'bu logda poz məlumu yoxdur — heç nə seçilməyib',
   'wpilog.queued': 'Jurnal faylları',
   'wpilog.inspecting': '{name} oxunur…',
   'wpilog.inspectFailed': '{name} oxuna bilmədi: {message}',

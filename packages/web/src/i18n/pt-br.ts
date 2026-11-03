@@ -242,6 +242,8 @@ export const ptBR: Record<MessageKey, string> = {
   'import.folderNotExpanded': 'O seletor devolveu a pasta em si, mas nenhum arquivo dela — arraste a pasta para a janela para lê-la recursivamente',
   'import.folderNoRoutes': 'nenhum arquivo de rota legível (.traj / .path / .auto / .ghostauto / .chor) nesta pasta',
   'wpilog.title': 'Importar registros do robô (.wpilog)',
+  'wpilog.stillReading': 'ainda estava sendo lido quando Importar foi pressionado',
+  'wpilog.nothingSelected': 'sem dados de pose neste registro — nada selecionado',
   'wpilog.queued': 'Arquivos de registro',
   'wpilog.inspecting': 'Lendo {name}…',
   'wpilog.inspectFailed': 'Não foi possível ler {name}: {message}',

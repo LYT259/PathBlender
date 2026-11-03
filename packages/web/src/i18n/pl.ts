@@ -244,6 +244,8 @@ export const pl: Record<MessageKey, string> = {
   'import.folderNotExpanded': 'Selektor zwrócił sam folder bez jego plików — przeciągnij folder na okno, aby odczytać go rekurencyjnie',
   'import.folderNoRoutes': 'brak plików tras do odczytania (.traj / .path / .auto / .ghostauto / .chor) w tym folderze',
   'wpilog.title': 'Importuj logi robota (.wpilog)',
+  'wpilog.stillReading': 'wciąż wczytywano w momencie naciśnięcia Importuj',
+  'wpilog.nothingSelected': 'brak danych pozy w tym logu — nic nie wybrano',
   'wpilog.queued': 'Pliki logów',
   'wpilog.inspecting': 'Czytanie {name}…',
   'wpilog.inspectFailed': 'Nie udało się odczytać {name}: {message}',

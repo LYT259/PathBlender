@@ -202,6 +202,8 @@ export const ro = {
   'import.folderNotExpanded': 'Selectorul a returnat folderul însuși, dar niciunul dintre fișierele lui — trage folderul în fereastră pentru a-l citi recursiv',
   'import.folderNoRoutes': 'niciun fișier de rută analizabil (.traj / .path / .auto / .ghostauto / .chor) în acest folder',
   'wpilog.title': 'Importă jurnalele robotului (.wpilog)',
+  'wpilog.stillReading': 'era încă în citire la apăsarea Importă',
+  'wpilog.nothingSelected': 'fără date de poză în acest jurnal — nimic selectat',
   'wpilog.queued': 'Fișiere jurnal',
   'wpilog.inspecting': 'Se citește {name}…',
   'wpilog.inspectFailed': 'Nu s-a putut citi {name}: {message}',

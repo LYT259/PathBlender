@@ -100,11 +100,8 @@ describe('WpilogImportDialog', () => {
 
   it('accepts a .wpilog dropped while the dialog is already open', async () => {
     const logA = buildLog();
-    const logB = (() => {
-      // Second log with a distinguishable pose (x offset by 5).
-      const bytes = buildLog();
-      return bytes;
-    })();
+    // A second log of identical shape — the relPath distinguishes the two.
+    const logB = buildLog();
     const results: WpilogImportResult[] = [];
     const initial = [{ file: new File([logA], 'a.wpilog'), relPath: 'a.wpilog' }];
     const { rerender } = render(
