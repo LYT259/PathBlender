@@ -55,6 +55,7 @@ PathBlender bu boşluğu doldurur:
 | `.path` | PathPlanner (MIT) | Yörünge yerel olarak üretilir — taşınmış PathPlannerLib algoritması |
 | `.auto` | PathPlanner (MIT) | Bekleme/komut anlamlarıyla yol dizileri |
 | `settings.json` | PathPlanner (MIT) | O projedeki robotların tampon boyutları |
+| `.wpilog` | WPILib (BSD-3) | Gerçek robot kaydı: pose girdisini ve otonom aralığı seçin, kaydedilen yolu planlananların yanında oynatın |
 | `.pb` | Bu proje | Oturum dosyası: tüm robotlar + ayarlar + saha (yeniden adlandırmadan önceki `.ghpb.json` de açılır) |
 
 Sahalar: FRC 2022–2026 yerleşik; ayrıca kalibrasyonlu özel saha içe aktarma ve bir WPILib/PhotonVision AprilTag yerleşim JSON'u (başka her sezon veya bir antrenman sahaları için kullanın).

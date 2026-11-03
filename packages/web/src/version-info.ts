@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.10-beta.2';
+export const APP_VERSION = '0.1.10-beta.3';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.10-beta.3', date: '2026.11.03', note: {
+    'en': 'Import real robot runs from .wpilog logs: pick the pose entry and autonomous interval, then replay the recorded route next to planned paths (waits and dropouts preserved)',
+    'zh': '导入 .wpilog 实车日志：选择位姿条目与自动时段，把记录到的路线与规划路线一起回放（等待与记录中断如实保留）',
+    'zh-tw': '匯入 .wpilog 實車日誌：選擇位姿項目與自動時段，把記錄到的路線與規劃路線一起回放（等待與記錄中斷如實保留）',
+    'cs': 'Import skutečných jízd z logů .wpilog: vyberte záznam pózy a autonomní interval a přehrajte zaznamenanou trasu vedle plánovaných cest (čekání a výpadky se zachovají)',
+    'nl': 'Importeer echte rijruns uit .wpilog-logs: kies de pose-invoer en het autonome interval en speel de opgenomen route af naast geplande paden (wachten en dropouts blijven behouden)',
+    'fr': 'Importez les runs réels du robot depuis les logs .wpilog : choisissez l\'entrée de pose et l\'intervalle autonome, puis rejouez la trajectoire enregistrée à côté des parcours planifiés (attentes et coupures conservées)',
+    'he': 'ייבוא ריצות אמיתיות של הרובוט מיומני .wpilog: בחרו את רשומת הפוזה ואת הטווח האוטונומי והפעילו את המסלול המוקלט לצד המסלולים המתוכננים (המתנות והפסקות הקלטה נשמרות)',
+    'ja': '.wpilog ログから実走行を取り込む：姿勢エントリとオートノマス区間を選ぶと、記録された経路を計画経路と並べて再生（待機や記録欠落もそのまま）',
+    'ko': '.wpilog 로그에서 실제 주행 가져오기: 포즈 항목과 자율 구간을 고르면 기록된 경로를 계획 경로 옆에서 재생합니다(대기와 기록 끊김은 그대로 유지)',
+    'pl': 'Importuj rzeczywiste przejazdy z logów .wpilog: wybierz wpis pozy i interwał autonomiczny, a następnie odtwórz nagraną trasę obok planowanych ścieżek (czekania i przerwy w zapisie zachowane)',
+    'pt-br': 'Importe corridas reais do robô de logs .wpilog: escolha a entrada de pose e o intervalo autônomo e reproduza a rota gravada ao lado dos caminhos planejados (esperas e falhas de registro preservadas)',
+    'es': 'Importa corridas reales del robot desde logs .wpilog: elige la entrada de pose y el intervalo autónomo y reproduce la ruta grabada junto a las rutas planificadas (esperas y caídas de registro se conservan)',
+    'tr': '.wpilog kayıtlarından gerçek robot koşularını içe aktar: poz girdisini ve otonom aralığı seçin, kaydedilen yolu planlanan yolların yanında oynatın (beklemeler ve kayıp aralıklar korunur)',
+    'ar': 'استورد جولات حقيقية للروبوت من سجلات .wpilog: اختر إدخال الوضعية والفترة المستقلة ثم أعد تشغيل المسار المسجل بجانب المسارات المخططة (تُحفظ فترات الانتظار وانقطاعات التسجيل)',
+    'az': '.wpilog jurnallarından real robot yürüşlərini idxal edin: poza qeydini və avtonom intervalı seçin, qeydə alınan yolu planlaşdırılmış yolların yanında oynadın (gözləmələr və yazı kəsikləri qorunur)',
+    'bg': 'Импортирайте реални шайби от логове .wpilog: изберете записа на позата и автономния интервал и пуснете записания маршрут до планираните пътеки (изчакванията и пропуските в записа се пазят)',
+    'bs': 'Uvezite stvarne vožnje robota iz logova .wpilog: odaberite stavku poze i autonomni interval pa reproducirajte snimljenu rutu uz planirane putanje (čekanja i prekidi snimanja se čuvaju)',
+    'da': 'Importér rigtige robotkørsler fra .wpilog-logge: vælg pose-posten og den autonome periode og afspil den optagede rute ved siden af planlagte baner (ventetider og huller i loggen bevares)',
+    'de': 'Echte Roboterfahrten aus .wpilog-Logs importieren: Pose-Eintrag und Autonomie-Zeitraum wählen und die aufgezeichnete Route neben geplanten Pfaden abspielen (Wartezeiten und Aussetzer bleiben erhalten)',
+    'el': 'Εισαγωγή πραγματικών διαδρομών ρομπότ από logs .wpilog: επιλέξτε την καταχώριση πόζας και το αυτόνομο διάστημα και αναπαραγάγετε τη καταγεγραμμένη διαδρομή δίπλα στις σχεδιασμένες (αναμονές και διακοπές διατηρούνται)',
+    'fil': 'I-import ang mga totoong takbo ng robot mula sa .wpilog log: piliin ang pose entry at autonomous na pagitan, i-play ang naitala ruta katabi ng mga planong daan (mga hintay at dropout napanatili)',
+    'hi': '.wpilog लॉग से रोबोट की वास्तविक रन आयात करें: मुद्रा प्रविष्टि और स्वायत्त अंतराल चुनें, फिर रिकॉर्ड किए मार्ग को योजनाबद्ध पथों के साथ चलाएं (प्रतीक्षा और रिकॉर्डिंग ब्रेक यथावत रहते हैं)',
+    'hr': 'Uvezite stvarne vožnje robota iz .wpilog zapisa: odaberite stavku poze i autonomni interval te reproducirajte snimljenu rutu uz planirane putanje (čekanja i prekisi snimanja ostaju sačuvani)',
+    'hu': 'Valódi robotfutások importálása .wpilog naplókból: válassza a póza bejegyzést és az autonóm időszakot, majd játssza le a rögzített útvonalat a tervezett útvonalak mellett (várakozások és kihagyások megőrzve)',
+    'hy': 'Ներմուծեք ռոբոտի իրական վազքերը .wpilog տեղեկամատյաններից՝ ընտրեք դիրքի գրառումը և ինքնավար միջակայքը, ապա նվագարկեք ձայնագրված երթուղին պլանավորվածների կողքին (սպասումներն ու գրանցման ընդհատումները պահպանվում են)',
+    'id': 'Impor lari robot sungguhan dari log .wpilog: pilih entri pose dan interval otonom lalu putar rute terekam di samping rute terencana (tunggu dan putus rekam dipertahankan)',
+    'it': 'Importa le run reali del robot dai log .wpilog: scegli la voce di posa e l\'intervallo autonomo, poi riproduci la rotta registrata accanto ai percorsi pianificati (attese e interruzioni preservate)',
+    'mk': 'Увезете реални возења од роботи од .wpilog логови: изберете ја ставката поза и автономниот интервал, па пуштете ја снимената рута до планираните патеки (чекаењата и прекините на снимање се зачувани)',
+    'mr': '.wpilog लॉगमधून रोबर्टच्या खऱ्या धावा आयात करा: मुद्रा नोंद आणि स्वायत्त कालावधी निवडा, नंतर मुद्रांकित मार्ग नियोजित मार्गांसोबत प्ले करा (प्रतीक्षा व मुद्रांकन खंड जसेच्या तसे राहतात)',
+    'ms': 'Import larian robot sebenar daripada log .wpilog: pilih entri pose dan selang autonomi, kemudian main laluan direkod di sebelah laluan dirancang (tunggu dan lentaman rekod dikekalkan)',
+    'nb': 'Importer ekte robotkjøringer fra .wpilog-logger: velg pose-posten og den autonome perioden, og spill den innspilte ruten ved siden av planlagte baner (ventetider og hull i loggingen bevares)',
+    'nn': 'Importer ekte robotkøyringar frå .wpilog-loggar: vel pose-posten og den autonome perioden, og spel den innspilte ruta ved sida av planlagde banar (ventetid og hol i logginga blir bevart)',
+    'ro': 'Importă curse reale ale robotului din loguri .wpilog: alege intrarea de poză și intervalul autonom, apoi redă ruta înregistrată lângă traseele planificate (așteptările și căderile de înregistrare se păstrează)',
+    'rw': 'Kuzana imihanda myiza ya robote mu biko bya .wpilog: hitamo andika imyanya n\'igihe cya auto, hanyuma ukine inzira yanditse imbere y\'inzira zateganyijwe (kutegereza no guhindura ibiko biracyariho)',
+    'sq': 'Importoni xhiro reale roboti nga log .wpilog: zgjidhni hyrjen e pozës dhe intervalin autonom, pastaj riprodhoni rrugën e regjistruar krahas rrugëve të planifikuara (pritjet dhe ndërprerjet e regjistrimit ruhen)',
+    'sr': 'Uvezite stvarne vožnje robota iz .wpilog logova: izaberite stavku poze i autonomni interval, pa reproducirajte snimljenu rutu pored planiranih putanja (čekanja i prekidi snimanja se čuvaju)',
+    'sv': 'Importera verkliga robotkörningar från .wpilog-loggar: välj pose-posten och den autonoma perioden och spela upp den inspelade rutten bredvid planerade banor (väntetider och loggluckor bevaras)',
+    'ta': '.wpilog பதிவுகளிலிருந்து ரோபோவின் உண்மையான ஓட்டங்களை இறக்குமதி செய்யுங்கள்: நிலை உள்ளீடு மற்றும் தன்னிச்சை இடைவெளியைத் தேர்ந்தெடுத்து, திட்டமிடப்பட்ட பாதைகளுடன் பதிவு செய்யப்பட்ட பாதையை இயக்கவும் (காத்திருப்புகள், பதிவு இடைவெளிகள் பாதுகாக்கப்படும்)',
+    'uk': 'Імпортуйте реальні заїзди робота з журналів .wpilog: оберіть запис пози та автономний інтервал, а потім відтворіть записаний маршрут поруч із планованими (очікування та розриви запису збережено)',
+    'vi': 'Nhập các lượt chạy thật của robot từ log .wpilog: chọn mục tư thế và khoảng thời gian tự động, rồi phát lại lộ trình đã ghi bên cạnh các lộ trình dự kiến (giữ nguyên thời gian chờ và đoạn mất tín hiệu)',
+  } },
   { version: '0.1.10-beta.2', date: '2026.11.03', note: {
     en: 'Touchscreen support: pan, pinch and rotate the field, and scrub the timeline by touch',
     zh: '触屏支持：手指平移、双指缩放与旋转场地，以及拖动时间轴',

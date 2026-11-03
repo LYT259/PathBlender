@@ -17,6 +17,7 @@ import type {
   ModuleLocation,
   OutOfBoundsInterval,
   SessionTrajectory,
+  TrajectoryGap,
 } from '@pathblender/core';
 import {
   chassisModules,
@@ -50,12 +51,38 @@ export interface RenderView {
 
 type PathPoint = { x: number; y: number; heading: number };
 
+/** Path points that also know their trajectory time (samples do). */
+type TimedPathPoint = PathPoint & { t: number };
+
+/**
+ * Split a sample list at trajectory gaps (wpilog imports): a line drawn
+ * across a data dropout would fake motion nobody observed, so each
+ * covered stretch becomes its own polyline.
+ */
+function splitAtGaps(samples: TimedPathPoint[], gaps: readonly TrajectoryGap[] | undefined): PathPoint[][] {
+  if (!gaps || gaps.length === 0) return [samples];
+  const out: PathPoint[][] = [];
+  let current: PathPoint[] = [];
+  for (const sample of samples) {
+    const inGap = gaps.some((gap) => sample.t > gap.startT && sample.t < gap.endT);
+    if (inGap) {
+      if (current.length > 0) out.push(current);
+      current = [];
+      continue;
+    }
+    current.push(sample);
+  }
+  if (current.length > 0) out.push(current);
+  return out;
+}
+
 /** Per-segment path geometry: composed robots contribute one array per
- * segment (no inter-segment bridge), legacy robots their single route. */
+ *  segment (no inter-segment bridge), legacy robots their single route —
+ *  wpilog gaps split their route the same way. */
 function pathSegmentsOf(r: SessionTrajectory): PathPoint[][] {
   const resolved = resolveSequence(r);
   if (resolved) return resolved.map((segment) => segment.trajectory.samples);
-  return [r.trajectory.samples];
+  return splitAtGaps(r.trajectory.samples, r.trajectory.gaps);
 }
 
 function pathSegments(r: SessionTrajectory): PathPoint[] {

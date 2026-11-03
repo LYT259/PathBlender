@@ -50,7 +50,7 @@ export function sameRouteTrajectory(option: Trajectory, current: Trajectory): bo
 
 /** File names distinguish candidates even when embedded project names repeat. */
 export function routeName(route: LibraryRoute): string {
-  return route.relPath.split('/').at(-1)!.replace(/\.(traj|ghostauto|path|auto)$/i, '');
+  return route.relPath.split('/').at(-1)!.replace(/\.(traj|ghostauto|path|auto|wpilog)$/i, '');
 }
 
 export function robotFromRoute(route: LibraryRoute, colorIndex: number, id = crypto.randomUUID()): SessionTrajectory {

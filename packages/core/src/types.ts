@@ -61,7 +61,20 @@ export type TrajectorySource =
   | 'choreo-traj'
   | 'ghostauto'
   | 'pathplanner-path'
-  | 'pathplanner-auto';
+  | 'pathplanner-auto'
+  | 'wpilog';
+
+/**
+ * A span on a trajectory's own clock with NO pose data behind it (a
+ * logging dropout or a pose reset/jump — wpilog imports). Consumers must
+ * not interpolate across a gap: sampleTrajectory holds the last known
+ * pose (zero velocity) until the gap ends. Times are seconds.
+ */
+export interface TrajectoryGap {
+  startT: number;
+  endT: number;
+  kind: 'gap' | 'jump';
+}
 
 /** A named marker attached to a trajectory time (Choreo events etc.). */
 export interface TrajectoryEvent {
@@ -100,6 +113,11 @@ export interface Trajectory {
   geometrySource: 'file' | 'default';
   moduleLocations: ModuleLocation[];
   events: TrajectoryEvent[];
+  /**
+   * Uncovered spans (wpilog imports; absent on file formats and older
+   * sessions). Sorted, non-overlapping, inside [0, durationS].
+   */
+  gaps?: TrajectoryGap[];
   /** Non-fatal parser warnings surfaced to the user. */
   warnings: string[];
   /**

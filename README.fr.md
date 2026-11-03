@@ -55,6 +55,7 @@ PathBlender comble ce manque :
 | `.path` | PathPlanner (MIT) | Trajectoire générée localement — algorithme de PathPlannerLib porté |
 | `.auto` | PathPlanner (MIT) | Séquences de parcours avec sémantique d’attentes et de commandes |
 | `settings.json` | PathPlanner (MIT) | Dimensions des pare-chocs des robots de ce projet |
+| `.wpilog` | WPILib (BSD-3) | Journal réel du robot : choisissez l’entrée de pose et l’intervalle autonome, puis rejouez la trajectoire enregistrée à côté des parcours planifiés |
 | `.pb` | Ce projet | Fichier de session : tous les robots + réglages + terrain (le `.ghpb.json` d’avant le renommage s’ouvre encore) |
 
 Terrains : FRC 2022–2026 intégrés, plus l’import de terrains personnalisés avec calibrage et un JSON de disposition AprilTags WPILib/PhotonVision (utile pour toute autre saison ou un terrain d’entraînement).

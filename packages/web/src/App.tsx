@@ -24,6 +24,7 @@ import {
   deserializeSession,
   FIELDS,
   fieldById,
+  isWpilogFileName,
   parsePathFile,
   parseRobotProfile,
   ParseError,
@@ -37,6 +38,8 @@ import {
 } from '@pathblender/core';
 import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } from '@pathblender/core';
 import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
+import { WpilogImportDialog, type WpilogImportResult, type WpilogIncomingFile } from './wpilog/WpilogImportDialog';
+import './wpilog/WpilogImportDialog.css';
 import { displayName, robotsFromImport, type LibraryProfile, type LibraryRoute } from './route-library';
 import { withTeamPlaceholders } from './team-placeholder';
 import { withColorblindPalette } from './session-colors';
@@ -463,6 +466,9 @@ function AppBody() {
   const importedFileStoreRef = useRef(new Map<string, File>());
   // Applied settings.json per robot — also for the solution package.
   const settingsFilesRef = useRef(new Map<string, File>());
+  // Pending .wpilog logs awaiting the user's pose/interval selection. The
+  // dialog owns the parse; confirmed routes re-enter the normal pipeline.
+  const [wpilogQueue, setWpilogQueue] = useState<WpilogIncomingFile[] | null>(null);
 
   const importFiles = useCallback(async (files: FileList | File[] | IncomingFile[], opts?: { fromFolder?: boolean }) => {
     exampleRequest.current += 1;
@@ -472,11 +478,20 @@ function AppBody() {
     // Keep every incoming file raw — the solution package's per-team
     // 原始导入文件 come from here (byte-identical to what was imported).
     for (const { file, relPath } of incoming) importedFileStoreRef.current.set(relPath, file);
+    // Binary .wpilog logs detour into the selection dialog: the container
+    // parses there (worker), the user confirms pose source + auto interval,
+    // and the confirmed extraction re-enters the normal route pipeline.
+    const wpilogFiles = incoming.filter(({ file }) => isWpilogFileName(file.name));
+    const textIncoming = incoming.filter(({ file }) => !isWpilogFileName(file.name));
+    if (wpilogFiles.length > 0) {
+      setWpilogQueue((prev) => [...(prev ?? []), ...wpilogFiles.map(({ file, relPath }) => ({ file, relPath }))]);
+    }
+    const incomingList = textIncoming;
     // A folder drop/pick is any import that carries paths below its root.
     const fromFolder = opts?.fromFolder ?? incoming.some((f) => f.relPath.includes('/'));
-    const knownRouteExt = /\.(traj|ghostauto|path|auto|chor)$/i;
+    const knownRouteExt = /\.(traj|ghostauto|path|auto|chor|wpilog)$/i;
     const batch = new Map<string, string>(fromFolder ? [] : pathTextsRef.current);
-    for (const { file, relPath } of incoming) {
+    for (const { file, relPath } of incomingList) {
       if (/\.path$/i.test(file.name)) {
         const stem = relPath.split('/').pop()!.replace(/\.path$/i, '');
         batch.set(fromFolder ? relPath : stem, await file.text());
@@ -484,7 +499,7 @@ function AppBody() {
     }
     const addedRoutes: LibraryRoute[] = [];
     const addedProfiles: LibraryProfile[] = [];
-    for (const { file, relPath } of incoming) {
+    for (const { file, relPath } of incomingList) {
       if (fromFolder && !knownRouteExt.test(file.name) && !/\.json$/i.test(file.name)) continue;
       const text = await file.text();
       // Session files restore as a whole session rather than one robot.
@@ -552,10 +567,11 @@ function AppBody() {
       addedRoutes.length === 0 &&
       addedProfiles.length === 0 &&
       nextErrors.length === 0 &&
-      incoming.length > 0
+      incomingList.length > 0 &&
+      wpilogFiles.length === 0
     ) {
       nextErrors.push({
-        fileName: incoming[0]!.relPath.split('/')[0] || incoming[0]!.file.name,
+        fileName: incomingList[0]!.relPath.split('/')[0] || incomingList[0]!.file.name,
         message: tr('import.folderNoRoutes'),
       });
     }
@@ -579,11 +595,38 @@ function AppBody() {
     } else if (!fromFolder && addedProfiles.length > 0) {
       pendingProfilesRef.current.push(...addedProfiles);
       flash(tr('library.imported', { n: 0, m: addedProfiles.length }));
-    } else if (fromFolder && !addedRoutes.length && !nextErrors.length) {
-      nextErrors.push({ fileName: incoming[0]?.relPath.split('/')[0] ?? '', message: tr('import.folderNoRoutes') });
+    } else if (fromFolder && !addedRoutes.length && !nextErrors.length && incomingList.length > 0 && wpilogFiles.length === 0) {
+      nextErrors.push({ fileName: incomingList[0]?.relPath.split('/')[0] ?? '', message: tr('import.folderNoRoutes') });
     }
     setErrors(nextErrors);
   }, [tr, flash, sourceRobots.length, selectedId, setRobots, setScene, setT, playback.setPlaying]);
+
+  /**
+   * Confirmed wpilog extractions join the route pipeline exactly like parsed
+   * text formats: one batch commit (one undo step), failures reported
+   * without dropping the successes.
+   */
+  const finishWpilogImport = useCallback((result: WpilogImportResult) => {
+    setWpilogQueue(null);
+    const addedRoutes: LibraryRoute[] = result.routes.map((route) => ({
+      id: crypto.randomUUID(),
+      relPath: route.relPath,
+      trajectory: route.trajectory,
+    }));
+    const failures = result.failures.map((failure) => ({
+      fileName: failure.relPath,
+      message: failure.message,
+    }));
+    if (addedRoutes.length > 0) {
+      const fromFolder = addedRoutes.some((route) => route.relPath.includes('/'));
+      const additions = robotsFromImport(addedRoutes, [], fromFolder, sourceRobots.length);
+      setRobots((prev) => withTeamPlaceholders(withColorblindPalette([...prev, ...additions], colorblindRef.current)));
+      setSelectedId(additions[0]!.trajectory.id);
+      setInspectorMode('checks');
+      flash(tr('library.imported', { n: addedRoutes.length, m: 0 }));
+    }
+    setErrors((prev) => [...prev, ...failures]);
+  }, [tr, flash, sourceRobots.length, setRobots]);
 
   /**
    * Folder picker result, with every silent exit removed. Before this handler
@@ -1626,6 +1669,14 @@ function AppBody() {
       {showPrefs && <Dialog title={tr('prefs.title')} onClose={() => setShowPrefs(false)} className="preferences-dialog">
         <PreferencesPanel desktop={IS_DESKTOP} onClose={() => setShowPrefs(false)} onColorblindSaved={setColorblind} />
       </Dialog>}
+      {wpilogQueue && wpilogQueue.length > 0 && (
+        <WpilogImportDialog
+          files={wpilogQueue}
+          field={field}
+          onDone={finishWpilogImport}
+          onCancel={() => setWpilogQueue(null)}
+        />
+      )}
       {showGuide && <GuideDialog onClose={() => setShowGuide(false)} onOpenShortcuts={() => { setShowGuide(false); setShowHelp(true); }} onOpenUrl={openExternalUrl} />}
       {showHelp && <Dialog title={tr('help.title')} onClose={() => setShowHelp(false)} className="help-dialog">
         <p className="help-intro">{tr('help.intro')}</p>

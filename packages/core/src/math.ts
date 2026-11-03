@@ -4,7 +4,7 @@
  * (matches the 103 fork's sampleLinear approach for .ghostauto).
  */
 
-import type { Pose2d, TrajectorySample } from './types';
+import type { Pose2d, TrajectoryGap, TrajectorySample } from './types';
 
 /** Wrap an angle into (-π, π]. */
 export function wrapAngle(a: number): number {
@@ -21,18 +21,48 @@ export function lerpAngle(a: number, b: number, t: number): number {
 }
 
 /**
+ * The state at the start of the gap covering `t`, with zero velocity —
+ * the honest pose for a dropout: the robot is held at its last known
+ * state and no motion is invented across the uncovered span.
+ */
+function holdAtGapStart(gaps: readonly TrajectoryGap[], samples: TrajectorySample[], t: number): TrajectorySample | undefined {
+  for (const gap of gaps) {
+    if (t >= gap.startT && t < gap.endT) {
+      // The sample at (or just before) the gap start holds.
+      let low = 0;
+      let high = samples.length - 1;
+      while (low !== high) {
+        const mid = Math.ceil((low + high) / 2);
+        if ((samples[mid] as TrajectorySample).t <= gap.startT) low = mid;
+        else high = mid - 1;
+      }
+      const held = samples[low] as TrajectorySample;
+      return { ...held, t, vx: 0, vy: 0, omega: 0 };
+    }
+  }
+  return undefined;
+}
+
+/**
  * Sample the trajectory at time t. Before the first sample returns the
- * first state; after the last returns the last state (clamped).
+ * first state; after the last returns the last state (clamped). A query
+ * inside a wpilog gap (trajectory.gaps) holds the last known state with
+ * zero velocity — never interpolated across the uncovered span.
  */
 export function sampleTrajectory(
   samples: TrajectorySample[],
   t: number,
+  gaps?: readonly TrajectoryGap[],
 ): TrajectorySample | undefined {
   if (samples.length === 0) return undefined;
   const first = samples[0] as TrajectorySample;
   const last = samples[samples.length - 1] as TrajectorySample;
   if (t <= first.t) return first;
   if (t >= last.t) return last;
+  if (gaps && gaps.length > 0) {
+    const held = holdAtGapStart(gaps, samples, t);
+    if (held) return held;
+  }
 
   // Binary search for the lowest index whose t exceeds the query.
   let low = 1;
