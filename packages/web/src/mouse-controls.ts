@@ -187,13 +187,21 @@ export type ViewMouseAction =
   | { kind: 'roll' }
   | { kind: 'none' };
 
+export interface PointerOwnership {
+  pointerType?: string;
+  penAsMouse?: boolean;
+}
+
 export function resolveMouseAction(
   scheme: MouseControlsScheme,
   button: number,
   mods: { ctrlKey: boolean; shiftKey: boolean; altKey: boolean },
   defaultConstrained: boolean,
   custom?: CustomMouseMap,
+  pointer?: PointerOwnership,
 ): ViewMouseAction {
+  if (pointer?.pointerType === 'touch') return { kind: 'none' };
+  if (pointer?.pointerType === 'pen' && pointer.penAsMouse !== true) return { kind: 'none' };
   if (scheme === 'custom') {
     const name: CustomMouseButton | null = button === 0 ? 'left' : button === 1 ? 'middle' : button === 2 ? 'right' : null;
     if (!name) return { kind: 'none' };

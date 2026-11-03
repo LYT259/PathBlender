@@ -316,7 +316,7 @@ body.desktop.desktop-macos .toolbar { padding-left: 84px; }
   padding: 6px 10px;
 }
 .field-canvas-3d { flex: 1; min-height: 0; }
-.field-canvas-3d canvas { display: block; }
+.field-canvas-3d canvas { display: block; touch-action: none; }
 /* Parked 3D wrapper: fills the canvas slot like the canvas itself would,
    and collapses (not just visually hides) while 2D owns the slot — the
    explicit [hidden] rule is required because display:flex would otherwise

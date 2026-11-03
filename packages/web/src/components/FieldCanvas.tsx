@@ -370,16 +370,93 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       requestDraw();
     };
 
+    // Direct screen-touch pointers (not trackpad gesture* events): one finger
+    // pans the view. Capture keeps the gesture alive when a finger slides off
+    // the canvas; cancel/lost capture drop that pointer without disturbing a
+    // still-touching finger.
+    const touchPoints = new Map<number, { x: number; y: number }>();
+    const touchPoint = (e: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    };
+    // Touch panning may roam, but never lose the field: after every touch
+    // update at least a 24 px slice of the field rectangle stays in view.
+    const clampTouchView = () => {
+      const { w, h } = sizeRef.current;
+      if (w === 0 || h === 0) return;
+      const margin = Math.min(24, w / 2, h / 2);
+      const v = viewRef.current;
+      v.cx = Math.min(field.lengthM + (w / 2 - margin) / v.scale, Math.max(-(w / 2 - margin) / v.scale, v.cx));
+      v.cy = Math.min(field.widthM + (h / 2 - margin) / v.scale, Math.max((margin - h / 2) / v.scale, v.cy));
+    };
+    const onTouchDown = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch') return;
+      e.preventDefault();
+      touchPoints.set(e.pointerId, touchPoint(e));
+      try { canvas.setPointerCapture(e.pointerId); } catch { /* capture is an accelerator, not a requirement */ }
+    };
+    const onTouchMove = (e: PointerEvent) => {
+      const prev = touchPoints.get(e.pointerId);
+      if (e.pointerType !== 'touch' || !prev) return;
+      e.preventDefault();
+      const next = touchPoint(e);
+      touchPoints.set(e.pointerId, next);
+      if (touchPoints.size === 1) {
+        autoFitRef.current = false;
+        const v = viewRef.current;
+        v.cx -= (next.x - prev.x) / v.scale;
+        v.cy += (next.y - prev.y) / v.scale;
+        clampTouchView();
+        requestDraw();
+      } else if (touchPoints.size >= 2) {
+        autoFitRef.current = false;
+        const [a, b] = [...touchPoints.values()];
+        if (!a || !b) return;
+        const beforeA = a === next ? prev : a;
+        const beforeB = b === next ? prev : b;
+        const beforeDistance = Math.hypot(beforeA.x - beforeB.x, beforeA.y - beforeB.y);
+        const afterDistance = Math.hypot(a.x - b.x, a.y - b.y);
+        if (beforeDistance > 0 && afterDistance > 0) {
+          const beforeMid = { x: (beforeA.x + beforeB.x) / 2, y: (beforeA.y + beforeB.y) / 2 };
+          const afterMid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+          const anchor = world(beforeMid.x, beforeMid.y);
+          const v = viewRef.current;
+          const factor = pinchZoomFactor(afterDistance / beforeDistance);
+          v.scale = clampZoomView({ scale: v.scale * factor, cx: v.cx, cy: v.cy }, zoomRange()).scale;
+          const after = world(afterMid.x, afterMid.y);
+          v.cx += anchor.x - after.x;
+          v.cy += anchor.y - after.y;
+          clampTouchView();
+          requestDraw();
+        }
+      }
+    };
+    const onTouchEnd = (e: PointerEvent) => {
+      if (!touchPoints.delete(e.pointerId)) return;
+      try { canvas.releasePointerCapture(e.pointerId); } catch { /* pointer may already be released */ }
+    };
+
     canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('gesturestart', onGestureStart);
     canvas.addEventListener('gesturechange', onGestureChange);
     canvas.addEventListener('gestureend', onGestureEnd);
+    canvas.addEventListener('pointerdown', onTouchDown);
+    canvas.addEventListener('pointermove', onTouchMove);
+    canvas.addEventListener('pointerup', onTouchEnd);
+    canvas.addEventListener('pointercancel', onTouchEnd);
+    canvas.addEventListener('lostpointercapture', onTouchEnd);
     return () => {
       stopChase();
       canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('gesturestart', onGestureStart);
       canvas.removeEventListener('gesturechange', onGestureChange);
       canvas.removeEventListener('gestureend', onGestureEnd);
+      canvas.removeEventListener('pointerdown', onTouchDown);
+      canvas.removeEventListener('pointermove', onTouchMove);
+      canvas.removeEventListener('pointerup', onTouchEnd);
+      canvas.removeEventListener('pointercancel', onTouchEnd);
+      canvas.removeEventListener('lostpointercapture', onTouchEnd);
+      touchPoints.clear();
     };
   }, [requestDraw]);
 

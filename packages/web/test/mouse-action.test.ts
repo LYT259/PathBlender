@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveMouseAction } from '../src/mouse-controls';
+import { DEFAULT_CUSTOM_MOUSE_MAP, resolveMouseAction } from '../src/mouse-controls';
 
 const none = { ctrlKey: false, shiftKey: false, altKey: false };
 const alt = { ctrlKey: false, shiftKey: false, altKey: true };
@@ -25,6 +25,22 @@ describe('resolveMouseAction (verified Onshape/SolidWorks bindings)', () => {
     it('the default-constrained checkbox swaps plain and Alt drags', () => {
       expect(resolveMouseAction('onshape', 2, none, true)).toEqual({ kind: 'orbit', constrained: true });
       expect(resolveMouseAction('onshape', 2, alt, true)).toEqual({ kind: 'orbit', constrained: false });
+    });
+  });
+
+  describe('pointer ownership in the 3D view', () => {
+    it('keeps touch out of the custom mouse-drag route and honors the pen preference', () => {
+      const leftRotate = { ...DEFAULT_CUSTOM_MOUSE_MAP, left: 'rotate' as const };
+      expect(resolveMouseAction('custom', 0, none, false, leftRotate, { pointerType: 'mouse' }))
+        .toEqual({ kind: 'orbit', constrained: false });
+      // OrbitControls owns touch: one finger rotates, two fingers dolly/pan.
+      // The custom map must never consume the same touch pointer twice.
+      expect(resolveMouseAction('custom', 0, none, false, leftRotate, { pointerType: 'touch' }))
+        .toEqual({ kind: 'none' });
+      expect(resolveMouseAction('custom', 0, none, false, leftRotate, { pointerType: 'pen', penAsMouse: false }))
+        .toEqual({ kind: 'none' });
+      expect(resolveMouseAction('custom', 0, none, false, leftRotate, { pointerType: 'pen', penAsMouse: true }))
+        .toEqual({ kind: 'orbit', constrained: false });
     });
   });
 

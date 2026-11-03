@@ -61,6 +61,8 @@
 .sequence-ghost.is-invalid { border-color: var(--danger); color: var(--danger); }
 .sequence-selection-bar { min-height: 42px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 6px 18px; border-top: 1px solid var(--border); font-size: 11px; color: var(--fg-dim); }
 .sequence-selection-bar input { width: 72px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-card); color: var(--fg); font: inherit; font-variant-numeric: tabular-nums; }
+.sequence-remove-route { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 5px 10px; border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border)); border-radius: 6px; color: var(--danger); font: inherit; font-size: 12px; cursor: pointer; }
+.sequence-remove-route:hover { background: var(--badge-err-bg); }
 .sequence-selected-route { color: var(--fg); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sequence-timing-warning { display: flex; align-items: center; gap: 6px; margin: 8px 18px 0; font-size: 11px; color: var(--danger); }
 .sequence-composer-footnote { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px; font-size: 10px; padding: 8px 18px 0; color: var(--fg-dim); }
@@ -105,7 +107,7 @@
 .sequence-playback-controls { padding: 4px 18px 12px; }
 /* Radius + inset ring: a full-width square ring read as a foreign rectangle
    (user report, focus-audit 2026-10-07). */
-.sequence-playback-controls > input { display: block; width: 100%; margin: 0; accent-color: var(--accent-text); border-radius: 8px; }
+.sequence-playback-controls > input { display: block; width: 100%; min-height: 28px; margin: 0; accent-color: var(--accent-text); border-radius: 8px; touch-action: none; }
 :where(html.kbd-nav) .sequence-playback-controls > input:focus-visible { outline-offset: -2px; }
 .sequence-clip-menu { position: fixed; z-index: 1500; width: 180px; padding: 5px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); box-shadow: 0 8px 24px var(--shadow); }
 .sequence-clip-menu button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--danger); font: inherit; font-size: 12px; cursor: pointer; }

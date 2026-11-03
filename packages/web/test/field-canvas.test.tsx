@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type FieldPackage, type SessionTrajectory } from '@pathblender/core';
 import { FieldCanvas, type FieldCanvasHandle } from '../src/components/FieldCanvas';
-import { CHASE_INSTANT_SHARE, PINCH_GAIN, TRACKPAD_K, WHEEL_STEP } from '../src/zoom';
+import { CHASE_INSTANT_SHARE, PINCH_GAIN, pinchZoomFactor, TRACKPAD_K, WHEEL_STEP } from '../src/zoom';
 import { I18nProvider } from '../src/i18n';
 
 const field: FieldPackage = { id: 'test', name: 'Test field', year: 2026, lengthM: 10, widthM: 5 };
@@ -111,6 +111,83 @@ describe('field canvas interaction and redraws', () => {
     act(() => ref.current!.fit());
     paint();
     expect(strokeRect).toHaveBeenLastCalledWith(30, 30, 600, 300);
+  });
+
+  it('one touch pointer pans the field without changing zoom', () => {
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240);
+    paint();
+    expect(strokeRect).toHaveBeenLastCalledWith(20, 20, 400, 200);
+    const canvas = container.querySelector('canvas')!;
+
+    fireEvent.pointerDown(canvas, { pointerType: 'touch', pointerId: 7, button: 0, buttons: 1, clientX: 220, clientY: 120 });
+    fireEvent.pointerMove(canvas, { pointerType: 'touch', pointerId: 7, buttons: 1, clientX: 260, clientY: 140 });
+    fireEvent.pointerUp(canvas, { pointerType: 'touch', pointerId: 7, clientX: 260, clientY: 140 });
+    paint();
+
+    // Dragging right/down moves the world with the finger: +1 m in x and
+    // +0.5 m in y at the 40 px/m fit scale, with zoom unchanged.
+    expect(strokeRect).toHaveBeenLastCalledWith(60, 40, 400, 200);
+  });
+
+  it('drops a cancelled touch pointer without carrying movement into a later gesture', () => {
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240);
+    paint();
+    const canvas = container.querySelector('canvas')!;
+    fireEvent.pointerDown(canvas, { pointerType: 'touch', pointerId: 11, button: 0, buttons: 1, clientX: 100, clientY: 120 });
+    fireEvent.pointerCancel(canvas, { pointerType: 'touch', pointerId: 11, clientX: 100, clientY: 120 });
+    fireEvent.pointerMove(canvas, { pointerType: 'touch', pointerId: 11, buttons: 1, clientX: 500, clientY: 160 });
+    paint();
+    expect(strokeRect).toHaveBeenLastCalledWith(20, 20, 400, 200);
+
+    // A later finger starts from its own baseline; the cancelled pointer
+    // leaves no drag state behind.
+    fireEvent.pointerDown(canvas, { pointerType: 'touch', pointerId: 12, button: 0, buttons: 1, clientX: 120, clientY: 120 });
+    fireEvent.pointerMove(canvas, { pointerType: 'touch', pointerId: 12, buttons: 1, clientX: 160, clientY: 120 });
+    fireEvent.pointerUp(canvas, { pointerType: 'touch', pointerId: 12, clientX: 160, clientY: 120 });
+    paint();
+    expect(strokeRect).toHaveBeenLastCalledWith(60, 20, 400, 200);
+  });
+
+  it('keeps at least a visible slice of the field while touch-panning far', () => {
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240);
+    paint();
+    const canvas = container.querySelector('canvas')!;
+    fireEvent.pointerDown(canvas, { pointerType: 'touch', pointerId: 9, button: 0, buttons: 1, clientX: 20, clientY: 120 });
+    fireEvent.pointerMove(canvas, { pointerType: 'touch', pointerId: 9, buttons: 1, clientX: 2000, clientY: 120 });
+    fireEvent.pointerUp(canvas, { pointerType: 'touch', pointerId: 9, clientX: 2000, clientY: 120 });
+    paint();
+    // Panning is allowed, but the field may never disappear: at least a
+    // 24 px slice stays inside the 440 px-wide canvas.
+    const x = strokeRect.mock.lastCall![0]!;
+    expect(x).toBeLessThanOrEqual(416);
+    expect(x).toBeGreaterThanOrEqual(0);
+  });
+
+  it('two touch pointers pinch at their midpoint without a join jump', () => {
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240);
+    paint();
+    expect(strokeRect).toHaveBeenLastCalledWith(20, 20, 400, 200);
+    const canvas = container.querySelector('canvas')!;
+    const touch = (type: string, id: number, x: number, y: number) =>
+      fireEvent(canvas, new PointerEvent(type, { pointerType: 'touch', pointerId: id, button: 0, buttons: 1, clientX: x, clientY: y }));
+
+    touch('pointerdown', 7, 100, 120);
+    touch('pointerdown', 8, 300, 120);
+    touch('pointermove', 7, 110, 120);
+    touch('pointermove', 8, 330, 120);
+    paint();
+
+    // Separation grows 200 → 240 px (×1.2); the shared pinch gain applies.
+    // The initial midpoint (x=200) held world x=4.5; after the gesture that
+    // world point stays under the final midpoint (x=220).
+    const factor = pinchZoomFactor(1.2);
+    const [x, , width] = strokeRect.mock.lastCall!;
+    expect(width).toBeCloseTo(400 * factor, 0);
+    expect(x + 0.45 * width).toBeCloseTo(220, 0);
   });
 
   it('anchors wheel zoom at the cursor (the world point under it stays put)', () => {
