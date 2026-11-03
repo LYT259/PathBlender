@@ -811,6 +811,42 @@ describe('wpilog session round trip', () => {
 });
 
 
+
+describe('wpilog large-series regression', () => {
+  it('extracts a 130k-sample pose series without stack overflow', () => {
+    // Spread-of-array (`Math.min(...dts)`, `push(...poses)`) threw
+    // RangeError around 125k elements — full-match 250 Hz logs reach that.
+    const writer = new WpilogWriter();
+    registerPoseSchemas(writer);
+    const cwSchema = writer.start('NT:/.schema/struct:ControlWord', 'structschema');
+    writer.data(cwSchema, 0, [...new TextEncoder().encode(CONTROL_WORD_SCHEMA)]);
+    const cw = writer.start('NT:/DriverStation/ControlWord', 'struct:ControlWord');
+    const cwBytes = encodeControlWordBits(0, 1, true);
+    writer.data(cw, 0, cwBytes);
+    const pose = writer.start('NT:/Drivetrain/Pose', 'struct:Pose2d');
+    const COUNT = 130_000;
+    for (let i = 0; i < COUNT; i++) {
+      // 250 Hz, small forward steps — no gap/jump heuristics triggered.
+      writer.data(pose, i * 4000, f64(1 + i * 0.0001, 2, 0));
+    }
+    writer.data(cw, COUNT * 4000, encodeControlWordBits(0, 2, false));
+    const bytes = writer.bytes();
+    const inspection = inspectWpilog(bytes, 'big.wpilog');
+    const candidate = inspection.candidates.find((c) => c.entryName === 'NT:/Drivetrain/Pose')!;
+    expect(candidate).toBeDefined();
+    const traj = extractWpilogTrajectory(bytes, inspection, {
+      pose: { mode: 'candidate', entryId: candidate.entryId, elementIndex: 0 },
+      interval: { mode: 'auto', index: 0 },
+      lengthUnit: 'm',
+      headingUnit: 'rad',
+      name: 'big.wpilog',
+    });
+    expect(traj.samples).toHaveLength(COUNT);
+    expect(traj.gaps ?? []).toHaveLength(0);
+    expect(traj.samples[COUNT - 1]!.x).toBeCloseTo(1 + (COUNT - 1) * 0.0001, 3);
+  });
+});
+
 describe('wpilog collision semantics', () => {
   it('a robot held across a gap participates in collisions at its held pose', async () => {
     const { detectCollisions, makeSession, sampleStateAt } = await import('../src');
@@ -885,8 +921,9 @@ describe('wpilog large real fixtures', () => {
       const inspection = inspectWpilog(bytes, file);
       const ms = Date.now() - started;
       expect(inspection.warnings.some((w) => w.startsWith('corrupt timestamp'))).toBe(false);
-      // These DS logs contain pose-bearing entries; at least one candidate.
-      expect(inspection.candidates.length).toBeGreaterThanOrEqual(0); // shape varies per log
+      // Shape varies per log; what must hold everywhere is a non-empty
+      // catalog and a finished scan (these are smoke/no-crash checks).
+      expect(inspection.catalog.entries.length).toBeGreaterThan(0);
       console.log(`[wpilog] ${file}: ${bytes.length} bytes, ${inspection.catalog.entries.length} entries, ${inspection.candidates.length} pose candidates, ${inspection.autoIntervals.length} auto intervals in ${ms} ms`);
     });
   }

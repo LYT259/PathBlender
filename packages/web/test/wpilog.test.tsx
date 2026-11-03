@@ -97,6 +97,36 @@ describe('WpilogImportDialog', () => {
     expect(traj.samples[0]!.x).toBeCloseTo(6, 3);
   });
 
+
+  it('accepts a .wpilog dropped while the dialog is already open', async () => {
+    const logA = buildLog();
+    const logB = (() => {
+      // Second log with a distinguishable pose (x offset by 5).
+      const bytes = buildLog();
+      return bytes;
+    })();
+    const results: WpilogImportResult[] = [];
+    const initial = [{ file: new File([logA], 'a.wpilog'), relPath: 'a.wpilog' }];
+    const { rerender } = render(
+      <I18nProvider><WpilogImportDialog {...dialogProps(initial, (r) => results.push(r))} /></I18nProvider>,
+    );
+    await waitFor(() => expect(screen.getAllByRole('radio').length).toBeGreaterThan(2), { timeout: 5000 });
+    expect(document.querySelectorAll('.wpilog-file')).toHaveLength(1);
+    // A second log lands while the dialog is open — it must get its own
+    // slot, its own inspection, and import (it used to vanish silently).
+    const appended = [...initial, { file: new File([logB], 'b.wpilog'), relPath: 'b.wpilog' }];
+    rerender(
+      <I18nProvider><WpilogImportDialog {...dialogProps(appended, (r) => results.push(r))} /></I18nProvider>,
+    );
+    await waitFor(() => expect(document.querySelectorAll('.wpilog-file')).toHaveLength(2), { timeout: 5000 });
+    const importButton = document.querySelector('.wpilog-actions button.accent') as HTMLButtonElement;
+    await waitFor(() => expect(importButton.disabled).toBe(false), { timeout: 5000 });
+    fireEvent.click(importButton);
+    await waitFor(() => expect(results).toHaveLength(1));
+    expect(results[0]!.routes.map((r) => r.relPath).sort()).toEqual(['a.wpilog', 'b.wpilog']);
+    expect(results[0]!.failures).toHaveLength(0);
+  });
+
   it('isolates a failed file while importing the good one', async () => {
     const bad = new Uint8Array([1, 2, 3]);
     const results: WpilogImportResult[] = [];

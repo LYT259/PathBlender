@@ -7,7 +7,10 @@ Real `.wpilog` files used by the regression suite. Provenance and license:
   schemas, telemetry units). Source: the MIT-licensed
   [wpilog-parser](https://github.com/jonahsnider/wpilog-parser) fixture set
   (`packages/wpilog-parser/tests/fixtures/logs/`, fetched 2026-11-03). Copied
-  unmodified.
+  unmodified. License basis: the npm package and the repo's
+  `packages/wpilog-parser/package.json` both declare `MIT`; the repository
+  root itself carries no LICENSE file, so the grant rests on the package
+  declaration.
 
 The larger real match logs from the same fixture set (FRC DS logs 10–15 MB,
 `FRC_*.wpilog`) are intentionally NOT committed; fetch them into a local

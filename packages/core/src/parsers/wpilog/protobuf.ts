@@ -132,7 +132,10 @@ function readNumberField(bytes: Uint8Array, field: number): number | undefined {
     const fieldNumber = Number(key >> 3n);
     const wireType = Number(key & 7n);
     if (fieldNumber === field && wireType === 0) {
-      return Number(readVarint(c));
+      // A truncated value varint propagates undefined (field dropped),
+      // never a silent 0. Read once — readVarint consumes bytes.
+      const value = readVarint(c);
+      return value === null ? undefined : Number(value);
     }
     if (!skipWireValue(c, wireType)) return undefined;
   }

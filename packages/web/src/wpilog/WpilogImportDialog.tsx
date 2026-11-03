@@ -37,10 +37,22 @@ type FileState =
   | { status: 'failed'; message: string };
 
 interface FileSlot {
+  /** Stable identity: relPath#index at enqueue time — survives appends. */
+  key: string;
   file: File;
   relPath: string;
   state: FileState;
   selection: Selection | null;
+}
+
+function slotOf(incoming: WpilogIncomingFile, index: number): FileSlot {
+  return {
+    key: `${incoming.relPath}#${index}`,
+    file: incoming.file,
+    relPath: incoming.relPath,
+    state: { status: 'inspecting' },
+    selection: null,
+  };
 }
 
 interface Selection {
@@ -122,51 +134,67 @@ export function WpilogImportDialog({
   onCancel: () => void;
 }) {
   const { t } = useI18n();
-  const [slots, setSlots] = useState<FileSlot[]>(() => files.map((incoming) => ({
-    file: incoming.file,
-    relPath: incoming.relPath,
-    state: { status: 'inspecting' } as FileState,
-    selection: null,
-  })));
+  // Slots are created exclusively by the files effect (initial batch and
+  // later appends take the same path) — seeding them here as well would
+  // duplicate every file.
+  const [slots, setSlots] = useState<FileSlot[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [working, setWorking] = useState(false);
   const clientRef = useRef<WpilogClient | null>(null);
   const cancelledRef = useRef(false);
+  /** relPath#index keys already queued or inspected (appends while open
+   *  re-run the effect; the first run covers the initial batch). */
+  const seenKeysRef = useRef(new Set<string>());
+  /** Serializes inspections: one worker, bounded memory, any arrival order. */
+  const queueRef = useRef<Promise<void>>(Promise.resolve());
 
-  // Inspect every file once, sequentially — one worker, bounded memory.
+  // Client lifecycle only — inspections run through the files effect below.
   useEffect(() => {
     cancelledRef.current = false;
     const client = createWpilogClient();
     clientRef.current = client;
-    void (async () => {
-      for (let i = 0; i < files.length; i++) {
-        if (cancelledRef.current) break;
-        const incoming = files[i]!;
-        try {
-          const bytes = new Uint8Array(await incoming.file.arrayBuffer());
-          const inspection = await client.inspect(bytes, incoming.relPath);
-          if (cancelledRef.current) break;
-          const selection = defaultSelection(inspection);
-          setSlots((prev) => prev.map((slot, index) => index === i
-            ? { ...slot, state: { status: 'ready', inspection }, selection }
-            : slot));
-        } catch (error) {
-          if (cancelledRef.current) break;
-          const message = error instanceof Error ? error.message : String(error);
-          setSlots((prev) => prev.map((slot, index) => index === i
-            ? { ...slot, state: { status: 'failed', message } }
-            : slot));
-        }
-      }
-    })();
     return () => {
       cancelledRef.current = true;
       client.dispose();
       clientRef.current = null;
     };
-    // files captured at mount on purpose: one inspection pass per batch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Inspect every file once, sequentially — including files appended to the
+  // queue while the dialog is already open (a .wpilog dropped mid-session
+  // used to vanish silently; it now gets its own slot and inspection).
+  useEffect(() => {
+    const pending = files
+      .map((incoming, index) => ({ incoming, key: `${incoming.relPath}#${index}` }))
+      .filter(({ key }) => !seenKeysRef.current.has(key));
+    if (pending.length === 0) return;
+    for (const { key } of pending) seenKeysRef.current.add(key);
+    setSlots((prev) => [...prev, ...pending.map(({ incoming, key }) => slotOf(incoming, Number(key.split('#').at(-1))))]);
+    for (const { incoming, key } of pending) {
+      const slotKey = key;
+      queueRef.current = queueRef.current.then(async () => {
+        if (cancelledRef.current) return;
+        const client = clientRef.current;
+        if (!client) return;
+        try {
+          const bytes = new Uint8Array(await incoming.file.arrayBuffer());
+          const inspection = await client.inspect(bytes, incoming.relPath);
+          if (cancelledRef.current) return;
+          const selection = defaultSelection(inspection);
+          setSlots((prev) => prev.map((slot) => slot.key === slotKey
+            ? { ...slot, state: { status: 'ready', inspection }, selection }
+            : slot));
+        } catch (error) {
+          if (cancelledRef.current) return;
+          const message = error instanceof Error ? error.message : String(error);
+          setSlots((prev) => prev.map((slot) => slot.key === slotKey
+            ? { ...slot, state: { status: 'failed', message } }
+            : slot));
+        }
+      });
+    }
+  }, [files]);
 
   const active = slots[activeIndex] ?? null;
   const patchActive = useCallback((patch: Partial<FileSlot>) => {
@@ -185,7 +213,14 @@ export function WpilogImportDialog({
         failures.push({ relPath: slot.relPath, message: slot.state.message });
         continue;
       }
-      if (slot.state.status !== 'ready' || !slot.selection) continue;
+      if (slot.state.status === 'inspecting') {
+        failures.push({ relPath: slot.relPath, message: 'still being read when Import was pressed' });
+        continue;
+      }
+      if (!slot.selection) {
+        failures.push({ relPath: slot.relPath, message: 'no pose data in this log — nothing selected' });
+        continue;
+      }
       const selection = slot.selection;
       const payload: WpilogExtractionSelection = {
         pose: selection.pose,

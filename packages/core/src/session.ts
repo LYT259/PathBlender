@@ -391,10 +391,12 @@ function validGeometry(value: RobotGeometry | undefined): boolean {
 }
 
 /**
- * Gaps are optional and self-heal: entries that are not finite, ordered,
- * inside the sample span or of a known kind are dropped individually
+ * Gaps are optional and self-heal: entries that are not finite, positively
+ * spanned (endT > startT) or of a known kind are dropped individually
  * rather than bricking the session — a missing gap only re-enables
- * interpolation for that one span.
+ * interpolation for that one span. Span-position/ordering is deliberately
+ * not re-validated: an out-of-span gap degrades sampling to a hold, which
+ * is the same self-healing behavior, so the check would add nothing.
  */
 function readGaps(value: Trajectory['gaps']): Trajectory['gaps'] {
   if (value === undefined || !Array.isArray(value)) return undefined;

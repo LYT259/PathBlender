@@ -1,6 +1,6 @@
 /**
  * WPILOG parse worker body. Handles two requests:
- *  - 'inspect': bytes transferred in → inspection catalog posted back once.
+ *  - 'inspect': bytes cloned in (caller keeps its copy) → inspection posted back once.
  *  - 'extract': bytes + the inspection + the user's selection → trajectory.
  * Errors surface as {type:'error', message} so the UI can report them.
  */

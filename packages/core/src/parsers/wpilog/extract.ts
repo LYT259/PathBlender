@@ -329,7 +329,11 @@ export function buildSamples(
     const dt = cleaned[i]!.tS - cleaned[i - 1]!.tS;
     if (dt > 1e-9) dts.push(dt);
   }
-  const fastest = dts.length > 0 ? Math.min(...dts) : 1;
+  // Loop, not Math.min(...dts): the spread form throws RangeError once a
+  // window holds ~125k samples — exactly the full-match 250 Hz pose logs
+  // this import exists for.
+  let fastest = 1;
+  for (const dt of dts) if (dt < fastest) fastest = dt;
   const gapThresholdS = Math.min(10, Math.max(0.25, fastest * 20));
   const JUMP_DISTANCE_M = 0.75;
   const JUMP_SPEED_MPS = 12;
@@ -488,16 +492,22 @@ export function extractWpilogTrajectory(
     throw new ParseError('invalid-wpilog', inspection.fileName, 'selected interval is empty');
   }
 
+  // Loop appends throughout: spread-of-array (`push(...items)`) throws
+  // RangeError around 125k elements — full-match 250 Hz pose logs reach
+  // that, and this import exists for real logs.
   const rawPoses: RawPose[] = [];
   if (selection.pose.mode === 'candidate') {
-    rawPoses.push(...decodeCandidatePoses(
+    for (const pose of decodeCandidatePoses(
       bytes, catalog, inspection, selection.pose.entryId, selection.pose.elementIndex,
-      selection.lengthUnit, selection.headingUnit, warnings));
+      selection.lengthUnit, selection.headingUnit, warnings)) {
+      rawPoses.push(pose);
+    }
   } else {
-    const poses = mapEntryPoses(
+    for (const pose of mapEntryPoses(
       bytes, catalog, selection.pose.xEntryId, selection.pose.yEntryId, selection.pose.headingEntryId,
-      selection.lengthUnit, selection.headingUnit, warnings);
-    rawPoses.push(...poses);
+      selection.lengthUnit, selection.headingUnit, warnings)) {
+      rawPoses.push(pose);
+    }
   }
 
   // Window + rebase to the interval clock.
