@@ -1,0 +1,176 @@
+/* WPILOG import dialog: queue + per-file selection panel. */
+
+.wpilog-dialog .prefs-modal {
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+}
+
+.wpilog-body {
+  display: flex;
+  gap: 12px;
+  min-height: 320px;
+  overflow: hidden;
+}
+
+.wpilog-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 168px;
+  max-width: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.wpilog-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--border, #d4d4d8);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.wpilog-file.active {
+  border-color: var(--accent, #007aff);
+}
+
+.wpilog-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.wpilog-main {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.wpilog-panel section {
+  margin-bottom: 14px;
+}
+
+.wpilog-panel h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+  margin: 0 0 6px;
+}
+
+.wpilog-candidates {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wpilog-candidate,
+.wpilog-interval {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.wpilog-candidate.selected,
+.wpilog-interval.selected {
+  border-color: var(--accent, #007aff);
+}
+
+.wpilog-candidate-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wpilog-candidate-name {
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.wpilog-candidate-meta,
+.wpilog-hint {
+  font-size: 11.5px;
+  opacity: 0.72;
+}
+
+.wpilog-badge {
+  font-size: 10.5px;
+  border-radius: 4px;
+  padding: 1px 6px;
+  width: fit-content;
+}
+
+.wpilog-badge.target {
+  background: rgba(255, 159, 10, 0.18);
+  color: var(--warn, #b25000);
+}
+
+.wpilog-badge.range {
+  background: rgba(255, 69, 58, 0.14);
+  color: var(--danger, #ff453a);
+}
+
+.wpilog-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.wpilog-mapping,
+.wpilog-manual,
+.wpilog-units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.wpilog-mapping label,
+.wpilog-manual label,
+.wpilog-units label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  min-width: 140px;
+}
+
+.wpilog-logwarnings ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.wpilog-preview canvas {
+  border: 1px solid var(--border, #d4d4d8);
+  border-radius: 6px;
+  max-width: 100%;
+}
+
+.wpilog-error {
+  color: var(--danger, #ff453a);
+  font-size: 13px;
+}
+
+.wpilog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}

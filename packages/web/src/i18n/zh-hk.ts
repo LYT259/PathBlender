@@ -22,6 +22,11 @@ export const zhHkOverrides: Partial<Record<MessageKey, string>> = {
   // Same 米 rule for the standalone unit picker (was an oversight: the four
   // overrides above covered every other metre-bearing string).
   'prefs.unit.m': '米 (m)',
+  // 機械人 (HK) vs 機器人 (TW) — wpilog import strings (TDM official usage).
+  'wpilog.title': '匯入機械人日誌（.wpilog）',
+  'wpilog.poseSource': '日誌中的機械人位姿',
+  'wpilog.noPose': '日誌中沒有找到位姿資料。請先在機械人程式碼記錄位姿（例如 Pose2d 項目），或在下方手動對應欄位。',
+  'wpilog.candidateTarget': '目標/期望位姿，並非實測機械人位置',
   // HK Education Bureau standard is 厘米; TW 公分.
   'prefs.unit.cm': '厘米 (cm)',
   // Imperial units: HK Customs weights-and-measures usage is 呎/吋; TW writes

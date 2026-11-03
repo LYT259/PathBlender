@@ -47,13 +47,16 @@ You can also [follow me](https://github.com/LYT259) for updates and future proje
 | Collaborative PathPlanner `.ghostauto` | Import the trajectory, bumper geometry and team name. |
 | PathPlanner `.path` / `.auto` | Generate trajectories locally; see timing limits below. |
 | PathPlanner `settings.json` | Apply robot dimensions and supported dynamics to individual `.path` imports. |
+| WPILib `.wpilog` | Import the path your robot actually drove: pick the pose entry and the autonomous interval, then replay it next to planned routes. Struct (`Pose2d`, custom shapes) and protobuf pose entries, AdvKit/DogLog/DS logs and manual field mapping are supported; see notes below. |
 | PathBlender `.pb` | Save and reopen sessions on desktop; legacy `.ghpb.json` files also open. |
 
 ## Timing and limitations
 
-PathBlender compares imported plans. It does not run robot code or read
-`.wpilog` / `.hoot` logs, and its collision checks depend on the paths,
-timing and robot dimensions supplied.
+PathBlender compares imported plans. It does not run robot code, and its
+collision checks depend on the paths, timing and robot dimensions supplied.
+`.hoot` logs are not read directly — convert them to `.wpilog` with Phoenix
+Tuner first (verified against WPILib-written logs; CTRE-converted files
+should work but were not tested end-to-end).
 
 - **PathPlanner `.path`:** generation reads supported speed and acceleration
   constraints from the file. Robot configuration starts with defaults;
@@ -63,6 +66,13 @@ timing and robot dimensions supplied.
   configuration. Explicit waits are included, but named-command durations
   are unknown and add no time. Parallel/race groups are approximated as
   sequential; unsupported commands are skipped with warnings.
+- **`.wpilog` imports are recordings, not plans.** The route replays what the
+  log recorded: t=0 is the chosen autonomous interval's start, waits and
+  pauses keep their real durations, and spans with no pose data (dropouts,
+  pose resets) hold the last known position instead of inventing motion —
+  check any collision reported inside such a span yourself. Pose entries are
+  read in the WPILib blue-origin field frame in metres and radians; if your
+  logger wrote something else, set the units/frame in the import dialog.
 - **Check results on the robot.** Generated timing can differ from actual
   execution. A clear timeline does not guarantee a collision-free auto,
   especially when robots pass close to each other.

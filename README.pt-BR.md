@@ -55,6 +55,7 @@ O PathBlender preenche essa lacuna:
 | `.path` | PathPlanner (MIT) | Trajetória gerada localmente — algoritmo do PathPlannerLib portado |
 | `.auto` | PathPlanner (MIT) | Sequências de trajetórias com semântica de esperas e comandos |
 | `settings.json` | PathPlanner (MIT) | Dimensões dos para-choques dos robôs do projeto |
+| `.wpilog` | WPILib (BSD-3) | Registro real do robô: escolha a entrada de pose e o intervalo autônomo e reproduza o caminho gravado junto aos planejados |
 | `.pb` | Este projeto | Arquivo de sessão: todos os robôs + configurações + campo (o `.ghpb.json` de antes da renomeação também abre) |
 
 Campos: FRC 2022–2026 embutidos, além da importação de campos personalizados com calibração e um JSON de disposição de AprilTags do WPILib/PhotonVision (serve para qualquer outra temporada ou um campo de treino).

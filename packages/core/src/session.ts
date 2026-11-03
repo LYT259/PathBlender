@@ -120,7 +120,7 @@ export function samplePoseAt(st: SessionTrajectory, globalT: number): Pose2d {
     if (s) return { x: s.x, y: s.y, heading: s.heading };
   }
   const localT = globalT - st.startDelayS;
-  const s = sampleTrajectory(st.trajectory.samples, localT);
+  const s = sampleTrajectory(st.trajectory.samples, localT, st.trajectory.gaps);
   if (!s) return { x: 0, y: 0, heading: 0 };
   return { x: s.x, y: s.y, heading: s.heading };
 }
@@ -135,9 +135,9 @@ export function samplePoseAt(st: SessionTrajectory, globalT: number): Pose2d {
 export function sampleStateAt(st: SessionTrajectory, globalT: number): TrajectorySample | undefined {
   if (st.sequence) {
     return sampleSequenceState(st, globalT)
-      ?? sampleTrajectory(st.trajectory.samples, globalT - st.startDelayS);
+      ?? sampleTrajectory(st.trajectory.samples, globalT - st.startDelayS, st.trajectory.gaps);
   }
-  return sampleTrajectory(st.trajectory.samples, globalT - st.startDelayS);
+  return sampleTrajectory(st.trajectory.samples, globalT - st.startDelayS, st.trajectory.gaps);
 }
 
 export function activeStartT(st: SessionTrajectory): number {
@@ -225,6 +225,8 @@ export interface SessionFileV1 {
     geometrySource: Trajectory['geometrySource'];
     moduleLocations: Trajectory['moduleLocations'];
     events: Trajectory['events'];
+    /** Uncovered spans (wpilog imports; absent on older files). */
+    gaps?: Trajectory['gaps'];
     samples: Trajectory['samples'];
     /** Robot mass when known from a profile/file; optional since v1.7 files. */
     massKG?: Trajectory['massKG'];
@@ -305,6 +307,7 @@ export function serializeSession(
       geometrySource: st.trajectory.geometrySource,
       moduleLocations: st.trajectory.moduleLocations,
       events: st.trajectory.events,
+      gaps: st.trajectory.gaps,
       samples: st.trajectory.samples,
       massKG: st.trajectory.massKG,
       holonomic: st.trajectory.holonomic,
@@ -357,6 +360,7 @@ export function deserializeSession(text: string): {
       geometrySource: r.geometrySource,
       moduleLocations: r.moduleLocations,
       events: r.events,
+      gaps: readGaps(r.gaps),
       warnings: [],
       massKG: typeof r.massKG === 'number' && Number.isFinite(r.massKG) ? r.massKG : undefined,
       holonomic: typeof r.holonomic === 'boolean' ? r.holonomic : undefined,
@@ -386,6 +390,20 @@ function validGeometry(value: RobotGeometry | undefined): boolean {
     Number.isFinite(value.offsetX) && Number.isFinite(value.offsetY);
 }
 
+/**
+ * Gaps are optional and self-heal: entries that are not finite, ordered,
+ * inside the sample span or of a known kind are dropped individually
+ * rather than bricking the session — a missing gap only re-enables
+ * interpolation for that one span.
+ */
+function readGaps(value: Trajectory['gaps']): Trajectory['gaps'] {
+  if (value === undefined || !Array.isArray(value)) return undefined;
+  const gaps = value.filter((gap): gap is NonNullable<typeof gap> =>
+    !!gap && (gap.kind === 'gap' || gap.kind === 'jump') &&
+    Number.isFinite(gap.startT) && Number.isFinite(gap.endT) && gap.endT > gap.startT);
+  return gaps.length > 0 ? gaps : undefined;
+}
+
 function readSequence(value: AutoSequence | undefined): AutoSequence | undefined {
   if (value === undefined) return undefined;
   const segments = value?.segments;
@@ -413,7 +431,7 @@ function readRouteOptions(value: SessionRouteOption[] | undefined): SessionRoute
     const t = option?.trajectory;
     return typeof option?.id !== 'string' || typeof option.relPath !== 'string' ||
       !t || !['id', 'name', 'teamName', 'teamNumber'].every((key) => typeof t[key as keyof Trajectory] === 'string') ||
-      !['choreo-traj', 'ghostauto', 'pathplanner-path', 'pathplanner-auto'].includes(t.source) ||
+      !['choreo-traj', 'ghostauto', 'pathplanner-path', 'pathplanner-auto', 'wpilog'].includes(t.source) ||
       !['blue', 'red'].includes(t.alliance) || !['file', 'default'].includes(t.geometrySource) ||
       !validGeometry(t.geometry) || !Array.isArray(t.moduleLocations) || t.moduleLocations.some((m) =>
         !m || !Number.isFinite(m.x) || !Number.isFinite(m.y)) ||
