@@ -88,6 +88,11 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
   // Last fitted px/m — anchors the zoom-out floor (field stays ≥ half the
   // canvas) and updates on every fit/resize.
   const fitScaleRef = useRef(40);
+  // Latest-field ref: the wheel/gesture/touch effect runs once (its handlers
+  // must not be rebound mid-session), so everything it derives from the field
+  // reads through this ref instead of a stale closure (acceptance P2-1).
+  const fieldRef = useRef(field);
+  fieldRef.current = field;
   const sizeRef = useRef({ w: 0, h: 0 });
   const autoFitRef = useRef(true);
   const drawRef = useRef<() => void>(() => {});
@@ -216,8 +221,8 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     const zoomRange = () => ({
       minScale: Math.max(8, fitScaleRef.current),
       maxScale: MAX_SCALE,
-      homeCx: field.lengthM / 2,
-      homeCy: field.widthM / 2,
+      homeCx: fieldRef.current.lengthM / 2,
+      homeCy: fieldRef.current.widthM / 2,
     });
     const zoomAt = (sx: number, sy: number, factor: number) => {
       const v = viewRef.current;
@@ -303,6 +308,9 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     const onGestureChange = (e: Event) => {
       e.preventDefault();
       if (gestureDone) return; // stray post-end flush
+      // Fingers down own the view — a concurrent trackpad pinch is the
+      // other hand and must not interleave its own zoom math (P2-2).
+      if (touchPoints.size > 0) return;
       const scale = gestureScale(e);
       if (scale > 0 && lastScale > 0) {
         autoFitRef.current = false;
@@ -341,6 +349,10 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       // scroll burst — suppressing it is what freezes the zoom at release
       // (round 4; the gesture stream itself proved clean on video).
       if (wheelSuppressed()) return;
+      // Direct fingers own the view while any touch pointer is down: wheel
+      // (and trackpad pinch, below) is the OTHER hand's input stream and
+      // must neither fight the touch math nor restart a chase under it.
+      if (touchPoints.size > 0) return;
       autoFitRef.current = false;
       const factor = wheelZoomFactor(e.deltaY, e.deltaMode);
       const sx = e.offsetX;
@@ -381,17 +393,27 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     };
     // Touch panning may roam, but never lose the field: after every touch
     // update at least a 24 px slice of the field rectangle stays in view.
+    // Bounds come from fieldRef — the CURRENT field, not the one mounted
+    // when this once-bound effect ran (acceptance P2-1).
     const clampTouchView = () => {
       const { w, h } = sizeRef.current;
       if (w === 0 || h === 0) return;
       const margin = Math.min(24, w / 2, h / 2);
       const v = viewRef.current;
-      v.cx = Math.min(field.lengthM + (w / 2 - margin) / v.scale, Math.max(-(w / 2 - margin) / v.scale, v.cx));
-      v.cy = Math.min(field.widthM + (h / 2 - margin) / v.scale, Math.max((margin - h / 2) / v.scale, v.cy));
+      const f = fieldRef.current;
+      v.cx = Math.min(f.lengthM + (w / 2 - margin) / v.scale, Math.max(-(w / 2 - margin) / v.scale, v.cx));
+      v.cy = Math.min(f.widthM + (h / 2 - margin) / v.scale, Math.max((margin - h / 2) / v.scale, v.cy));
     };
     const onTouchDown = (e: PointerEvent) => {
       if (e.pointerType !== 'touch') return;
       e.preventDefault();
+      // A finger takes direct control of the view: any trackpad chase still
+      // easing toward an old zoom target must die here, or it keeps writing
+      // the view under the finger and snaps the pan back on release
+      // (acceptance P2-2). Wheel/gesture events are ignored while fingers
+      // are down (see onWheel/onGestureChange), so the chase cannot restart
+      // mid-gesture or resume after it.
+      stopChase();
       touchPoints.set(e.pointerId, touchPoint(e));
       try { canvas.setPointerCapture(e.pointerId); } catch { /* capture is an accelerator, not a requirement */ }
     };

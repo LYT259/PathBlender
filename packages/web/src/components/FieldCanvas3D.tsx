@@ -501,7 +501,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // OrbitControls itself (touches.ONE above), and the enableRotate flag
     // gates that touch path — it must stay on (touch pass 2026-11-03).
     controls.enableRotate = true;
-    const drag = { active: false, x: 0, y: 0, vTheta: 0, vPhi: 0, lastT: 0, constrained: false };
+    const drag = { active: false, pointerId: -1, x: 0, y: 0, vTheta: 0, vPhi: 0, lastT: 0, constrained: false };
     const applyOrbit = (dTheta: number, dPhi: number) => {
       const sph = new THREE.Spherical().setFromVector3(
         camera.position.clone().sub(controls.target),
@@ -524,9 +524,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     //             MouseMap); the wheel always stays zoom.
     // Left does nothing by default in every scheme (a viewer has no
     // selection), but custom may assign it.
-    const pan = { active: false, x: 0, y: 0 };
-    const dragZoom = { active: false, lastY: 0 };
-    const roll = { active: false, x: 0 };
+    const pan = { active: false, pointerId: -1, x: 0, y: 0 };
+    const dragZoom = { active: false, pointerId: -1, lastY: 0 };
+    const roll = { active: false, pointerId: -1, x: 0 };
     // Roll view (SOLIDWORKS Alt+middle): spin the camera about its own view
     // axis — only the up vector moves, position/target (and therefore
     // OrbitControls' spherical state) stay put. Drag right rolls the field
@@ -539,6 +539,16 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       camera.lookAt(controls.target);
     };
     const onDragDown = (e: PointerEvent) => {
+      // Non-touch pointers belong to the scheme handlers (or to nobody) —
+      // never to OrbitControls. Intercepting on the HOST in the capture
+      // phase keeps mouse/pen presses from reaching OrbitControls' canvas
+      // listener at all: its internal finger tally would otherwise count a
+      // held mouse button as a second "finger" and turn the next
+      // single-finger touch into a dolly/pan (mixed-input acceptance
+      // P2-3). Touch flows through untouched, and the viewcube/overlay
+      // children keep their own events (target guard).
+      if (e.pointerType === 'touch' || e.target !== renderer.domElement) return;
+      e.stopPropagation();
       const action = resolveMouseAction(
         mouseSchemeRef.current, e.button, e, defaultConstrainedRef.current, customMouseMapRef.current,
         { pointerType: e.pointerType, penAsMouse: penAsMouseRef.current },
@@ -547,6 +557,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       e.preventDefault(); // middle: no autoscroll; right: no native menu
       if (action.kind === 'orbit') {
         drag.active = true;
+        drag.pointerId = e.pointerId;
         drag.constrained = action.constrained;
         drag.x = e.clientX;
         drag.y = e.clientY;
@@ -555,15 +566,18 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
         drag.lastT = performance.now();
       } else if (action.kind === 'pan') {
         pan.active = true;
+        pan.pointerId = e.pointerId;
         pan.x = e.clientX;
         pan.y = e.clientY;
       } else if (action.kind === 'roll') {
         roll.active = true;
+        roll.pointerId = e.pointerId;
         roll.x = e.clientX;
       } else {
         // dragZoom: aim the dolly at the press point (same NDC anchor the
         // pinch chase uses), then feed vertical drag through applyPinchStep.
         dragZoom.active = true;
+        dragZoom.pointerId = e.pointerId;
         dragZoom.lastY = e.clientY;
         const rect = renderer.domElement.getBoundingClientRect();
         pinchChase.nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -571,20 +585,25 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       }
       renderer.domElement.setPointerCapture(e.pointerId);
     };
+    // A scheme gesture answers only to the pointer that started it: touch
+    // moves (OrbitControls') and any second pointer must neither feed nor
+    // finish it (mixed-input acceptance P2-3).
+    const owns = (g: { active: boolean; pointerId: number }, e: PointerEvent) =>
+      g.active && e.pointerId === g.pointerId;
     const onPanMove = (e: PointerEvent) => {
-      if (!pan.active) return;
+      if (!owns(pan, e)) return;
       controls.pan(e.clientX - pan.x, e.clientY - pan.y);
       pan.x = e.clientX;
       pan.y = e.clientY;
       markDirty();
     };
     const onPanUp = (e: PointerEvent) => {
-      if (!pan.active) return;
+      if (!owns(pan, e)) return;
       pan.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
     };
     const onDragZoomMove = (e: PointerEvent) => {
-      if (!dragZoom.active) return;
+      if (!owns(dragZoom, e)) return;
       const dy = e.clientY - dragZoom.lastY;
       dragZoom.lastY = e.clientY;
       if (dy === 0) return;
@@ -595,12 +614,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       markDirty();
     };
     const onDragZoomUp = (e: PointerEvent) => {
-      if (!dragZoom.active) return;
+      if (!owns(dragZoom, e)) return;
       dragZoom.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
     };
     const onRollMove = (e: PointerEvent) => {
-      if (!roll.active) return;
+      if (!owns(roll, e)) return;
       const dx = e.clientX - roll.x;
       roll.x = e.clientX;
       if (dx === 0) return;
@@ -608,12 +627,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       markDirty();
     };
     const onRollUp = (e: PointerEvent) => {
-      if (!roll.active) return;
+      if (!owns(roll, e)) return;
       roll.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
     };
     const onDragMove = (e: PointerEvent) => {
-      if (!drag.active) return;
+      if (!owns(drag, e)) return;
       const ROT = 0.0052; // rad per px — the flat-field-era sensitivity
       const dTheta = (e.clientX - drag.x) * ROT;
       // Constrained rotate (Onshape turntable): azimuth only, no elevation.
@@ -629,23 +648,27 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       drag.vPhi = drag.vPhi * 0.7 + (dPhi / dt) * 0.3;
     };
     const onDragUp = (e: PointerEvent) => {
-      if (!drag.active) return;
+      if (!owns(drag, e)) return;
       drag.active = false;
       renderer.domElement.releasePointerCapture(e.pointerId);
     };
-    renderer.domElement.addEventListener('pointerdown', onDragDown);
+    host.addEventListener('pointerdown', onDragDown, true);
     renderer.domElement.addEventListener('pointermove', onDragMove);
     renderer.domElement.addEventListener('pointermove', onPanMove);
     renderer.domElement.addEventListener('pointermove', onDragZoomMove);
     renderer.domElement.addEventListener('pointerup', onDragUp);
     renderer.domElement.addEventListener('pointercancel', onDragUp);
+    renderer.domElement.addEventListener('lostpointercapture', onDragUp);
     renderer.domElement.addEventListener('pointerup', onPanUp);
     renderer.domElement.addEventListener('pointercancel', onPanUp);
+    renderer.domElement.addEventListener('lostpointercapture', onPanUp);
     renderer.domElement.addEventListener('pointerup', onDragZoomUp);
     renderer.domElement.addEventListener('pointercancel', onDragZoomUp);
+    renderer.domElement.addEventListener('lostpointercapture', onDragZoomUp);
     renderer.domElement.addEventListener('pointermove', onRollMove);
     renderer.domElement.addEventListener('pointerup', onRollUp);
     renderer.domElement.addEventListener('pointercancel', onRollUp);
+    renderer.domElement.addEventListener('lostpointercapture', onRollUp);
 
     // Trackpad two-finger horizontal swipes arrive as wheel deltaX, which
     // OrbitControls ignores — turn them into azimuth rotation so "dragging
@@ -1100,19 +1123,23 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       cubeAppearance.dispose();
       cubeRenderer.dispose();
       viewcubeEl.remove();
-      renderer.domElement.removeEventListener('pointerdown', onDragDown);
+      host.removeEventListener('pointerdown', onDragDown, true);
       renderer.domElement.removeEventListener('pointermove', onDragMove);
       renderer.domElement.removeEventListener('pointermove', onPanMove);
       renderer.domElement.removeEventListener('pointerup', onDragUp);
       renderer.domElement.removeEventListener('pointercancel', onDragUp);
+      renderer.domElement.removeEventListener('lostpointercapture', onDragUp);
       renderer.domElement.removeEventListener('pointerup', onPanUp);
       renderer.domElement.removeEventListener('pointercancel', onPanUp);
+      renderer.domElement.removeEventListener('lostpointercapture', onPanUp);
       renderer.domElement.removeEventListener('pointermove', onDragZoomMove);
       renderer.domElement.removeEventListener('pointerup', onDragZoomUp);
       renderer.domElement.removeEventListener('pointercancel', onDragZoomUp);
+      renderer.domElement.removeEventListener('lostpointercapture', onDragZoomUp);
       renderer.domElement.removeEventListener('pointermove', onRollMove);
       renderer.domElement.removeEventListener('pointerup', onRollUp);
       renderer.domElement.removeEventListener('pointercancel', onRollUp);
+      renderer.domElement.removeEventListener('lostpointercapture', onRollUp);
       renderer.domElement.removeEventListener('wheel', onWheelX);
       host.removeEventListener('wheel', onWheelZoomSpeed, { capture: true });
       renderer.domElement.removeEventListener('gesturestart', onGestureStart);

@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.10-beta.3';
+export const APP_VERSION = '0.1.10-beta.4';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.10-beta.4', date: '2026.11.04', note: {
+    en: 'Touch fixes: field-switch clamping, trackpad zoom handover and mixed mouse/touch 3D gestures',
+    zh: '触屏修复：切换场地后的平移限位、触控板缩放与触摸的交接、3D 鼠标与触摸混用',
+    'zh-tw': '觸控修復：切換場地後的平移限位、觸控板縮放與觸控的交接、3D 滑鼠與觸控混用',
+    cs: 'Opravy dotyku: omezení posunu po přepnutí pole, předání mezi zoomem trackpadu a dotykem, kombinované gesta myši a dotyku ve 3D',
+    nl: 'Touch-correcties: clampen na veldwissel, overdracht tussen trackpad-zoom en aanraking, en gemengde muis/aanraking-gebaren in 3D',
+    fr: 'Corrections tactiles : limites du panoramique après changement de terrain, passation entre le zoom au trackpad et le tactile, et gestes mixtes souris/tactile en 3D',
+    he: 'תיקוני מגע: הגבלת הזזה אחרי החלפת מגרש, מסירה בין זום משטח המגע למגע, ומחוות עכבר/מגע מעורבות בתלת-ממד',
+    ja: 'タッチ修正：フィールド切替後のパン制限、トラックパッドズームからタッチへの引き継ぎ、3D でのマウスとタッチの混在',
+    ko: '터치 수정: 필드 전환 후 이동 제한, 트랙패드 확대에서 터치로의 전환, 3D 마우스/터치 혼용',
+    pl: 'Poprawki dotyku: ograniczenie przesuwania po zmianie boiska, przekazanie między zoomem gładzika a dotykiem oraz mieszane gesty myszy/dotyku w 3D',
+    'pt-br': 'Correções de toque: limites do arrasto após trocar de campo, transição entre o zoom do trackpad e o toque, e gestos mistos de mouse/toque no 3D',
+    es: 'Correcciones táctiles: límites de arrastre al cambiar de campo, traspaso entre el zoom del trackpad y el táctil, y gestos combinados de ratón/táctil en 3D',
+    tr: 'Dokunma düzeltmeleri: saha değişiminden sonra kaydırma sınırı, trackpad yakınlaştırmasından dokunmaya devir ve 3B’de karışık fare/dokunma hareketleri',
+    ar: 'إصلاحات اللمس: تقييد التحريك بعد تبديل الساحة، وتسليم بين تكبير لوحة اللمس واللمس، وإيماءات مختلطة للفأرة واللمس في ثلاثي الأبعاد',
+    az: 'Toxunma düzəlişləri: meydani dəyişdikdən sonra sürükləmə həddi, trekped yaxınlaşdırması ilə toxunma arasında ötürmə və 3D-də qarışıq siçan/toxunma jestləri',
+    bg: 'Корекции на докосването: ограничение на плъзгане след смяна на полето, предаване между зума на тъчпада и докосването и смесени жестове мишка/докосване в 3D',
+    bs: 'Ispravke dodira: ograničenje povlačenja nakon promjene terena, predaja između zumiranja trackpada i dodira te miješani gest miša/dodira u 3D',
+    da: 'Touch-rettelser: begrænsning af panorering efter baneskift, overdragelse mellem trackpad-zoom og berøring samt blandede mus/berøringsbevægelser i 3D',
+    de: 'Touch-Korrekturen: Begrenzung des Schwenkens nach Feldwechsel, Übergabe zwischen Trackpad-Zoom und Touch sowie gemischte Maus/Touch-Gesten in 3D',
+    el: 'Διορθώσεις αφής: περιορισμός μετακίνησης μετά την αλλαγή γηπέδου, παράδοση μεταξύ ζουμ πινακίδας αφής και αφής, και μεικτές χειρονομίες ποντικιού/αφής σε 3D',
+    fil: 'Mga pag-aayos sa touch: pag-limit ng pag-drag pagkatapos magpalit ng field, turnover sa pagitan ng trackpad zoom at pagpindot, at halo-halong mouse/touch gestures sa 3D',
+    hi: 'टच सुधार: फ़ील्ड बदलने के बाद पैन सीमा, ट्रैकपैड ज़ूम से टच को स्थानांतरण, और 3D में मिश्रित माउस/टच इशारे',
+    hr: 'Ispravke dodira: ograničenje povlačenja nakon promjene terena, predaja između zumiranja trackpada i dodira te miješani gest miša/dodira u 3D-u',
+    hu: 'Érintés-javítások: mozgatás korlátozása pályaváltás után, átadás a trackpad zoom és az érintés között, valamint kevert egér/érintés gesztusok a 3D-ben',
+    hy: 'Հպման ուղղումներ. դաշտը փոխելուց հետո տեղաշարժի սահմանափակում, թրեքփեդ խոշորացումից հպմանը փոխանցում և խառը մկնիկ/հպում ժեստեր 3D-ում',
+    id: 'Perbaikan sentuh: batas geser setelah ganti lapangan, serah terima antara zoom trackpad dan sentuhan, serta gestur campuran mouse/sentuh di 3D',
+    it: 'Correzioni touch: limiti di trascinamento dopo il cambio campo, passaggio tra zoom del trackpad e tocco, e gesti misti mouse/tocco nel 3D',
+    mk: 'Поправки на допир: ограничување на повлекување по промена на теренот, предавање меѓу зум на тачпадот и допир, и мешани гестови глушец/допир во 3D',
+    mr: 'टच दुरुस्ती: फील्ड बदलल्यावर पॅन मर्यादा, ट्रॅकपॅड झूम ते टच हस्तांतरण, आणि 3D मध्ये मिश्र माउस/टच इशारे',
+    ms: 'Pembaikan sentuh: had anjakan selepas tukar padang, serah terima antara zum trekpad dan sentuhan, serta gerak isyarat campuran tetikus/sentuh dalam 3D',
+    nb: 'Berøringsrettinger: begrensning av panorering etter banekifte, overlevering mellom styrepute-zoom og berøring, samt blandede mus/berøringsbevegelser i 3D',
+    nn: 'Berøringsrettingar: avgrensing av panorering etter baneweksling, overlevering mellom styrepute-zoom og berøring, samt blanda mus/berøringsrørsler i 3D',
+    ro: 'Corecturi tactile: limitarea panoramării după schimbarea terenului, predarea între zoom-ul trackpad-ului și atingere și gesturi combinate mouse/atingere în 3D',
+    rw: 'Ibysigaye by’urutoke: guca ku kwimura nyuma y’ihindurwa ry’umurima, kwohereza hagati ya zoom y’urwandiko n’urutoke, n’imikorerere myinshi y’imbeba/urutoke muri 3D',
+    sq: 'Rregullime prekjeje: kufizimi i zvarritjes pas ndërrimit të fushës, dorëzimi mes zoom-it të trackpad-it dhe prekjes, dhe gjeste të përziera miu/prekje në 3D',
+    sr: 'Исправке додира: ограничење превлачења после промене терена, предаја између зума тачпада и додира и мешани гестови миш/додир у 3Д',
+    sv: 'Pekkorrigeringar: panoreringens gränser efter fältbyte, överlämning mellan styrplatta-zoom och pek samt blandade mus/pek-gester i 3D',
+    ta: 'தொடு திருத்தங்கள்: களம் மாறிய பின் பேன் வரம்பு, டிராக்பேட் ஜூமிலிருந்து தொடுதலுக்கு ஒப்படைப்பு, மற்றும் 3D-இல் கலப்பு சுட்டி/தொடு சைகைகள்',
+    uk: 'Виправлення сенсору: обмеження панорамування після зміни поля, передача між зумом тачпада й дотиком та змішані жести миша/дотик у 3D',
+    vi: 'Sửa cảm ứng: giới hạn kéo sau khi đổi sân, bàn giao giữa thu phóng bàn di chuột và cảm ứng, cùng cử chỉ chuột/cảm ứng hỗn hợp trong 3D',
+  } },
   { version: '0.1.10-beta.3', date: '2026.11.03', note: {
     'en': 'Import real robot runs from .wpilog logs: pick the pose entry and autonomous interval, then replay the recorded route next to planned paths (waits and dropouts preserved)',
     'zh': '导入 .wpilog 实车日志：选择位姿条目与自动时段，把记录到的路线与规划路线一起回放（等待与记录中断如实保留）',
