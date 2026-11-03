@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.10-beta.1';
+export const APP_VERSION = '0.1.10-beta.2';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.10-beta.2', date: '2026.11.03', note: {
+    en: 'Touchscreen support: pan, pinch and rotate the field, and scrub the timeline by touch',
+    zh: '触屏支持：手指平移、双指缩放与旋转场地，以及拖动时间轴',
+    'zh-tw': '觸控螢幕支援：手指平移、雙指縮放與旋轉場地，以及拖動時間軸',
+    cs: 'Dotykové ovládání: posun, přiblížení a rotace pole, tažení časové osy prstem',
+    nl: 'Aanraakbediening: het veld pannen, knijpen en draaien, en de tijdlijn met de vinger verslepen',
+    fr: 'Prise en charge tactile : panoramique, pincement et rotation du terrain, et défilement de la chronologie au doigt',
+    he: 'תמיכה במגע: הזזה, צביטה וסיבוב של המגרש, וגרירת ציר הזמן במגע',
+    ja: 'タッチ操作対応：フィールドのパン・ピンチ・回転と、タイムラインの指でのスクラブ',
+    ko: '터치 스크린 지원: 필드 이동, 핀치 및 회전, 타임라인 스크럽',
+    pl: 'Obsługa dotyku: przesuwanie, skalowanie i obracanie boiska oraz przewijanie osi czasu palcem',
+    'pt-br': 'Suporte a toque: arraste, pinçe e gire o campo e percorra a linha do tempo com o dedo',
+    es: 'Soporte táctil: desplazar, pellizcar y rotar el campo, y recorrer la línea de tiempo con el dedo',
+    tr: 'Dokunmatik destek: sahayı kaydırma, iki parmakla yakınlaştırma ve döndürme, zaman çizelgesini parmakla sürükleme',
+    ar: 'دعم اللمس: تحريك الساحة وتكبيرها بالقرص وتدويرها، وسحب الخط الزمني باللمس',
+    az: 'Toxunma dəstəyi: meydanı sürükləmə, iki barmaqla yaxınlaşdırma və fırlatma, vaxt oxunu barmaqla sürükləmə',
+    bg: 'Поддръжка на докосване: местене, мащабиране с щипване и завъртане на полето, както и плъзгане на времевата ос с пръст',
+    bs: 'Podrška za dodir: pomeranje, zumiranje štipanjem i rotiranje terena, prevlačenje vremenske ose prstom',
+    da: 'Touch-understøttelse: træk, knib og rotér banen, og skrub tidslinjen med fingeren',
+    de: 'Touchscreen-Unterstützung: Feld schieben, mit den Fingern zoomen und drehen sowie die Zeitleiste mit dem Finger bedienen',
+    el: 'Υποστήριξη αφής: μετακίνηση, ζουμ με τσίμπημα και περιστροφή του γηπέδου, και μετακίνηση της χρονογραμμής με το δάχτυλο',
+    fil: 'Touch support: pag-drag, pinch at pag-rotate ng field, at pag-scrub ng timeline gamit ang daliri',
+    hi: 'टच स्क्रीन समर्थन: फ़ील्ड पैन करें, पिंच करें और घुमाएँ, और टाइमलाइन को उंगली से स्क्रब करें',
+    hr: 'Podrška za dodir: pomicanje, zumiranje štipanjem i rotiranje terena, te povlačenje vremenske crte prstom',
+    hu: 'Érintéstámogatás: a pálya húzása, csippentéses nagyítása és forgatása, valamint az idővonal ujjal történő húzása',
+    hy: 'Սենսորային էկրանի աջակցություն՝ դաշտի տեղաշարժ, երկու մատով մեծացում և պտույտ, ժամանակագծի տեղաշարժ մատով',
+    id: 'Dukungan layar sentuh: geser, cubit, dan putar lapangan, serta seret garis waktu dengan sentuhan',
+    it: 'Supporto al tocco: trascina, pizzica e ruota il campo e scorri la timeline con il dito',
+    mk: 'Поддршка на допир: поместување, зумирање со стискање и ротација на теренот, повлекување на временската оска со прст',
+    mr: 'टचस्क्रीन समर्थन: मैदान पॅन करा, पिंच करा आणि फिरवा, तसेच वेळरेषा बोटाने स्क्रब करा',
+    ms: 'Sokongan skrin sentuh: anjak, cubit dan putar padang, serta seret garis masa dengan sentuhan',
+    nb: 'Berøringsstøtte: dra, knip og rotér banen, og skrub tidslinjen med fingeren',
+    nn: 'Berøringsstøtte: dra, knip og rotér banen, og skrub tidslinjen med fingeren',
+    ro: 'Suport pentru atingere: glisați, ciupiți și rotiți terenul și parcurgeți axa timpului cu degetul',
+    rw: 'Ubwoko bwo gukoresha urutoke: kwimura, kugabanya imyanya no guzunguza umurima, no kunyerera ku murongo w’igihe n’urutoke',
+    sq: 'Mbështetje për prekje: zhvendosni, ngushtoni dhe rrotulloni fushën, dhe lëvizni boshtin kohor me gisht',
+    sr: 'Подршка за додир: померање, зумирање стисањем и ротација терена, превлачење временске осе прстом',
+    sv: 'Pekskärmsstöd: panorera, nyp-zooma och rotera planen samt dra i tidslinjen med fingret',
+    ta: 'தொடுதிரை ஆதரவு: களத்தை நகர்த்தவும், இரு விரல்களால் பெரிதாக்கவும் சுழற்றவும், காலவரிசையை விரலால் இழுக்கவும்',
+    uk: 'Підтримка сенсорного екрана: переміщення, масштабування щипком і обертання поля, а також переміщення часової шкали дотиком',
+    vi: 'Hỗ trợ cảm ứng: kéo, chụm và xoay sân, cũng có thể kéo dòng thời gian bằng ngón tay',
+  } },
   { version: '0.1.10-beta.1', date: '2026.11.01', note: {
     en: 'Fix the core library npm package so it installs and loads under Node',
     zh: '修复 core 核心库 npm 包在 Node 下的安装与加载',

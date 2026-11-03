@@ -461,6 +461,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
     camera.position.set(...CAM_HOME);
     const controls = new OrbitControls(camera, renderer.domElement);
+    // Touch belongs to OrbitControls exclusively: one finger rotates, two
+    // fingers dolly/pan. The scheme-routed handlers above opt out for touch
+    // so a custom left-button map can never consume the same pointer twice.
+    controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     // Damped drag (the flat-field-era feel the user asked back): releasing
     // the pointer lets the view glide to a stop.
     // user input, and the rAF loop runs unconditionally, so the old
@@ -491,8 +495,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // Drag-orbit (original 3D-mode logic, Onshape-style): cursor down lifts
     // the camera so the field's top tilts into view — the same direction the
     // flat-field build used. Owned here (not OrbitControls) so the glide and
-    // clamp share the spherical math with the wheel-deltaX handler.
-    controls.enableRotate = false;
+    // clamp share the spherical math with the wheel-deltaX handler; the
+    // mouseButtons effect below keeps OrbitControls off every button, so
+    // enabling rotate cannot double-drive a mouse drag. Touch rotate rides
+    // OrbitControls itself (touches.ONE above), and the enableRotate flag
+    // gates that touch path — it must stay on (touch pass 2026-11-03).
+    controls.enableRotate = true;
     const drag = { active: false, x: 0, y: 0, vTheta: 0, vPhi: 0, lastT: 0, constrained: false };
     const applyOrbit = (dTheta: number, dPhi: number) => {
       const sph = new THREE.Spherical().setFromVector3(
@@ -531,10 +539,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       camera.lookAt(controls.target);
     };
     const onDragDown = (e: PointerEvent) => {
-      // Pen gate: a stylus only drives the view when "use pen as mouse".
-      if (e.pointerType === 'pen' && !penAsMouseRef.current) return;
       const action = resolveMouseAction(
         mouseSchemeRef.current, e.button, e, defaultConstrainedRef.current, customMouseMapRef.current,
+        { pointerType: e.pointerType, penAsMouse: penAsMouseRef.current },
       );
       if (action.kind === 'none') return;
       e.preventDefault(); // middle: no autoscroll; right: no native menu

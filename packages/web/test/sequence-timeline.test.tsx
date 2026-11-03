@@ -125,6 +125,72 @@ describe('live arrangement editing', () => {
     expect(activeEndT(commit.mock.calls[1]![0])).toBe(10);
     expect(clips()[0]!.querySelector('small')).toHaveTextContent('4.00s');
   });
+  it('gives touch drags a larger start threshold so small finger slips still tap', () => {
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
+    const source = screen.getByRole('button', { name: 'B: 3.00 s' });
+    const touchPointer = (element: HTMLElement, type: string, id: number, x: number, y: number) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperties(event, {
+        pointerType: { value: 'touch' }, pointerId: { value: id },
+        button: { value: 0 }, buttons: { value: 1 },
+        clientX: { value: x }, clientY: { value: y },
+      });
+      fireEvent(element, event);
+    };
+    touchPointer(source, 'pointerdown', 31, 20, 30);
+    touchPointer(source, 'pointermove', 31, 25, 34);
+    expect(document.querySelector('.sequence-ghost')).toBeNull();
+    touchPointer(source, 'pointerup', 31, 25, 34);
+    fireEvent.click(source, { detail: 1 });
+    // The 5 px slip stayed a tap: B appends after A instead of landing at the
+    // slipped pointer time, and the append click is not swallowed.
+    expect(screen.getByRole('button', { name: 'B, 4.00–7.00 s' })).toBeInTheDocument();
+    expect(commit).toHaveBeenCalledTimes(1);
+
+    const sourceC = screen.getByRole('button', { name: 'C: 3.00 s' });
+    touchPointer(sourceC, 'pointerdown', 32, 20, 30);
+    touchPointer(sourceC, 'pointermove', 32, 500, 130);
+    touchPointer(sourceC, 'pointerup', 32, 500, 130);
+    expect(screen.getByRole('button', { name: 'C, 10.00–13.00 s' })).toBeInTheDocument();
+  });
+
+  it('clears a touch clip drag on pointercancel so no state survives the gesture', () => {
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
+    const clip = clips()[0]!;
+    const touchPointer = (element: HTMLElement, type: string, x: number, y: number) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperties(event, {
+        pointerType: { value: 'touch' }, pointerId: { value: 7 },
+        button: { value: 0 }, buttons: { value: 1 },
+        clientX: { value: x }, clientY: { value: y },
+      });
+      fireEvent(element, event);
+    };
+    touchPointer(clip, 'pointerdown', 60, 130);
+    // Off the lane row the drag rides the free-flight badge (user 2026-10-10).
+    touchPointer(clip, 'pointermove', 120, 30);
+    expect(document.querySelector('.sequence-drag-badge')).not.toBeNull();
+    touchPointer(clip, 'pointercancel', 120, 30);
+    expect(document.querySelector('.sequence-drag-badge')).toBeNull();
+    expect(document.querySelector('.sequence-ghost')).toBeNull();
+    // A stray late move from the cancelled pointer neither revives the drag
+    // UI nor commits: the gesture is fully retired.
+    touchPointer(clip, 'pointermove', 400, 130);
+    touchPointer(clip, 'pointerup', 400, 130);
+    expect(document.querySelector('.sequence-drag-badge')).toBeNull();
+    expect(document.querySelector('.sequence-ghost')).toBeNull();
+    expect(commit).not.toHaveBeenCalled();
+    expect(clips()).toHaveLength(1);
+  });
+
+  it('offers a direct Remove route button once a clip is chosen', () => {
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} />);
+    fireEvent.click(clips()[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove route' }));
+    expect(clips()).toHaveLength(0);
+    expect(commit).toHaveBeenCalledTimes(1);
+  });
+
   it('drops a library route at the pointer time, and a following click does not append twice', () => {
     const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
     const source = screen.getByRole('button', { name: 'B: 3.00 s' });

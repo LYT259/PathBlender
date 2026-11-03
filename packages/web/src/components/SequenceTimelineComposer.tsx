@@ -346,7 +346,8 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     const drag = dragRef.current;
     const rect = laneRef.current?.getBoundingClientRect();
     if (!drag || drag.robotId !== activeId || !rect?.width) return;
-    if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 3) return;
+    const dragThreshold = event.pointerType === 'touch' ? 8 : 3;
+    if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < dragThreshold) return;
     drag.moved = true; suppressClick.current = true; event.preventDefault();
     if (drag.kind === 'scrub') {
       playback?.setT(clampToAxis((event.clientX - rect.left) / rect.width * axis, axis));
@@ -632,6 +633,9 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     </div></div>
     {chosen && <div className="sequence-selection-bar">
       <span className="sequence-selected-route">{active.routes.find((route) => route.id === chosen.routeId)?.relPath.split('/').at(-1)}</span>
+      <button type="button" className="sequence-remove-route" onClick={() => remove(chosen.id)}>
+        <Icon name="trash" size={14} />{t('sequence.removeRoute')}
+      </button>
       {/* Four linked editable views of one placement (user 2026-10-10):
           change any field and the others follow on the shared remount key
           (startS). First/last legs show only the neighbour side that
