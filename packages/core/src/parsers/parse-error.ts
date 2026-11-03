@@ -4,7 +4,9 @@ export type ParseErrorKind =
   | 'unrecognized-format'
   | 'empty-trajectory'
   | 'missing-trajectory'
-  | 'not-yet-supported';
+  | 'not-yet-supported'
+  | 'invalid-wpilog'
+  | 'wpilog-too-new';
 
 export class ParseError extends Error {
   readonly kind: ParseErrorKind;

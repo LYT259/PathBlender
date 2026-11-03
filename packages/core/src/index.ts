@@ -10,6 +10,7 @@ export type {
   RobotGeometry,
   Trajectory,
   TrajectoryEvent,
+  TrajectoryGap,
   TrajectorySample,
   TrajectorySource,
 } from './types';
@@ -56,6 +57,40 @@ export {
   ParseError,
 } from './parsers';
 export type { DetectedFormat, ParseErrorKind } from './parsers';
+export {
+  // WPILOG binary log import (2026-11): inspect → user selection → extract.
+  isWpilogFileName,
+  looksLikeWpilog,
+  inspectWpilog,
+  detectAutoIntervals,
+  extractWpilogTrajectory,
+  parseStructSchema,
+  buildStructSet,
+  decodeStructValue,
+  parseFileDescriptor,
+  decodeProtoPayload,
+  decodePrimitive,
+  recognizePose,
+  buildSamples,
+  LENGTH_TO_M,
+  HEADING_TO_RAD,
+} from './parsers';
+export type {
+  WpilogInspection,
+  PoseCandidate,
+  PoseCandidateKind,
+  PoseSamplePreview,
+  WpilogAutoInterval,
+  WpilogExtractionSelection,
+  WpilogPoseSelection,
+  LengthUnit,
+  HeadingUnit,
+  ParsedSchema,
+  StructLayout,
+  StructValue,
+  ProtoMessageDesc,
+  ProtoValue,
+} from './parsers';
 export type { RobotProfile, ProfileDynamics, ProfileDefaultConstraints } from './parsers/robot-profile';
 export { applyProfileToTrajectory } from './profile-apply';
 export type { AutoSegment } from './parsers/pathplanner-auto';

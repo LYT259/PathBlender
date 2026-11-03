@@ -279,6 +279,7 @@ function EyeIcon({ visible }: { visible: boolean }) {
 
 function sourceLabel(source: SessionTrajectory['trajectory']['source']): string {
   switch (source) {
+    case 'wpilog': return 'WPILOG log';
     case 'choreo-traj': return 'Choreo';
     case 'ghostauto': return 'Ghost';
     case 'pathplanner-path': return 'PathPlanner';

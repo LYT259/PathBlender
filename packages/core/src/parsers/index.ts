@@ -19,6 +19,41 @@ export { parsePathPlannerPath } from './pathplanner-path';
 export { parsePathPlannerAuto } from './pathplanner-auto';
 export { parseRobotProfile } from './robot-profile';
 export type { RobotProfile } from './robot-profile';
+// WPILOG (binary) lives in its own sub-module with a two-step
+// inspect → extract flow; see ./wpilog.
+export {
+  isWpilogFileName,
+  looksLikeWpilog,
+  inspectWpilog,
+  detectAutoIntervals,
+  extractWpilogTrajectory,
+  buildSamples,
+  parseStructSchema,
+  buildStructSet,
+  decodeStructValue,
+  decodePrimitive,
+  recognizePose,
+  parseFileDescriptor,
+  decodeProtoPayload,
+  LENGTH_TO_M,
+  HEADING_TO_RAD,
+} from './wpilog';
+export type {
+  WpilogInspection,
+  PoseCandidate,
+  PoseCandidateKind,
+  PoseSamplePreview,
+  WpilogAutoInterval,
+  WpilogExtractionSelection,
+  WpilogPoseSelection,
+  LengthUnit,
+  HeadingUnit,
+  ParsedSchema,
+  StructLayout,
+  StructValue,
+  ProtoMessageDesc,
+  ProtoValue,
+} from './wpilog';
 
 export type DetectedFormat =
   | 'choreo-traj'

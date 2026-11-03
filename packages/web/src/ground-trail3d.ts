@@ -1,8 +1,29 @@
 import * as THREE from 'three';
-import { resolveSequence, type SessionTrajectory } from '@pathblender/core';
+import { resolveSequence, type SessionTrajectory, type TrajectoryGap } from '@pathblender/core';
 import { groundTrailData, TRAIL_HEIGHT_M } from './ground-trail';
 import { worldToRenderVec3 } from './field3d-frame';
 import { heatmapColor } from './robot-identity';
+
+/**
+ * Split samples at trajectory gaps (wpilog imports): the 3D tape must not
+ * bridge an uncovered span — same honesty rule as the 2D canvas.
+ */
+function splitAtGaps3d(samples: SessionTrajectory['trajectory']['samples'], gaps: readonly TrajectoryGap[] | undefined) {
+  if (!gaps || gaps.length === 0) return [samples];
+  const out: typeof samples[] = [];
+  let current: typeof samples = [];
+  for (const sample of samples) {
+    const inGap = gaps.some((gap) => sample.t > gap.startT && sample.t < gap.endT);
+    if (inGap) {
+      if (current.length > 0) out.push(current);
+      current = [];
+      continue;
+    }
+    current.push(sample);
+  }
+  if (current.length > 0) out.push(current);
+  return out;
+}
 
 export function createGroundTrail(robot: SessionTrajectory, cx: number, cy: number, colorOverride?: string) {
   // Composed robots tape every segment on the global clock, each as its own
@@ -11,7 +32,7 @@ export function createGroundTrail(robot: SessionTrajectory, cx: number, cy: numb
   const resolved = resolveSequence(robot);
   const segments = resolved
     ? resolved.map((segment) => ({ samples: segment.trajectory.samples, offsetS: segment.startS }))
-    : [{ samples: robot.trajectory.samples, offsetS: 0 }];
+    : splitAtGaps3d(robot.trajectory.samples, robot.trajectory.gaps).map((samples) => ({ samples, offsetS: 0 }));
   const data = segments.reduce<{ positions: number[]; times: number[] }>(
     (merged, segment) => {
       const part = groundTrailData(segment.samples);
@@ -72,7 +93,7 @@ export function createGroundHeatmap(
   const resolved = resolveSequence(robot);
   const segments = resolved
     ? resolved.map((segment) => segment.trajectory.samples)
-    : [robot.trajectory.samples];
+    : splitAtGaps3d(robot.trajectory.samples, robot.trajectory.gaps);
   const L = robot.trajectory.geometry.lengthM;
   const W = robot.trajectory.geometry.widthM;
   const positions: number[] = [];

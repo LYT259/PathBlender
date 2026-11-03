@@ -49,6 +49,7 @@ practised first on the built-in **Try an example** session.
 | PathPlanner | `.path` + `.auto` | Take the files from the project folder; **every `.path` referenced by an `.auto` must be imported in the same batch** |
 | PathPlanner (bonus) | `settings.json` | Import it too and every robot gets the project's real bumper size |
 | 103 Collaborative fork | `.ghostauto` | Export a ghost from the fork — it carries the robot size and team name |
+| Any custom auto code | `.wpilog` | Copy the robot log (the roboRIO's onboard `logs` folder, or wherever your logger writes); convert `.hoot` logs to `.wpilog` with Phoenix Tuner first |
 
 **What you should have**: at least one path file per team, with each
 `.auto` in the same folder as the `.path` files it references so they can
@@ -61,6 +62,32 @@ with a generic robot profile and flagged "timing is an estimate" (see FAQ).
 On the welcome screen press **Import path files** — multi-select and mixed
 formats in one go — or **Import folder** to ingest a team's whole deploy
 directory (bystander files are skipped; every route lands in the library).
+
+`.wpilog` logs open a short picker first, because a log records everything
+and PathBlender must not guess which part is the route:
+
+1. **Robot pose in the log** — pose entries the log can decode (WPILib
+   struct/protobuf poses, pose arrays, odometry-style `double[]` entries
+   with a pose-like name) are listed with a small path preview; entries
+   whose names suggest a target/desired pose are marked so you don't pick
+   your trajectory by mistake. No pose entries at all? Map any three
+   numeric log fields to x/y/heading yourself.
+2. **Autonomous interval** — logs with an enable/auto-mode signal
+   (AdvantageKit `DriverStation`, the 2026 DS logger's `DS:enabled` /
+   `DS:autonomous`, NetworkTables DriverStation) list the detected
+   intervals; pick the run you mean. Without a signal, type the start and
+   end times.
+3. **Units & frame** — WPILib pose entries are metres/radians in the
+   blue-origin field frame already; custom mappings ask for units, and a
+   one-time red→blue flip exists for loggers that wrote red-origin
+   coordinates.
+
+The imported route is the recording: t = 0 is the chosen interval's start,
+waits and pauses keep their real durations, and spans with no pose data
+(dropouts, pose resets) hold the last known position — the robot visibly
+stops there and any check inside that span is flagged in the route's
+notes. Multiple logs align on their own interval starts, so two teams'
+recordings replay side by side with the planned routes.
 
 **What you should see**: one robot per team (with team number) in the
 robot list on the left, the field in the middle, the timeline at the
