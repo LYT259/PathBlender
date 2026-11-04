@@ -140,7 +140,7 @@ check('composer: Enter appends the route as a clip',
 
 // 5 — Tab forward to the APPENDED clip: it is the last segment on the lane,
 // so a nudge has free room on at least the right side. Arrows move, Delete
-// removes, Meta+Z restores.
+// removes, Ctrl/Cmd+Z restores.
 const clipFocused = await walk(
   () => page.evaluate((want) => {
     const el = document.activeElement;
@@ -167,9 +167,9 @@ check('composer: an overlapping −1 s nudge is refused', (await activeLabel()) 
 await page.keyboard.press('Delete');
 await page.waitForTimeout(400);
 check('composer: Delete removes the focused clip', (await clips()) === baseline);
-await page.keyboard.press('Meta+z');
+await page.keyboard.press('ControlOrMeta+z');
 await page.waitForTimeout(400);
-check('composer: Meta+Z restores the deleted clip', (await clips()) === baseline + 1);
+check('composer: Ctrl/Cmd+Z restores the deleted clip', (await clips()) === baseline + 1);
 
 // 6 — Escape returns to playback; focus lands on a real control (never body).
 await page.keyboard.press('Escape');

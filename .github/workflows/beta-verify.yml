@@ -1,0 +1,242 @@
+name: Beta verification
+on:
+  pull_request:
+    branches: [beta]
+permissions:
+  contents: read
+concurrency:
+  group: beta-verify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.policy.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - id: policy
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: node scripts/beta-change-policy.mjs "$BASE" "$HEAD"
+  windows:
+    needs: policy
+    if: needs.policy.outputs.docs_only == 'false'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install workspace deps
+        run: npm ci
+      - run: npm run version:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/candidate-browser-check.mjs
+      - run: cargo test --manifest-path packages/desktop/src-tauri/Cargo.toml
+      - name: Build NSIS installer
+        # Same config path as the release job (tauri.conf.json bundle targets).
+        # The updater key is a throwaway generated here: the smoke build must
+        # produce the same artifacts (setup.exe + .sig) as a release build,
+        # but the repo signing key stays release-only.
+        shell: bash
+        run: |
+          cd packages/desktop
+          npx tauri signer generate -w "$RUNNER_TEMP/smoke-updater.key" --password "" >/dev/null
+          export TAURI_SIGNING_PRIVATE_KEY="$(cat "$RUNNER_TEMP/smoke-updater.key")"
+          export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
+          npx tauri build --bundles nsis
+      - name: Smoke the updater feed generator
+        # The release pipeline's PB_WINDOWS_ARTIFACT branch, exercised for
+        # real: the feed must carry a windows-x86_64 entry pointing at the
+        # setup.exe with a non-empty signature.
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          # gen-latest-json exits nonzero when NO platform has artifacts, so
+          # the Windows entry must be pointed at explicitly — same env var the
+          # release publish job sets (a smoke runner has no macOS bundle).
+          ART=$(basename packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe)
+          PB_WINDOWS_ARTIFACT="$ART" node scripts/gen-latest-json.mjs "$VERSION" packages/desktop/src-tauri/target/release/bundle > feed.json
+          node -e "
+            const feed = require('./feed.json');
+            const win = feed.platforms['windows-x86_64'];
+            if (!win || !win.url.endsWith('_x64-setup.exe') || !win.signature.length) {
+              console.error('feed.json missing a valid windows-x86_64 entry:', JSON.stringify(feed));
+              process.exit(1);
+            }
+            console.log('feed OK:', win.url);
+          "
+      - name: Silent install (per-user)
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem "packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
+          if (-not $setup) { Write-Host "::error::no setup.exe found"; exit 1 }
+          Write-Host "Installing $($setup.Name)"
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Host "::error::installer exit code $($p.ExitCode)"; exit 1 }
+      - name: Locate, launch and assert
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          # Install location from the per-user uninstall registry entry
+          # (currentUser NSIS installs under HKCU), with the known default as
+          # fallback.
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $installDir = $installDir.Trim('"', "'")
+          $exe = Join-Path $installDir "pathblender-desktop.exe"
+          if (-not (Test-Path $exe)) {
+            Write-Host "::error::pathblender-desktop.exe not found at $exe"
+            Get-ChildItem -Path $installDir -Recurse -File | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+          }
+          $expected = (Get-Content package.json | ConvertFrom-Json).version
+          $actual = (Get-Item $exe).VersionInfo.ProductVersion
+          Write-Host "Installed version: $actual (tree: $expected)"
+          if ($actual -ne $expected) { Write-Host "::error::installed version $actual != tree version $expected"; exit 1 }
+
+          Start-Process -FilePath $exe
+          Start-Sleep -Seconds 15
+          $proc = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $proc) { Write-Host "::error::PathBlender process not running 15s after launch"; exit 1 }
+          $proc.Refresh()
+          if (-not $proc.MainWindowTitle) { Write-Host "::error::PathBlender running but has no main window"; exit 1 }
+          Write-Host "Window title: '$($proc.MainWindowTitle)'"
+          if ($proc.MainWindowTitle -ne "PathBlender") { Write-Host "::warning::unexpected window title" }
+          "running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath smoke-result.txt
+      - name: Screenshot
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms
+          Add-Type -AssemblyName System.Drawing
+          $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+          $bmp.Save("$PWD/smoke-screenshot.png")
+          $g.Dispose(); $bmp.Dispose()
+          Write-Host "Screenshot saved: $PWD/smoke-screenshot.png"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta-verify-windows
+          path: |
+            smoke-screenshot.png
+            smoke-result.txt
+            packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
+            packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe.sig
+          if-no-files-found: error
+
+  macos:
+    needs: policy
+    if: needs.policy.outputs.docs_only == 'false'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - run: npm ci
+      - run: npm run version:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/candidate-browser-check.mjs
+      - run: cargo test --manifest-path packages/desktop/src-tauri/Cargo.toml
+      - name: Build and seal Universal DMG with a disposable verification key
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd packages/desktop
+          npx tauri signer generate -w "$RUNNER_TEMP/verify.key" --password "" >/dev/null
+          export TAURI_SIGNING_PRIVATE_KEY="$(cat "$RUNNER_TEMP/verify.key")"
+          export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
+          npx tauri build --target universal-apple-darwin --bundles app
+          cd ../..
+          VERSION=$(node -p "require('./package.json').version")
+          scripts/package-desktop-artifacts.sh "$VERSION" --target universal-apple-darwin
+      - name: Install from the DMG and launch the installed app
+        shell: bash
+        run: bash scripts/verify-candidate-macos.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta-verify-macos
+          path: candidate-macos.png
+          if-no-files-found: error
+
+  linux:
+    needs: policy
+    if: needs.policy.outputs.docs_only == 'false'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install build and runtime verification tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev patchelf rpm rpm2cpio cpio xvfb xdotool imagemagick openbox dbus-x11
+      - run: npm ci
+      - run: npm run version:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/candidate-browser-check.mjs
+      - run: cargo test --manifest-path packages/desktop/src-tauri/Cargo.toml
+      - name: Build all Linux packages with a disposable verification key
+        run: |
+          set -euo pipefail
+          cd packages/desktop
+          npx tauri signer generate -w "$RUNNER_TEMP/verify.key" --password "" >/dev/null
+          export TAURI_SIGNING_PRIVATE_KEY="$(cat "$RUNNER_TEMP/verify.key")"
+          export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
+          npx tauri build --config src-tauri/tauri.linux.conf.json --bundles deb,appimage,rpm
+      - name: Install DEB and launch each Linux package
+        run: dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' bash scripts/verify-candidate-linux.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta-verify-linux
+          path: candidate-linux-*
+          if-no-files-found: error
+  gate:
+    name: Beta gate
+    needs: [policy, macos, windows, linux]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the policy and every applicable platform
+        env:
+          POLICY: ${{ needs.policy.result }}
+          DOCS_ONLY: ${{ needs.policy.outputs.docs_only }}
+          MACOS: ${{ needs.macos.result }}
+          WINDOWS: ${{ needs.windows.result }}
+          LINUX: ${{ needs.linux.result }}
+        run: |
+          test "$POLICY" = success
+          if [ "$DOCS_ONLY" = true ]; then
+            test "$MACOS" = skipped && test "$WINDOWS" = skipped && test "$LINUX" = skipped
+          else
+            test "$MACOS" = success && test "$WINDOWS" = success && test "$LINUX" = success
+          fi
