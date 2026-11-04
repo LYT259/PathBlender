@@ -31,7 +31,7 @@ import { mkdirSync, readFileSync, readdirSync as readdir } from 'node:fs';
 import { resolve } from 'node:path';
 
 const BASE = process.env.WALK_BASE ?? 'http://localhost:4173/';
-const SHOTS = '/tmp/pb-shots';
+const SHOTS = process.env.WALK_SHOTS ?? '/tmp/pb-shots';
 const SAMPLES = resolve(process.cwd(), 'samples');
 mkdirSync(SHOTS, { recursive: true });
 
@@ -304,12 +304,28 @@ await playBtn.click();
 await page.waitForTimeout(1500);
 await playBtn.click();
 await page.locator('.timeline-speeds button', { hasText: '0.5×' }).click();
-const t1 = await clockText();
 await playBtn.click();
-await page.waitForTimeout(1000);
+// Measure both clocks inside the browser. Runner scheduling and the next
+// Playwright click can take seconds on Windows, so a host-side sleep cannot
+// stand in for the actual playback interval.
+const timing = await page.evaluate(() => new Promise((resolve) => {
+  const clock = () => parseFloat(document.querySelector('.clock')?.textContent ?? '0');
+  requestAnimationFrame((start) => {
+    const before = clock();
+    const sample = (now) => {
+      if (now - start < 1000) {
+        requestAnimationFrame(sample);
+        return;
+      }
+      resolve({ before, after: clock(), elapsed: (now - start) / 1000 });
+    };
+    requestAnimationFrame(sample);
+  });
+}));
 await playBtn.click();
-const t2 = await clockText();
-check('playback 0.5× slows the clock', t2 - t1 > 0.25 && t2 - t1 < 0.9, `clock ${t1.toFixed(2)} → ${t2.toFixed(2)} over 1s wall`);
+const measuredRate = (timing.after - timing.before) / timing.elapsed;
+check('playback 0.5× slows the clock', measuredRate > 0.25 && measuredRate < 0.9,
+  `clock ${timing.before.toFixed(2)} → ${timing.after.toFixed(2)} over ${timing.elapsed.toFixed(2)}s wall`);
 check(
   'fast-forward speeds removed',
   (await page.locator('.timeline-speeds button', { hasText: '2×' }).count()) === 0 &&
@@ -504,8 +520,13 @@ await pickCombobox(seasonSelect, 'reefscape-2025');
 await page.waitForTimeout(700);
 await page.locator('.field-variant-toggle button', { hasText: 'AndyMark' }).click();
 await page.waitForTimeout(400);
+await ctx.tracing.start({ screenshots: true, snapshots: true });
 await page.evaluate(() => history.replaceState(null, '', location.pathname));
-await page.reload({ waitUntil: 'domcontentloaded' });
+try {
+  await page.reload({ waitUntil: 'domcontentloaded' });
+} finally {
+  await ctx.tracing.stop({ path: `${SHOTS}/reload-trace.zip` });
+}
 // The reload clears the in-memory session; the empty state exposes no field
 // controls, so re-import first — the canvas bar (with the selects) follows.
 await fileInput().setInputFiles([

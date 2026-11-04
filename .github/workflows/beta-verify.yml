@@ -4,6 +4,8 @@ on:
     branches: [beta]
 permissions:
   contents: read
+env:
+  WALK_SHOTS: ${{ github.workspace }}/browser-evidence
 concurrency:
   group: beta-verify-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -43,6 +45,11 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: node scripts/candidate-browser-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-windows
+          path: browser-evidence
       - run: cargo test --manifest-path packages/desktop/src-tauri/Cargo.toml
       - name: Build NSIS installer
         # Same config path as the release job (tauri.conf.json bundle targets).
@@ -160,6 +167,11 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: node scripts/candidate-browser-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-macos
+          path: browser-evidence
       - run: cargo test --manifest-path packages/desktop/src-tauri/Cargo.toml
       - name: Build and seal Universal DMG with a disposable verification key
         shell: bash
@@ -204,6 +216,11 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: node scripts/candidate-browser-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-linux
+          path: browser-evidence
       - run: cargo test --manifest-path packages/desktop/src-tauri/Cargo.toml
       - name: Build all Linux packages with a disposable verification key
         run: |
