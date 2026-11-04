@@ -166,6 +166,67 @@ describe('field canvas interaction and redraws', () => {
     expect(x).toBeGreaterThanOrEqual(0);
   });
 
+  it('clamps touch panning to the CURRENT field after switching to a smaller field', () => {
+    const ui = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240); paint();
+    const smaller = { ...field, id: 'small', lengthM: 2, widthM: 1 };
+    ui.rerender(<I18nProvider><FieldCanvas {...emptyScene} field={smaller} /></I18nProvider>);
+    resize(440, 240); paint();
+    const canvas = ui.container.querySelector('canvas')!;
+    fireEvent.pointerDown(canvas, { pointerType: 'touch', pointerId: 1, button: 0, buttons: 1, clientX: 220, clientY: 120 });
+    fireEvent.pointerMove(canvas, { pointerType: 'touch', pointerId: 1, buttons: 1, clientX: -5000, clientY: 120 });
+    fireEvent.pointerUp(canvas, { pointerType: 'touch', pointerId: 1, clientX: -5000, clientY: 120 });
+    paint();
+    // The listener must clamp against the 2×1 m field the user is looking
+    // at, not the 10×5 m field mounted first (acceptance P2-1: the stale
+    // clamp let the field leave the canvas entirely, right edge −936 px).
+    // Panning hard LEFT pins the field's RIGHT edge at the 24 px margin.
+    const [x, , width] = strokeRect.mock.lastCall!;
+    expect(x + width).toBeGreaterThanOrEqual(24);
+    expect(x + width).toBeCloseTo(24, 0);
+  });
+
+  it('clamps touch panning to the CURRENT field after switching to a larger field', () => {
+    const smallScene = { ...emptyScene, field: { ...field, id: 'small', lengthM: 2, widthM: 1 } };
+    const ui = render(<I18nProvider><FieldCanvas {...smallScene} /></I18nProvider>);
+    resize(440, 240); paint();
+    ui.rerender(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240); paint();
+    const canvas = ui.container.querySelector('canvas')!;
+    fireEvent.pointerDown(canvas, { pointerType: 'touch', pointerId: 1, button: 0, buttons: 1, clientX: 220, clientY: 120 });
+    fireEvent.pointerMove(canvas, { pointerType: 'touch', pointerId: 1, buttons: 1, clientX: -5000, clientY: 120 });
+    fireEvent.pointerUp(canvas, { pointerType: 'touch', pointerId: 1, clientX: -5000, clientY: 120 });
+    paint();
+    // Panning hard LEFT after the small→large switch: the fresh 10 m field
+    // allows roaming until its right edge pins at the 24 px margin. A stale
+    // small-field clamp would over-restrict the pan (right edge stuck at
+    // ~344 px — red pre-fix).
+    const [x, , width] = strokeRect.mock.lastCall!;
+    expect(x + width).toBeCloseTo(24, 0);
+    expect(x).toBeLessThanOrEqual(416);
+  });
+
+  it('a touch gesture takes ownership from an unfinished trackpad chase', () => {
+    const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
+    resize(440, 240); paint(); steadyClock();
+    const canvas = container.querySelector('canvas')!;
+    // Trackpad-class wheel starts a deferred chase toward a zoomed target…
+    fireEvent.wheel(canvas, { deltaY: -4 });
+    paint();
+    // …then a finger takes direct control and pans. The finger owns the
+    // view from pointerdown on: the old chase must die, not resume the
+    // moment the finger lifts (acceptance P2-2 snapped ~82 px back).
+    fireEvent.pointerDown(canvas, { pointerType: 'touch', pointerId: 1, button: 0, buttons: 1, clientX: 100, clientY: 120 });
+    fireEvent.pointerMove(canvas, { pointerType: 'touch', pointerId: 1, buttons: 1, clientX: 200, clientY: 120 });
+    fireEvent.pointerUp(canvas, { pointerType: 'touch', pointerId: 1, clientX: 200, clientY: 120 });
+    paint();
+    const released = [...strokeRect.mock.lastCall!];
+    for (let i = 0; i < 80; i++) paint();
+    const settled = [...strokeRect.mock.lastCall!];
+    expect(settled[0]).toBeCloseTo(released[0], 1);
+    expect(settled[2]).toBeCloseTo(released[2], 1);
+  });
+
   it('two touch pointers pinch at their midpoint without a join jump', () => {
     const { container } = render(<I18nProvider><FieldCanvas {...emptyScene} /></I18nProvider>);
     resize(440, 240);

@@ -138,3 +138,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Private touchscreen adaptation notes / 私有触屏适配记录
+/PathBlender_触屏适配记录.md
