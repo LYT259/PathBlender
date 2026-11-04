@@ -350,7 +350,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       // (round 4; the gesture stream itself proved clean on video).
       if (wheelSuppressed()) return;
       // Direct fingers own the view while any touch pointer is down: wheel
-      // (and trackpad pinch, below) is the OTHER hand's input stream and
+      // (and trackpad pinch, above) is the OTHER hand's input stream and
       // must neither fight the touch math nor restart a chase under it.
       if (touchPoints.size > 0) return;
       autoFitRef.current = false;
