@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { setTimeout } from 'node:timers/promises';
 const server = spawn(process.execPath,['scripts/serve-dist.mjs','4173'],{stdio:'inherit'});
 const run = file => new Promise((resolve,reject) => {
-  const child=spawn(process.execPath,[file],{stdio:'inherit',env:{...process.env,WALK_CHROME:'0'}});
+  const child=spawn(process.execPath,[file],{stdio:'inherit',env:process.env});
   child.on('error',reject);
   child.on('exit',code=>code===0?resolve():reject(new Error(`${file} failed: ${code}`)));
 });

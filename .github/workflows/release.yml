@@ -222,7 +222,18 @@ jobs:
             ARGS+=(--prerelease)
           fi
           if gh release view "$RELEASE_TAG" --json tagName,isDraft,assets > existing-release.json; then
-            node scripts/check-existing-release.mjs existing-release.json release "$RELEASE_TAG"
+            STATE=$(node scripts/check-existing-release.mjs existing-release.json release "$RELEASE_TAG")
+            if [ "$STATE" = draft ]; then
+              # A cancelled upload may leave an unpublished partial draft.
+              # Replace its complete asset cohort before making it public;
+              # published installers are never changed on a rerun.
+              gh release upload "$RELEASE_TAG" release/* --clobber
+              if [ "$(node scripts/release-channel.mjs "$RELEASE_TAG")" = beta ]; then
+                gh release edit "$RELEASE_TAG" --draft=false --prerelease
+              else
+                gh release edit "$RELEASE_TAG" --draft=false --latest
+              fi
+            fi
           else
             gh release create "$RELEASE_TAG" "${ARGS[@]}" release/*
           fi
