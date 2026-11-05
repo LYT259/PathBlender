@@ -42,9 +42,18 @@ const check = (name, ok, detail = '') => {
 };
 
 // System Chrome when present (no 150MB playwright download); bundled otherwise.
+// GPU-less runs (CI, bundled headless shell) would fall back to SwiftShader,
+// whose GL context teardown at page unload blocks the main thread for tens of
+// seconds — every navigation from a page with live WebGL contexts stalls
+// (measured 2026-11-05: reload 20 s+ vs 94 ms on a hardware backend). Pin a
+// hardware-backed ANGLE backend per platform so the walkthrough exercises
+// the app, not the software renderer's teardown path. Linux `gl` runs on
+// Mesa llvmpipe under Xvfb (CI wraps this script in xvfb-run).
+const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11', linux: '--use-angle=gl' }[process.platform];
+const backendArgs = ANGLE_BACKEND ? [ANGLE_BACKEND] : [];
 const browser = await chromium
-  .launch(process.env.WALK_CHROME === '0' ? {} : { channel: 'chrome' })
-  .catch(() => chromium.launch());
+  .launch(process.env.WALK_CHROME === '0' ? { args: backendArgs } : { channel: 'chrome', args: backendArgs })
+  .catch(() => chromium.launch({ args: backendArgs }));
 const ctx = await browser.newContext({
   viewport: { width: 1440, height: 900 },
   locale: 'en-US',
@@ -527,14 +536,17 @@ try {
 } finally {
   await ctx.tracing.stop({ path: `${SHOTS}/reload-trace.zip` });
 }
-// The reload clears the in-memory session; the empty state exposes no field
-// controls, so re-import first — the canvas bar (with the selects) follows.
-await fileInput().setInputFiles([
-  `${SAMPLES}/ghostauto/straight_run.ghostauto`,
-  `${SAMPLES}/ghostauto/stop_and_score.ghostauto`,
-  `${SAMPLES}/ghostauto/out_of_bounds.ghostauto`,
-]);
-await page.waitForSelector('.robot-library-row', { timeout: 10000 });
+// The autosaved session comes back on reload (launch continuity, 2026-10-02):
+// straight_run, stop_and_score and the bounds-check's out_of_bounds robot are
+// restored by the mount-time loadAutosave — no re-import. Re-importing here
+// used to stack duplicates on top of the restore (imports do not dedup) and
+// made the later PathPlanner count race (Windows CI read rows=9 on 2026-11-04).
+await page.waitForFunction(
+  () => document.querySelectorAll('.robot-library-row').length === 3,
+  undefined,
+  { timeout: 10000 },
+);
+check('autosave restores the session across reload', true, 'rows=3');
 await page.waitForSelector('.field-canvas');
 const fieldAfterReload = await readCombobox(seasonSelect);
 const amPressed = (await page.locator('.field-variant-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'AndyMark';
@@ -615,9 +627,14 @@ await fileInput().setInputFiles([
   `${SAMPLES}/pathplanner/Pickup.path`,
   `${SAMPLES}/pathplanner/Score.path`,
 ]);
+// Gate the wait on the pre-batch count so "6" can only mean this batch
+// landed — before 2026-11-05 the restored 3 plus the re-import above could
+// already satisfy ===6, and the check read whatever timing produced.
+const rowsBeforeBatch = await rows().count();
+check('pre-batch robot count is the restored three', rowsBeforeBatch === 3, `rows=${rowsBeforeBatch}`);
 await page.waitForFunction(
-  () => document.querySelectorAll('.robot-library-row').length === 6,
-  undefined,
+  (expected) => document.querySelectorAll('.robot-library-row').length === expected,
+  6,
   { timeout: 20000 },
 );
 // Rows carry team numbers, not file names, so the PathPlanner batch is
