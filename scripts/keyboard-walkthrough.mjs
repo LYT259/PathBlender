@@ -25,10 +25,18 @@ const check = (name, ok, detail = '') => {
 // Same backend pin and headful handling as browser-walkthrough.mjs:
 // SwiftShader's GL teardown freezes GPU-less runs, native backends need a
 // window server (CI runs headed via WALK_HEADFUL=1).
-const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11 --ignore-gpu-blocklist', linux: '--use-angle=gl --ignore-gpu-blocklist' }[process.platform];
-const backendArgs = (ANGLE_BACKEND ? [ANGLE_BACKEND] : []).concat(
-  process.env.WALK_HEADFUL === '1' ? ['--no-first-run', '--no-default-browser-check'] : [],
-);
+// One argv element per flag, always: Chromium parses only the first `=` of
+// an element, so a space-joined single element silently drops every flag
+// after the first on some builds (independent review 2026-11-06). The CI
+// system Chromes happened to honor the joined form (runs on 6751985/4ba13e6
+// rendered real 3D on llvmpipe/WARP), but that is not semantics to rely on.
+const PLATFORM_FLAGS = {
+  darwin: ['--use-angle=metal'],
+  win32: ['--use-angle=d3d11', '--ignore-gpu-blocklist'],
+  linux: ['--use-angle=gl', '--ignore-gpu-blocklist'],
+}[process.platform] ?? [];
+const backendArgs = [...PLATFORM_FLAGS,
+  ...(process.env.WALK_HEADFUL === '1' ? ['--no-first-run', '--no-default-browser-check'] : [])];
 const headful = process.env.WALK_HEADFUL === '1';
 const launchOpts = { headless: !headful, args: backendArgs };
 const browser = await chromium

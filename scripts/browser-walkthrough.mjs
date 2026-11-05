@@ -66,10 +66,18 @@ const check = (name, ok, detail = '') => {
 // Driver are denylisted software adapters, which silently blocks WebGL
 // entirely (run 42013910173: the 3D view fell back to 2D with no console
 // error and every 3D check timed out).
-const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11 --ignore-gpu-blocklist', linux: '--use-angle=gl --ignore-gpu-blocklist' }[process.platform];
-const backendArgs = (ANGLE_BACKEND ? [ANGLE_BACKEND] : []).concat(
-  process.env.WALK_HEADFUL === '1' ? ['--no-first-run', '--no-default-browser-check'] : [],
-);
+// One argv element per flag, always: Chromium parses only the first `=` of
+// an element, so a space-joined single element silently drops every flag
+// after the first on some builds (independent review 2026-11-06). The CI
+// system Chromes happened to honor the joined form (runs on 6751985/4ba13e6
+// rendered real 3D on llvmpipe/WARP), but that is not semantics to rely on.
+const PLATFORM_FLAGS = {
+  darwin: ['--use-angle=metal'],
+  win32: ['--use-angle=d3d11', '--ignore-gpu-blocklist'],
+  linux: ['--use-angle=gl', '--ignore-gpu-blocklist'],
+}[process.platform] ?? [];
+const backendArgs = [...PLATFORM_FLAGS,
+  ...(process.env.WALK_HEADFUL === '1' ? ['--no-first-run', '--no-default-browser-check'] : [])];
 const headful = process.env.WALK_HEADFUL === '1';
 const launchOpts = { headless: !headful, args: backendArgs };
 const browser = await chromium
@@ -84,6 +92,8 @@ const ctx = await browser.newContext({
   locale: 'en-US',
   permissions: ['clipboard-read', 'clipboard-write'],
 });
+// Default timeout covers locator actions and waits, not navigations —
+// those carry NAV_TIMEOUT_MS explicitly below.
 ctx.setDefaultTimeout(120_000);
 const page = await ctx.newPage();
 const errors = [];
@@ -711,6 +721,8 @@ const ctx3 = await browser.newContext({ viewport: { width: 1440, height: 900 }, 
 const page3 = await ctx3.newPage();
 const stressErrors = [];
 page3.on('pageerror', (e) => stressErrors.push(String(e)));
+// Fresh context, first navigation — no WebGL contexts exist yet, so the
+// software-GL teardown stall cannot bite here; the default wait is fine.
 await page3.goto(BASE, { waitUntil: 'domcontentloaded' });
 const allSamples = [
   ...(await readdir(`${SAMPLES}/traj`)).map((f) => `${SAMPLES}/traj/${f}`),
