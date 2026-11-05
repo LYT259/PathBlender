@@ -154,6 +154,45 @@ describe('live arrangement editing', () => {
     expect(screen.getByRole('button', { name: 'C, 10.00–13.00 s' })).toBeInTheDocument();
   });
 
+  it('touch-drags a route in again after removing the previous one — create, remove, create (redrag regression)', () => {
+    // Removing a placed clip must not poison the NEXT library drag: the same
+    // touch gesture creates a clip again after the Remove route button and
+    // after the Delete key (verified in a real browser against the
+    // pointercancel(0,0) failure — the browser cancelled the second gesture
+    // because the library row had shifted and the touch landed on the order
+    // toggle instead of the route).
+    const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
+    const touchPointer = (element: HTMLElement, type: string, id: number, x: number, y: number) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperties(event, {
+        pointerType: { value: 'touch' }, pointerId: { value: id },
+        button: { value: 0 }, buttons: { value: 1 },
+        clientX: { value: x }, clientY: { value: y },
+      });
+      fireEvent(element, event);
+    };
+    const dragB = (id: number) => {
+      const source = screen.getByRole('button', { name: 'B: 3.00 s' });
+      touchPointer(source, 'pointerdown', id, 20, 30);
+      touchPointer(source, 'pointermove', id, 500, 130);
+      touchPointer(source, 'pointerup', id, 500, 130);
+    };
+    // Create: the first drag lands B at the pointer time (10–13 s) and selects it.
+    dragB(41);
+    expect(screen.getByRole('button', { name: 'B, 10.00–13.00 s' })).toBeInTheDocument();
+    // Remove via the Remove route button, then create again with the SAME gesture.
+    fireEvent.click(screen.getByRole('button', { name: 'Remove route' }));
+    expect(clips()).toHaveLength(1);
+    dragB(42);
+    expect(screen.getByRole('button', { name: 'B, 10.00–13.00 s' })).toBeInTheDocument();
+    // Remove via Delete and create a third time — the keyboard path too.
+    fireEvent.keyDown(activeLane(), { key: 'Delete' });
+    expect(clips()).toHaveLength(1);
+    dragB(43);
+    expect(screen.getByRole('button', { name: 'B, 10.00–13.00 s' })).toBeInTheDocument();
+    expect(commit).toHaveBeenCalledTimes(5); // three creates, two removes
+  });
+
   it('clears a touch clip drag on pointercancel so no state survives the gesture', () => {
     const commit = vi.fn(); render(<LiveHarness onCommit={commit} />); geometry();
     const clip = clips()[0]!;
@@ -797,6 +836,26 @@ describe('route library "group by start" order (user 2026-10-09)', () => {
     expect(captions()).toEqual(['Trench', 'Hub', 'Other']);
     expect(labels()).toEqual(['A-trench', 'Z-trench', 'A-hub', 'Z-hub', 'A-other', 'Z-other']);
     expect(document.querySelector('.sequence-order')).not.toBeNull();
+  });
+
+  it('keeps the route sources ahead of the order toggle so library drags always start on a route (redrag regression)', () => {
+    // The first button of the route library is the drop of any repeated
+    // drag — it must be a route source even while the order toggle is
+    // visible (empty arrangement), and the toggle must come AFTER the
+    // sources. Before the fix the toggle rendered first and a second drag
+    // after a remove landed on it; its touch-action: manipulation trigger
+    // let the browser take the gesture over and cancel it.
+    localStorage.setItem('pb.routeOrder', 'start');
+    localStorage.setItem('pb.lengthUnit', 'm');
+    const robot = applySequenceSegments(groupedFixture(), []);
+    render(<I18nProvider><SequenceTimelineComposer robots={[robot]} selectedId={robot.trajectory.id} onSelect={vi.fn()}
+      autoPeriodS={20} startZone={zone} startRegions={regions} open onClose={vi.fn()} onChange={vi.fn()} onJump={vi.fn()} /></I18nProvider>);
+    const library = document.querySelector('.sequence-route-library')!;
+    const first = library.querySelector('button')!;
+    expect(first.classList.contains('sequence-route-source')).toBe(true);
+    const toggle = library.querySelector('.sequence-order')!;
+    expect(toggle).not.toBeNull();
+    expect(toggle.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
   });
 
   it('persists the user\u2019s order choice across launches', () => {
