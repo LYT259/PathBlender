@@ -506,11 +506,6 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         <option value="paths">{t('timeline.rangePaths')}</option>
       </SelectControl>} />
     <div className="sequence-route-library" ref={libraryRef}>
-      {startRegions !== undefined && startRegions.length > 0 && anchorClip === undefined && <SelectControl className="timeline-range sequence-order" aria-label={t('sequence.orderLabel')} value={routeOrder}
-        onValueChange={(value) => setRouteOrder(value as RouteOrder)}>
-        <option value="name">{t('sequence.orderName')}</option>
-        <option value="start">{t('sequence.orderStart')}</option>
-      </SelectControl>}
       <div className="sequence-route-options">
       {library.map(({ route, blocked, outOfZone, continuity, region }, index) => {
         // A caption chip opens each start group (and the trailing unmatched
@@ -552,7 +547,20 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
         onClick={(event) => { if (blocked || (event.detail !== 0 && suppressClick.current)) return; append(route.id, route.trajectory.durationS); }}>
         <span aria-hidden="true" className="sequence-grip">⠿</span><span>{routeLabel(route, active.routes)}</span><small>{n(route.trajectory.durationS, 2)}s</small>
       </button></Fragment>; })}
-      </div></div>
+      </div>
+      {/* The order toggle renders AFTER the options on purpose (redrag fix,
+          2026-11-05): mounting/unmounting it as clips come and go must not
+          move the route sources. When it appeared on the left, a repeated
+          drag from the library landed on the toggle instead of the route —
+          and a touch on its trigger (touch-action: manipulation) was taken
+          over by the browser and cancelled with pointercancel (0,0), so
+          nothing was created until a reload. */}
+      {startRegions !== undefined && startRegions.length > 0 && anchorClip === undefined && <SelectControl className="timeline-range sequence-order" aria-label={t('sequence.orderLabel')} value={routeOrder}
+        onValueChange={(value) => setRouteOrder(value as RouteOrder)}>
+        <option value="name">{t('sequence.orderName')}</option>
+        <option value="start">{t('sequence.orderStart')}</option>
+      </SelectControl>}
+    </div>
     <div className="sequence-timeline-scroll" dir="ltr"><div className="sequence-timeline-surface">
       <div className="sequence-axis"><span>s</span><div onPointerDown={beginScrub}>{ticks.map((tick) => <span key={tick} style={{ left: percent(tick) }}>{tick}</span>)}</div></div>
       {tracks.map(({ robot, routes, clips }) => {

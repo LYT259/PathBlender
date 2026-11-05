@@ -117,8 +117,13 @@
 .sequence-drag-badge > span:not(.sequence-grip) { overflow: hidden; text-overflow: ellipsis; }
 .sequence-drag-badge small { color: var(--fg-dim); }
 
-/* "Group by start" order (user 2026-10-09): the order toggle rides at the
-   head of the library row; caption chips separate the start groups inside
-   the horizontally scrolling options. */
-.sequence-route-library .sequence-order { flex: 0 0 auto; }
+/* "Group by start" order (user 2026-10-09): the order toggle sits at the
+   tail of the library row (AFTER the options — 2026-11-05 redrag fix: its
+   mounting/unmounting must never move the route sources, or a repeated
+   drag from the library lands on the toggle and is scroll-cancelled by
+   the browser); caption chips separate the start groups inside the
+   horizontally scrolling options. touch-action none matches the route
+   sources so a touch that does land on the toggle cannot be taken over
+   as a scroll either. */
+.sequence-route-library .sequence-order { flex: 0 0 auto; touch-action: none; }
 .sequence-group-tag { flex: 0 0 auto; align-self: center; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; color: var(--fg-dim); font-size: 10px; white-space: nowrap; }

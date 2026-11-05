@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.10-beta.5';
+export const APP_VERSION = '0.1.10-beta.6';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.10-beta.6', date: '2026.11.05', note: {
+    en: 'Composer: dragging a route in again after removing a clip works with touch and mouse',
+    'zh': '编排修复：移除片段后，再次从路线库拖入在触摸和鼠标下都正常',
+    'zh-tw': '編排修復：移除片段後，再次從路線庫拖入在觸控與滑鼠下都正常',
+    'cs': 'Oprava editoru: po odebrání klipu lze trasu znovu přetáhnout — dotykem i myší',
+    'nl': 'Composer-fix: een route opnieuw verslepen na het verwijderen van een clip werkt met aanraking en muis',
+    'fr': 'Correctif de l\'assembleur : après suppression d\'un clip, la route se glisse de nouveau — tactile et souris',
+    'he': 'תיקון עורך: גרירה חוזרת של מסלול אחרי מחיקת קטע עובדת במגע ובעכבר',
+    'ja': '編集パネル修正：クリップを削除した後でも、タッチとマウスのどちらでもルートを再ドラッグできる',
+    'ko': '편집기 수정: 클립 삭제 후에도 터치와 마우스로 경로를 다시 드래그할 수 있음',
+    'pl': 'Poprawka kompozytora: po usunięciu klipu trasę można ponownie przeciągnąć — dotykiem i myszą',
+    'pt-br': 'Correção do editor: arrastar uma rota de novo após remover um clipe funciona com toque e mouse',
+    'es': 'Corrección del compositor: tras quitar un clip, la ruta puede volver a arrastrarse con el tacto y el ratón',
+    'tr': 'Düzenleyici düzeltmesi: klip kaldırıldıktan sonra rota dokunma ve fareyle yeniden sürüklenebiliyor',
+    'ar': 'إصلاح المحرر: يمكن سحب المسار مجددًا بعد حذف مقطع، باللمس وبالفأرة',
+    'az': 'Redaktor düzəlişi: klip silindikdən sonra marşrut toxunma və siçanla yenidən dartıla bilər',
+    'bg': 'Корекция на композитора: след изтриване на клип маршрутът може да се издърпа отново — с докосване и мишка',
+    'bs': 'Ispravka uređivača: nakon uklanjanja klipa ruta se može ponovo povući — dodirom i mišem',
+    'da': 'Editor-rettelse: en rute kan trækkes ind igen efter sletning af et klip — med berøring og mus',
+    'de': 'Editor-Fix: Nach dem Entfernen eines Clips lässt sich eine Route wieder hineinziehen — per Touch und Maus',
+    'el': 'Διόρθωση επεξεργαστή: μετά τη διαγραφή ενός κλιπ η διαδρομή μπορεί να συρθεί ξανά — με αφή και ποντίκι',
+    'fil': 'Pag-aayos sa editor: maaaring i-drag muli ang ruta pagkatapos mag-alis ng clip — sa touch at mouse',
+    'hi': 'एडिटर सुधार: क्लिप हटाने के बाद रूट फिर से खींचा जा सकता है — टच और माउस दोनों से',
+    'hr': 'Ispravak uređivača: nakon uklanjanja klipa ruta se može ponovno povući — dodirom i mišem',
+    'hu': 'Szerkesztő-javítás: klip eltávolítása után az útvonal újra behúzható — érintéssel és egérrel',
+    'hy': 'Խմբագրիչի ուղղում. կլիպը հեռացնելուց հետո երթուղին կարելի է նորից քաշել՝ հպումով և մկնիկով',
+    'id': 'Perbaikan editor: rute bisa ditarik lagi setelah menghapus klip — dengan sentuhan maupun mouse',
+    'it': 'Correzione del compositore: dopo aver rimosso un clip, il percorso si può trascinare di nuovo — con tocco e mouse',
+    'mk': 'Поправка на композиторот: по бришење на клип рутата може повторно да се влече — со допир и глушец',
+    'mr': 'एडिटर दुरुस्ती: क्लिप काढल्यानंतर मार्ग पुन्हा ओढता येतो — टच आणि माऊसने',
+    'ms': 'Pembaikan editor: laluan boleh diseret semula selepas memadam klip — dengan sentuhan dan tetikus',
+    'nb': 'Redigeringsfiks: en rute kan dras inn igjen etter at et klipp er fjernet — med berøring og mus',
+    'nn': 'Redigeringsfiks: ei rute kan dragast inn att etter at eit klipp er fjerna — med berøring og mus',
+    'ro': 'Corectare editor: traseul poate fi tras din nou după ștergerea unui clip — cu atingere și mouse',
+    'rw': 'Gukosora Composer: nyuma yo gukuraho igice, inzira ishobora kongera gukururwa — gukora ku ikiranga cyangwa imbeba',
+    'sq': 'Rregullim i redaktuesit: pas heqjes së një klipi, rruga mund të tërhiqet përsëri — me prekje dhe miun',
+    'sr': 'Исправка уређивача: након уклањања клипа рута може поново да се превуче — додиром и мишем',
+    'sv': 'Redigeringsfix: en rutt kan dras in igen efter att ett klipp tagits bort — med pekning och mus',
+    'ta': 'தொகுப்பி திருத்தம்: கிளிப்பை நீக்கிய பிறகு பாதையை மீண்டும் இழுக்கலாம் — தொடுதலிலும் சுட்டியிலும்',
+    'uk': 'Виправлення редактора: після видалення кліпу маршрут можна знову перетягнути — дотиком і мишею',
+    'vi': 'Sửa trình soạn thảo: có thể kéo lại tuyến đường sau khi xóa clip — bằng cảm ứng và chuột',
+  } },
   { version: '0.1.10-beta.5', date: '2026.11.05', note: {
     en: 'Fix a regression where clicking the 3D canvas no longer closed menus and the composer',
     zh: '修复回归：点击 3D 画布不再关闭菜单与时间轴编排',
