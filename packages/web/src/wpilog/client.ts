@@ -37,10 +37,15 @@ export function createWpilogClient(onProgress?: WpilogProgress): WpilogClient {
   return syncClient();
 }
 
-/** Worker-based inspect; extraction spawns one-shot workers (any slot). */
+/** Worker-based inspect; extraction spawns one-shot workers (any slot).
+ *  dispose() terminates the inspect worker AND every live extraction worker
+ *  and rejects their promises — a cancelled dialog can never receive a late
+ *  trajectory (acceptance report: late worker reply still called onDone). */
 function workerInspectClient(worker: Worker, onProgress?: WpilogProgress): WpilogClient {
   let pendingResolve: ((value: WpilogInspection) => void) | null = null;
   let pendingReject: ((error: unknown) => void) | null = null;
+  let disposed = false;
+  const liveExtractions = new Set<{ worker: Worker; reject: (error: unknown) => void }>();
   worker.onmessage = (event: MessageEvent) => {
     const data = event.data as { type: string; inspection?: WpilogInspection; message?: string; progress?: number };
     if (data.type === 'inspection' && data.inspection) {
@@ -53,6 +58,16 @@ function workerInspectClient(worker: Worker, onProgress?: WpilogProgress): Wpilo
   };
   worker.onerror = (event) => {
     pendingReject?.(new Error((event as ErrorEvent).message ?? 'wpilog worker failed'));
+  };
+  const disposeAll = () => {
+    if (disposed) return;
+    disposed = true;
+    for (const live of liveExtractions) {
+      live.worker.terminate();
+      live.reject(new Error('wpilog parse cancelled'));
+    }
+    liveExtractions.clear();
+    worker.terminate();
   };
   return {
     inspect(bytes, fileName) {
@@ -67,8 +82,13 @@ function workerInspectClient(worker: Worker, onProgress?: WpilogProgress): Wpilo
     extract(bytes, inspection, selection) {
       // One-shot worker per extraction: keeps the inspect worker's protocol
       // single-purpose and lets the confirm loop extract any file in any
-      // order without shipping bytes back and forth.
+      // order without shipping bytes back and forth. Every live worker is
+      // registered so dispose() can cancel the whole batch.
       return new Promise<Trajectory>((resolve, reject) => {
+        if (disposed) {
+          reject(new Error('wpilog parse cancelled'));
+          return;
+        }
         let settled = false;
         let oneShot: Worker;
         try {
@@ -81,30 +101,34 @@ function workerInspectClient(worker: Worker, onProgress?: WpilogProgress): Wpilo
           }
           return;
         }
+        const live = { worker: oneShot, reject: (error: unknown) => reject(error) };
+        liveExtractions.add(live);
+        const settle = (finish: () => void) => {
+          if (settled) return;
+          settled = true;
+          liveExtractions.delete(live);
+          oneShot.terminate();
+          finish();
+        };
         oneShot.onmessage = (event: MessageEvent) => {
+          // A worker reply racing dispose() is dropped: the promise was
+          // already rejected with 'wpilog parse cancelled'.
+          if (disposed) return;
           const data = event.data as { type: string; trajectory?: Trajectory; message?: string };
           if (data.type === 'trajectory' && data.trajectory) {
-            settled = true;
-            resolve(data.trajectory);
-            oneShot.terminate();
+            settle(() => resolve(data.trajectory as Trajectory));
           } else if (data.type === 'error') {
-            settled = true;
-            reject(new Error(data.message ?? 'wpilog extraction failed'));
-            oneShot.terminate();
+            settle(() => reject(new Error(data.message ?? 'wpilog extraction failed')));
           }
         };
         oneShot.onerror = (event) => {
-          if (settled) return;
-          settled = true;
-          reject(new Error((event as ErrorEvent).message ?? 'wpilog extraction failed'));
-          oneShot.terminate();
+          if (disposed) return;
+          settle(() => reject(new Error((event as ErrorEvent).message ?? 'wpilog extraction failed')));
         };
         oneShot.postMessage({ type: 'extract', bytes, inspection, selection });
       });
     },
-    dispose() {
-      worker.terminate();
-    },
+    dispose: disposeAll,
   };
 }
 

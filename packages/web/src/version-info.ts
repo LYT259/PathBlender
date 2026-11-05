@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.10-beta.6';
+export const APP_VERSION = '0.1.10-beta.7';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.10-beta.7', date: '2026.11.05', note: {
+    en: 'Fix wpilog log import found in acceptance: gap holds inside composed sequences, manual field mapping for any entry names, heading joins across ±180°, cancel-safe imports, unified dropdowns; desktop-saved sessions now reopen (.pb filter)',
+    'zh': '修复验收发现的 wpilog 日志导入问题：编排序列内缺口保持、任意命名字段可手动映射、朝向跨 ±180° 正确插值、取消导入不再残留、统一下拉控件；桌面保存的会话可正常重开（.pb 过滤器）',
+    'zh-tw': '修復驗收發現的 wpilog 日誌匯入問題：編排序列內缺口保持、任意命名字段可手動對應、朝向跨 ±180° 正確插值、取消匯入不再殘留、統一下拉控制項；桌面儲存的工作階段可正常重開（.pb 篩選器）',
+    'cs': 'Opravy importu wpilog z nezávislé akceptace: podržení pózy v mezerách u sekvencí, ruční mapování pro libovolné názvy polí, interpolace orientace přes ±180°, bezpečné zrušení importu, sjednocené rozbalovací nabídky; desktopové relace se znovu otevírají (filtr .pb)',
+    'nl': 'Wpilog-importfixes uit acceptatie: houding vasthouden in gaten binnen samenstellingen, handmatige koppeling voor willekeurige veldnamen, heading-interpolatie over ±180°, veilig annuleren van imports, uniforme vervolgkeuzelijsten; desktopsessies openen nu opnieuw (.pb-filter)',
+    'fr': 'Corrections d’import wpilog issues de l’acceptation : maintien de pose dans les trous des séquences, mappage manuel pour tout nom de champ, interpolation de cap à travers ±180°, import annulable proprement, listes déroulantes unifiées ; les sessions de bureau se rouvrent (filtre .pb)',
+    'he': 'תיקוני ייבוא wpilog מהכניסה העצמאית: החזקת פוזה בפערים בתוך רצפים, מיפוי ידני לכל שם שדה, אינטרפולציית כיוון דרך ±180°, ביטול ייבוא ללא שאריות, תפריטים נפתחים אחידים; הפעלות שולחן עבודה נפתחות מחדש (מסנן .pb)',
+    'ja': '検収で発見された wpilog ログ取り込みの修正：編成シーケンス内の欠落で姿勢保持、任意のフィールド名で手動マッピング、±180° を跨ぐ朝向補間、取り込みキャンセルの残留解消、統一ドロップダウン。デスクトップ保存セッションが正しく開けるように（.pb フィルタ）',
+    'ko': '수용 테스트에서 발견된 wpilog 로그 가져오기 수정: 시퀀스 내 간격에서 자세 유지, 임의 필드 이름으로 수동 매핑, ±180°를 넘는 방향 보간, 취소 안전한 가져오기, 통합 드롭다운. 데스크톱 저장 세션이 다시 열림(.pb 필터)',
+    'pl': 'Poprawki importu wpilog z akceptacji: utrzymanie pozy w lukach sekwencji, ręczne mapowanie dowolnych nazw pól, interpolacja kursu przez ±180°, bezpieczne anulowanie importu, ujednolicone listy rozwijane; sesje desktopowe otwierają się ponownie (filtr .pb)',
+    'pt-br': 'Correções do import wpilog da aceitação: pose mantida nas lacunas de sequências, mapeamento manual para qualquer nome de campo, interpolação de rumo cruzando ±180°, import cancelável sem resíduos, menus suspensos unificados; sessões do desktop reabrem (filtro .pb)',
+    'es': 'Correcciones del import wpilog de la aceptación: pose mantenida en los huecos de secuencias, mapeo manual para cualquier nombre de campo, interpolación de rumbo cruzando ±180°, import cancelable sin residuos, desplegables unificados; las sesiones de escritorio vuelven a abrirse (filtro .pb)',
+    'tr': 'Kabulden bulunan wpilog içe aktarma düzeltmeleri: dizilerdeki boşluklarda poz koruma, herhangi bir alan adı için elle eşleme, ±180° boyunca yön aradeğerlemesi, iptalde iz bırakmayan içe aktarma, birleşik açılır listeler; masaüstü oturumları yeniden açılıyor (.pb filtresi)',
+    'ar': 'إصلاحات استيراد wpilog من القبول: تثبيت الوضعية في فجوات التتابعات، ربط يدوي لأي أسماء حقول، استيفاء الاتجاه عبر ±180°، استيراد قابل للإلغاء دون بقايا، قوائم موحدة؛ جلسات سطح المكتب تُفتح مجددًا (مرشح .pb)',
+    'az': 'Akceptdən wpilog idxal düzəlişləri: ardıcıllıqdakı boşluqlarda poz saxlanması, istənilən sahə adı üçün əl ilə xəritələmə, ±180° boyunca istiqamət interpolyasiyası, ləngiməz imtina, vahid açılan siyahılar; desktop seansları yenidən açılır (.pb filtri)',
+    'bg': 'Поправки на wpilog импорта от приемката: задържане на позата в пролуките на последователностите, ръчно картографиране за всякакви имена на полета, интерполация на курса през ±180°, отменяем импорт без остатък, унифицирани падащи менюта; работните сесии се отварят отново (филтър .pb)',
+    'bs': 'Popravke wpilog uvoza iz prihvatanja: zadržavanje poze u prazninama sekvenci, ručno mapiranje za bilo koja imena polja, interpolacija kursa preko ±180°, otkaziv uvoz bez ostataka, objedinjeni padajući meniji; desktop sesije se ponovo otvaraju (.pb filter)',
+    'da': 'wpilog-importrettelser fra accept: positurhold i huller i sekvenser, manuel mapping for alle feltnavne, kursinterpolation over ±180°, annullérbar import uden rester, fælles rullemenuer; desktopsessioner genåbnes (.pb-filter)',
+    'de': 'Wpilog-Importkorrekturen aus der Abnahme: Pose-Halten in Sequenzlücken, manuelles Mapping für beliebige Feldnamen, Kursinterpolation über ±180°, abbruch­sichere Imports, vereinheitlichte Dropdowns; Desktop-Sitzungen lassen sich wieder öffnen (.pb-Filter)',
+    'el': 'Διορθώσεις εισαγωγής wpilog από την αποδοχή: διατήρηση πόζας στα κενά των ακολουθιών, χειροκίνητη αντιστοίχιση για οποιαδήποτε ονόματα πεδίων, παρεμβολή πορείας عبر ±180°, ακυρώσιμη εισαγωγή χωρίς υπολείμματα, ενιαία αναπτυσσόμενα· οι συνεδρίες desktop ανοίγουν ξανά (φίλτρο .pb)',
+    'fil': 'Mga pag-aayos ng wpilog import mula sa acceptance: pose-hold sa mga puwang ng sequence, manu-manong mapping para sa anumang pangalan ng field, interpolasyon ng heading sa ±180°, cancellable import nang walang tira, pinag-isang dropdown; muling bubukas ang desktop session (.pb filter)',
+    'hi': 'स्वीकृति से मिली डब्ल्यूपीआईलॉग आयात सुधार: अनुक्रमों के अंतरालों में मुद्रा अवरोध, किसी भी फ़ील्ड नाम के लिए मैनुअल मैपिंग, ±180° के पार दिशा इंटरपोलेशन, रद्द-सुरक्षित आयात, एकीकृत ड्रॉपडाउन; डेस्कटॉप सत्रें पुनः खुलती हैं (.pb फ़िल्टर)',
+    'hr': 'Popravci wpilog uvoza iz prihvatne provjere: zadržavanje poze u prazninama sekvenci, ručno preslikavanje za bilo koja imena polja, interpolacija kursa preko ±180°, otkaziv uvoz bez ostataka, objedinjeni padajući izbornici; desktop sesije ponovno se otvaraju (.pb filter)',
+    'hu': 'Wpilog importjavítások az elfogadásból: pózatartás a szekvenciák hézagaiban, kézi hozzárendelés tetszőleges mezőnevekhez, irányinterpoláció ±180°-on át, biztonsan megszakítható import, egységes legördülők; az asztali munkamenetek újra megnyílnak (.pb szűrő)',
+    'hy': 'Ընդունումից wpilog ներմուծման ուղղումներ՝ պոզի պահում հաջորդականությունների բացերում, ձեռքով քարտեզագրում ցանկացած դաշտի անվան համար, ±180° միջով ուղղության ինտերպոլացիա, չեղարկելի ներմուծում մնացորդների բացակայությամբ, միասնական բացվող ցանկեր. desktop նստաշրջանները կրկին բացվում են (.pb զտիչ)',
+    'id': 'Perbaikan impor wpilog dari acceptance: pose tertahan di celah sekuens, pemetaan manual untuk nama kolom apa pun, interpolasi arah melintasi ±180°, impor yang dapat dibatalkan tanpa sisa, dropdown terpadu; sesi desktop terbuka kembali (filter .pb)',
+    'it': 'Correzioni dell’importazione wpilog dall’accettazione: pose trattenuta nelle lacune delle sequenze, mappatura manuale per qualsiasi nome di campo, interpolazione di rotta attraverso ±180°, import annullabile senza residui, menu a tendina unificati; le sessioni desktop si riaprono (filtro .pb)',
+    'mk': 'Поправки на wpilog увозот од приемката: држење поза во празнините на секвенциите, рачно мапирање за било кои имиња на полиња, интерполација на курс преку ±180°, отказлив увоз без остатоци, обединети паѓачки мени; десктоп сесиите се отвораат повторно (.pb филтер)',
+    'mr': 'स्वीकृतीतून आढळलेले डब्ल्यूपीआयलॉग आयात दुरुस्त्या: अनुक्रमांच्या अंतराळात मुद्रा धरून ठेवणे, कोणतेही फील्ड नावासाठी मॅन्युअल मॅपिंग, ±180° ओलांडणारे दिशा इंटरपोलेशन, रद्द-सुरक्षित आयात, एकत्रित ड्रॉपडाउन; डेस्कटॉप सत्रे पुन्हा उघडतात (.pb फिल्टर)',
+    'ms': 'Pembaikan import wpilog daripada penerimaan: pegangan pose dalam jurang jujukan, pemetaan manual untuk sebarang nama medan, interpolasi haluan merentasi ±180°, import boleh batalkan tanpa sisa, menu lungsur disatukan; sesi desktop dibuka semula (penapis .pb)',
+    'nb': 'wpilog-importrettinger fra aksept: posehold i hull i sekvenser, manuell tilordning for alle feltnavn, kursinterpolasjon over ±180°, avbruddsikker import uten rester, felles rullegardinmenyer; desktopøkter åpnes på nytt (.pb-filter)',
+    'nn': 'wpilog-importrettingar frå aksept: posehald i hol i sekvensar, manuell tilordning for alle feltnamn, kursinterpolasjon over ±180°, avbrytbar import utan restar, felles rullegardinmenyar; skrivebordsøkter opnast på nytt (.pb-filter)',
+    'ro': 'Corecții de import wpilog din acceptare: menținerea pozei în golurile secvențelor, mapare manuală pentru orice nume de câmp, interpolarea cursului peste ±180°, import anulabil fără resturi, meniuri derulante unificate; sesiunile desktop se redeschid (filtrul .pb)',
+    'rw': 'Ibisubizo by’ingendo ya wpilog mu kwemeza: kubika imyanya mu banga ku mirongo, iperereya ry’amabara yose, umwerere w’icyerekezo unyura ku ±180°, kureka bizwi nta gasigaye, imenyekisahamwe rimwe; inyandiko za desktop zongera zifungura (muyunguruzi .pb)',
+    'sq': 'Rregullime importi wpilog nga pranimi: mbajtje pose në boshllëqet e sekuencave, hartim manual për çdo emër fushë, interpolim kursi përmes ±180°, import i anulueshëm pa mbetje, dropdown të unifikuar; sesionet desktop rihapen (filtër .pb)',
+    'sr': 'Поправке wpilog увоза из прихватања: држање позе у празнинама секвенци, ручно мапирање за било која имена поља, интерполација курса преко ±180°, отказив увоз без остатака, обједињени падајући менији; десктоп сесије се поново отварају (.pb филтер)',
+    'sv': 'Wpilog-importfixar från acceptansen: posehållning i sekvenshål, manuell mappning för alla fältnamn, kursinterpolation över ±180°, avbrotts­säker import utan rester, enhetliga rullgardinsmenyer; skrivbordssessioner öppnas igen (.pb-filter)',
+    'ta': 'ஏற்பிலிருந்து wpilog இறக்குமதி திருத்தங்கள்: வரிசைகளின் இடைவெளிகளில் நிலை தக்கவைப்பு, எந்தப் புலப் பெயருக்கும் கையேடு வரைபடம், ±180° கடந்த திசை இடைச்செருகல், எச்சமில்லாத ரத்து செய்யக்கூடிய இறக்குமதி, ஒருங்கிணைந்த கீழ்தோன்றல்கள்; டெஸ்க்டாப் அமர்வுகள் மீண்டும் திறக்கின்றன (.pb வடிகட்டி)',
+    'uk': 'Виправлення імпорту wpilog із приймання: утримання пози у прогалинах послідовностей, ручне відображення для будь-яких назв полів, інтерполяція курсу через ±180°, скасовуваний імпорт без залишків, уніфіковані випадаючі списки; настільні сеанси відкриваються знову (фільтр .pb)',
+    'vi': 'Sửa nhập log wpilog từ nghiệm thu: giữ tư thế trong khoảng trống của chuỗi, ánh xạ thủ công cho mọi tên trường, nội suy hướng qua ±180°, nhập có thể hủy sạch, menu thả xuống thống nhất; phiên máy tính mở lại được (bộ lọc .pb)',
+  } },
   { version: '0.1.10-beta.6', date: '2026.11.05', note: {
     en: 'Composer: dragging a route in again after removing a clip works with touch and mouse',
     'zh': '编排修复：移除片段后，再次从路线库拖入在触摸和鼠标下都正常',

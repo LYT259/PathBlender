@@ -72,7 +72,9 @@ export function segmentDurationS(segment: { playS?: number }, trajectory: Trajec
  */
 function truncateTrajectory(trajectory: Trajectory, playS: number): Trajectory {
   const within = trajectory.samples.filter((sample) => sample.t <= playS);
-  const boundary = sampleTrajectory(trajectory.samples, playS);
+  // Gaps ride along: a cut inside an uncovered span holds at the gap start
+  // (zero velocity), exactly as a standalone sample at that time would.
+  const boundary = sampleTrajectory(trajectory.samples, playS, trajectory.gaps);
   const samples = boundary && (!within.length || within.at(-1)!.t < playS)
     ? [...within, { ...boundary, t: playS }]
     : within;
@@ -81,6 +83,7 @@ function truncateTrajectory(trajectory: Trajectory, playS: number): Trajectory {
     samples,
     durationS: playS,
     events: trajectory.events.filter((event) => event.t <= playS),
+    gaps: trajectory.gaps?.filter((gap) => gap.startT < playS),
   };
 }
 
@@ -180,7 +183,11 @@ export function sampleSequenceState(
   }
   if (!active) return parked(poseOrOrigin(first.trajectory, false));
   if (globalT <= active.endS) {
-    const local = sampleTrajectory(active.trajectory.samples, globalT - active.startS);
+    // Gap semantics ride along: a query inside a wpilog log's uncovered
+    // span holds the last known pose instead of interpolating across it —
+    // compositions get the same behavior as the standalone route (the
+    // acceptance report caught this missing argument).
+    const local = sampleTrajectory(active.trajectory.samples, globalT - active.startS, active.trajectory.gaps);
     return local ?? parked({ x: 0, y: 0, heading: 0 });
   }
   // Past the active segment: a wait or the end of the auto — parked at the

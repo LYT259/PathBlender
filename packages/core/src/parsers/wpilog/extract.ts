@@ -261,6 +261,39 @@ function numericSeries(
   return out;
 }
 
+/**
+ * Angular interpolation of a heading series at time t: the segment delta
+ * takes the shortest arc, so 179°→−179° crosses ±180° instead of passing
+ * through 0° (the acceptance report caught the plain-linear join). The
+ * series is in SOURCE units — the wrap period is 360 for degrees and 2π
+ * for radians, so a radians-based wrap on degree values would misfold.
+ */
+function seriesAngleAt(
+  series: ReadonlyArray<{ tS: number; value: number }>,
+  tS: number,
+  period: number,
+): number | null {
+  const direct = seriesAt(series, tS);
+  if (direct === null || series.length < 2) return direct;
+  if (tS <= series[0]!.tS || tS >= series[series.length - 1]!.tS) return direct;
+  let low = 1;
+  let high = series.length - 1;
+  while (low !== high) {
+    const mid = Math.floor((low + high) / 2);
+    if ((series[mid] as { tS: number }).tS < tS) low = mid + 1;
+    else high = mid;
+  }
+  const b = series[low]!;
+  const a = series[low - 1]!;
+  const dt = b.tS - a.tS;
+  if (dt <= 0) return b.value;
+  let delta = (b.value - a.value) % period;
+  if (delta > period / 2) delta -= period;
+  if (delta < -period / 2) delta += period;
+  const fraction = (tS - a.tS) / dt;
+  return a.value + delta * fraction;
+}
+
 /** Linear interpolation of a step series at time t (clamped at the ends). */
 function seriesAt(series: ReadonlyArray<{ tS: number; value: number }>, tS: number): number | null {
   if (series.length === 0) return null;
@@ -448,7 +481,9 @@ function mapEntryPoses(
     const y = seriesAt(ySeries, point.tS);
     if (x === null || y === null) continue;
     let heading: number | null = null;
-    const h = hSeries.length > 0 ? seriesAt(hSeries, point.tS) : null;
+    const h = hSeries.length > 0
+      ? seriesAngleAt(hSeries, point.tS, headingUnit === 'deg' ? 360 : Math.PI * 2)
+      : null;
     if (h !== null) {
       heading = h * headingFactor;
       lastHeading = heading;

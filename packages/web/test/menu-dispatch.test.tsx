@@ -75,7 +75,9 @@ describe('desktop menu dispatch', () => {
     await waitFor(() => expect(download.saveText).toHaveBeenCalled());
     const [name, ext, text] = download.saveText.mock.calls[0]!;
     expect(String(name)).toMatch(/^session-\d{4}-\d{2}-\d{2}\.pb$/);
-    expect(ext).toBe('json');
+    // The native save panel appends the active filter's extension; the
+    // filter must be pb or macOS writes "…pb.json", which reopen rejects.
+    expect(ext).toBe('pb');
     const parsed = JSON.parse(text as string);
     expect(parsed.app).toBe('pathblender');
   });

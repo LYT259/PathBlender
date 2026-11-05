@@ -605,3 +605,37 @@ describe('doctor and install-rules', () => {
     r.clean();
   });
 });
+
+describe('negative resolution before existence check', () => {
+  it('manual ranges with abbreviated SHAs keep their negative (no full-history sweep)', () => {
+    // 2026-11-05: cat-file --batch-check does not resolve short SHAs or
+    // rev expressions, so manual-mode ranges dropped every negative and
+    // scanned entire histories — a worktree push swept in 1081 commits
+    // including blobs a repo-hygiene commit had long removed. Existence
+    // must be checked on resolved full OIDs. The fixture repo guarantees
+    // a real parent commit even in CI's shallow checkouts of THIS repo.
+    const repo = makeRepo(true, false);
+    try {
+      writeFileSync(join(repo.dir, 'a.txt'), 'first\n');
+      repo.g('add', '.');
+      repo.g('commit', '-qm', 'first');
+      writeFileSync(join(repo.dir, 'b.txt'), 'second\n');
+      repo.g('add', '.');
+      repo.g('commit', '-qm', 'second');
+      const short = repo.g('rev-parse', '--short', 'HEAD');
+      const parent = repo.g('rev-parse', 'HEAD~1');
+      const res = spawnSync('node', [SCRIPT, '--range', `${parent.slice(0, 10)}..${short}`], {
+        cwd: repo.dir,
+        encoding: 'utf8',
+        env: GITENV,
+      });
+      const out = `${res.stdout ?? ''}${res.stderr ?? ''}`;
+      // The abbreviated parent survives as a negative: exactly one commit
+      // scanned (the head), not the fixture's whole history — and clean.
+      expect(out).toMatch(/→ 1 commit\(s\)/);
+      expect(out).toContain('clean');
+    } finally {
+      repo.clean();
+    }
+  });
+});

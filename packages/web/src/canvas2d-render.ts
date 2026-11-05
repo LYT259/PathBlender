@@ -81,7 +81,12 @@ function splitAtGaps(samples: TimedPathPoint[], gaps: readonly TrajectoryGap[] |
  *  wpilog gaps split their route the same way. */
 function pathSegmentsOf(r: SessionTrajectory): PathPoint[][] {
   const resolved = resolveSequence(r);
-  if (resolved) return resolved.map((segment) => segment.trajectory.samples);
+  if (resolved) {
+    // Composed robots: one array per segment, and log segments split again
+    // at their own gaps — a tape bridging a dropout fakes observed motion.
+    return resolved.flatMap((segment) =>
+      splitAtGaps(segment.trajectory.samples as TimedPathPoint[], segment.trajectory.gaps));
+  }
   return splitAtGaps(r.trajectory.samples, r.trajectory.gaps);
 }
 

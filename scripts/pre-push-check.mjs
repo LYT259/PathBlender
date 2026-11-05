@@ -642,8 +642,21 @@ async function runScan({ mode, remote, rangesArg, stdinText }) {
 
   // Negatives must exist locally; one that does not (remote moved past what
   // we have, forced update) cannot exclude anything — scan those refs in full.
-  const presentNegatives = objectExistsBatch(git, negatives);
-  const verifiedNegatives = negatives.filter((n) => presentNegatives.has(n));
+  // Existence is checked on FULL OIDs: cat-file --batch-check does not
+  // resolve abbreviated SHAs or rev expressions ("@{u}", a short SHA from a
+  // --range) — those read as "missing", which silently dropped EVERY
+  // negative in manual mode and scanned entire histories (a worktree push
+  // swept in 1081 commits and blobs a repo-hygiene commit had long
+  // removed; 2026-11-05). Resolve first; an unresolvable rev is genuinely
+  // absent and stays excluded.
+  const resolvedNegatives = negatives.map((n) => {
+    const oid = git.try('rev-parse', '--verify', `${n}^{object}`);
+    return oid ? oid.trim() : null;
+  });
+  const verifiedNegatives = negatives
+    .map((n, i) => (resolvedNegatives[i] ? { rev: resolvedNegatives[i], exists: true } : { rev: n, exists: false }))
+    .filter((entry) => entry.exists)
+    .map((entry) => entry.rev);
   if (negatives.length !== verifiedNegatives.length) {
     console.log('pre-push-check: some advertised remote tips are not present locally (stale fetch or forced update) — scanning those refs in full');
   }
