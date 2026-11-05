@@ -540,15 +540,22 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     };
     const onDragDown = (e: PointerEvent) => {
       // Non-touch pointers belong to the scheme handlers (or to nobody) —
-      // never to OrbitControls. Intercepting on the HOST in the capture
-      // phase keeps mouse/pen presses from reaching OrbitControls' canvas
-      // listener at all: its internal finger tally would otherwise count a
-      // held mouse button as a second "finger" and turn the next
-      // single-finger touch into a dolly/pan (mixed-input acceptance
-      // P2-3). Touch flows through untouched, and the viewcube/overlay
-      // children keep their own events (target guard).
+      // never to OrbitControls: its internal finger tally would otherwise
+      // count a held mouse button as a second "finger" and turn the next
+      // single-finger touch into a dolly/pan (mixed-input acceptance P2-3).
+      // Suppression is per-dispatch, not per-tree: OrbitControls' own
+      // pointerdown returns immediately while `enabled` is false, and a
+      // microtask restores it once this dispatch completes — before any
+      // later event can arrive. The event itself keeps propagating, so the
+      // app's document-level listeners still see canvas clicks: menus,
+      // the robot context menu and the composer close on a 3D blank click
+      // exactly as they do in 2D (dismissal regression, 2026-11-05).
+      // Touch flows through untouched (OrbitControls stays enabled for it),
+      // and the viewcube/overlay children keep their own events (target
+      // guard).
       if (e.pointerType === 'touch' || e.target !== renderer.domElement) return;
-      e.stopPropagation();
+      controls.enabled = false;
+      queueMicrotask(() => { controls.enabled = true; });
       const action = resolveMouseAction(
         mouseSchemeRef.current, e.button, e, defaultConstrainedRef.current, customMouseMapRef.current,
         { pointerType: e.pointerType, penAsMouse: penAsMouseRef.current },

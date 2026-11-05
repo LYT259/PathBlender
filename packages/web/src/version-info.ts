@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.10-beta.4';
+export const APP_VERSION = '0.1.10-beta.5';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.10-beta.5', date: '2026.11.05', note: {
+    en: 'Fix a regression where clicking the 3D canvas no longer closed menus and the composer',
+    zh: '修复回归：点击 3D 画布不再关闭菜单与时间轴编排',
+    'zh-tw': '修復回歸：點擊 3D 畫布不再關閉選單與時間軸編排',
+    cs: 'Oprava regrese: kliknutí na 3D plátno opět zavírá nabídky a skladatele sekvencí',
+    nl: 'Regressie hersteld: klikken op het 3D-canvas sluit menu’s en de componist weer',
+    fr: 'Correction d’une régression : cliquer sur la zone 3D referme à nouveau les menus et le compositeur',
+    he: 'תיקון רגרסיה: לחיצה על בד התלת-ממד סוגרת שוב תפריטים ואת עורך הרצף',
+    ja: 'リグレッション修正：3D キャンバスのクリックでメニューとシーケンス編集が再び閉じるように',
+    ko: '회귀 수정: 3D 캔버스 클릭이 메뉴와 시퀀스 편집기를 다시 닫도록 수정',
+    pl: 'Poprawka regresji: kliknięcie płótna 3D ponownie zamyka menu i kompozytor sekwencji',
+    'pt-br': 'Correção de regressão: clicar na tela 3D volta a fechar menus e o compositor',
+    es: 'Corrección de regresión: hacer clic en el lienzo 3D vuelve a cerrar los menús y el compositor',
+    tr: 'Regresyon düzeltmesi: 3B tuvale tıklamak menüleri ve sıra düzenleyiciyi yeniden kapatıyor',
+    ar: 'إصلاح خطأ تراجعي: النقر على لوحة الرسم ثلاثية الأبعاد يعيد إغلاق القوائم ومحرر التتابع',
+    az: 'Reqressiya düzəlişi: 3D lövhəyə klikləmə menyuları və ardıcıllıq redaktorunu yenidən bağlayır',
+    bg: 'Корекция на регресия: щракването върху 3D платното отново затваря менютата и композитора',
+    bs: 'Ispravka regresije: klik na 3D platno ponovo zatvara menije i kompozitor sekvenci',
+    da: 'Regression rettet: klik på 3D-lærredet lukker igen menuer og komponisten',
+    de: 'Regressionskorrektur: Ein Klick auf die 3D-Leinwand schließt Menüs und den Composer wieder',
+    el: 'Διόρθωση παλινδρόμησης: το κλικ στον 3D καμβά κλείνει ξανά τα μενού και τον συνθέτη',
+    fil: 'Pag-aayos ng regression: ang pag-click sa 3D canvas ay muling nagsasara ng mga menu at composer',
+    hi: 'प्रतिगमन सुधार: 3D कैनवास पर क्लिक करने से मेनू और सीक्वेंस संपादक फिर बंद होते हैं',
+    hr: 'Ispravak regresije: klik na 3D platno ponovno zatvara izbornike i kompozitor sekvenci',
+    hu: 'Regresszió-javítás: a 3D vászonra kattintva ismét bezárulnak a menük és a szekvenciaszerkesztő',
+    hy: 'Ռեգրեսիայի ուղղում. 3D կտավին սեղմելը նորից փակում է ընտրացանկերն ու հաջորդականության խմբագրիչը',
+    id: 'Perbaikan regresi: mengeklik kanvas 3D kembali menutup menu dan penyusun urutan',
+    it: 'Correzione di regressione: cliccare sulla tela 3D richiude di nuovo menu e compositore',
+    mk: 'Поправка на регресија: кликот на 3D платното повторно ги затвора менијата и уредникот на секвенци',
+    mr: 'प्रतिगमन दुरुस्ती: 3D कॅनव्हासवर क्लिक केल्यावर मेनू आणि सिक्वेन्स संपादक पुन्हा बंद होतात',
+    ms: 'Pembaikan regresi: mengklik kanvas 3D kembali menutup menu dan penyusun jujukan',
+    nb: 'Regressjonsretting: å klikke på 3D-lerretet lukker igjen menyer og sekvenskomponisten',
+    nn: 'Regressjonsretting: å klikka på 3D-lerretet lukkar igjen menyar og sekvenskomponisten',
+    ro: 'Corecție de regresie: clic pe pânza 3D închide din nou meniurile și compozitorul',
+    rw: 'Ivugururwa ry’ikiciye cya kabiri: gukanda ku kibaho cya 3D kisubira gufunga ibyatoranya n’umuhuzi wa urungano',
+    sq: 'Rregullim regresioni: klikimi në kanavacën 3D i mbyll përsëri menutë dhe përpiluesin e sekuencave',
+    sr: 'Исправка регресије: клик на 3Д платно поново затвара меније и уредник секвенци',
+    sv: 'Regressionskorrigering: att klicka på 3D-duken stänger återigen menyer och sekvensredigeraren',
+    ta: 'பின்னடைவு திருத்தம்: 3D கேன்வாஸைக் கிளிக் செய்தல் மெனுக்கள் மற்றும் வரிசை தொகுப்பானை மீண்டும் மூடுகிறது',
+    uk: 'Виправлення регресії: клацання по 3D-полотну знову закриває меню та редактор послідовностей',
+    vi: 'Sửa hồi quy: nhấp vào khung 3D lại đóng menu và trình soạn chuỗi hành động',
+  } },
   { version: '0.1.10-beta.4', date: '2026.11.04', note: {
     en: 'Touch fixes: field-switch clamping, trackpad zoom handover and mixed mouse/touch 3D gestures',
     zh: '触屏修复：切换场地后的平移限位、触控板缩放与触摸的交接、3D 鼠标与触摸混用',
