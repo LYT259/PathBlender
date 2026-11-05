@@ -33,6 +33,14 @@ import { resolve } from 'node:path';
 const BASE = process.env.WALK_BASE ?? 'http://localhost:4173/';
 const SHOTS = process.env.WALK_SHOTS ?? '/tmp/pb-shots';
 const SAMPLES = resolve(process.cwd(), 'samples');
+// Navigating away from a page with live WebGL contexts blocks on GL context
+// teardown. On hardware backends that is milliseconds; on the software GL the
+// GPU-less Linux/Windows runners must use (Mesa llvmpipe / D3D11 WARP, un-
+// blocklisted for this verification) it measured 30 s+ per navigation — the
+// navigation still completes and every post-navigation assertion still runs,
+// so the waits budget for it instead of the default 30 s. No check is skipped
+// or weakened by this constant; it only sizes a wait.
+const NAV_TIMEOUT_MS = 120_000;
 mkdirSync(SHOTS, { recursive: true });
 
 const results = [];
@@ -122,7 +130,7 @@ const prefsGear = async () => {
 };
 const clockText = () => page.locator('.clock').textContent().then((t) => parseFloat(t ?? '0'));
 
-await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
 await page.waitForSelector('.workspace-empty');
 // Empty state: the whole canvas bar (incl. view toggle) is replaced by the
 // welcome screen; view3D defaults to false, asserted once robots exist.
@@ -545,7 +553,7 @@ await page.waitForTimeout(400);
 await ctx.tracing.start({ screenshots: true, snapshots: true });
 await page.evaluate(() => history.replaceState(null, '', location.pathname));
 try {
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
 } finally {
   await ctx.tracing.stop({ path: `${SHOTS}/reload-trace.zip` });
 }
@@ -1244,7 +1252,7 @@ await page.waitForFunction(
   () => (localStorage.getItem('pb.autosave.v1') ?? '').includes('rebuilt-2026'),
   { timeout: 5000 },
 );
-await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
 await page.waitForSelector('.field-canvas-3d canvas', { timeout: 15000 });
 check('3D view restored after reload', true);
 await page.locator('.view-toggle button', { hasText: '2D' }).click();
@@ -1253,7 +1261,7 @@ await page.waitForSelector('.field-canvas:not(.field-canvas-3d)', { timeout: 100
 // Launch continuity (user 2026-10-02: quitting in 3D reopened to the
 // welcome page). The autosaved session comes back on reload — robots,
 // field, and variant, with no fresh import.
-await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
 await page.waitForSelector('.field-canvas', { timeout: 10000 });
 await page.waitForSelector('.robot-library-row', { timeout: 10000 });
 await page.waitForTimeout(800);
