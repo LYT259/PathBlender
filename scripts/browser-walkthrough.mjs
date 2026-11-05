@@ -53,8 +53,12 @@ const check = (name, ok, detail = '') => {
 // --in-process-gpu). CI therefore runs headed (WALK_HEADFUL=1): Linux under
 // xvfb-run (Mesa llvmpipe), Windows on the runner's interactive desktop
 // (D3D11 WARP) — CDP input and screenshots do not need the window on screen.
-// macOS Metal keeps working headless and stays that way.
-const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11', linux: '--use-angle=gl' }[process.platform];
+// macOS Metal keeps working headless and stays that way. Linux and Windows
+// also pass --ignore-gpu-blocklist: Mesa llvmpipe and Microsoft Basic Render
+// Driver are denylisted software adapters, which silently blocks WebGL
+// entirely (run 42013910173: the 3D view fell back to 2D with no console
+// error and every 3D check timed out).
+const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11 --ignore-gpu-blocklist', linux: '--use-angle=gl --ignore-gpu-blocklist' }[process.platform];
 const backendArgs = (ANGLE_BACKEND ? [ANGLE_BACKEND] : []).concat(
   process.env.WALK_HEADFUL === '1' ? ['--no-first-run', '--no-default-browser-check'] : [],
 );

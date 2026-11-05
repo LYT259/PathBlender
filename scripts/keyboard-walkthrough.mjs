@@ -25,7 +25,7 @@ const check = (name, ok, detail = '') => {
 // Same backend pin and headful handling as browser-walkthrough.mjs:
 // SwiftShader's GL teardown freezes GPU-less runs, native backends need a
 // window server (CI runs headed via WALK_HEADFUL=1).
-const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11', linux: '--use-angle=gl' }[process.platform];
+const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11 --ignore-gpu-blocklist', linux: '--use-angle=gl --ignore-gpu-blocklist' }[process.platform];
 const backendArgs = (ANGLE_BACKEND ? [ANGLE_BACKEND] : []).concat(
   process.env.WALK_HEADFUL === '1' ? ['--no-first-run', '--no-default-browser-check'] : [],
 );
