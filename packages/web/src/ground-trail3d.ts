@@ -31,7 +31,9 @@ export function createGroundTrail(robot: SessionTrajectory, cx: number, cy: numb
   // stays an honest gap instead of a fake connecting line.
   const resolved = resolveSequence(robot);
   const segments = resolved
-    ? resolved.map((segment) => ({ samples: segment.trajectory.samples, offsetS: segment.startS }))
+    ? resolved.flatMap((segment) =>
+        splitAtGaps3d(segment.trajectory.samples, segment.trajectory.gaps)
+          .map((samples) => ({ samples, offsetS: segment.startS })))
     : splitAtGaps3d(robot.trajectory.samples, robot.trajectory.gaps).map((samples) => ({ samples, offsetS: 0 }));
   const data = segments.reduce<{ positions: number[]; times: number[] }>(
     (merged, segment) => {

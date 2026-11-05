@@ -18,6 +18,7 @@ import type {
 } from '@pathblender/core';
 import { Dialog } from '../components/Dialog';
 import { Icon } from '../components/Icon';
+import { SelectControl } from '../components/SelectControl';
 import { useI18n } from '../i18n';
 import { createWpilogClient, type WpilogClient } from './client';
 
@@ -82,8 +83,11 @@ function defaultLengthUnit(hint: string | undefined): LengthUnit {
  * Sensible starting point after inspection: the highest-scoring measured
  * candidate and the longest detected auto interval — every default stays a
  * visible, changeable choice in the panel. With no candidates at all, the
- * custom x/y/heading mapping starts on name-matched numeric entries; with
- * no numeric entries either, the file reports "no pose data".
+ * custom x/y/heading mapping opens with numeric entries; names only RANK
+ * the suggestion (x/east, y/north, heading/bearing style stems first) —
+ * they are never an admission condition, because logs legitimately call
+ * their fields east/north/bearing or anything else. With no numeric
+ * entries either, the file honestly reports "no pose data".
  */
 function defaultSelection(inspection: WpilogInspection): Selection | null {
   const spanS = (inspection.lastTimestampUs - inspection.firstTimestampUs) / 1e6;
@@ -92,10 +96,18 @@ function defaultSelection(inspection: WpilogInspection): Selection | null {
   const best = inspection.candidates[0];
   if (!best) {
     if (numeric.length === 0) return null;
-    const x = numeric.find((e) => /x/i.test(e.name.split('/').pop() ?? ''));
-    const y = numeric.find((e) => /\by\b/i.test(e.name.split('/').pop() ?? ''));
-    if (!x || !y) return null;
-    const heading = numeric.find((e) => /(heading|theta|angle|rot|yaw)/i.test(e.name));
+    const last = (entry: WpilogInspection['catalog']['entries'][number]) =>
+      entry.name.split('/').pop() ?? entry.name;
+    const byStem = (patterns: RegExp[]) => {
+      for (const pattern of patterns) {
+        const hit = numeric.find((entry) => pattern.test(last(entry)));
+        if (hit) return hit;
+      }
+      return undefined;
+    };
+    const x = byStem([/x/i, /east/i, /lon/i]) ?? numeric[0]!;
+    const y = byStem([/\by\b/i, /north/i, /lat/i]) ?? numeric.find((entry) => entry !== x) ?? numeric[0]!;
+    const heading = byStem([/(heading|theta|angle|rot|yaw|bearing)/i]);
     return {
       pose: { mode: 'fields', xEntryId: x.id, yEntryId: y.id, headingEntryId: heading?.id },
       intervalIndex: null,
@@ -205,10 +217,16 @@ export function WpilogImportDialog({
 
   const confirm = useCallback(async () => {
     setWorking(true);
-    const client = clientRef.current ?? createWpilogClient();
+    // Only the dialog-owned client: it is disposed on unmount/cancel, which
+    // terminates every in-flight extraction worker and rejects its promise.
+    // A fresh fallback client here would outlive the dialog (acceptance
+    // report: cancel left extraction running and onDone still fired).
+    const client = clientRef.current;
+    if (!client) return;
     const routes: WpilogImportResult['routes'] = [];
     const failures: WpilogImportResult['failures'] = [];
     for (const slot of slots) {
+      if (cancelledRef.current) return;
       if (slot.state.status === 'failed') {
         failures.push({ relPath: slot.relPath, message: slot.state.message });
         continue;
@@ -237,12 +255,17 @@ export function WpilogImportDialog({
         // Bytes re-read from the File at confirm time — large logs don't
         // sit duplicated in memory while the user ponders the panel.
         const bytes = new Uint8Array(await slot.file.arrayBuffer());
+        if (cancelledRef.current) return;
         const trajectory = await client.extract(bytes, slot.state.inspection, payload);
+        if (cancelledRef.current) return;
         routes.push({ relPath: slot.relPath, trajectory });
       } catch (error) {
+        if (cancelledRef.current) return;
         failures.push({ relPath: slot.relPath, message: error instanceof Error ? error.message : String(error) });
       }
     }
+    // The last guard: a cancel during the final await must not commit.
+    if (cancelledRef.current) return;
     onDone({ routes, failures });
   }, [slots, onDone, field]);
 
@@ -346,10 +369,18 @@ function FilePanel({
             name="wpilog-pose"
             checked={selection.pose.mode === 'fields'}
             onChange={() => {
-              const x = numericEntries.find((e) => /x/i.test(e.name.split('/').pop() ?? ''));
-              const y = numericEntries.find((e) => /\by\b/i.test(e.name.split('/').pop() ?? ''));
-              const heading = numericEntries.find((e) => /(heading|theta|angle|rot|yaw)/i.test(e.name));
-              if (!x || !y) return;
+              // Same rule as the default selection: stems only suggest.
+              const last = (e: typeof numericEntries[number]) => e.name.split('/').pop() ?? e.name;
+              const byStem = (patterns: RegExp[]) => {
+                for (const pattern of patterns) {
+                  const hit = numericEntries.find((e) => pattern.test(last(e)));
+                  if (hit) return hit;
+                }
+                return undefined;
+              };
+              const x = byStem([/x/i, /east/i, /lon/i]) ?? numericEntries[0]!;
+              const y = byStem([/\by\b/i, /north/i, /lat/i]) ?? numericEntries.find((e) => e !== x) ?? numericEntries[0]!;
+              const heading = byStem([/(heading|theta|angle|rot|yaw|bearing)/i]);
               patch({ pose: { mode: 'fields', xEntryId: x.id, yEntryId: y.id, headingEntryId: heading?.id }, headingUnit: 'deg' });
             }}
           />
@@ -379,23 +410,32 @@ function FilePanel({
       {selection.pose.mode === 'fields' && (
         <div className="wpilog-mapping">
           <label>{t('wpilog.xField')}
-            <select value={selection.pose.mode === 'fields' ? selection.pose.xEntryId : 0} onChange={(e) => selection.pose.mode === 'fields' && patch({ pose: { ...selection.pose, xEntryId: Number(e.target.value) } })}>
-              {numericEntries.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
-            </select>
+            <SelectControl
+              aria-label={t('wpilog.xField')}
+              value={String(selection.pose.mode === 'fields' ? selection.pose.xEntryId : 0)}
+              onValueChange={(value) => selection.pose.mode === 'fields' && patch({ pose: { ...selection.pose, xEntryId: Number(value) } })}
+            >
+              {numericEntries.map((entry) => <option key={entry.id} value={String(entry.id)}>{entry.name}</option>)}
+            </SelectControl>
           </label>
           <label>{t('wpilog.yField')}
-            <select value={selection.pose.mode === 'fields' ? selection.pose.yEntryId : 0} onChange={(e) => selection.pose.mode === 'fields' && patch({ pose: { ...selection.pose, yEntryId: Number(e.target.value) } })}>
-              {numericEntries.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
-            </select>
+            <SelectControl
+              aria-label={t('wpilog.yField')}
+              value={String(selection.pose.mode === 'fields' ? selection.pose.yEntryId : 0)}
+              onValueChange={(value) => selection.pose.mode === 'fields' && patch({ pose: { ...selection.pose, yEntryId: Number(value) } })}
+            >
+              {numericEntries.map((entry) => <option key={entry.id} value={String(entry.id)}>{entry.name}</option>)}
+            </SelectControl>
           </label>
           <label>{t('wpilog.headingField')}
-            <select
-              value={selection.pose.headingEntryId ?? ''}
-              onChange={(e) => selection.pose.mode === 'fields' && patch({ pose: { ...selection.pose, headingEntryId: e.target.value === '' ? undefined : Number(e.target.value) } })}
+            <SelectControl
+              aria-label={t('wpilog.headingField')}
+              value={selection.pose.headingEntryId !== undefined ? String(selection.pose.headingEntryId) : ''}
+              onValueChange={(value) => selection.pose.mode === 'fields' && patch({ pose: { ...selection.pose, headingEntryId: value === '' ? undefined : Number(value) } })}
             >
               <option value="">—</option>
-              {numericEntries.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
-            </select>
+              {numericEntries.map((entry) => <option key={entry.id} value={String(entry.id)}>{entry.name}</option>)}
+            </SelectControl>
           </label>
         </div>
       )}
@@ -452,28 +492,40 @@ function FilePanel({
         <div className="wpilog-units">
           <label>
             {t('wpilog.lengthUnit')}
-            <select value={selection.lengthUnit} onChange={(e) => patch({ lengthUnit: e.target.value as LengthUnit })}>
+            <SelectControl
+              aria-label={t('wpilog.lengthUnit')}
+              value={selection.lengthUnit}
+              onValueChange={(value) => patch({ lengthUnit: value as LengthUnit })}
+            >
               <option value="m">m</option>
               <option value="cm">cm</option>
               <option value="in">in</option>
               <option value="ft">ft</option>
-            </select>
+            </SelectControl>
           </label>
           <label>
             {t('wpilog.headingUnit')}
-            <select value={selection.headingUnit} onChange={(e) => patch({ headingUnit: e.target.value as HeadingUnit })}>
+            <SelectControl
+              aria-label={t('wpilog.headingUnit')}
+              value={selection.headingUnit}
+              onValueChange={(value) => patch({ headingUnit: value as HeadingUnit })}
+            >
               <option value="rad">rad</option>
               <option value="deg">deg</option>
-            </select>
+            </SelectControl>
           </label>
         </div>
       )}
       <label className="wpilog-inline">
         {t('wpilog.frame')}
-        <select value={selection.frameOrigin} onChange={(e) => patch({ frameOrigin: e.target.value as 'blue' | 'red' })}>
+        <SelectControl
+          aria-label={t('wpilog.frame')}
+          value={selection.frameOrigin}
+          onValueChange={(value) => patch({ frameOrigin: value as 'blue' | 'red' })}
+        >
           <option value="blue">{t('wpilog.frameBlue')}</option>
           <option value="red">{t('wpilog.frameRed')}</option>
-        </select>
+        </SelectControl>
       </label>
     </section>
 

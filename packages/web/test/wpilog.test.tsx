@@ -7,11 +7,14 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import { REBUILT_2026 } from '@pathblender/core';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { inspectWpilog as inspectWpilogCore, REBUILT_2026 } from '@pathblender/core';
 import type { WpilogIncomingFile, WpilogImportResult } from '../src/wpilog/WpilogImportDialog';
 import { WpilogImportDialog } from '../src/wpilog/WpilogImportDialog';
+
+// Worker stubs in the cancellation tests must not leak into later tests.
+afterEach(() => { vi.unstubAllGlobals(); });
 import { I18nProvider } from '../src/i18n';
 
 const SAMPLES = resolve(__dirname, '../../../samples');
@@ -40,14 +43,18 @@ describe('WpilogImportDialog', () => {
     expect(importButton.disabled).toBe(true);
   });
 
-  it('reads the real DogLog fixture and lands on its honest limits', async () => {
-    // The fixture logs telemetry but no field pose — the dialog must say so
-    // rather than inventing a route from joysticks.
+  it('reads the real DogLog fixture: no pose candidates, mapping stays open', async () => {
+    // The fixture logs telemetry but no field pose. Since the acceptance
+    // fix, numeric entries open the manual mapping instead of a dead end —
+    // the panel must still SAY there are no pose candidates rather than
+    // inventing a route from joysticks.
     render(<I18nProvider><WpilogImportDialog
       {...dialogProps([{ file: new File([FIXTURE], 'doglog.wpilog'), relPath: 'doglog.wpilog' }], () => undefined)}
     /></I18nProvider>);
-    await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy(), { timeout: 6000 });
-    expect(screen.getByRole('alert').textContent).toMatch(/No pose data/i);
+    await waitFor(() => expect(document.querySelector('.wpilog-panel')).toBeTruthy(), { timeout: 6000 });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText(/No pose data/i)).toBeTruthy();
+    expect(screen.getAllByRole('combobox').length).toBeGreaterThanOrEqual(3);
   });
 
   it('routes a synthetic log through candidate → interval → route', async () => {
@@ -230,6 +237,146 @@ function buildLog(): Uint8Array {
   writer.record(cw, 3_500_000, cwBytes(2, false));
   return writer.bytes();
 }
+
+
+/* ------------------------------------------------------------------ */
+/* Acceptance regressions (2026-11-05 report)                          */
+/* ------------------------------------------------------------------ */
+
+describe('wpilog acceptance regressions', () => {
+  /** east/north/bearing: no pose-named entry anywhere, numeric fields only. */
+  function buildCustomLog() {
+    const writer = new LogWriter();
+    const east = writer.start('east', 'double');
+    const north = writer.start('north', 'double');
+    const bearing = writer.start('bearing', 'double');
+    for (let i = 0; i <= 2; i++) {
+      writer.record(east, i * 500_000, f64le(1 + i * 0.5));
+      writer.record(north, i * 500_000, f64le(2));
+    }
+    writer.record(bearing, 0, f64le(179));
+    writer.record(bearing, 1_000_000, f64le(-179));
+    return { log: writer.bytes(), east, north, bearing };
+  }
+
+  it('arbitrarily named numeric fields reach manual mapping and import', async () => {
+    const { log, bearing } = buildCustomLog();
+    const results: WpilogImportResult[] = [];
+    render(<I18nProvider><WpilogImportDialog
+      {...dialogProps([{ file: new File([log], 'custom.wpilog'), relPath: 'custom.wpilog' }], (r) => results.push(r))}
+    /></I18nProvider>);
+    // Inspection finishes WITHOUT the dead-end alert (the P2: east/north
+    // names must not gate the manual-mapping entry).
+    await waitFor(() => expect(document.querySelector('.wpilog-panel')).toBeTruthy(), { timeout: 5000 });
+    expect(screen.queryByRole('alert')).toBeNull();
+    // The mapping controls are present and drive the SelectControl comboboxes.
+    const boxes = screen.getAllByRole('combobox');
+    expect(boxes.length).toBeGreaterThanOrEqual(3);
+    expect(document.querySelectorAll('.wpilog-panel select').length).toBe(0); // no native selects
+    // The heading mapping lands on `bearing` by stem suggestion; confirm imports it.
+    const importButton = document.querySelector('.wpilog-actions button.accent') as HTMLButtonElement;
+    await waitFor(() => expect(importButton.disabled).toBe(false), { timeout: 5000 });
+    fireEvent.click(importButton);
+    await waitFor(() => expect(results).toHaveLength(1));
+    const traj = results[0]!.routes[0]!.trajectory;
+    expect(traj.samples.length).toBe(3);
+    // Heading joined across ±180° through the custom bearing field.
+    expect(Math.abs(traj.samples[1]!.heading)).toBeCloseTo(Math.PI, 6);
+    void bearing;
+  });
+
+  it('the mapping comboboxes follow the shared keyboard contract', async () => {
+    const { log } = buildCustomLog();
+    render(<I18nProvider><WpilogImportDialog
+      {...dialogProps([{ file: new File([log], 'custom.wpilog'), relPath: 'custom.wpilog' }], () => undefined)}
+    /></I18nProvider>);
+    await waitFor(() => expect(screen.getAllByRole('combobox').length).toBeGreaterThanOrEqual(3), { timeout: 5000 });
+    const x = screen.getByRole('combobox', { name: 'x entry' });
+    // Open → listbox appears; Escape closes the list and keeps the dialog
+    // (a second Escape would be the dialog's, per the SelectControl
+    // contract shared with every other dropdown in the app).
+    const { openCombobox, pickComboboxValue } = await import('./combobox');
+    const list = openCombobox(x);
+    expect(within(list).getAllByRole('option').length).toBeGreaterThan(0);
+    fireEvent.keyDown(x, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(document.querySelector('.wpilog-dialog')).toBeTruthy();
+    // Re-keyboard-drive another mapping: pick `bearing` for y via value.
+    const y = screen.getByRole('combobox', { name: 'y entry' });
+    const yList = openCombobox(y);
+    const bearingOption = within(yList).getAllByRole('option')
+      .find((option) => option.getAttribute('data-value') !== undefined);
+    fireEvent.click(bearingOption!);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(document.querySelector('.wpilog-dialog')).toBeTruthy();
+    void pickComboboxValue;
+  });
+
+  it('cancel/unmount during extraction prevents a late import callback', async () => {
+    const instances: MockWorker[] = [];
+    class MockWorker {
+      onmessage: ((event: { data: unknown }) => void) | null = null;
+      onerror = null;
+      terminated = false;
+      constructor() { instances.push(this); }
+      postMessage(message: { type: string; bytes?: Uint8Array; fileName?: string }) {
+        if (message.type === 'inspect') {
+          const bytes = message.bytes!;
+          queueMicrotask(() => this.onmessage?.({ data: {
+            type: 'inspection', inspection: inspectWpilogCore(bytes, message.fileName ?? 'x.wpilog'),
+          } }));
+        }
+      }
+      terminate() { this.terminated = true; }
+    }
+    vi.stubGlobal('Worker', MockWorker);
+    const writer = new LogWriter();
+    const x = writer.start('x', 'double');
+    const y = writer.start('y', 'double');
+    for (let i = 0; i <= 2; i++) {
+      writer.record(x, i * 500_000, f64le(i));
+      writer.record(y, i * 500_000, f64le(1));
+    }
+    const done = vi.fn();
+    const view = render(<I18nProvider><WpilogImportDialog
+      files={[{ file: new File([writer.bytes()], 'valid.wpilog'), relPath: 'valid.wpilog' }]}
+      field={REBUILT_2026} onDone={done} onCancel={() => view.unmount()}
+    /></I18nProvider>);
+    await waitFor(() => expect(document.querySelector('.wpilog-actions .accent')).not.toBeDisabled(), { timeout: 5000 });
+    fireEvent.click(document.querySelector('.wpilog-actions .accent')!);
+    await waitFor(() => expect(instances).toHaveLength(2), { timeout: 5000 }); // inspect + one-shot extract
+    fireEvent.click(document.querySelector('.wpilog-actions button')!); // cancel → unmount
+    // Unmount must have terminated the extraction worker…
+    expect(instances[1]!.terminated).toBe(true);
+    // …and a reply racing after cancel is dropped: no import fires.
+    instances[1].onmessage?.({ data: { type: 'trajectory', trajectory: { samples: [] } as never } });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(done).not.toHaveBeenCalled();
+  });
+
+  it('re-importing immediately after cancel works on a fresh dialog', async () => {
+    const { log } = buildCustomLog();
+    let queue: Array<{ file: File; relPath: string }> | null = [{ file: new File([log], 'custom.wpilog'), relPath: 'custom.wpilog' }];
+    const { rerender } = render(<I18nProvider><WpilogImportDialog
+      files={queue ?? []}
+      field={REBUILT_2026}
+      onDone={() => { queue = null; }}
+      onCancel={() => { queue = null; }}
+    /></I18nProvider>);
+    // Cancel, then reopen with a new queue — a fresh dialog instance must
+    // inspect and import cleanly (no state carried over from the cancel).
+    await waitFor(() => expect(document.querySelector('.wpilog-panel')).toBeTruthy(), { timeout: 5000 });
+    fireEvent.click(document.querySelector('.wpilog-actions button')!);
+    await waitFor(() => expect(queue).toBeNull(), { timeout: 2000 });
+    rerender(<I18nProvider><WpilogImportDialog
+      files={[]}
+      field={REBUILT_2026}
+      onDone={() => undefined}
+      onCancel={() => undefined}
+    /></I18nProvider>);
+    expect(document.querySelector('.wpilog-dialog')).toBeTruthy();
+  });
+});
 
 /* ------------------------------------------------------------------ */
 /* App integration: .wpilog files detour into the dialog             */

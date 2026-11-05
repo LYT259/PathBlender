@@ -847,6 +847,127 @@ describe('wpilog large-series regression', () => {
   });
 });
 
+
+describe('wpilog acceptance regressions (2026-11-05 report)', () => {
+  /** east/north/bearing custom-mapping log: heading at 0/1 s, x/y at 0/0.5/1 s. */
+  function buildCustomLog() {
+    const writer = new WpilogWriter();
+    const east = writer.start('east', 'double');
+    const north = writer.start('north', 'double');
+    const bearing = writer.start('bearing', 'double');
+    for (let i = 0; i <= 2; i++) {
+      writer.data(east, i * 500_000, f64(1));
+      writer.data(north, i * 500_000, f64(2));
+    }
+    writer.data(bearing, 0, f64(179));
+    writer.data(bearing, 1_000_000, f64(-179));
+    return { bytes: writer.bytes(), east, north, bearing };
+  }
+
+  function customExtraction(bytes: Uint8Array, east: number, north: number, bearing: number) {
+    return extractWpilogTrajectory(bytes, inspectWpilog(bytes, 'custom.wpilog'), {
+      pose: { mode: 'fields', xEntryId: east, yEntryId: north, headingEntryId: bearing },
+      interval: { mode: 'manual', startS: 0, endS: 1 },
+      lengthUnit: 'm',
+      headingUnit: 'deg',
+      name: 'custom.wpilog',
+    });
+  }
+
+  it('custom heading interpolation crosses ±180° by the shortest arc (degrees)', () => {
+    const log = buildCustomLog();
+    const traj = customExtraction(log.bytes, log.east, log.north, log.bearing);
+    // 179° at t=0 and −179° at t=1: the t=0.5 join must be ±π, not 0.
+    expect(traj.samples[1]!.t).toBeCloseTo(0.5, 6);
+    expect(Math.abs(traj.samples[1]!.heading)).toBeCloseTo(Math.PI, 6);
+    expect(traj.samples[1]!.heading).toBeGreaterThan(0); // 179→180→−179 direction
+  });
+
+  it('custom heading interpolation wraps in radians and across sample-rate mismatches', () => {
+    // Radians, heading at half the x rate: heading 3.10 at t=0, −3.10 at t=2.
+    const writer = new WpilogWriter();
+    const x = writer.start('x', 'double');
+    const y = writer.start('y', 'double');
+    const heading = writer.start('heading', 'double');
+    for (let i = 0; i <= 4; i++) {
+      writer.data(x, i * 500_000, f64(i * 0.1));
+      writer.data(y, i * 500_000, f64(1));
+    }
+    writer.data(heading, 0, f64(3.10));
+    writer.data(heading, 2_000_000, f64(-3.10));
+    const bytes = writer.bytes();
+    const traj = extractWpilogTrajectory(bytes, inspectWpilog(bytes, 'r.wpilog'), {
+      pose: { mode: 'fields', xEntryId: x, yEntryId: y, headingEntryId: heading },
+      interval: { mode: 'manual', startS: 0, endS: 2 },
+      lengthUnit: 'm',
+      headingUnit: 'rad',
+      name: 'r.wpilog',
+    });
+    // Halfway (t=1, an x-only sample) the heading joins across the wrap:
+    // |3.10 + shortestArc(3.10→−3.10)/2| ≈ π, not ≈ 0.
+    const mid = traj.samples.find((sample) => Math.abs(sample.t - 1) < 1e-9);
+    expect(mid).toBeDefined();
+    expect(Math.abs(mid!.heading)).toBeCloseTo(Math.PI, 2);
+  });
+
+  it('sequences keep gap semantics: a held pose stays held inside a composition', async () => {
+    const { makeSession, sampleStateAt, resolveSequence } = await import('../src');
+    const log = buildCustomLog();
+    const base = customExtraction(log.bytes, log.east, log.north, log.bearing);
+    // Two samples t=0/x=1 → t=10/x=11 with the whole span uncovered: the
+    // standalone route holds x=1 at t=5 (never interpolates), and the very
+    // same route inside a one-segment composition must agree (P1).
+    const trajectory = {
+      ...base,
+      samples: [
+        { t: 0, x: 1, y: 2, heading: 0, vx: 0, vy: 0, omega: 0 },
+        { t: 10, x: 11, y: 2, heading: 0, vx: 0, vy: 0, omega: 0 },
+      ],
+      durationS: 10,
+      gaps: [{ startT: 0, endT: 10, kind: 'gap' as const }],
+    };
+    const session = makeSession(trajectory);
+    const standalone = sampleStateAt(session, 5);
+    expect(standalone!.x).toBe(1);
+    session.routeOptions = [{ id: 'r', relPath: 'custom.wpilog', trajectory }];
+    session.sequence = { segments: [{ id: 's', routeId: 'r', waitBeforeS: 0 }] };
+    const composed = sampleStateAt(session, 5);
+    expect(composed!.x).toBe(standalone!.x); // held, not 6
+    expect(composed!.vx).toBe(0);
+    // The resolver serves the truncated/composed views with gaps intact.
+    const resolved = resolveSequence(session)!;
+    expect(resolved[0]!.trajectory.gaps).toHaveLength(1);
+  });
+
+  it('truncating a log route inside a gap holds the pose at the cut', async () => {
+    // truncateTrajectory (playS path) runs through segmentDuration views in
+    // the composer; a cut inside a gap must hold, per the same semantics.
+    const { makeSession, resolveSequence } = await import('../src');
+    const log = buildCustomLog();
+    const base = customExtraction(log.bytes, log.east, log.north, log.bearing);
+    const trajectory = {
+      ...base,
+      samples: [
+        { t: 0, x: 1, y: 2, heading: 0, vx: 0, vy: 0, omega: 0 },
+        { t: 10, x: 11, y: 2, heading: 0, vx: 0, vy: 0, omega: 0 },
+      ],
+      durationS: 10,
+      gaps: [{ startT: 0, endT: 10, kind: 'gap' as const }],
+    };
+    const session = makeSession(trajectory);
+    session.routeOptions = [{ id: 'r', relPath: 'custom.wpilog', trajectory }];
+    session.sequence = { segments: [{ id: 's', routeId: 'r', waitBeforeS: 0, playS: 5 }] };
+    const resolved = resolveSequence(session)!;
+    expect(resolved[0]!.endS).toBeCloseTo(5, 6);
+    // The truncated view ends at t=5 inside the gap: its final sample must
+    // be the held pose (x=1), not the interpolated x=6.
+    const cut = resolved[0]!.trajectory;
+    expect(cut.samples.at(-1)!.x).toBe(1);
+    expect(cut.samples.at(-1)!.vx).toBe(0);
+    expect(cut.gaps ?? []).toHaveLength(1);
+  });
+});
+
 describe('wpilog collision semantics', () => {
   it('a robot held across a gap participates in collisions at its held pose', async () => {
     const { detectCollisions, makeSession, sampleStateAt } = await import('../src');
