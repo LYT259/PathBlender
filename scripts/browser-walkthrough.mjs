@@ -47,15 +47,22 @@ const check = (name, ok, detail = '') => {
 // seconds — every navigation from a page with live WebGL contexts stalls
 // (measured 2026-11-05: reload 20 s+ vs 94 ms on a hardware backend). Pin a
 // hardware-backed ANGLE backend per platform so the walkthrough exercises
-// the app, not the software renderer's teardown path. Linux `gl` runs on
-// Mesa llvmpipe under Xvfb (CI wraps this script in xvfb-run). Linux and
-// Windows also pass --in-process-gpu: headless otherwise fails native-backend
-// context creation with "BindToCurrentSequence failed" (run 42004826050).
-const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11 --in-process-gpu', linux: '--use-angle=gl --in-process-gpu' }[process.platform];
-const backendArgs = ANGLE_BACKEND ? ANGLE_BACKEND.split(' ') : [];
+// the app, not the software renderer's teardown path. Native backends need a
+// real window server though: headless context creation fails with
+// "BindToCurrentSequence failed" (runs 42004826050/42008242198, even with
+// --in-process-gpu). CI therefore runs headed (WALK_HEADFUL=1): Linux under
+// xvfb-run (Mesa llvmpipe), Windows on the runner's interactive desktop
+// (D3D11 WARP) — CDP input and screenshots do not need the window on screen.
+// macOS Metal keeps working headless and stays that way.
+const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11', linux: '--use-angle=gl' }[process.platform];
+const backendArgs = (ANGLE_BACKEND ? [ANGLE_BACKEND] : []).concat(
+  process.env.WALK_HEADFUL === '1' ? ['--no-first-run', '--no-default-browser-check'] : [],
+);
+const headful = process.env.WALK_HEADFUL === '1';
+const launchOpts = { headless: !headful, args: backendArgs };
 const browser = await chromium
-  .launch(process.env.WALK_CHROME === '0' ? { args: backendArgs } : { channel: 'chrome', args: backendArgs })
-  .catch(() => chromium.launch({ args: backendArgs }));
+  .launch(process.env.WALK_CHROME === '0' ? launchOpts : { ...launchOpts, channel: 'chrome' })
+  .catch(() => chromium.launch(launchOpts));
 const ctx = await browser.newContext({
   viewport: { width: 1440, height: 900 },
   locale: 'en-US',

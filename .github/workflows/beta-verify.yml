@@ -31,6 +31,10 @@ jobs:
     if: needs.policy.outputs.docs_only == 'false'
     runs-on: windows-latest
     timeout-minutes: 60
+    env:
+      # Headed: D3D11 WARP WebGL needs the interactive desktop; headless
+      # context creation fails with "BindToCurrentSequence failed".
+      WALK_HEADFUL: 1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -199,6 +203,10 @@ jobs:
     if: needs.policy.outputs.docs_only == 'false'
     runs-on: ubuntu-22.04
     timeout-minutes: 60
+    env:
+      # Headed under xvfb-run: Mesa llvmpipe WebGL needs an X display;
+      # headless context creation fails with "BindToCurrentSequence failed".
+      WALK_HEADFUL: 1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -215,10 +223,9 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      # The walkthrough pins --use-angle=gl; on this GPU-less runner that
-      # backend needs an X display, served by Xvfb (installed above). Headless
-      # default there is SwiftShader, whose GL teardown freezes every
-      # navigation away from a page with WebGL contexts for 20 s+ (2026-11-05).
+      # Headed under Xvfb (WALK_HEADFUL=1): the --use-angle=gl backend needs
+      # an X display; headless would fall back to SwiftShader, whose GL
+      # teardown freezes every navigation for 20 s+ (2026-11-05).
       - run: xvfb-run -a node scripts/candidate-browser-check.mjs
       - uses: actions/upload-artifact@v4
         if: always()

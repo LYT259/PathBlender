@@ -22,14 +22,18 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`);
 };
 
-// Same backend pin as browser-walkthrough.mjs: SwiftShader's GL teardown
-// freezes GPU-less runs and its software rendering alone blows the 3D
-// assertions' timeouts (measured 2026-11-05).
-const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11 --in-process-gpu', linux: '--use-angle=gl --in-process-gpu' }[process.platform];
-const backendArgs = ANGLE_BACKEND ? ANGLE_BACKEND.split(' ') : [];
+// Same backend pin and headful handling as browser-walkthrough.mjs:
+// SwiftShader's GL teardown freezes GPU-less runs, native backends need a
+// window server (CI runs headed via WALK_HEADFUL=1).
+const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11', linux: '--use-angle=gl' }[process.platform];
+const backendArgs = (ANGLE_BACKEND ? [ANGLE_BACKEND] : []).concat(
+  process.env.WALK_HEADFUL === '1' ? ['--no-first-run', '--no-default-browser-check'] : [],
+);
+const headful = process.env.WALK_HEADFUL === '1';
+const launchOpts = { headless: !headful, args: backendArgs };
 const browser = await chromium
-  .launch(process.env.WALK_CHROME === '0' ? { args: backendArgs } : { channel: 'chrome', args: backendArgs })
-  .catch(() => chromium.launch({ args: backendArgs }));
+  .launch(process.env.WALK_CHROME === '0' ? launchOpts : { ...launchOpts, channel: 'chrome' })
+  .catch(() => chromium.launch(launchOpts));
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'en-US' });
 const page = await ctx.newPage();
 const errors = [];
