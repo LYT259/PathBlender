@@ -48,9 +48,11 @@ const check = (name, ok, detail = '') => {
 // (measured 2026-11-05: reload 20 s+ vs 94 ms on a hardware backend). Pin a
 // hardware-backed ANGLE backend per platform so the walkthrough exercises
 // the app, not the software renderer's teardown path. Linux `gl` runs on
-// Mesa llvmpipe under Xvfb (CI wraps this script in xvfb-run).
-const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11', linux: '--use-angle=gl' }[process.platform];
-const backendArgs = ANGLE_BACKEND ? [ANGLE_BACKEND] : [];
+// Mesa llvmpipe under Xvfb (CI wraps this script in xvfb-run). Linux and
+// Windows also pass --in-process-gpu: headless otherwise fails native-backend
+// context creation with "BindToCurrentSequence failed" (run 42004826050).
+const ANGLE_BACKEND = { darwin: '--use-angle=metal', win32: '--use-angle=d3d11 --in-process-gpu', linux: '--use-angle=gl --in-process-gpu' }[process.platform];
+const backendArgs = ANGLE_BACKEND ? ANGLE_BACKEND.split(' ') : [];
 const browser = await chromium
   .launch(process.env.WALK_CHROME === '0' ? { args: backendArgs } : { channel: 'chrome', args: backendArgs })
   .catch(() => chromium.launch({ args: backendArgs }));
