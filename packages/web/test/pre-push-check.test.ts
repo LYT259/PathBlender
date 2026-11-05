@@ -605,3 +605,26 @@ describe('doctor and install-rules', () => {
     r.clean();
   });
 });
+
+describe('negative resolution before existence check', () => {
+  it('manual ranges with abbreviated SHAs keep their negative (no full-history sweep)', () => {
+    // 2026-11-05: cat-file --batch-check does not resolve short SHAs or
+    // rev expressions, so manual-mode ranges dropped every negative and
+    // scanned entire histories — a worktree push swept in 1081 commits
+    // including blobs a repo-hygiene commit had long removed. Existence
+    // must be checked on resolved full OIDs.
+    const root = resolve(__dirname, '../../..');
+    const short = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+    const parent = execFileSync('git', ['rev-parse', 'HEAD~1'], { cwd: root, encoding: 'utf8' }).trim();
+    const res = spawnSync('node', [SCRIPT, '--range', `${parent.slice(0, 10)}..${short}`], {
+      cwd: root,
+      encoding: 'utf8',
+    });
+    const out = `${res.stdout ?? ''}${res.stderr ?? ''}`;
+    expect(out).toContain('manual range');
+    // The abbreviated parent must survive as a negative: the scan covers
+    // exactly one commit, not the repository's whole history.
+    expect(out).toMatch(/→ 1 commit\(s\)/);
+    expect(out).toContain('clean');
+  });
+});
