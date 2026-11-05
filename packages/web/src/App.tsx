@@ -868,7 +868,12 @@ function AppBody() {
     file.ui = { selectedId, t, playbackRange };
     void saveText(
       `session-${new Date().toISOString().slice(0, 10)}${SESSION_EXT}`,
-      'json',
+      // The filter extension must BE the session extension: macOS save
+      // panels append the active filter's extension, so 'json' turned the
+      // suggested "session-DATE.pb" into "…pb.json" on disk — a name
+      // isSessionFileName rejects, making every ⌘S session impossible to
+      // reopen (found driving the desktop save/reopen flow 2026-11-05).
+      SESSION_EXT.slice(1),
       JSON.stringify(file, null, 2),
     );
   }, [robots, fieldId, field, selectedId, t, playbackRange]);
