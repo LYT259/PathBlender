@@ -612,19 +612,30 @@ describe('negative resolution before existence check', () => {
     // rev expressions, so manual-mode ranges dropped every negative and
     // scanned entire histories — a worktree push swept in 1081 commits
     // including blobs a repo-hygiene commit had long removed. Existence
-    // must be checked on resolved full OIDs.
-    const root = resolve(__dirname, '../../..');
-    const short = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
-    const parent = execFileSync('git', ['rev-parse', 'HEAD~1'], { cwd: root, encoding: 'utf8' }).trim();
-    const res = spawnSync('node', [SCRIPT, '--range', `${parent.slice(0, 10)}..${short}`], {
-      cwd: root,
-      encoding: 'utf8',
-    });
-    const out = `${res.stdout ?? ''}${res.stderr ?? ''}`;
-    expect(out).toContain('manual range');
-    // The abbreviated parent must survive as a negative: the scan covers
-    // exactly one commit, not the repository's whole history.
-    expect(out).toMatch(/→ 1 commit\(s\)/);
-    expect(out).toContain('clean');
+    // must be checked on resolved full OIDs. The fixture repo guarantees
+    // a real parent commit even in CI's shallow checkouts of THIS repo.
+    const repo = makeRepo(true, false);
+    try {
+      writeFileSync(join(repo.dir, 'a.txt'), 'first\n');
+      repo.g('add', '.');
+      repo.g('commit', '-qm', 'first');
+      writeFileSync(join(repo.dir, 'b.txt'), 'second\n');
+      repo.g('add', '.');
+      repo.g('commit', '-qm', 'second');
+      const short = repo.g('rev-parse', '--short', 'HEAD');
+      const parent = repo.g('rev-parse', 'HEAD~1');
+      const res = spawnSync('node', [SCRIPT, '--range', `${parent.slice(0, 10)}..${short}`], {
+        cwd: repo.dir,
+        encoding: 'utf8',
+        env: GITENV,
+      });
+      const out = `${res.stdout ?? ''}${res.stderr ?? ''}`;
+      // The abbreviated parent survives as a negative: exactly one commit
+      // scanned (the head), not the fixture's whole history — and clean.
+      expect(out).toMatch(/→ 1 commit\(s\)/);
+      expect(out).toContain('clean');
+    } finally {
+      repo.clean();
+    }
   });
 });
