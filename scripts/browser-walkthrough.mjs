@@ -75,11 +75,16 @@ const launchOpts = { headless: !headful, args: backendArgs };
 const browser = await chromium
   .launch(process.env.WALK_CHROME === '0' ? launchOpts : { ...launchOpts, channel: 'chrome' })
   .catch(() => chromium.launch(launchOpts));
+// Software-GL backends (CI Linux/Windows) are slow everywhere: the prewarm's
+// first hidden 3D frame alone can block interaction for tens of seconds
+// (run 42019197117: a composer undo click timed out mid-action on WARP).
+// Budget waits accordingly — assertions themselves are unchanged.
 const ctx = await browser.newContext({
   viewport: { width: 1440, height: 900 },
   locale: 'en-US',
   permissions: ['clipboard-read', 'clipboard-write'],
 });
+ctx.setDefaultTimeout(120_000);
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
