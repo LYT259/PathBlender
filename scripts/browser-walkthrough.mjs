@@ -997,10 +997,12 @@ const clickCube = async (fx, fy) => {
   await page.mouse.move(vcBox.x + vcBox.width * fx, vcBox.y + vcBox.height * fy);
   await page.mouse.down();
   await page.mouse.up();
+  // Software-GL runners (CI Linux llvmpipe) dispatch pointer events between
+  // multi-second frames; the pick still lands, just later — budget for it.
   const picked = await page.waitForFunction(
     () => (window.__pb3d.lastPick ? true : false),
     undefined,
-    { timeout: 4000, polling: 100 },
+    { timeout: 30_000, polling: 250 },
   ).then(() => true).catch(() => false);
   if (!picked) return null; // the click landed off the cube — reported as a miss, not a crash
   const lp = await page.evaluate(() => {
@@ -1026,7 +1028,7 @@ const clickCube = async (fx, fy) => {
         return Math.abs(dAz) < 0.1 && Math.abs(c.getPolarAngle() - tPol) < 0.1;
       },
       lp,
-      { timeout: 6000, polling: 100 },
+      { timeout: 30_000, polling: 250 },
     )
     .then(() => true)
     .catch(async () => {
