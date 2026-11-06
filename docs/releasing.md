@@ -2,13 +2,27 @@
 
 > 依据：许可证（Apache-2.0 + 第三方 MIT/BSD 归属）与 GitHub 操作纪律。
 
+## Beta delivery policy / Beta 交付流程 (2026-11-04)
+
+Every feature, fix, or other non-documentation change must pass the **Beta gate** before merging: full repository tests and type/version checks on macOS, Windows and Linux, desktop builds, and installation/launch smoke checks. macOS checks a sealed Universal DMG; Windows installs NSIS; Linux installs DEB and launches AppImage and the expanded RPM payload. These checks use disposable runners and keys, never the production signing key. They do not establish compatibility with every physical device.
+
+Browser walkthroughs pin a hardware-backed ANGLE backend per platform (Metal on macOS, D3D11/WARP on Windows, GL on Mesa under Xvfb on Linux). The headless default on GPU-less runners is SwiftShader, whose WebGL context teardown at page unload freezes the main thread for 20+ seconds and turns every reload into a timeout — verification would test the software renderer's teardown, not the app. The SwiftShader stall itself remains a real limitation for users on software-rendered Chromium browsers and is listed in the release notes' known issues; it is not exercised by CI.
+
+For owner-directed work, the PR app creates the PR; an independent reviewer agent reviews the final diff and evidence, then the executing agent submits the delegated owner approval and merges once required checks pass. External contributions still require the owner's personal approval. A green gate alone does not grant review approval.
+
+Each non-documentation merge to beta receives a unique, increasing beta version and **its own Pre-release**. The push workflow pins the tag to that merge commit and calls the release workflow explicitly; it does not rely on a token-created tag triggering another workflow. Confirm the Release and all five installer formats exist before reporting delivery. Stable promotion retains its separate approval requirements.
+
+Documentation-only PRs retain review and privacy checks but skip platform builds, version bumps, tags and releases. The classifier permits only README/contribution/security prose and Markdown under docs, excluding release-note inputs. Mixed changes, packaged notices, dependencies, workflows, translations, code and assets are not documentation-only. “Direct merge” means the normal approved PR merge, never a bypass of branch protection.
+
+功能、修复及其他非纯文档改动：最终候选三端测试、构建、安装／启动验证全绿 → 独立复核与委托批准 → 合入 beta → 每次发布一个新 Pre-release。纯文档保留复核及隐私检查，合入 beta，不跑三端、不抬号、不发版。Linux RPM 在 Ubuntu 展开验证，不宣称已完成 RPM 系发行版原生安装验收。
+
 ## 构建与质量
 
 - [ ] **推送前门禁**：`scripts/pre-push-check.mjs`（git pre-push 钩子自动执行；新克隆后先跑 `scripts/install-hooks.sh`——它安装共享钩子、迁移/创建共享私有匹配规则（`.git/info/pathblender-privacy-rules`，全工作树共用），并以 `--doctor` 报告 READY / NOT READY）。门禁按对象扫描全部待推引用：提交/附注标签的作者、提交者与 tagger 身份和消息、树路径、软链目标、文件内容，外加「绕过 .gitignore 强加的私有文件」检测；命中一律中止，输出只给类别与定位、不回显敏感值；规则缺失/损坏或对象读取失败同样中止而不是放行。2026-09-02 教训：一次性扫描会随日志追加失效，门禁是唯一可靠形态。
 
 - [ ] `npm run typecheck` 零错误
 - [ ] `npm run version:check`（七处版本号同源：root / core / web / desktop 的 package.json + tauri.conf.json + Cargo.toml + web `version-info.ts`；SW 缓存名取 root 值）
-- [ ] 版本号生命周期（2026-10-01 定稿）：每次合 beta 经 `scripts/bump-version.mjs beta "说明"` 抬 `-beta.N`（附用户可懂说明，偏好设置「关于」展示/一键复制）；发版时 `bump-version.mjs release` 去后缀得正式号，再打 `v*` tag；**同一版本号永不对应两种内容**——有问题需重发时用新号，旧版安装包留在 Release 里可回退
+- [ ] 版本号生命周期（2026-10-01 定稿）：每次非纯文档合 beta 经 `scripts/bump-version.mjs beta "说明"` 抬 `-beta.N`（附用户可懂说明，偏好设置「关于」展示/一键复制）；发版时 `bump-version.mjs release` 去后缀得正式号，再打 `v*` tag；**同一版本号永不对应两种内容**——有问题需重发时用新号，旧版安装包留在 Release 里可回退
 - [ ] `npm test` 全绿（core + web e2e）
 - [ ] `npm run build` 成功；`packages/web/dist` 体积合理（gzip JS < 300 KB 量级）
 - [ ] 本地 `npm run build -w @pathblender/web && npm run preview -w @pathblender/web` 后跑两个真实浏览器走查脚本并全绿：`node scripts/browser-walkthrough.mjs`（鼠标 + 真实文件：四格式导入 → 回放 → 碰撞 → 路线库编排 → 43 语言与 RTL → 会话存/取 → GIF 与方案包导出 → 服务工作者 → 3D）、`node scripts/keyboard-walkthrough.mjs`（纯键盘走通同一成品）。界面一改，脚本同步改在同一个 PR 里，别留下指向已删控件的断言

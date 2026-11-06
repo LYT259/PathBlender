@@ -31,8 +31,16 @@ import { mkdirSync, readFileSync, readdirSync as readdir } from 'node:fs';
 import { resolve } from 'node:path';
 
 const BASE = process.env.WALK_BASE ?? 'http://localhost:4173/';
-const SHOTS = '/tmp/pb-shots';
+const SHOTS = process.env.WALK_SHOTS ?? '/tmp/pb-shots';
 const SAMPLES = resolve(process.cwd(), 'samples');
+// Navigating away from a page with live WebGL contexts blocks on GL context
+// teardown. On hardware backends that is milliseconds; on the software GL the
+// GPU-less Linux/Windows runners must use (Mesa llvmpipe / D3D11 WARP, un-
+// blocklisted for this verification) it measured 30 s+ per navigation — the
+// navigation still completes and every post-navigation assertion still runs,
+// so the waits budget for it instead of the default 30 s. No check is skipped
+// or weakened by this constant; it only sizes a wait.
+const NAV_TIMEOUT_MS = 120_000;
 mkdirSync(SHOTS, { recursive: true });
 
 const results = [];
@@ -42,14 +50,51 @@ const check = (name, ok, detail = '') => {
 };
 
 // System Chrome when present (no 150MB playwright download); bundled otherwise.
+// GPU-less runs (CI, bundled headless shell) would fall back to SwiftShader,
+// whose GL context teardown at page unload blocks the main thread for tens of
+// seconds — every navigation from a page with live WebGL contexts stalls
+// (measured 2026-11-05: reload 20 s+ vs 94 ms on a hardware backend). Pin a
+// hardware-backed ANGLE backend per platform so the walkthrough exercises
+// the app, not the software renderer's teardown path. Native backends need a
+// real window server though: headless context creation fails with
+// "BindToCurrentSequence failed" (runs 42004826050/42008242198, even with
+// --in-process-gpu). CI therefore runs headed (WALK_HEADFUL=1): Linux under
+// xvfb-run (Mesa llvmpipe), Windows on the runner's interactive desktop
+// (D3D11 WARP) — CDP input and screenshots do not need the window on screen.
+// macOS Metal keeps working headless and stays that way. Linux and Windows
+// also pass --ignore-gpu-blocklist: Mesa llvmpipe and Microsoft Basic Render
+// Driver are denylisted software adapters, which silently blocks WebGL
+// entirely (run 42013910173: the 3D view fell back to 2D with no console
+// error and every 3D check timed out).
+// One argv element per flag, always: Chromium parses only the first `=` of
+// an element, so a space-joined single element silently drops every flag
+// after the first on some builds (independent review 2026-11-06). The CI
+// system Chromes happened to honor the joined form (runs on 6751985/4ba13e6
+// rendered real 3D on llvmpipe/WARP), but that is not semantics to rely on.
+const PLATFORM_FLAGS = {
+  darwin: ['--use-angle=metal'],
+  win32: ['--use-angle=d3d11', '--ignore-gpu-blocklist'],
+  linux: ['--use-angle=gl', '--ignore-gpu-blocklist'],
+}[process.platform] ?? [];
+const backendArgs = [...PLATFORM_FLAGS,
+  ...(process.env.WALK_HEADFUL === '1' ? ['--no-first-run', '--no-default-browser-check'] : [])];
+const headful = process.env.WALK_HEADFUL === '1';
+const launchOpts = { headless: !headful, args: backendArgs };
 const browser = await chromium
-  .launch(process.env.WALK_CHROME === '0' ? {} : { channel: 'chrome' })
-  .catch(() => chromium.launch());
+  .launch(process.env.WALK_CHROME === '0' ? launchOpts : { ...launchOpts, channel: 'chrome' })
+  .catch(() => chromium.launch(launchOpts));
+// Software-GL backends (CI Linux/Windows) are slow everywhere: the prewarm's
+// first hidden 3D frame alone can block interaction for tens of seconds
+// (run 42019197117: a composer undo click timed out mid-action on WARP).
+// Budget waits accordingly — assertions themselves are unchanged.
 const ctx = await browser.newContext({
   viewport: { width: 1440, height: 900 },
   locale: 'en-US',
   permissions: ['clipboard-read', 'clipboard-write'],
 });
+// Default timeout covers locator actions and waits, not navigations —
+// those carry NAV_TIMEOUT_MS explicitly below.
+ctx.setDefaultTimeout(120_000);
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
@@ -100,7 +145,7 @@ const prefsGear = async () => {
 };
 const clockText = () => page.locator('.clock').textContent().then((t) => parseFloat(t ?? '0'));
 
-await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
 await page.waitForSelector('.workspace-empty');
 // Empty state: the whole canvas bar (incl. view toggle) is replaced by the
 // welcome screen; view3D defaults to false, asserted once robots exist.
@@ -304,12 +349,28 @@ await playBtn.click();
 await page.waitForTimeout(1500);
 await playBtn.click();
 await page.locator('.timeline-speeds button', { hasText: '0.5×' }).click();
-const t1 = await clockText();
 await playBtn.click();
-await page.waitForTimeout(1000);
+// Measure both clocks inside the browser. Runner scheduling and the next
+// Playwright click can take seconds on Windows, so a host-side sleep cannot
+// stand in for the actual playback interval.
+const timing = await page.evaluate(() => new Promise((resolve) => {
+  const clock = () => parseFloat(document.querySelector('.clock')?.textContent ?? '0');
+  requestAnimationFrame((start) => {
+    const before = clock();
+    const sample = (now) => {
+      if (now - start < 1000) {
+        requestAnimationFrame(sample);
+        return;
+      }
+      resolve({ before, after: clock(), elapsed: (now - start) / 1000 });
+    };
+    requestAnimationFrame(sample);
+  });
+}));
 await playBtn.click();
-const t2 = await clockText();
-check('playback 0.5× slows the clock', t2 - t1 > 0.25 && t2 - t1 < 0.9, `clock ${t1.toFixed(2)} → ${t2.toFixed(2)} over 1s wall`);
+const measuredRate = (timing.after - timing.before) / timing.elapsed;
+check('playback 0.5× slows the clock', measuredRate > 0.25 && measuredRate < 0.9,
+  `clock ${timing.before.toFixed(2)} → ${timing.after.toFixed(2)} over ${timing.elapsed.toFixed(2)}s wall`);
 check(
   'fast-forward speeds removed',
   (await page.locator('.timeline-speeds button', { hasText: '2×' }).count()) === 0 &&
@@ -504,16 +565,24 @@ await pickCombobox(seasonSelect, 'reefscape-2025');
 await page.waitForTimeout(700);
 await page.locator('.field-variant-toggle button', { hasText: 'AndyMark' }).click();
 await page.waitForTimeout(400);
+await ctx.tracing.start({ screenshots: true, snapshots: true });
 await page.evaluate(() => history.replaceState(null, '', location.pathname));
-await page.reload({ waitUntil: 'domcontentloaded' });
-// The reload clears the in-memory session; the empty state exposes no field
-// controls, so re-import first — the canvas bar (with the selects) follows.
-await fileInput().setInputFiles([
-  `${SAMPLES}/ghostauto/straight_run.ghostauto`,
-  `${SAMPLES}/ghostauto/stop_and_score.ghostauto`,
-  `${SAMPLES}/ghostauto/out_of_bounds.ghostauto`,
-]);
-await page.waitForSelector('.robot-library-row', { timeout: 10000 });
+try {
+  await page.reload({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
+} finally {
+  await ctx.tracing.stop({ path: `${SHOTS}/reload-trace.zip` });
+}
+// The autosaved session comes back on reload (launch continuity, 2026-10-02):
+// straight_run, stop_and_score and the bounds-check's out_of_bounds robot are
+// restored by the mount-time loadAutosave — no re-import. Re-importing here
+// used to stack duplicates on top of the restore (imports do not dedup) and
+// made the later PathPlanner count race (Windows CI read rows=9 on 2026-11-04).
+await page.waitForFunction(
+  () => document.querySelectorAll('.robot-library-row').length === 3,
+  undefined,
+  { timeout: 10000 },
+);
+check('autosave restores the session across reload', true, 'rows=3');
 await page.waitForSelector('.field-canvas');
 const fieldAfterReload = await readCombobox(seasonSelect);
 const amPressed = (await page.locator('.field-variant-toggle button[aria-pressed=true]').first().textContent())?.trim() === 'AndyMark';
@@ -594,9 +663,14 @@ await fileInput().setInputFiles([
   `${SAMPLES}/pathplanner/Pickup.path`,
   `${SAMPLES}/pathplanner/Score.path`,
 ]);
+// Gate the wait on the pre-batch count so "6" can only mean this batch
+// landed — before 2026-11-05 the restored 3 plus the re-import above could
+// already satisfy ===6, and the check read whatever timing produced.
+const rowsBeforeBatch = await rows().count();
+check('pre-batch robot count is the restored three', rowsBeforeBatch === 3, `rows=${rowsBeforeBatch}`);
 await page.waitForFunction(
-  () => document.querySelectorAll('.robot-library-row').length === 6,
-  undefined,
+  (expected) => document.querySelectorAll('.robot-library-row').length === expected,
+  6,
   { timeout: 20000 },
 );
 // Rows carry team numbers, not file names, so the PathPlanner batch is
@@ -647,6 +721,8 @@ const ctx3 = await browser.newContext({ viewport: { width: 1440, height: 900 }, 
 const page3 = await ctx3.newPage();
 const stressErrors = [];
 page3.on('pageerror', (e) => stressErrors.push(String(e)));
+// Fresh context, first navigation — no WebGL contexts exist yet, so the
+// software-GL teardown stall cannot bite here; the default wait is fine.
 await page3.goto(BASE, { waitUntil: 'domcontentloaded' });
 const allSamples = [
   ...(await readdir(`${SAMPLES}/traj`)).map((f) => `${SAMPLES}/traj/${f}`),
@@ -933,10 +1009,12 @@ const clickCube = async (fx, fy) => {
   await page.mouse.move(vcBox.x + vcBox.width * fx, vcBox.y + vcBox.height * fy);
   await page.mouse.down();
   await page.mouse.up();
+  // Software-GL runners (CI Linux llvmpipe) dispatch pointer events between
+  // multi-second frames; the pick still lands, just later — budget for it.
   const picked = await page.waitForFunction(
     () => (window.__pb3d.lastPick ? true : false),
     undefined,
-    { timeout: 4000, polling: 100 },
+    { timeout: 30_000, polling: 250 },
   ).then(() => true).catch(() => false);
   if (!picked) return null; // the click landed off the cube — reported as a miss, not a crash
   const lp = await page.evaluate(() => {
@@ -962,7 +1040,7 @@ const clickCube = async (fx, fy) => {
         return Math.abs(dAz) < 0.1 && Math.abs(c.getPolarAngle() - tPol) < 0.1;
       },
       lp,
-      { timeout: 6000, polling: 100 },
+      { timeout: 30_000, polling: 250 },
     )
     .then(() => true)
     .catch(async () => {
@@ -1193,7 +1271,7 @@ await page.waitForFunction(
   () => (localStorage.getItem('pb.autosave.v1') ?? '').includes('rebuilt-2026'),
   { timeout: 5000 },
 );
-await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
 await page.waitForSelector('.field-canvas-3d canvas', { timeout: 15000 });
 check('3D view restored after reload', true);
 await page.locator('.view-toggle button', { hasText: '2D' }).click();
@@ -1202,7 +1280,7 @@ await page.waitForSelector('.field-canvas:not(.field-canvas-3d)', { timeout: 100
 // Launch continuity (user 2026-10-02: quitting in 3D reopened to the
 // welcome page). The autosaved session comes back on reload — robots,
 // field, and variant, with no fresh import.
-await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
 await page.waitForSelector('.field-canvas', { timeout: 10000 });
 await page.waitForSelector('.robot-library-row', { timeout: 10000 });
 await page.waitForTimeout(800);

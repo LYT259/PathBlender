@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.10-beta.7';
+export const APP_VERSION = '0.1.10-beta.8';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.10-beta.8', date: '2026.11.06', note: {
+    en: 'More reliable beta releases: stricter pre-release checks and sturdier update feeds',
+    zh: '更可靠的 beta 发布：更严格的发布前检查与更稳固的更新源',
+    'zh-tw': '更可靠的 beta 發布：更嚴格的發布前檢查與更穩固的更新來源',
+    cs: 'Spolehlivější beta verze: přísnější kontroly před vydáním a odolnější kanály aktualizací',
+    nl: 'Betrouwbatere beta-releases: strengere controles vóór uitgave en steviger updatefeeds',
+    fr: 'Versions bêta plus fiables : contrôles avant publication plus stricts et flux de mise à jour plus robustes',
+    he: 'שחרורי בטא אמינים יותר: בדיקות קדם-שחרור מחמירות יותר ועדכוני הזנה יציבים יותר',
+    ja: 'より信頼できるベータリリース：より厳格なリリース前チェックとより堅牢な更新フィード',
+    ko: '더 안정적인 베타 출시: 더 엄격한 출시 전 확인과 더 견고한 업데이트 피드',
+    pl: 'Bardziej niezawodne wydania beta: ściślejsze sprawdzenia przed wydaniem i stabilniejsze kanały aktualizacji',
+    'pt-br': 'Versões beta mais confiáveis: verificações pré-lançamento mais rígidas e fontes de atualização mais robustas',
+    es: 'Versiones beta más fiables: comprobaciones previas al lanzamiento más estrictas y canales de actualización más sólidos',
+    tr: 'Daha güvenilir beta sürümleri: daha sıkı sürüm öncesi kontroller ve daha sağlam güncelleme kaynakları',
+    ar: 'إصدارات بيتا أكثر موثوقية: فحوصات أكثر صرامة قبل الإصدار وقنوات تحديث أكثر متانة',
+    az: 'Daha etibarlı buraxılışlar: buraxılışdan əvvəl daha ciddi yoxlamalar və daha möhkəm yeniləmə kanalları',
+    bg: 'По-надеждни бета версии: по-строги проверки преди издаване и по-здрави канали за актуализации',
+    bs: 'Pouzdanija beta izdanja: strožije provjere prije objave i trajniji kanali ažuriranja',
+    da: 'Mere pålidelige betaudgivelser: strengere kontrol før udgivelse og mere robuste opdateringsfeeds',
+    de: 'Zuverlässigere Beta-Releases: strengere Prüfungen vor der Veröffentlichung und robustere Update-Feeds',
+    el: 'Πιο αξιόπιστες εκδόσεις beta: αυστηρότεροι έλεγχοι πριν την κυκλοφορία και πιο στιβαρές ροές ενημερώσεων',
+    fil: 'Mas maaasahang beta release: mas mahigpit na pagsusuri bago ilabas at mas matibay na feed ng update',
+    hi: 'अधिक विश्वसनीय बीटा रिलीज़: रिलीज़ से पहले की कठोर जाँच और अधिक मज़बूत अपडेट फ़ीड',
+    hr: 'Pouzdanija beta izdanja: strože provjere prije objave i robusniji kanali ažuriranja',
+    hu: 'Megbízhatóbb béta kiadások: szigorúbb kiadás előtti ellenőrzések és tartósabb frissítési csatornák',
+    hy: 'Ավելի վստահելի բետա թողարկումներ՝ թողարկումից առաջ ավելի խիստ ստուգումներ և ավելի ամուր թարմացումների հոսքեր',
+    id: 'Rilis beta yang lebih andal: pemeriksaan pra-rilis yang lebih ketat dan umpan pembaruan yang lebih kokoh',
+    it: 'Rilasci beta più affidabili: controlli pre-rilascio più severi e feed di aggiornamento più robusti',
+    mk: 'Пoudbezni beta izdanja: postri proverki pred izdavanje i postabilni kanali za ažuriranje',
+    mr: 'अधिक विश्वसनीय बीटा प्रकाशने: प्रकाशनापूर्वीची अधिक कठोर तपासणी व अधिक मजबूत अपडेट फीड',
+    ms: 'Keluaran beta yang lebih dipercayai: semakan pra-keluaran yang lebih ketat dan suapan kemas kini yang lebih kukuh',
+    nb: 'Mer pålitelige beta-utgivelser: strengere kontroller før utgivelse og mer robuste oppdateringsfeeder',
+    nn: 'Meir pålitelege beta-utgåver: strengare kontrollar før utgjeving og meir robuste oppdateringsfeider',
+    ro: 'Versiuni beta mai sigure: verificări mai stricte înainte de lansare și fluxuri de actualizare mai robuste',
+    rw: 'Ibyavuye mu byuma bya beta bishoboye kwizihiza: ibipimo bikomeye mbere yo kubyasoka hamwe n impuruza zihagije',
+    sq: 'Versione beta më të besueshme: kontroll më të rreptë para botimit dhe kanale përditësimi më të qëndrueshme',
+    sr: 'Pouzdanija beta izdanja: strožije provere pre objave i robusniji kanali ažuriranja',
+    sv: 'Mer pålitliga betautgåvor: strängare kontroller före utgåva och robustare uppdateringsflöden',
+    ta: 'மிகவும் நம்பகமான பீட்டா வெளியீடுகள்: வெளியீட்டுக்கு முன் கடுமையான சோதனைகள் மற்றும் வலுவான புதுப்பிப்பு ஊட்டங்கள்',
+    uk: 'Надійніші бета-випуски: суворіші перевірки перед випуском і надійніші канали оновлень',
+    vi: 'Bản beta đáng tin cậy hơn: kiểm tra chặt chẽ hơn trước khi phát hành và nguồn cập nhật vững chắc hơn',
+  } },
   { version: '0.1.10-beta.7', date: '2026.11.05', note: {
     en: 'Fix wpilog log import found in acceptance: gap holds inside composed sequences, manual field mapping for any entry names, heading joins across ±180°, cancel-safe imports, unified dropdowns; desktop-saved sessions now reopen (.pb filter)',
     'zh': '修复验收发现的 wpilog 日志导入问题：编排序列内缺口保持、任意命名字段可手动映射、朝向跨 ±180° 正确插值、取消导入不再残留、统一下拉控件；桌面保存的会话可正常重开（.pb 过滤器）',

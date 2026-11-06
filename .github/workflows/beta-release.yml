@@ -1,0 +1,43 @@
+name: Beta release
+on:
+  push:
+    branches: [beta]
+permissions:
+  contents: write
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.policy.outputs.docs_only }}
+      tag: ${{ steps.policy.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - id: policy
+        env:
+          BASE: ${{ github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: node scripts/beta-change-policy.mjs "$BASE" "$HEAD"
+      - name: Tag precisely this merge (never a moving branch)
+        if: steps.policy.outputs.docs_only == 'false'
+        env:
+          TAG: ${{ steps.policy.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if git rev-parse --verify "refs/tags/$TAG" >/dev/null 2>&1; then
+            test "$(git rev-parse "refs/tags/$TAG^{commit}")" = "$GITHUB_SHA"
+          else
+            git tag "$TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/$TAG"
+          fi
+  release:
+    needs: policy
+    if: needs.policy.outputs.docs_only == 'false'
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.policy.outputs.tag }}
+    secrets: inherit

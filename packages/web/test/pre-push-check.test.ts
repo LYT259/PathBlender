@@ -262,7 +262,8 @@ describe('e2e: messages, paths, symlinks, file content', () => {
     // 机密资料/内部 笔记 + a newline inside one filename — every byte class
     // the old diff-line scanner mishandled.
     const dir = '\u673a\u5bc6\u8d44\u6599';
-    const name = '\u5185\u90e8 \u7b14\u8bb0\nv2.md';
+    // Windows forbids newline bytes in filesystem names; Unix retains that case.
+    const name = process.platform === 'win32' ? '\u5185\u90e8 \u7b14\u8bb0 v2.md' : '\u5185\u90e8 \u7b14\u8bb0\nv2.md';
     mkdirSync(join(r.dir, dir), { recursive: true });
     writeFileSync(join(r.dir, dir, name), 'clean content\n');
     r.g('add', '-A');
@@ -486,7 +487,8 @@ describe('e2e: rules and object failures block (never "assume clean")', () => {
     r.clean();
   });
 
-  it('exits 2 when the rules file is unreadable', () => {
+  // chmod(000) cannot revoke read permission on Windows; exercised on Mac/Linux.
+  it.skipIf(process.platform === 'win32')('exits 2 when the rules file is unreadable', () => {
     const r = makeRepo();
     commitFile(r, 'a.txt', 'clean\n', 'clean');
     const rulesFile = join(r.dir, '.git', 'info', 'pathblender-privacy-rules');
@@ -567,8 +569,9 @@ describe('doctor and install-rules', () => {
     writeFileSync(rules, RULES + '\n');
     chmodSync(rules, 0o600);
     const after = r.run(['--doctor']);
-    expect(after.code).toBe(0);
-    expect(after.out).toContain('READY');
+    // The current doctor requires a POSIX executable hook; Windows must stay NOT READY.
+    expect(after.code).toBe(process.platform === 'win32' ? 1 : 0);
+    expect(after.out).toContain(process.platform === 'win32' ? 'NOT READY' : 'READY');
     r.clean();
   });
 
@@ -588,7 +591,7 @@ describe('doctor and install-rules', () => {
       .filter((f) => f.startsWith('pathblender-privacy-rules.bak-'));
     expect(backups.length).toBeGreaterThanOrEqual(1);
     const doctor = r.run(['--doctor']);
-    expect(doctor.code).toBe(0);
+    expect(doctor.code).toBe(process.platform === 'win32' ? 1 : 0);
     expect(doctor.out).toContain('all covered by shared rules');
     const again = r.run(['--install-rules']); // idempotent
     expect(again.code).toBe(0);

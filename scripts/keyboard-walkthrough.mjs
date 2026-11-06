@@ -22,10 +22,32 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`);
 };
 
+// Same backend pin and headful handling as browser-walkthrough.mjs:
+// SwiftShader's GL teardown freezes GPU-less runs, native backends need a
+// window server (CI runs headed via WALK_HEADFUL=1).
+// One argv element per flag, always: Chromium parses only the first `=` of
+// an element, so a space-joined single element silently drops every flag
+// after the first on some builds (independent review 2026-11-06). The CI
+// system Chromes happened to honor the joined form (runs on 6751985/4ba13e6
+// rendered real 3D on llvmpipe/WARP), but that is not semantics to rely on.
+const PLATFORM_FLAGS = {
+  darwin: ['--use-angle=metal'],
+  win32: ['--use-angle=d3d11', '--ignore-gpu-blocklist'],
+  linux: ['--use-angle=gl', '--ignore-gpu-blocklist'],
+}[process.platform] ?? [];
+const backendArgs = [...PLATFORM_FLAGS,
+  ...(process.env.WALK_HEADFUL === '1' ? ['--no-first-run', '--no-default-browser-check'] : [])];
+const headful = process.env.WALK_HEADFUL === '1';
+const launchOpts = { headless: !headful, args: backendArgs };
 const browser = await chromium
-  .launch(process.env.WALK_CHROME === '0' ? {} : { channel: 'chrome' })
-  .catch(() => chromium.launch());
+  .launch(process.env.WALK_CHROME === '0' ? launchOpts : { ...launchOpts, channel: 'chrome' })
+  .catch(() => chromium.launch(launchOpts));
+// Software-GL backends (CI Linux/Windows) are slow everywhere: the prewarm's
+// first hidden 3D frame alone can block interaction for tens of seconds
+// (run 42019197117: a composer undo click timed out mid-action on WARP).
+// Budget waits accordingly — assertions themselves are unchanged.
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'en-US' });
+ctx.setDefaultTimeout(120_000);
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
@@ -140,7 +162,7 @@ check('composer: Enter appends the route as a clip',
 
 // 5 — Tab forward to the APPENDED clip: it is the last segment on the lane,
 // so a nudge has free room on at least the right side. Arrows move, Delete
-// removes, Meta+Z restores.
+// removes, Ctrl/Cmd+Z restores.
 const clipFocused = await walk(
   () => page.evaluate((want) => {
     const el = document.activeElement;
@@ -167,9 +189,9 @@ check('composer: an overlapping −1 s nudge is refused', (await activeLabel()) 
 await page.keyboard.press('Delete');
 await page.waitForTimeout(400);
 check('composer: Delete removes the focused clip', (await clips()) === baseline);
-await page.keyboard.press('Meta+z');
+await page.keyboard.press('ControlOrMeta+z');
 await page.waitForTimeout(400);
-check('composer: Meta+Z restores the deleted clip', (await clips()) === baseline + 1);
+check('composer: Ctrl/Cmd+Z restores the deleted clip', (await clips()) === baseline + 1);
 
 // 6 — Escape returns to playback; focus lands on a real control (never body).
 await page.keyboard.press('Escape');

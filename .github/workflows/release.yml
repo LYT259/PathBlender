@@ -13,6 +13,14 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 permissions:
   contents: write
@@ -27,6 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 23
@@ -42,8 +52,8 @@ jobs:
         # between tagging and CI; assert it in CI from now on.
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          if [ "${GITHUB_REF_NAME#v}" != "$VERSION" ]; then
-            echo "::error::tag $GITHUB_REF_NAME does not match package.json version $VERSION" >&2
+          if [ "${RELEASE_TAG#v}" != "$VERSION" ]; then
+            echo "::error::tag $RELEASE_TAG does not match package.json version $VERSION" >&2
             exit 1
           fi
 
@@ -52,6 +62,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 23
@@ -77,7 +89,7 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        run: scripts/package-desktop-artifacts.sh "${GITHUB_REF_NAME#v}" --target universal-apple-darwin
+        run: scripts/package-desktop-artifacts.sh "${RELEASE_TAG#v}" --target universal-apple-darwin
       - name: Stage artifacts
         run: |
           mkdir -p release
@@ -85,7 +97,7 @@ jobs:
           cp "$B/macos/PathBlender.app.tar.gz" "$B/macos/PathBlender.app.tar.gz.sig" release/
           # No `|| true`: a release without a (verified) dmg must fail loudly —
           # beta.22 shipped a pre-seal image collected from a stale path.
-          cp "$B/dmg/PathBlender_${GITHUB_REF_NAME#v}_universal.dmg" release/
+          cp "$B/dmg/PathBlender_${RELEASE_TAG#v}_universal.dmg" release/
       - uses: actions/upload-artifact@v4
         with:
           name: macos
@@ -96,6 +108,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 23
@@ -125,6 +139,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 23
@@ -154,6 +170,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - uses: actions/download-artifact@v4
         with: { path: artifacts }
       - uses: actions/setup-node@v4
@@ -161,7 +179,7 @@ jobs:
           node-version: 23
       - run: npm ci
       - name: Gather and validate every platform artifact
-        run: node scripts/prepare-release-artifacts.mjs "${GITHUB_REF_NAME#v}" artifacts bundle release
+        run: node scripts/prepare-release-artifacts.mjs "${RELEASE_TAG#v}" artifacts bundle release
       - name: Compose user-facing release notes
         # Single source of per-version user notes (task: one text drives the
         # About page, the GitHub Release body AND the updater feed): the
@@ -171,19 +189,19 @@ jobs:
         # updater feed, and kept as release-body.md for gh release create
         # (--generate-notes then appends the commit list as a supplement).
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${RELEASE_TAG#v}
           node scripts/release-notes-for.mjs "$VERSION" > bundle/RELEASE_NOTES.md
           cp bundle/RELEASE_NOTES.md release-body.md
           cat release-body.md
       - name: Generate updater feeds
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${RELEASE_TAG#v}
           # Channel routing by tag: a pre-release suffix (-alpha/-beta/-rc)
           # publishes ONLY latest-beta.json and marks the GitHub Release as a
           # prerelease (keeps it out of GitHub's "latest", so stable feeds
           # can never point at a beta build); a stable release publishes both
           # feeds — stable raises the beta channel too.
-          CH=$(node scripts/release-channel.mjs "$GITHUB_REF_NAME")
+          CH=$(node scripts/release-channel.mjs "$RELEASE_TAG")
           echo "RELEASE_CHANNEL=$CH" >> "$GITHUB_ENV"  # step-level if: below
           node scripts/gen-latest-json.mjs "$VERSION" bundle > release/latest-beta.json
           if [ "$CH" = "stable" ]; then
@@ -198,28 +216,45 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${RELEASE_TAG#v}
           ARGS=(--title "PathBlender v${VERSION}" -F release-body.md --generate-notes)
-          if [ "$(node scripts/release-channel.mjs "$GITHUB_REF_NAME")" = "beta" ]; then
+          if [ "$(node scripts/release-channel.mjs "$RELEASE_TAG")" = "beta" ]; then
             ARGS+=(--prerelease)
           fi
-          gh release create "$GITHUB_REF_NAME" "${ARGS[@]}" release/*
-      - name: Republish the beta feed onto the latest stable release
-        # GitHub's `releases/latest` NEVER resolves to a prerelease, but the
-        # desktop app's beta channel reads
-        # releases/latest/download/latest-beta.json — so a beta tag alone
-        # left beta users stranded on whatever beta feed the last stable
-        # shipped (found 2026-10-02: after v0.1.5 + newer betas, the URL
-        # still served v0.1.5's feed). latest-beta.json is a LIVE POINTER,
-        # not a historical artifact: every beta release re-uploads it onto
-        # the current stable release, where releases/latest can always find
-        # it. Installer/appendix assets are never touched — only this feed.
+          if gh release view "$RELEASE_TAG" --json tagName,isDraft,assets > existing-release.json; then
+            STATE=$(node scripts/check-existing-release.mjs existing-release.json release "$RELEASE_TAG")
+            if [ "$STATE" = draft ]; then
+              # A cancelled upload may leave an unpublished partial draft.
+              # Replace its complete asset cohort before making it public;
+              # published installers are never changed on a rerun.
+              gh release upload "$RELEASE_TAG" release/* --clobber
+              if [ "$(node scripts/release-channel.mjs "$RELEASE_TAG")" = beta ]; then
+                gh release edit "$RELEASE_TAG" --draft=false --prerelease
+              else
+                gh release edit "$RELEASE_TAG" --draft=false --latest
+              fi
+            fi
+          else
+            gh release create "$RELEASE_TAG" "${ARGS[@]}" release/*
+          fi
+
+  promote-beta-feed:
+    needs: publish
+    runs-on: ubuntu-latest
+    # Only pointer promotion is serialized; every release still publishes.
+    # A replaced pending promotion is safe: each survivor selects the newest
+    # completed release, rather than promoting its own possibly older build.
+    concurrency:
+      group: desktop-beta-feed
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - name: Promote the newest completed release monotonically
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: env.RELEASE_CHANNEL == 'beta'
-        run: |
-          STABLE_TAG="$(gh release view --json tagName --jq .tagName)" || {
-            echo "no stable release exists yet — beta feed stays on this prerelease only"; exit 0; }
-          gh release upload "$STABLE_TAG" release/latest-beta.json --clobber
-          echo "beta feed (latest-beta.json) now on stable release $STABLE_TAG:"
-          gh release view "$STABLE_TAG" --json assets --jq '.assets[].name'
+        run: node scripts/promote-beta-feed.mjs
