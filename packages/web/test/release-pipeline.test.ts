@@ -201,7 +201,7 @@ describe('shipped-artifact verification gates', () => {
     expect(workflow).toContain('node scripts/prepare-release-artifacts.mjs');
   });
   it('mirrors the same viewer build to Cloudflare Pages and verifies both sites', () => {
-    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8');
+    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8').replace(/\r\n/g, '\n');
     expect(deploy).toContain('name: viewer-dist');
     expect(deploy).toContain('path: packages/web/dist');
     expect(deploy).toContain('actions/download-artifact@v4');
