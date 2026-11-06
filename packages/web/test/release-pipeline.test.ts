@@ -191,7 +191,8 @@ describe('shipped-artifact verification gates', () => {
   });
 
   it('keeps public deployment dormant while private and builds the viewer on beta pushes', () => {
-    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8');
+    // Windows checkouts carry CRLF; assert against LF-normalized content.
+    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8').replace(/\r\n/g, '\n');
     expect(deploy).toContain('if: github.event.repository.private == false');
     expect(deploy).toContain('branches: [beta]');
     expect(deploy).toContain("VITE_VIEWER_ONLY: '1'");
@@ -200,7 +201,7 @@ describe('shipped-artifact verification gates', () => {
     expect(workflow).toContain('node scripts/prepare-release-artifacts.mjs');
   });
   it('mirrors the same viewer build to Cloudflare Pages and verifies both sites', () => {
-    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8');
+    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8').replace(/\r\n/g, '\n');
     expect(deploy).toContain('name: viewer-dist');
     expect(deploy).toContain('path: packages/web/dist');
     expect(deploy).toContain('actions/download-artifact@v4');
@@ -213,7 +214,15 @@ describe('shipped-artifact verification gates', () => {
     expect(deploy).not.toContain('\\\"');
     expect(deploy).toContain('https://lyt259.github.io/PathBlender/sw.js');
     expect(deploy).toContain('https://pathblender.pages.dev/sw.js');
-    expect(deploy).toContain('"$version" = "$expected"');
+    // Verification binds to THIS build's full cache identifier (version +
+    // build timestamp) and refuses to go green when any deployment failed
+    // (acceptance 2026-11-06: a version-only compare passed while Pages was
+    // down and the mirror had the new build).
+    expect(deploy).toContain('outputs:\n      cache_name: ${{ steps.cache.outputs.name }}');
+    expect(deploy).toContain('needs: [build, deploy, deploy-cloudflare]');
+    expect(deploy).toContain('Require every deployment to have succeeded');
+    expect(deploy).toContain('"$cache" = "$expected"');
+    expect(deploy).not.toContain('"$version" = "$expected"');
   });
   it('installs locked Node dependencies before composing release notes in the publish job', () => {
     const publish = workflow.slice(workflow.indexOf('  publish:'));

@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.10-beta.9';
+export const APP_VERSION = '0.1.10-beta.10';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+    { version: '0.1.10-beta.10', date: '2026.11.06', note: {
+    'en': 'Release reliability: restored required branch checks, and deploy verification now matches both sites to the exact same build',
+    'zh': '发布可靠性：恢复必需分支检查，部署验证现在要求双站与本次构建完全一致',
+    'zh-tw': '發布可靠性：恢復必要分支檢查，部署驗證現在要求雙站與本次構建完全一致',
+    'cs': 'Spolehlivost vydávání: obnoveny vyžadované kontroly větve a ověření nasazení nyní vyžaduje shodu obou webů s přesně tímto sestavením',
+    'nl': 'Betrouwbaarheid van uitgaven: vereiste branchcontroles hersteld en deployverificatie vereist nu dat beide sites exact deze build tonen',
+    'fr': 'Fiabilité des versions : contrôles de branche requis rétablis, et la vérification du déploiement exige désormais que les deux sites servent exactement ce build',
+    'he': 'אמינות שחרור: בדיקות הענף הנדרשות הוחזרו, ואימות הפריסה דורש כעת ששני האתרים יגישו בדיוק את הבנייה הזו',
+    'ja': 'リリースの信頼性：必須ブランチチェックを復元し、デプロイ検証は両サイトがこのビルドと完全一致することを要求します',
+    'ko': '릴리스 신뢰성: 필수 브랜치 검사를 복원했고 배포 검증은 이제 두 사이트 모두 이 빌드와 정확히 일치해야 합니다',
+    'pl': 'Niezawodność wydań: przywrócono wymagane kontrole gałęzi, a weryfikacja wdrożenia wymaga teraz, aby obie strony serwowały dokładnie tę kompilację',
+    'pt-br': 'Confiabilidade de lançamento: verificações obrigatórias de ramo restauradas, e a verificação de implantação agora exige que os dois sites sirvam exatamente esta compilação',
+    'es': 'Fiabilidad de las versiones: comprobaciones obligatorias de rama restauradas y la verificación del despliegue ahora exige que ambos sitios sirvan exactamente esta compilación',
+    'tr': 'Sürüm güvenilirliği: zorunlu dal kontrolleri geri yüklendi ve dağıtım doğrulaması artık her iki sitenin de tam olarak bu yapıyı sunmasını gerektiriyor',
+    'ar': 'موثوقية الإصدار: استُعيدت فحوص الفرع المطلوبة، ويطلب تحقق النشر الآن أن يقدّم الموقعان هذه البنية نفسها بالضبط',
+    'az': 'Buraxılış etibarlılığı: tələb olunan budaq yoxlamaları bərpa edildi və yerləşdirmə yoxlaması artıq hər iki saytın dəqiq bu quruluşu təqdim etməsini tələb edir',
+    'bg': 'Надеждност на изданията: възстановени са задължителните проверки на клона, а проверката на внедряването вече изисква двата сайта да обслужват точно тази сборка',
+    'bs': 'Pouzdanost izdanja: vraćene obavezne provjere grane, a provjera objave sada zahtijeva da obje stranice služe tačno ovu izgradnju',
+    'da': 'Udgivelsespålidelighed: påkrævede grenkontroller genoprettet, og implementeringsverificering kræver nu, at begge websteder serverer præcis dette build',
+    'de': 'Release-Zuverlässigkeit: erforderliche Branch-Checks wiederhergestellt, und die Deploy-Verifizierung verlangt nun, dass beide Sites exakt diesen Build ausliefern',
+    'el': 'Αξιοπιστία εκδόσεων: επανήλθαν οι απαιτούμενοι έλεγχοι κλάδου και η επαλήθευση ανάπτυξης απαιτεί πλέον και οι δύο ιστότοποι να εξυπηρετούν ακριβώς αυτή τη δόμηση',
+    'fil': 'Pagiging maaasahan ng release: nabalik ang mga kinakailangang pagsusuri ng branch, at ang pag-verify ng deployment ay nangangailangan na eksaktong itong build ang nasa parehong site',
+    'hi': 'रिलीज़ विश्वसनीयता: आवश्यक ब्रांच जाँचें बहाल की गईं, और डिप्लॉय सत्यापन अब दोनों साइटों का ठीक इसी बिल्ड से मेल खाना मांगता है',
+    'hr': 'Pouzdanost izdanja: vraćene obavezne provjere grane, a provjera uvođenja sada zahtijeva da obje stranice služe točno ovu gradnju',
+    'hu': 'Kiadásmegbízhatóság: a kötelező ág-ellenőrzések visszaállítva, a telepítés ellenőrzése pedig most azt követeli, hogy mindkét oldal pontosan ezt a buildet szolgálja ki',
+    'hy': 'Թողարկումների հուսալիություն. վերականգնվել են պարտադիր ճյուղի ստուգումները, և տեղակայման ստուգումն այժմ պահանջում է, որ երկու կայքերն էլ սպասարկեն ուղիղ այս կառուցումը',
+    'id': 'Keandalan rilis: pemeriksaan cabang wajib dipulihkan, dan verifikasi penyebaran kini menuntut kedua situs menyajikan tepat build ini',
+    'it': 'Affidabilità di rilascio: ripristinati i controlli obbligatori di branch e la verifica del deploy ora richiede che entrambi i siti servano esattamente questa build',
+    'mk': 'Сигност на изданијата: вратени се задолжителните проверки на гранката, а проверката на распоредувањето сега бара двете сајта да служат точно оваа градба',
+    'mr': 'प्रकाशन विश्वसनीयता: आवश्यक शाखा तपासण्या पुनर्स्थापित, आणि उपलब्धता तपासणी आता दोन्ही साइट्सचा याच बिल्डशी अचूक जुळणी मागते',
+    'ms': 'Kebolehpercayaan keluaran: semakan cawangan wajib dipulihkan, dan pengesahan pelaksanaan kini menuntut kedua-dua laman menyaji tepat binaan ini',
+    'nb': 'Utgivelsespålitelighet: påkrevde forgreningskontroller gjenopprettet, og distribusjonsverifisering krever nå at begge nettsteder serverer nøyaktig denne bygget',
+    'nn': 'Utgjevingspålitelegheit: påkravde greinkontrollar gjenoppretta, og distribusjonsverifisering krev no at begge nettsider tenar nøyaktig denne bygget',
+    'ro': 'Fiabilitatea lansărilor: controalele obligatorii de ramură au fost restaurate, iar verificarea implementării cere acum ca ambele site-uri să servească exact această compilare',
+    'rw': 'Ukwizera kwa byavuye hanze: byagarutse ibipimo byateganyijwe ku rwishami, kandi isuzuma ryo gutangiza rirasaba ko urubuga ruvuye ari urwo rwose iyi build',
+    'sq': 'Besueshmëria e versioneve: rikthyen kontrollet e detyrueshme të degës, ndërsa verifikimi i vendosjes kërkon tani që të dy sajtet të shërbejnë saktësisht këtë ndërtim',
+    'sr': 'Pouzdanost izdanja: vraćene obavezne provere grane, a provera raspoređivanja sada zahteva da obe lokacije služe tačno ovu izgradnju',
+    'sv': 'Utgivningspålitlighet: obligatoriska grenkontroller återställda, och distributionsverifieringen kräver nu att båda webbplatserna serverar exakt detta bygge',
+    'ta': 'வெளியீட்டு நம்பகத்தன்மை: தேவையான கிளைச் சோதனைகள் மீட்டமைக்கப்பட்டன, பயன்பாட்டுச் சரிபார்ப்பு இப்போது இரு தளங்களும் இந்த உருவாக்கத்தையே வழங்க வேண்டும் என்கிறது',
+    'uk': 'Надійність випусків: відновлено обовʼязкові перевірки гілки, а перевірка розгортання тепер вимагає, щоб обидва сайти обслуговували саме цей білд',
+    'vi': 'Độ tin cậy phát hành: khôi phục các kiểm tra nhánh bắt buộc, và xác minh triển khai giờ yêu cầu cả hai site phục vụ đúng chính bản build này',
+  } },
   { version: '0.1.10-beta.9', date: '2026.11.06', note: {
     en: 'Fix mixed input isolation: one-finger touch now rotates reliably while a mouse button is held',
     zh: '修复混合输入隔离：按住鼠标时单指触摸现在能可靠旋转',
