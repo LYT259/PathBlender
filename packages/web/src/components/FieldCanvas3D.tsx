@@ -484,6 +484,10 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       get: () => baseEnabled && !suppressForCurrentEvent,
       set: (v: boolean) => { baseEnabled = v; },
     });
+    // Outside a dispatch the stamp persists until the next event: wheel and
+    // contextmenu re-stamp enabled=true, so this is safe by construction.
+    // OrbitControls keyboard orbit is not wired here; if listenToKeyEvents
+    // is ever enabled, keydown must be stamped too.
     const stampInput = (e: Event) => {
       // Only pointer events can be touch or not. Wheel and contextmenu
       // always stay enabled for every device: OrbitControls owns wheel zoom
