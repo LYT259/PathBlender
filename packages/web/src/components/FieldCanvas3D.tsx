@@ -465,6 +465,32 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     // fingers dolly/pan. The scheme-routed handlers above opt out for touch
     // so a custom left-button map can never consume the same pointer twice.
     controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+    // Non-touch pointers never enter OrbitControls' finger tally, WITHOUT
+    // suppressing event propagation (the PR #402 stopPropagation regression)
+    // and WITHOUT timer races (the PR #404 microtask regression — real
+    // browsers run microtask checkpoints BETWEEN listeners, so a deferred
+    // restore lands before OrbitControls' own listener runs). OrbitControls
+    // guards every event entry with `this.enabled === false` (0.185.1:
+    // onPointerDown 1546, onPointerMove 1585, onMouseWheel 1769, onKeyDown
+    // 1783, onContextMenu 1929). The host capture handlers stamp the input
+    // type of the CURRENT event; the getter resolves enabled=false exactly
+    // for non-touch pointer events, synchronously. Mouse/pen presses never
+    // reach _pointers, yet the same events keep bubbling to the app's
+    // document-level dismissal listeners (PR #404).
+    let baseEnabled = true;
+    let suppressForCurrentEvent = false;
+    Object.defineProperty(controls, 'enabled', {
+      configurable: true,
+      get: () => baseEnabled && !suppressForCurrentEvent,
+      set: (v: boolean) => { baseEnabled = v; },
+    });
+    const stampInput = (e: Event) => {
+      // Only pointer events can be touch or not. Wheel and contextmenu
+      // always stay enabled for every device: OrbitControls owns wheel zoom
+      // and right-click prevention.
+      suppressForCurrentEvent = e.type.startsWith('pointer')
+        && (e as PointerEvent).pointerType !== 'touch';
+    };
     // Damped drag (the flat-field-era feel the user asked back): releasing
     // the pointer lets the view glide to a stop.
     // user input, and the rAF loop runs unconditionally, so the old
@@ -539,23 +565,12 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       camera.lookAt(controls.target);
     };
     const onDragDown = (e: PointerEvent) => {
-      // Non-touch pointers belong to the scheme handlers (or to nobody) —
-      // never to OrbitControls: its internal finger tally would otherwise
-      // count a held mouse button as a second "finger" and turn the next
-      // single-finger touch into a dolly/pan (mixed-input acceptance P2-3).
-      // Suppression is per-dispatch, not per-tree: OrbitControls' own
-      // pointerdown returns immediately while `enabled` is false, and a
-      // microtask restores it once this dispatch completes — before any
-      // later event can arrive. The event itself keeps propagating, so the
-      // app's document-level listeners still see canvas clicks: menus,
-      // the robot context menu and the composer close on a 3D blank click
-      // exactly as they do in 2D (dismissal regression, 2026-11-05).
-      // Touch flows through untouched (OrbitControls stays enabled for it),
-      // and the viewcube/overlay children keep their own events (target
-      // guard).
+      // Stamp the CURRENT event's input type before anything else — the
+      // enabled getter above resolves from this stamp (see the comment at
+      // the OrbitControls construction). Touch flows through untouched;
+      // the viewcube/overlay children keep their own events (target guard).
+      stampInput(e);
       if (e.pointerType === 'touch' || e.target !== renderer.domElement) return;
-      controls.enabled = false;
-      queueMicrotask(() => { controls.enabled = true; });
       const action = resolveMouseAction(
         mouseSchemeRef.current, e.button, e, defaultConstrainedRef.current, customMouseMapRef.current,
         { pointerType: e.pointerType, penAsMouse: penAsMouseRef.current },
@@ -660,6 +675,11 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       renderer.domElement.releasePointerCapture(e.pointerId);
     };
     host.addEventListener('pointerdown', onDragDown, true);
+    // Stamp every other event OrbitControls guards on (and wheel/contextmenu,
+    // which always stay enabled for every device) in the capture phase.
+    for (const type of ['pointermove', 'pointerup', 'pointercancel', 'lostpointercapture', 'wheel', 'contextmenu']) {
+      host.addEventListener(type, stampInput, true);
+    }
     renderer.domElement.addEventListener('pointermove', onDragMove);
     renderer.domElement.addEventListener('pointermove', onPanMove);
     renderer.domElement.addEventListener('pointermove', onDragZoomMove);
@@ -1131,6 +1151,9 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       cubeRenderer.dispose();
       viewcubeEl.remove();
       host.removeEventListener('pointerdown', onDragDown, true);
+      for (const type of ['pointermove', 'pointerup', 'pointercancel', 'lostpointercapture', 'wheel', 'contextmenu']) {
+        host.removeEventListener(type, stampInput, true);
+      }
       renderer.domElement.removeEventListener('pointermove', onDragMove);
       renderer.domElement.removeEventListener('pointermove', onPanMove);
       renderer.domElement.removeEventListener('pointerup', onDragUp);

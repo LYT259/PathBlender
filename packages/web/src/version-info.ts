@@ -14,7 +14,7 @@
  * historical record.
  */
 
-export const APP_VERSION = '0.1.10-beta.8';
+export const APP_VERSION = '0.1.10-beta.9';
 
 export const NOTE_LANGS = ['en', 'zh', 'zh-tw', 'cs', 'nl', 'fr', 'he', 'ja', 'ko', 'pl', 'pt-br', 'es', 'tr', 'ar', 'az', 'bg', 'bs', 'da', 'de', 'el', 'fil', 'hi', 'hr', 'hu', 'hy', 'id', 'it', 'mk', 'mr', 'ms', 'nb', 'nn', 'ro', 'rw', 'sq', 'sr', 'sv', 'ta', 'uk', 'vi'] as const;
 export type NoteLang = (typeof NOTE_LANGS)[number];
@@ -40,6 +40,48 @@ export function noteText(note: VersionNote['note'], lang: string): string {
 }
 
 export const VERSION_NOTES: VersionNote[] = [
+  { version: '0.1.10-beta.9', date: '2026.11.06', note: {
+    en: 'Fix mixed input isolation: one-finger touch now rotates reliably while a mouse button is held',
+    zh: '修复混合输入隔离：按住鼠标时单指触摸现在能可靠旋转',
+    'zh-tw': '修復混合輸入隔離：按住滑鼠時單指觸控現在能可靠旋轉',
+    cs: 'Oprava izolace smíšeného vstupu: jeden prst při podrženém tlačítku myši nyní spolehlivě otáčí',
+    nl: 'Gemengde-invoerisolatie hersteld: één vinger roteert nu betrouwbaar terwijl een muisknop ingedrukt is',
+    fr: 'Correction de l’isolation des entrées mixtes : un doigt pivote désormais fiablement pendant qu’un bouton de souris est maintenu',
+    he: 'תיקון בידוד קלט מעורב: אצבע אחת מסובבת כעת באמינות גם כשלחצן העכבר לחוץ',
+    ja: '混在入力の分離を修正：マウスボタンを押したまま片指で確実に回転できるように',
+    ko: '혼합 입력 분리 수정: 마우스 버튼을 누른 상태에서도 한 손가락으로 확실하게 회전',
+    pl: 'Naprawa izolacji mieszanych wejść: jeden palec teraz niezawodnie obraca przy wciśniętym przycisku myszy',
+    'pt-br': 'Correção do isolamento de entrada mista: um dedo agora gira de forma confiável com o botão do mouse pressionado',
+    es: 'Corrección del aislamiento de entrada mixta: un dedo ahora gira de forma fiable con un botón del ratón pulsado',
+    tr: 'Karma girdi izolasyonu düzeltmesi: fare düğmesi basılıyken tek parmak artık güvenle döndürüyor',
+    ar: 'إصلاح عزل المدخلات المختلطة: إصبع واحد يدور الآن بثبات أثناء الضغط على زر الفأرة',
+    az: 'Qarışıq giriş izolyasiyası düzəlişi: siçan düyməsi basılı ikən bir barmaq artıq etibarlı şəkildə fırlanır',
+    bg: 'Поправка на смесения вход: един пръст сега надеждно върти при задържан бутон на мишката',
+    bs: 'Ispravka izolacije miješanog unosa: jedan prst sada pouzdano rotira dok je pritisnuto dugme miša',
+    da: 'Ret mixed input-isolering: én finger roterer nu pålideligt, mens en museknap er holdt nede',
+    de: 'Gemischte Eingabe-Isolation korrigiert: Ein Finger dreht jetzt zuverlässig bei gehaltener Maustaste',
+    el: 'Διόρθωση απομόνωσης μεικτής εισόδου: ένα δάχτυλο περιστρέφει πλέον αξιόπιστα με πατημένο κουμπί ποντικιού',
+    fil: 'Ayos sa mixed input isolation: ang isang daliri ay mapagkakatiwalaang umiikot habang pinipindot ang mouse button',
+    hi: 'मिश्रित इनपुट पृथक्करण सुधार: माउस बटन दबाए रखने पर अब एक उंगली विश्वसनीय रूप से घूमती है',
+    hr: 'Ispravak izolacije miješanog unosa: jedan prst sada pouzdano rotira dok je pritisnut gumb miša',
+    hu: 'Vegyes beviteli elkülönítés javítása: egy ujj most megbízhatóan forgat lenyomva tartott egérgomb mellett',
+    hy: 'Խառը մուտքի մեկուսացման ուղղում. մեկ մատ այժմ վստահորեն պտտում է մկնիկի կոճակը սեղմած պահելիս',
+    id: 'Perbaikan isolasi input campuran: satu jari kini berputar dengan andal saat tombol mouse ditahan',
+    it: 'Correzione dell’isolamento degli input misti: un dito ora ruota in modo affidabile con un pulsante del mouse premuto',
+    mk: 'Поправка на изолацијата на мешаниот внес: еден прст сега сигурно ротира додека е притиснато копчето на глушецот',
+    mr: 'मिश्र इनपुट विलगीकरण दुरुस्ती: माउस बटण दाबून ठेवल्यावर एक बोट आता विश्वासाने फिरते',
+    ms: 'Pembaikan pengasingan input campuran: satu jari kini berputar dengan pasti semasa butang tetikus ditekan',
+    nb: 'Rettelse av blandet inndata-isolering: én finger roterer nå pålitelig mens en museknapp er holdt inne',
+    nn: 'Rettelse av blanda inndata-isolering: éin finger roterer no påliteleg medan ein museknapp er halden inne',
+    ro: 'Corecție a izolării intrărilor mixte: un deget acum rotește fiabil cu un buton de mouse apăsat',
+    rw: 'Icyongereza cy’ivugururwa ry’ibikorwa bivanze: urutoke rumwe rukora neza iyo buto ya mbeba ifatanyije',
+    sq: 'Rregullim i izolimit të hyrjeve të përziera: një gisht tani rrotullon në mënyrë të besueshme me butonin e miut të shtypur',
+    sr: 'Исправка изолације мешаног уноса: један прст сада поуздано ротира док је притиснуто дугме миша',
+    sv: 'Korrigering av blandad inmatningsisolering: ett finger roterar nu tillförlitligt medan en musknapp är nedtryckt',
+    ta: 'கலப்பு உள்ளீட்டு தனிமைப்படுத்தல் திருத்தம்: சுட்டி பொத்தானை அழுத்திக் கொண்டிருக்கும் போது ஒரு விரல் இப்போது நம்பகமாக சுழற்றுகிறது',
+    uk: 'Виправлення ізоляції змішаного введення: один палець тепер надійно обертає при затиснутій кнопці миші',
+    vi: 'Sửa cách ly đầu vào hỗn hợp: một ngón tay giờ xoay ổn định khi giữ nút chuột',
+  } },
   { version: '0.1.10-beta.8', date: '2026.11.06', note: {
     en: 'More reliable beta releases: stricter pre-release checks and sturdier update feeds',
     zh: '更可靠的 beta 发布：更严格的发布前检查与更稳固的更新源',
