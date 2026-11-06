@@ -130,5 +130,9 @@ function render(lang) {
   const downloads = assets.map(([platform, name]) => `- **${t.platforms[platform]}** — \`${name}\`${platform === 'windowsOffline' ? ` (${Math.round(manifest.windows.nsisOfflineBytes / 1048576)} MB)` : ''}`).join('\n');
   return `## ${t.changes}\n\n${changes}\n\n## ${t.download}\n\n${downloads}\n\n${t.web}\n\n## ${t.issues}\n\n${issuesFor(lang)}\n\n## ${t.update}\n\n${t.instructions}`;
 }
+// One short Star + Follow invitation per release body (user rule 2026-11-06,
+// recorded in the red book §16.45 and docs/releasing.md): concise, no pitch,
+// appended once at the very end so every language section stays intact.
+const STAR_LINE = 'If PathBlender helps your team, consider starring the repo and following [LYT259](https://github.com/LYT259).';
 console.log(render('en') + Object.entries(translations).filter(([lang]) => lang !== 'en').map(([lang, t]) =>
-  `\n\n<details>\n<summary>${t.label}</summary>\n\n${render(lang)}\n\n</details>`).join(''));
+  `\n\n<details>\n<summary>${t.label}</summary>\n\n${render(lang)}\n\n</details>`).join('') + `\n\n---\n\n${STAR_LINE}`);

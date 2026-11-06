@@ -659,16 +659,19 @@ const afterSpace = await clockText();
 check('Space toggles playback', afterSpace > 0.3, `clock 0 → ${afterSpace.toFixed(2)}`);
 
 // --- PathPlanner native import (auto + paths in one batch) ---
+// Gate the wait on the pre-batch count so "6" can only mean this batch
+// landed — before 2026-11-05 the restored 3 plus the re-import above could
+// already satisfy ===6, and the check read whatever timing produced. The
+// count must be read BEFORE the import: reading it after setInputFiles
+// races the batch itself (a fast import already shows 6 and fails the
+// pre-count check — acceptance 2026-11-06).
+const rowsBeforeBatch = await rows().count();
+check('pre-batch robot count is the restored three', rowsBeforeBatch === 3, `rows=${rowsBeforeBatch}`);
 await fileInput().setInputFiles([
   `${SAMPLES}/pathplanner/Example Auto.auto`,
   `${SAMPLES}/pathplanner/Pickup.path`,
   `${SAMPLES}/pathplanner/Score.path`,
 ]);
-// Gate the wait on the pre-batch count so "6" can only mean this batch
-// landed — before 2026-11-05 the restored 3 plus the re-import above could
-// already satisfy ===6, and the check read whatever timing produced.
-const rowsBeforeBatch = await rows().count();
-check('pre-batch robot count is the restored three', rowsBeforeBatch === 3, `rows=${rowsBeforeBatch}`);
 await page.waitForFunction(
   (expected) => document.querySelectorAll('.robot-library-row').length === expected,
   6,
