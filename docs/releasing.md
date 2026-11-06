@@ -79,6 +79,12 @@ Documentation-only PRs retain review and privacy checks but skip platform builds
 
 - [ ] 发布帖（Chief Delphi）中注明：PathPlanner 移植关系与 MIT 来源、Choreo 互操作定位、零上传承诺
 
+## 对外文案（Release 正文、发布帖与社区宣传）
+
+- [ ] **简洁自然、少 AI 腔（2026-11-06 起，向前生效）**：更新说明一句话与 Release 正文都直说改了什么、为什么值得更新；删掉空话与模板化套话（「我们很高兴地宣布…」「敬请期待」一类）。宁短勿水。不批量回改历史 notes 与旧帖。
+- [ ] **每篇 Release 保留一条简短 Star + Follow 邀请**：正文末尾一两句、自然口吻，例：`If PathBlender helps your team, consider starring the repo and following LYT259 (https://github.com/LYT259).` 不写推销段、不重复刷。`release-notes-for.mjs` 组装的正文不含此行——发布时随正文附上，发布后回读 Release 确认在。
+- [ ] 既有文案要求照旧、不因简洁省略：英文为主 + 全量多语言更新说明（40 语，`version-notes.test.ts` 门禁）、第三方许可署名（PathPlanner/Choreo 移植注明）、已知问题如实标注。
+
 ## 更新签名密钥（tauri-plugin-updater，2026-08-30 集成）
 
 - **密钥**：ed25519，`npx tauri signer generate` 生成，**无口令**。
