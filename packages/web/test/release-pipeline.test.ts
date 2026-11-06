@@ -191,7 +191,8 @@ describe('shipped-artifact verification gates', () => {
   });
 
   it('keeps public deployment dormant while private and builds the viewer on beta pushes', () => {
-    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8');
+    // Windows checkouts carry CRLF; assert against LF-normalized content.
+    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8').replace(/\r\n/g, '\n');
     expect(deploy).toContain('if: github.event.repository.private == false');
     expect(deploy).toContain('branches: [beta]');
     expect(deploy).toContain("VITE_VIEWER_ONLY: '1'");
