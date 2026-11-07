@@ -211,6 +211,11 @@ export const ptBR: Record<MessageKey, string> = {
   'field.style.schematic': 'Esquemático',
 
   'field.style.rendered': 'Renderizado',
+  'season.rapidreact2022': 'Rapid React',
+  'season.chargedup2023': 'Charged Up',
+  'season.crescendo2024': 'Crescendo',
+  'season.reefscape2025': 'Reefscape',
+  'season.rebuilt2026': 'REBUILT',
   'conflicts.title': 'Conflitos',
 'conflicts.toleranceBadge': 'desvio ±{delta} s',
   'checks.tolerance': 'Verificação de tolerância: pior caso ±{delta} s no início',

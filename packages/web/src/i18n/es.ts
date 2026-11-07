@@ -209,6 +209,11 @@ export const es: Record<MessageKey, string> = {
   'field.style.schematic': 'Esquemático',
 
   'field.style.rendered': 'Renderizado',
+  'season.rapidreact2022': 'Rapid React',
+  'season.chargedup2023': 'Charged Up',
+  'season.crescendo2024': 'Crescendo',
+  'season.reefscape2025': 'Reefscape',
+  'season.rebuilt2026': 'REBUILT',
   'conflicts.title': 'Conflictos',
 'conflicts.toleranceBadge': 'desvío ±{delta} s',
   'checks.tolerance': 'Comprobación de tolerancia: peor caso ±{delta} s al inicio',

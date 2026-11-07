@@ -160,6 +160,11 @@ export const en = {
   'field.style.schematic': 'Schematic',
 
   'field.style.rendered': 'Rendered',
+  'season.rapidreact2022': 'Rapid React',
+  'season.chargedup2023': 'Charged Up',
+  'season.crescendo2024': 'Crescendo',
+  'season.reefscape2025': 'Reefscape',
+  'season.rebuilt2026': 'REBUILT',
   'conflicts.title': 'Conflicts',
 'conflicts.toleranceBadge': '±{delta} s slip',
   'checks.tolerance': 'Tolerance check: worst-case ±{delta} s start execution',

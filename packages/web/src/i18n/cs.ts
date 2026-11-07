@@ -210,6 +210,11 @@ export const cs: Record<MessageKey, string> = {
   'field.style.schematic': 'Schematický',
 
   'field.style.rendered': 'Vykreslený',
+  'season.rapidreact2022': 'Rapid React',
+  'season.chargedup2023': 'Charged Up',
+  'season.crescendo2024': 'Crescendo',
+  'season.reefscape2025': 'Reefscape',
+  'season.rebuilt2026': 'REBUILT',
   'conflicts.title': 'Konflikty',
 'conflicts.toleranceBadge': 'skluz ±{delta} s',
   'checks.tolerance': 'Kontrola tolerance: nejhorší případ startu ±{delta} s',

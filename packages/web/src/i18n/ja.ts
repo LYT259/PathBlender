@@ -213,6 +213,11 @@ export const ja: Record<MessageKey, string> = {
   'field.style.schematic': '模式図',
 
   'field.style.rendered': 'レンダリング',
+  'season.rapidreact2022': 'Rapid React',
+  'season.chargedup2023': 'Charged Up',
+  'season.crescendo2024': 'Crescendo',
+  'season.reefscape2025': 'Reefscape',
+  'season.rebuilt2026': 'REBUILT',
   'conflicts.title': '競合',
 'conflicts.toleranceBadge': '±{delta} 秒のずれ',
   'checks.tolerance': '公差チェック：最悪ケース ±{delta} 秒のスタート実行',

@@ -210,6 +210,11 @@ export const nl: Record<MessageKey, string> = {
   'field.style.schematic': 'Schematisch',
 
   'field.style.rendered': 'Gerenderd',
+  'season.rapidreact2022': 'Rapid React',
+  'season.chargedup2023': 'Charged Up',
+  'season.crescendo2024': 'Crescendo',
+  'season.reefscape2025': 'Reefscape',
+  'season.rebuilt2026': 'REBUILT',
   'conflicts.title': 'Conflicten',
 'conflicts.toleranceBadge': 'verschuiving ±{delta} s',
   'checks.tolerance': 'Tolerantiecontrole: worst case ±{delta} s start',
