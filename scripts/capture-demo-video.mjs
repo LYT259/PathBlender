@@ -90,15 +90,11 @@ export function outputPaths(lang, outDir) {
   };
 }
 
-// Scene midpoints in recorded seconds, for the frame-distinct readback.
-function sceneMidpointSeconds() {
-  const midpoints = [];
-  let elapsed = 0;
-  for (const scene of SCENES) {
-    midpoints.push(elapsed + scene.targetSeconds / 2);
-    elapsed += scene.targetSeconds;
-  }
-  return midpoints;
+// Scene midpoints for the frame-distinct readback, derived from the times
+// the take actually held each scene (actions can overrun the storyboard
+// targets) — not from the storyboard's targetSeconds.
+export function sceneMidpoints(marks) {
+  return marks.map((mark) => (mark.start + mark.end) / 2);
 }
 
 const sceneById = new Map(SCENES.map((scene) => [scene.id, scene]));
@@ -352,25 +348,32 @@ async function recordLanguage(browser, lang, base, outDir, compareRobot, compare
   });
   ctx.setDefaultTimeout(60000);
   const page = await ctx.newPage();
+  // Request gate lives on the context: it sees every page in this context
+  // plus service-worker-issued requests that page-level events miss.
   const nonlocal = [];
   const errors = [];
-  page.on('request', (r) => { if (!isLocalRequest(r.url(), base)) nonlocal.push(r.url()); });
+  ctx.on('request', (r) => { if (!isLocalRequest(r.url(), base)) nonlocal.push(r.url()); });
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   const h = makePageHelpers(page, base);
 
-  // Hold each scene to its storyboard target so scene midpoints land where
-  // the frame readback expects them.
-  let sceneStart = Date.now();
+  // Hold each scene to its storyboard target and record the times the take
+  // actually held (video-relative) so the frame readback extracts at real
+  // scene midpoints even when actions overrun a target.
+  const videoOrigin = Date.now();
+  const sceneMarks = [];
+  let sceneStart;
   const startScene = (id) => {
     if (!sceneById.has(id)) fail(`unknown scene id ${id}`);
     sceneStart = Date.now();
   };
+  const held = () => (Date.now() - videoOrigin) / 1000;
   const holdScene = async (id) => {
     const targetMs = sceneById.get(id).targetSeconds * 1000;
     const remain = targetMs - (Date.now() - sceneStart);
     if (remain > 0) await page.waitForTimeout(remain);
-    console.log(`scene ${id} held ${((Date.now() - sceneStart) / 1000).toFixed(1)}s`);
+    sceneMarks.push({ id, start: (sceneStart - videoOrigin) / 1000, end: held() });
+    console.log(`scene ${id} held ${(sceneMarks.at(-1).end - sceneMarks.at(-1).start).toFixed(1)}s`);
   };
 
   // welcome
@@ -434,7 +437,7 @@ async function recordLanguage(browser, lang, base, outDir, compareRobot, compare
   startScene('compare');
   const compareRow = await h.rowFor(compareRobot);
   await h.openComposer(compareRow);
-  const original = (await h.clipRouteLabel()) ?? (await h.sourceMeta())[0].label;
+  const original = (await h.clipRouteLabel()) ?? (await h.sourceMeta())[0];
   if (!(await h.sourceByLabel(original).count())) {
     fail(`original route "${original}" not found in the composer for ${compareRobot}`);
   }
@@ -472,7 +475,8 @@ async function recordLanguage(browser, lang, base, outDir, compareRobot, compare
   await h.rows().nth(mirrorIdx).getByRole('button', { name: /mirror|镜像/i }).first().click();
   const mirrorAfter = await h.settleCount();
   check(`mirroring ${MIRROR_ROBOT} takes the check ${MEASURED.exampleBaseline} → ${MEASURED.mirrorAfter}`,
-    mirrorAfter === MEASURED.mirrorAfter, `count=${mirrorBefore}→${mirrorAfter}`);
+    mirrorBefore === MEASURED.exampleBaseline && mirrorAfter === MEASURED.mirrorAfter,
+    `count=${mirrorBefore}→${mirrorAfter}`);
   await holdScene('mirror');
 
   // alliance: whole session red then blue — verdicts must not move
@@ -500,7 +504,10 @@ async function recordLanguage(browser, lang, base, outDir, compareRobot, compare
   const paths = outputPaths(lang, outDir);
   copyFileSync(webmSrc, paths.webm);
   console.log(`wrote ${paths.webm}`);
-  return paths;
+  if (sceneMarks.length !== SCENES.length) {
+    fail(`${lang} take recorded ${sceneMarks.length} scene marks, expected ${SCENES.length}`);
+  }
+  return { paths, sceneMarks };
 }
 
 function run(binary, args, opts = {}) {
@@ -509,7 +516,7 @@ function run(binary, args, opts = {}) {
   return r;
 }
 
-function postProcess(lang, paths) {
+function postProcess(lang, paths, sceneMarks) {
   const ffmpeg = process.env.FFMPEG_BIN ?? 'ffmpeg';
   const ffprobe = process.env.FFPROBE_BIN ?? 'ffprobe';
 
@@ -538,14 +545,17 @@ function postProcess(lang, paths) {
 
   const frameDir = mkdtempSync(join(tmpdir(), `pb-demo-frames-${lang}-`));
   const digests = [];
-  sceneMidpointSeconds().forEach((t, i) => {
+  const framePaths = [];
+  sceneMidpoints(sceneMarks).forEach((t, i) => {
     const png = join(frameDir, `scene-${i}.png`);
     const fr = run(ffmpeg, ['-hide_banner', '-y', '-ss', String(t), '-i', paths.mp4, '-frames:v', '1', png], { stdio: ['ignore', 'pipe', 'pipe'] });
     if (fr.status !== 0) fail(`${lang} frame extraction failed at ${t}s: ${fr.stderr.slice(-300)}`);
     digests.push(createHash('md5').update(readFileSync(png)).digest('hex'));
+    framePaths.push(png);
   });
   check(`${lang} scene-midpoint frames are pairwise distinct`,
     new Set(digests).size === digests.length, `${new Set(digests).size}/${digests.length} distinct`);
+  console.log(`${lang} frame readback PNGs: ${framePaths.join(' ')}`);
 }
 
 async function main() {
@@ -572,8 +582,8 @@ async function main() {
     const { chromium } = await import('playwright-core');
     const browser = await launchBrowser(chromium);
     for (const lang of langs) {
-      const paths = await recordLanguage(browser, lang, base, outDir, opts.compareRobot, opts.compareRoute);
-      postProcess(lang, paths);
+      const { paths, sceneMarks } = await recordLanguage(browser, lang, base, outDir, opts.compareRobot, opts.compareRoute);
+      postProcess(lang, paths, sceneMarks);
     }
     await browser.close();
   } finally {
