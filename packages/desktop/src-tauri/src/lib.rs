@@ -16,6 +16,8 @@ use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_updater::{Update, UpdaterExt};
 
+mod hoot;
+
 const PREFS_WINDOW: &str = "prefs";
 
 /// Updater feeds per channel — the whitelist. Must stay in sync with

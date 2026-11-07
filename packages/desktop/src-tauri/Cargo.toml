@@ -13,12 +13,21 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 base64 = "0.22"
+# reqwest/tempfile are already in Cargo.lock (transitive via tauri) — declared
+# directly here to reuse those pinned versions; sha1 is the only new crate.
+# (TLS: reqwest 0.13 renamed 0.12's "rustls-tls" and its "rustls" feature
+# force-enables the aws-lc provider; "rustls-no-provider" matches the stack
+# tauri-plugin-updater already uses in this lock — hyper-rustls with the ring
+# provider installed process-wide at runtime, see updater's updater.rs.)
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha1 = "0.10"
+tempfile = "3"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # Same versions as the existing lockfile entries (transitive via tauri on
