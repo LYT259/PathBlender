@@ -3,11 +3,13 @@
  * companion read, landed 2026-10-04).
  *
  * Geometry always applies. When the profile carries drive-train dynamics
- * and the trajectory is a regenerable PathPlanner import (`.path` files
- * carry no samples — their timeline comes from generation against a robot
- * config), the timeline is regenerated against the real robot instead of
- * the app default: the "timing is an estimate" story ends there. Choreo
- * imports embed their samples and are never regenerated.
+ * and the trajectory is a regenerable PathPlanner import (`.path` files and
+ * `.auto` routines carry no samples — their timeline comes from generation
+ * against a robot config), the timeline is regenerated against the real
+ * robot instead of the app default: the "timing is an estimate" story ends
+ * there. Choreo imports embed their samples and are never regenerated;
+ * WPILOG-derived trajectories are logged reality and are never regenerated
+ * either.
  *
  * The path's own constraint set is authoritative: a file marked
  * `unlimited` regenerates unlimited — profile generation defaults are
@@ -25,6 +27,7 @@
 
 import { DCMotor } from './pathplanner/dc-motor';
 import { generateTrajectory } from './pathplanner/generation';
+import { generateAutoTrajectory } from './parsers/pathplanner-auto';
 import { makeRobotConfig } from './pathplanner/robot-config';
 import type { RobotConfig } from './pathplanner/robot-config';
 import type { RobotProfile } from './parsers/robot-profile';
@@ -188,42 +191,76 @@ export function applyProfileToTrajectory(traj: Trajectory, profile: RobotProfile
 
   const editable = traj.editable;
   const d = profile.dynamics;
-  if (editable?.kind !== 'pathplanner' || !d) return base;
+  if (!d) return base;
 
-  // Real-robot regeneration through the profile→config seam. Fields the
-  // profile omits (or that were rejected as invalid) fall back to the
-  // generator defaults one by one, so a mass-only profile still re-times
-  // the path on real mass. The path is regenerated verbatim: an unlimited
-  // global-constraints marker stays unlimited — upstream v2025.2.7
-  // (lib/path/pathplanner_path.dart, verified at the pinned tag) loads
-  // globalConstraints from the file JSON as-is and maps `unlimited` to
-  // unconstrained values in _constraintsForPos without merging project
-  // settings, so profile generation defaults never backfill the path.
-  const { config, unknownMotorType } = resolveRobotConfig(profile);
-  const path = editable.path;
-  const generated = generateTrajectory(path, config);
-  if (generated.samples.length < 2) return base;
-  const samples = generated.samples as TrajectorySample[];
-  return {
-    ...base,
-    editable: { kind: 'pathplanner', path },
-    samples,
-    durationS: trajectoryDuration(samples),
-    events: generated.events,
-    warnings: [
-      `regenerated with real robot config from profile "${profile.name}"`,
-      ...(unknownMotorType
-        ? [
-            `drive motor "${unknownMotorType}" not supported (timing uses the default Kraken X60 model)`,
-          ]
-        : []),
-      // Same condition as the parse-time warning (parsers/pathplanner-path.ts):
-      // it lives in the trajectory warnings, not parseWarnings, so
-      // regeneration re-issues it for a path that is still unlimited.
-      ...(!Number.isFinite(path.globalConstraints.maxVelocityMPS)
-        ? ['path has unlimited global constraints; results may be unrealistic']
-        : []),
-      ...path.parseWarnings,
-    ],
-  };
+  if (editable?.kind === 'pathplanner') {
+    // Real-robot regeneration through the profile→config seam. Fields the
+    // profile omits (or that were rejected as invalid) fall back to the
+    // generator defaults one by one, so a mass-only profile still re-times
+    // the path on real mass. The path is regenerated verbatim: an unlimited
+    // global-constraints marker stays unlimited — upstream v2025.2.7
+    // (lib/path/pathplanner_path.dart, verified at the pinned tag) loads
+    // globalConstraints from the file JSON as-is and maps `unlimited` to
+    // unconstrained values in _constraintsForPos without merging project
+    // settings, so profile generation defaults never backfill the path.
+    const { config, unknownMotorType } = resolveRobotConfig(profile);
+    const path = editable.path;
+    const generated = generateTrajectory(path, config);
+    if (generated.samples.length < 2) return base;
+    const samples = generated.samples as TrajectorySample[];
+    return {
+      ...base,
+      editable: { kind: 'pathplanner', path },
+      samples,
+      durationS: trajectoryDuration(samples),
+      events: generated.events,
+      warnings: [
+        `regenerated with real robot config from profile "${profile.name}"`,
+        ...(unknownMotorType
+          ? [
+              `drive motor "${unknownMotorType}" not supported (timing uses the default Kraken X60 model)`,
+            ]
+          : []),
+        // Same condition as the parse-time warning (parsers/pathplanner-path.ts):
+        // it lives in the trajectory warnings, not parseWarnings, so
+        // regeneration re-issues it for a path that is still unlimited.
+        ...(!Number.isFinite(path.globalConstraints.maxVelocityMPS)
+          ? ['path has unlimited global constraints; results may be unrealistic']
+          : []),
+        ...path.parseWarnings,
+      ],
+    };
+  }
+
+  if (editable?.kind === 'pathplanner-auto') {
+    // Routines regenerate the same way as single paths: every referenced
+    // path re-generates against the profile config and the segments chain
+    // again (waits/named commands are structure, not config-dependent).
+    // generateAutoTrajectory reports command-tree, per-path parse, and
+    // chaining warnings only — it never claims a config (the generator
+    // default claim belongs to parsePathPlannerAuto; timing warnings
+    // against the applied profile are built by the timing layer).
+    const { config, unknownMotorType } = resolveRobotConfig(profile);
+    const auto = editable.auto;
+    const generated = generateAutoTrajectory(auto, config);
+    if (generated.samples.length < 2) return base;
+    return {
+      ...base,
+      editable: { kind: 'pathplanner-auto', auto },
+      samples: generated.samples,
+      durationS: trajectoryDuration(generated.samples),
+      events: generated.events,
+      warnings: [
+        `regenerated with real robot config from profile "${profile.name}"`,
+        ...(unknownMotorType
+          ? [
+              `drive motor "${unknownMotorType}" not supported (timing uses the default Kraken X60 model)`,
+            ]
+          : []),
+        ...generated.warnings,
+      ],
+    };
+  }
+
+  return base;
 }

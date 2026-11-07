@@ -16,6 +16,7 @@
 import { generateTrajectory } from './pathplanner/generation';
 import { makeRobotConfig } from './pathplanner/robot-config';
 import type { ParsedPath, Waypoint } from './pathplanner/path-model';
+import type { ParsedAuto } from './parsers/pathplanner-auto';
 import type { ChoreoWaypoint } from './parsers/traj-editable';
 import { remapChoreoGeometry } from './parsers/traj-editable';
 import type { Trajectory, TrajectorySample } from './types';
@@ -24,6 +25,7 @@ import { trajectoryDuration } from './types';
 /** Editable source data attached to a trajectory (undefined → not editable). */
 export type EditablePath =
   | { kind: 'pathplanner'; path: ParsedPath }
+  | { kind: 'pathplanner-auto'; auto: ParsedAuto }
   | {
       kind: 'choreo';
       version: string;
@@ -167,7 +169,9 @@ export function removeChoreoWaypoint(traj: Trajectory, idx: number): Trajectory 
 
 export function reparameterize(traj: Trajectory): Trajectory {
   const e = traj.editable;
-  if (!e) return traj;
+  // Autos carry no editable waypoints (all waypoint-edit functions throw for
+  // them), so there is no geometry edit to re-time.
+  if (!e || e.kind === 'pathplanner-auto') return traj;
 
   if (e.kind === 'pathplanner') {
     const generated = generateTrajectory(e.path, makeRobotConfig());

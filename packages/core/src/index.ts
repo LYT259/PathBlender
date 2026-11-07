@@ -112,7 +112,8 @@ export type {
   DynamicsProvenance,
   ResolvedRobotConfig,
 } from './profile-apply';
-export type { AutoSegment } from './parsers/pathplanner-auto';
+export type { AutoSegment, ParsedAuto } from './parsers/pathplanner-auto';
+export { generateAutoTrajectory, parseAutoStructure } from './parsers/pathplanner-auto';
 
 // PathPlanner trajectory generation (Phase 2 port, MIT-licensed upstream).
 export { DCMotor } from './pathplanner/dc-motor';

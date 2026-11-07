@@ -7,15 +7,18 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  generateAutoTrajectory,
   generatePathPoints,
   generateTrajectory,
   makeRobotConfig,
+  parseAutoStructure,
   parsePathFile,
   parsePathJson,
   parsePathPlannerAuto,
   samplePath,
   ParseError,
 } from '../src';
+import type { ParsedAuto } from '../src';
 
 const SAMPLES = resolve(__dirname, '../../../samples');
 const read = (rel: string): string =>
@@ -227,6 +230,8 @@ describe('.auto routine semantics', () => {
   const pickupText = read('pathplanner/Pickup.path');
   const scoreText = read('pathplanner/Score.path');
   const autoText = read('pathplanner/Example Auto.auto');
+  const resolveSamplePaths = (name: string): string | undefined =>
+    name === 'Pickup' ? pickupText : name === 'Score' ? scoreText : undefined;
 
   it('chains Pickup → 1s wait → 1s wait → Score with events', () => {
     const traj = parsePathFile(autoText, 'Example Auto.auto', (name) =>
@@ -276,5 +281,66 @@ describe('.auto routine semantics', () => {
     const traj = parsePathFile(scoreText, 'Score.path');
     expect(traj.source).toBe('pathplanner-path');
     expect(traj.durationS).toBeGreaterThan(1);
+  });
+
+  it('parsePathPlannerAuto preserves the editable auto structure', () => {
+    const traj = parsePathPlannerAuto(autoText, 'Example Auto.auto', resolveSamplePaths);
+    expect(traj.editable?.kind).toBe('pathplanner-auto');
+    const auto = (traj.editable as { kind: 'pathplanner-auto'; auto: ParsedAuto }).auto;
+    // Hand-derived from Example Auto.auto: path, 1s wait, named, 1s wait, path.
+    expect(auto.segments).toEqual([
+      { kind: 'path', pathName: 'Pickup' },
+      { kind: 'wait', seconds: 1 },
+      { kind: 'named', name: 'print hello' },
+      { kind: 'wait', seconds: 1 },
+      { kind: 'path', pathName: 'Score' },
+    ]);
+    // The .auto file carries no "name" field → the fileName minus extension.
+    expect(auto.name).toBe('Example Auto');
+    expect(Object.keys(auto.paths)).toEqual(['Pickup', 'Score']);
+    expect(auto.paths['Pickup']!.waypoints).toHaveLength(2);
+    expect(auto.commandWarnings).toEqual([]);
+  });
+
+  it('deadline groups flatten with an approximation warning', () => {
+    const autoJson = JSON.stringify({
+      version: '2025.0',
+      command: {
+        type: 'deadline',
+        data: {
+          commands: [
+            { type: 'path', data: { pathName: 'Pickup' } },
+            { type: 'path', data: { pathName: 'Score' } },
+          ],
+        },
+      },
+      resetOdom: true,
+    });
+    const auto = parseAutoStructure(autoJson, 'Deadline.auto', resolveSamplePaths);
+    expect(auto.segments).toEqual([
+      { kind: 'path', pathName: 'Pickup' },
+      { kind: 'path', pathName: 'Score' },
+    ]);
+    expect(auto.commandWarnings).toEqual([
+      '"deadline" command group approximated as sequential — the group ends when its first command finishes, so the summed duration is an upper-bound estimate',
+    ]);
+
+    const traj = parsePathPlannerAuto(autoJson, 'Deadline.auto', resolveSamplePaths);
+    expect(traj.samples.length).toBeGreaterThan(2);
+    expect(traj.warnings.join('\n')).toContain('"deadline" command group approximated as sequential');
+    expect(traj.warnings.join('\n')).not.toContain('unsupported command type "deadline" ignored');
+  });
+
+  it('structure round-trips through structuredClone and regenerates identically', () => {
+    const auto = parseAutoStructure(autoText, 'Example Auto.auto', resolveSamplePaths);
+    const a = generateAutoTrajectory(structuredClone(auto), makeRobotConfig());
+    const b = generateAutoTrajectory(structuredClone(auto), makeRobotConfig());
+    expect(a.samples).toEqual(b.samples);
+    expect(a.events).toEqual(b.events);
+    expect(a.warnings).toEqual(b.warnings);
+
+    // Generation is pure: the parsed structure is byte-identical to a fresh
+    // parse after being used as a generation input.
+    expect(auto).toEqual(parseAutoStructure(autoText, 'Example Auto.auto', resolveSamplePaths));
   });
 });

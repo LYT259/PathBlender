@@ -8,16 +8,26 @@
  *   warning (strategy timelines should treat these as estimates)
  * - parallel/race/group: approximated by sequentializing with a warning
  *   (degraded-approximation policy, study §5.2)
+ * - deadline: approximated by sequentializing with its own warning — the
+ *   group really ends when its FIRST command finishes, so the sequential
+ *   sum is an upper-bound estimate
  *
- * The referenced .path files are resolved by the caller-supplied lookup
- * (same import batch or previously imported paths).
+ * Split since the profile-timing work: parseAutoStructure captures the
+ * routine structure (segments, resolved paths, command-tree findings) at
+ * import time through the caller-supplied team-scoped lookup (same import
+ * batch or previously imported paths); generateAutoTrajectory replays that
+ * structure against any RobotConfig. parsePathPlannerAuto remains the
+ * one-call default-config import and additionally attaches the parsed
+ * structure as `editable` so profiles can re-time the routine.
  */
 
-import type { Trajectory, TrajectorySample } from '../types';
+import type { Trajectory, TrajectoryEvent, TrajectorySample } from '../types';
 import { teamNumberFromName, trajectoryDuration } from '../types';
 import { makeRobotConfig, defaultConfigGeometry } from '../pathplanner/robot-config';
+import type { RobotConfig } from '../pathplanner/robot-config';
 import { generateTrajectory } from '../pathplanner/generation';
 import { parsePathJson } from '../pathplanner/path-model';
+import type { ParsedPath } from '../pathplanner/path-model';
 import { asArray, asRecord, num, parseJson, str } from './json';
 import { ParseError } from './parse-error';
 
@@ -25,6 +35,16 @@ export type AutoSegment =
   | { kind: 'path'; pathName: string }
   | { kind: 'wait'; seconds: number }
   | { kind: 'named'; name: string };
+
+/** Parsed .auto structure: segments, resolved paths, command-tree findings. */
+export interface ParsedAuto {
+  name: string;
+  segments: AutoSegment[];
+  /** Parsed .path source per referenced pathName (team-scoped at import). */
+  paths: Record<string, ParsedPath>;
+  /** Non-fatal command-tree findings (parallel/race/group/deadline/unknown). */
+  commandWarnings: string[];
+}
 
 interface ParseCtx {
   warnings: string[];
@@ -69,22 +89,35 @@ function flattenCommand(
       for (const child of asArray(data.commands) ?? []) flattenCommand(child, out, ctx, depth + 1);
       return;
     }
+    case 'deadline': {
+      // A deadline group ends when its first command finishes; the
+      // sequential sum is therefore an upper-bound estimate.
+      ctx.warnings.push(
+        '"deadline" command group approximated as sequential — the group ends when its first command finishes, so the summed duration is an upper-bound estimate',
+      );
+      for (const child of asArray(data.commands) ?? []) flattenCommand(child, out, ctx, depth + 1);
+      return;
+    }
     default:
-      // Unknown command types (deadline, conditional, etc.) — ignore.
+      // Unknown command types (conditional, etc.) — ignore.
       ctx.warnings.push(`unsupported command type "${type}" ignored`);
   }
 }
 
 /**
- * Parse an .auto file and generate a unified trajectory.
- * resolvePath must return the raw .path JSON text for a referenced path
- * name, or undefined when unknown.
+ * Parse an .auto file into its routine structure, resolving every referenced
+ * path through resolvePath (must return the raw .path JSON text for a path
+ * name, or undefined when unknown; same import batch or previously imported
+ * paths). Throws the same ParseErrors as the historical one-call import:
+ * missing command tree, no path/wait segments, unresolved path,
+ * referenced-path parse failure, and no motion (pathless routines cannot
+ * produce samples under any config).
  */
-export function parsePathPlannerAuto(
+export function parseAutoStructure(
   text: string,
   fileName: string,
   resolvePath: (pathName: string) => string | undefined,
-): Trajectory {
+): ParsedAuto {
   const root = asRecord(parseJson(text, fileName));
   if (!root || !asRecord(root.command)) {
     throw new ParseError('unrecognized-format', fileName, 'missing command tree');
@@ -96,20 +129,61 @@ export function parsePathPlannerAuto(
   if (segments.length === 0) {
     throw new ParseError('empty-trajectory', fileName, 'routine has no path/wait segments');
   }
+  if (!segments.some((s) => s.kind === 'path')) {
+    throw new ParseError('empty-trajectory', fileName, 'routine produced no motion');
+  }
 
-  const config = makeRobotConfig();
+  const paths: Record<string, ParsedPath> = {};
+  for (const seg of segments) {
+    if (seg.kind !== 'path' || paths[seg.pathName] !== undefined) continue;
+    const pathText = resolvePath(seg.pathName);
+    if (pathText === undefined) {
+      throw new ParseError(
+        'unrecognized-format',
+        fileName,
+        `routine references path "${seg.pathName}" — import the matching .path file too (drop it in the same batch)`,
+      );
+    }
+    try {
+      paths[seg.pathName] = parsePathJson(pathText, `${seg.pathName}.path`);
+    } catch (e) {
+      throw new ParseError(
+        'unrecognized-format',
+        fileName,
+        `referenced path "${seg.pathName}" failed to parse: ${e instanceof Error ? e.message : e}`,
+      );
+    }
+  }
+
+  return {
+    name: str(root.name, fileName.replace(/\.auto$/i, '')),
+    segments,
+    paths,
+    commandWarnings: ctx.warnings,
+  };
+}
+
+/**
+ * Generate a unified timeline from a parsed routine against a robot config:
+ * paths are regenerated and time-shifted into place, waits hold the previous
+ * end pose (sampled at 10 Hz), named commands become zero-duration events.
+ * Warnings cover command-tree findings, per-path parse warnings, and
+ * segment-chaining discontinuities — this function never claims a config;
+ * the caller that chose one does.
+ */
+export function generateAutoTrajectory(
+  auto: ParsedAuto,
+  config: RobotConfig,
+): { samples: TrajectorySample[]; events: TrajectoryEvent[]; warnings: string[] } {
   const samples: TrajectorySample[] = [];
-  const events: Trajectory['events'] = [];
-  const warnings = [
-    'generated with default robot config (Kraken X60 swerve) — timing is an estimate',
-    ...ctx.warnings,
-  ];
+  const events: TrajectoryEvent[] = [];
+  const warnings = [...auto.commandWarnings];
 
   let clock = 0;
   let lastPose: { x: number; y: number; heading: number } | undefined;
   let segmentIndex = 0;
 
-  for (const seg of segments) {
+  for (const seg of auto.segments) {
     if (seg.kind === 'wait') {
       // Hold the previous pose for the wait duration (sampled at 10 Hz).
       if (lastPose) {
@@ -127,23 +201,12 @@ export function parsePathPlannerAuto(
         warnings.push('named commands run in unknown time — not counted in the timeline');
       }
     } else {
-      const pathText = resolvePath(seg.pathName);
-      if (pathText === undefined) {
-        throw new ParseError(
-          'unrecognized-format',
-          fileName,
-          `routine references path "${seg.pathName}" — import the matching .path file too (drop it in the same batch)`,
-        );
-      }
-      let path;
-      try {
-        path = parsePathJson(pathText, `${seg.pathName}.path`);
-      } catch (e) {
-        throw new ParseError(
-          'unrecognized-format',
-          fileName,
-          `referenced path "${seg.pathName}" failed to parse: ${e instanceof Error ? e.message : e}`,
-        );
+      // Hand-built structures may reference unknown paths; treat them as
+      // empty segments rather than crashing on a missing record entry.
+      const path = auto.paths[seg.pathName];
+      if (!path) {
+        segmentIndex++;
+        continue;
       }
       const gen = generateTrajectory(path, config);
       for (const w of path.parseWarnings) {
@@ -170,23 +233,44 @@ export function parsePathPlannerAuto(
     segmentIndex++;
   }
 
-  if (samples.length < 2) {
+  return { samples, events, warnings };
+}
+
+/**
+ * Parse an .auto file and generate a unified trajectory with the default
+ * robot config. resolvePath must return the raw .path JSON text for a
+ * referenced path name, or undefined when unknown. The parsed structure is
+ * attached as `editable` so a robot profile can regenerate the timeline.
+ */
+export function parsePathPlannerAuto(
+  text: string,
+  fileName: string,
+  resolvePath: (pathName: string) => string | undefined,
+): Trajectory {
+  const auto = parseAutoStructure(text, fileName, resolvePath);
+  const config = makeRobotConfig();
+  const generated = generateAutoTrajectory(auto, config);
+  if (generated.samples.length < 2) {
     throw new ParseError('empty-trajectory', fileName, 'routine produced no motion');
   }
 
   return {
     id: crypto.randomUUID(),
-    name: str(root.name, fileName.replace(/\.auto$/i, '')),
+    name: auto.name,
     teamName: '',
     teamNumber: teamNumberFromName(fileName),
     source: 'pathplanner-auto',
     alliance: 'blue',
-    samples,
-    durationS: trajectoryDuration(samples),
+    samples: generated.samples,
+    durationS: trajectoryDuration(generated.samples),
     geometry: defaultConfigGeometry(),
     geometrySource: 'default',
     moduleLocations: config.moduleLocations,
-    events,
-    warnings,
+    events: generated.events,
+    warnings: [
+      'generated with default robot config (Kraken X60 swerve) — timing is an estimate',
+      ...generated.warnings,
+    ],
+    editable: { kind: 'pathplanner-auto', auto },
   };
 }

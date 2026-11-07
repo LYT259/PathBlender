@@ -7,14 +7,21 @@ import {
   DEFAULT_GEOMETRY,
   deserializeSession,
   dynamicsConfigComplete,
+  extractWpilogTrajectory,
+  generateTrajectory,
+  inspectWpilog,
+  makeRobotConfig,
   makeSession,
   parsePathFile,
+  parsePathJson,
+  parsePathPlannerAuto,
   parseRobotProfile,
   parseTraj,
   resolveRobotConfig,
   serializeSession,
+  trajectoryDuration,
 } from '../src';
-import type { RobotProfile } from '../src';
+import type { RobotProfile, RobotConfig, Trajectory } from '../src';
 
 const SAMPLES = resolve(__dirname, '../../../samples');
 const read = (rel: string) => readFileSync(resolve(SAMPLES, rel), 'utf-8');
@@ -226,15 +233,22 @@ describe('applyProfileToTrajectory (real-robot regeneration)', () => {
   });
 
   it('keeps Choreo samples untouched (embedded, never regenerated)', () => {
-    const choreo = parseTraj(read('traj/v3_swerve.traj'), 'v3_swerve.traj');
     const profile = parseRobotProfile(
       JSON.stringify({ robotConfig: { robotWidth: 0.9, robotLength: 0.9, robotMass: 50 } }),
       'a/settings.json',
     )!;
+
+    const choreo = parseTraj(read('traj/v3_swerve.traj'), 'v3_swerve.traj');
     const applied = applyProfileToTrajectory(choreo, profile);
-    expect(applied.samples).toEqual(choreo.samples);
+    // Reference-equal: embedded samples survive application untouched.
+    expect(applied.samples).toBe(choreo.samples);
     expect(applied.geometrySource).toBe('file');
     expect(applied.massKG).toBe(50);
+
+    // WPILOG-derived trajectories embed logged poses — equally never regenerated.
+    const wpilogTraj = extractMinimalPoseLog();
+    const appliedLog = applyProfileToTrajectory(wpilogTraj, profile);
+    expect(appliedLog.samples).toBe(wpilogTraj.samples);
   });
 
   it('survives the session round trip (mass + drive mode persist since v1.7 files)', () => {
@@ -393,3 +407,187 @@ describe('resolveRobotConfig (motor, current, provenance)', () => {
     expect(DCMotor.isKnownMotorType('krakenx60')).toBe(false);
   });
 });
+
+describe('.auto regeneration', () => {
+  // Pickup.path/Score.path are fully constraint-masked against mass alone
+  // (their own constraints bind before the drive dynamics), so the routine's
+  // first segment resolves to the dynamics-sensitive constrained_pointing.path
+  // sample, and the profile is the Task 2 full synthetic set with a lower
+  // current limit (40 A) — proven to retime both paths decisively.
+  const autoText = read('pathplanner/Example Auto.auto');
+  const constrainedText = read('pathplanner/constrained_pointing.path');
+  const scoreText = read('pathplanner/Score.path');
+  const resolveAutoPaths = (name: string): string | undefined =>
+    name === 'Pickup' ? constrainedText : name === 'Score' ? scoreText : undefined;
+  const parseAuto = () => parsePathPlannerAuto(autoText, 'Example Auto.auto', resolveAutoPaths);
+
+  const currentLimitedProfile = parseRobotProfile(
+    JSON.stringify({
+      robotWidth: 0.85,
+      robotLength: 0.85,
+      holonomicMode: true,
+      robotMass: 150,
+      robotMOI: 6.9,
+      wheelCOF: 1.2,
+      driveWheelRadius: 0.048,
+      driveGearing: 6.08,
+      maxDriveSpeed: 4.5,
+      driveMotorType: 'krakenX60',
+      driveCurrentLimit: 40,
+      flModuleX: 0.273, flModuleY: 0.273,
+      frModuleX: -0.273, frModuleY: 0.273,
+      blModuleX: 0.273, blModuleY: -0.273,
+      brModuleX: -0.273, brModuleY: -0.273,
+    }),
+    '254/pathplanner/settings.json',
+  )!;
+
+  // Independently derived expectations: the auto chains the .path
+  // generator's own timelines — d1 + 1s wait + 0s named + 1s wait + d2.
+  // The generator is exercised directly here; the code under test is the
+  // chaining and the regeneration branch.
+  const segmentTimings = (config: RobotConfig) => {
+    const g1 = generateTrajectory(parsePathJson(constrainedText, 'Pickup.path'), config);
+    const g2 = generateTrajectory(parsePathJson(scoreText, 'Score.path'), config);
+    return {
+      d1: trajectoryDuration(g1.samples),
+      d2: trajectoryDuration(g2.samples),
+      markerT: g2.events.find((e) => e.name === 'Example Marker')!.t,
+    };
+  };
+  const byDefault = segmentTimings(makeRobotConfig());
+  const byProfile = segmentTimings(resolveRobotConfig(currentLimitedProfile).config);
+
+  // Fixture sanity: the current limit really retimes both referenced paths.
+  expect(byProfile.d1).toBeGreaterThan(byDefault.d1);
+  expect(byProfile.d2).toBeGreaterThan(byDefault.d2);
+
+  it('applying a profile regenerates every segment, shift, and event', () => {
+    const traj = parseAuto();
+    expect(traj.editable?.kind).toBe('pathplanner-auto');
+    expect(traj.durationS).toBeCloseTo(byDefault.d1 + 2 + byDefault.d2, 6);
+
+    const applied = applyProfileToTrajectory(traj, currentLimitedProfile);
+    expect(applied.editable?.kind).toBe('pathplanner-auto');
+    expect(applied.geometrySource).toBe('file');
+    // Current-starved: less torque, longer timeline.
+    expect(applied.durationS).toBeGreaterThan(traj.durationS);
+    expect(applied.durationS).toBeCloseTo(byProfile.d1 + 2 + byProfile.d2, 6);
+
+    // Events shift with the segments: 'print hello' fires after the first
+    // segment plus its 1 s wait; Score's marker rides Score's own timeline
+    // shifted by the new clock.
+    const named = (t: Trajectory) => t.events.find((e) => e.name === 'print hello')!;
+    expect(named(traj).t).toBeCloseTo(byDefault.d1 + 1, 6);
+    expect(named(applied).t).toBeCloseTo(byProfile.d1 + 1, 6);
+    const marker = (t: Trajectory) => t.events.find((e) => e.name === 'Example Marker')!;
+    expect(marker(traj).t).toBeCloseTo(byDefault.d1 + 2 + byDefault.markerT, 6);
+    expect(marker(applied).t).toBeCloseTo(byProfile.d1 + 2 + byProfile.markerT, 6);
+
+    // Waits are preserved exactly: 10 Hz holds with zero velocity at one
+    // fixed pose, across both waits (the named command moves nothing).
+    const holdInterior = (t: Trajectory, start: number) => {
+      const inside = t.samples.filter((s) => s.t > start + 1e-9 && s.t < start + 1 - 1e-9);
+      // Offsets 0.1…0.9 — the 1.0 sample shares its t with the next
+      // segment's first sample, so the interior is unambiguous.
+      expect(inside).toHaveLength(9);
+      for (let i = 0; i < inside.length; i++) {
+        expect(inside[i]!.t).toBeCloseTo(start + (i + 1) / 10, 9);
+        expect(inside[i]!.vx).toBe(0);
+        expect(inside[i]!.vy).toBe(0);
+        expect(inside[i]!.omega).toBe(0);
+        expect(inside[i]!.x).toBeCloseTo(inside[0]!.x, 12);
+        expect(inside[i]!.y).toBeCloseTo(inside[0]!.y, 12);
+      }
+      return { x: inside[0]!.x, y: inside[0]!.y };
+    };
+    const hold1 = holdInterior(traj, byDefault.d1);
+    const hold2 = holdInterior(traj, byDefault.d1 + 1);
+    expect([hold2.x, hold2.y]).toEqual([hold1.x, hold1.y]);
+    const appliedHold1 = holdInterior(applied, byProfile.d1);
+    const appliedHold2 = holdInterior(applied, byProfile.d1 + 1);
+    // Geometry is config-independent: the robot parks at the same spot.
+    expect(appliedHold1.x).toBeCloseTo(hold1.x, 12);
+    expect(appliedHold1.y).toBeCloseTo(hold1.y, 12);
+    expect([appliedHold2.x, appliedHold2.y]).toEqual([appliedHold1.x, appliedHold1.y]);
+
+    // Named commands stay zero-duration events with their warning, and the
+    // regenerated warnings never claim a robot config of their own.
+    expect(applied.warnings[0]).toContain('regenerated with real robot config');
+    expect(applied.warnings.join('\n')).toContain('named commands run in unknown time');
+    expect(applied.warnings.join('\n')).not.toContain('generated with default robot config');
+  });
+
+  it('regeneration is deterministic', () => {
+    const a = applyProfileToTrajectory(parseAuto(), currentLimitedProfile);
+    const b = applyProfileToTrajectory(parseAuto(), currentLimitedProfile);
+    expect(a.samples).toEqual(b.samples);
+    expect(a.events).toEqual(b.events);
+  });
+});
+
+/* Minimal byte-level WPILOG pose log (test-side only; mirrors the spec-exact
+   writer in wpilog.test.ts, trimmed to what extraction needs: the Pose2d
+   schema trio, one struct:Pose2d entry, no control word — the extraction
+   interval is a manual range). */
+function extractMinimalPoseLog(): Trajectory {
+  const chunks: number[] = [];
+  const enc = new TextEncoder();
+  const u32 = (v: number) => [v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >>> 24) & 0xff];
+  const strField = (s: string) => [...u32(enc.encode(s).length), ...enc.encode(s)];
+  const f64 = (v: number) => {
+    const view = new DataView(new ArrayBuffer(8));
+    view.setFloat64(0, v, true);
+    return [...new Uint8Array(view.buffer)];
+  };
+  chunks.push(...enc.encode('WPILOG'), 0x00, 0x01, ...u32(0)); // v1.0, no extra header
+
+  let nextId = 1;
+  const record = (entryId: number, timestampUs: number, payload: number[]) => {
+    const widthFor = (value: number, max: number) => {
+      for (let len = 1; len < max; len++) if (value < 2 ** (8 * len)) return len;
+      return max;
+    };
+    const idLen = widthFor(entryId, 4);
+    const sizeLen = widthFor(payload.length, 4);
+    const tsLen = widthFor(timestampUs, 8);
+    chunks.push((idLen - 1) | ((sizeLen - 1) << 2) | ((tsLen - 1) << 4));
+    for (let i = 0; i < idLen; i++) chunks.push(Math.floor(entryId / 2 ** (8 * i)) % 256);
+    for (let i = 0; i < sizeLen; i++) chunks.push(Math.floor(payload.length / 2 ** (8 * i)) % 256);
+    for (let i = 0; i < tsLen; i++) chunks.push(Math.floor(timestampUs / 2 ** (8 * i)) % 256);
+    chunks.push(...payload);
+  };
+  const start = (name: string, type: string, payload?: number[]) => {
+    const id = nextId++;
+    record(0, 0, [0, ...u32(id), ...strField(name), ...strField(type), ...strField('')]);
+    if (payload) record(id, 0, payload);
+    return id;
+  };
+
+  start('NT:/.schema/struct:Pose2d', 'structschema', [
+    ...enc.encode('Translation2d translation;Rotation2d rotation'),
+  ]);
+  start('NT:/.schema/struct:Translation2d', 'structschema', [...enc.encode('double x;double y')]);
+  start('NT:/.schema/struct:Rotation2d', 'structschema', [...enc.encode('double value')]);
+  const pose = start('NT:/Drivetrain/Pose', 'struct:Pose2d');
+  const poses = [
+    { tS: 0.0, x: 1.0, y: 1.0 },
+    { tS: 0.5, x: 1.5, y: 1.0 },
+    { tS: 1.0, x: 2.0, y: 1.0 },
+  ];
+  for (const p of poses) record(pose, p.tS * 1e6, [...f64(p.x), ...f64(p.y), ...f64(0)]);
+
+  const bytes = new Uint8Array(chunks);
+  const inspection = inspectWpilog(bytes, 'robot.wpilog');
+  const candidate = inspection.candidates.find((c) => !c.likelyTarget)!;
+  const traj = extractWpilogTrajectory(bytes, inspection, {
+    pose: { mode: 'candidate', entryId: candidate.entryId, elementIndex: 0 },
+    interval: { mode: 'manual', startS: 0, endS: 1 },
+    lengthUnit: 'm',
+    headingUnit: 'rad',
+    name: 'robot.wpilog',
+  });
+  expect(traj.source).toBe('wpilog');
+  expect(traj.samples).toHaveLength(3);
+  return traj;
+}
