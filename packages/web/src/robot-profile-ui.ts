@@ -1,23 +1,21 @@
-import { applyProfileToTrajectory } from '@pathblender/core';
-import type { RobotProfile, SessionTrajectory, Trajectory } from '@pathblender/core';
+import { applyProfileToRobot } from '@pathblender/core';
+import type { RobotProfile, SessionTrajectory } from '@pathblender/core';
 
 /**
  * Post-hoc settings.json application (red book §6.6 entrance ②): the parsed
  * profile is applied to the robot and, coherently, to every route in its
- * library — displayed geometry, the selected route and each composed
- * segment then read the same valid profile and regenerated timing.
- * History, autosave and session files pick the result up through the
- * ordinary robot store; the route text on disk is never touched.
+ * library through the same core entry as the select and folder flows —
+ * displayed geometry, the selected route and each composed segment then read
+ * the same valid profile and regenerated timing. History, autosave and
+ * session files pick the result up through the ordinary robot store; the
+ * route text on disk is never touched.
  */
 export function applyUploadedProfile(robot: SessionTrajectory, profile: RobotProfile, relPath: string): SessionTrajectory {
   const entry = { id: crypto.randomUUID(), relPath, profile };
-  const apply = (trajectory: Trajectory) => applyProfileToTrajectory(trajectory, profile);
   return {
-    ...robot,
+    ...applyProfileToRobot(robot, profile),
     profileId: entry.id,
     profileOptions: [...(robot.profileOptions ?? []), entry],
-    trajectory: apply(robot.trajectory),
-    routeOptions: robot.routeOptions?.map((option) => ({ ...option, trajectory: apply(option.trajectory) })),
   };
 }
 

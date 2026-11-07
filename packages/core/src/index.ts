@@ -103,6 +103,7 @@ export {
 export type { HootProbeResult } from './parsers/hoot';
 export type { RobotProfile, ProfileDynamics, ProfileDefaultConstraints } from './parsers/robot-profile';
 export {
+  applyProfileToRobot,
   applyProfileToTrajectory,
   dynamicsConfigComplete,
   resolveRobotConfig,

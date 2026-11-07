@@ -17,7 +17,7 @@ import { WelcomeScreen } from './components/WelcomeScreen';
 import { UsageTip, useUsageTip } from './components/UsageTip';
 import { OnboardingTasks, useTourProgress, type TourTaskId } from './components/OnboardingTasks';
 import {
-  applyProfileToTrajectory,
+  applyProfileToRobot,
   CUSTOM_FIELD_ID,
   detectCollisions,
   detectFieldBounds,
@@ -702,8 +702,11 @@ function AppBody() {
       const entry = robot.profileOptions?.find((profile) => profile.id === profileId);
       if (!entry) return robot;
       // §6.6: geometry always applies; a dynamics-carrying profile also
-      // regenerates PathPlanner timelines against the real robot.
-      return { ...robot, profileId: entry.id, trajectory: applyProfileToTrajectory(robot.trajectory, entry.profile) };
+      // regenerates PathPlanner timelines against the real robot — through
+      // the same core entry as upload and folder import, so the whole route
+      // library (and every sequence resolving through it) is re-timed, not
+      // just the current route.
+      return { ...applyProfileToRobot(robot, entry.profile), profileId: entry.id };
     }));
   }, [setRobots]);
 

@@ -2,10 +2,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { makeSession, parseGhostAuto, parsePathFile, parseRobotProfile, type SessionTrajectory } from '@pathblender/core';
+import { applyProfileToRobot, makeSession, parseGhostAuto, parsePathFile, parseRobotProfile, type SessionTrajectory } from '@pathblender/core';
 import { I18nProvider } from '../src/i18n';
 import { App } from '../src/App';
+import { saveText } from '../src/download';
 import { applyUploadedProfile, inspectorWarnings } from '../src/robot-profile-ui';
+import { comboboxValues, pickComboboxValue } from './combobox';
+
+vi.mock('../src/download', () => ({ saveText: vi.fn(async () => true) }));
 
 const SAMPLES = resolve(__dirname, '../../../samples');
 const read = (rel: string) => readFileSync(resolve(SAMPLES, rel), 'utf-8');
@@ -119,5 +123,86 @@ describe('settings.json upload in the workspace', () => {
 describe('inspector warning filtering', () => {
   it('removes only the redundant default-config notice for both PathPlanner formats', () => {
     expect(inspectorWarnings([defaultWarning, 'generated with default robot config (Kraken X60 swerve) — timing is an estimate', 'Missing waypoint data'])).toEqual(['Missing waypoint data']);
+  });
+});
+
+describe('unified application entries (Task 6)', () => {
+  const constrainedText = read('pathplanner/constrained_pointing.path');
+  const scoreText = read('pathplanner/Score.path');
+  const autoText = read('pathplanner/Example Auto.auto');
+  const profile45 = parseRobotProfile(
+    JSON.stringify({ robotConfig: { robotWidth: 0.9, robotLength: 0.9, robotMass: 45, robotMOI: 2.0 } }),
+    '254/settings.json',
+  )!;
+  // The full synthetic set current-limited to 40 A retimes every fixture in
+  // this folder decisively (probed 2026-11-07): the constrained content
+  // 8.0105 → 10.074476474759628 s, Score 4.0827 → 10.619182604797595 s, and
+  // the routine chains d1 + 2 s + d2 = 22.693659079557223 s.
+  const SETTINGS_FULL40 = JSON.stringify({
+    robotWidth: 0.85, robotLength: 0.85, holonomicMode: true,
+    robotMass: 150, robotMOI: 6.9, wheelCOF: 1.2, driveWheelRadius: 0.048,
+    driveGearing: 6.08, maxDriveSpeed: 4.5, driveMotorType: 'krakenX60',
+    driveCurrentLimit: 40,
+    flModuleX: 0.273, flModuleY: 0.273, frModuleX: -0.273, frModuleY: 0.273,
+    blModuleX: 0.273, blModuleY: -0.273, brModuleX: -0.273, brModuleY: -0.273,
+  });
+
+  function constrainedRobot(): SessionTrajectory {
+    const trajectory = parsePathFile(constrainedText, 'team/pointing.path', () => undefined);
+    return { ...makeSession(trajectory), routeId: 'p', routeOptions: [{ id: 'p', relPath: 'team/pointing.path', trajectory }] };
+  }
+
+  function folderFile(relPath: string, text: string) {
+    const file = new File([text], relPath.split('/').at(-1)!, { type: 'application/json' });
+    Object.defineProperty(file, 'webkitRelativePath', { value: relPath });
+    return file;
+  }
+  const dropFolder = (files: File[]) => fireEvent.drop(window, { dataTransfer: { files } });
+
+  it('upload and select entries produce identical application', () => {
+    const robot = constrainedRobot();
+    const uploaded = applyUploadedProfile(robot, profile45, 'x/settings.json');
+    const viaCore = applyProfileToRobot(robot, profile45);
+    // Bookkeeping aside, both entries apply exactly the same trajectories to
+    // the whole slot — a real regeneration, not just a geometry swap.
+    expect(uploaded.trajectory).toEqual(viaCore.trajectory);
+    expect(uploaded.routeOptions).toEqual(viaCore.routeOptions);
+    expect(uploaded.trajectory.durationS).not.toBeCloseTo(robot.trajectory.durationS, 6);
+    // Bookkeeping stays each entry's own concern.
+    expect(uploaded.profileId).toBeDefined();
+    expect(uploaded.profileOptions).toHaveLength(1);
+    expect(viaCore.profileId).toBeUndefined();
+    expect(viaCore.profileOptions).toBeUndefined();
+  });
+
+  it('selecting a profile from the inspector applies it to the whole route library', async () => {
+    render(<App />);
+    dropFolder([
+      folderFile('254/paths/Pickup.path', constrainedText),
+      folderFile('254/paths/Score.path', scoreText),
+      folderFile('254/autos/Example Auto.auto', autoText),
+      folderFile('254/settings.json', SETTINGS_FULL40),
+    ]);
+    await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
+    fireEvent.click(screen.getByText('254', { selector: '.robot-name' }));
+    const profiles = await screen.findByRole('combobox', { name: 'Robot profile' });
+    pickComboboxValue(profiles, comboboxValues(profiles)[1]!);
+    // Save moved to the File menu (2026-10-06): trigger the same handler via ⌘S.
+    fireEvent.keyDown(window, { key: 's', metaKey: true });
+    const stored = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]);
+    const robot = stored.robots[0];
+    expect(robot.profileId).toBe(robot.profileOptions[0].id);
+    // Every library route carries the regenerated timeline — the raw import
+    // (default config) ran 8.010485665780992 / 4.082737556237078 /
+    // 14.09322322201807 s; today's select-entry bug left these untouched.
+    const duration = (relPath: string) =>
+      robot.routeOptions.find((o: { relPath: string }) => o.relPath === relPath).trajectory.durationS;
+    expect(duration('254/paths/Pickup.path')).toBeCloseTo(10.074476474759628, 6);
+    expect(duration('254/paths/Score.path')).toBeCloseTo(10.619182604797595, 6);
+    expect(duration('254/autos/Example Auto.auto')).toBeCloseTo(22.693659079557223, 6);
+    for (const option of robot.routeOptions) {
+      expect(option.trajectory.geometrySource).toBe('file');
+      expect(option.trajectory.timingSource).toBe('full-config');
+    }
   });
 });

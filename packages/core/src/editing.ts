@@ -8,19 +8,21 @@
  *
  * Time reparameterization:
  * - PathPlanner sources regenerate the full trajectory through the ported
- *   generator (same code path as import);
+ *   generator (same code path as import), against the bound profile's config
+ *   when one carries dynamics (an edit on a calibrated robot re-times on
+ *   that robot, not the app default) and against the default robot
+ *   otherwise — the timing state always reflects the config actually used;
  * - Choreo sources degrade to "keep the original timing, remap geometry
  *   only" with an explicit warning (Choreo's optimizer is not ported).
  */
 
-import { generateTrajectory } from './pathplanner/generation';
-import { makeRobotConfig } from './pathplanner/robot-config';
 import type { ParsedPath, Waypoint } from './pathplanner/path-model';
 import type { ParsedAuto } from './parsers/pathplanner-auto';
 import type { ChoreoWaypoint } from './parsers/traj-editable';
+import type { RobotProfile } from './parsers/robot-profile';
+import { regeneratePathTimeline } from './profile-apply';
 import { remapChoreoGeometry } from './parsers/traj-editable';
-import type { Trajectory, TrajectorySample } from './types';
-import { trajectoryDuration } from './types';
+import type { Trajectory } from './types';
 
 /** Editable source data attached to a trajectory (undefined → not editable). */
 export type EditablePath =
@@ -167,22 +169,20 @@ export function removeChoreoWaypoint(traj: Trajectory, idx: number): Trajectory 
 
 // --- Time reparameterization after a geometry edit ---
 
-export function reparameterize(traj: Trajectory): Trajectory {
+export function reparameterize(traj: Trajectory, profile?: RobotProfile): Trajectory {
   const e = traj.editable;
   // Autos carry no editable waypoints (all waypoint-edit functions throw for
   // them), so there is no geometry edit to re-time.
   if (!e || e.kind === 'pathplanner-auto') return traj;
 
   if (e.kind === 'pathplanner') {
-    const generated = generateTrajectory(e.path, makeRobotConfig());
-    if (generated.samples.length < 2) return traj;
-    const samples = generated.samples as TrajectorySample[];
-    return {
-      ...traj,
-      samples,
-      durationS: trajectoryDuration(samples),
-      events: generated.events,
-    };
+    // The bound profile's config when it carries dynamics, else the default
+    // robot — and the timing state follows the config actually used, so an
+    // edited trajectory never keeps a stale provenance claim (or zero-duration
+    // marker) from an earlier regeneration under a different config.
+    const regenerated = regeneratePathTimeline(e.path, profile);
+    if (!regenerated) return traj;
+    return { ...traj, ...regenerated };
   }
 
   // Choreo: keep the original time distribution, remap geometry onto the

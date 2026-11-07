@@ -28,6 +28,14 @@
  * resolveRobotConfig is the single profile→generator-config seam: it maps
  * the profile onto a RobotConfig and records per-parameter provenance
  * (file / default / invalid / unsupported) for downstream timing honesty.
+ *
+ * applyProfileToRobot is the robot-level entry every UI surface (upload,
+ * select, folder import) delegates to: one call applies the profile to the
+ * current trajectory and every route option, so composed sequences — which
+ * resolve through routeOptions — always see the same config. The single-path
+ * seam regeneratePathTimeline owns the timing state for whichever config
+ * regenerated a timeline (profile or default), so an edited trajectory can
+ * never carry a stale provenance claim.
  */
 
 import { DCMotor } from './pathplanner/dc-motor';
@@ -35,8 +43,10 @@ import { generateTrajectory } from './pathplanner/generation';
 import { generateAutoTrajectory } from './parsers/pathplanner-auto';
 import { makeRobotConfig } from './pathplanner/robot-config';
 import type { RobotConfig } from './pathplanner/robot-config';
+import type { ParsedPath } from './pathplanner/path-model';
 import type { RobotProfile } from './parsers/robot-profile';
-import type { TimingSource, Trajectory, TrajectorySample } from './types';
+import type { SessionTrajectory } from './session';
+import type { TimingSource, Trajectory, TrajectoryEvent, TrajectorySample } from './types';
 import { trajectoryDuration } from './types';
 
 /** Generation-relevant dynamics parameters tracked in provenance. */
@@ -223,6 +233,71 @@ function zeroDurationWarning(durationS: number): string[] {
     : [];
 }
 
+/** The parse-time default-config estimate (parsers/pathplanner-path.ts
+ * writes the identical notice at import); a regeneration that falls back to
+ * the default robot re-issues it. */
+const DEFAULT_CONFIG_TIMING_WARNING =
+  'generated with default robot config (Kraken X60 swerve) — timing is an estimate; attach a PathPlanner settings.json profile for real geometry and timing';
+
+/** One regenerated .path timeline plus the timing state for the config that
+ * produced it. */
+export interface PathRegeneration {
+  samples: TrajectorySample[];
+  durationS: number;
+  events: TrajectoryEvent[];
+  timingSource: TimingSource;
+  warnings: string[];
+}
+
+/**
+ * Regenerate one .path timeline — against the profile's config when it
+ * carries dynamics, else the app default — and rebuild the timing state and
+ * warnings for the config actually used. Shared by applyProfileToTrajectory
+ * and reparameterize so whichever config regenerated the samples owns the
+ * provenance claim: an edited trajectory never keeps a stale full-config or
+ * zero-duration story from an earlier regeneration under a different config.
+ * Undefined when the generator degenerates below two samples; callers keep
+ * their previous timeline then.
+ */
+export function regeneratePathTimeline(path: ParsedPath, profile?: RobotProfile): PathRegeneration | undefined {
+  const resolved = profile?.dynamics ? resolveRobotConfig(profile) : undefined;
+  const generated = generateTrajectory(path, resolved?.config ?? makeRobotConfig());
+  if (generated.samples.length < 2) return undefined;
+  const samples = generated.samples as TrajectorySample[];
+  const durationS = trajectoryDuration(samples);
+  const state = profile && resolved
+    ? configTimingWarnings(profile, resolved.provenance, resolved.unknownMotorType)
+    : { timingSource: 'default-config' as const, warnings: [DEFAULT_CONFIG_TIMING_WARNING] };
+  const warnings = [
+    ...state.warnings,
+    // Same condition as the parse-time warning (parsers/pathplanner-path.ts):
+    // it lives in the trajectory warnings so every regeneration re-issues it
+    // for a path that is still unlimited.
+    ...(!Number.isFinite(path.globalConstraints.maxVelocityMPS)
+      ? ['path has unlimited global constraints; results may be unrealistic']
+      : []),
+    ...zeroDurationWarning(durationS),
+    ...path.parseWarnings,
+  ];
+  return { samples, durationS, events: generated.events, timingSource: state.timingSource, warnings };
+}
+
+/**
+ * Apply a profile to a whole robot: the current trajectory and every route
+ * option. Composed sequences resolve through routeOptions, so they see the
+ * regenerated timelines too — no separate handling needed. Bookkeeping
+ * (profileOptions/profileId) stays with the caller; geometry-guarded entry
+ * points decide before calling. Pure: returns a derived copy.
+ */
+export function applyProfileToRobot(robot: SessionTrajectory, profile: RobotProfile): SessionTrajectory {
+  const apply = (trajectory: Trajectory): Trajectory => applyProfileToTrajectory(trajectory, profile);
+  return {
+    ...robot,
+    trajectory: apply(robot.trajectory),
+    routeOptions: robot.routeOptions?.map((option) => ({ ...option, trajectory: apply(option.trajectory) })),
+  };
+}
+
 /**
  * Apply a profile to one trajectory. Pure: returns a derived copy, source
  * data untouched. The applied provenance (geometrySource='file') engages
@@ -254,31 +329,13 @@ export function applyProfileToTrajectory(traj: Trajectory, profile: RobotProfile
     // globalConstraints from the file JSON as-is and maps `unlimited` to
     // unconstrained values in _constraintsForPos without merging project
     // settings, so profile generation defaults never backfill the path.
-    const { config, provenance, unknownMotorType } = resolveRobotConfig(profile);
-    const { timingSource, warnings } = configTimingWarnings(profile, provenance, unknownMotorType);
     const path = editable.path;
-    const generated = generateTrajectory(path, config);
-    if (generated.samples.length < 2) return base;
-    const samples = generated.samples as TrajectorySample[];
-    const durationS = trajectoryDuration(samples);
-    warnings.push(
-      // Same condition as the parse-time warning (parsers/pathplanner-path.ts):
-      // it lives in the trajectory warnings, not parseWarnings, so
-      // regeneration re-issues it for a path that is still unlimited.
-      ...(!Number.isFinite(path.globalConstraints.maxVelocityMPS)
-        ? ['path has unlimited global constraints; results may be unrealistic']
-        : []),
-      ...zeroDurationWarning(durationS),
-      ...path.parseWarnings,
-    );
+    const regenerated = regeneratePathTimeline(path, profile);
+    if (!regenerated) return base;
     return {
       ...base,
       editable: { kind: 'pathplanner', path },
-      samples,
-      durationS,
-      events: generated.events,
-      timingSource,
-      warnings,
+      ...regenerated,
     };
   }
 

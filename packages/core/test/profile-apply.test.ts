@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
+  applyProfileToRobot,
   applyProfileToTrajectory,
   DCMotor,
   DEFAULT_GEOMETRY,
@@ -12,16 +13,18 @@ import {
   inspectWpilog,
   makeRobotConfig,
   makeSession,
+  movePpWaypoint,
   parsePathFile,
   parsePathJson,
   parsePathPlannerAuto,
   parseRobotProfile,
   parseTraj,
+  reparameterize,
   resolveRobotConfig,
   serializeSession,
   trajectoryDuration,
 } from '../src';
-import type { RobotProfile, RobotConfig, Trajectory } from '../src';
+import type { RobotProfile, RobotConfig, SessionTrajectory, Trajectory } from '../src';
 
 const SAMPLES = resolve(__dirname, '../../../samples');
 const read = (rel: string) => readFileSync(resolve(SAMPLES, rel), 'utf-8');
@@ -626,6 +629,200 @@ describe('.auto regeneration', () => {
     // referenced path is unlimited must not lose the caveat just because
     // regeneration goes through the routine structure.
     expect(applied.warnings.join('\n')).toContain('path has unlimited global constraints');
+  });
+});
+
+describe('applyProfileToRobot (unified application, Task 6)', () => {
+  // The full synthetic set current-limited to 40 A retimes every fixture
+  // decisively (probed 2026-11-07: constrained 8.0105 → 10.0745 s,
+  // Score 4.0827 → 10.6192 s) — the same profile shape the .auto describe
+  // above proved on these very paths.
+  const constrainedText = read('pathplanner/constrained_pointing.path');
+  const scoreText = read('pathplanner/Score.path');
+  const autoText = read('pathplanner/Example Auto.auto');
+  const p40 = parseRobotProfile(
+    JSON.stringify({
+      robotWidth: 0.85,
+      robotLength: 0.85,
+      holonomicMode: true,
+      robotMass: 150,
+      robotMOI: 6.9,
+      wheelCOF: 1.2,
+      driveWheelRadius: 0.048,
+      driveGearing: 6.08,
+      maxDriveSpeed: 4.5,
+      driveMotorType: 'krakenX60',
+      driveCurrentLimit: 40,
+      flModuleX: 0.273, flModuleY: 0.273,
+      frModuleX: -0.273, frModuleY: 0.273,
+      blModuleX: 0.273, blModuleY: -0.273,
+      brModuleX: -0.273, brModuleY: -0.273,
+    }),
+    '254/pathplanner/settings.json',
+  )!;
+  // Independently derived expectations: the generator runs directly on the
+  // fixture paths with the profile-resolved config — the code under test is
+  // the two-level application, not the generator.
+  const cfg40 = resolveRobotConfig(p40).config;
+  const genDuration = (text: string, name: string) =>
+    trajectoryDuration(generateTrajectory(parsePathJson(text, name), cfg40).samples);
+
+  it('regenerates the current trajectory and every route option', () => {
+    const constrained = parsePathFile(constrainedText, 'constrained_pointing.path');
+    const score = parsePathFile(scoreText, 'Score.path');
+    const auto = parsePathPlannerAuto(
+      autoText,
+      'Example Auto.auto',
+      (name) => (name === 'Pickup' ? constrainedText : name === 'Score' ? scoreText : undefined),
+    );
+    const choreo = parseTraj(read('traj/v3_swerve.traj'), 'v3_swerve.traj');
+    const robot: SessionTrajectory = {
+      ...makeSession(constrained, 3),
+      routeId: 'r1',
+      routeOptions: [
+        { id: 'r1', relPath: '254/constrained_pointing.path', trajectory: constrained },
+        { id: 'r2', relPath: '254/Score.path', trajectory: score },
+        { id: 'r3', relPath: '254/Example Auto.auto', trajectory: auto },
+        { id: 'r4', relPath: '254/v3_swerve.traj', trajectory: choreo },
+      ],
+      profileOptions: [{ id: 'p1', relPath: '254/settings.json', profile: p40 }],
+      profileId: 'p1',
+    };
+
+    const applied = applyProfileToRobot(robot, p40);
+    const expectedConstrained = genDuration(constrainedText, 'constrained_pointing.path');
+    const expectedScore = genDuration(scoreText, 'Score.path');
+
+    // The current route: geometry from the file, timeline regenerated against
+    // the profile config.
+    expect(applied.trajectory.geometrySource).toBe('file');
+    expect(applied.trajectory.timingSource).toBe('full-config');
+    expect(applied.trajectory.durationS).toBeCloseTo(expectedConstrained, 6);
+    expect(applied.trajectory.durationS).not.toBeCloseTo(constrained.durationS, 6);
+
+    const option = (id: string) => applied.routeOptions!.find((o) => o.id === id)!.trajectory;
+    expect(option('r1').geometrySource).toBe('file');
+    expect(option('r1').durationS).toBeCloseTo(expectedConstrained, 6);
+    expect(option('r1').durationS).not.toBeCloseTo(constrained.durationS, 6);
+    expect(option('r2').geometrySource).toBe('file');
+    expect(option('r2').durationS).toBeCloseTo(expectedScore, 6);
+    expect(option('r2').durationS).not.toBeCloseTo(score.durationS, 6);
+    // The routine chains the .path timelines: d1 + 1 s wait + 0 s named
+    // command + 1 s wait + d2, all regenerated against the profile config.
+    expect(option('r3').geometrySource).toBe('file');
+    expect(option('r3').timingSource).toBe('full-config');
+    expect(option('r3').durationS).toBeCloseTo(expectedConstrained + 2 + expectedScore, 6);
+    expect(option('r3').durationS).not.toBeCloseTo(auto.durationS, 6);
+    // Choreo embeds its samples: geometry applies, the timeline never
+    // regenerates (reference-equal samples).
+    expect(option('r4').samples).toBe(choreo.samples);
+    expect(option('r4').geometrySource).toBe('file');
+
+    // Bookkeeping is the callers' job — the core function never touches it.
+    expect(applied.profileId).toBe('p1');
+    expect(applied.profileOptions).toBe(robot.profileOptions);
+    // Pure function: the source robot and its options are untouched.
+    expect(robot.trajectory.samples).toBe(constrained.samples);
+    expect(robot.routeOptions![0]!.trajectory.samples).toBe(constrained.samples);
+    expect(robot.routeOptions![3]!.trajectory.samples).toBe(choreo.samples);
+  });
+});
+
+describe('reparameterize with a bound profile (Task 6)', () => {
+  const constrainedText = read('pathplanner/constrained_pointing.path');
+  const parse = () => parsePathFile(constrainedText, 'constrained_pointing.path');
+  const fullSettings = (over: Record<string, unknown> = {}) =>
+    parseRobotProfile(
+      JSON.stringify({
+        robotWidth: 0.85,
+        robotLength: 0.85,
+        holonomicMode: true,
+        robotMass: 150,
+        robotMOI: 6.9,
+        wheelCOF: 1.2,
+        driveWheelRadius: 0.048,
+        driveGearing: 6.08,
+        maxDriveSpeed: 4.5,
+        driveMotorType: 'krakenX60',
+        driveCurrentLimit: 200,
+        flModuleX: 0.273, flModuleY: 0.273,
+        frModuleX: -0.273, frModuleY: 0.273,
+        blModuleX: 0.273, blModuleY: -0.273,
+        brModuleX: -0.273, brModuleY: -0.273,
+        ...over,
+      }),
+      '254/pathplanner/settings.json',
+    )!;
+  const edited = () => movePpWaypoint(parse(), 0, { anchor: { x: 2.5, y: 3.5 } });
+  const pathOf = (t: Trajectory) => (t.editable as { path: Parameters<typeof generateTrajectory>[0] }).path;
+  // Probed 2026-11-07 on this exact edit: default config 7.6893336839423885 s;
+  // the lighter mass 45 kg + 2.0 kg·m² 7.395670853036663 s; the 40 A variant
+  // 9.80723784543343 s; the 20 A variant degenerates to 0 s (32 samples, all
+  // at t=0 — the upstream torque-loss cancellation characterized in the
+  // resolveRobotConfig describe).
+  const DEFAULT_EDIT_DURATION = 7.6893336839423885;
+
+  it('honors a bound profile — the timeline follows the team config, not the default', () => {
+    const lighter = parseRobotProfile(
+      JSON.stringify({ robotConfig: { robotWidth: 0.9, robotLength: 0.9, robotMass: 45, robotMOI: 2.0 } }),
+      '254/settings.json',
+    )!;
+    const withProfile = reparameterize(edited(), lighter);
+    const onDefaults = reparameterize(edited());
+    expect(withProfile.durationS).toBeCloseTo(7.395670853036663, 6);
+    expect(onDefaults.durationS).toBeCloseTo(DEFAULT_EDIT_DURATION, 6);
+    expect(withProfile.durationS).not.toBeCloseTo(onDefaults.durationS, 6);
+    expect(withProfile.timingSource).toBe('partial-config');
+    expect(onDefaults.timingSource).toBe('default-config');
+  });
+
+  it('without a profile the default-config behavior is bit-identical to today', () => {
+    // Regression pin: the optional second parameter is a pure addition —
+    // same samples, duration, events and warnings as the one-argument call
+    // has always produced (the trajectory itself carries the parse-time
+    // default-config warning set).
+    const source = edited();
+    const generated = generateTrajectory(pathOf(source), makeRobotConfig());
+    expect(reparameterize(source)).toEqual({
+      ...source,
+      samples: generated.samples,
+      durationS: trajectoryDuration(generated.samples),
+      events: generated.events,
+    });
+  });
+
+  it('does not retain stale profile provenance when it regenerates on defaults', () => {
+    const applied = applyProfileToTrajectory(parse(), fullSettings({ driveCurrentLimit: 40 }));
+    expect(applied.timingSource).toBe('full-config');
+    const editedApplied = movePpWaypoint(applied, 0, { anchor: { x: 2.5, y: 3.5 } });
+    const onDefaults = reparameterize(editedApplied);
+    // The full-config claim must not survive a defaults regeneration: the
+    // timeline just reverted to default-config physics.
+    expect(onDefaults.timingSource).toBe('default-config');
+    expect(onDefaults.warnings.join('\n')).not.toContain('regenerated with real robot config');
+    expect(onDefaults.warnings[0]).toBe(
+      'generated with default robot config (Kraken X60 swerve) — timing is an estimate; attach a PathPlanner settings.json profile for real geometry and timing',
+    );
+    // Re-binding the profile restores its claim — with the config actually
+    // used for this regeneration.
+    const onProfile = reparameterize(editedApplied, fullSettings({ driveCurrentLimit: 40 }));
+    expect(onProfile.timingSource).toBe('full-config');
+    expect(onProfile.warnings[0]).toBe('regenerated with real robot config from profile "pathplanner"');
+    expect(onProfile.durationS).toBeCloseTo(9.80723784543343, 6);
+    expect(onProfile.durationS).not.toBeCloseTo(onDefaults.durationS, 6);
+  });
+
+  it('zero-duration warnings follow the config actually used', () => {
+    const degenerate = reparameterize(edited(), fullSettings({ driveCurrentLimit: 20 }));
+    expect(degenerate.durationS).toBe(0);
+    expect(degenerate.timingSource).toBe('full-config');
+    expect(degenerate.warnings.join('\n')).toContain('zero duration');
+    // The same edit on the default config is healthy — and must not keep the
+    // degenerate marker earned under the 20 A config.
+    const healthy = reparameterize(degenerate);
+    expect(healthy.durationS).toBeCloseTo(DEFAULT_EDIT_DURATION, 6);
+    expect(healthy.warnings.join('\n')).not.toContain('zero duration');
+    expect(healthy.timingSource).toBe('default-config');
   });
 });
 
