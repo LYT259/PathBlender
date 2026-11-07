@@ -164,24 +164,34 @@ fn hoot_dir(cache_dir: &Path) -> PathBuf {
 }
 
 /// Load the persisted state. A missing state file reads as a fresh
-/// [`HootState::default`]; so does a damaged one — the cache dir is
-/// user-writable, and degrading to fresh (re-consent plus an idempotent
-/// re-download) beats erroring the import feature until the cache is cleared
-/// by hand. Only genuine I/O errors propagate.
+/// [`HootState::default`]; so does a damaged one (unparseable JSON or invalid
+/// UTF-8) — the cache dir is user-writable, and degrading to fresh
+/// (re-consent plus an idempotent re-download) beats erroring the import
+/// feature until the cache is cleared by hand. Only genuine I/O errors
+/// propagate.
 pub fn load_hoot_state(cache_dir: &Path) -> Result<HootState, String> {
     let path = hoot_dir(cache_dir).join(STATE_FILE_NAME);
     if !path.is_file() {
         return Ok(HootState::default());
     }
-    let raw =
-        std::fs::read_to_string(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
-    Ok(serde_json::from_str(&raw).unwrap_or_default())
+    // Bytes, not a String: non-UTF-8 damage must land in the same
+    // degrade-to-fresh path as unparseable JSON, not surface as an error.
+    let raw = std::fs::read(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
+    Ok(serde_json::from_slice(&raw).unwrap_or_default())
 }
 
 /// Persist `state` atomically: serialize, write `<file>.tmp`, then rename
 /// over the previous state, so a crash mid-save can never leave a
-/// half-written state file. Creates `{cache_dir}/hoot/` when absent.
+/// half-written state file. Creates `{cache_dir}/hoot/` when absent. Refuses
+/// a `file_name` that is not a pure basename (see [`is_safe_basename`]) —
+/// our own writes must never persist a record that could resolve outside the
+/// hoot dir.
 pub fn save_hoot_state(cache_dir: &Path, state: &HootState) -> Result<(), String> {
+    if let Some(name) = state.file_name.as_deref() {
+        if !is_safe_basename(name) {
+            return Err(format!("refusing to persist non-basename owlet file name {name:?}"));
+        }
+    }
     let dir = hoot_dir(cache_dir);
     std::fs::create_dir_all(&dir).map_err(|e| format!("create {}: {e}", dir.display()))?;
     let json =
@@ -194,14 +204,36 @@ pub fn save_hoot_state(cache_dir: &Path, state: &HootState) -> Result<(), String
     Ok(())
 }
 
+/// A recordable owlet file name: exactly one path component — no separators
+/// (`/` or `\`, the latter for Windows), and not `.`, `..`, or empty. Task 4
+/// derives the name from `platform_artifact_key`, so legitimate names always
+/// pass; the rule exists so a tampered or buggy record can never resolve —
+/// or, in Task 5, execute — outside `{cache_dir}/hoot/`.
+fn is_safe_basename(name: &str) -> bool {
+    !name.is_empty() && name != "." && name != ".." && !name.contains('/') && !name.contains('\\')
+}
+
+/// Resolve the recorded owlet binary's on-disk path, but only for a
+/// pure-basename `file_name` (see [`is_safe_basename`]) — anything else
+/// yields `None`. The status computation here and the convert command in a
+/// later task must both go through this helper instead of joining
+/// `file_name` themselves.
+pub fn owlet_binary_path(cache_dir: &Path, state: &HootState) -> Option<PathBuf> {
+    let name = state.file_name.as_deref()?;
+    if !is_safe_basename(name) {
+        return None;
+    }
+    Some(hoot_dir(cache_dir).join(name))
+}
+
 /// Derive the client-facing status from a loaded state. `downloaded` requires
-/// both a recorded artifact (`file_name` and `version`, always written
-/// together by a download) and the binary still present at
-/// `{cache_dir}/hoot/{file_name}` — a stale record without the file, or a
-/// stray binary without a record, is not a download.
+/// a recorded `version`, a basename-safe `file_name` (via
+/// [`owlet_binary_path`]), and the binary still present at the resolved path
+/// — a stale record without the file, a stray binary without a record, or a
+/// tampered path-like name is not a download.
 fn status_from_state(cache_dir: &Path, state: &HootState) -> HootStatus {
-    let downloaded = match (&state.file_name, &state.version) {
-        (Some(file_name), Some(_)) => hoot_dir(cache_dir).join(file_name).is_file(),
+    let downloaded = match (&state.version, owlet_binary_path(cache_dir, state)) {
+        (Some(_), Some(binary)) => binary.is_file(),
         _ => false,
     };
     HootStatus {
@@ -602,6 +634,92 @@ mod tests {
             hoot_status_in(cache.path()).expect("corrupt state degrades to fresh"),
             fresh_status()
         );
+    }
+
+    #[test]
+    fn non_utf8_state_file_reads_as_fresh_state_not_an_error() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        std::fs::create_dir_all(cache.path().join("hoot")).expect("mkdir");
+        // Invalid UTF-8 (e.g. binary-mangled or truncated mid-escape): the same
+        // damaged-state ruling as unparseable JSON — degrade to fresh, never
+        // brick the import feature on a read error.
+        std::fs::write(
+            cache.path().join("hoot").join("owlet-state.json"),
+            [0xFF, 0xFE, 0x7B, 0x81],
+        )
+        .expect("write non-UTF-8 state");
+        assert_eq!(
+            hoot_status_in(cache.path()).expect("non-UTF-8 state degrades to fresh"),
+            fresh_status()
+        );
+    }
+
+    #[test]
+    fn parent_escaping_file_name_is_never_reported_downloaded() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        std::fs::create_dir_all(cache.path().join("hoot")).expect("mkdir");
+        // The escaped target EXISTS at {tmp}/pwned, reachable from {tmp}/hoot
+        // via "../pwned" — an unvalidated join would report it downloaded.
+        // The state file itself is hand-written the way an external edit would
+        // produce it; the status boundary must refuse the record instead.
+        std::fs::write(cache.path().join("pwned"), b"escaped stub binary").expect("write target");
+        std::fs::write(
+            cache.path().join("hoot").join("owlet-state.json"),
+            r#"{"eulaAccepted":true,"version":"25.0.1","compliancy":10,"sha1":"d8fe9583d9137729215b31b8cbe0124c46a244a1","fileName":"../pwned"}"#,
+        )
+        .expect("write tampered state");
+        let status = hoot_status_in(cache.path()).expect("status still loads");
+        assert!(!status.downloaded, "escaping file_name must never resolve outside hoot/");
+        // The safe parts of the record still surface; only the path is refused.
+        assert_eq!(status.version, Some("25.0.1".to_string()));
+        assert_eq!(status.compliancy, Some(10));
+    }
+
+    #[test]
+    fn nested_path_file_name_is_never_reported_downloaded() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        std::fs::create_dir_all(cache.path().join("hoot").join("sub")).expect("mkdir");
+        // A nested name stays inside hoot/, but the contract is a single path
+        // component — subdirectories are not a download we vouch for either.
+        std::fs::write(
+            cache.path().join("hoot").join("sub").join("owlet.bin"),
+            b"stub owlet binary (synthetic)",
+        )
+        .expect("write nested binary");
+        std::fs::write(
+            cache.path().join("hoot").join("owlet-state.json"),
+            r#"{"eulaAccepted":true,"version":"25.0.1","compliancy":10,"sha1":"d8fe9583d9137729215b31b8cbe0124c46a244a1","fileName":"sub/owlet.bin"}"#,
+        )
+        .expect("write tampered state");
+        let status = hoot_status_in(cache.path()).expect("status still loads");
+        assert!(!status.downloaded, "file_name must be a pure basename");
+    }
+
+    #[test]
+    fn save_refuses_non_basename_file_names() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        // Every entry is a path (or path component) rather than a file name;
+        // persisting any of them would let the record resolve outside the
+        // hoot/ dir on some platform — backslash is a separator on Windows.
+        for bad in [
+            "../pwned",
+            "sub/owlet.bin",
+            "..\\pwned",
+            "/absolute/owlet",
+            "C:\\owlet.exe",
+            ".",
+            "..",
+            "",
+        ] {
+            let mut state = downloaded_state();
+            state.file_name = Some(bad.to_string());
+            assert!(
+                save_hoot_state(cache.path(), &state).is_err(),
+                "save must refuse file_name {bad:?}"
+            );
+        }
+        // The legitimate platform-derived basename (Task 4: owlet-<version>-<artifact_key>) still saves.
+        save_hoot_state(cache.path(), &downloaded_state()).expect("basename saves");
     }
 
     #[test]
