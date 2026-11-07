@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error repository scripts are plain JavaScript
-import { isLocalRequest, outputPaths, sceneMidpoints } from '../../../scripts/capture-demo-video.mjs';
+import { isLocalRequest, outputPaths, sceneMidpoints, trimSeconds } from '../../../scripts/capture-demo-video.mjs';
+// @ts-expect-error repository scripts are plain JavaScript
+import { SCENES } from '../../../scripts/demo-video-captions.mjs';
 
 describe('capture-demo-video helpers', () => {
   it('classifies only same-origin, data and blob requests as local', () => {
@@ -23,6 +25,13 @@ describe('capture-demo-video helpers', () => {
     expect(midpoints[0]).toBeCloseTo(3.2);
     expect(midpoints[1]).toBeCloseTo(12.85);
     expect(midpoints[2]).toBeCloseTo(23.8);
+  });
+  it('bounds the encoded mp4 at the storyboard content end plus a 1 s tail', () => {
+    expect(trimSeconds([
+      { id: 'a', targetSeconds: 6 },
+      { id: 'b', targetSeconds: 10 },
+    ])).toBe(17);
+    expect(trimSeconds(SCENES)).toBe(83);
   });
   it('pairs mp4 and vtt outputs per language in the shared screenshots dir', () => {
     const p = outputPaths('en', 'docs/screenshots');

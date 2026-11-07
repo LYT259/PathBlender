@@ -97,6 +97,14 @@ export function sceneMidpoints(marks) {
   return marks.map((mark) => (mark.start + mark.end) / 2);
 }
 
+// The encoded cut is bounded at the storyboard's content end plus a 1 s
+// tail: scene pacing can overrun the closing scene (context close, video
+// finalize), and that teardown dead air must not ship after the captions.
+export function trimSeconds(scenes) {
+  const TAIL_SECONDS = 1;
+  return scenes.reduce((sum, scene) => sum + scene.targetSeconds, 0) + TAIL_SECONDS;
+}
+
 const sceneById = new Map(SCENES.map((scene) => [scene.id, scene]));
 
 // --- check() PASS/FAIL accumulator (scripts/browser-walkthrough.mjs shape) ---
@@ -519,8 +527,9 @@ function run(binary, args, opts = {}) {
 function postProcess(lang, paths, sceneMarks) {
   const ffmpeg = process.env.FFMPEG_BIN ?? 'ffmpeg';
   const ffprobe = process.env.FFPROBE_BIN ?? 'ffprobe';
+  const trim = trimSeconds(SCENES);
 
-  const enc = run(ffmpeg, ['-y', '-i', paths.webm, '-an', '-c:v', 'libx264', '-crf', '23',
+  const enc = run(ffmpeg, ['-y', '-i', paths.webm, '-t', String(trim), '-an', '-c:v', 'libx264', '-crf', '23',
     '-pix_fmt', 'yuv420p', '-movflags', '+faststart', paths.mp4], { stdio: ['ignore', 'pipe', 'pipe'] });
   if (enc.status !== 0) fail(`${lang} ffmpeg encode failed: ${enc.stderr.slice(-400)}`);
   console.log(`wrote ${paths.mp4}`);
@@ -535,6 +544,8 @@ function postProcess(lang, paths, sceneMarks) {
   const info = JSON.parse(probe.stdout);
   const duration = Number(info.format?.duration);
   check(`${lang} mp4 duration is within 75–105 s`, duration >= 75 && duration <= 105, `${duration.toFixed(2)}s`);
+  check(`${lang} mp4 is trimmed to the ${trim}s content end + tail`, Math.abs(duration - trim) <= 0.5,
+    `${duration.toFixed(2)}s vs ${trim}s`);
   const v = info.streams?.[0] ?? {};
   check(`${lang} mp4 is h264 1440×900`, v.codec_name === 'h264' && v.width === VIEWPORT.width && v.height === VIEWPORT.height,
     `${v.codec_name} ${v.width}×${v.height}`);
