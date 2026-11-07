@@ -17,8 +17,12 @@
 //!   rule the order is `25.0.1 > 9.x > 1.0.1.1`; the brief's example chain
 //!   `25.0.1 > 1.0.1.1 > 9.x` contradicts its own rule and is not used.
 //!
-//! This module holds no I/O: downloading, persistence, and the owlet CLI
-//! invocation land in later tasks of the plan.
+//! Persistence of the owlet EULA consent and download record under the app
+//! cache dir lives here; the network download and the owlet CLI invocation
+//! land in later tasks of the plan.
+
+use std::path::{Path, PathBuf};
+use tauri::{AppHandle, Manager};
 
 /// The selected owlet release for a platform artifact — the output of
 /// [`parse_owlet_index`]. `sha1` is the lowercase hex digest published under
@@ -123,9 +127,135 @@ pub fn verify_sha1(bytes: &[u8], expected_hex: &str) -> bool {
     actual == expected_hex.to_ascii_lowercase()
 }
 
+/// Persisted owlet bookkeeping, stored as JSON at
+/// `{app_cache_dir}/hoot/owlet-state.json`. `version`/`compliancy`/`sha1`/
+/// `file_name` describe the downloaded owlet artifact and stay `None` until
+/// the first successful download.
+#[derive(Debug, Default, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HootState {
+    pub eula_accepted: bool,
+    pub version: Option<String>,
+    pub compliancy: Option<u32>,
+    pub sha1: Option<String>,
+    pub file_name: Option<String>,
+}
+
+/// Snapshot for the web client — the response of `hoot_status` and
+/// `hoot_accept_eula`. Serialized with camelCase keys to match the Tauri
+/// invoke convention the web side types against.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HootStatus {
+    pub eula_accepted: bool,
+    pub downloaded: bool,
+    pub version: Option<String>,
+    pub compliancy: Option<u32>,
+}
+
+/// Subdirectory of the app cache dir holding the state file and the owlet
+/// binary.
+const HOOT_DIR_NAME: &str = "hoot";
+/// Name of the persisted state file inside that directory.
+const STATE_FILE_NAME: &str = "owlet-state.json";
+
+fn hoot_dir(cache_dir: &Path) -> PathBuf {
+    cache_dir.join(HOOT_DIR_NAME)
+}
+
+/// Load the persisted state. A missing state file reads as a fresh
+/// [`HootState::default`]; so does a damaged one — the cache dir is
+/// user-writable, and degrading to fresh (re-consent plus an idempotent
+/// re-download) beats erroring the import feature until the cache is cleared
+/// by hand. Only genuine I/O errors propagate.
+pub fn load_hoot_state(cache_dir: &Path) -> Result<HootState, String> {
+    let path = hoot_dir(cache_dir).join(STATE_FILE_NAME);
+    if !path.is_file() {
+        return Ok(HootState::default());
+    }
+    let raw =
+        std::fs::read_to_string(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
+    Ok(serde_json::from_str(&raw).unwrap_or_default())
+}
+
+/// Persist `state` atomically: serialize, write `<file>.tmp`, then rename
+/// over the previous state, so a crash mid-save can never leave a
+/// half-written state file. Creates `{cache_dir}/hoot/` when absent.
+pub fn save_hoot_state(cache_dir: &Path, state: &HootState) -> Result<(), String> {
+    let dir = hoot_dir(cache_dir);
+    std::fs::create_dir_all(&dir).map_err(|e| format!("create {}: {e}", dir.display()))?;
+    let json =
+        serde_json::to_string_pretty(state).map_err(|e| format!("serialize state: {e}"))?;
+    let final_path = dir.join(STATE_FILE_NAME);
+    let tmp_path = dir.join(format!("{STATE_FILE_NAME}.tmp"));
+    std::fs::write(&tmp_path, json).map_err(|e| format!("write {}: {e}", tmp_path.display()))?;
+    std::fs::rename(&tmp_path, &final_path)
+        .map_err(|e| format!("publish {}: {e}", final_path.display()))?;
+    Ok(())
+}
+
+/// Derive the client-facing status from a loaded state. `downloaded` requires
+/// both a recorded artifact (`file_name` and `version`, always written
+/// together by a download) and the binary still present at
+/// `{cache_dir}/hoot/{file_name}` — a stale record without the file, or a
+/// stray binary without a record, is not a download.
+fn status_from_state(cache_dir: &Path, state: &HootState) -> HootStatus {
+    let downloaded = match (&state.file_name, &state.version) {
+        (Some(file_name), Some(_)) => hoot_dir(cache_dir).join(file_name).is_file(),
+        _ => false,
+    };
+    HootStatus {
+        eula_accepted: state.eula_accepted,
+        downloaded,
+        version: state.version.clone(),
+        compliancy: state.compliancy,
+    }
+}
+
+/// Read persisted state from `cache_dir` and derive the status — the core of
+/// the `hoot_status` command.
+pub fn hoot_status_in(cache_dir: &Path) -> Result<HootStatus, String> {
+    let state = load_hoot_state(cache_dir)?;
+    Ok(status_from_state(cache_dir, &state))
+}
+
+/// Record EULA consent, preserving any existing download record — the core of
+/// the `hoot_accept_eula` command.
+pub fn accept_eula(cache_dir: &Path) -> Result<HootStatus, String> {
+    let mut state = load_hoot_state(cache_dir)?;
+    state.eula_accepted = true;
+    save_hoot_state(cache_dir, &state)?;
+    Ok(status_from_state(cache_dir, &state))
+}
+
+fn app_cache_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_cache_dir()
+        .map_err(|e| format!("resolve app cache dir: {e}"))
+}
+
+/// Current owlet EULA/download status for the web client. Registered on the
+/// invoke handler in a later task of the plan.
+#[tauri::command]
+pub async fn hoot_status(app: AppHandle) -> Result<HootStatus, String> {
+    let cache_dir = app_cache_dir(&app)?;
+    hoot_status_in(&cache_dir)
+}
+
+/// Persist the user's owlet EULA consent and return the resulting status.
+/// Registered on the invoke handler in a later task of the plan.
+#[tauri::command]
+pub async fn hoot_accept_eula(app: AppHandle) -> Result<HootStatus, String> {
+    let cache_dir = app_cache_dir(&app)?;
+    accept_eula(&cache_dir)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{parse_owlet_index, platform_artifact_key, verify_sha1};
+    use super::{
+        accept_eula, hoot_status_in, load_hoot_state, parse_owlet_index, platform_artifact_key,
+        save_hoot_state, verify_sha1, HootState, HootStatus,
+    };
 
     /// Trimmed copy of the real distribution index (fetched 2026-11-07): the
     /// corvus tool is kept (with a higher version than any owlet item) to pin
@@ -322,5 +452,172 @@ mod tests {
         ));
         // da39a3ee…afd80709 = SHA-1 of the empty byte string.
         assert!(verify_sha1(b"", "da39a3ee5e6b4b0d3255bfef95601890afd80709"));
+    }
+
+    // ---- EULA / download state persistence (Task 3) ------------------------
+    // All fixtures are synthetic: a full download record for owlet 25.0.1 and
+    // a stub binary. `tempdir()` stands in for the app cache dir.
+
+    fn downloaded_state() -> HootState {
+        HootState {
+            eula_accepted: true,
+            version: Some("25.0.1".to_string()),
+            compliancy: Some(10),
+            sha1: Some("d8fe9583d9137729215b31b8cbe0124c46a244a1".to_string()),
+            file_name: Some("owlet-25.0.1-macosuniversal".to_string()),
+        }
+    }
+
+    fn fresh_status() -> HootStatus {
+        HootStatus {
+            eula_accepted: false,
+            downloaded: false,
+            version: None,
+            compliancy: None,
+        }
+    }
+
+    #[test]
+    fn fresh_environment_reports_no_eula_no_download_and_no_version() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        // No hoot/ dir, no state file — a first run must read as all-clear
+        // rather than erroring on the missing file.
+        assert_eq!(
+            hoot_status_in(cache.path()).expect("missing state file means fresh state"),
+            fresh_status()
+        );
+    }
+
+    #[test]
+    fn accepting_the_eula_persists_across_restart() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        let accepted = accept_eula(cache.path()).expect("accept persists state");
+        assert_eq!(
+            accepted,
+            HootStatus {
+                eula_accepted: true,
+                downloaded: false,
+                version: None,
+                compliancy: None,
+            }
+        );
+        // "Restart": the status is recomputed from the file on disk, not from
+        // the in-memory state the accept call just built.
+        assert_eq!(
+            hoot_status_in(cache.path()).expect("state file was written"),
+            HootStatus {
+                eula_accepted: true,
+                downloaded: false,
+                version: None,
+                compliancy: None,
+            }
+        );
+        // Atomic write: the tmp file must be gone once save returns, so a
+        // later load can never observe a half-written state.
+        assert!(!cache
+            .path()
+            .join("hoot")
+            .join("owlet-state.json.tmp")
+            .exists());
+    }
+
+    #[test]
+    fn accepting_the_eula_preserves_an_existing_download_record() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        save_hoot_state(cache.path(), &downloaded_state()).expect("save state");
+        std::fs::write(
+            cache.path().join("hoot").join("owlet-25.0.1-macosuniversal"),
+            b"stub owlet binary (synthetic)",
+        )
+        .expect("write stub binary");
+        // Re-accepting (a defensive second invoke from the web side) must keep
+        // the record — a bare `eula_accepted: true` reset would force a
+        // needless re-download and re-consent on the next import.
+        let status = accept_eula(cache.path()).expect("accept keeps the record");
+        assert_eq!(
+            status,
+            HootStatus {
+                eula_accepted: true,
+                downloaded: true,
+                version: Some("25.0.1".to_string()),
+                compliancy: Some(10),
+            }
+        );
+    }
+
+    #[test]
+    fn recorded_version_without_the_binary_is_not_downloaded() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        save_hoot_state(cache.path(), &downloaded_state()).expect("save state");
+        // The full record round-trips — sha1 and file_name included — so a
+        // serde field rename on HootState cannot silently drop download facts.
+        assert_eq!(
+            load_hoot_state(cache.path()).expect("reload state"),
+            downloaded_state()
+        );
+        // But with no binary on disk the state is a stale record, not a
+        // download: `downloaded == file exists && state has a record`.
+        assert_eq!(
+            hoot_status_in(cache.path()).expect("status"),
+            HootStatus {
+                eula_accepted: true,
+                downloaded: false,
+                version: Some("25.0.1".to_string()),
+                compliancy: Some(10),
+            }
+        );
+    }
+
+    #[test]
+    fn downloaded_requires_both_the_binary_file_and_a_state_record() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        let binary = cache.path().join("hoot").join("owlet-25.0.1-macosuniversal");
+        std::fs::create_dir_all(binary.parent().expect("parent dir")).expect("mkdir");
+        std::fs::write(&binary, b"stub owlet binary (synthetic)").expect("write binary");
+        // A binary without a state record (state file wiped, file kept) is not
+        // a download PathBlender can vouch for.
+        assert_eq!(
+            hoot_status_in(cache.path()).expect("status"),
+            fresh_status()
+        );
+        // Record + binary together are what `downloaded` means.
+        save_hoot_state(cache.path(), &downloaded_state()).expect("save state");
+        let status = hoot_status_in(cache.path()).expect("status");
+        assert!(status.downloaded, "state record and binary on disk");
+    }
+
+    #[test]
+    fn corrupt_state_file_reads_as_fresh_state_not_an_error() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        std::fs::create_dir_all(cache.path().join("hoot")).expect("mkdir");
+        std::fs::write(
+            cache.path().join("hoot").join("owlet-state.json"),
+            b"{ not json",
+        )
+        .expect("write corrupt state");
+        // The cache dir is user-writable; a damaged state file must degrade to
+        // fresh state (worst case: re-consent plus an idempotent re-download)
+        // instead of erroring the import feature until the cache is cleared.
+        assert_eq!(
+            hoot_status_in(cache.path()).expect("corrupt state degrades to fresh"),
+            fresh_status()
+        );
+    }
+
+    #[test]
+    fn status_serializes_with_camel_case_keys_for_the_web_client() {
+        let json = serde_json::to_string(&HootStatus {
+            eula_accepted: true,
+            downloaded: false,
+            version: Some("25.0.1".to_string()),
+            compliancy: Some(10),
+        })
+        .expect("serialize status");
+        // Hand-written wire literal: the web client (Task 6) types these
+        // camelCase keys — serde's snake_case default would break the contract.
+        assert_eq!(
+            json,
+            r#"{"eulaAccepted":true,"downloaded":false,"version":"25.0.1","compliancy":10}"#
+        );
     }
 }
