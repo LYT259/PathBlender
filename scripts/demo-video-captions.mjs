@@ -2,7 +2,9 @@
 // Pure data plus one generator: no browser, media, or file side effects.
 // Copy states only measured facts, and button names must match the shipped
 // i18n dictionaries (packages/web/src/i18n/{en,zh}.ts) — pinned by
-// packages/web/test/demo-video-captions.test.ts.
+// packages/web/test/demo-video-captions.test.ts. Counts re-measured against
+// the live app on 2026-11-07 (example bundle baseline 3, swap 3→1, mirror
+// 3→2); evidence in .superpowers/sdd/…/task-1-report.md.
 
 export const SCENES = [
   { id: 'welcome', targetSeconds: 6 },
@@ -26,11 +28,11 @@ export const CAPTIONS = {
     { scene: 'locate', startMs: 26500, endMs: 31000, text: 'The checks panel lists each conflict moment.' },
     { scene: 'locate', startMs: 31500, endMs: 35500, text: 'Click an entry to jump the clock right to it.' },
     { scene: 'to-example', startMs: 36500, endMs: 40000, text: '"Try an example" loads three real robots with routes.' },
-    { scene: 'to-example', startMs: 40500, endMs: 43500, text: 'Its conflict check also reports 1.' },
+    { scene: 'to-example', startMs: 40500, endMs: 43500, text: 'The conflict check reports 3.' },
     { scene: 'compare', startMs: 44500, endMs: 51000, text: '"Arrange timeline" swaps in another route from the library.' },
-    { scene: 'compare', startMs: 51500, endMs: 57500, text: 'The check goes from 1 to 0; swapping back restores 1.' },
-    { scene: 'mirror', startMs: 58500, endMs: 63000, text: '"Mirror left/right" flips robot 8814 to the mirrored side.' },
-    { scene: 'mirror', startMs: 63500, endMs: 67500, text: 'The check goes from 1 to 0.' },
+    { scene: 'compare', startMs: 51500, endMs: 57500, text: 'The check goes from 3 to 1; swapping back restores 3.' },
+    { scene: 'mirror', startMs: 58500, endMs: 63000, text: '"Mirror left/right" flips robot 11019 to the mirrored side.' },
+    { scene: 'mirror', startMs: 63500, endMs: 67500, text: 'The check goes from 3 to 2.' },
     { scene: 'alliance', startMs: 68500, endMs: 75500, text: 'Switch the whole session red or blue: verdicts stay the same.' },
     { scene: 'closing', startMs: 76500, endMs: 79000, text: 'The analysis view never rewrites your original files or robot programs.' },
     { scene: 'closing', startMs: 79500, endMs: 81500, text: 'Learn more in Help → Quick guide.' },
@@ -44,11 +46,11 @@ export const CAPTIONS = {
     { scene: 'locate', startMs: 26500, endMs: 31000, text: '检查面板列出每个冲突时刻。' },
     { scene: 'locate', startMs: 31500, endMs: 35500, text: '点击条目，时钟直接跳到该时刻。' },
     { scene: 'to-example', startMs: 36500, endMs: 40000, text: '“体验示例”载入三台真实机器人的路线。' },
-    { scene: 'to-example', startMs: 40500, endMs: 43500, text: '示例的冲突检查同样为 1。' },
+    { scene: 'to-example', startMs: 40500, endMs: 43500, text: '示例的冲突检查为 3。' },
     { scene: 'compare', startMs: 44500, endMs: 51000, text: '“编排时间轴”可从路线库换入另一条路线。' },
-    { scene: 'compare', startMs: 51500, endMs: 57500, text: '检查从 1 变为 0；换回原路线又回到 1。' },
-    { scene: 'mirror', startMs: 58500, endMs: 63000, text: '“左右镜像”把 8814 翻转到镜像一侧。' },
-    { scene: 'mirror', startMs: 63500, endMs: 67500, text: '检查从 1 变为 0。' },
+    { scene: 'compare', startMs: 51500, endMs: 57500, text: '检查从 3 变为 1；换回原路线又回到 3。' },
+    { scene: 'mirror', startMs: 58500, endMs: 63000, text: '“左右镜像”把 11019 翻转到镜像一侧。' },
+    { scene: 'mirror', startMs: 63500, endMs: 67500, text: '检查从 3 变为 2。' },
     { scene: 'alliance', startMs: 68500, endMs: 75500, text: '整个会话切换红方或蓝方：检查结论保持不变。' },
     { scene: 'closing', startMs: 76500, endMs: 79000, text: '分析视图绝不改写你的原始文件或机器人程序。' },
     { scene: 'closing', startMs: 79500, endMs: 81500, text: '更多内容见“帮助 → 快速指南”。' },

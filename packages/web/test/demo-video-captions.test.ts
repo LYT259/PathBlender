@@ -32,6 +32,21 @@ describe('demo video storyboard and captions', () => {
     expect(/original (files|route files)|not (rewrite|modify)/i.test(enClosing)).toBe(true);
     expect(CAPTIONS.en.every((c) => !/guarantee|will (fix|solve)/i.test(c.text))).toBe(true);
   });
+  it('states the live-measured counts (2026-11-07 real-UI probe, evidence in task-1-report.md)', () => {
+    // Sample pair straight_run × stop_and_score re-measured at 1; welcome
+    // example bundle measured at 3 baseline; best single swap 3→1 (round trip
+    // 3→1→3 only on 8814, whose original route is re-addable); mirror measured
+    // 3→2 on 11019 (no change on 8814).
+    expect(CAPTIONS.en.find((c) => c.scene === 'import' && /reports/.test(c.text))!.text).toContain('reports 1');
+    expect(CAPTIONS.en.find((c) => c.scene === 'to-example' && /reports/.test(c.text))!.text).toContain('reports 3');
+    const enCompare = CAPTIONS.en.find((c) => c.scene === 'compare' && /from \d/.test(c.text))!.text;
+    expect(enCompare).toContain('from 3 to 1');
+    expect(enCompare).toContain('restores 3');
+    expect(CAPTIONS.en.find((c) => c.scene === 'mirror' && /from \d/.test(c.text))!.text).toContain('from 3 to 2');
+    expect(CAPTIONS.zh.find((c) => c.scene === 'to-example' && /为 \d/.test(c.text))!.text).toContain('为 3');
+    expect(CAPTIONS.zh.find((c) => c.scene === 'compare' && /变为/.test(c.text))!.text).toContain('3 变为 1');
+    expect(CAPTIONS.zh.find((c) => c.scene === 'mirror' && /变为/.test(c.text))!.text).toContain('3 变为 2');
+  });
   it('renders valid WEBVTT with monotone timestamps', () => {
     for (const lang of ['en', 'zh'] as const) {
       const vtt = toVtt(lang);
