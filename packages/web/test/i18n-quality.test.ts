@@ -247,6 +247,57 @@ describe('Hebrew joins with the maqaf', () => {
 });
 
 /**
+ * Punctuation and address register inside the hoot.* rows (2026-11-07
+ * review, Task 9 fix round 1). Like PATH_STEMS, these pin per-dictionary
+ * *decisions*: the marker lists name only unambiguous minority forms, so
+ * wording inside the right convention stays free — the gates exist to stop a
+ * paste from reintroducing the reviewed defects, not to freeze the sentences.
+ */
+const HOOT_KEYS = KEYS.filter((k) => k.startsWith('hoot.'));
+
+describe('hoot rows keep the reviewed punctuation and register conventions', () => {
+  it('hy carries no ASCII : or ; — sentences end with ։, clauses break on ․/՝', () => {
+    // The file's own convention (U+0589 verjaket, U+2024 miyt, U+0587 shesht)
+    // — the first hoot pass shipped ASCII colons/semicolons instead.
+    for (const key of HOOT_KEYS) {
+      expect(DICTS.hy![key]!, `hy:${key} ships ASCII : or ;`).not.toMatch(/[;:]/);
+    }
+    // And the multi-sentence body actually carries the Armenian full stop.
+    expect(DICTS.hy!['hoot.eulaBody']).toContain('։');
+  });
+
+  it('de addresses the user with Sie, never du', () => {
+    // The dictionary's dominant register is Sie (21 rows against 4 du rows,
+    // 2026-11-07 count); the tour's du rows are the minority exception.
+    for (const key of HOOT_KEYS) {
+      expect(DICTS.de![key]!, `de:${key} du possessive`).not.toMatch(
+        /\b(?:dein|deine|deinem|deinen|deiner)\b/i,
+      );
+      expect(DICTS.de![key]!, `de:${key} du pronoun`).not.toMatch(/\bdu\b/i);
+    }
+  });
+
+  it('hu addresses the user with the te-form, never the formal imperative', () => {
+    // Dominant register is te (Állítsd/Mentsd/Javítsd…); the formal -ssa/-je
+    // imperatives and the formal possessive are the minority forms to refuse.
+    const FORMAL = /\b(?:alakítsa|frissítse|próbálja|naplói)\b/;
+    for (const key of HOOT_KEYS) {
+      expect(DICTS.hu![key]!, `hu:${key} formal form`).not.toMatch(FORMAL);
+    }
+  });
+
+  it('ro addresses the user with tu, never voi/dvs.', () => {
+    // Formal -ți imperatives and dvs. are the minority here (15 rows against
+    // 49 tu rows, 2026-11-07 count); "toți/mulți" style words do not end hoot copy.
+    for (const key of HOOT_KEYS) {
+      expect(DICTS.ro![key]!, `ro:${key} formal -ți verb or dvs.`).not.toMatch(
+        /\b\w*ți\b|\bdvs\.?\b/,
+      );
+    }
+  });
+});
+
+/**
  * One concept, one word per language. The audit's single largest finding was
  * the same object named two, three or four different ways inside one dictionary
  * — fr used five words for "path", tr ran yol/rota across the path/route split

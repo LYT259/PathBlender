@@ -284,7 +284,7 @@ export const ja: Record<MessageKey, string> = {
   'hoot.eulaBody': '.hoot ログを最初に読み込むとき、PathBlender は CTRE 公式の owlet コンバーターを redist.ctr-electronics.com からダウンロードします。変換はローカルで行われ、ログがアップロードされることはありません。',
   'hoot.eulaLink': 'CTRE のライセンス情報を開く',
   'hoot.eulaAgree': '同意してダウンロード',
-  'hoot.eulaDecline': '後で',
+  'hoot.eulaDecline': '今はしない',
   'hoot.downloading': '公式コンバーターをダウンロードしています… {pct}%',
   'hoot.converting': '{name} を変換しています…',
   'hoot.newerThanConverter': 'このログはダウンロード済みのコンバーターより新しいものです。PathBlender を更新して、もう一度お試しください。',

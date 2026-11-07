@@ -282,7 +282,7 @@ export const ko: Record<MessageKey, string> = {
   'hoot.eulaBody': '.hoot 로그를 처음 가져올 때 PathBlender가 redist.ctr-electronics.com에서 CTRE 공식 owlet 변환기를 다운로드합니다. 변환은 로컬에서 실행되며 로그는 업로드되지 않습니다.',
   'hoot.eulaLink': 'CTRE 라이선스 정보 열기',
   'hoot.eulaAgree': '동의하고 다운로드',
-  'hoot.eulaDecline': '나중에',
+  'hoot.eulaDecline': '지금은 아니요',
   'hoot.downloading': '공식 변환기 다운로드 중… {pct}%',
   'hoot.converting': '{name} 변환 중…',
   'hoot.newerThanConverter': '이 로그는 내려받은 변환기보다 최신입니다 — PathBlender를 업데이트한 후 다시 시도하세요.',

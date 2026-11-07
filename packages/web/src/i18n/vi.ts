@@ -265,7 +265,7 @@ export const vi = {
   'hoot.eulaBody': 'Lần đầu tiên bạn nhập nhật ký .hoot, PathBlender tải trình chuyển đổi owlet chính thức của CTRE từ redist.ctr-electronics.com. Chuyển đổi chạy cục bộ; nhật ký của bạn không bao giờ được tải lên.',
   'hoot.eulaLink': 'Mở thông tin giấy phép của CTRE',
   'hoot.eulaAgree': 'Đồng ý và tải xuống',
-  'hoot.eulaDecline': 'Để sau',
+  'hoot.eulaDecline': 'Không phải bây giờ',
   'hoot.downloading': 'Đang tải trình chuyển đổi chính thức… {pct}%',
   'hoot.converting': 'Đang chuyển đổi {name}…',
   'hoot.newerThanConverter': 'Nhật ký này mới hơn trình chuyển đổi đã tải — hãy cập nhật PathBlender rồi thử lại.',
