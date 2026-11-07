@@ -639,9 +639,35 @@ fn run_owlet_cli(program: &Path, args: &[String]) -> Result<OwletRun, String> {
     })
 }
 
+/// The async hop for [`hoot_convert`]: run the whole blocking [`convert_via`]
+/// chain — state read, SHA-1 re-hash, temp-file I/O, the owlet subprocess —
+/// on the runtime's blocking pool (`spawn_blocking`) so the async executor's
+/// workers are never stalled for the duration of a CLI run. Generic over the
+/// runner only so tests can drive it with a stub; the command passes
+/// [`run_owlet_cli`]. A join failure (the blocking task panicked or was
+/// cancelled) still carries the `hoot-convert-failed` code.
+async fn convert_offloaded<F>(
+    cache_dir: PathBuf,
+    file_name: String,
+    data: Vec<u8>,
+    run: F,
+) -> Result<HootConverted, String>
+where
+    F: FnOnce(&Path, &[String]) -> Result<OwletRun, String> + Send + 'static,
+{
+    let converted = tauri::async_runtime::spawn_blocking(move || {
+        convert_via(&cache_dir, &file_name, &data, run)
+    })
+    .await
+    .map_err(|e| format!("hoot-convert-failed:join conversion task: {e}"))?;
+    converted
+}
+
 /// Convert one `.hoot` log to wpilog with the official owlet CLI: gate on
 /// EULA consent and a hash-verified download, convert through a throwaway
-/// temp dir, and return the output name plus its bytes as base64.
+/// temp dir, and return the output name plus its bytes as base64. The whole
+/// blocking chain runs on the runtime's blocking pool, off the async
+/// executor — the command itself only resolves the cache dir and awaits.
 #[tauri::command]
 pub async fn hoot_convert(
     app: AppHandle,
@@ -649,15 +675,15 @@ pub async fn hoot_convert(
     data: Vec<u8>,
 ) -> Result<HootConverted, String> {
     let cache_dir = app_cache_dir(&app)?;
-    convert_via(&cache_dir, &file_name, &data, run_owlet_cli)
+    convert_offloaded(cache_dir, file_name, data, run_owlet_cli).await
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        accept_eula, convert_via, download_via, hoot_status_in, load_hoot_state, owlet_args,
-        parse_owlet_index, platform_artifact_key, save_hoot_state, verify_sha1, HootConverted,
-        HootState, HootStatus, OwletRun,
+        accept_eula, convert_offloaded, convert_via, download_via, hoot_status_in, load_hoot_state,
+        owlet_args, parse_owlet_index, platform_artifact_key, save_hoot_state, verify_sha1,
+        HootConverted, HootState, HootStatus, OwletRun,
     };
     use std::path::Path;
 
@@ -1696,5 +1722,40 @@ mod tests {
             json,
             r#"{"wpilogName":"match.wpilog","wpilogBase64":"UGF0aEJsZW5kZXIgd3BpbG9nIGZpeHR1cmU="}"#
         );
+    }
+
+    #[test]
+    fn offloaded_conversion_awaits_to_the_core_result_unchanged() {
+        // The async offload must be a transparent wrapper: same inputs → the
+        // same Ok payload, the same gate failure → the same error string,
+        // driven through tauri's runtime helper (no AppHandle, no new
+        // dependency). A join-failure mapping that swallowed or rewrote the
+        // core's result breaks this test.
+        let cache = owlet_installed_cache();
+        let converted = tauri::async_runtime::block_on(convert_offloaded(
+            cache.path().to_path_buf(),
+            "match.hoot".to_string(),
+            STUB_HOOT_BYTES.to_vec(),
+            |_program, args| {
+                std::fs::write(&args[3], STUB_WPILOG_BYTES).expect("stub writes output");
+                Ok(OwletRun {
+                    success: true,
+                    stderr: Vec::new(),
+                })
+            },
+        ))
+        .expect("success path preserves the core result");
+        assert_eq!(converted.wpilog_name, "match.wpilog");
+        assert_eq!(converted.wpilog_base64, STUB_WPILOG_BASE64);
+        // The EULA gate error survives the blocking-pool round trip verbatim.
+        let fresh = tempfile::tempdir().expect("tempdir");
+        let err = tauri::async_runtime::block_on(convert_offloaded(
+            fresh.path().to_path_buf(),
+            "match.hoot".to_string(),
+            STUB_HOOT_BYTES.to_vec(),
+            |_, _| unreachable!("the EULA gate must refuse before any runner call"),
+        ))
+        .expect_err("gate error preserved through the offload");
+        assert_eq!(err, "hoot-eula-required");
     }
 }
