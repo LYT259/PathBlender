@@ -24,6 +24,7 @@ import {
   deserializeSession,
   FIELDS,
   fieldById,
+  isHootFileName,
   isWpilogFileName,
   parsePathFile,
   parseRobotProfile,
@@ -39,6 +40,7 @@ import {
 import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } from '@pathblender/core';
 import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
 import { WpilogImportDialog, type WpilogImportResult, type WpilogIncomingFile } from './wpilog/WpilogImportDialog';
+import { routeHootFiles } from './hoot/gate';
 import './wpilog/WpilogImportDialog.css';
 import { displayName, robotsFromImport, type LibraryProfile, type LibraryRoute } from './route-library';
 import { withTeamPlaceholders } from './team-placeholder';
@@ -469,6 +471,9 @@ function AppBody() {
   // Pending .wpilog logs awaiting the user's pose/interval selection. The
   // dialog owns the parse; confirmed routes re-enter the normal pipeline.
   const [wpilogQueue, setWpilogQueue] = useState<WpilogIncomingFile[] | null>(null);
+  // Pending .hoot logs queued for the desktop converter flow (HOOT import,
+  // 2026-11). Task 7 only fills it; Task 8 mounts the dialog that drains it.
+  const [hootQueue, setHootQueue] = useState<Array<{ file: File; relPath: string }> | null>(null);
 
   const importFiles = useCallback(async (files: FileList | File[] | IncomingFile[], opts?: { fromFolder?: boolean }) => {
     exampleRequest.current += 1;
@@ -478,11 +483,21 @@ function AppBody() {
     // Keep every incoming file raw — the solution package's per-team
     // 原始导入文件 come from here (byte-identical to what was imported).
     for (const { file, relPath } of incoming) importedFileStoreRef.current.set(relPath, file);
+    // CTRE .hoot logs stop at the gate — never at the text parsers. Browsers
+    // get the explicit desktop/Phoenix-Tuner notice; desktop queues
+    // probe-convertible files for the Task 8 converter flow.
+    const routedHoot = await routeHootFiles(incoming, IS_DESKTOP);
+    for (const error of routedHoot.errors) {
+      nextErrors.push({ fileName: error.relPath, message: tr(error.key, 'vars' in error ? error.vars : undefined) });
+    }
+    if (routedHoot.desktopQueue.length > 0) {
+      setHootQueue((prev) => [...(prev ?? []), ...routedHoot.desktopQueue]);
+    }
     // Binary .wpilog logs detour into the selection dialog: the container
     // parses there (worker), the user confirms pose source + auto interval,
     // and the confirmed extraction re-enters the normal route pipeline.
     const wpilogFiles = incoming.filter(({ file }) => isWpilogFileName(file.name));
-    const textIncoming = incoming.filter(({ file }) => !isWpilogFileName(file.name));
+    const textIncoming = incoming.filter(({ file }) => !isWpilogFileName(file.name) );
     if (wpilogFiles.length > 0) {
       setWpilogQueue((prev) => [...(prev ?? []), ...wpilogFiles.map(({ file, relPath }) => ({ file, relPath }))]);
     }

@@ -390,9 +390,11 @@ describe('App wpilog import routing', () => {
     const log = buildLog();
     render(<ThemeProvider><App /></ThemeProvider>);
     fireEvent.drop(window, { dataTransfer: { files: [new File([log], 'robot.wpilog')] } });
-    // The dialog (not the error banner) answers the drop.
-    const dialog = await waitFor(() => document.querySelector('.wpilog-dialog'), { timeout: 5000 });
-    expect(dialog).toBeTruthy();
+    // The dialog (not the error banner) answers the drop. The assertion
+    // lives inside waitFor: a bare querySelector callback resolves with
+    // null on the first poll, before the (now awaited) gate lets the
+    // wpilog queue state flush.
+    await waitFor(() => expect(document.querySelector('.wpilog-dialog')).toBeTruthy(), { timeout: 5000 });
     await waitFor(() => expect(screen.getAllByRole('radio').length).toBeGreaterThan(2), { timeout: 5000 });
     fireEvent.click(document.querySelector('.wpilog-actions button.accent') as HTMLButtonElement);
     // The dialog closes and the route lands as a robot row (the toast
