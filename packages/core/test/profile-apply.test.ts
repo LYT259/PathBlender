@@ -37,24 +37,24 @@ describe('profile dynamics parsing (§6.6 全量消费)', () => {
   });
 
   it('parses PP settings.json dynamics and generation defaults when carried', () => {
-    // Field names per red book §6.6 (upstream prefs); no local real sample
-    // carries them yet — synthetic fixture, plausibility-guarded.
+    // Authoritative v2025.2.7 shape: every field top-level flat, exactly as
+    // home_page.dart _saveProjectSettingsToFile writes it (verified at the
+    // pinned tag). Angular defaults are degrees in the file.
     const text = JSON.stringify({
-      robotConfig: {
-        robotWidth: 0.85,
-        robotLength: 1.02,
-        robotMass: 61.2,
-        robotMOI: 5.1,
-        driveGearing: 6.08,
-        driveWheelRadius: 0.0508,
-        wheelCOF: 1.0,
-      },
-      generationSettings: {
-        defaultMaxVel: 4.5,
-        defaultMaxAccel: 3.2,
-        defaultMaxAngVel: 540,
-        defaultMaxAngAccel: 720,
-      },
+      robotWidth: 0.85,
+      robotLength: 1.02,
+      robotMass: 61.2,
+      robotMOI: 5.1,
+      driveGearing: 6.08,
+      driveWheelRadius: 0.0508,
+      wheelCOF: 1.0,
+      driveMotorType: 'falcon500FOC',
+      driveCurrentLimit: 80,
+      defaultMaxVel: 4.5,
+      defaultMaxAccel: 3.2,
+      defaultMaxAngVel: 540,
+      defaultMaxAngAccel: 720,
+      defaultNominalVoltage: 12,
     });
     const profile = parseRobotProfile(text, '254/pathplanner/settings.json');
     expect(profile!.dynamics!.massKG).toBe(61.2);
@@ -62,8 +62,46 @@ describe('profile dynamics parsing (§6.6 全量消费)', () => {
     expect(profile!.dynamics!.driveGearing).toBe(6.08);
     expect(profile!.dynamics!.wheelRadiusM).toBe(0.0508);
     expect(profile!.dynamics!.wheelCOF).toBe(1.0);
+    expect(profile!.dynamics!.driveMotorType).toBe('falcon500FOC');
+    expect(profile!.dynamics!.driveCurrentLimitA).toBe(80);
     expect(profile!.defaultConstraints!.maxVelMPS).toBe(4.5);
-    expect(profile!.defaultConstraints!.maxAngVelRadPS).toBe(540);
+    expect(profile!.defaultConstraints!.maxAccelMPSS).toBe(3.2);
+    // 540°/s × π/180 = 9.42477…, 720°/s² × π/180 = 12.56637… (upstream
+    // PathConstraints stores degrees; the generator converts via
+    // Units.degreesToRadians, trajectory.dart at v2025.2.7).
+    expect(profile!.defaultConstraints!.maxAngVelRadPS).toBeCloseTo(9.42478, 4);
+    expect(profile!.defaultConstraints!.maxAngAccelRadPSSq).toBeCloseTo(12.56637, 4);
+    expect(profile!.defaultConstraints!.nominalVoltageV).toBe(12);
+  });
+
+  it('keeps linear defaults in SI units unchanged', () => {
+    const text = JSON.stringify({
+      robotWidth: 0.9,
+      robotLength: 0.9,
+      defaultMaxVel: 4.5,
+      defaultMaxAccel: 3.2,
+    });
+    const profile = parseRobotProfile(text, 'a/settings.json');
+    expect(profile!.defaultConstraints!.maxVelMPS).toBe(4.5);
+    expect(profile!.defaultConstraints!.maxAccelMPSS).toBe(3.2);
+  });
+
+  it('still converts angular defaults from the legacy nested generationSettings shape', () => {
+    // Compatibility coverage: pre-flat files nested the same keys under
+    // generationSettings. The deg→rad fix applies to both shapes.
+    const text = JSON.stringify({
+      robotConfig: { robotWidth: 0.9, robotLength: 0.9 },
+      generationSettings: {
+        defaultMaxAngVel: 540,
+        defaultMaxAngAccel: 720,
+        defaultNominalVoltage: 0,
+      },
+    });
+    const profile = parseRobotProfile(text, 'a/settings.json');
+    expect(profile!.defaultConstraints!.maxAngVelRadPS).toBeCloseTo(9.42478, 4);
+    expect(profile!.defaultConstraints!.maxAngAccelRadPSSq).toBeCloseTo(12.56637, 4);
+    // Non-positive nominal voltage is dropped, not applied.
+    expect(profile!.defaultConstraints!.nominalVoltageV).toBeUndefined();
   });
 
   it('carries no dynamics for files without those fields (real samples today)', () => {

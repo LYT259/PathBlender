@@ -5,8 +5,17 @@
  * Recognized today are two project settings formats, in both cases by
  * shape — never the file name:
  * - PathPlanner settings.json (format facts, MIT-licensed upstream):
- *   - 2024+: { robotConfig: { robotWidth, robotLength, modules: [{x,y},…], … } }
- *   - 2023-: top-level { robotWidth, robotLength, moduleLocations: [{x,y},…], … }
+ *   - v2025.2.7 (authoritative): every field top-level flat —
+ *     { robotWidth, robotLength, holonomicMode, robotMass, robotMOI,
+ *     wheelCOF, driveWheelRadius, driveGearing, maxDriveSpeed,
+ *     driveMotorType, driveCurrentLimit, flModuleX…brModuleY,
+ *     robotTrackwidth, defaultMaxVel, defaultMaxAccel, defaultMaxAngVel,
+ *     defaultMaxAngAccel, defaultNominalVoltage, … } (verified against
+ *     home_page.dart _saveProjectSettingsToFile at tag v2025.2.7)
+ *   - 2024 compat: { robotConfig: { robotWidth, robotLength, modules:
+ *     [{x,y},…], … }, generationSettings: {…} }
+ *   - 2023- compat: top-level { robotWidth, robotLength, moduleLocations:
+ *     [{x,y},…], isHolonomic }
  * - Choreo project file `.chor` (red book v1.15, §6.6 companion read):
  *   { name, version, type: "Swerve"|"Differential", config: { bumper:
  *   {front,side,back}, frontLeft, backLeft, mass, … } } — the config
@@ -37,6 +46,13 @@ export interface ProfileDynamics {
   driveGearing?: number;
   /** Free speed at the wheel, m/s (derived from motor-shaft values). */
   maxDriveVelocityMPS?: number;
+  /** Raw upstream `driveMotorType` string (e.g. 'krakenX60', 'falcon500FOC');
+   * motor-model resolution and unknown-type handling happen downstream. */
+  driveMotorType?: string;
+  /** Upstream `driveCurrentLimit`, amps per drive motor exactly as written in
+   * the file (upstream multiplies by motor count when building its module
+   * config, RobotConfig.fromPrefs at v2025.2.7). */
+  driveCurrentLimitA?: number;
 }
 
 /** PP settings.json generation defaults, used when a path is unlimited. */
@@ -45,6 +61,9 @@ export interface ProfileDefaultConstraints {
   maxAccelMPSS?: number;
   maxAngVelRadPS?: number;
   maxAngAccelRadPSSq?: number;
+  /** Upstream `defaultNominalVoltage`, volts — caps the motor model during
+   * generation (trajectory.dart feeds it into the current calculation). */
+  nominalVoltageV?: number;
 }
 
 export interface RobotProfile {
@@ -59,6 +78,14 @@ export interface RobotProfile {
   dynamics?: ProfileDynamics;
   /** Project-wide generation defaults; only recognized in PP settings.json. */
   defaultConstraints?: ProfileDefaultConstraints;
+  /**
+   * Generation-relevant fields the file carried but whose values the guards
+   * rejected: upstream settings.json field name (e.g. 'driveCurrentLimit') →
+   * raw value as found in the file. Distinguishes "invalid" from "absent"
+   * for downstream per-parameter provenance (consumed by the config
+   * resolver; Task 2 provenance 'invalid' state). Undefined on clean files.
+   */
+  rejectedGenerationFields?: Readonly<Record<string, unknown>>;
 }
 
 /** Plausible free speed at the wheel — guards a misread vmax unit. */
@@ -66,7 +93,35 @@ function plausibleWheelSpeedMPS(v: number): boolean {
   return v > 0.5 && v < 15;
 }
 
+/**
+ * v2025.2.7 flat module corners, in the same stable order upstream
+ * RobotConfig.fromPrefs builds its layout: [fl, fr, bl, br]. All eight
+ * values must be finite or the flat set counts as absent (all-or-nothing)
+ * and the caller falls back to the legacy nested arrays.
+ */
+const FLAT_MODULE_KEYS = [
+  ['flModuleX', 'flModuleY'],
+  ['frModuleX', 'frModuleY'],
+  ['blModuleX', 'blModuleY'],
+  ['brModuleX', 'brModuleY'],
+] as const;
+
+function readFlatModuleLocations(source: Record<string, unknown>): ModuleLocation[] | null {
+  const corners: ModuleLocation[] = [];
+  for (const [xKey, yKey] of FLAT_MODULE_KEYS) {
+    const x = num(source[xKey], Number.NaN);
+    const y = num(source[yKey], Number.NaN);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    corners.push({ x, y });
+  }
+  return corners;
+}
+
 function readModuleLocations(source: Record<string, unknown>): ModuleLocation[] {
+  return readFlatModuleLocations(source) ?? readNestedModuleLocations(source);
+}
+
+function readNestedModuleLocations(source: Record<string, unknown>): ModuleLocation[] {
   const raw = asArray(source.modules) ?? asArray(source.moduleLocations);
   if (!raw) return [];
   const locations: ModuleLocation[] = [];
@@ -222,19 +277,61 @@ function choreoProjectProfile(
 }
 
 /**
- * PP settings.json dynamics + generation defaults. Field names follow the
- * red book §6.6 consumption matrix (verified against the MIT upstream
- * prefs); the local real samples carry none of them, so every field is
- * optional and a file without them yields no dynamics — behavior is then
- * unchanged. 实测留待：遇到携带动力学字段的真机 settings.json 时回填样本.
+ * PP settings.json dynamics + generation defaults. Field names are the
+ * v2025.2.7 top-level flat keys (verified against home_page.dart at the
+ * pinned tag; the 2024 nested robotConfig/generationSettings shapes stay
+ * supported as compatibility coverage). The local real samples carry none
+ * of them, so every field is optional and a file without them yields no
+ * dynamics — behavior is then unchanged. 实测留待：遇到携带动力学字段的真机
+ * settings.json 时回填样本.
+ *
+ * Present in the v2025.2.7 file but not consumed here:
+ * - pathFolders, autoFolders — UI tree organization only, no generation role.
+ * - robotFeatures — field-overlay display features (serialized feature JSON).
+ * - bumperOffsetX/bumperOffsetY — bumper-box display/collision offset; no
+ *   timing effect (candidate for future geometry mapping, not a generation
+ *   input; robotWidth/robotLength already feed RobotGeometry).
+ * - robotTrackwidth — consumed one level up (diff-drive module layout when
+ *   holonomicMode is false), not a scalar dynamics field.
  */
-function ppDynamics(source: Record<string, unknown>): ProfileDynamics | undefined {
-  const massKG = num(source.robotMass ?? source.robotMassKg, Number.NaN);
-  const moiKGm2 = num(source.robotMOI, Number.NaN);
-  const wheelCOF = num(source.wheelCOF, Number.NaN);
-  const wheelRadiusM = num(source.driveWheelRadius, Number.NaN);
-  const driveGearing = num(source.driveGearing, Number.NaN);
-  const maxDriveVelocityMPS = num(source.maxDriveSpeed, Number.NaN);
+function ppDynamics(source: Record<string, unknown>): {
+  dynamics?: ProfileDynamics;
+  rejected?: Record<string, unknown>;
+} {
+  const rejected: Record<string, unknown> = {};
+  /** Record a present-but-rejected field: invalid ≠ absent for provenance. */
+  const reject = (field: string, raw: unknown, ok: boolean): void => {
+    if (raw !== undefined && !ok) rejected[field] = raw;
+  };
+
+  const massRaw = source.robotMass ?? source.robotMassKg;
+  const moiRaw = source.robotMOI;
+  const cofRaw = source.wheelCOF;
+  const radiusRaw = source.driveWheelRadius;
+  const gearingRaw = source.driveGearing;
+  const maxSpeedRaw = source.maxDriveSpeed;
+  const motorRaw = source.driveMotorType;
+  const currentRaw = source.driveCurrentLimit;
+
+  const massKG = num(massRaw, Number.NaN);
+  const moiKGm2 = num(moiRaw, Number.NaN);
+  const wheelCOF = num(cofRaw, Number.NaN);
+  const wheelRadiusM = num(radiusRaw, Number.NaN);
+  const driveGearing = num(gearingRaw, Number.NaN);
+  const maxDriveVelocityMPS = num(maxSpeedRaw, Number.NaN);
+  const driveMotorType =
+    typeof motorRaw === 'string' && motorRaw.length > 0 ? motorRaw : undefined;
+  const driveCurrentLimitA = num(currentRaw, Number.NaN);
+
+  reject('robotMass', massRaw, Number.isFinite(massKG));
+  reject('robotMOI', moiRaw, Number.isFinite(moiKGm2));
+  reject('wheelCOF', cofRaw, Number.isFinite(wheelCOF) && wheelCOF > 0);
+  reject('driveWheelRadius', radiusRaw, Number.isFinite(wheelRadiusM) && wheelRadiusM > 0);
+  reject('driveGearing', gearingRaw, Number.isFinite(driveGearing) && driveGearing > 0);
+  reject('maxDriveSpeed', maxSpeedRaw, plausibleWheelSpeedMPS(maxDriveVelocityMPS));
+  reject('driveMotorType', motorRaw, driveMotorType !== undefined);
+  reject('driveCurrentLimit', currentRaw, Number.isFinite(driveCurrentLimitA) && driveCurrentLimitA > 0);
+
   const dynamics: ProfileDynamics = {
     massKG: Number.isFinite(massKG) ? massKG : undefined,
     moiKGm2: Number.isFinite(moiKGm2) ? moiKGm2 : undefined,
@@ -244,22 +341,37 @@ function ppDynamics(source: Record<string, unknown>): ProfileDynamics | undefine
     maxDriveVelocityMPS: plausibleWheelSpeedMPS(maxDriveVelocityMPS)
       ? maxDriveVelocityMPS
       : undefined,
+    driveMotorType,
+    driveCurrentLimitA:
+      Number.isFinite(driveCurrentLimitA) && driveCurrentLimitA > 0
+        ? driveCurrentLimitA
+        : undefined,
   };
-  return Object.values(dynamics).some((v) => v !== undefined) ? dynamics : undefined;
+  return {
+    dynamics: Object.values(dynamics).some((v) => v !== undefined) ? dynamics : undefined,
+    rejected: Object.keys(rejected).length > 0 ? rejected : undefined,
+  };
 }
 
 function ppDefaultConstraints(root: Record<string, unknown>): ProfileDefaultConstraints | undefined {
-  const gen = asRecord(root.generationSettings);
-  if (!gen) return undefined;
-  const maxVelMPS = num(gen.defaultMaxVel, Number.NaN);
-  const maxAccelMPSS = num(gen.defaultMaxAccel, Number.NaN);
-  const maxAngVelRadPS = num(gen.defaultMaxAngVel, Number.NaN);
-  const maxAngAccelRadPSSq = num(gen.defaultMaxAngAccel, Number.NaN);
+  // v2025.2.7 writes these top-level flat; the nested generationSettings
+  // object is the older compatibility shape (same keys, same units).
+  const source = asRecord(root.generationSettings) ?? root;
+  const DEG_TO_RAD = Math.PI / 180;
+  const maxVelMPS = num(source.defaultMaxVel, Number.NaN);
+  const maxAccelMPSS = num(source.defaultMaxAccel, Number.NaN);
+  // Angular values are degrees in the file (upstream PathConstraints carries
+  // maxAngularVelocityDeg/maxAngularAccelerationDeg; the generator converts
+  // via Units.degreesToRadians — trajectory.dart at v2025.2.7).
+  const maxAngVelRadPS = num(source.defaultMaxAngVel, Number.NaN) * DEG_TO_RAD;
+  const maxAngAccelRadPSSq = num(source.defaultMaxAngAccel, Number.NaN) * DEG_TO_RAD;
+  const nominalVoltageV = num(source.defaultNominalVoltage, Number.NaN);
   const dc: ProfileDefaultConstraints = {
     maxVelMPS: Number.isFinite(maxVelMPS) && maxVelMPS > 0 ? maxVelMPS : undefined,
     maxAccelMPSS: Number.isFinite(maxAccelMPSS) && maxAccelMPSS > 0 ? maxAccelMPSS : undefined,
     maxAngVelRadPS: Number.isFinite(maxAngVelRadPS) && maxAngVelRadPS > 0 ? maxAngVelRadPS : undefined,
     maxAngAccelRadPSSq: Number.isFinite(maxAngAccelRadPSSq) && maxAngAccelRadPSSq > 0 ? maxAngAccelRadPSSq : undefined,
+    nominalVoltageV: Number.isFinite(nominalVoltageV) && nominalVoltageV > 0 ? nominalVoltageV : undefined,
   };
   return Object.values(dc).some((v) => v !== undefined) ? dc : undefined;
 }
@@ -293,13 +405,31 @@ export function parseRobotProfile(text: string, fileName: string): RobotProfile 
     const massRaw = source.robotMassKg ?? source.robotMass ?? root.robotMassKg;
     const massKG = typeof massRaw === 'number' && Number.isFinite(massRaw) ? massRaw : undefined;
 
+    let moduleLocations = readModuleLocations(source);
+    // Upstream ignores the corner fields entirely when the project is not
+    // holonomic and builds the layout from robotTrackwidth instead
+    // (RobotConfig.fromPrefs at v2025.2.7: (0, ±trackwidth/2)). Without a
+    // usable trackwidth we keep whatever layout the file carried — upstream
+    // would fall back to its own 0.546 m default, which we do not invent.
+    if (holonomic === false) {
+      const trackwidth = num(source.robotTrackwidth ?? root.robotTrackwidth, Number.NaN);
+      if (Number.isFinite(trackwidth) && trackwidth > 0) {
+        moduleLocations = [
+          { x: 0, y: trackwidth / 2 },
+          { x: 0, y: -trackwidth / 2 },
+        ];
+      }
+    }
+
+    const { dynamics, rejected } = ppDynamics(source);
     return {
       name: profileNameFromPath(fileName),
       geometry,
-      moduleLocations: readModuleLocations(source),
+      moduleLocations,
       massKG,
       holonomic,
-      dynamics: ppDynamics(source),
+      dynamics,
+      rejectedGenerationFields: rejected,
       defaultConstraints: ppDefaultConstraints(root),
     };
   }
