@@ -71,6 +71,7 @@ import { ImportBanner } from './components/ImportBanner';
 import { usePlayback } from './playback';
 import { playbackEnd, usePlaybackRange } from './playback-range';
 import { I18nProvider, isRtl, useI18n } from './i18n';
+import { seasonLabel } from './i18n/season-names';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
@@ -1633,7 +1634,7 @@ function AppBody() {
               {hasRobots && <div className="canvas-bar workspace-canvas-bar">
                 <div className="field-options">
                   <SelectControl className="field-select" aria-label={tr('workspace.season')} value={fieldId} onValueChange={selectSeason}>
-                    {FIELDS.map((f) => <option key={f.id} value={f.id}>{f.name} {f.year}</option>)}
+                    {FIELDS.map((f) => <option key={f.id} value={f.id}>{seasonLabel(tr, f)}</option>)}
                     <option value={CUSTOM_FIELD_ID}>{tr('customField.title')}</option>
                   </SelectControl>
                   {field.aprilTagsAndyMark && <div className="seg field-variant-toggle" role="group" aria-label={tr('field.variant')}>

@@ -18,6 +18,7 @@
 
 import { FIELDS } from '@pathblender/core';
 import type { MessageKey } from './i18n/en';
+import { seasonLabel } from './i18n/season-names';
 
 export type MenuRole =
   | 'separator'
@@ -160,7 +161,7 @@ export function buildMenuSpec(ctx: MenuContext): MenuSection[] {
   }
 
   const seasonItems: MenuEntry[] = FIELDS.map((f) =>
-    check(`season-${f.id}`, `${f.name} ${f.year}`, ctx.fieldId === f.id));
+    check(`season-${f.id}`, seasonLabel(t, f), ctx.fieldId === f.id));
   seasonItems.push(sep());
   seasonItems.push(check('season-custom', t('customField.title'), ctx.fieldId === 'custom'));
 

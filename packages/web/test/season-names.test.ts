@@ -29,4 +29,12 @@ describe('season name keys', () => {
     expect(SEASON_NAME_KEYS[CUSTOM_FIELD_ID]).toBeUndefined();
     expect(seasonLabel(keyEcho, { id: 'future-2099', name: 'New Game', year: 2099 })).toBe('New Game');
   });
+
+  it('ids that collide with inherited Object properties are unknown, not keys', () => {
+    // Field ids arrive from imported packages: a bare Record lookup resolves
+    // 'constructor'/'toString' to Object.prototype members and would hand a
+    // function to t() — the raw field name must come back instead.
+    expect(seasonLabel(keyEcho, { id: 'constructor', name: 'Factory Field', year: 2026 })).toBe('Factory Field');
+    expect(seasonLabel(keyEcho, { id: 'toString', name: 'Plain Field', year: 2026 })).toBe('Plain Field');
+  });
 });

@@ -5,7 +5,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeSession, parsePathFile, serializeSession } from '@pathblender/core';
 import { App } from '../src/App';
-import { expectComboboxValue, pickComboboxValue } from './combobox';
+import { expectComboboxValue, openCombobox, pickComboboxValue } from './combobox';
 
 const samples = resolve(__dirname, '../../../samples');
 
@@ -64,6 +64,17 @@ describe('workspace workflow', () => {
     await importSamples('ghostauto/straight_run.ghostauto');
     expect(screen.getByRole('button', { name: '2D', exact: true })).toHaveAttribute('aria-pressed', 'true');
     expect(document.querySelector('.canvas-bar')).toBeInTheDocument();
+  });
+
+  it('season picker labels come from the dictionaries (English pin)', async () => {
+    render(<App />);
+    await importSamples('ghostauto/straight_run.ghostauto');
+    const control = document.querySelector<HTMLElement>('.field-select')!;
+    const list = openCombobox(control);
+    const option = within(list).getAllByRole('option')
+      .find((o) => o.getAttribute('data-value') === 'rebuilt-2026')!;
+    expect(option.textContent).toBe('REBUILT 2026');
+    fireEvent.keyDown(control, { key: 'Escape' });
   });
 
   it('returns from robot details to checks without removing a robot', async () => {

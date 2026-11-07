@@ -20,6 +20,10 @@ export function seasonLabel(
   t: (key: MessageKey) => string,
   field: { id: string; name: string; year: number },
 ): string {
-  const key = SEASON_NAME_KEYS[field.id];
+  // Own-property lookup: imported field ids are external data, and a bare
+  // Record index would resolve 'constructor'/'toString' to inherited members.
+  const key = Object.hasOwn(SEASON_NAME_KEYS, field.id)
+    ? SEASON_NAME_KEYS[field.id]
+    : undefined;
   return key === undefined ? field.name : `${t(key)} ${field.year}`;
 }
