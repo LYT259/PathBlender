@@ -101,7 +101,17 @@ export {
 } from './parsers/hoot';
 export type { HootProbeResult } from './parsers/hoot';
 export type { RobotProfile, ProfileDynamics, ProfileDefaultConstraints } from './parsers/robot-profile';
-export { applyProfileToTrajectory } from './profile-apply';
+export {
+  applyProfileToTrajectory,
+  dynamicsConfigComplete,
+  resolveRobotConfig,
+} from './profile-apply';
+export type {
+  DynamicsParamKey,
+  DynamicsParamSource,
+  DynamicsProvenance,
+  ResolvedRobotConfig,
+} from './profile-apply';
 export type { AutoSegment } from './parsers/pathplanner-auto';
 
 // PathPlanner trajectory generation (Phase 2 port, MIT-licensed upstream).

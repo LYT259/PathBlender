@@ -3,11 +3,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   applyProfileToTrajectory,
+  DCMotor,
   deserializeSession,
+  dynamicsConfigComplete,
   makeSession,
   parsePathFile,
   parseRobotProfile,
   parseTraj,
+  resolveRobotConfig,
   serializeSession,
 } from '../src';
 
@@ -207,5 +210,131 @@ describe('applyProfileToTrajectory (real-robot regeneration)', () => {
     const restored = deserializeSession(serializeSession([makeSession(applied, 0)], 'rebuilt-2026'));
     expect(restored.robots[0]!.trajectory.massKG).toBe(61.2);
     expect(restored.robots[0]!.trajectory.holonomic).toBe(false);
+  });
+});
+
+describe('resolveRobotConfig (motor, current, provenance)', () => {
+  const traj = parsePathFile(read('pathplanner/constrained_pointing.path'), 'constrained_pointing.path');
+
+  // Authoritative v2025.2.7 flat shape (Task 1). Probed on this sample: the
+  // motor model only binds above ~120 kg (lighter robots saturate the path's
+  // own 3 m/s² constraint first), so the shared fixture is 150 kg with 200 A
+  // headroom — heavier than the 74.088 kg default, but the default-config
+  // parse is current-starved at 60 A, so both motors still beat it.
+  const fullSettings = (over: Record<string, unknown> = {}): string =>
+    JSON.stringify({
+      robotWidth: 0.85,
+      robotLength: 0.85,
+      holonomicMode: true,
+      robotMass: 150,
+      robotMOI: 6.9,
+      wheelCOF: 1.2,
+      driveWheelRadius: 0.048,
+      driveGearing: 6.08,
+      maxDriveSpeed: 4.5,
+      driveMotorType: 'krakenX60',
+      driveCurrentLimit: 200,
+      flModuleX: 0.273, flModuleY: 0.273,
+      frModuleX: -0.273, frModuleY: 0.273,
+      blModuleX: 0.273, blModuleY: -0.273,
+      brModuleX: -0.273, brModuleY: -0.273,
+      ...over,
+    });
+  const profile = (over: Record<string, unknown> = {}) =>
+    parseRobotProfile(fullSettings(over), '254/pathplanner/settings.json')!;
+
+  it('motor type reaches the generator and changes a dynamics-limited timeline', () => {
+    const falcon = applyProfileToTrajectory(traj, profile({ driveMotorType: 'falcon500' }));
+    const kraken = applyProfileToTrajectory(traj, profile({ driveMotorType: 'krakenX60' }));
+    // Falcon 500 delivers less torque at speed than the Kraken X60 with the
+    // same gearing and current headroom → longer timeline.
+    expect(falcon.durationS).toBeGreaterThan(kraken.durationS);
+    // Sanity: both beat the default-config parse (74.088 kg, 60 A Kraken).
+    expect(falcon.durationS).toBeLessThan(traj.durationS);
+    expect(kraken.durationS).toBeLessThan(traj.durationS);
+  });
+
+  it('current limit reaches the generator', () => {
+    // 40 vs 80 A: a viable pair. At ≤30 A the loss term (draw at max drive
+    // speed, clamped by the limit) cancels the available torque entirely and
+    // the timeline degenerates to zero duration — upstream-identical physics
+    // (trajectory.dart torqueLoss at v2025.2.7), characterized here, not
+    // papered over.
+    const low = applyProfileToTrajectory(traj, profile({ driveCurrentLimit: 40 }));
+    const high = applyProfileToTrajectory(traj, profile({ driveCurrentLimit: 80 }));
+    expect(low.durationS).toBeGreaterThan(high.durationS);
+  });
+
+  it('unknown motor type is visibly unsupported', () => {
+    const p = profile({ driveMotorType: 'madeUp2027' });
+    const resolved = resolveRobotConfig(p);
+    expect(resolved.unknownMotorType).toBe('madeUp2027');
+    expect(resolved.provenance.driveMotorType).toBe('unsupported');
+    // Fallback is the default Kraken model with the profile's gearing still
+    // applied (7.09 N·m stall × 6.08 reduction = 43.1072 N·m), never a guess.
+    expect(resolved.config.moduleConfig.driveMotor.stallTorqueNM).toBeCloseTo(43.1072, 3);
+    const applied = applyProfileToTrajectory(traj, p);
+    expect(applied.warnings.join('\n')).toContain('drive motor "madeUp2027" not supported');
+  });
+
+  it('invalid current limit is recorded, not applied', () => {
+    const p = profile({ driveCurrentLimit: -5 });
+    const resolved = resolveRobotConfig(p);
+    expect(resolved.provenance.driveCurrentLimitA).toBe('invalid');
+    // Holonomic module = 1 motor → the per-module default stays 60 A.
+    expect(resolved.config.moduleConfig.driveCurrentLimitA).toBe(60);
+  });
+
+  it('non-positive mass and MOI are rejected as invalid, not passed to dynamics', () => {
+    const p = profile({ robotMass: -10, robotMOI: 0 });
+    const resolved = resolveRobotConfig(p);
+    expect(resolved.provenance.massKG).toBe('invalid');
+    expect(resolved.provenance.moiKGm2).toBe('invalid');
+    // makeRobotConfig defaults (upstream Defaults): 74.088 kg, 6.883 kg·m².
+    expect(resolved.config.massKG).toBe(74.088);
+    expect(resolved.config.moi).toBe(6.883);
+  });
+
+  it('diff-drive doubles the per-motor current limit into the per-module total', () => {
+    const p = profile({ holonomicMode: false, robotTrackwidth: 0.6, driveCurrentLimit: 80 });
+    const resolved = resolveRobotConfig(p);
+    expect(resolved.config.moduleConfig.driveCurrentLimitA).toBe(160);
+    // numMotors = 2 for diff drive: Kraken stall 366 A × 2 motors = 732 A.
+    expect(resolved.config.moduleConfig.driveMotor.stallCurrentAmps).toBe(732);
+  });
+
+  it('provenance marks every consumed parameter', () => {
+    const complete = resolveRobotConfig(profile());
+    expect(complete.provenance).toEqual({
+      massKG: 'file',
+      moiKGm2: 'file',
+      wheelCOF: 'file',
+      wheelRadiusM: 'file',
+      driveGearing: 'file',
+      maxDriveVelocityMPS: 'file',
+      driveMotorType: 'file',
+      driveCurrentLimitA: 'file',
+      moduleLocations: 'file',
+      holonomic: 'file',
+    });
+    expect(dynamicsConfigComplete(complete.provenance)).toBe(true);
+
+    const noMotor = resolveRobotConfig(profile({ driveMotorType: undefined }));
+    expect(noMotor.provenance.driveMotorType).toBe('default');
+    expect(dynamicsConfigComplete(noMotor.provenance)).toBe(false);
+  });
+
+  it('DCMotor.isKnownMotorType matches the exact upstream case list', () => {
+    // lib/trajectory/dc_motor.dart at v2025.2.7 (Task 1 citation): these 8
+    // strings are every case fromString resolves; a real team's motor string
+    // outside the list must surface as unsupported, not silently swapped.
+    for (const known of [
+      'krakenX60', 'krakenX60FOC', 'falcon500', 'falcon500FOC',
+      'vortex', 'NEO', 'CIM', 'miniCIM',
+    ]) {
+      expect(DCMotor.isKnownMotorType(known)).toBe(true);
+    }
+    expect(DCMotor.isKnownMotorType('madeUp2027')).toBe(false);
+    expect(DCMotor.isKnownMotorType('krakenx60')).toBe(false);
   });
 });
