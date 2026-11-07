@@ -91,8 +91,14 @@ export function HootImportFlow({ files, onConverted, onFailures, onCancel }: Hoo
   const [progressPct, setProgressPct] = useState<number | null>(null);
   const [convertingName, setConvertingName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const cancelledRef = useRef(false);
-  const startedRef = useRef(false);
+  /** Shared "is my run cancelled" reader; the mount effect keeps it current. */
+  const cancelledRef = useRef<() => boolean>(() => false);
+  /** Run token: each effect setup (and cleanup) bumps it, killing every
+   *  in-flight pipeline except the one the latest setup started. Refs survive
+   *  StrictMode's setup→cleanup→setup, so a plain boolean would strand the
+   *  remounted component in loading forever — cleanup#1 poisons it, setup#2
+   *  no-ops — while a bare reset would revive the cancelled twin's awaits. */
+  const runRef = useRef(0);
   const onConvertedRef = useRef(onConverted);
   onConvertedRef.current = onConverted;
   const onFailuresRef = useRef(onFailures);
@@ -106,11 +112,11 @@ export function HootImportFlow({ files, onConverted, onFailures, onCancel }: Hoo
     const converted: Array<{ relPath: string; file: File }> = [];
     const failures: Array<{ relPath: string; message: string }> = [];
     for (const { file, relPath } of filesRef.current) {
-      if (cancelledRef.current) return;
+      if (cancelledRef.current()) return;
       setConvertingName(file.name);
       // Re-probe for the compliancy value (Task 7's gate already routed here).
       const bytes = new Uint8Array(await file.arrayBuffer());
-      if (cancelledRef.current) return;
+      if (cancelledRef.current()) return;
       const probe = probeHootFile(bytes);
       if (probe.kind === 'rejected') {
         failures.push({
@@ -125,7 +131,7 @@ export function HootImportFlow({ files, onConverted, onFailures, onCancel }: Hoo
       }
       try {
         const product = await hootConvert(file.name, bytes);
-        if (cancelledRef.current) return;
+        if (cancelledRef.current()) return;
         // {stem}.wpilog under the file's original directory.
         const name = `${file.name.replace(/\.hoot$/i, '')}.wpilog`;
         const slash = relPath.lastIndexOf('/');
@@ -137,7 +143,7 @@ export function HootImportFlow({ files, onConverted, onFailures, onCancel }: Hoo
         failures.push({ relPath, message: convertFailureMessage(t, file.name, err) });
       }
     }
-    if (cancelledRef.current) return;
+    if (cancelledRef.current()) return;
     if (converted.length > 0) onConvertedRef.current(converted);
     if (failures.length > 0) onFailuresRef.current(failures);
   };
@@ -151,30 +157,30 @@ export function HootImportFlow({ files, onConverted, onFailures, onCancel }: Hoo
         setProgressPct(p.total > 0 ? Math.floor((p.downloaded / p.total) * 100) : null);
       };
       current = await hootDownloadOwlet(onProgress);
-      if (cancelledRef.current) return;
+      if (cancelledRef.current()) return;
     }
     setPhase('converting');
     await convertAll(current);
   };
 
   useEffect(() => {
-    if (startedRef.current) return;
-    startedRef.current = true;
+    const myRun = ++runRef.current;
+    cancelledRef.current = () => runRef.current !== myRun;
     void (async () => {
       try {
         const status = await hootStatus();
-        if (cancelledRef.current) return;
+        if (cancelledRef.current()) return;
         if (!status.eulaAccepted) {
           setPhase('eula');
           return;
         }
         await downloadAndConvert(status);
       } catch (err) {
-        if (!cancelledRef.current) setError(stageFailureMessage(t, err));
+        if (!cancelledRef.current()) setError(stageFailureMessage(t, err));
       }
     })();
     return () => {
-      cancelledRef.current = true;
+      runRef.current += 1;
     };
     // The flow runs exactly once per mount; later phases live in handlers.
   }, []);
@@ -185,10 +191,10 @@ export function HootImportFlow({ files, onConverted, onFailures, onCancel }: Hoo
       try {
         setPhase('downloading');
         const status = await hootAcceptEula();
-        if (cancelledRef.current) return;
+        if (cancelledRef.current()) return;
         await downloadAndConvert(status);
       } catch (err) {
-        if (!cancelledRef.current) setError(stageFailureMessage(t, err));
+        if (!cancelledRef.current()) setError(stageFailureMessage(t, err));
       }
     })();
   };

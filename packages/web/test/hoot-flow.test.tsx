@@ -11,6 +11,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { HOOT_COMPLIANCY_OFFSET } from '@pathblender/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../src/i18n';
@@ -228,5 +229,37 @@ describe('HootImportFlow', () => {
     await waitFor(() => expect(onFailures).toHaveBeenCalledTimes(1), { timeout: 3000 });
     expect(onFailures.mock.calls[0]![0]).toEqual([{ relPath: 'Log.hoot', message: 'plain failure' }]);
     expect(onConverted).not.toHaveBeenCalled();
+  });
+
+  it('StrictMode setup→cleanup→setup revives the pipeline instead of stranding it in loading', async () => {
+    vi.mocked(hootStatus).mockResolvedValue(NOT_ACCEPTED);
+    vi.mocked(hootAcceptEula).mockResolvedValue(ACCEPTED_NOT_DOWNLOADED);
+    vi.mocked(hootDownloadOwlet).mockResolvedValue(DOWNLOADED_SAME_COMPLIANCY);
+    vi.mocked(hootConvert).mockResolvedValue({ wpilogName: 'Log.wpilog', wpilogBase64: toBase64(new Uint8Array([1, 2, 3])) });
+    const onConverted = vi.fn();
+    render(
+      <StrictMode>
+        <I18nProvider>
+          <HootImportFlow
+            files={[hootStub('Log.hoot', 9, 'Log.hoot')]}
+            onConverted={onConverted}
+            onFailures={() => undefined}
+            onCancel={() => undefined}
+          />
+        </I18nProvider>
+      </StrictMode>,
+    );
+    // The remount simulation must actually run the status read twice, and the
+    // second setup's pipeline must reach the EULA step — the first setup's
+    // cleanup may poison only its own run, not the mounted component.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Agree and download' })).toBeTruthy(), { timeout: 3000 });
+    expect(hootStatus).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Agree and download' }));
+    await waitFor(() => expect(onConverted).toHaveBeenCalledTimes(1), { timeout: 3000 });
+    // The cancelled twin never reached a mutating command — exactly one of each.
+    expect(hootAcceptEula).toHaveBeenCalledTimes(1);
+    expect(hootDownloadOwlet).toHaveBeenCalledTimes(1);
+    expect(hootConvert).toHaveBeenCalledTimes(1);
   });
 });
