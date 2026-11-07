@@ -52,10 +52,10 @@
 
 | field id | en | locale | 显示值 | 一手来源（2026-11-07 核查） |
 |---|---|---|---|---|
-| `reefscape-2025` | Reefscape | zh / zh-tw | 珊瑚拯救 / 珊瑚拯救 | [FIRST 2025 简体中文比赛手册](https://firstfrc.blob.core.windows.net/frc2025/Manual/TranslatedManuals/2025GameManual-CN.pdf) |
-| `rebuilt-2026` | REBUILT | zh / zh-tw | 发掘重建 / 發掘重建 | [FIRST 2026 简体中文比赛手册](https://firstfrc.blob.core.windows.net/frc2026/Manual/Translations/2026GameManual-CS.pdf) |
+| `reefscape-2025` | Reefscape | zh / zh-tw；zh-hk / zh-mo 沿继承链 | 珊瑚拯救 / 珊瑚拯救 | [FIRST 2025 简体中文比赛手册](https://firstfrc.blob.core.windows.net/frc2025/Manual/TranslatedManuals/2025GameManual-CN.pdf) |
+| `rebuilt-2026` | REBUILT | zh / zh-tw；zh-hk / zh-mo 沿继承链 | 发掘重建 / 發掘重建 | [FIRST 2026 简体中文比赛手册](https://firstfrc.blob.core.windows.net/frc2026/Manual/Translations/2026GameManual-CS.pdf) |
 
-其余语言与赛季名目前保留英文，并继续使用各自的 `KEEP_VERBATIM` 条目；新增官方译名时再补表和修剪白名单。
+其余尚未取得官方一手译名的语言/赛季组合保留英文，并继续使用各自的 `KEEP_VERBATIM` 条目；港澳沿继承链使用上述值，不另开覆盖键。新增官方译名时再补表和修剪白名单。
 
 ## 4. 数字与排版
 
