@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyProfileToRobot, makeSession, parseGhostAuto, parsePathFile, parseRobotProfile, type SessionTrajectory } from '@pathblender/core';
 import { I18nProvider } from '../src/i18n';
 import { App } from '../src/App';
 import { saveText } from '../src/download';
 import { applyUploadedProfile, inspectorWarnings } from '../src/robot-profile-ui';
-import { comboboxValues, pickComboboxValue } from './combobox';
+import { comboboxValues, openCombobox } from './combobox';
 
 vi.mock('../src/download', () => ({ saveText: vi.fn(async () => true) }));
 
@@ -146,6 +146,13 @@ describe('unified application entries (Task 6)', () => {
     flModuleX: 0.273, flModuleY: 0.273, frModuleX: -0.273, frModuleY: 0.273,
     blModuleX: 0.273, blModuleY: -0.273, brModuleX: -0.273, brModuleY: -0.273,
   });
+  // The distractor that keeps the folder ambiguous (two profiles → no
+  // automatic pick at import), so the test below exercises the select entry
+  // alone: mass 45 + MOI 2.0 would re-time Pickup to 7.629417092969108 s,
+  // distinguishable from every pinned value.
+  const SETTINGS_MASS45_ALT = JSON.stringify({
+    robotConfig: { robotWidth: 0.9, robotLength: 0.9, robotMass: 45, robotMOI: 2.0 },
+  });
 
   function constrainedRobot(): SessionTrajectory {
     const trajectory = parsePathFile(constrainedText, 'team/pointing.path', () => undefined);
@@ -177,32 +184,49 @@ describe('unified application entries (Task 6)', () => {
 
   it('selecting a profile from the inspector applies it to the whole route library', async () => {
     render(<App />);
+    // Two profiles in the folder → no automatic pick at import, so this test
+    // isolates the select entry itself (a single-profile folder would let the
+    // import-time application mask a select-only regression).
     dropFolder([
       folderFile('254/paths/Pickup.path', constrainedText),
       folderFile('254/paths/Score.path', scoreText),
       folderFile('254/autos/Example Auto.auto', autoText),
       folderFile('254/settings.json', SETTINGS_FULL40),
+      folderFile('254/alt/settings.json', SETTINGS_MASS45_ALT),
     ]);
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
     fireEvent.click(screen.getByText('254', { selector: '.robot-name' }));
     const profiles = await screen.findByRole('combobox', { name: 'Robot profile' });
-    pickComboboxValue(profiles, comboboxValues(profiles)[1]!);
+    expect(comboboxValues(profiles)).toHaveLength(3); // prompt + both profiles
     // Save moved to the File menu (2026-10-06): trigger the same handler via ⌘S.
+    // Before selection: no profile bound, every library route still on the
+    // default-config import timings.
     fireEvent.keyDown(window, { key: 's', metaKey: true });
-    const stored = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]);
-    const robot = stored.robots[0];
-    expect(robot.profileId).toBe(robot.profileOptions[0].id);
-    // Every library route carries the regenerated timeline — the raw import
-    // (default config) ran 8.010485665780992 / 4.082737556237078 /
-    // 14.09322322201807 s; today's select-entry bug left these untouched.
+    const before = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]).robots[0];
+    expect(before.profileId).toBeUndefined();
+    const beforeDuration = (relPath: string) =>
+      before.routeOptions.find((o: { relPath: string }) => o.relPath === relPath).trajectory.durationS;
+    expect(beforeDuration('254/paths/Pickup.path')).toBeCloseTo(8.010485665780992, 6);
+    expect(beforeDuration('254/paths/Score.path')).toBeCloseTo(4.082737556237078, 6);
+    expect(beforeDuration('254/autos/Example Auto.auto')).toBeCloseTo(14.09322322201807, 6);
+    // Select the 40 A profile by its rendered name ("254 · …", not "alt").
+    const list = openCombobox(profiles);
+    fireEvent.click(within(list).getAllByRole('option').find((o) => o.textContent!.startsWith('254 ·'))!);
+    // After selection: the whole route library regenerated against the
+    // selected config, profile bookkeeping bound to that entry.
+    fireEvent.keyDown(window, { key: 's', metaKey: true });
+    const stored = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]).robots[0];
+    expect(stored.profileId).toBe(
+      stored.profileOptions.find((p: { relPath: string }) => p.relPath === '254/settings.json').id,
+    );
     const duration = (relPath: string) =>
-      robot.routeOptions.find((o: { relPath: string }) => o.relPath === relPath).trajectory.durationS;
+      stored.routeOptions.find((o: { relPath: string }) => o.relPath === relPath).trajectory.durationS;
     expect(duration('254/paths/Pickup.path')).toBeCloseTo(10.074476474759628, 6);
     expect(duration('254/paths/Score.path')).toBeCloseTo(10.619182604797595, 6);
     expect(duration('254/autos/Example Auto.auto')).toBeCloseTo(22.693659079557223, 6);
-    for (const option of robot.routeOptions) {
-      expect(option.trajectory.geometrySource).toBe('file');
-      expect(option.trajectory.timingSource).toBe('full-config');
+    for (const route of stored.routeOptions) {
+      expect(route.trajectory.geometrySource).toBe('file');
+      expect(route.trajectory.timingSource).toBe('full-config');
     }
   });
 });
