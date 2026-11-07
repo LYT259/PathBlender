@@ -91,13 +91,19 @@ export function HootImportFlow({ files, onConverted, onFailures, onCancel }: Hoo
   const [progressPct, setProgressPct] = useState<number | null>(null);
   const [convertingName, setConvertingName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  /** Shared "is my run cancelled" reader; the mount effect keeps it current. */
-  const cancelledRef = useRef<() => boolean>(() => false);
-  /** Run token: each effect setup (and cleanup) bumps it, killing every
-   *  in-flight pipeline except the one the latest setup started. Refs survive
-   *  StrictMode's setup→cleanup→setup, so a plain boolean would strand the
-   *  remounted component in loading forever — cleanup#1 poisons it, setup#2
-   *  no-ops — while a bare reset would revive the cancelled twin's awaits. */
+  /** Cancellation predicate of the latest mount run — for handlers that start
+   *  after mount settles (the Agree click). Async pipelines must NOT read
+   *  this: they consult their own captured predicate, so a superseded twin
+   *  cannot ride the surviving run's liveness. */
+  const handlerCancelRef = useRef<() => boolean>(() => false);
+  /** Run token: every effect setup (and cleanup) bumps it, so each run's
+   *  captured predicate (`runRef.current !== myRun`) reports cancelled the
+   *  moment a later setup — or the real unmount's cleanup — fires. Refs
+   *  survive StrictMode's setup→cleanup→setup, which rules out two cheaper
+   *  designs: a poisoned boolean strands the remounted flow in loading
+   *  forever (cleanup#1 poisons it, setup#2 no-ops), and consulting the
+   *  latest predicate lets the superseded twin borrow the surviving run's
+   *  liveness and convert a second time. */
   const runRef = useRef(0);
   const onConvertedRef = useRef(onConverted);
   onConvertedRef.current = onConverted;
@@ -108,15 +114,15 @@ export function HootImportFlow({ files, onConverted, onFailures, onCancel }: Hoo
   const barId = useId();
 
   /** Sequential per-file conversion; partial failures never drop successes. */
-  const convertAll = async (status: HootStatus): Promise<void> => {
+  const convertAll = async (status: HootStatus, isCancelled: () => boolean): Promise<void> => {
     const converted: Array<{ relPath: string; file: File }> = [];
     const failures: Array<{ relPath: string; message: string }> = [];
     for (const { file, relPath } of filesRef.current) {
-      if (cancelledRef.current()) return;
+      if (isCancelled()) return;
       setConvertingName(file.name);
       // Re-probe for the compliancy value (Task 7's gate already routed here).
       const bytes = new Uint8Array(await file.arrayBuffer());
-      if (cancelledRef.current()) return;
+      if (isCancelled()) return;
       const probe = probeHootFile(bytes);
       if (probe.kind === 'rejected') {
         failures.push({
@@ -131,7 +137,7 @@ export function HootImportFlow({ files, onConverted, onFailures, onCancel }: Hoo
       }
       try {
         const product = await hootConvert(file.name, bytes);
-        if (cancelledRef.current()) return;
+        if (isCancelled()) return;
         // {stem}.wpilog under the file's original directory.
         const name = `${file.name.replace(/\.hoot$/i, '')}.wpilog`;
         const slash = relPath.lastIndexOf('/');
@@ -143,13 +149,13 @@ export function HootImportFlow({ files, onConverted, onFailures, onCancel }: Hoo
         failures.push({ relPath, message: convertFailureMessage(t, file.name, err) });
       }
     }
-    if (cancelledRef.current()) return;
+    if (isCancelled()) return;
     if (converted.length > 0) onConvertedRef.current(converted);
     if (failures.length > 0) onFailuresRef.current(failures);
   };
 
   /** Download (unless already in place), then convert. */
-  const downloadAndConvert = async (status: HootStatus): Promise<void> => {
+  const downloadAndConvert = async (status: HootStatus, isCancelled: () => boolean): Promise<void> => {
     let current = status;
     if (!current.downloaded) {
       setPhase('downloading');
@@ -157,44 +163,52 @@ export function HootImportFlow({ files, onConverted, onFailures, onCancel }: Hoo
         setProgressPct(p.total > 0 ? Math.floor((p.downloaded / p.total) * 100) : null);
       };
       current = await hootDownloadOwlet(onProgress);
-      if (cancelledRef.current()) return;
+      if (isCancelled()) return;
     }
     setPhase('converting');
-    await convertAll(current);
+    await convertAll(current, isCancelled);
   };
 
   useEffect(() => {
+    // This run's every async step consults the predicate captured HERE —
+    // reading the latest one would let a superseded twin ride the surviving
+    // run's liveness (double conversion under StrictMode).
     const myRun = ++runRef.current;
-    cancelledRef.current = () => runRef.current !== myRun;
+    const isCancelled = () => runRef.current !== myRun;
+    handlerCancelRef.current = isCancelled;
     void (async () => {
       try {
         const status = await hootStatus();
-        if (cancelledRef.current()) return;
+        if (isCancelled()) return;
         if (!status.eulaAccepted) {
           setPhase('eula');
           return;
         }
-        await downloadAndConvert(status);
+        await downloadAndConvert(status, isCancelled);
       } catch (err) {
-        if (!cancelledRef.current()) setError(stageFailureMessage(t, err));
+        if (!isCancelled()) setError(stageFailureMessage(t, err));
       }
     })();
     return () => {
       runRef.current += 1;
     };
-    // The flow runs exactly once per mount; later phases live in handlers.
+    // The status read runs once per effect setup (twice under StrictMode in
+    // dev); later phases live in handlers.
   }, []);
 
-  /** Consent and continue: accept → download with progress → convert. */
+  /** Consent and continue: accept → download with progress → convert. The
+   *  click happens after mount settles, so its run shares the latest mount
+   *  run's predicate — cancelled exactly by a real unmount. */
   const onAgree = (): void => {
+    const isCancelled = handlerCancelRef.current;
     void (async () => {
       try {
         setPhase('downloading');
         const status = await hootAcceptEula();
-        if (cancelledRef.current()) return;
-        await downloadAndConvert(status);
+        if (isCancelled()) return;
+        await downloadAndConvert(status, isCancelled);
       } catch (err) {
-        if (!cancelledRef.current()) setError(stageFailureMessage(t, err));
+        if (!isCancelled()) setError(stageFailureMessage(t, err));
       }
     })();
   };

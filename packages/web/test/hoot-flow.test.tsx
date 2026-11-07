@@ -262,4 +262,53 @@ describe('HootImportFlow', () => {
     expect(hootDownloadOwlet).toHaveBeenCalledTimes(1);
     expect(hootConvert).toHaveBeenCalledTimes(1);
   });
+
+  it('a READY mount under StrictMode converts and reports exactly once — the twin dies on its own predicate', async () => {
+    vi.mocked(hootStatus).mockResolvedValue(READY); // accepted + downloaded: straight to converting
+    vi.mocked(hootConvert).mockResolvedValue({ wpilogName: 'Log.wpilog', wpilogBase64: toBase64(new Uint8Array([1, 2, 3])) });
+    const onConverted = vi.fn();
+    render(
+      <StrictMode>
+        <I18nProvider>
+          <HootImportFlow
+            files={[hootStub('Log.hoot', 9, 'Log.hoot')]}
+            onConverted={onConverted}
+            onFailures={() => undefined}
+            onCancel={() => undefined}
+          />
+        </I18nProvider>
+      </StrictMode>,
+    );
+    await waitFor(() => expect(onConverted).toHaveBeenCalled(), { timeout: 3000 });
+    // Both setups' status reads resolved; give the twin's continuation the
+    // same microtask schedule before pinning the counts (20 ms settle bound,
+    // as in the App gate tests).
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(hootConvert).toHaveBeenCalledTimes(1);
+    expect(onConverted).toHaveBeenCalledTimes(1);
+  });
+
+  it('a real unmount still cancels: a convert resolving afterwards reports nothing', async () => {
+    vi.mocked(hootStatus).mockResolvedValue(READY);
+    let releaseConvert!: (value: { wpilogName: string; wpilogBase64: string }) => void;
+    vi.mocked(hootConvert).mockImplementationOnce(() => new Promise((resolve) => { releaseConvert = resolve; }));
+    const onConverted = vi.fn();
+    const onFailures = vi.fn();
+    const view = render(
+      <I18nProvider>
+        <HootImportFlow
+          files={[hootStub('Log.hoot', 9, 'Log.hoot')]}
+          onConverted={onConverted}
+          onFailures={onFailures}
+          onCancel={() => undefined}
+        />
+      </I18nProvider>,
+    );
+    await waitFor(() => expect(hootConvert).toHaveBeenCalledTimes(1), { timeout: 3000 });
+    view.unmount();
+    releaseConvert({ wpilogName: 'Log.wpilog', wpilogBase64: toBase64(new Uint8Array([1, 2, 3])) });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(onConverted).not.toHaveBeenCalled();
+    expect(onFailures).not.toHaveBeenCalled();
+  });
 });
