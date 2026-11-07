@@ -6,6 +6,7 @@
 
 import type { Pose2d, RobotGeometry, Trajectory, TrajectorySample } from './types';
 import { sampleTrajectory } from './math';
+import { TIMING_SOURCE_VALUES } from './types';
 import { makeCustomField } from './field';
 import type { RobotProfile } from './parsers/robot-profile';
 import { resolveSequence, sampleSequenceState, type AutoSequence } from './auto-sequence';
@@ -232,6 +233,11 @@ export interface SessionFileV1 {
     massKG?: Trajectory['massKG'];
     /** Drive mode when known from a profile; optional since v1.7 files. */
     holonomic?: Trajectory['holonomic'];
+    /**
+     * Timing provenance (added 2026-11-07, still v1: optional so every
+     * session file saved before it keeps opening unchanged).
+     */
+    timingSource?: Trajectory['timingSource'];
     /** Editable source data (v1.4 §6.3); absent when not editable. */
     editable?: Trajectory['editable'];
     edited?: boolean;
@@ -311,6 +317,7 @@ export function serializeSession(
       samples: st.trajectory.samples,
       massKG: st.trajectory.massKG,
       holonomic: st.trajectory.holonomic,
+      timingSource: st.trajectory.timingSource,
       editable: st.trajectory.editable,
       edited: st.trajectory.edited,
       original: st.trajectory.original,
@@ -364,6 +371,7 @@ export function deserializeSession(text: string): {
       warnings: [],
       massKG: typeof r.massKG === 'number' && Number.isFinite(r.massKG) ? r.massKG : undefined,
       holonomic: typeof r.holonomic === 'boolean' ? r.holonomic : undefined,
+      timingSource: readTimingSource(r.timingSource),
       editable: r.editable,
       edited: r.edited,
       original: r.original,
@@ -388,6 +396,17 @@ function validGeometry(value: RobotGeometry | undefined): boolean {
   return !!value && Number.isFinite(value.lengthM) && value.lengthM > 0 &&
     Number.isFinite(value.widthM) && value.widthM > 0 &&
     Number.isFinite(value.offsetX) && Number.isFinite(value.offsetY);
+}
+
+/**
+ * Session files are external input: a timingSource outside the four-state
+ * vocabulary drops to undefined (unknown) rather than crashing the load or
+ * reaching the UI as an invented state — same self-healing stance as gaps.
+ */
+function readTimingSource(value: Trajectory['timingSource']): Trajectory['timingSource'] {
+  return typeof value === 'string' && (TIMING_SOURCE_VALUES as readonly string[]).includes(value)
+    ? (value as Trajectory['timingSource'])
+    : undefined;
 }
 
 /**
@@ -444,7 +463,12 @@ function readRouteOptions(value: SessionRouteOption[] | undefined): SessionRoute
         !['t', 'x', 'y', 'heading', 'vx', 'vy', 'omega'].every((key) => Number.isFinite(sample[key as keyof typeof sample])) ||
         (index > 0 && sample.t < t.samples[index - 1]!.t));
   })) throw new Error('invalid team route options');
-  return value;
+  // Route-option trajectories ride through the same timing-state vocabulary
+  // check as top-level robots (their trajectory objects are stored whole).
+  return value.map((option) => ({
+    ...option,
+    trajectory: { ...option.trajectory, timingSource: readTimingSource(option.trajectory.timingSource) },
+  }));
 }
 
 function readProfileOptions(value: SessionProfileOption[] | undefined): SessionProfileOption[] | undefined {

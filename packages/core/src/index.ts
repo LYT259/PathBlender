@@ -8,6 +8,7 @@ export type {
   ModuleLocation,
   Pose2d,
   RobotGeometry,
+  TimingSource,
   Trajectory,
   TrajectoryEvent,
   TrajectoryGap,

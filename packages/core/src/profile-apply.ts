@@ -6,10 +6,15 @@
  * and the trajectory is a regenerable PathPlanner import (`.path` files and
  * `.auto` routines carry no samples — their timeline comes from generation
  * against a robot config), the timeline is regenerated against the real
- * robot instead of the app default: the "timing is an estimate" story ends
- * there. Choreo imports embed their samples and are never regenerated;
- * WPILOG-derived trajectories are logged reality and are never regenerated
- * either.
+ * robot instead of the app default. The regenerated trajectory records its
+ * timing provenance (Trajectory.timingSource): 'full-config' when every
+ * dynamics parameter came from the profile, 'partial-config' when some
+ * still fall back to defaults — the warning then names them, so a partial
+ * application never erases the estimate story (§16.39 direction 4).
+ * Full-config is still a plan, never a measurement of the real robot.
+ * Choreo imports embed their samples and are never regenerated (timingSource
+ * stays undefined); WPILOG-derived trajectories are logged reality, never
+ * regenerated either (timingSource stays 'logged').
  *
  * The path's own constraint set is authoritative: a file marked
  * `unlimited` regenerates unlimited — profile generation defaults are
@@ -31,7 +36,7 @@ import { generateAutoTrajectory } from './parsers/pathplanner-auto';
 import { makeRobotConfig } from './pathplanner/robot-config';
 import type { RobotConfig } from './pathplanner/robot-config';
 import type { RobotProfile } from './parsers/robot-profile';
-import type { Trajectory, TrajectorySample } from './types';
+import type { TimingSource, Trajectory, TrajectorySample } from './types';
 import { trajectoryDuration } from './types';
 
 /** Generation-relevant dynamics parameters tracked in provenance. */
@@ -174,6 +179,51 @@ export function resolveRobotConfig(profile: RobotProfile): ResolvedRobotConfig {
 }
 
 /**
+ * Timing state + honesty warnings for a regeneration against a profile
+ * config. "regenerated with real robot config" is reserved for a complete
+ * config; a partial config keeps the estimate story with the defaulted
+ * parameters named (§16.39 direction 4). An unknown motor string appends
+ * the fallback note regardless of completeness (it always costs full
+ * completeness anyway).
+ */
+function configTimingWarnings(
+  profile: RobotProfile,
+  provenance: DynamicsProvenance,
+  unknownMotorType: string | undefined,
+): { timingSource: TimingSource; warnings: string[] } {
+  const warnings: string[] = [];
+  let timingSource: TimingSource;
+  if (dynamicsConfigComplete(provenance)) {
+    timingSource = 'full-config';
+    warnings.push(`regenerated with real robot config from profile "${profile.name}"`);
+  } else {
+    timingSource = 'partial-config';
+    const defaulted = DYNAMICS_PARAM_KEYS.filter((key) => provenance[key] !== 'file');
+    warnings.push(
+      `timing re-estimated with partial robot config from profile "${profile.name}" — defaults fill: ${defaulted.join(', ')}`,
+    );
+  }
+  if (unknownMotorType) {
+    warnings.push(
+      `drive motor "${unknownMotorType}" not supported (timing uses the default Kraken X60 model)`,
+    );
+  }
+  return { timingSource, warnings };
+}
+
+/**
+ * Upstream-identical physics can degenerate: with e.g. ≤~30 A per motor the
+ * torque-loss term at max drive speed cancels acceleration entirely and the
+ * generator emits samples that never leave t=0 (trajectory.dart torqueLoss
+ * at v2025.2.7). A zero-duration timeline must not read as a valid plan.
+ */
+function zeroDurationWarning(durationS: number): string[] {
+  return durationS === 0
+    ? ['generated timeline has zero duration — the robot cannot move under this config; not a valid motion plan']
+    : [];
+}
+
+/**
  * Apply a profile to one trajectory. Pure: returns a derived copy, source
  * data untouched. The applied provenance (geometrySource='file') engages
  * the v1.14 read-only lock upstream.
@@ -197,38 +247,38 @@ export function applyProfileToTrajectory(traj: Trajectory, profile: RobotProfile
     // Real-robot regeneration through the profile→config seam. Fields the
     // profile omits (or that were rejected as invalid) fall back to the
     // generator defaults one by one, so a mass-only profile still re-times
-    // the path on real mass. The path is regenerated verbatim: an unlimited
-    // global-constraints marker stays unlimited — upstream v2025.2.7
+    // the path on real mass — and the timing state says which story that is.
+    // The path is regenerated verbatim: an unlimited global-constraints
+    // marker stays unlimited — upstream v2025.2.7
     // (lib/path/pathplanner_path.dart, verified at the pinned tag) loads
     // globalConstraints from the file JSON as-is and maps `unlimited` to
     // unconstrained values in _constraintsForPos without merging project
     // settings, so profile generation defaults never backfill the path.
-    const { config, unknownMotorType } = resolveRobotConfig(profile);
+    const { config, provenance, unknownMotorType } = resolveRobotConfig(profile);
+    const { timingSource, warnings } = configTimingWarnings(profile, provenance, unknownMotorType);
     const path = editable.path;
     const generated = generateTrajectory(path, config);
     if (generated.samples.length < 2) return base;
     const samples = generated.samples as TrajectorySample[];
+    const durationS = trajectoryDuration(samples);
+    warnings.push(
+      // Same condition as the parse-time warning (parsers/pathplanner-path.ts):
+      // it lives in the trajectory warnings, not parseWarnings, so
+      // regeneration re-issues it for a path that is still unlimited.
+      ...(!Number.isFinite(path.globalConstraints.maxVelocityMPS)
+        ? ['path has unlimited global constraints; results may be unrealistic']
+        : []),
+      ...zeroDurationWarning(durationS),
+      ...path.parseWarnings,
+    );
     return {
       ...base,
       editable: { kind: 'pathplanner', path },
       samples,
-      durationS: trajectoryDuration(samples),
+      durationS,
       events: generated.events,
-      warnings: [
-        `regenerated with real robot config from profile "${profile.name}"`,
-        ...(unknownMotorType
-          ? [
-              `drive motor "${unknownMotorType}" not supported (timing uses the default Kraken X60 model)`,
-            ]
-          : []),
-        // Same condition as the parse-time warning (parsers/pathplanner-path.ts):
-        // it lives in the trajectory warnings, not parseWarnings, so
-        // regeneration re-issues it for a path that is still unlimited.
-        ...(!Number.isFinite(path.globalConstraints.maxVelocityMPS)
-          ? ['path has unlimited global constraints; results may be unrealistic']
-          : []),
-        ...path.parseWarnings,
-      ],
+      timingSource,
+      warnings,
     };
   }
 
@@ -240,25 +290,26 @@ export function applyProfileToTrajectory(traj: Trajectory, profile: RobotProfile
     // chaining warnings only — it never claims a config (the generator
     // default claim belongs to parsePathPlannerAuto; timing warnings
     // against the applied profile are built by the timing layer).
-    const { config, unknownMotorType } = resolveRobotConfig(profile);
+    const { config, provenance, unknownMotorType } = resolveRobotConfig(profile);
+    const { timingSource, warnings } = configTimingWarnings(profile, provenance, unknownMotorType);
     const auto = editable.auto;
     const generated = generateAutoTrajectory(auto, config);
     if (generated.samples.length < 2) return base;
+    // Same unlimited-constraints honesty marker the single-path branch
+    // re-issues: regenerating through a routine must not lose it.
+    if (Object.values(auto.paths).some((p) => !Number.isFinite(p.globalConstraints.maxVelocityMPS))) {
+      warnings.push('path has unlimited global constraints; results may be unrealistic');
+    }
+    const durationS = trajectoryDuration(generated.samples);
+    warnings.push(...zeroDurationWarning(durationS), ...generated.warnings);
     return {
       ...base,
       editable: { kind: 'pathplanner-auto', auto },
       samples: generated.samples,
-      durationS: trajectoryDuration(generated.samples),
+      durationS,
       events: generated.events,
-      warnings: [
-        `regenerated with real robot config from profile "${profile.name}"`,
-        ...(unknownMotorType
-          ? [
-              `drive motor "${unknownMotorType}" not supported (timing uses the default Kraken X60 model)`,
-            ]
-          : []),
-        ...generated.warnings,
-      ],
+      timingSource,
+      warnings,
     };
   }
 

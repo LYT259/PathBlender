@@ -275,6 +275,7 @@ export function parsePathPlannerAuto(
       'generated with default robot config (Kraken X60 swerve) — timing is an estimate',
       ...generated.warnings,
     ],
+    timingSource: 'default-config',
     editable: { kind: 'pathplanner-auto', auto },
   };
 }

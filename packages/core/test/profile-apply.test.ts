@@ -26,6 +26,30 @@ import type { RobotProfile, RobotConfig, Trajectory } from '../src';
 const SAMPLES = resolve(__dirname, '../../../samples');
 const read = (rel: string) => readFileSync(resolve(SAMPLES, rel), 'utf-8');
 
+/** Complete v2025.2.7 flat settings.json profile — every provenance key 'file'. */
+const fullProfile = (over: Record<string, unknown> = {}) =>
+  parseRobotProfile(
+    JSON.stringify({
+      robotWidth: 0.85,
+      robotLength: 0.85,
+      holonomicMode: true,
+      robotMass: 150,
+      robotMOI: 6.9,
+      wheelCOF: 1.2,
+      driveWheelRadius: 0.048,
+      driveGearing: 6.08,
+      maxDriveSpeed: 4.5,
+      driveMotorType: 'krakenX60',
+      driveCurrentLimit: 200,
+      flModuleX: 0.273, flModuleY: 0.273,
+      frModuleX: -0.273, frModuleY: 0.273,
+      blModuleX: 0.273, blModuleY: -0.273,
+      brModuleX: -0.273, brModuleY: -0.273,
+      ...over,
+    }),
+    '254/pathplanner/settings.json',
+  )!;
+
 describe('profile dynamics parsing (§6.6 全量消费)', () => {
   it('maps the real .chor config onto ProfileDynamics, vmax as motor-shaft speed', () => {
     const chor = readFileSync(resolve(SAMPLES, 'choreo/choreo.chor'), 'utf-8');
@@ -132,7 +156,7 @@ describe('applyProfileToTrajectory (real-robot regeneration)', () => {
   const traj = parsePathFile(read('pathplanner/constrained_pointing.path'), 'constrained_pointing.path');
   expect(traj.editable?.kind).toBe('pathplanner');
 
-  it('regenerates a .path timeline from profile dynamics and clears the estimate warning', () => {
+  it('regenerates a .path timeline from profile dynamics and keeps an honest partial estimate', () => {
     const profile = parseRobotProfile(
       JSON.stringify({ robotConfig: { robotWidth: 0.9, robotLength: 0.9, robotMass: 45, robotMOI: 2.0 } }),
       '254/settings.json',
@@ -141,8 +165,36 @@ describe('applyProfileToTrajectory (real-robot regeneration)', () => {
     expect(applied.geometrySource).toBe('file');
     expect(applied.massKG).toBe(45);
     expect(applied.durationS).toBeLessThan(traj.durationS);
-    expect(applied.warnings[0]).toContain('regenerated with real robot config');
+    // Mass+MOI only: the timeline is a partial estimate and the warning says
+    // which parameters still fall back to defaults (§16.39 direction 4 — a
+    // partial application must not erase the estimate story).
+    expect(applied.timingSource).toBe('partial-config');
+    expect(applied.warnings[0]).toBe(
+      'timing re-estimated with partial robot config from profile "254" — defaults fill: '
+        + 'wheelCOF, wheelRadiusM, driveGearing, maxDriveVelocityMPS, driveMotorType, '
+        + 'driveCurrentLimitA, moduleLocations, holonomic',
+    );
+    expect(applied.warnings.join('\n')).not.toContain('regenerated with real robot config');
     expect(applied.warnings.join('\n')).not.toContain('generated with default robot config');
+  });
+
+  it('a profile without dynamics keeps the trajectory timing state unchanged', () => {
+    const geometryOnly = parseRobotProfile(
+      JSON.stringify({ robotConfig: { robotWidth: 0.9, robotLength: 0.9 } }),
+      'a/settings.json',
+    )!;
+    // Fresh default-config parse stays default-config.
+    expect(applyProfileToTrajectory(traj, geometryOnly).timingSource).toBe('default-config');
+    // Geometry-only application on an already full-config trajectory keeps
+    // its timing story — only a dynamics-carrying profile can change it.
+    const appliedFull = applyProfileToTrajectory(traj, fullProfile());
+    expect(appliedFull.timingSource).toBe('full-config');
+    expect(applyProfileToTrajectory(appliedFull, geometryOnly).timingSource).toBe('full-config');
+  });
+
+  it('fresh PathPlanner imports carry default-config timing', () => {
+    expect(parsePathFile(read('pathplanner/Pickup.path'), 'Pickup.path').timingSource)
+      .toBe('default-config');
   });
 
   it('keeps timing when path constraints mask the dynamics (documented behavior)', () => {
@@ -249,6 +301,11 @@ describe('applyProfileToTrajectory (real-robot regeneration)', () => {
     const wpilogTraj = extractMinimalPoseLog();
     const appliedLog = applyProfileToTrajectory(wpilogTraj, profile);
     expect(appliedLog.samples).toBe(wpilogTraj.samples);
+    // Timing provenance: Choreo embeds the original tool's samples — no
+    // PathBlender timing claim; WPILOG samples are logged reality and stay
+    // logged through geometry-only application.
+    expect(applied.timingSource).toBeUndefined();
+    expect(appliedLog.timingSource).toBe('logged');
   });
 
   it('survives the session round trip (mass + drive mode persist since v1.7 files)', () => {
@@ -393,6 +450,28 @@ describe('resolveRobotConfig (motor, current, provenance)', () => {
     expect(dynamicsConfigComplete(noMotor.provenance)).toBe(false);
   });
 
+  it('a complete profile claims full-config timing; the result is still a plan', () => {
+    const applied = applyProfileToTrajectory(traj, profile());
+    expect(applied.timingSource).toBe('full-config');
+    expect(applied.warnings[0]).toBe('regenerated with real robot config from profile "pathplanner"');
+  });
+
+  it('degenerate zero-duration regeneration gets an honest warning, not a valid plan', () => {
+    // ≤~30 A: the torque-loss term cancels acceleration entirely and the
+    // generator emits samples that never leave t=0 (upstream-identical
+    // physics, characterized in the current-limit test above). Probed: 33
+    // samples all at t=0 — previously sold as a valid "regenerated" plan.
+    const applied = applyProfileToTrajectory(traj, profile({ driveCurrentLimit: 20 }));
+    // Config provenance is complete — the degenerate output is a physics
+    // result, not a provenance gap, and must be flagged as its own warning.
+    expect(applied.timingSource).toBe('full-config');
+    expect(applied.durationS).toBe(0);
+    expect(applied.samples.length).toBeGreaterThanOrEqual(2);
+    expect(applied.warnings.join('\n')).toContain('regenerated with real robot config');
+    expect(applied.warnings.join('\n')).toContain('zero duration');
+    expect(applied.warnings.join('\n')).toContain('cannot move');
+  });
+
   it('DCMotor.isKnownMotorType matches the exact upstream case list', () => {
     // lib/trajectory/dc_motor.dart at v2025.2.7 (Task 1 citation): these 8
     // strings are every case fromString resolves; a real team's motor string
@@ -524,6 +603,29 @@ describe('.auto regeneration', () => {
     const b = applyProfileToTrajectory(parseAuto(), currentLimitedProfile);
     expect(a.samples).toEqual(b.samples);
     expect(a.events).toEqual(b.events);
+  });
+
+  it('routine timing state follows the config story', () => {
+    const traj = parseAuto();
+    expect(traj.timingSource).toBe('default-config');
+    const applied = applyProfileToTrajectory(traj, currentLimitedProfile);
+    expect(applied.timingSource).toBe('full-config');
+  });
+
+  it('routine regeneration re-issues the unlimited-constraints warning for referenced paths', () => {
+    const asJson = JSON.parse(constrainedText) as { globalConstraints: Record<string, unknown> };
+    delete asJson.globalConstraints.maxVelocity;
+    asJson.globalConstraints.unlimited = true;
+    const auto = parsePathPlannerAuto(
+      autoText,
+      'Example Auto.auto',
+      (name) => (name === 'Pickup' ? JSON.stringify(asJson) : name === 'Score' ? scoreText : undefined),
+    );
+    const applied = applyProfileToTrajectory(auto, currentLimitedProfile);
+    // Same honesty marker the single-path branch re-issues: a routine whose
+    // referenced path is unlimited must not lose the caveat just because
+    // regeneration goes through the routine structure.
+    expect(applied.warnings.join('\n')).toContain('path has unlimited global constraints');
   });
 });
 

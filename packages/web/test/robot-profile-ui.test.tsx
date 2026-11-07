@@ -36,9 +36,10 @@ describe('applyUploadedProfile', () => {
     expect(applied.trajectory.geometry.lengthM).toBeCloseTo(1.02, 9);
     expect(applied.trajectory.geometry.widthM).toBeCloseTo(0.85, 9);
     expect(applied.trajectory.geometrySource).toBe('file');
-    // Real-robot regeneration: new samples, new duration, provenance warning.
+    // Real-robot regeneration: new samples, new duration, partial-config
+    // warning (mass+MOI profile — defaults still fill the other parameters).
     expect(applied.trajectory.samples).not.toBe(before);
-    expect(applied.trajectory.warnings.some((w) => w.startsWith('regenerated with real robot config'))).toBe(true);
+    expect(applied.trajectory.warnings.some((w) => w.startsWith('timing re-estimated with partial robot config'))).toBe(true);
     expect(applied.trajectory.durationS).toBeGreaterThan(0);
     // The route library carries the same applied profile — composed segments
     // resolve through routeOptions, so they must see the regenerated timing.
@@ -46,7 +47,7 @@ describe('applyUploadedProfile', () => {
     expect(option.samples).not.toBe(before);
     expect(option.geometry.lengthM).toBeCloseTo(1.02, 9);
     expect(option.geometrySource).toBe('file');
-    expect(option.warnings.some((w) => w.startsWith('regenerated with real robot config'))).toBe(true);
+    expect(option.warnings.some((w) => w.startsWith('timing re-estimated with partial robot config'))).toBe(true);
     // The composition itself is untouched: route ids and waits stay put.
     const composed = { ...applied, sequence: { segments: [{ id: 's1', routeId: 'pickup', waitBeforeS: 1 }] } };
     const composedApplied = applyUploadedProfile(composed, profile, 'team/settings.json');

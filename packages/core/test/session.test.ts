@@ -3,10 +3,13 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   applyAllianceChange,
+  applyProfileToTrajectory,
   deserializeSession,
   flipPoseToBlue,
   makeSession,
   parseGhostAuto,
+  parsePathFile,
+  parseRobotProfile,
   parseTraj,
   REBUILT_2026,
   COLORBLIND_COLORS,
@@ -16,6 +19,7 @@ import {
   SESSION_COLORS,
   sessionDuration,
 } from '../src';
+import type { Trajectory } from '../src';
 
 const SAMPLES = resolve(__dirname, '../../../samples');
 const read = (rel: string): string =>
@@ -142,6 +146,127 @@ describe('session id persistence (save/load keeps identity)', () => {
     const back = deserializeSession(JSON.stringify(file));
     expect(back.robots[0]?.trajectory.id).toBeTruthy();
     expect(back.robots[0]?.trajectory.id).not.toBe(traj.id);
+  });
+});
+
+describe('timing source persistence (timingSource, 2026-11-07)', () => {
+  const fullProfile = parseRobotProfile(
+    JSON.stringify({
+      robotWidth: 0.85, robotLength: 0.85, holonomicMode: true,
+      robotMass: 150, robotMOI: 6.9, wheelCOF: 1.2,
+      driveWheelRadius: 0.048, driveGearing: 6.08, maxDriveSpeed: 4.5,
+      driveMotorType: 'krakenX60', driveCurrentLimit: 200,
+      flModuleX: 0.273, flModuleY: 0.273, frModuleX: -0.273, frModuleY: 0.273,
+      blModuleX: 0.273, blModuleY: -0.273, brModuleX: -0.273, brModuleY: -0.273,
+    }),
+    '254/pathplanner/settings.json',
+  )!;
+  const partialProfile = parseRobotProfile(
+    JSON.stringify({ robotConfig: { robotWidth: 0.9, robotLength: 0.9, robotMass: 61.2 } }),
+    '254/settings.json',
+  )!;
+  const full = applyProfileToTrajectory(
+    parsePathFile(read('pathplanner/constrained_pointing.path'), 'constrained_pointing.path'),
+    fullProfile,
+  );
+  const partial = applyProfileToTrajectory(
+    parsePathFile(read('pathplanner/Pickup.path'), 'Pickup.path'),
+    partialProfile,
+  );
+  const logged: Trajectory = {
+    id: 'log-1',
+    name: 'robot.wpilog',
+    teamName: 'robot.wpilog',
+    teamNumber: '',
+    source: 'wpilog',
+    alliance: 'blue',
+    samples: [
+      { t: 0, x: 1, y: 1, heading: 0, vx: 0, vy: 0, omega: 0 },
+      { t: 1, x: 2, y: 1, heading: 0, vx: 1, vy: 0, omega: 0 },
+    ],
+    durationS: 1,
+    geometry: { lengthM: 0.9, widthM: 0.9, offsetX: 0, offsetY: 0 },
+    geometrySource: 'default',
+    moduleLocations: [],
+    events: [],
+    warnings: [],
+    timingSource: 'logged',
+  };
+
+  it('timingSource survives the session round trip', () => {
+    const robots = [makeSession(full, 0), makeSession(partial, 1), makeSession(logged, 2)];
+    // Route options ride along as whole trajectories — their timing state
+    // must persist the same way (profile application reaches them in Task 6).
+    robots[0]!.routeOptions = [{ id: 'r1', relPath: 'alt.path', trajectory: full }];
+    const back = deserializeSession(serializeSession(robots, 'rebuilt-2026'));
+    expect(back.robots.map((r) => r.trajectory.timingSource)).toEqual([
+      'full-config',
+      'partial-config',
+      'logged',
+    ]);
+    expect(back.robots[0]!.routeOptions![0]!.trajectory.timingSource).toBe('full-config');
+    // Choreo (undefined) stays absent — no key invented on write or read.
+    const choreo = makeSession(parseTraj(read('traj/v3_swerve.traj'), 'v3.traj'), 3);
+    const text = serializeSession([choreo], 'rebuilt-2026');
+    expect((JSON.parse(text).robots[0] as Record<string, unknown>).timingSource).toBeUndefined();
+    expect(deserializeSession(text).robots[0]!.trajectory.timingSource).toBeUndefined();
+  });
+
+  it('pre-timingSource session file restores without the field', () => {
+    // Hand-written minimal v1 file exactly as a pre-2026-11-07 build wrote
+    // it: no timingSource key anywhere, one robot.
+    const legacy = JSON.stringify({
+      app: 'pathblender',
+      version: 1,
+      fieldId: 'rebuilt-2026',
+      robots: [
+        {
+          name: 'Old Path',
+          teamName: '',
+          source: 'pathplanner-path',
+          alliance: 'blue',
+          startDelayS: 0,
+          color: '#C5A16A',
+          visible: true,
+          geometry: { lengthM: 0.9, widthM: 0.9, offsetX: 0, offsetY: 0 },
+          geometrySource: 'file',
+          moduleLocations: [],
+          events: [],
+          samples: [
+            { t: 0, x: 1, y: 1, heading: 0, vx: 0, vy: 0, omega: 0 },
+            { t: 2, x: 3, y: 1, heading: 0, vx: 0, vy: 0, omega: 0 },
+          ],
+        },
+      ],
+    });
+    const back = deserializeSession(legacy);
+    expect(back.robots[0]!.trajectory.timingSource).toBeUndefined();
+    expect(back.robots[0]!.trajectory.samples).toHaveLength(2);
+    expect(back.robots[0]!.trajectory.samples[0]!.x).toBe(1);
+    expect(back.robots[0]!.trajectory.durationS).toBe(2);
+  });
+
+  it('invalid timingSource values are dropped, not crashed on or invented', () => {
+    const file = JSON.parse(
+      serializeSession(
+        [
+          {
+            ...makeSession(full, 0),
+            routeOptions: [{ id: 'r1', relPath: 'alt.path', trajectory: full }],
+          },
+        ],
+        'rebuilt-2026',
+      ),
+    ) as {
+      robots: Array<{ timingSource: unknown; routeOptions: Array<{ trajectory: { timingSource: unknown } }> }>;
+    };
+    file.robots[0]!.timingSource = 'wishful-thinking';
+    file.robots[0]!.routeOptions[0]!.trajectory.timingSource = 'bogus';
+    const back = deserializeSession(JSON.stringify(file));
+    expect(back.robots[0]!.trajectory.timingSource).toBeUndefined();
+    expect(back.robots[0]!.routeOptions![0]!.trajectory.timingSource).toBeUndefined();
+    // The rest of the robot is intact.
+    expect(back.robots[0]!.trajectory.samples.length).toBeGreaterThan(2);
   });
 });
 

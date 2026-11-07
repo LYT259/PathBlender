@@ -65,6 +65,24 @@ export type TrajectorySource =
   | 'wpilog';
 
 /**
+ * Where a trajectory's timeline came from (§16.39 direction 4), in order of
+ * increasing timing confidence:
+ * ① 'default-config' — estimated against PathPlanner's default robot config
+ *   (fresh `.path`/`.auto` imports);
+ * ② 'partial-config' — re-estimated from an imported profile where some
+ *   dynamics parameters still fell back to defaults (the warning names
+ *   them);
+ * ③ 'full-config' — generated from a complete imported robot config; still
+ *   a plan, never a measurement of the real robot;
+ * ④ 'logged' — recorded from the robot's log (WPILOG) during an actual run.
+ *
+ * Choreo `.traj` and `.ghostauto` stay undefined: their samples come from
+ * the original tool and PathBlender makes no timing claim about them.
+ */
+export const TIMING_SOURCE_VALUES = ['default-config', 'partial-config', 'full-config', 'logged'] as const;
+export type TimingSource = (typeof TIMING_SOURCE_VALUES)[number];
+
+/**
  * A span on a trajectory's own clock with NO pose data behind it (a
  * logging dropout or a pose reset/jump — wpilog imports). Consumers must
  * not interpolate across a gap: sampleTrajectory holds the last known
@@ -139,6 +157,12 @@ export interface Trajectory {
    * undefined for formats without geometric waypoints (.ghostauto).
    */
   editable?: import('./editing').EditablePath;
+  /**
+   * Timing provenance (see TimingSource). Undefined = unknown — Choreo and
+   * .ghostauto never carry one, and sessions saved before 2026-11-07
+   * deserialize without it.
+   */
+  timingSource?: TimingSource;
   /** True once any meditation edit has been applied (derived copy). */
   edited?: boolean;
   /** Snapshot of the pre-edit state, taken on the first edit (reset source). */
