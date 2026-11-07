@@ -497,7 +497,7 @@ function AppBody() {
     // parses there (worker), the user confirms pose source + auto interval,
     // and the confirmed extraction re-enters the normal route pipeline.
     const wpilogFiles = incoming.filter(({ file }) => isWpilogFileName(file.name));
-    const textIncoming = incoming.filter(({ file }) => !isWpilogFileName(file.name) );
+    const textIncoming = incoming.filter(({ file }) => !isWpilogFileName(file.name) && !isHootFileName(file.name));
     if (wpilogFiles.length > 0) {
       setWpilogQueue((prev) => [...(prev ?? []), ...wpilogFiles.map(({ file, relPath }) => ({ file, relPath }))]);
     }
