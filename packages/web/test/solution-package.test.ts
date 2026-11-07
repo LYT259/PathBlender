@@ -302,4 +302,12 @@ describe('buildSolutionPackage', () => {
     });
     expect(seen).toEqual([{ secondsLabel: '秒', more: '还有 2 项' }, { secondsLabel: '秒', more: '还有 2 项' }]);
   });
+
+  it('README keeps the official English field name — exports are data, never localized', async () => {
+    const o = baseOptions();
+    const result = await buildSolutionPackage({ ...o, capture: { ...o.capture } });
+    const dir = readZipDirectory(result.zip);
+    const readme = new TextDecoder().decode(await inflateEntry(dir[0]!));
+    expect(readme).toContain('Field 场地: Rebuilt 2026'); // raw o.field.name + year
+  });
 });
