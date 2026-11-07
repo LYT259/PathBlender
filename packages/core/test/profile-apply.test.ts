@@ -458,9 +458,10 @@ describe('.auto regeneration', () => {
   const byDefault = segmentTimings(makeRobotConfig());
   const byProfile = segmentTimings(resolveRobotConfig(currentLimitedProfile).config);
 
-  // Fixture sanity: the current limit really retimes both referenced paths.
-  expect(byProfile.d1).toBeGreaterThan(byDefault.d1);
-  expect(byProfile.d2).toBeGreaterThan(byDefault.d2);
+  it('fixture check: the current limit really retimes both referenced paths', () => {
+    expect(byProfile.d1).toBeGreaterThan(byDefault.d1);
+    expect(byProfile.d2).toBeGreaterThan(byDefault.d2);
+  });
 
   it('applying a profile regenerates every segment, shift, and event', () => {
     const traj = parseAuto();

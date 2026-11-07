@@ -333,14 +333,31 @@ describe('.auto routine semantics', () => {
 
   it('structure round-trips through structuredClone and regenerates identically', () => {
     const auto = parseAutoStructure(autoText, 'Example Auto.auto', resolveSamplePaths);
-    const a = generateAutoTrajectory(structuredClone(auto), makeRobotConfig());
-    const b = generateAutoTrajectory(structuredClone(auto), makeRobotConfig());
-    expect(a.samples).toEqual(b.samples);
-    expect(a.events).toEqual(b.events);
-    expect(a.warnings).toEqual(b.warnings);
+    const fromClone = generateAutoTrajectory(structuredClone(auto), makeRobotConfig());
+    // The original structure is itself a generation input — a purity check
+    // against only ever-cloned inputs would be vacuous.
+    const fromOriginal = generateAutoTrajectory(auto, makeRobotConfig());
+    expect(fromOriginal.samples).toEqual(fromClone.samples);
+    expect(fromOriginal.events).toEqual(fromClone.events);
+    expect(fromOriginal.warnings).toEqual(fromClone.warnings);
 
-    // Generation is pure: the parsed structure is byte-identical to a fresh
+    // Generation is pure: the parsed structure is deep-equal to a fresh
     // parse after being used as a generation input.
     expect(auto).toEqual(parseAutoStructure(autoText, 'Example Auto.auto', resolveSamplePaths));
+  });
+
+  it('warns when a segment references a path missing from the parsed structure', () => {
+    // Hand-built or corrupted ParsedAuto: the Score entry is gone.
+    // Generation stays lenient (no crash, remaining segments still
+    // generate) but must say which path was skipped — import-time parsing
+    // still throws for unresolved paths instead (guidance test above).
+    const auto = parseAutoStructure(autoText, 'Example Auto.auto', resolveSamplePaths);
+    const handBuilt: ParsedAuto = { ...auto, paths: { ...auto.paths } };
+    delete handBuilt.paths['Score'];
+    const generated = generateAutoTrajectory(handBuilt, makeRobotConfig());
+    expect(generated.warnings.join('\n')).toContain(
+      'segment references path "Score" with no parsed source — segment skipped',
+    );
+    expect(generated.samples.length).toBeGreaterThan(2);
   });
 });

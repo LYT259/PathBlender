@@ -201,10 +201,14 @@ export function generateAutoTrajectory(
         warnings.push('named commands run in unknown time — not counted in the timeline');
       }
     } else {
-      // Hand-built structures may reference unknown paths; treat them as
-      // empty segments rather than crashing on a missing record entry.
+      // Hand-built or corrupted structures may reference paths with no
+      // parsed source: skip the segment (never crash) but say which one —
+      // import-time parsing throws for unresolved paths instead.
       const path = auto.paths[seg.pathName];
       if (!path) {
+        warnings.push(
+          `segment references path "${seg.pathName}" with no parsed source — segment skipped`,
+        );
         segmentIndex++;
         continue;
       }
