@@ -18,8 +18,9 @@
 //!   `25.0.1 > 1.0.1.1 > 9.x` contradicts its own rule and is not used.
 //!
 //! Persistence of the owlet EULA consent and download record under the app
-//! cache dir lives here; the network download and the owlet CLI invocation
-//! land in later tasks of the plan.
+//! cache dir lives here, as does the official-artifact download (index fetch,
+//! SHA-1 gate, atomic install, idempotent re-entry); the owlet CLI invocation
+//! lands in a later task of the plan.
 
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
@@ -205,12 +206,18 @@ pub fn save_hoot_state(cache_dir: &Path, state: &HootState) -> Result<(), String
 }
 
 /// A recordable owlet file name: exactly one path component — no separators
-/// (`/` or `\`, the latter for Windows), and not `.`, `..`, or empty. Task 4
-/// derives the name from `platform_artifact_key`, so legitimate names always
-/// pass; the rule exists so a tampered or buggy record can never resolve —
-/// or, in Task 5, execute — outside `{cache_dir}/hoot/`.
+/// (`/`, `\`, or `:` — backslash separates on Windows, and a colon makes
+/// `C:owlet` a drive-relative path there), and not `.`, `..`, or empty.
+/// Task 4 derives the name from `platform_artifact_key`, so legitimate names
+/// always pass; the rule exists so a tampered or buggy record can never
+/// resolve — or, in Task 5, execute — outside `{cache_dir}/hoot/`.
 fn is_safe_basename(name: &str) -> bool {
-    !name.is_empty() && name != "." && name != ".." && !name.contains('/') && !name.contains('\\')
+    !name.is_empty()
+        && name != "."
+        && name != ".."
+        && !name.contains('/')
+        && !name.contains('\\')
+        && !name.contains(':')
 }
 
 /// Resolve the recorded owlet binary's on-disk path, but only for a
@@ -252,9 +259,17 @@ pub fn hoot_status_in(cache_dir: &Path) -> Result<HootStatus, String> {
 }
 
 /// Record EULA consent, preserving any existing download record — the core of
-/// the `hoot_accept_eula` command.
+/// the `hoot_accept_eula` command. A record whose `file_name` is not a safe
+/// basename (external tampering; see [`is_safe_basename`]) is dropped
+/// wholesale instead of failing the save: consent must never be held hostage
+/// to a poisoned record, and the next download re-records idempotently.
 pub fn accept_eula(cache_dir: &Path) -> Result<HootStatus, String> {
     let mut state = load_hoot_state(cache_dir)?;
+    if let Some(name) = state.file_name.as_deref() {
+        if !is_safe_basename(name) {
+            state = HootState::default();
+        }
+    }
     state.eula_accepted = true;
     save_hoot_state(cache_dir, &state)?;
     Ok(status_from_state(cache_dir, &state))
@@ -282,11 +297,226 @@ pub async fn hoot_accept_eula(app: AppHandle) -> Result<HootStatus, String> {
     accept_eula(&cache_dir)
 }
 
+// ---- official artifact download (Task 4) ----------------------------------
+
+/// The CTRE distribution index — the single network entry point for owlet.
+const OWLET_INDEX_URL: &str = "https://redist.ctr-electronics.com/index.json";
+
+/// Per-chunk download progress for the web client, reported through the
+/// command's channel while the artifact streams in.
+#[derive(serde::Serialize, Clone)]
+pub struct DownloadProgress {
+    pub downloaded: u64,
+    pub total: u64,
+}
+
+/// Install the process-default rustls CryptoProvider (ring) before this
+/// module's first reqwest call, using the guarded idiom tauri-plugin-updater
+/// uses (its src/updater.rs: `CryptoProvider::get_default().is_none()` before
+/// `ring::default_provider().install_default()`). reqwest is built here with
+/// `rustls-no-provider`, and the updater plugin may never run in a session
+/// that only imports HOOT logs — without this, the download fails at TLS
+/// provider setup.
+fn install_ring_tls_provider() {
+    if rustls::crypto::CryptoProvider::get_default().is_none() {
+        // Only fails if a provider already got installed concurrently —
+        // exactly the case the guard means to yield to.
+        let _ = rustls::crypto::ring::default_provider().install_default();
+    }
+}
+
+/// The pre-network gate every download passes: EULA consent first (the legal
+/// gate — before any network byte), then platform support. Yields the loaded
+/// state and the platform artifact key.
+fn hoot_download_gate(
+    cache_dir: &Path,
+    artifact_key: Option<&'static str>,
+) -> Result<(HootState, &'static str), String> {
+    let state =
+        load_hoot_state(cache_dir).map_err(|e| format!("hoot-download-failed:{e}"))?;
+    if !state.eula_accepted {
+        return Err("hoot-eula-required".to_string());
+    }
+    let key = artifact_key.ok_or_else(|| "hoot-unsupported-platform".to_string())?;
+    Ok((state, key))
+}
+
+/// Whether the recorded download is still intact — "already downloaded AND
+/// the hash still matches": a complete record (version + sha1), a
+/// basename-safe name resolving through [`owlet_binary_path`] to an existing
+/// file, and file bytes that still hash to the recorded sha1. Repeat imports
+/// with an intact artifact skip the network entirely; a tampered or corrupted
+/// cache re-downloads.
+fn cached_download_is_current(cache_dir: &Path, state: &HootState) -> bool {
+    match (
+        state.sha1.as_deref(),
+        state.version.as_deref(),
+        owlet_binary_path(cache_dir, state),
+    ) {
+        (Some(recorded_sha1), Some(_), Some(path)) => match std::fs::read(&path) {
+            Ok(bytes) => verify_sha1(&bytes, recorded_sha1),
+            Err(_) => false,
+        },
+        _ => false,
+    }
+}
+
+/// The recorded on-disk name for the owlet binary, derived solely from the
+/// platform artifact key plus a fixed `.exe` extension on Windows — never
+/// from the artifact URL or any other fetched string, so it is always a pure
+/// basename (see [`is_safe_basename`]).
+fn owlet_file_name(artifact_key: &str) -> String {
+    if cfg!(target_os = "windows") {
+        format!("owlet-{artifact_key}.exe")
+    } else {
+        format!("owlet-{artifact_key}")
+    }
+}
+
+/// Where a download-in-progress stages bytes before its atomic rename.
+fn partial_artifact_path(cache_dir: &Path, artifact_key: &str) -> PathBuf {
+    hoot_dir(cache_dir).join(format!("{}.tmp", owlet_file_name(artifact_key)))
+}
+
+/// Gate `bytes` through the selection's published sha1, then atomically
+/// publish the artifact and the full state record. On mismatch or any write
+/// failure the partial output is deleted so nothing half-written survives;
+/// the record — version, compliancy, sha1, file_name — is persisted in one
+/// atomic save, so a binary without its record (or vice versa) is never
+/// observable. Only reachable behind the consent gate, hence `true`.
+fn install_owlet_artifact(
+    cache_dir: &Path,
+    artifact_key: &str,
+    selection: &IndexSelection,
+    bytes: &[u8],
+) -> Result<HootStatus, String> {
+    if !verify_sha1(bytes, &selection.sha1) {
+        // Also sweep a stale partial from an earlier crashed attempt, so the
+        // retry starts from nothing.
+        let _ = std::fs::remove_file(partial_artifact_path(cache_dir, artifact_key));
+        return Err(format!("hoot-hash-mismatch:{artifact_key}"));
+    }
+    let dir = hoot_dir(cache_dir);
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("hoot-download-failed:create {}: {e}", dir.display()))?;
+    let tmp_path = partial_artifact_path(cache_dir, artifact_key);
+    let final_path = dir.join(owlet_file_name(artifact_key));
+    let fail = |detail: String| {
+        let _ = std::fs::remove_file(&tmp_path);
+        format!("hoot-download-failed:{detail}")
+    };
+    std::fs::write(&tmp_path, bytes)
+        .map_err(|e| fail(format!("write {}: {e}", tmp_path.display())))?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&tmp_path, std::fs::Permissions::from_mode(0o755))
+            .map_err(|e| fail(format!("chmod {}: {e}", tmp_path.display())))?;
+    }
+    std::fs::rename(&tmp_path, &final_path)
+        .map_err(|e| fail(format!("publish {}: {e}", final_path.display())))?;
+    let state = HootState {
+        eula_accepted: true,
+        version: Some(selection.version.clone()),
+        compliancy: Some(selection.compliancy),
+        sha1: Some(selection.sha1.clone()),
+        file_name: Some(owlet_file_name(artifact_key)),
+    };
+    save_hoot_state(cache_dir, &state)
+        .map_err(|e| format!("hoot-download-failed:record state: {e}"))?;
+    Ok(status_from_state(cache_dir, &state))
+}
+
+/// The injectable download orchestration — the unit-test seam covering the
+/// whole consent → idempotence → parse → fetch → verify → persist chain with
+/// zero network: pass a fake `fetch` and an index document. The
+/// [`hoot_download_owlet`] command runs the same steps through the same
+/// helpers with real reqwest calls and chunk-progress emission (thin shell;
+/// real-device verification covers what unit tests cannot).
+pub fn download_via<F: Fn(&str) -> Result<Vec<u8>, String>>(
+    fetch: F,
+    artifact_key: Option<&'static str>,
+    index_json: &str,
+    cache_dir: &Path,
+) -> Result<HootStatus, String> {
+    let (state, key) = hoot_download_gate(cache_dir, artifact_key)?;
+    if cached_download_is_current(cache_dir, &state) {
+        return Ok(status_from_state(cache_dir, &state));
+    }
+    let selection =
+        parse_owlet_index(index_json, key).map_err(|e| format!("hoot-download-failed:{e}"))?;
+    let bytes = fetch(&selection.url).map_err(|e| format!("hoot-download-failed:{e}"))?;
+    install_owlet_artifact(cache_dir, key, &selection, &bytes)
+}
+
+/// GET the distribution index as text. Transport failures carry the
+/// `hoot-download-failed` code the web side maps.
+async fn fetch_index_text() -> Result<String, String> {
+    let response = reqwest::get(OWLET_INDEX_URL)
+        .await
+        .map_err(|e| format!("hoot-download-failed:fetch index: {e}"))?;
+    response
+        .text()
+        .await
+        .map_err(|e| format!("hoot-download-failed:read index: {e}"))
+}
+
+/// Stream the selected artifact, accumulating in memory and reporting
+/// [`DownloadProgress`] per chunk. Progress is best-effort: a closed or slow
+/// channel must never fail the download itself.
+async fn fetch_artifact_with_progress(
+    url: &str,
+    on_progress: &tauri::ipc::Channel<DownloadProgress>,
+) -> Result<Vec<u8>, String> {
+    let mut response = reqwest::get(url)
+        .await
+        .map_err(|e| format!("hoot-download-failed:fetch artifact: {e}"))?;
+    let total = response.content_length().unwrap_or(0);
+    let mut bytes = Vec::with_capacity(total as usize);
+    while let Some(chunk) = response
+        .chunk()
+        .await
+        .map_err(|e| format!("hoot-download-failed:read artifact: {e}"))?
+    {
+        bytes.extend_from_slice(&chunk);
+        let _ = on_progress.send(DownloadProgress {
+            downloaded: bytes.len() as u64,
+            total,
+        });
+    }
+    Ok(bytes)
+}
+
+/// Download the official owlet converter for this platform: fetch the CTRE
+/// distribution index, stream the selected artifact with progress reports,
+/// and publish it only after the full-content SHA-1 gate. Idempotent — an
+/// intact recorded download returns the current status without any network.
+/// Registered on the invoke handler in a later task of the plan.
+#[tauri::command]
+pub async fn hoot_download_owlet(
+    app: AppHandle,
+    on_progress: tauri::ipc::Channel<DownloadProgress>,
+) -> Result<HootStatus, String> {
+    install_ring_tls_provider();
+    let cache_dir = app_cache_dir(&app)?;
+    let artifact_key = platform_artifact_key();
+    // Consent and platform gates run before the first network byte.
+    let (state, key) = hoot_download_gate(&cache_dir, artifact_key)?;
+    if cached_download_is_current(&cache_dir, &state) {
+        return Ok(status_from_state(&cache_dir, &state));
+    }
+    let index_text = fetch_index_text().await?;
+    let selection =
+        parse_owlet_index(&index_text, key).map_err(|e| format!("hoot-download-failed:{e}"))?;
+    let bytes = fetch_artifact_with_progress(&selection.url, &on_progress).await?;
+    install_owlet_artifact(&cache_dir, key, &selection, &bytes)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        accept_eula, hoot_status_in, load_hoot_state, parse_owlet_index, platform_artifact_key,
-        save_hoot_state, verify_sha1, HootState, HootStatus,
+        accept_eula, download_via, hoot_status_in, load_hoot_state, parse_owlet_index,
+        platform_artifact_key, save_hoot_state, verify_sha1, HootState, HootStatus,
     };
 
     /// Trimmed copy of the real distribution index (fetched 2026-11-07): the
@@ -700,13 +930,17 @@ mod tests {
         let cache = tempfile::tempdir().expect("tempdir");
         // Every entry is a path (or path component) rather than a file name;
         // persisting any of them would let the record resolve outside the
-        // hoot/ dir on some platform — backslash is a separator on Windows.
+        // hoot/ dir on some platform — backslash is a separator on Windows,
+        // and a colon makes `C:owlet.exe` a drive-relative path there (and a
+        // path/separator surrogate on classic Mac paths) even with no slash.
         for bad in [
             "../pwned",
             "sub/owlet.bin",
             "..\\pwned",
             "/absolute/owlet",
             "C:\\owlet.exe",
+            "C:owlet.exe",
+            "owlet:ads",
             ".",
             "..",
             "",
@@ -720,6 +954,39 @@ mod tests {
         }
         // The legitimate platform-derived basename (Task 4: owlet-<version>-<artifact_key>) still saves.
         save_hoot_state(cache.path(), &downloaded_state()).expect("basename saves");
+    }
+
+    #[test]
+    fn accept_eula_recovers_from_a_tampered_file_name_record() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        std::fs::create_dir_all(cache.path().join("hoot")).expect("mkdir");
+        // An external edit planted a path-like file_name. Consent must still
+        // save (never strand the user at the EULA gate with a hard error):
+        // the untrustworthy download record is dropped wholesale — keeping
+        // version/sha1 without the binary would advertise a download the
+        // status layer cannot vouch for.
+        std::fs::write(
+            cache.path().join("hoot").join("owlet-state.json"),
+            r#"{"eulaAccepted":true,"version":"25.0.1","compliancy":10,"sha1":"d8fe9583d9137729215b31b8cbe0124c46a244a1","fileName":"../pwned"}"#,
+        )
+        .expect("write tampered state");
+        let status = accept_eula(cache.path()).expect("consent saves despite poisoned record");
+        assert_eq!(
+            status,
+            HootStatus {
+                eula_accepted: true,
+                downloaded: false,
+                version: None,
+                compliancy: None,
+            }
+        );
+        assert_eq!(
+            load_hoot_state(cache.path()).expect("reload state"),
+            HootState {
+                eula_accepted: true,
+                ..HootState::default()
+            }
+        );
     }
 
     #[test]
@@ -737,5 +1004,272 @@ mod tests {
             json,
             r#"{"eulaAccepted":true,"downloaded":false,"version":"25.0.1","compliancy":10}"#
         );
+    }
+
+    // ---- download orchestration (Task 4) ------------------------------------
+    // All network-free: `download_via` takes an injected fetch, so these tests
+    // exercise parse → verify → persist → idempotent against tempdirs only.
+
+    /// Synthetic artifact bytes; 4ac8a1b506732acc1126cbff7cb39dbf5b8c8748 is
+    /// SHA-1("PathBlender owlet download fixture"), computed with `shasum`
+    /// independently of `verify_sha1` (expectations must not derive from the
+    /// code under test).
+    const STUB_ARTIFACT_BYTES: &[u8] = b"PathBlender owlet download fixture";
+    const STUB_ARTIFACT_SHA1: &str = "4ac8a1b506732acc1126cbff7cb39dbf5b8c8748";
+
+    /// Hand-written per-platform literal for the recorded file name — the
+    /// naming rule is `owlet-{platform_artifact_key}` plus a fixed `.exe` on
+    /// Windows only, never anything from the artifact URL.
+    #[cfg(target_os = "macos")]
+    const EXPECTED_FILE_NAME: &str = "owlet-macosuniversal";
+    #[cfg(target_os = "windows")]
+    const EXPECTED_FILE_NAME: &str = "owlet-windowsx86-64.exe";
+    #[cfg(target_os = "linux")]
+    const EXPECTED_FILE_NAME: &str = "owlet-linuxx86-64";
+    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+    const EXPECTED_FILE_NAME: &str = "";
+
+    /// Index fixture carrying every desktop platform key (like the real
+    /// index), each pointing at example.invalid with the same synthetic sha1,
+    /// so the current target's `platform_artifact_key()` always resolves.
+    fn download_index_fixture() -> String {
+        format!(
+            r#"{{"Tools": [{{"Name": "owlet", "Items": [{{"Version": "25.0.1", "Compliancy": 10, "Urls": {{
+                "macosuniversal": "https://example.invalid/owlet-macosuniversal",
+                "macosuniversal-sha1": "{STUB_ARTIFACT_SHA1}",
+                "windowsx86-64": "https://example.invalid/owlet-windowsx86-64",
+                "windowsx86-64-sha1": "{STUB_ARTIFACT_SHA1}",
+                "linuxx86-64": "https://example.invalid/owlet-linuxx86-64",
+                "linuxx86-64-sha1": "{STUB_ARTIFACT_SHA1}"}}}}]}}]}}"#
+        )
+    }
+
+    /// A tempdir with EULA consent already persisted.
+    fn eula_accepted_cache() -> tempfile::TempDir {
+        let cache = tempfile::tempdir().expect("tempdir");
+        accept_eula(cache.path()).expect("accept eula");
+        cache
+    }
+
+    #[test]
+    fn download_persists_verified_artifact_and_full_state_record() {
+        let cache = eula_accepted_cache();
+        let calls = std::cell::Cell::new(0u32);
+        let key = platform_artifact_key().expect("test host is a desktop target");
+        let expected_url = format!("https://example.invalid/owlet-{key}");
+        let status = download_via(
+            |url: &str| {
+                // The fetch must target the selected artifact's URL — not the
+                // index, not another platform's key.
+                assert_eq!(url, expected_url, "fetch must use the selected artifact URL");
+                calls.set(calls.get() + 1);
+                Ok(STUB_ARTIFACT_BYTES.to_vec())
+            },
+            platform_artifact_key(),
+            &download_index_fixture(),
+            cache.path(),
+        )
+        .expect("sha1-matching bytes install");
+        assert_eq!(
+            status,
+            HootStatus {
+                eula_accepted: true,
+                downloaded: true,
+                version: Some("25.0.1".to_string()),
+                compliancy: Some(10),
+            }
+        );
+        assert_eq!(calls.get(), 1, "exactly one artifact fetch");
+        // The full record — version, compliancy, sha1, file_name — lands in a
+        // single save (a partial record would read as not-downloaded).
+        let state = load_hoot_state(cache.path()).expect("reload state");
+        assert_eq!(state.version.as_deref(), Some("25.0.1"));
+        assert_eq!(state.compliancy, Some(10));
+        assert_eq!(state.sha1.as_deref(), Some(STUB_ARTIFACT_SHA1));
+        assert_eq!(state.file_name.as_deref(), Some(EXPECTED_FILE_NAME));
+        // The bytes on disk are exactly what fetch returned.
+        let written = std::fs::read(cache.path().join("hoot").join(EXPECTED_FILE_NAME))
+            .expect("artifact written");
+        assert_eq!(written, STUB_ARTIFACT_BYTES);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(cache.path().join("hoot").join(EXPECTED_FILE_NAME))
+                .expect("metadata")
+                .permissions()
+                .mode();
+            assert_eq!(mode & 0o777, 0o755, "artifact must be executable");
+        }
+    }
+
+    #[test]
+    fn hash_mismatch_deletes_partial_output_and_names_the_artifact() {
+        let cache = eula_accepted_cache();
+        let hoot = cache.path().join("hoot");
+        std::fs::create_dir_all(&hoot).expect("mkdir");
+        // A stale partial from an imagined earlier crashed attempt: the
+        // mismatch path must leave zero partial output, not merely skip
+        // writing new bytes.
+        std::fs::write(hoot.join(format!("{EXPECTED_FILE_NAME}.tmp")), b"stale partial")
+            .expect("stale tmp");
+        let bad_index =
+            download_index_fixture().replace(STUB_ARTIFACT_SHA1, "0000000000000000000000000000000000000000");
+        let err = download_via(
+            |_| Ok(b"tampered bytes".to_vec()),
+            platform_artifact_key(),
+            &bad_index,
+            cache.path(),
+        )
+        .expect_err("bytes do not match the published sha1");
+        assert!(
+            err.starts_with("hoot-hash-mismatch:"),
+            "web maps this prefix: {err}"
+        );
+        assert!(
+            err.contains(platform_artifact_key().expect("desktop target")),
+            "error names the artifact key: {err}"
+        );
+        assert!(
+            !hoot.join(EXPECTED_FILE_NAME).exists(),
+            "no half-written final artifact"
+        );
+        assert!(
+            !hoot.join(format!("{EXPECTED_FILE_NAME}.tmp")).exists(),
+            "stale partial cleaned up"
+        );
+    }
+
+    #[test]
+    fn download_without_eula_consent_touches_no_network() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        let calls = std::cell::Cell::new(0u32);
+        let err = download_via(
+            |_| {
+                calls.set(calls.get() + 1);
+                Ok(STUB_ARTIFACT_BYTES.to_vec())
+            },
+            platform_artifact_key(),
+            &download_index_fixture(),
+            cache.path(),
+        )
+        .expect_err("consent must gate the download");
+        assert_eq!(err, "hoot-eula-required");
+        assert_eq!(calls.get(), 0, "no fetch before consent");
+        assert!(
+            !cache.path().join("hoot").exists(),
+            "the gate writes nothing either"
+        );
+    }
+
+    #[test]
+    fn repeat_download_with_intact_artifact_never_refetches() {
+        let cache = eula_accepted_cache();
+        let calls = std::cell::Cell::new(0u32);
+        let fetch = |_url: &str| {
+            calls.set(calls.get() + 1);
+            Ok(STUB_ARTIFACT_BYTES.to_vec())
+        };
+        let first = download_via(
+            fetch,
+            platform_artifact_key(),
+            &download_index_fixture(),
+            cache.path(),
+        )
+        .expect("first download");
+        let second = download_via(
+            fetch,
+            platform_artifact_key(),
+            &download_index_fixture(),
+            cache.path(),
+        )
+        .expect("second call short-circuits");
+        assert_eq!(calls.get(), 1, "second call must not hit the network");
+        assert_eq!(first, second);
+        assert!(second.downloaded);
+    }
+
+    #[test]
+    fn corrupted_cached_artifact_is_rehashed_and_redownloaded() {
+        let cache = eula_accepted_cache();
+        let calls = std::cell::Cell::new(0u32);
+        let fetch = |_url: &str| {
+            calls.set(calls.get() + 1);
+            Ok(STUB_ARTIFACT_BYTES.to_vec())
+        };
+        download_via(
+            fetch,
+            platform_artifact_key(),
+            &download_index_fixture(),
+            cache.path(),
+        )
+        .expect("first download");
+        // Tamper with the cached binary: "already downloaded" requires the
+        // hash to STILL match, so this must re-fetch and restore.
+        std::fs::write(
+            cache.path().join("hoot").join(EXPECTED_FILE_NAME),
+            b"corrupted on disk",
+        )
+        .expect("tamper");
+        let status = download_via(
+            fetch,
+            platform_artifact_key(),
+            &download_index_fixture(),
+            cache.path(),
+        )
+        .expect("re-download over stale bytes");
+        assert_eq!(calls.get(), 2, "hash-stale cache must re-fetch");
+        assert!(status.downloaded);
+        let restored = std::fs::read(cache.path().join("hoot").join(EXPECTED_FILE_NAME))
+            .expect("artifact restored");
+        assert_eq!(restored, STUB_ARTIFACT_BYTES);
+    }
+
+    #[test]
+    fn unsupported_platform_key_fails_before_any_fetch() {
+        let cache = eula_accepted_cache();
+        let calls = std::cell::Cell::new(0u32);
+        let err = download_via(
+            |_| {
+                calls.set(calls.get() + 1);
+                Ok(Vec::new())
+            },
+            None,
+            &download_index_fixture(),
+            cache.path(),
+        )
+        .expect_err("no artifact exists for this target");
+        assert_eq!(err, "hoot-unsupported-platform");
+        assert_eq!(calls.get(), 0);
+    }
+
+    #[test]
+    fn transport_and_parse_failures_carry_the_download_failed_code() {
+        let cache = eula_accepted_cache();
+        // A damaged index document is a download failure, not a raw parse
+        // error the web side cannot map.
+        let err = download_via(
+            |_| Ok(STUB_ARTIFACT_BYTES.to_vec()),
+            platform_artifact_key(),
+            "{ not json",
+            cache.path(),
+        )
+        .expect_err("index damage");
+        assert!(
+            err.starts_with("hoot-download-failed:"),
+            "prefix contract: {err}"
+        );
+        // Same for the transport error surfaced by the injected fetch.
+        let err = download_via(
+            |_| Err("connection reset".to_string()),
+            platform_artifact_key(),
+            &download_index_fixture(),
+            cache.path(),
+        )
+        .expect_err("fetch error");
+        assert!(
+            err.starts_with("hoot-download-failed:"),
+            "prefix contract: {err}"
+        );
+        assert!(err.contains("connection reset"), "detail survives: {err}");
     }
 }

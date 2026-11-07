@@ -2307,6 +2307,7 @@ dependencies = [
  "objc2-app-kit",
  "objc2-foundation",
  "reqwest",
+ "rustls",
  "serde",
  "serde_json",
  "sha1",

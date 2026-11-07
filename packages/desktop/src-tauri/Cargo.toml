@@ -22,6 +22,14 @@ base64 = "0.22"
 # src/updater.rs in the cargo registry, rustls::crypto::ring::
 # default_provider().install_default().)
 reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }
+# Declared directly so hoot.rs can install the process-default rustls ring
+# CryptoProvider before its first download request (tauri-plugin-updater's
+# guarded idiom, src/updater.rs) — the updater plugin may never run in a
+# session that only imports HOOT logs. Mirrors the updater's rustls-tls spec
+# (version 0.23, ring, no defaults) and reuses the locked rustls; the
+# updater's default features already enable the same crate+feature, so this
+# adds no second TLS stack and no new lock entries.
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-updater = "2"
