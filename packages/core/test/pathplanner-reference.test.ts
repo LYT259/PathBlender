@@ -141,11 +141,83 @@ function readFixtureFile(dir: string, file: string, caseName: string): string {
   return readFileSync(path, 'utf-8');
 }
 
+/** Peak forward finite-difference acceleration of a golden state series —
+ * the mechanical value a manifest's peakAccelMPSSq literal must transcribe. */
+function goldenPeakAccelMPSSq(states: GoldenState[]): number {
+  let peak = 0;
+  for (let i = 1; i < states.length; i++) {
+    const a = states[i - 1]!;
+    const b = states[i]!;
+    const dt = b.t - a.t;
+    if (dt > 1e-12) {
+      peak = Math.max(peak, (b.linearVelocity - a.linearVelocity) / dt);
+    }
+  }
+  return peak;
+}
+
+/** Absorbs only JSON float formatting; any real transcription slip is far larger. */
+const TRANSCRIPTION_EPSILON = 1e-9;
+
+const CROSS_CHECKED_FIELDS = [
+  'durationS',
+  'endX',
+  'endY',
+  'endHeadingDeg',
+  'maxSpeedMPS',
+  'peakAccelMPSSq',
+] as const;
+
+/**
+ * Mechanical cross-check of the manifest's hand-transcribed expected literals
+ * against the golden file itself: the two sit next to the sha256 pins, and a
+ * slip here would otherwise only surface as a wrong (not failing) acceptance
+ * basis. Only declared literals are checked; a case without a golden skips.
+ */
+function crossCheckExpected(
+  caseName: string,
+  expected: ExpectedCase,
+  golden: GoldenState[],
+  goldenFile: string,
+): void {
+  const declared = CROSS_CHECKED_FIELDS.filter(
+    (field) => expected[field] !== undefined,
+  );
+  if (declared.length === 0) return;
+  if (golden.length === 0) {
+    throw new Error(
+      `reference fixture "${caseName}": golden file ${goldenFile} has no states to cross-check expected literals against`,
+    );
+  }
+  const last = golden[golden.length - 1]!;
+  const goldenValues: Record<(typeof CROSS_CHECKED_FIELDS)[number], number> = {
+    durationS: last.t,
+    endX: last.x,
+    endY: last.y,
+    endHeadingDeg: last.holonomicRotDeg,
+    maxSpeedMPS: Math.max(...golden.map((s) => s.linearVelocity)),
+    peakAccelMPSSq: goldenPeakAccelMPSSq(golden),
+  };
+  for (const field of declared) {
+    const manifestValue = expected[field] as number;
+    const goldenValue = goldenValues[field];
+    const ok =
+      Math.abs(manifestValue - goldenValue) <=
+      Math.max(TRANSCRIPTION_EPSILON, TRANSCRIPTION_EPSILON * Math.abs(goldenValue));
+    if (!ok) {
+      throw new Error(
+        `reference fixture "${caseName}": manifest expected.${field} ${manifestValue} does not match golden ${goldenValue} (${goldenFile}) — transcription slip`,
+      );
+    }
+  }
+}
+
 function loadReferenceFixtures(dir: string): LoadedFixture[] {
   const manifestPath = join(dir, 'manifest.json');
-  // An absent or empty manifest means zero fixtures — the gate stays closed.
+  // An absent manifest file or an explicit empty cases array means zero
+  // fixtures — the gate stays closed. Anything else malformed fails loudly.
   if (!existsSync(manifestPath)) return [];
-  let manifest: { tolerances?: Partial<Tolerances>; cases?: CaseManifest[] };
+  let manifest: { tolerances?: Partial<Tolerances>; cases?: unknown };
   try {
     manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as typeof manifest;
   } catch (e) {
@@ -154,9 +226,15 @@ function loadReferenceFixtures(dir: string): LoadedFixture[] {
       `reference manifest is malformed (${manifestPath}): ${e instanceof Error ? e.message : e}`,
     );
   }
+  if (!Array.isArray(manifest.cases)) {
+    throw new Error(
+      `reference manifest (${manifestPath}) must declare "cases" as an array — only an absent manifest file or an explicit empty "cases": [] closes the gate`,
+    );
+  }
+  const cases = manifest.cases as CaseManifest[];
   const tolerances: Tolerances = { ...DEFAULT_TOLERANCES, ...manifest.tolerances };
   const fixtures: LoadedFixture[] = [];
-  for (const c of manifest.cases ?? []) {
+  for (const c of cases) {
     const settingsText = readFixtureFile(dir, c.settingsFile, c.name);
     for (const [file, expected] of Object.entries(c.sha256 ?? {})) {
       if (sha256Of(join(dir, file)) !== expected) {
@@ -184,6 +262,9 @@ function loadReferenceFixtures(dir: string): LoadedFixture[] {
         }
         return state;
       });
+    }
+    if (c.goldenFile !== undefined) {
+      crossCheckExpected(c.name, c.expected ?? {}, goldenStates, c.goldenFile);
     }
     const autoPathTexts = new Map<string, string>();
     if (c.kind === 'path' && c.pathFile !== undefined) {
@@ -544,6 +625,37 @@ function validPathCaseDir(): string {
   return dir;
 }
 
+/** Golden with hand-derivable facts: 3 s total, end (2, 0) at 0°, peak speed
+ * 1 m/s, peak accel 1 m/s² (0→1 m/s across the first second). */
+function transcribedCaseDir(expected: ExpectedCase): string {
+  const dir = makeFixtureDir();
+  writeJson(dir, 'settings.json', SAMPLE_SETTINGS);
+  writeJson(dir, 'One.path', straightPath(0, 1));
+  writeJson(dir, 'golden-one.json', {
+    totalTimeS: 3,
+    states: [
+      { t: 0, x: 0, y: 0, holonomicRotDeg: 0, linearVelocity: 0 },
+      { t: 1, x: 0.5, y: 0, holonomicRotDeg: 0, linearVelocity: 1 },
+      { t: 2, x: 1.5, y: 0, holonomicRotDeg: 0, linearVelocity: 1 },
+      { t: 3, x: 2, y: 0, holonomicRotDeg: 0, linearVelocity: 0 },
+    ],
+  });
+  writeJson(dir, 'manifest.json', {
+    version: 1,
+    cases: [
+      {
+        name: 'transcribed',
+        kind: 'path',
+        pathFile: 'One.path',
+        settingsFile: 'settings.json',
+        goldenFile: 'golden-one.json',
+        expected,
+      },
+    ],
+  });
+  return dir;
+}
+
 describe('reference harness loader (constructed fixtures)', () => {
   it('returns zero fixtures when the manifest is absent — the gate stays closed', () => {
     expect(loadReferenceFixtures(makeFixtureDir())).toHaveLength(0);
@@ -553,6 +665,22 @@ describe('reference harness loader (constructed fixtures)', () => {
     const dir = makeFixtureDir();
     writeJson(dir, 'manifest.json', { version: 1, cases: [] });
     expect(loadReferenceFixtures(dir)).toHaveLength(0);
+  });
+
+  it('requires an existing manifest to declare cases as an array', () => {
+    const variants: unknown[] = [undefined, null, 'nope', { case: 1 }];
+    for (const cases of variants) {
+      const dir = makeFixtureDir();
+      writeJson(
+        dir,
+        'manifest.json',
+        cases === undefined ? { version: 1 } : { version: 1, cases },
+      );
+      expect(
+        () => loadReferenceFixtures(dir),
+        `cases=${JSON.stringify(cases) ?? 'missing'}`,
+      ).toThrow(/cases/);
+    }
   });
 
   it('rejects a malformed manifest instead of treating it as empty', () => {
@@ -606,6 +734,37 @@ describe('reference harness loader (constructed fixtures)', () => {
     expect(f.tolerances.positionTolM).toBe(0.05);
     expect(f.goldenStates).toHaveLength(3);
     expect(f.goldenStates[1]!).toEqual({ t: 1, x: 0.5, y: 0, holonomicRotDeg: 0, linearVelocity: 1 });
+  });
+
+  it('cross-checks manifest expected literals against the golden at load time', () => {
+    const correct: ExpectedCase = {
+      durationS: 3,
+      endX: 2,
+      endY: 0,
+      endHeadingDeg: 0,
+      maxSpeedMPS: 1,
+      peakAccelMPSSq: 1,
+    };
+    expect(loadReferenceFixtures(transcribedCaseDir(correct))).toHaveLength(1);
+    const slips: [
+      'durationS' | 'endX' | 'endY' | 'endHeadingDeg' | 'maxSpeedMPS' | 'peakAccelMPSSq',
+      number,
+    ][] = [
+      ['durationS', 2.5],
+      ['endX', 1.9],
+      ['endY', 0.2],
+      ['endHeadingDeg', 5],
+      ['maxSpeedMPS', 0.8],
+      ['peakAccelMPSSq', 0.5],
+    ];
+    for (const [field, wrong] of slips) {
+      const slipped = { ...correct };
+      slipped[field] = wrong;
+      expect(
+        () => loadReferenceFixtures(transcribedCaseDir(slipped)),
+        field,
+      ).toThrow(new RegExp(field));
+    }
   });
 });
 
