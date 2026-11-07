@@ -19,10 +19,11 @@
 //!
 //! Persistence of the owlet EULA consent and download record under the app
 //! cache dir lives here, as does the official-artifact download (index fetch,
-//! SHA-1 gate, atomic install, idempotent re-entry); the owlet CLI invocation
-//! lands in a later task of the plan.
+//! SHA-1 gate, atomic install, idempotent re-entry) and the owlet CLI
+//! invocation that converts one `.hoot` log to wpilog.
 
 use std::path::{Path, PathBuf};
+use base64::Engine as _;
 use tauri::{AppHandle, Manager};
 
 /// The selected owlet release for a platform artifact — the output of
@@ -281,8 +282,7 @@ fn app_cache_dir(app: &AppHandle) -> Result<PathBuf, String> {
         .map_err(|e| format!("resolve app cache dir: {e}"))
 }
 
-/// Current owlet EULA/download status for the web client. Registered on the
-/// invoke handler in a later task of the plan.
+/// Current owlet EULA/download status for the web client.
 #[tauri::command]
 pub async fn hoot_status(app: AppHandle) -> Result<HootStatus, String> {
     let cache_dir = app_cache_dir(&app)?;
@@ -290,7 +290,6 @@ pub async fn hoot_status(app: AppHandle) -> Result<HootStatus, String> {
 }
 
 /// Persist the user's owlet EULA consent and return the resulting status.
-/// Registered on the invoke handler in a later task of the plan.
 #[tauri::command]
 pub async fn hoot_accept_eula(app: AppHandle) -> Result<HootStatus, String> {
     let cache_dir = app_cache_dir(&app)?;
@@ -433,6 +432,11 @@ fn install_owlet_artifact(
 /// [`hoot_download_owlet`] command runs the same steps through the same
 /// helpers with real reqwest calls and chunk-progress emission (thin shell;
 /// real-device verification covers what unit tests cannot).
+// Test-only by design (the command mirrors its steps because the seam's
+// fetch is sync while reqwest is async): the cfg_attr silences only this
+// item's dead_code lint, and only in non-test builds — test builds keep the
+// lint live, and every other warning stays visible.
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn download_via<F: Fn(&str) -> Result<Vec<u8>, String>>(
     fetch: F,
     artifact_key: Option<&'static str>,
@@ -491,7 +495,6 @@ async fn fetch_artifact_with_progress(
 /// distribution index, stream the selected artifact with progress reports,
 /// and publish it only after the full-content SHA-1 gate. Idempotent — an
 /// intact recorded download returns the current status without any network.
-/// Registered on the invoke handler in a later task of the plan.
 #[tauri::command]
 pub async fn hoot_download_owlet(
     app: AppHandle,
@@ -512,12 +515,151 @@ pub async fn hoot_download_owlet(
     install_owlet_artifact(&cache_dir, key, &selection, &bytes)
 }
 
+// ---- .hoot → wpilog conversion (Task 5) ------------------------------------
+
+/// The most stderr characters a `hoot-convert-failed` detail may carry —
+/// enough of a tail to diagnose a failed conversion, never a dump of the
+/// whole log (and never the user's file contents).
+const CONVERT_STDERR_TAIL_CHARS: usize = 500;
+
+/// The conversion result for the web client — Task 6/8's typed contract:
+/// the output name and its bytes as standard base64.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HootConverted {
+    pub wpilog_name: String,
+    pub wpilog_base64: String,
+}
+
+/// What the conversion orchestration needs from one owlet CLI run — the
+/// success flag and stderr. The real runner maps a
+/// `std::process::Command::output()` into this; stub runners construct it
+/// directly, keeping unit tests free of any real process execution.
+#[derive(Debug)]
+pub struct OwletRun {
+    pub success: bool,
+    pub stderr: Vec<u8>,
+}
+
+/// The official owlet CLI argument list (pinned to the owlet documentation):
+/// `-f wpilog` selects the output format, then the input and output paths in
+/// that order — `owlet -f wpilog {in} {out}`.
+pub fn owlet_args(input: &Path, output: &Path) -> Vec<String> {
+    vec![
+        "-f".to_string(),
+        "wpilog".to_string(),
+        input.to_string_lossy().into_owned(),
+        output.to_string_lossy().into_owned(),
+    ]
+}
+
+/// The last `max_chars` characters of an owlet stderr, lossily decoded.
+fn stderr_tail(stderr: &[u8], max_chars: usize) -> String {
+    let text = String::from_utf8_lossy(stderr);
+    let count = text.chars().count();
+    text.chars().skip(count.saturating_sub(max_chars)).collect()
+}
+
+/// The pre-execution gate: EULA consent first (the legal gate — before any
+/// execution), then a vouchable owlet — the binary must resolve exclusively
+/// through [`owlet_binary_path`] and still hash to the recorded sha1 (via
+/// [`cached_download_is_current`], the same re-verification the download's
+/// idempotence uses). Any gap yields `hoot-owlet-missing`, which the web side
+/// maps to the re-download path.
+fn convert_gate(cache_dir: &Path, state: &HootState) -> Result<PathBuf, String> {
+    if !state.eula_accepted {
+        return Err("hoot-eula-required".to_string());
+    }
+    let Some(binary) = owlet_binary_path(cache_dir, state) else {
+        return Err("hoot-owlet-missing".to_string());
+    };
+    if !cached_download_is_current(cache_dir, state) {
+        return Err("hoot-owlet-missing".to_string());
+    }
+    Ok(binary)
+}
+
+/// The injectable conversion orchestration — the unit-test seam for the
+/// whole gate → temp input → CLI → output-read → base64 chain with zero real
+/// owlet execution: pass a fake runner. The [`hoot_convert`] command runs the
+/// same steps through [`run_owlet_cli`] with a real `std::process::Command`.
+/// The per-conversion temp dir is removed on success and failure alike
+/// (`TempDir` drops even through early error returns), and no file content is
+/// ever printed — stderr only travels inside the capped error detail.
+pub fn convert_via<F: FnOnce(&Path, &[String]) -> Result<OwletRun, String>>(
+    cache_dir: &Path,
+    file_name: &str,
+    data: &[u8],
+    run: F,
+) -> Result<HootConverted, String> {
+    let state = load_hoot_state(cache_dir)?;
+    let binary = convert_gate(cache_dir, &state)?;
+    // `file_stem` strips any directory components, so even a path-like
+    // file name from the web side yields a pure stem and the work files
+    // stay inside the temp dir.
+    let stem = Path::new(file_name)
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .ok_or_else(|| format!("hoot-convert-failed:no .hoot stem in {file_name:?}"))?
+        .to_string();
+    let work = tempfile::tempdir()
+        .map_err(|e| format!("hoot-convert-failed:create temp dir: {e}"))?;
+    let input_path = work.path().join(format!("{stem}.hoot"));
+    let output_path = work.path().join(format!("{stem}.wpilog"));
+    std::fs::write(&input_path, data)
+        .map_err(|e| format!("hoot-convert-failed:write {stem}.hoot: {e}"))?;
+    match run(&binary, &owlet_args(&input_path, &output_path)) {
+        Ok(result) if result.success => {
+            let wpilog = std::fs::read(&output_path)
+                .map_err(|e| format!("hoot-convert-failed:read {stem}.wpilog: {e}"))?;
+            Ok(HootConverted {
+                wpilog_name: format!("{stem}.wpilog"),
+                wpilog_base64: base64::engine::general_purpose::STANDARD.encode(wpilog),
+            })
+        }
+        Ok(result) => Err(format!(
+            "hoot-convert-failed:{}",
+            stderr_tail(&result.stderr, CONVERT_STDERR_TAIL_CHARS)
+        )),
+        Err(detail) => Err(format!("hoot-convert-failed:{detail}")),
+    }
+}
+
+/// Run the real owlet CLI (the command's runner): capture the process output
+/// and keep only what the orchestration consumes. Spawn failures carry the
+/// `hoot-convert-failed` code; no path or file content is added to the error.
+fn run_owlet_cli(program: &Path, args: &[String]) -> Result<OwletRun, String> {
+    let output = std::process::Command::new(program)
+        .args(args)
+        .output()
+        .map_err(|e| format!("run owlet: {e}"))?;
+    Ok(OwletRun {
+        success: output.status.success(),
+        stderr: output.stderr,
+    })
+}
+
+/// Convert one `.hoot` log to wpilog with the official owlet CLI: gate on
+/// EULA consent and a hash-verified download, convert through a throwaway
+/// temp dir, and return the output name plus its bytes as base64.
+#[tauri::command]
+pub async fn hoot_convert(
+    app: AppHandle,
+    file_name: String,
+    data: Vec<u8>,
+) -> Result<HootConverted, String> {
+    let cache_dir = app_cache_dir(&app)?;
+    convert_via(&cache_dir, &file_name, &data, run_owlet_cli)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        accept_eula, download_via, hoot_status_in, load_hoot_state, parse_owlet_index,
-        platform_artifact_key, save_hoot_state, verify_sha1, HootState, HootStatus,
+        accept_eula, convert_via, download_via, hoot_status_in, load_hoot_state, owlet_args,
+        parse_owlet_index, platform_artifact_key, save_hoot_state, verify_sha1, HootConverted,
+        HootState, HootStatus, OwletRun,
     };
+    use std::path::Path;
 
     /// Trimmed copy of the real distribution index (fetched 2026-11-07): the
     /// corvus tool is kept (with a higher version than any owlet item) to pin
@@ -952,7 +1094,8 @@ mod tests {
                 "save must refuse file_name {bad:?}"
             );
         }
-        // The legitimate platform-derived basename (Task 4: owlet-<version>-<artifact_key>) still saves.
+        // The legitimate platform-derived basename (Task 4's rule:
+        // owlet-{artifact_key}, plus a fixed `.exe` on Windows) still saves.
         save_hoot_state(cache.path(), &downloaded_state()).expect("basename saves");
     }
 
@@ -1271,5 +1414,287 @@ mod tests {
             "prefix contract: {err}"
         );
         assert!(err.contains("connection reset"), "detail survives: {err}");
+    }
+
+    // ---- convert orchestration (Task 5) --------------------------------------
+    // Process-free: `convert_via` takes an injected runner, so the gate →
+    // temp input → CLI → output read → base64 chain runs against tempdirs
+    // and stub runners only — no real owlet binary is ever executed in unit
+    // tests (real-device verification is the plan's separate step).
+
+    /// Synthetic .hoot input bytes handed to `convert_via`.
+    const STUB_HOOT_BYTES: &[u8] = b"stub hoot log (synthetic)";
+    /// Synthetic wpilog bytes a stub runner "produces"; the base64 literal is
+    /// `base64` of exactly these bytes, computed with the host `base64` tool
+    /// independently of the implementation.
+    const STUB_WPILOG_BYTES: &[u8] = b"PathBlender wpilog fixture";
+    const STUB_WPILOG_BASE64: &str = "UGF0aEJsZW5kZXIgd3BpbG9nIGZpeHR1cmU=";
+
+    /// A tempdir with EULA consent and an intact recorded owlet install: the
+    /// synthetic artifact bytes on disk under the platform-derived name plus
+    /// the full matching record — exactly what the convert gate (via
+    /// `cached_download_is_current`) demands.
+    fn owlet_installed_cache() -> tempfile::TempDir {
+        let cache = eula_accepted_cache();
+        save_hoot_state(
+            cache.path(),
+            &HootState {
+                eula_accepted: true,
+                version: Some("25.0.1".to_string()),
+                compliancy: Some(10),
+                sha1: Some(STUB_ARTIFACT_SHA1.to_string()),
+                file_name: Some(EXPECTED_FILE_NAME.to_string()),
+            },
+        )
+        .expect("save state");
+        let hoot = cache.path().join("hoot");
+        std::fs::create_dir_all(&hoot).expect("mkdir");
+        std::fs::write(hoot.join(EXPECTED_FILE_NAME), STUB_ARTIFACT_BYTES).expect("write owlet");
+        cache
+    }
+
+    #[test]
+    fn owlet_args_is_format_wpilog_then_in_then_out() {
+        // Hand-written literals — the official owlet CLI invocation order
+        // (owlet docs): format flag, format name, input path, output path.
+        // A reordered variant is a wrong CLI call, not a style change.
+        assert_eq!(
+            owlet_args(Path::new("/work/match.hoot"), Path::new("/work/match.wpilog")),
+            vec![
+                "-f".to_string(),
+                "wpilog".to_string(),
+                "/work/match.hoot".to_string(),
+                "/work/match.wpilog".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn convert_runs_the_recorded_owlet_and_returns_its_output_base64() {
+        let cache = owlet_installed_cache();
+        let mut program_seen = None;
+        let mut args_seen = None;
+        let converted =
+            convert_via(cache.path(), "match.hoot", STUB_HOOT_BYTES, |program, args| {
+                program_seen = Some(program.to_path_buf());
+                args_seen = Some(args.to_vec());
+                // The CLI runs only after the caller's bytes are on disk at
+                // the input path; the stub "converts" by writing the fixture
+                // output to the path owlet was told to write.
+                assert_eq!(
+                    std::fs::read(&args[2]).expect("input written before the run"),
+                    STUB_HOOT_BYTES,
+                    "input file must hold the caller's bytes when the CLI runs"
+                );
+                std::fs::write(&args[3], STUB_WPILOG_BYTES).expect("stub writes output");
+                Ok(OwletRun {
+                    success: true,
+                    stderr: Vec::new(),
+                })
+            })
+            .expect("a verified install converts");
+        assert_eq!(converted.wpilog_name, "match.wpilog");
+        // Hand-computed base64 literal — not STANDARD.encode of the fixture.
+        assert_eq!(converted.wpilog_base64, STUB_WPILOG_BASE64);
+        let args = args_seen.expect("runner invoked");
+        // The executable is the recorded binary resolved through
+        // owlet_binary_path — never a fresh join (the same-looking path here
+        // is pinned literally so a bypass shows up as a mismatch).
+        assert_eq!(
+            program_seen.expect("runner invoked"),
+            cache.path().join("hoot").join(EXPECTED_FILE_NAME),
+            "executable must be the recorded owlet path"
+        );
+        assert_eq!(&args[0..2], &["-f".to_string(), "wpilog".to_string()]);
+        assert!(args[2].ends_with("match.hoot"), "input named {{stem}}.hoot: {}", args[2]);
+        assert!(args[3].ends_with("match.wpilog"), "output named {{stem}}.wpilog: {}", args[3]);
+        let work = Path::new(&args[3])
+            .parent()
+            .expect("temp work dir")
+            .to_path_buf();
+        assert!(
+            work != cache.path().join("hoot"),
+            "conversion never runs inside the cache dir"
+        );
+        assert!(!work.exists(), "temp dir removed after success");
+    }
+
+    #[test]
+    fn convert_failure_carries_the_stderr_tail_capped_at_500_chars() {
+        let cache = owlet_installed_cache();
+        // 603 chars: returning the whole stderr would exceed the 500-char cap.
+        let long_stderr = format!("{}END", "0123456789".repeat(60));
+        assert_eq!(long_stderr.chars().count(), 603);
+        let mut out_seen = None;
+        let err = convert_via(cache.path(), "match.hoot", STUB_HOOT_BYTES, |_program, args| {
+            out_seen = Some(args[3].clone());
+            Ok(OwletRun {
+                success: false,
+                stderr: long_stderr.clone().into_bytes(),
+            })
+        })
+        .expect_err("a non-zero owlet exit is a per-file failure");
+        assert!(err.starts_with("hoot-convert-failed:"), "web maps this prefix: {err}");
+        assert!(err.contains("END"), "the stderr tail survives: {err}");
+        assert!(
+            err["hoot-convert-failed:".len()..].chars().count() <= 500,
+            "detail capped at 500 chars"
+        );
+        let work = Path::new(&out_seen.expect("runner invoked"))
+            .parent()
+            .expect("temp work dir")
+            .to_path_buf();
+        assert!(!work.exists(), "temp dir removed after failure");
+        // A short stderr travels whole under the same code.
+        let err = convert_via(cache.path(), "match.hoot", STUB_HOOT_BYTES, |_, _| {
+            Ok(OwletRun {
+                success: false,
+                stderr: b"cannot open input".to_vec(),
+            })
+        })
+        .expect_err("short stderr case");
+        assert_eq!(err, "hoot-convert-failed:cannot open input");
+        // A spawn failure carries its detail under the same code.
+        let err = convert_via(cache.path(), "match.hoot", STUB_HOOT_BYTES, |_, _| {
+            Err("permission denied".to_string())
+        })
+        .expect_err("spawn failure case");
+        assert_eq!(err, "hoot-convert-failed:permission denied");
+    }
+
+    #[test]
+    fn convert_without_eula_consent_never_executes_owlet() {
+        let cache = tempfile::tempdir().expect("tempdir");
+        let mut runs = 0u32;
+        let err = convert_via(cache.path(), "match.hoot", STUB_HOOT_BYTES, |_, _| {
+            runs += 1;
+            Ok(OwletRun {
+                success: true,
+                stderr: Vec::new(),
+            })
+        })
+        .expect_err("consent must gate execution of the downloaded binary");
+        assert_eq!(err, "hoot-eula-required");
+        assert_eq!(runs, 0, "no execution before consent");
+        assert!(!cache.path().join("hoot").exists(), "the gate writes nothing");
+    }
+
+    #[test]
+    fn convert_without_a_vouchable_owlet_binary_reports_it_missing() {
+        // Consent but no download record at all.
+        let cache = eula_accepted_cache();
+        let mut runs = 0u32;
+        let err = convert_via(cache.path(), "match.hoot", STUB_HOOT_BYTES, |_, _| {
+            runs += 1;
+            Ok(OwletRun {
+                success: true,
+                stderr: Vec::new(),
+            })
+        })
+        .expect_err("nothing is recorded");
+        assert_eq!(err, "hoot-owlet-missing");
+        assert_eq!(runs, 0);
+        // A full record whose binary file is gone (a stale record).
+        let cache = owlet_installed_cache();
+        std::fs::remove_file(cache.path().join("hoot").join(EXPECTED_FILE_NAME))
+            .expect("remove binary");
+        let err = convert_via(cache.path(), "match.hoot", STUB_HOOT_BYTES, |_, _| {
+            Ok(OwletRun {
+                success: true,
+                stderr: Vec::new(),
+            })
+        })
+        .expect_err("stale record without the file");
+        assert_eq!(err, "hoot-owlet-missing");
+        // A tampered path-like recorded name whose escape target exists and
+        // hashes right: resolution must go exclusively through
+        // owlet_binary_path, so a fresh join of the recorded name must never
+        // reach the runner.
+        let cache = tempfile::tempdir().expect("tempdir");
+        std::fs::create_dir_all(cache.path().join("hoot")).expect("mkdir");
+        std::fs::write(cache.path().join("pwned"), STUB_ARTIFACT_BYTES).expect("write target");
+        std::fs::write(
+            cache.path().join("hoot").join("owlet-state.json"),
+            format!(
+                r#"{{"eulaAccepted":true,"version":"25.0.1","compliancy":10,"sha1":"{STUB_ARTIFACT_SHA1}","fileName":"../pwned"}}"#
+            ),
+        )
+        .expect("write tampered state");
+        let mut runs = 0u32;
+        let err = convert_via(cache.path(), "match.hoot", STUB_HOOT_BYTES, |_, _| {
+            runs += 1;
+            Ok(OwletRun {
+                success: true,
+                stderr: Vec::new(),
+            })
+        })
+        .expect_err("path-like record must not resolve");
+        assert_eq!(err, "hoot-owlet-missing");
+        assert_eq!(runs, 0, "a joined path would have executed {tmp}/pwned", tmp = cache.path().display());
+    }
+
+    #[test]
+    fn convert_refuses_to_execute_a_binary_that_no_longer_matches_the_recorded_sha1() {
+        let cache = owlet_installed_cache();
+        // Swap the bytes under the recorded name: the recorded sha1 is the
+        // only thing vouching for the executable, so it must not run.
+        std::fs::write(
+            cache.path().join("hoot").join(EXPECTED_FILE_NAME),
+            b"tampered replacement",
+        )
+        .expect("tamper");
+        let mut runs = 0u32;
+        let err = convert_via(cache.path(), "match.hoot", STUB_HOOT_BYTES, |_, _| {
+            runs += 1;
+            Ok(OwletRun {
+                success: true,
+                stderr: Vec::new(),
+            })
+        })
+        .expect_err("a hash-stale binary must not execute");
+        assert_eq!(err, "hoot-owlet-missing", "missing maps to the re-download remedy");
+        assert_eq!(runs, 0, "the swapped binary never ran");
+    }
+
+    #[test]
+    fn convert_derives_a_pure_stem_so_path_like_names_stay_in_the_temp_dir() {
+        let cache = owlet_installed_cache();
+        let mut input_seen = None;
+        let converted =
+            convert_via(cache.path(), "../match.hoot", STUB_HOOT_BYTES, |_, args| {
+                input_seen = Some(args[2].clone());
+                std::fs::write(&args[3], STUB_WPILOG_BYTES).expect("stub writes output");
+                Ok(OwletRun {
+                    success: true,
+                    stderr: Vec::new(),
+                })
+            })
+            .expect("conversion succeeds");
+        assert_eq!(converted.wpilog_name, "match.wpilog");
+        let input_owned = input_seen.expect("runner invoked");
+        let input = Path::new(&input_owned);
+        assert!(input.ends_with("match.hoot"), "stem only: {}", input.display());
+        let work = input.parent().expect("temp work dir");
+        assert!(
+            work.starts_with(std::env::temp_dir()),
+            "input lives in the temp dir: {}",
+            work.display()
+        );
+        assert!(!work.starts_with(cache.path()), "input never lands in the cache dir");
+    }
+
+    #[test]
+    fn converted_serializes_with_camel_case_keys_for_the_web_client() {
+        let json = serde_json::to_string(&HootConverted {
+            wpilog_name: "match.wpilog".to_string(),
+            wpilog_base64: STUB_WPILOG_BASE64.to_string(),
+        })
+        .expect("serialize converted");
+        // Hand-written wire literal — Task 6/8 type these camelCase keys;
+        // serde's snake_case default would break the contract.
+        assert_eq!(
+            json,
+            r#"{"wpilogName":"match.wpilog","wpilogBase64":"UGF0aEJsZW5kZXIgd3BpbG9nIGZpeHR1cmU="}"#
+        );
     }
 }

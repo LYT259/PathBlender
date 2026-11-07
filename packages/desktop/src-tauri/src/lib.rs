@@ -3,7 +3,8 @@
 /// a native menu rebuilt from the web's menu spec (`set_menu` — the web
 /// owns the labels in every UI language; PathBlender | File | Edit | View |
 /// Playback | Window | Help), a native import dialog, native save dialogs,
-/// and a preferences window on ?window=prefs.
+/// a preferences window on ?window=prefs, and the HOOT import's owlet
+/// EULA/download/convert commands (hoot.rs).
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
@@ -417,15 +418,15 @@ fn disable_webview_scroll_bounce<R: tauri::Runtime>(window: &tauri::WebviewWindo
     });
 }
 
-/// Open the repo link in the user's system browser (handoff 2026-10-05).
-/// A plain `target="_blank"` anchor is not routed outward by WKWebView /
-/// WebKitGTK, so the web layer asks the shell. The allowlist keeps this from
-/// becoming a generic URL launcher — the workspace only ever passes the
-/// project's own GitHub URL.
+/// Open an allowed external link in the user's system browser (handoff
+/// 2026-10-05). A plain `target="_blank"` anchor is not routed outward by
+/// WKWebView / WebKitGTK, so the web layer asks the shell. The allowlist
+/// keeps this from becoming a generic URL launcher — the workspace only ever
+/// passes the project's own GitHub URL, plus CTRE's owlet documentation and
+/// EULA domains, which the HOOT import flow opens.
 #[tauri::command]
 fn open_external(url: String) -> Result<(), String> {
-    const ALLOWED_PREFIX: &str = "https://github.com/LYT259/pathblender";
-    if !url.starts_with(ALLOWED_PREFIX) {
+    if !is_allowed_external_url(&url) {
         return Err(format!("url not allowed: {url}"));
     }
     #[cfg(target_os = "macos")]
@@ -441,6 +442,33 @@ fn open_external(url: String) -> Result<(), String> {
         Ok(status) => Err(format!("opener exited with {status}")),
         Err(e) => Err(e.to_string()),
     }
+}
+
+/// The fixed external-URL allowlist for [`open_external`]: the project's own
+/// GitHub repo plus CTRE's owlet documentation and EULA domains (opened by
+/// the HOOT import flow).
+const ALLOWED_EXTERNAL_URL_PREFIXES: [&str; 3] = [
+    "https://github.com/LYT259/pathblender",
+    "https://v6.docs.ctr-electronics.com/",
+    "https://www.ctr-electronics.com/",
+];
+
+/// Whether `url` falls under one of the allowed external prefixes. Entries
+/// ending in `/` (the CTRE domains) cover every path beneath them; the bare
+/// repo URL matches only itself or a `/`-delimited subpath beneath it, so a
+/// longer name that merely starts with the same characters
+/// (`…/pathblender.evil`) is refused.
+pub fn is_allowed_external_url(url: &str) -> bool {
+    ALLOWED_EXTERNAL_URL_PREFIXES.iter().any(|prefix| {
+        if prefix.ends_with('/') {
+            url.starts_with(prefix)
+        } else {
+            *prefix == url
+                || (url.len() > prefix.len()
+                    && url.starts_with(prefix)
+                    && url.as_bytes()[prefix.len()] == b'/')
+        }
+    })
 }
 
 #[tauri::command]
@@ -580,7 +608,11 @@ pub fn run() {
             open_external,
             set_dock_icon,
             check_update,
-            install_update
+            install_update,
+            hoot::hoot_status,
+            hoot::hoot_accept_eula,
+            hoot::hoot_download_owlet,
+            hoot::hoot_convert
         ])
         .manage(MenuState {
             ids: Mutex::new(Vec::new()),
@@ -640,7 +672,7 @@ pub fn run() {
                             .file()
                             .add_filter(
                                 "Autonomous paths & sessions",
-                                &["traj", "ghostauto", "path", "auto", "wpilog", "json"],
+                                &["traj", "ghostauto", "path", "auto", "wpilog", "hoot", "json"],
                             )
                             .blocking_pick_files()
                         {
@@ -719,7 +751,7 @@ async fn save_file(
 
 #[cfg(test)]
 mod tests {
-    use super::dock_icon_resource;
+    use super::{dock_icon_resource, is_allowed_external_url};
 
     /// The whitelist is the whole contract: every (style, dark) pair maps to
     /// one of the four bundled dock resources, and anything unexpected falls
@@ -734,5 +766,29 @@ mod tests {
         assert_eq!(dock_icon_resource("neon", true), "icon-night.png");
         // Path-like input is just an unknown style: classic fallback.
         assert_eq!(dock_icon_resource("../../etc/passwd", false), "icon-day.png");
+    }
+
+    /// The fixed prefix allowlist is the whole `open_external` contract: the
+    /// repo URL and paths beneath it, plus CTRE's owlet docs and EULA domains
+    /// the HOOT import flow opens. Everything else — unrelated hosts, longer
+    /// names that merely start with a whitelisted string, a downgraded
+    /// scheme, the www-less apex — is refused.
+    #[test]
+    fn external_url_whitelist_covers_the_repo_and_hoot_ctr_domains() {
+        assert!(is_allowed_external_url("https://github.com/LYT259/pathblender"));
+        assert!(is_allowed_external_url(
+            "https://github.com/LYT259/pathblender/releases/latest"
+        ));
+        assert!(is_allowed_external_url(
+            "https://v6.docs.ctr-electronics.com/en/stable/"
+        ));
+        assert!(is_allowed_external_url("https://www.ctr-electronics.com/"));
+        assert!(!is_allowed_external_url("https://evil.example"));
+        // Starts with the repo URL's characters but is a different name.
+        assert!(!is_allowed_external_url("https://github.com/LYT259/pathblender.evil"));
+        // Same-string pitfalls: scheme downgrade and the www-less apex are
+        // not the whitelisted origins.
+        assert!(!is_allowed_external_url("http://github.com/LYT259/pathblender"));
+        assert!(!is_allowed_external_url("https://ctr-electronics.com/"));
     }
 }
