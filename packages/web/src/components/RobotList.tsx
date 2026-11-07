@@ -8,7 +8,7 @@ import { RobotContextMenu } from './RobotContextMenu';
 import { formatLength, formatLengthNumber, useLengthUnit } from '../length-units';
 import './RobotList.css';
 import { useTeamOrderUI, type TeamOrderUI } from './TeamOrderUI';
-import { displayTimingSource, inspectorWarnings } from '../robot-profile-ui';
+import { displayTimingSource, dropStaleTimingClaims, inspectorWarnings } from '../robot-profile-ui';
 import { robotIdentity, robotOriginalIdentity } from '../robot-identity';
 
 /** Timing-provenance chip beside the geometry badge (§16.39 direction 4):
@@ -235,7 +235,7 @@ export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: Robot
   const { trajectory } = robot;
   const id = trajectory.id;
   const fileGeometry = trajectory.geometrySource === 'file';
-  const warnings = inspectorWarnings(trajectory.warnings);
+  const warnings = inspectorWarnings(dropStaleTimingClaims(trajectory, trajectory.warnings));
   const timing = displayTimingSource(trajectory);
 
   return (

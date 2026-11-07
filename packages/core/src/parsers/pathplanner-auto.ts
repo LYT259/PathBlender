@@ -167,9 +167,10 @@ export function parseAutoStructure(
  * Generate a unified timeline from a parsed routine against a robot config:
  * paths are regenerated and time-shifted into place, waits hold the previous
  * end pose (sampled at 10 Hz), named commands become zero-duration events.
- * Warnings cover command-tree findings, per-path parse warnings, and
- * segment-chaining discontinuities — this function never claims a config;
- * the caller that chose one does.
+ * Warnings cover command-tree findings, per-path parse warnings,
+ * segment-chaining discontinuities, and degenerate zero-duration motion
+ * segments — this function never claims a config; the caller that chose one
+ * does.
  */
 export function generateAutoTrajectory(
   auto: ParsedAuto,
@@ -213,6 +214,17 @@ export function generateAutoTrajectory(
         continue;
       }
       const gen = generateTrajectory(path, config);
+      // Upstream-identical physics can degenerate (e.g. ≤~30 A per motor
+      // cancels acceleration through the torque-loss term, trajectory.dart
+      // at v2025.2.7): the segment emits samples that never leave t=0. Warn
+      // per motion segment — a wait elsewhere in the routine would mask a
+      // total-duration check, while a legitimate wait-only pause (zero
+      // velocity by design) must never read as degenerate.
+      if (trajectoryDuration(gen.samples) === 0) {
+        warnings.push(
+          `segment ${segmentIndex + 1} ("${seg.pathName}") generated zero-duration motion — the robot cannot move under this config; not a valid motion plan`,
+        );
+      }
       for (const w of path.parseWarnings) {
         if (!warnings.some((x) => x === w)) warnings.push(w);
       }
@@ -257,6 +269,12 @@ export function parsePathPlannerAuto(
   if (generated.samples.length < 2) {
     throw new ParseError('empty-trajectory', fileName, 'routine produced no motion');
   }
+  // Same unlimited-constraints caveat the single-path import emits — one
+  // entry per applicable referenced path, naming it: a routine references
+  // several paths and the caveat must say which one is unlimited.
+  const unlimitedCaveats = Object.entries(auto.paths)
+    .filter(([, path]) => !Number.isFinite(path.globalConstraints.maxVelocityMPS))
+    .map(([name]) => `referenced path "${name}" has unlimited global constraints; results may be unrealistic`);
 
   return {
     id: crypto.randomUUID(),
@@ -274,6 +292,7 @@ export function parsePathPlannerAuto(
     warnings: [
       'generated with default robot config (Kraken X60 swerve) — timing is an estimate',
       ...generated.warnings,
+      ...unlimitedCaveats,
     ],
     timingSource: 'default-config',
     editable: { kind: 'pathplanner-auto', auto },

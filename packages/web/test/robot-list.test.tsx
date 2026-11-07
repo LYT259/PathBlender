@@ -312,3 +312,36 @@ describe('timing source badge', () => {
     expect(screen.queryByText('Real-config timing')).not.toBeInTheDocument();
   });
 });
+
+describe('stale timing warnings (pre-timingSource sessions)', () => {
+  // The exact string the pre-2026-11-07 build wrote when it regenerated a
+  // timeline from a profile — back then a mass-only profile already claimed
+  // "real robot config" and no timing state was recorded to contradict it.
+  const LEGACY_FULL_CONFIG_WARNING = 'regenerated with real robot config from profile "254"';
+
+  it('drops the legacy full-config claim beside the conservative default badge', () => {
+    const legacy = robot();
+    legacy.trajectory.source = 'pathplanner-path';
+    legacy.trajectory.timingSource = undefined;
+    legacy.trajectory.warnings = [LEGACY_FULL_CONFIG_WARNING, 'Missing waypoint data'];
+    render(<I18nProvider><RobotInspector robot={legacy} {...inspectorCallbacks()} /></I18nProvider>);
+    // Restored without timingSource, the source stands in: default estimate.
+    expect(screen.getByText('Default-estimate timing')).toBeInTheDocument();
+    // The stale claim contradicts that badge and is hidden…
+    expect(screen.queryByText(LEGACY_FULL_CONFIG_WARNING)).not.toBeInTheDocument();
+    // …while unrelated diagnostics stay visible.
+    expect(screen.getByText('Missing waypoint data')).toBeInTheDocument();
+  });
+
+  it('keeps the same warning when timingSource explicitly records full-config', () => {
+    const current = robot();
+    current.trajectory.source = 'pathplanner-path';
+    current.trajectory.timingSource = 'full-config';
+    current.trajectory.warnings = [LEGACY_FULL_CONFIG_WARNING];
+    render(<I18nProvider><RobotInspector robot={current} {...inspectorCallbacks()} /></I18nProvider>);
+    // A current build wrote both the state and the warning: legitimate
+    // messaging, not a stale claim.
+    expect(screen.getByText('Real-config timing')).toBeInTheDocument();
+    expect(screen.getByText(LEGACY_FULL_CONFIG_WARNING)).toBeInTheDocument();
+  });
+});

@@ -343,10 +343,10 @@ export function applyProfileToTrajectory(traj: Trajectory, profile: RobotProfile
     // Routines regenerate the same way as single paths: every referenced
     // path re-generates against the profile config and the segments chain
     // again (waits/named commands are structure, not config-dependent).
-    // generateAutoTrajectory reports command-tree, per-path parse, and
-    // chaining warnings only — it never claims a config (the generator
-    // default claim belongs to parsePathPlannerAuto; timing warnings
-    // against the applied profile are built by the timing layer).
+    // generateAutoTrajectory reports command-tree, per-path parse, chaining,
+    // and per-segment degenerate-motion warnings — it never claims a config
+    // (the generator default claim belongs to parsePathPlannerAuto; timing
+    // warnings against the applied profile are built by the timing layer).
     const { config, provenance, unknownMotorType } = resolveRobotConfig(profile);
     const { timingSource, warnings } = configTimingWarnings(profile, provenance, unknownMotorType);
     const auto = editable.auto;
@@ -357,8 +357,11 @@ export function applyProfileToTrajectory(traj: Trajectory, profile: RobotProfile
     if (Object.values(auto.paths).some((p) => !Number.isFinite(p.globalConstraints.maxVelocityMPS))) {
       warnings.push('path has unlimited global constraints; results may be unrealistic');
     }
+    // Degenerate zero-duration motion is flagged per generated segment by
+    // generateAutoTrajectory; a routine-level total-duration check would be
+    // masked by legitimate waits (the segments the routine chains between).
     const durationS = trajectoryDuration(generated.samples);
-    warnings.push(...zeroDurationWarning(durationS), ...generated.warnings);
+    warnings.push(...generated.warnings);
     return {
       ...base,
       editable: { kind: 'pathplanner-auto', auto },

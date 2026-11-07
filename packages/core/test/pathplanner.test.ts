@@ -16,6 +16,7 @@ import {
   parsePathJson,
   parsePathPlannerAuto,
   samplePath,
+  trajectoryDuration,
   ParseError,
 } from '../src';
 import type { ParsedAuto } from '../src';
@@ -359,5 +360,79 @@ describe('.auto routine semantics', () => {
       'segment references path "Score" with no parsed source — segment skipped',
     );
     expect(generated.samples.length).toBeGreaterThan(2);
+  });
+
+  it('import emits the unlimited-constraints caveat for each applicable referenced path', () => {
+    // Same mutation the single-path parser test uses: the velocity cap is
+    // dropped so the path parses to +∞ constraints. A routine references
+    // several paths, so the caveat must name which one is unlimited.
+    const unlimited = (text: string) => {
+      const asJson = JSON.parse(text) as { globalConstraints: Record<string, unknown> };
+      delete asJson.globalConstraints.maxVelocity;
+      asJson.globalConstraints.unlimited = true;
+      return JSON.stringify(asJson);
+    };
+
+    // Pickup unlimited, Score constrained: exactly one caveat, naming Pickup.
+    const oneUnlimited = parsePathPlannerAuto(
+      autoText,
+      'Example Auto.auto',
+      (name) => (name === 'Pickup' ? unlimited(pickupText) : name === 'Score' ? scoreText : undefined),
+    );
+    expect(oneUnlimited.warnings.join('\n')).toContain(
+      'referenced path "Pickup" has unlimited global constraints; results may be unrealistic',
+    );
+    expect(oneUnlimited.warnings.join('\n')).not.toContain('referenced path "Score"');
+    expect(oneUnlimited.warnings.filter((w) => w.includes('unlimited global constraints'))).toHaveLength(1);
+
+    // Both referenced paths unlimited: one caveat per path — "each applicable
+    // referenced path", not one collapsed blanket entry.
+    const both = parsePathPlannerAuto(
+      autoText,
+      'Example Auto.auto',
+      (name) => (name === 'Pickup' ? unlimited(pickupText) : name === 'Score' ? unlimited(scoreText) : undefined),
+    );
+    expect(both.warnings.join('\n')).toContain(
+      'referenced path "Score" has unlimited global constraints; results may be unrealistic',
+    );
+    expect(both.warnings.filter((w) => w.includes('unlimited global constraints'))).toHaveLength(2);
+  });
+
+  it('warns for a degenerate motion segment even when a wait keeps the total duration positive', () => {
+    // Path + 1 s wait. Probed: at 20 A per module and 150 kg the path
+    // degenerates to 33 samples that never leave t=0 (upstream-identical
+    // torque-loss cancellation) while the wait alone holds the total at
+    // 1 s — a total-duration check would stay silent; the segment must not.
+    const autoJson = JSON.stringify({
+      version: '2025.0',
+      command: {
+        type: 'sequential',
+        data: {
+          commands: [
+            { type: 'path', data: { pathName: 'Constrained' } },
+            { type: 'wait', data: { waitTime: 1.0 } },
+          ],
+        },
+      },
+    });
+    const constrainedText = read('pathplanner/constrained_pointing.path');
+    const auto = parseAutoStructure(autoJson, 'Probe.auto', (name) =>
+      name === 'Constrained' ? constrainedText : undefined,
+    );
+
+    const starved = makeRobotConfig({ massKG: 150, moduleConfig: { driveCurrentLimitA: 20 } });
+    const degenerate = generateAutoTrajectory(auto, starved);
+    // The wait is legitimate structure: it keeps the timeline non-empty and
+    // must never be read as degenerate itself.
+    expect(trajectoryDuration(degenerate.samples)).toBeCloseTo(1, 9);
+    expect(degenerate.warnings.join('\n')).toContain(
+      'segment 1 ("Constrained") generated zero-duration motion — the robot cannot move under this config; not a valid motion plan',
+    );
+
+    // No false positive: the same structure on the default config is healthy
+    // motion plus the same wait, with no degenerate warning.
+    const healthy = generateAutoTrajectory(auto, config);
+    expect(trajectoryDuration(healthy.samples)).toBeGreaterThan(9);
+    expect(healthy.warnings.join('\n')).not.toContain('zero-duration motion');
   });
 });

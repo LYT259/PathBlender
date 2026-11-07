@@ -38,3 +38,17 @@ export function displayTimingSource(traj: Trajectory): TimingSource | undefined 
       : traj.source.startsWith('pathplanner') ? 'default-config'
       : undefined);
 }
+
+/**
+ * A session saved before `timingSource` existed can still carry the old
+ * build's `regenerated with real robot config…` claim — written when a
+ * mass-only profile already triggered it and no timing state was recorded.
+ * The badge beside it reads those sessions as default estimates, so the
+ * stale claim is dropped instead of contradicting it; a trajectory whose
+ * timingSource explicitly records its state (e.g. a current 'full-config'
+ * regeneration) keeps its legitimate warning.
+ */
+export function dropStaleTimingClaims(traj: Trajectory, warnings: string[]): string[] {
+  if (traj.timingSource !== undefined || displayTimingSource(traj) !== 'default-config') return warnings;
+  return warnings.filter((warning) => !warning.startsWith('regenerated with real robot config from profile'));
+}

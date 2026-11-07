@@ -630,6 +630,47 @@ describe('.auto regeneration', () => {
     // regeneration goes through the routine structure.
     expect(applied.warnings.join('\n')).toContain('path has unlimited global constraints');
   });
+
+  it('import-time unlimited caveats never duplicate on profile regeneration', () => {
+    // Import already carries the per-referenced-path caveat (the .auto
+    // import finding); regeneration rebuilds the warning set from the
+    // config story, so exactly one caveat must come out — not the import
+    // entry plus a regeneration copy.
+    const asJson = JSON.parse(constrainedText) as { globalConstraints: Record<string, unknown> };
+    delete asJson.globalConstraints.maxVelocity;
+    asJson.globalConstraints.unlimited = true;
+    const auto = parsePathPlannerAuto(
+      autoText,
+      'Example Auto.auto',
+      (name) => (name === 'Pickup' ? JSON.stringify(asJson) : name === 'Score' ? scoreText : undefined),
+    );
+    expect(auto.warnings.filter((w) => w.includes('unlimited global constraints'))).toHaveLength(1);
+    const applied = applyProfileToTrajectory(auto, currentLimitedProfile);
+    expect(applied.warnings.join('\n')).toContain('unlimited global constraints');
+    expect(applied.warnings.filter((w) => w.includes('unlimited global constraints'))).toHaveLength(1);
+  });
+
+  it('waits do not mask a degenerate regenerated motion segment', () => {
+    // 20 A per motor (probed in the resolveRobotConfig describe): both
+    // referenced paths degenerate to samples that never leave t=0, yet the
+    // routine's two 1 s waits hold the total at 2 s — the old total-duration
+    // zero check stayed silent behind them. Each degenerate segment is named
+    // by the generation layer instead, and the masked total-duration string
+    // no longer appears (the per-segment warnings own the story).
+    const auto = parseAuto();
+    const starved = fullProfile({ driveCurrentLimit: 20 });
+    const applied = applyProfileToTrajectory(auto, starved);
+    expect(applied.durationS).toBeLessThan(auto.durationS);
+    expect(applied.durationS).toBeCloseTo(2, 9);
+    expect(applied.timingSource).toBe('full-config');
+    expect(applied.warnings.join('\n')).toContain(
+      'segment 1 ("Pickup") generated zero-duration motion',
+    );
+    expect(applied.warnings.join('\n')).toContain(
+      'segment 5 ("Score") generated zero-duration motion',
+    );
+    expect(applied.warnings.join('\n')).not.toContain('generated timeline has zero duration');
+  });
 });
 
 describe('applyProfileToRobot (unified application, Task 6)', () => {
