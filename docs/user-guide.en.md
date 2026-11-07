@@ -49,7 +49,7 @@ practised first on the built-in **Try an example** session.
 | PathPlanner | `.path` + `.auto` | Take the files from the project folder; **every `.path` referenced by an `.auto` must be imported in the same batch** |
 | PathPlanner (bonus) | `settings.json` | Import it too and every robot gets the project's real bumper size |
 | 103 Collaborative fork | `.ghostauto` | Export a ghost from the fork — it carries the robot size and team name |
-| Any custom auto code | `.wpilog` | Copy the robot log (the roboRIO's onboard `logs` folder, or wherever your logger writes); convert `.hoot` logs to `.wpilog` with Phoenix Tuner first |
+| Any custom auto code | `.wpilog` | Copy the robot log (the roboRIO's onboard `logs` folder, or wherever your logger writes). `.hoot` logs: import directly in the desktop app — the first import asks for consent, downloads CTRE's official converter and converts locally (logs never uploaded); on the web, convert to `.wpilog` with Phoenix Tuner first |
 
 **What you should have**: at least one path file per team, with each
 `.auto` in the same folder as the `.path` files it references so they can
