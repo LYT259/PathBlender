@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import {
   applyProfileToTrajectory,
   DCMotor,
+  DEFAULT_GEOMETRY,
   deserializeSession,
   dynamicsConfigComplete,
   makeSession,
@@ -13,6 +14,7 @@ import {
   resolveRobotConfig,
   serializeSession,
 } from '../src';
+import type { RobotProfile } from '../src';
 
 const SAMPLES = resolve(__dirname, '../../../samples');
 const read = (rel: string) => readFileSync(resolve(SAMPLES, rel), 'utf-8');
@@ -152,22 +154,27 @@ describe('applyProfileToTrajectory (real-robot regeneration)', () => {
     expect(applied.massKG).toBe(61.2);
   });
 
-  it('fills unlimited global constraints from profile generation defaults, never file data', () => {
-    const profile = parseRobotProfile(
+  it('unlimited global constraints are never backfilled from the profile', () => {
+    const withDefaults = parseRobotProfile(
       JSON.stringify({
         robotConfig: { robotWidth: 0.9, robotLength: 0.9, robotMass: 65 },
         generationSettings: { defaultMaxVel: 3.0, defaultMaxAccel: 2.0 },
       }),
       'a/settings.json',
     )!;
+    const noDefaults = parseRobotProfile(
+      JSON.stringify({ robotConfig: { robotWidth: 0.9, robotLength: 0.9, robotMass: 65 } }),
+      'a/settings.json',
+    )!;
 
-    // File-carried constraints (Pickup.path) must survive untouched (v1.14).
-    const applied = applyProfileToTrajectory(traj, profile);
+    // File-carried constraints (constrained_pointing.path) must survive
+    // application untouched (v1.14): a constrained path stays constrained.
+    const applied = applyProfileToTrajectory(traj, withDefaults);
     const carried = (applied.editable as unknown as { path: { globalConstraints: { unlimited: boolean } } }).path;
     expect(carried.globalConstraints.unlimited).toBe(false);
 
-    // An unlimited path (the "no constraint" marker) takes the profile's
-    // project defaults instead of the generator's invented ones.
+    // An unlimited path (the "no constraint" marker) stays exactly as the
+    // file wrote it — upstream never merges project defaults into a path.
     const unlimitedTraj = {
       ...traj,
       editable: {
@@ -182,11 +189,40 @@ describe('applyProfileToTrajectory (real-robot regeneration)', () => {
         },
       },
     } as typeof traj;
-    const filled = applyProfileToTrajectory(unlimitedTraj as Parameters<typeof applyProfileToTrajectory>[0], profile);
-    const gc = (filled.editable as unknown as { path: { globalConstraints: { unlimited: boolean; maxVelocityMPS: number; maxAccelerationMPSSq: number } } }).path.globalConstraints;
-    expect(gc.unlimited).toBe(false);
-    expect(gc.maxVelocityMPS).toBe(3.0);
-    expect(gc.maxAccelerationMPSSq).toBe(2.0);
+    const filled = applyProfileToTrajectory(unlimitedTraj as Parameters<typeof applyProfileToTrajectory>[0], withDefaults);
+    const gc = (filled.editable as unknown as { path: { globalConstraints: { unlimited: boolean; maxVelocityMPS: number } } }).path.globalConstraints;
+    expect(gc.unlimited).toBe(true);
+    expect(gc.maxVelocityMPS).toBe(999);
+    // Carrying generationSettings must be indistinguishable from not
+    // carrying them: the defaults never reach the path.
+    const filledNoDefaults = applyProfileToTrajectory(
+      unlimitedTraj as Parameters<typeof applyProfileToTrajectory>[0],
+      noDefaults,
+    );
+    expect(filled.durationS).toBe(filledNoDefaults.durationS);
+  });
+
+  it('unlimited path keeps the estimate warning lineage', () => {
+    // Re-parse the sample with the velocity cap omitted so the parser maps
+    // it to +∞ and parse-time warnings carry the unlimited caveat; profile
+    // application must not silently drop that honesty marker.
+    const asJson = JSON.parse(read('pathplanner/constrained_pointing.path')) as {
+      globalConstraints: Record<string, unknown>;
+    };
+    delete asJson.globalConstraints.maxVelocity;
+    asJson.globalConstraints.unlimited = true;
+    const unlimited = parsePathFile(JSON.stringify(asJson), 'constrained_pointing.path');
+    expect(unlimited.warnings.join('\n')).toContain('path has unlimited global constraints');
+
+    const profile = parseRobotProfile(
+      JSON.stringify({
+        robotConfig: { robotWidth: 0.9, robotLength: 0.9, robotMass: 65 },
+        generationSettings: { defaultMaxVel: 3.0, defaultMaxAccel: 2.0 },
+      }),
+      'a/settings.json',
+    )!;
+    const applied = applyProfileToTrajectory(unlimited, profile);
+    expect(applied.warnings.join('\n')).toContain('path has unlimited global constraints');
   });
 
   it('keeps Choreo samples untouched (embedded, never regenerated)', () => {
@@ -283,6 +319,25 @@ describe('resolveRobotConfig (motor, current, provenance)', () => {
     expect(resolved.provenance.driveCurrentLimitA).toBe('invalid');
     // Holonomic module = 1 motor → the per-module default stays 60 A.
     expect(resolved.config.moduleConfig.driveCurrentLimitA).toBe(60);
+  });
+
+  it('hand-built profile with non-positive gearing never scales the motor with it', () => {
+    // Public-API path: a hand-built RobotProfile skips the parser guards
+    // (Task 2 review minor), so resolveRobotConfig itself must treat a
+    // non-positive driveGearing like a rejected file value — the default
+    // 5.143 reduction applies, consistent with the provenance entry.
+    const handBuilt: RobotProfile = {
+      name: 'hand-built',
+      geometry: DEFAULT_GEOMETRY,
+      moduleLocations: [],
+      holonomic: true,
+      dynamics: { driveGearing: -3, driveMotorType: 'krakenX60' },
+    };
+    const resolved = resolveRobotConfig(handBuilt);
+    expect(resolved.provenance.driveGearing).toBe('invalid');
+    // Kraken X60 stall 7.09 N·m × default 5.143 = 36.46387 N·m at the
+    // wheel; scaling with -3 would give -21.27 N·m.
+    expect(resolved.config.moduleConfig.driveMotor.stallTorqueNM).toBeCloseTo(36.46387, 3);
   });
 
   it('non-positive mass and MOI are rejected as invalid, not passed to dynamics', () => {

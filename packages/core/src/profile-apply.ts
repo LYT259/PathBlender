@@ -9,6 +9,15 @@
  * the app default: the "timing is an estimate" story ends there. Choreo
  * imports embed their samples and are never regenerated.
  *
+ * The path's own constraint set is authoritative: a file marked
+ * `unlimited` regenerates unlimited — profile generation defaults are
+ * parsed data only and never backfill a path. Upstream at v2025.2.7
+ * (lib/path/pathplanner_path.dart, verified at the pinned tag) loads
+ * globalConstraints verbatim via `PathConstraints.fromJson(
+ * json['globalConstraints'] ?? {})` and `_constraintsForPos` maps
+ * `unlimited` to double-infinity constraints without ever merging project
+ * settings into a loaded path.
+ *
  * resolveRobotConfig is the single profile→generator-config seam: it maps
  * the profile onto a RobotConfig and records per-parameter provenance
  * (file / default / invalid / unsupported) for downstream timing honesty.
@@ -18,7 +27,6 @@ import { DCMotor } from './pathplanner/dc-motor';
 import { generateTrajectory } from './pathplanner/generation';
 import { makeRobotConfig } from './pathplanner/robot-config';
 import type { RobotConfig } from './pathplanner/robot-config';
-import type { ParsedPath } from './pathplanner/path-model';
 import type { RobotProfile } from './parsers/robot-profile';
 import type { Trajectory, TrajectorySample } from './types';
 import { trajectoryDuration } from './types';
@@ -76,9 +84,13 @@ export function dynamicsConfigComplete(provenance: DynamicsProvenance): boolean 
  * file, was invalid, is an unsupported motor, or fell back to the default.
  * Mirrors upstream RobotConfig.fromPrefs / ModuleConfig.fromPrefs
  * (lib/trajectory/config.dart at v2025.2.7): numMotors = holonomic ? 1 : 2,
- * driveMotor = DCMotor.fromString(type, numMotors).withReduction(gearing ?? 5.143),
- * driveCurrentLimit = per-motor file value × numMotors (the config field is
- * the per-module total; the file field is per motor).
+ * driveMotor = DCMotor.fromString(type, numMotors).withReduction(gearing ?? 5.143)
+ * (upstream substitutes Defaults.driveGearing when the pref is absent; here
+ * the reduction is provenance-gated so a non-positive gearing from an
+ * untrusted hand-built profile also falls back to 5.143, never scales the
+ * motor with the invalid value), driveCurrentLimit = per-motor file value ×
+ * numMotors (the config field is the per-module total; the file field is
+ * per motor).
  *
  * The profile's defaultNominalVoltage is deliberately not substituted into
  * the path constraints: upstream generation takes applied voltage only from
@@ -144,7 +156,9 @@ export function resolveRobotConfig(profile: RobotProfile): ResolvedRobotConfig {
       wheelCOF: fromFile(sources.wheelCOF, d.wheelCOF),
       driveMotor:
         knownMotor !== undefined
-          ? DCMotor.fromString(knownMotor, numMotors).withReduction(d.driveGearing ?? 5.143)
+          ? DCMotor.fromString(knownMotor, numMotors).withReduction(
+              fromFile(sources.driveGearing, d.driveGearing) ?? 5.143,
+            )
           : undefined,
       // File value is per motor; the config limit is the per-module total.
       driveCurrentLimitA:
@@ -154,28 +168,6 @@ export function resolveRobotConfig(profile: RobotProfile): ResolvedRobotConfig {
     },
   });
   return { config, provenance: sources, unknownMotorType };
-}
-
-/**
- * Project-wide generation defaults fill in a path whose global constraints
- * are unlimited (§6.6 默认约束→兜底): the file said "no constraint", the
- * profile supplies the team's real defaults instead of invented numbers.
- */
-function withConstraintFallback(path: ParsedPath, profile: RobotProfile): ParsedPath {
-  const dc = profile.defaultConstraints;
-  if (!dc || !path.globalConstraints.unlimited) return path;
-  return {
-    ...path,
-    globalConstraints: {
-      ...path.globalConstraints,
-      unlimited: false,
-      maxVelocityMPS: dc.maxVelMPS ?? path.globalConstraints.maxVelocityMPS,
-      maxAccelerationMPSSq: dc.maxAccelMPSS ?? path.globalConstraints.maxAccelerationMPSSq,
-      maxAngularVelocityRadPS: dc.maxAngVelRadPS ?? path.globalConstraints.maxAngularVelocityRadPS,
-      maxAngularAccelerationRadPSSq:
-        dc.maxAngAccelRadPSSq ?? path.globalConstraints.maxAngularAccelerationRadPSSq,
-    },
-  };
 }
 
 /**
@@ -201,9 +193,14 @@ export function applyProfileToTrajectory(traj: Trajectory, profile: RobotProfile
   // Real-robot regeneration through the profile→config seam. Fields the
   // profile omits (or that were rejected as invalid) fall back to the
   // generator defaults one by one, so a mass-only profile still re-times
-  // the path on real mass.
+  // the path on real mass. The path is regenerated verbatim: an unlimited
+  // global-constraints marker stays unlimited — upstream v2025.2.7
+  // (lib/path/pathplanner_path.dart, verified at the pinned tag) loads
+  // globalConstraints from the file JSON as-is and maps `unlimited` to
+  // unconstrained values in _constraintsForPos without merging project
+  // settings, so profile generation defaults never backfill the path.
   const { config, unknownMotorType } = resolveRobotConfig(profile);
-  const path = withConstraintFallback(editable.path, profile);
+  const path = editable.path;
   const generated = generateTrajectory(path, config);
   if (generated.samples.length < 2) return base;
   const samples = generated.samples as TrajectorySample[];
@@ -219,6 +216,12 @@ export function applyProfileToTrajectory(traj: Trajectory, profile: RobotProfile
         ? [
             `drive motor "${unknownMotorType}" not supported (timing uses the default Kraken X60 model)`,
           ]
+        : []),
+      // Same condition as the parse-time warning (parsers/pathplanner-path.ts):
+      // it lives in the trajectory warnings, not parseWarnings, so
+      // regeneration re-issues it for a path that is still unlimited.
+      ...(!Number.isFinite(path.globalConstraints.maxVelocityMPS)
+        ? ['path has unlimited global constraints; results may be unrealistic']
         : []),
       ...path.parseWarnings,
     ],

@@ -55,7 +55,7 @@ export interface ProfileDynamics {
   driveCurrentLimitA?: number;
 }
 
-/** PP settings.json generation defaults, used when a path is unlimited. */
+/** PP settings.json generation defaults, carried as parsed project data. */
 export interface ProfileDefaultConstraints {
   maxVelMPS?: number;
   maxAccelMPSS?: number;
