@@ -77,6 +77,18 @@ describe('workspace workflow', () => {
     fireEvent.keyDown(control, { key: 'Escape' });
   });
 
+  it('season picker shows the FIRST-official Chinese season name', async () => {
+    localStorage.setItem('pb.lang', 'zh');
+    render(<App />);
+    await importSamples('ghostauto/straight_run.ghostauto');
+    const control = document.querySelector<HTMLElement>('.field-select')!;
+    const list = openCombobox(control);
+    const option = within(list).getAllByRole('option')
+      .find((o) => o.getAttribute('data-value') === 'rebuilt-2026')!;
+    expect(option.textContent).toBe('发掘重建 2026');
+    fireEvent.keyDown(control, { key: 'Escape' });
+  });
+
   it('returns from robot details to checks without removing a robot', async () => {
     render(<App />);
     await importSamples('ghostauto/straight_run.ghostauto', 'ghostauto/stop_and_score.ghostauto');

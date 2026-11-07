@@ -217,14 +217,14 @@ describe('i18n dictionaries', () => {
     'season.rapidreact2022', 'season.chargedup2023', 'season.crescendo2024', 'season.reefscape2025', 'season.rebuilt2026'],
     'zh': ['sequence.startGroupHub',
     'sequence.startGroupTrench',
-    'season.rapidreact2022', 'season.chargedup2023', 'season.crescendo2024', 'season.reefscape2025', 'season.rebuilt2026'],
+    'season.rapidreact2022', 'season.chargedup2023', 'season.crescendo2024'],
     'zh-hk': ["sequence.startGroupHub","sequence.startGroupTrench",
-    'season.rapidreact2022', 'season.chargedup2023', 'season.crescendo2024', 'season.reefscape2025', 'season.rebuilt2026'],
+    'season.rapidreact2022', 'season.chargedup2023', 'season.crescendo2024'],
     'zh-mo': ["sequence.startGroupHub","sequence.startGroupTrench",
-    'season.rapidreact2022', 'season.chargedup2023', 'season.crescendo2024', 'season.reefscape2025', 'season.rebuilt2026'],
+    'season.rapidreact2022', 'season.chargedup2023', 'season.crescendo2024'],
     'zh-tw': ['sequence.startGroupHub',
     'sequence.startGroupTrench',
-    'season.rapidreact2022', 'season.chargedup2023', 'season.crescendo2024', 'season.reefscape2025', 'season.rebuilt2026'],
+    'season.rapidreact2022', 'season.chargedup2023', 'season.crescendo2024'],
     // en-GB is English by construction (an 8-row override table over en), so
     // the residue gate is meaningless for it and it is skipped below; its own
     // suite ("English (United Kingdom) dictionary") pins the override shape.
