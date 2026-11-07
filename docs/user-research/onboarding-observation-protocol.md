@@ -55,6 +55,9 @@ Hand this list to the participant (in their language). Do not demonstrate anythi
 >
 > 按你平时的方式操作。如果愿意，请说出你在看什么、预期会怎样。不会弄坏任何东西：分析视图不会改写你的文件或机器人程序。
 
+**Moderator note — do not read aloud / 主持人注意——不向参与者宣读.** The preamble reassurance above is deliberate — keep it, so participants dare to explore — but it hands participants the criterion-4 fact, so the preamble itself is **excluded as evidence** for criterion 4. Score criterion 4 only from **unprompted** understanding or behavior during the relevant tasks (compare a route, mirror, alliance switch): for example, the participant says on their own that a changed route or a mirrored robot does not touch their real files or robot program, asks whether anything was saved, or checks/exports on their own initiative. Anything the participant says only after the moderator raises the topic does not count. Quote the observed basis on the record sheet (Part 3).
+/ 上面引言中的安抚是刻意保留的——让参与者敢于尝试——但它把标准 4 的事实直接告诉了参与者，因此引言本身对标准 4 **不作为证据**。标准 4 只依据相关任务（比较路线、镜像、联盟切换）中的**未经提示**的理解或行为评分：例如参与者主动说出换路线/镜像不会动到真实文件或机器人程序、主动询问是否保存了什么、或自己去核对/导出。主持人提起该话题之后参与者才说的不算。把观察到的依据逐字记入记录表（第 3 部分）。
+
 1. **Get started / 入门:** bring robots onto the field — either via the built-in example ("Try an example" / 「体验示例」) or by importing your own team's files / 让机器人出现在场地上：通过内置示例（「体验示例」）或导入你自己队伍的文件。
 2. **Replay together / 同时回放:** play the shared timeline so the robots move together, then pause / 播放共享时间轴，让机器人一起运动，然后暂停。
 3. **Locate a check result / 定位检查结果:** find the checks panel and jump to a reported problem moment / 找到检查面板，并跳转到某个问题时刻。
@@ -95,6 +98,7 @@ Per-task record / 逐任务记录:
 Closing fields / 收尾字段:
 
 - Verbatim purpose answer (criterion 1) / 用途回答逐字记录（标准 1）: "________"
+- Criterion 4 basis — unprompted understanding/behavior only; the preamble reassurance is excluded as evidence (quote it) / 标准 4 依据——仅限未经提示的理解或行为；引言安抚不作为证据（逐字引用）: ________
 - Six-criteria checklist below: observed / not observed / not applicable, with a note each / 六条标准逐条勾选：观察到／未观察到／不适用，并附备注。
 - Hints the moderator had to give, quoted / 主持人不得不给出的提示，逐字记录: ________
 - Anything that surprised the moderator / 主持人意外之处: ________

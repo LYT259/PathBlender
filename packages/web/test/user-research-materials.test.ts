@@ -20,4 +20,11 @@ describe('§六 observation materials', () => {
     expect(doc).toMatch(/# .*[Oo]bservation/);
     expect(doc).toMatch(/观察|知情同意/);
   });
+  it('keeps the reassurance but scores criterion 4 only from unprompted behavior', () => {
+    expect(doc).toContain('never rewrites your files');
+    expect(doc).toMatch(/unprompted/);
+    expect(doc).toMatch(/excluded as evidence/);
+    expect(doc).toMatch(/不作为证据/);
+    expect(doc).toMatch(/未经提示/);
+  });
 });
