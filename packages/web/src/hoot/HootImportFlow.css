@@ -1,0 +1,45 @@
+/* HOOT import flow dialog: EULA → converter download → per-file conversion.
+   Mirrors WpilogImportDialog's minimal sizing and action-row style. */
+
+.hoot-dialog {
+  width: min(520px, calc(100vw - 32px));
+}
+
+.hoot-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hoot-body h3 {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.hoot-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  margin: 0;
+}
+
+.hoot-progress progress {
+  width: 100%;
+}
+
+.hoot-error {
+  color: var(--danger, #ff453a);
+  font-size: 13px;
+  margin: 0;
+}
+
+.hoot-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
