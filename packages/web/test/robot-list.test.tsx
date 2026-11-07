@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { makeSession, parseGhostAuto, type SessionTrajectory } from '@pathblender/core';
+import { makeSession, parseGhostAuto, type SessionTrajectory, type TimingSource } from '@pathblender/core';
 import { I18nProvider } from '../src/i18n';
 import { RobotInspector, RobotList } from '../src/components/RobotList';
 
@@ -259,5 +259,56 @@ describe('always-visible mirror button (2026-10-05)', () => {
     // Without the App wiring the button renders disabled instead of dead.
     rerender(<I18nProvider><RobotList {...base} /></I18nProvider>);
     expect(screen.getByRole('button', { name: 'Mirror left/right' })).toBeDisabled();
+  });
+});
+
+describe('timing source badge', () => {
+  /** A restored pre-2026-11-07 session carries no timingSource — the source
+   *  field is then the only timing evidence, exactly like these fixtures. */
+  function timingRobot(source: SessionTrajectory['trajectory']['source'], timingSource?: TimingSource): SessionTrajectory {
+    const sample = robot();
+    sample.trajectory.source = source;
+    sample.trajectory.timingSource = timingSource;
+    return sample;
+  }
+  // Hand-checked English literals: the label shown and the hint exposed as
+  // the badge title, one row per timing state.
+  const STATES: ReadonlyArray<[TimingSource, string, string]> = [
+    ['default-config', 'Default-estimate timing', 'Estimated with PathBlender’s default robot config'],
+    ['partial-config', 'Partial-config timing', 'Some timing parameters fell back to PathBlender defaults'],
+    ['full-config', 'Real-config timing', 'Generated from this team’s imported robot config — still a plan, not a measurement'],
+    ['logged', 'Logged run', 'Recorded from the robot’s log during an actual run'],
+  ];
+
+  it('shows the badge for each timing state', () => {
+    for (const [timingSource, label, hint] of STATES) {
+      const view = render(<I18nProvider><RobotInspector robot={timingRobot('pathplanner-path', timingSource)} {...inspectorCallbacks()} /></I18nProvider>);
+      const badge = screen.getByText(label);
+      expect(badge).toHaveAttribute('title', hint);
+      // The geometry badge stays beside it: size-imported ≠ time-calibrated.
+      expect(screen.getByText('From file')).toBeInTheDocument();
+      view.unmount();
+    }
+    // Choreo carries its own samples; PathBlender makes no timing claim.
+    render(<I18nProvider><RobotInspector robot={timingRobot('choreo-traj', undefined)} {...inspectorCallbacks()} /></I18nProvider>);
+    for (const [, label] of STATES) {
+      expect(screen.queryByText(label)).not.toBeInTheDocument();
+    }
+  });
+
+  it('old sessions read as default estimate', () => {
+    const planner = render(<I18nProvider><RobotInspector robot={timingRobot('pathplanner-path', undefined)} {...inspectorCallbacks()} /></I18nProvider>);
+    expect(screen.getByText('Default-estimate timing')).toBeInTheDocument();
+    expect(screen.queryByText('Logged run')).not.toBeInTheDocument();
+    planner.unmount();
+    // A pre-timingSource WPILOG session was a real recorded run.
+    render(<I18nProvider><RobotInspector robot={timingRobot('wpilog', undefined)} {...inspectorCallbacks()} /></I18nProvider>);
+    expect(screen.getByText('Logged run')).toBeInTheDocument();
+  });
+
+  it('partial badge does not claim real config', () => {
+    render(<I18nProvider><RobotInspector robot={timingRobot('pathplanner-path', 'partial-config')} {...inspectorCallbacks()} /></I18nProvider>);
+    expect(screen.getByText('Partial-config timing')).toBeInTheDocument();
+    expect(screen.queryByText('Real-config timing')).not.toBeInTheDocument();
   });
 });

@@ -107,6 +107,14 @@
 .robot-data-source { display: inline-flex; align-items: center; gap: 5px; min-height: 25px; padding: 3px 7px; border-radius: 6px; font-size: 11px; font-weight: 600; }
 .robot-data-source.is-verified { color: var(--badge-ok-fg); background: var(--badge-ok-bg); border-color: color-mix(in srgb, var(--badge-ok-fg) 55%, var(--border)); }
 .robot-data-source.is-missing { background: var(--badge-err-bg); color: var(--badge-err-fg); border-color: var(--badge-err-fg); }
+/* Timing provenance (2026-11-07) is its own axis next to the geometry badge:
+   text + title carry the state; the tones reuse existing tokens only —
+   partial takes the missing badge's warn-tinted color-mix, config-based
+   timing takes the settings-upload button's accent pairing, and a logged
+   run shares the geometry badge's verified green (a real measurement). */
+.robot-inspector-badges { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.robot-data-source.is-timing.is-partial { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 30%, var(--border)); }
+.robot-data-source.is-timing.is-full { color: var(--accent-text); background: var(--accent-dim); border-color: color-mix(in srgb, var(--accent-text) 45%, var(--border)); }
 .robot-dimensions > .robot-dimension-card { padding: 11px 10px; border-width: 1.5px; }
 .robot-dimensions > .robot-dimension-card.is-verified { border-color: var(--badge-ok-fg); background: color-mix(in srgb, var(--badge-ok-bg) 50%, var(--bg-panel)); }
 .robot-dimensions > .robot-dimension-card.is-default { border-color: var(--badge-err-fg); background: color-mix(in srgb, var(--badge-err-bg) 50%, var(--bg-panel)); }

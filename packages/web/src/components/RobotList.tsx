@@ -8,8 +8,19 @@ import { RobotContextMenu } from './RobotContextMenu';
 import { formatLength, formatLengthNumber, useLengthUnit } from '../length-units';
 import './RobotList.css';
 import { useTeamOrderUI, type TeamOrderUI } from './TeamOrderUI';
-import { inspectorWarnings } from '../robot-profile-ui';
+import { displayTimingSource, inspectorWarnings } from '../robot-profile-ui';
 import { robotIdentity, robotOriginalIdentity } from '../robot-identity';
+
+/** Timing-provenance chip beside the geometry badge (§16.39 direction 4):
+ *  size-imported ≠ time-calibrated, so timing keeps its own badge — and only
+ *  a logged run borrows the geometry badge's verified green, because a
+ *  measurement is the one timing state as trustworthy as file geometry. */
+const TIMING_BADGES = {
+  'default-config': { label: 'robots.timingDefault', hint: 'robots.timingDefaultHint', state: '' },
+  'partial-config': { label: 'robots.timingPartial', hint: 'robots.timingPartialHint', state: ' is-partial' },
+  'full-config': { label: 'robots.timingFull', hint: 'robots.timingFullHint', state: ' is-full' },
+  'logged': { label: 'robots.timingLogged', hint: 'robots.timingLoggedHint', state: ' is-verified' },
+} as const;
 
 interface RobotListProps {
   teamOrder?: TeamOrderUI;
@@ -225,6 +236,7 @@ export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: Robot
   const id = trajectory.id;
   const fileGeometry = trajectory.geometrySource === 'file';
   const warnings = inspectorWarnings(trajectory.warnings);
+  const timing = displayTimingSource(trajectory);
 
   return (
     <section className="robot-inspector" key={id} aria-label={trajectory.name}>
@@ -236,7 +248,12 @@ export function RobotInspector({ robot, libraryProfiles, onApplyProfile }: Robot
       <section className="robot-inspector-section">
         <div className="robot-inspector-section-heading">
           <h3>{t('robots.data')}</h3>
-          <span className={`robot-data-source${fileGeometry ? ' is-verified' : ' is-missing'}`}>{fileGeometry ? t('robots.fromFile') : <><Icon name="warning" size={13} />{t('robots.notUploaded')}</>}</span>
+          <span className="robot-inspector-badges">
+            <span className={`robot-data-source${fileGeometry ? ' is-verified' : ' is-missing'}`}>{fileGeometry ? t('robots.fromFile') : <><Icon name="warning" size={13} />{t('robots.notUploaded')}</>}</span>
+            {timing && (
+              <span className={`robot-data-source is-timing${TIMING_BADGES[timing].state}`} title={t(TIMING_BADGES[timing].hint)}>{t(TIMING_BADGES[timing].label)}</span>
+            )}
+          </span>
         </div>
         <p className="robot-inspector-caption">{t('robots.bumper')}</p>
         <dl className="robot-dimensions">
