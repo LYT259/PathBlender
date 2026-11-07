@@ -20,6 +20,9 @@
 如果有帮助，可以[在 GitHub 上点 Star 支持 PathBlender](https://github.com/LYT259/pathblender)。
 遇到问题请[提交 issue](https://github.com/LYT259/pathblender/issues)，无需公开自己的路径文件。
 
+想先看一遍？一段 83 秒的演示涵盖导入、同一时钟回放、定位检查结果、比较路线与左右镜像：
+[演示视频（MP4）](screenshots/demo-video.zh.mp4)、[字幕（WebVTT）](screenshots/demo-video.zh.vtt)。
+
 ## 第一次完成联盟路径检查
 
 按下面七步走一遍，就能从零完成一次联盟路径检查。手头没有文件？每一步都可以先用欢迎页的**体验示例**练一遍。
