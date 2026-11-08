@@ -130,7 +130,12 @@ interface RunResult {
 // ---------------------------------------------------------------------------
 
 function sha256Of(path: string): string {
-  return createHash('sha256').update(readFileSync(path)).digest('hex');
+  // LF-normalized: the pins describe the repository blobs (LF); a Windows
+  // runner checkout rewrites them to CRLF on disk, which is a transport
+  // artifact, not a fixture change. Any real content change still mismatches.
+  return createHash('sha256')
+    .update(readFileSync(path, 'utf-8').replace(/\r\n/g, '\n'))
+    .digest('hex');
 }
 
 function readFixtureFile(dir: string, file: string, caseName: string): string {
@@ -723,6 +728,41 @@ describe('reference harness loader (constructed fixtures)', () => {
       ],
     });
     expect(() => loadReferenceFixtures(dir)).toThrow(/sha256.*One\.path/i);
+  });
+
+  it('accepts CRLF working-tree bytes against the LF pin (Windows checkout parity)', () => {
+    const dir = makeFixtureDir();
+    const lfText = `${JSON.stringify(SAMPLE_SETTINGS, null, 1)}\n`;
+    // Simulate a Windows runner checkout: git autocrlf rewrites the LF blob
+    // to CRLF on disk. The pin stays the LF-blob hash, so verification must
+    // normalize before hashing — a real content change still mismatches.
+    writeFileSync(join(dir, 'settings.json'), lfText.replace(/\n/g, '\r\n'));
+    writeJson(dir, 'One.path', straightPath(0, 1));
+    writeJson(dir, 'golden-one.json', {
+      totalTimeS: 2,
+      states: [
+        { t: 0, x: 0, y: 0, holonomicRotDeg: 0, linearVelocity: 0 },
+        { t: 1, x: 0.5, y: 0, holonomicRotDeg: 0, linearVelocity: 1 },
+        { t: 2, x: 1, y: 0, holonomicRotDeg: 0, linearVelocity: 0 },
+      ],
+    });
+    writeJson(dir, 'manifest.json', {
+      version: 1,
+      cases: [
+        {
+          name: 'crlf-checkout',
+          kind: 'path',
+          pathFile: 'One.path',
+          settingsFile: 'settings.json',
+          goldenFile: 'golden-one.json',
+          sha256: { 'settings.json': createHash('sha256').update(lfText).digest('hex') },
+          expected: { durationS: 2, endX: 1, endY: 0, endHeadingDeg: 0 },
+        },
+      ],
+    });
+    const fixtures = loadReferenceFixtures(dir);
+    expect(fixtures).toHaveLength(1);
+    expect(fixtures[0]!.name).toBe('crlf-checkout');
   });
 
   it('loads a valid case with expected literals, tolerances, and golden states', () => {

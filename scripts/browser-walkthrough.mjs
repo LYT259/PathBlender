@@ -29,6 +29,7 @@
 import { chromium } from 'playwright-core';
 import { mkdirSync, readFileSync, readdirSync as readdir } from 'node:fs';
 import { resolve } from 'node:path';
+import { sampleFiles } from './walkthrough-samples.mjs';
 
 const BASE = process.env.WALK_BASE ?? 'http://localhost:4173/';
 const SHOTS = process.env.WALK_SHOTS ?? '/tmp/pb-shots';
@@ -725,9 +726,9 @@ page3.on('pageerror', (e) => stressErrors.push(String(e)));
 // software-GL teardown stall cannot bite here; the default wait is fine.
 await page3.goto(BASE, { waitUntil: 'domcontentloaded' });
 const allSamples = [
-  ...(await readdir(`${SAMPLES}/traj`)).map((f) => `${SAMPLES}/traj/${f}`),
-  ...(await readdir(`${SAMPLES}/ghostauto`)).map((f) => `${SAMPLES}/ghostauto/${f}`),
-  ...(await readdir(`${SAMPLES}/pathplanner`)).map((f) => `${SAMPLES}/pathplanner/${f}`),
+  ...(await sampleFiles(`${SAMPLES}/traj`)),
+  ...(await sampleFiles(`${SAMPLES}/ghostauto`)),
+  ...(await sampleFiles(`${SAMPLES}/pathplanner`)),
 ];
 await page3.locator('input[type="file"][multiple]').first().setInputFiles(allSamples);
 await page3.waitForFunction(
