@@ -32,7 +32,7 @@
 | PathPlanner | `.path` + `.auto` | 从项目目录拿文件；**`.auto` 引用到的每个 `.path` 必须同批导入** |
 | PathPlanner（加分项） | `settings.json` | 一起导入，所有机器人获得该项目的真实保险杠尺寸 |
 | 103 Collaborative fork | `.ghostauto` | 从 fork 导出 ghost——自带机器人尺寸与队名 |
-| 任意自定义 auto 代码 | `.wpilog` | 拷走机器人日志（roboRIO 板载 `logs` 目录，或你日志器的输出目录）；`.hoot` 日志先用 Phoenix Tuner 转成 `.wpilog` |
+| 任意自定义 auto 代码 | `.wpilog` | 拷走机器人日志（roboRIO 板载 `logs` 目录，或你日志器的输出目录）。`.hoot` 日志：桌面版可直接导入——首次导入经同意后下载 CTRE 官方转换器、本机转换（日志不上传）；网页版先用 Phoenix Tuner 转成 `.wpilog` |
 
 **应该看到什么**：每个队至少一份路径文件；`.auto` 连同它引用的 `.path` 放在同一个文件夹里等会儿一起选。
 **没出现预期结果怎么办**：只拿到 `.path` 也能导入——轨迹会按通用机器人参数本地重算并标注「时间为估算值」（见 FAQ）。

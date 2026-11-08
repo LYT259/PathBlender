@@ -91,6 +91,15 @@ export type {
   ProtoMessageDesc,
   ProtoValue,
 } from './parsers';
+// CTRE .hoot (2026-11, HOOT desktop import): header probe gates the
+// owlet-converter flow before any EULA/download work happens.
+export {
+  HOOT_COMPLIANCY_OFFSET,
+  HOOT_MIN_COMPLIANCY,
+  isHootFileName,
+  probeHootFile,
+} from './parsers/hoot';
+export type { HootProbeResult } from './parsers/hoot';
 export type { RobotProfile, ProfileDynamics, ProfileDefaultConstraints } from './parsers/robot-profile';
 export { applyProfileToTrajectory } from './profile-apply';
 export type { AutoSegment } from './parsers/pathplanner-auto';

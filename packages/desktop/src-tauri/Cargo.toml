@@ -1,6 +1,6 @@
 [package]
 name = "pathblender-desktop"
-version = "0.1.10-beta.9"
+version = "0.1.10-beta.11"
 description = "PathBlender — FRC alliance path fusion viewer (desktop shell)"
 edition = "2021"
 
@@ -13,12 +13,31 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 base64 = "0.22"
+# reqwest/tempfile are already in Cargo.lock (transitive via tauri) — declared
+# directly here to reuse those pinned versions; sha1 is the only new crate.
+# (TLS: reqwest 0.13 renamed 0.12's "rustls-tls" and its "rustls" feature
+# force-enables the aws-lc provider; "rustls-no-provider" matches the stack
+# tauri-plugin-updater already uses in this lock — hyper-rustls with the ring
+# provider installed process-wide at runtime; see tauri-plugin-updater 2.14.1
+# src/updater.rs in the cargo registry, rustls::crypto::ring::
+# default_provider().install_default().)
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }
+# Declared directly so hoot.rs can install the process-default rustls ring
+# CryptoProvider before its first download request (tauri-plugin-updater's
+# guarded idiom, src/updater.rs) — the updater plugin may never run in a
+# session that only imports HOOT logs. Mirrors the updater's rustls-tls spec
+# (version 0.23, ring, no defaults) and reuses the locked rustls; the
+# updater's default features already enable the same crate+feature, so this
+# adds no second TLS stack and no new lock entries.
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha1 = "0.10"
+tempfile = "3"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # Same versions as the existing lockfile entries (transitive via tauri on

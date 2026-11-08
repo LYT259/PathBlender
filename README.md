@@ -54,9 +54,12 @@ You can also [follow me](https://github.com/LYT259) for updates and future proje
 
 PathBlender compares imported plans. It does not run robot code, and its
 collision checks depend on the paths, timing and robot dimensions supplied.
-`.hoot` logs are not read directly — convert them to `.wpilog` with Phoenix
-Tuner first (verified against WPILib-written logs; CTRE-converted files
-should work but were not tested end-to-end).
+`.hoot` logs: the desktop app imports them directly — the first import asks
+for your consent, downloads CTRE's official owlet converter, and converts
+the log locally; logs are never uploaded. On the web, convert `.hoot` to
+`.wpilog` with Phoenix Tuner first. `.wpilog` import is verified against
+WPILib-written logs; owlet-converted output from real CTRE logs is not yet
+tested end-to-end.
 
 - **PathPlanner `.path`:** generation reads supported speed and acceleration
   constraints from the file. Robot configuration starts with defaults;

@@ -79,3 +79,58 @@
 | `samples/pathplanner/*.path`、`*.auto` | Phase 2 存档 |
 
 损坏样本（`samples/invalid/`）随解析器实现补充：截断 JSON、缺 states、非 JSON 文本、错误 version 等。
+
+## 5. CTRE `.hoot`（桌面导入，2026-11-07 案头核查）
+
+> 与上文 Phase 0 实物定案不同：`.hoot` 无公开二进制格式规范，合法渠道拿不到
+> 真机样本。本节结论来自官方分发索引实测抓取、Phoenix 6 官方文档与工作包案头
+> 核实（不逆向二进制格式），按红线 3 分「已核查／待实测」两类。
+
+### 已核查
+
+- **分发索引结构**：`https://redist.ctr-electronics.com/index.json`
+  （2026-11-07 实测抓取）为 `Tools[]` 数组；`Name == "owlet"` 条目含
+  `Items[]`，每项带 `Version`（点分数值元组，如 `25.0.1` / `1.0.1.1`）、
+  `Compliancy`（数值，如 `10`）与 `Urls` 映射。版本按数值元组比较
+  （`25.0.1 > 9.x > 1.0.1.1`）。
+- **平台工件键**：本项目用三个——`macosuniversal`、`windowsx86-64`、
+  `linuxx86-64`（另有 linuxarm32/64 不用）。**Windows 键不带 `.exe`**：
+  后缀只出现在工件 URL 里；实测枚举全部 Items 无 `windowsx86-64.exe` 键
+  （计划原文与此不符，以实测为准）。每个工件同时发布 `{key}-sha1` 与
+  `{key}-md5`，无 sha256。
+- **官方 CLI**：`owlet -f wpilog "input.hoot" "output.wpilog"`
+  （Phoenix 6 官方文档 Signal Logging 页，2026-11-07 核）。
+- **compliancy 门槛**：`.hoot` 文件头偏移 70 处为 compliancy 版本字段，
+  **值 < 6 不被任何 owlet 版本支持**（工作包核实；抓取的 `index.json` 中
+  `ChannelCompliancy` 表佐证：2024 通道 = 6）。实现按裁定 R1 只读该处
+  **单个无符号字节**（`getUint8`）；计划早期「小端 u32」读法属推测，未实现。
+- **EULA／分发约束（工程口径）**：不逆向 `.hoot` 二进制格式；owlet 二进制
+  不捆绑、不再分发（不进仓库／CI 产物／依赖树），只在用户首次导入时经显式
+  同意（条款对话框 → `hoot_accept_eula` 落盘）后从
+  `redist.ctr-electronics.com` 运行时下载，经 `{key}-sha1` 校验后原子落盘；
+  用户日志零上传（转换本地执行，临时文件用后删除）。
+- **条款外链**：对话框链接 `CTRE_EULA_URL` =
+  `https://www.ctr-electronics.com/policies/terms-of-service`
+  （2026-11-07 钉取）。**该页是 CTRE 自己的通用服务条款页，不是 owlet EULA
+  原文**：Phoenix 6 文档站（v6.docs.ctr-electronics.com，检索索引核实）没有
+  EULA／许可页，canonical `CTRE_LICENSE.txt` 位于 CrossTheRoadElec 的 GitHub
+  分发仓（在 `open_external` 白名单之外，不外链）。对话框只外链官方页面，
+  不复制任何条款全文。
+
+### 待实测（不得宣称已验证）
+
+- **真实样本转换**：合法渠道无真机 `.hoot` 样本；全部单测用合成桩，
+  `samples/` 不添加伪造「真实」样本。获得用户真机日志并完成导入回放验证前，
+  README／发布说明只描述「经官方 owlet 转换」，不宣称「已验证支持 CTRE 日志」。
+- **owlet 产物 × WPILOG 管线兼容性**：现有 `.wpilog` 导入按 WPILib 官方写入
+  的日志验证；owlet 转出的 `.wpilog` 对该管线的实际兼容性未做端到端实测。
+- **字段宽度／端序**：偏移 70 处字段的实际宽度与端序未与真实文件比对；若
+  实测不符，只需改 `HOOT_COMPLIANCY_OFFSET`／读取宽度常量与 probe 测试。
+- **真实 CDN 下载链路**：CI 与单测不联网下载 owlet（EULA 与环境限制），下载
+  编排仅以注入 fetch 的桩覆盖；真机首次下载（SHA-1 校验、断网重试表现）在
+  桌面三端 Beta 验证时人工确认。
+- **macOS Gatekeeper**：reqwest 下载不附带 quarantine xattr，理论上可直接
+  执行；未签名第三方二进制的实际拦截行为待真机验证。
+- **owlet CLI 稳定性**：`owlet -f wpilog in out` 钉自 2026-11-07 官方文档；
+  未来 CLI 变更表现为 `hoot-convert-failed` 带原始 stderr 尾部（≤500 字符），
+  不静默。

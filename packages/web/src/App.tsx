@@ -24,6 +24,7 @@ import {
   deserializeSession,
   FIELDS,
   fieldById,
+  isHootFileName,
   isWpilogFileName,
   parsePathFile,
   parseRobotProfile,
@@ -39,7 +40,10 @@ import {
 import type { FieldPackage, RobotGeometry, RobotProfile, SessionTrajectory } from '@pathblender/core';
 import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-files';
 import { WpilogImportDialog, type WpilogImportResult, type WpilogIncomingFile } from './wpilog/WpilogImportDialog';
+import { HootImportFlow } from './hoot/HootImportFlow';
+import { routeHootFiles } from './hoot/gate';
 import './wpilog/WpilogImportDialog.css';
+import './hoot/HootImportFlow.css';
 import { displayName, robotsFromImport, type LibraryProfile, type LibraryRoute } from './route-library';
 import { withTeamPlaceholders } from './team-placeholder';
 import { withColorblindPalette } from './session-colors';
@@ -469,6 +473,9 @@ function AppBody() {
   // Pending .wpilog logs awaiting the user's pose/interval selection. The
   // dialog owns the parse; confirmed routes re-enter the normal pipeline.
   const [wpilogQueue, setWpilogQueue] = useState<WpilogIncomingFile[] | null>(null);
+  // Pending .hoot logs queued for the desktop converter flow (HOOT import,
+  // 2026-11). Task 7 only fills it; Task 8 mounts the dialog that drains it.
+  const [hootQueue, setHootQueue] = useState<Array<{ file: File; relPath: string }> | null>(null);
 
   const importFiles = useCallback(async (files: FileList | File[] | IncomingFile[], opts?: { fromFolder?: boolean }) => {
     exampleRequest.current += 1;
@@ -478,11 +485,21 @@ function AppBody() {
     // Keep every incoming file raw — the solution package's per-team
     // 原始导入文件 come from here (byte-identical to what was imported).
     for (const { file, relPath } of incoming) importedFileStoreRef.current.set(relPath, file);
+    // CTRE .hoot logs stop at the gate — never at the text parsers. Browsers
+    // get the explicit desktop/Phoenix-Tuner notice; desktop queues
+    // probe-convertible files for the Task 8 converter flow.
+    const routedHoot = await routeHootFiles(incoming, IS_DESKTOP);
+    for (const error of routedHoot.errors) {
+      nextErrors.push({ fileName: error.relPath, message: tr(error.key, 'vars' in error ? error.vars : undefined) });
+    }
+    if (routedHoot.desktopQueue.length > 0) {
+      setHootQueue((prev) => [...(prev ?? []), ...routedHoot.desktopQueue]);
+    }
     // Binary .wpilog logs detour into the selection dialog: the container
     // parses there (worker), the user confirms pose source + auto interval,
     // and the confirmed extraction re-enters the normal route pipeline.
     const wpilogFiles = incoming.filter(({ file }) => isWpilogFileName(file.name));
-    const textIncoming = incoming.filter(({ file }) => !isWpilogFileName(file.name));
+    const textIncoming = incoming.filter(({ file }) => !isWpilogFileName(file.name) && !isHootFileName(file.name));
     if (wpilogFiles.length > 0) {
       setWpilogQueue((prev) => [...(prev ?? []), ...wpilogFiles.map(({ file, relPath }) => ({ file, relPath }))]);
     }
@@ -627,6 +644,32 @@ function AppBody() {
     }
     setErrors((prev) => [...prev, ...failures]);
   }, [tr, flash, sourceRobots.length, setRobots]);
+
+  /**
+   * Converted .hoot products join the pending WPILOG selection queue exactly
+   * like hand-picked .wpilog files (from here on, one code path); conversion
+   * failures report through the import banner. Cancel is a quiet exit — no
+   * error entry, nothing queued. The raw .hoot bytes already sit in the
+   * original-file store from the moment they were imported.
+   */
+  const finishHootImport = useCallback((outcome: {
+    converted: Array<{ relPath: string; file: File }>;
+    failures: Array<{ relPath: string; message: string }>;
+  }) => {
+    setHootQueue(null);
+    if (outcome.converted.length > 0) {
+      setWpilogQueue((prev) => [
+        ...(prev ?? []),
+        ...outcome.converted.map(({ file, relPath }) => ({ file, relPath })),
+      ]);
+    }
+    if (outcome.failures.length > 0) {
+      setErrors((prev) => [
+        ...prev,
+        ...outcome.failures.map((failure) => ({ fileName: failure.relPath, message: failure.message })),
+      ]);
+    }
+  }, []);
 
   /**
    * Folder picker result, with every silent exit removed. Before this handler
@@ -1680,6 +1723,14 @@ function AppBody() {
           field={field}
           onDone={finishWpilogImport}
           onCancel={() => setWpilogQueue(null)}
+        />
+      )}
+      {hootQueue && hootQueue.length > 0 && (
+        <HootImportFlow
+          files={hootQueue}
+          onConverted={(converted) => finishHootImport({ converted, failures: [] })}
+          onFailures={(failures) => finishHootImport({ converted: [], failures })}
+          onCancel={() => setHootQueue(null)}
         />
       )}
       {showGuide && <GuideDialog onClose={() => setShowGuide(false)} onOpenShortcuts={() => { setShowGuide(false); setShowHelp(true); }} onOpenUrl={openExternalUrl} />}
