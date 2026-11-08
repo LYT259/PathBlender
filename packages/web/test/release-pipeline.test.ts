@@ -464,3 +464,20 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     expect(smoke.jobs.smoke.steps.some((step: any) => (step.run ?? '').includes('CopyFromScreen'))).toBe(true);
   });
 });
+
+describe('Windows offline NSIS overlay config', () => {
+  const read = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'));
+  it('flips only webviewInstallMode to offlineInstaller', () => {
+    const overlay = read('packages/desktop/src-tauri/tauri.windows-offline.conf.json');
+    expect(overlay.bundle.windows.webviewInstallMode).toEqual({ type: 'offlineInstaller' });
+    expect(Object.keys(overlay.bundle.windows)).toEqual(['webviewInstallMode']);
+    expect(Object.keys(overlay.bundle)).toEqual(['windows']);
+    expect(Object.keys(overlay).filter((k) => k !== '$schema')).toEqual(['bundle']);
+  });
+  it('keeps the base config on the online installer and updater untouched', () => {
+    const base = read('packages/desktop/src-tauri/tauri.conf.json');
+    expect(base.bundle.windows.webviewInstallMode).toEqual({ type: 'downloadBootstrapper' });
+    expect(base.bundle.createUpdaterArtifacts).toBe(true);
+    expect(base.plugins.updater.endpoints).toContain('https://github.com/LYT259/pathblender/releases/latest/download/latest.json');
+  });
+});
