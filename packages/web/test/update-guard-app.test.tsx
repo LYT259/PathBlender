@@ -111,8 +111,12 @@ describe('update session guard reporting', () => {
     // Real timers: rAF drives the clock and every frame resets the 600 ms
     // playhead debounce — exactly the window that must never report dirty.
     await waitFor(() => expect(Number((slider as HTMLInputElement).value)).toBeGreaterThan(before), { timeout: 4000 });
+    // Pause so t stops changing, then let the debounce actually fire
+    // (>600 ms): a playhead-only save must not add a dirty report even
+    // after the debounce lands.
+    fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 900));
     });
     expect(guardCalls()).toEqual([['set_update_guard', { dirty: false }]]);
   });
