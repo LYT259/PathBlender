@@ -145,6 +145,13 @@ export type {
   FieldBoundsOptions,
   OutOfBoundsInterval,
 } from './collision/field-bounds';
+export { obstaclesForField } from './field-obstacles';
+export type {
+  FieldObstacle,
+  FieldObstacleVariantSet,
+  HullPoint,
+} from './field-obstacles';
+export { FIELD_OBSTACLE_DATA } from './field-obstacles-data';
 
 export {
   COLORBLIND_COLORS,
