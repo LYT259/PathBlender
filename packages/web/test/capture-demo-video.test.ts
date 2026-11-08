@@ -1,10 +1,21 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error repository scripts are plain JavaScript
-import { isLocalRequest, outputPaths, sceneMidpoints, trimSeconds } from '../../../scripts/capture-demo-video.mjs';
+import { blackIntervals, isLocalRequest, outputPaths, sceneMidpoints, trimSeconds } from '../../../scripts/capture-demo-video.mjs';
 // @ts-expect-error repository scripts are plain JavaScript
 import { SCENES } from '../../../scripts/demo-video-captions.mjs';
 
 describe('capture-demo-video helpers', () => {
+  it('a failed blackdetect run throws instead of reading as no black interval', () => {
+    // FFmpeg exiting nonzero without emitting black_start must never record
+    // a PASS — the scan failed, it did not come back clean.
+    expect(() => blackIntervals({ status: 1, stderr: '' })).toThrow(/blackdetect failed/);
+    expect(() => blackIntervals({ status: null, stderr: 'killed' })).toThrow(/blackdetect failed/);
+  });
+  it('parses black intervals on success and stays empty when clean', () => {
+    const lines = '[blackdetect @ 0x1] black_start:0 black_end:1.04\nother noise\n';
+    expect(blackIntervals({ status: 0, stderr: lines })).toHaveLength(1);
+    expect(blackIntervals({ status: 0, stderr: 'clean run' })).toEqual([]);
+  });
   it('classifies only same-origin, data and blob requests as local', () => {
     const base = 'http://localhost:4173/';
     for (const ok of ['http://localhost:4173/', 'http://localhost:4173/assets/field.glb',

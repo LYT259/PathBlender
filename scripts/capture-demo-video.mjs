@@ -105,6 +105,15 @@ export function trimSeconds(scenes) {
   return scenes.reduce((sum, scene) => sum + scene.targetSeconds, 0) + TAIL_SECONDS;
 }
 
+/** Black-interval lines from a blackdetect run — a nonzero exit throws:
+ * a failed scan must never be recorded as a clean PASS. */
+export function blackIntervals(result) {
+  if (result.status !== 0) {
+    fail(`blackdetect failed (exit ${result.status ?? 'signal'}) — scan did not complete`);
+  }
+  return result.stderr.split('\n').filter((l) => l.includes('black_start')).map((l) => l.trim());
+}
+
 const sceneById = new Map(SCENES.map((scene) => [scene.id, scene]));
 
 // --- check() PASS/FAIL accumulator (scripts/browser-walkthrough.mjs shape) ---
@@ -501,12 +510,16 @@ async function recordLanguage(browser, lang, base, outDir, compareRobot, compare
 
   // closing: settle on the final state
   startScene('closing');
-  check('recording made zero nonlocal requests', nonlocal.length === 0, nonlocal.slice(0, 5).join(' | ') || 'none');
-  check('recording collected zero console/page errors', errors.length === 0, errors.slice(0, 5).join(' | ') || 'none');
   await holdScene('closing');
 
   const video = page.video();
   await ctx.close();
+  // Recording-wide guarantees assert only after the closing hold AND the
+  // context teardown: the listeners stay live through close, so a late
+  // request or error in the final scene or shutdown cannot slip past an
+  // earlier PASS (independent-review finding).
+  check('recording made zero nonlocal requests', nonlocal.length === 0, nonlocal.slice(0, 5).join(' | ') || 'none');
+  check('recording collected zero console/page errors', errors.length === 0, errors.slice(0, 5).join(' | ') || 'none');
   const webmSrc = await video.path();
   mkdirSync(outDir, { recursive: true });
   const paths = outputPaths(lang, outDir);
@@ -551,7 +564,7 @@ function postProcess(lang, paths, sceneMarks) {
     `${v.codec_name} ${v.width}×${v.height}`);
 
   const black = run(ffmpeg, ['-hide_banner', '-i', paths.mp4, '-vf', 'blackdetect=d=0.5', '-an', '-f', 'null', '-'], { stdio: ['ignore', 'pipe', 'pipe'] });
-  const blacks = black.stderr.split('\n').filter((l) => l.includes('black_start')).map((l) => l.trim());
+  const blacks = blackIntervals(black);
   check(`${lang} mp4 has no black interval ≥ 0.5 s`, blacks.length === 0, blacks.join(' | ') || 'none');
 
   const frameDir = mkdtempSync(join(tmpdir(), `pb-demo-frames-${lang}-`));

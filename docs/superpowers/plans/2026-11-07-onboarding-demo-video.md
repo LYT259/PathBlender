@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Produce a ~90-second onboarding demo video (English and Chinese versions, MP4 + WebVTT captions) recorded from the real PathBlender UI with in-recording assertions, plus no-telemetry external user observation materials for spec §六 — without fabricating any sample, dialog, participant, or result.
+**Goal:** Produce a ~83-second onboarding demo video (English and Chinese versions, MP4 + WebVTT captions) recorded from the real PathBlender UI with in-recording assertions, plus no-telemetry external user observation materials for spec §六 — without fabricating any sample, dialog, participant, or result.
 
 **Architecture:** A Playwright headed-Chrome driver (`scripts/capture-demo-video.mjs`) runs the real production build against the local preview server, walks a fixed scene storyboard (import → simultaneous playback → locate check result → compare routes → mirror → alliance switch), records with `context.recordVideo`, and asserts live state at every step — conflict count transitions `3→1→3` on the 8814 route compare and `3→2` on mirror, zero outbound network requests, zero console errors. A pure-data storyboard/captions module (`scripts/demo-video-captions.mjs`) is the single source of truth for scene durations and EN/zh caption text, and generates the sidecar VTT files. Local ffmpeg re-encodes the raw WebM to H.264 MP4; ffprobe and frame-extraction read back the result before anything is committed. Observation materials are prepared but §六 stays explicitly unexecuted until real participants exist.
 
@@ -230,7 +230,7 @@ Expected: each ≤ 25 MB. If over: re-encode with `-crf 28` from the retained We
 
 ```bash
 git add docs/screenshots/demo-video.en.mp4 docs/screenshots/demo-video.zh.mp4 docs/screenshots/demo-video.en.vtt docs/screenshots/demo-video.zh.vtt
-git commit -m "docs: add 90-second onboarding demo videos with EN/zh captions"
+git commit -m "docs: add 83-second onboarding demo videos with EN/zh captions"
 ```
 
 ### Task 4: Link the videos from the user guides
@@ -273,7 +273,7 @@ Expected: FAIL — guides do not yet contain the links (files exist from Task 3,
 
 - [ ] **Step 3: Add one short paragraph to each guide**
 
-At the end of "Try it without files" (EN) / the matching zh section, one concise sentence + two links, e.g. EN: `Prefer watching first? A 90-second demo covers import, shared-clock replay, locating a check result, comparing routes, and mirroring: [demo video (MP4)](screenshots/demo-video.en.mp4), [captions (WebVTT)](screenshots/demo-video.en.vtt).` The zh guide gets the zh pair with equivalent copy (concise, factual, no dev history). Do not paste the video inline into README (out of scope here).
+At the end of "Try it without files" (EN) / the matching zh section, one concise sentence + two links, e.g. EN: `Prefer watching first? A 83-second demo covers import, shared-clock replay, locating a check result, comparing routes, and mirroring: [demo video (MP4)](screenshots/demo-video.en.mp4), [captions (WebVTT)](screenshots/demo-video.en.vtt).` The zh guide gets the zh pair with equivalent copy (concise, factual, no dev history). Do not paste the video inline into README (out of scope here).
 
 - [ ] **Step 4: Run the test to verify it passes**
 
@@ -367,7 +367,7 @@ Expected: both green across workspaces (includes the four new test files and the
 
 - [ ] **Step 2: Bump the beta version with the required note**
 
-Run: `node scripts/bump-version.mjs beta "Add a 90-second onboarding demo video with EN/zh captions and guide links"` plus the same note translated for every NOTE_LANGS language in the same invocation/commit (check the script's args; `version-notes.test.ts` enforces completeness — a missing language is a red build, not a nit).
+Run: `node scripts/bump-version.mjs beta "Add a 83-second onboarding demo video with EN/zh captions and guide links"` plus the same note translated for every NOTE_LANGS language in the same invocation/commit (check the script's args; `version-notes.test.ts` enforces completeness — a missing language is a red build, not a nit).
 Expected: version bump lands in exactly the version files; `git status` shows nothing else.
 
 - [ ] **Step 3: Commit the bump**
