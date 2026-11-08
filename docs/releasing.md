@@ -78,6 +78,8 @@ Documentation-only PRs retain review and privacy checks but skip platform builds
       ⑦ 核对 README 三语的「获取方式」链接与真实可达状态一致（补充 Windows 下载说明）；更新 feed / Release 资产对未认证用户转可达（无需改动——端点本就是 GitHub 公网 URL）；
       ⑧ 反馈渠道=GitHub Issues（转公开即活；README/指南/模板已指向 issues 链接）；Chief Delphi 发布帖由用户本人发（用户决定 2026-10-03）。
 
+- [ ] **Homebrew cask 发布（owner 授权的外部步骤）**：stable 发版后，如需经 Homebrew 分发——① 对已发布的 `PathBlender_<version>_universal.dmg` 计算 `shasum -a 256`；② 运行 `node scripts/gen-homebrew-cask.mjs <version> <sha256>` 生成 cask 正文；③ 以该输出在 `LYT259/homebrew-tap` 仓库创建/更新 `Casks/pathblender.rb`；用户随后 `brew install --cask LYT259/tap/pathblender` 安装。红线：task agent 不得在没有用户明确指令时创建、推送或发布 tap 仓库——本仓只提供生成器与契约测试（`scripts/gen-homebrew-cask.mjs` 零文件写入、零 git、零网络）；`brew audit` / `brew style` 与真实安装尚未对实际 tap 运行过（当前无本地 tap），按「未验环境清单」登记，不得写成已验证。
+
 - [ ] 发布帖（Chief Delphi）中注明：PathPlanner 移植关系与 MIT 来源、Choreo 互操作定位、零上传承诺
 
 ## 对外文案（Release 正文、发布帖与社区宣传）
