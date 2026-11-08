@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "upstream": {
+    "project": "mjansen4857/pathplanner",
+    "tag": "v2025.2.7",
+    "license": "MIT",
+    "inspected": "2026-11-07",
+    "inputProvenance": [
+      {
+        "file": "settings.json",
+        "upstreamPath": "examples/java/src/main/deploy/pathplanner/settings.json",
+        "sha256": "ded3e52d3c063e3eaf65096eabcabfced4fbd20f8a56433e3ee3dc9fc15bb3d1"
+      },
+      {
+        "file": "Pickup.path",
+        "upstreamPath": "examples/java/src/main/deploy/pathplanner/paths/Pickup.path",
+        "sha256": "cd8d84c892f581703c9a3fd590c5153015a31da1d4e32877430de347d5393b46"
+      },
+      {
+        "file": "Score.path",
+        "upstreamPath": "examples/java/src/main/deploy/pathplanner/paths/Score.path",
+        "sha256": "2c9677bf72408e2d4228e45ffae505b97faaef292fd72d0aa5e18f83fd86f145"
+      }
+    ],
+    "expectedComputedBy": "robotpy-pathplannerlib 2025.2.7 (official PyPI wheel published from tag v2025.2.7) via golden-runner.py in this directory; RobotConfig.fromGUISettings() + PathPlannerPath.fromPathFile() + generateTrajectory(), ideal starting states, run once on 2026-11-07. Golden files record every official state; expected literals below are transcribed from those files.",
+    "unobtainable": [
+      {
+        "want": "committed golden generation outputs in upstream test resources",
+        "finding": "none exist at v2025.2.7: pathplannerlib/src/test/{java,native} carry only parser/geometry unit tests (ConstraintsZoneTest, PathConstraintsTest, GoalEndStateTest, RotationTargetTest, GeometryUtilTest) and there is no src/test/resources directory (inspected 2026-11-07 via GitHub contents API at the tag)"
+      },
+      {
+        "want": "official .auto routine trajectory (e.g. examples 'Example Auto.auto')",
+        "finding": "no library API at v2025.2.7 computes a routine trajectory — pathplannerlib .../lib/auto/ contains only AutoBuilder, AutoBuilderException, CommandUtil, NamedCommands (PathPlannerAuto no longer exists); the python port's auto.py builds commands only; GUI preview numbers are not exportable. No .auto acceptance case can honestly land; add one only with a real export from the GUI at this exact tag."
+      }
+    ]
+  },
+  "tolerances": {
+    "durationRelTol": 0.02,
+    "positionTolM": 0.05,
+    "headingTolDeg": 3,
+    "speedTolMPS": 0.2,
+    "accelTolMPSS": 0.5,
+    "accelTolReason": "not part of the declared default set; finite-difference acceleration peaks depend on each implementation's sample spacing (observed 3.0064 vs official 2.8293 m/s² on Score), so peaks compare within ±0.5 m/s²; both stay within the path's own 3.0 m/s² constraint up to numeric desaturation error",
+    "holdSpeedMPS": 0.05,
+    "holdMinFraction": 0.75,
+    "holdMaxOvershootS": 0.5
+  },
+  "cases": [
+    {
+      "name": "pickup-example-v2025.2.7",
+      "kind": "path",
+      "pathFile": "Pickup.path",
+      "settingsFile": "settings.json",
+      "goldenFile": "golden-pickup.json",
+      "sha256": {
+        "settings.json": "ded3e52d3c063e3eaf65096eabcabfced4fbd20f8a56433e3ee3dc9fc15bb3d1",
+        "Pickup.path": "cd8d84c892f581703c9a3fd590c5153015a31da1d4e32877430de347d5393b46",
+        "golden-pickup.json": "fa71baa2e7e3bc03cc9ef2a63a0e86dc0e8effc6e99866ca154483b59279fadc"
+      },
+      "expected": {
+        "durationS": 3.1366225530665304,
+        "startSpeedMPS": 0.0,
+        "endSpeedMPS": 0.0,
+        "endX": 7.726886294559709,
+        "endY": 0.8077125277685265,
+        "endHeadingDeg": 0.0,
+        "maxSpeedMPS": 3.0000000000000004,
+        "peakAccelMPSSq": 3.0000000000000018,
+        "caps": [{ "maxVelocityMPS": 3.0 }]
+      }
+    },
+    {
+      "name": "score-example-v2025.2.7",
+      "kind": "path",
+      "settingsFile": "settings.json",
+      "pathFile": "Score.path",
+      "goldenFile": "golden-score.json",
+      "sha256": {
+        "settings.json": "ded3e52d3c063e3eaf65096eabcabfced4fbd20f8a56433e3ee3dc9fc15bb3d1",
+        "Score.path": "2c9677bf72408e2d4228e45ffae505b97faaef292fd72d0aa5e18f83fd86f145",
+        "golden-score.json": "18f3d72c72a5e548ce1e58093f9b334e2e59badb9ea4d00c091ddb3ed8cd66cf"
+      },
+      "expected": {
+        "durationS": 4.073021663182226,
+        "startSpeedMPS": 0.0,
+        "endSpeedMPS": 0.0,
+        "endX": 2.0728986001800274,
+        "endY": 2.834336688351374,
+        "endHeadingDeg": 122.06194368281356,
+        "maxSpeedMPS": 3.0000000000000004,
+        "peakAccelMPSSq": 2.829278637467962,
+        "caps": [{ "maxVelocityMPS": 3.0 }]
+      }
+    }
+  ]
+}

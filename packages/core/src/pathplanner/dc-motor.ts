@@ -6,6 +6,18 @@
 
 const RPM_TO_RAD = (Math.PI * 2) / 60;
 
+/** Exact fromString case list (upstream dc_motor.dart at v2025.2.7). */
+const KNOWN_MOTOR_TYPES: ReadonlySet<string> = new Set([
+  'krakenX60',
+  'krakenX60FOC',
+  'falcon500',
+  'falcon500FOC',
+  'vortex',
+  'NEO',
+  'CIM',
+  'miniCIM',
+]);
+
 export class DCMotor {
   readonly nominalVoltageVolts: number;
   readonly stallTorqueNM: number;
@@ -98,5 +110,12 @@ export class DCMotor {
       case 'miniCIM': return DCMotor.getMiniCIM(numMotors);
       default: return DCMotor.getKrakenX60(numMotors);
     }
+  }
+
+  /** Whether fromString resolves `type` to a real motor model (case-sensitive
+   * membership in KNOWN_MOTOR_TYPES; unknown strings fall back to Kraken in
+   * fromString — callers use this to surface that fallback instead). */
+  static isKnownMotorType(type: string): boolean {
+    return KNOWN_MOTOR_TYPES.has(type);
   }
 }

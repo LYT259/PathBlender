@@ -3,8 +3,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { parsePathFile, parseRobotProfile } from '@pathblender/core';
 import { App } from '../src/App';
 import { saveText } from '../src/download';
+import { robotsFromImport } from '../src/route-library';
+import type { LibraryProfile, LibraryRoute } from '../src/route-library';
 import { comboboxValues, openCombobox, pickComboboxValue } from './combobox';
 
 vi.mock('../src/download', () => ({ saveText: vi.fn(async () => true) }));
@@ -267,4 +270,107 @@ describe('team folder workflow', () => {
     expect(comboboxValues(screen.getByRole('combobox', { name: 'Robot profile' }))).toHaveLength(2);
   });
 
+});
+
+describe('profile application at import (Task 6)', () => {
+  const constrainedText = readFileSync(resolve(samples, 'pathplanner/constrained_pointing.path'), 'utf8');
+  // Probed 2026-11-07 on constrained_pointing.path: the default-config
+  // import runs 8.010485665780992 s; mass 45 + MOI 2.0 re-times it to
+  // 7.629417092969108 s, mass 150 + MOI 6.9 to 8.201992039871868 s.
+  const route = (relPath: string): LibraryRoute => ({
+    id: crypto.randomUUID(),
+    relPath,
+    trajectory: parsePathFile(constrainedText, relPath),
+  });
+  const massProfile = (relPath: string, mass: number, moi: number): LibraryProfile => ({
+    id: `profile-${mass}`,
+    relPath,
+    profile: parseRobotProfile(
+      JSON.stringify({ robotConfig: { robotWidth: 0.9, robotLength: 0.9, robotMass: mass, robotMOI: moi } }),
+      relPath,
+    )!,
+  });
+
+  it('multi-profile folders apply nothing automatically', () => {
+    const routes = [route('254/pointing.path')];
+    const profiles = [massProfile('254/settings.json', 45, 2.0), massProfile('254/alt/settings.json', 150, 6.9)];
+    const [robot] = robotsFromImport(routes, profiles, true);
+    // No unambiguous pick: both stay selectable options, nothing applies.
+    expect(robot.profileId).toBeUndefined();
+    expect(robot.profileOptions?.map((p) => p.id)).toEqual(['profile-45', 'profile-150']);
+    expect(robot.trajectory.geometrySource).toBe('default');
+    expect(robot.trajectory.durationS).toBeCloseTo(8.010485665780992, 6);
+    expect(robot.trajectory.samples).toBe(routes[0]!.trajectory.samples);
+    expect(robot.routeOptions![0]!.trajectory.samples).toBe(routes[0]!.trajectory.samples);
+  });
+
+  it('teams in one import never share profiles', () => {
+    const routes = [route('254/pointing.path'), route('1678/pointing.path')];
+    const profiles = [massProfile('254/settings.json', 45, 2.0), massProfile('1678/settings.json', 150, 6.9)];
+    const robots = robotsFromImport(routes, profiles, true);
+    expect(robots.map((r) => r.trajectory.teamNumber)).toEqual(['254', '1678']);
+    const [light, heavy] = robots;
+    // Each slot lists only its own folder's profile…
+    expect(light.profileOptions?.map((p) => p.id)).toEqual(['profile-45']);
+    expect(heavy.profileOptions?.map((p) => p.id)).toEqual(['profile-150']);
+    expect(light.profileId).toBe('profile-45');
+    expect(heavy.profileId).toBe('profile-150');
+    // …and regenerates only against it: different masses, different timelines,
+    // neither the default-config import, on the current route and the option.
+    expect(light.trajectory.durationS).toBeCloseTo(7.629417092969108, 6);
+    expect(heavy.trajectory.durationS).toBeCloseTo(8.201992039871868, 6);
+    expect(light.trajectory.durationS).not.toBe(heavy.trajectory.durationS);
+    expect(light.routeOptions![0]!.trajectory.durationS).toBeCloseTo(7.629417092969108, 6);
+    expect(heavy.routeOptions![0]!.trajectory.durationS).toBeCloseTo(8.201992039871868, 6);
+    expect(light.routeOptions![0]!.trajectory.durationS).not.toBe(heavy.routeOptions![0]!.trajectory.durationS);
+  });
+
+  it('single-profile folder import regenerates timing, not just geometry', () => {
+    const routes = [route('254/pointing.path')];
+    const profiles = [massProfile('254/settings.json', 45, 2.0)];
+    const [robot] = robotsFromImport(routes, profiles, true);
+    expect(robot.profileId).toBe('profile-45');
+    expect(robot.trajectory.geometrySource).toBe('file');
+    expect(robot.trajectory.timingSource).toBe('partial-config');
+    expect(robot.trajectory.durationS).toBeCloseTo(7.629417092969108, 6);
+    expect(robot.trajectory.durationS).not.toBeCloseTo(8.010485665780992, 6);
+    // The whole slot: the route option carries the regenerated timeline too.
+    expect(robot.routeOptions![0]!.trajectory.timingSource).toBe('partial-config');
+    expect(robot.routeOptions![0]!.trajectory.durationS).toBeCloseTo(7.629417092969108, 6);
+  });
+
+  it('mixed-source folders never clobber a file-geometry option', () => {
+    // A Choreo .traj whose own file carries robot geometry (bumper block):
+    // parse marks it geometrySource 'file' — the v1.14 read-only lock.
+    const withCarriedConfig = (text: string): string => {
+      const obj = JSON.parse(text) as Record<string, unknown>;
+      obj.config = { bumper: { front: 0.45, back: 0.45, side: 0.425 } };
+      return JSON.stringify(obj);
+    };
+    const choreoOption = (relPath: string): LibraryRoute => ({
+      id: crypto.randomUUID(),
+      relPath,
+      trajectory: parsePathFile(withCarriedConfig(TRAJ), relPath),
+    });
+    const routes = [route('254/pointing.path'), choreoOption('254/Z9.traj')];
+    // Fixture sanity: the choreo alternative embeds its own geometry while
+    // the current route (natural filename order: pointing < Z9) is default.
+    expect(routes[0]!.trajectory.geometrySource).toBe('default');
+    expect(routes[1]!.trajectory.geometrySource).toBe('file');
+    const fileGeometry = routes[1]!.trajectory.geometry;
+    const fileSamples = routes[1]!.trajectory.samples;
+    const profiles = [massProfile('254/settings.json', 45, 2.0)];
+    const [robot] = robotsFromImport(routes, profiles, true);
+    // Mixed-source slot: automatic application is skipped entirely — the
+    // profile stays selectable, and the choreo option keeps its file-carried
+    // geometry and samples untouched (selecting the profile later is an
+    // explicit user decision).
+    expect(robot.profileId).toBeUndefined();
+    expect(robot.profileOptions?.map((p) => p.id)).toEqual(['profile-45']);
+    expect(robot.trajectory.durationS).toBeCloseTo(8.010485665780992, 6);
+    const option = robot.routeOptions!.find((o) => o.relPath.endsWith('Z9.traj'))!;
+    expect(option.trajectory.geometrySource).toBe('file');
+    expect(option.trajectory.geometry).toBe(fileGeometry);
+    expect(option.trajectory.samples).toBe(fileSamples);
+  });
 });

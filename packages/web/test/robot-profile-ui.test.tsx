@@ -1,11 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { makeSession, parseGhostAuto, parsePathFile, parseRobotProfile, type SessionTrajectory } from '@pathblender/core';
+import { applyProfileToRobot, makeSession, parseGhostAuto, parsePathFile, parseRobotProfile, type SessionTrajectory } from '@pathblender/core';
 import { I18nProvider } from '../src/i18n';
 import { App } from '../src/App';
+import { saveText } from '../src/download';
 import { applyUploadedProfile, inspectorWarnings } from '../src/robot-profile-ui';
+import { comboboxValues, openCombobox } from './combobox';
+
+vi.mock('../src/download', () => ({ saveText: vi.fn(async () => true) }));
 
 const SAMPLES = resolve(__dirname, '../../../samples');
 const read = (rel: string) => readFileSync(resolve(SAMPLES, rel), 'utf-8');
@@ -36,9 +40,10 @@ describe('applyUploadedProfile', () => {
     expect(applied.trajectory.geometry.lengthM).toBeCloseTo(1.02, 9);
     expect(applied.trajectory.geometry.widthM).toBeCloseTo(0.85, 9);
     expect(applied.trajectory.geometrySource).toBe('file');
-    // Real-robot regeneration: new samples, new duration, provenance warning.
+    // Real-robot regeneration: new samples, new duration, partial-config
+    // warning (mass+MOI profile — defaults still fill the other parameters).
     expect(applied.trajectory.samples).not.toBe(before);
-    expect(applied.trajectory.warnings.some((w) => w.startsWith('regenerated with real robot config'))).toBe(true);
+    expect(applied.trajectory.warnings.some((w) => w.startsWith('timing re-estimated with partial robot config'))).toBe(true);
     expect(applied.trajectory.durationS).toBeGreaterThan(0);
     // The route library carries the same applied profile — composed segments
     // resolve through routeOptions, so they must see the regenerated timing.
@@ -46,7 +51,7 @@ describe('applyUploadedProfile', () => {
     expect(option.samples).not.toBe(before);
     expect(option.geometry.lengthM).toBeCloseTo(1.02, 9);
     expect(option.geometrySource).toBe('file');
-    expect(option.warnings.some((w) => w.startsWith('regenerated with real robot config'))).toBe(true);
+    expect(option.warnings.some((w) => w.startsWith('timing re-estimated with partial robot config'))).toBe(true);
     // The composition itself is untouched: route ids and waits stay put.
     const composed = { ...applied, sequence: { segments: [{ id: 's1', routeId: 'pickup', waitBeforeS: 1 }] } };
     const composedApplied = applyUploadedProfile(composed, profile, 'team/settings.json');
@@ -118,5 +123,110 @@ describe('settings.json upload in the workspace', () => {
 describe('inspector warning filtering', () => {
   it('removes only the redundant default-config notice for both PathPlanner formats', () => {
     expect(inspectorWarnings([defaultWarning, 'generated with default robot config (Kraken X60 swerve) — timing is an estimate', 'Missing waypoint data'])).toEqual(['Missing waypoint data']);
+  });
+});
+
+describe('unified application entries (Task 6)', () => {
+  const constrainedText = read('pathplanner/constrained_pointing.path');
+  const scoreText = read('pathplanner/Score.path');
+  const autoText = read('pathplanner/Example Auto.auto');
+  const profile45 = parseRobotProfile(
+    JSON.stringify({ robotConfig: { robotWidth: 0.9, robotLength: 0.9, robotMass: 45, robotMOI: 2.0 } }),
+    '254/settings.json',
+  )!;
+  // The full synthetic set current-limited to 40 A retimes every fixture in
+  // this folder decisively (probed 2026-11-07): the constrained content
+  // 8.0105 → 10.074476474759628 s, Score 4.0827 → 10.619182604797595 s, and
+  // the routine chains d1 + 2 s + d2 = 22.693659079557223 s.
+  const SETTINGS_FULL40 = JSON.stringify({
+    robotWidth: 0.85, robotLength: 0.85, holonomicMode: true,
+    robotMass: 150, robotMOI: 6.9, wheelCOF: 1.2, driveWheelRadius: 0.048,
+    driveGearing: 6.08, maxDriveSpeed: 4.5, driveMotorType: 'krakenX60',
+    driveCurrentLimit: 40,
+    flModuleX: 0.273, flModuleY: 0.273, frModuleX: -0.273, frModuleY: 0.273,
+    blModuleX: 0.273, blModuleY: -0.273, brModuleX: -0.273, brModuleY: -0.273,
+  });
+  // The distractor that keeps the folder ambiguous (two profiles → no
+  // automatic pick at import), so the test below exercises the select entry
+  // alone: mass 45 + MOI 2.0 would re-time Pickup to 7.629417092969108 s,
+  // distinguishable from every pinned value.
+  const SETTINGS_MASS45_ALT = JSON.stringify({
+    robotConfig: { robotWidth: 0.9, robotLength: 0.9, robotMass: 45, robotMOI: 2.0 },
+  });
+
+  function constrainedRobot(): SessionTrajectory {
+    const trajectory = parsePathFile(constrainedText, 'team/pointing.path', () => undefined);
+    return { ...makeSession(trajectory), routeId: 'p', routeOptions: [{ id: 'p', relPath: 'team/pointing.path', trajectory }] };
+  }
+
+  function folderFile(relPath: string, text: string) {
+    const file = new File([text], relPath.split('/').at(-1)!, { type: 'application/json' });
+    Object.defineProperty(file, 'webkitRelativePath', { value: relPath });
+    return file;
+  }
+  const dropFolder = (files: File[]) => fireEvent.drop(window, { dataTransfer: { files } });
+
+  it('upload and select entries produce identical application', () => {
+    const robot = constrainedRobot();
+    const uploaded = applyUploadedProfile(robot, profile45, 'x/settings.json');
+    const viaCore = applyProfileToRobot(robot, profile45);
+    // Bookkeeping aside, both entries apply exactly the same trajectories to
+    // the whole slot — a real regeneration, not just a geometry swap.
+    expect(uploaded.trajectory).toEqual(viaCore.trajectory);
+    expect(uploaded.routeOptions).toEqual(viaCore.routeOptions);
+    expect(uploaded.trajectory.durationS).not.toBeCloseTo(robot.trajectory.durationS, 6);
+    // Bookkeeping stays each entry's own concern.
+    expect(uploaded.profileId).toBeDefined();
+    expect(uploaded.profileOptions).toHaveLength(1);
+    expect(viaCore.profileId).toBeUndefined();
+    expect(viaCore.profileOptions).toBeUndefined();
+  });
+
+  it('selecting a profile from the inspector applies it to the whole route library', async () => {
+    render(<App />);
+    // Two profiles in the folder → no automatic pick at import, so this test
+    // isolates the select entry itself (a single-profile folder would let the
+    // import-time application mask a select-only regression).
+    dropFolder([
+      folderFile('254/paths/Pickup.path', constrainedText),
+      folderFile('254/paths/Score.path', scoreText),
+      folderFile('254/autos/Example Auto.auto', autoText),
+      folderFile('254/settings.json', SETTINGS_FULL40),
+      folderFile('254/alt/settings.json', SETTINGS_MASS45_ALT),
+    ]);
+    await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
+    fireEvent.click(screen.getByText('254', { selector: '.robot-name' }));
+    const profiles = await screen.findByRole('combobox', { name: 'Robot profile' });
+    expect(comboboxValues(profiles)).toHaveLength(3); // prompt + both profiles
+    // Save moved to the File menu (2026-10-06): trigger the same handler via ⌘S.
+    // Before selection: no profile bound, every library route still on the
+    // default-config import timings.
+    fireEvent.keyDown(window, { key: 's', metaKey: true });
+    const before = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]).robots[0];
+    expect(before.profileId).toBeUndefined();
+    const beforeDuration = (relPath: string) =>
+      before.routeOptions.find((o: { relPath: string }) => o.relPath === relPath).trajectory.durationS;
+    expect(beforeDuration('254/paths/Pickup.path')).toBeCloseTo(8.010485665780992, 6);
+    expect(beforeDuration('254/paths/Score.path')).toBeCloseTo(4.082737556237078, 6);
+    expect(beforeDuration('254/autos/Example Auto.auto')).toBeCloseTo(14.09322322201807, 6);
+    // Select the 40 A profile by its rendered name ("254 · …", not "alt").
+    const list = openCombobox(profiles);
+    fireEvent.click(within(list).getAllByRole('option').find((o) => o.textContent!.startsWith('254 ·'))!);
+    // After selection: the whole route library regenerated against the
+    // selected config, profile bookkeeping bound to that entry.
+    fireEvent.keyDown(window, { key: 's', metaKey: true });
+    const stored = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]).robots[0];
+    expect(stored.profileId).toBe(
+      stored.profileOptions.find((p: { relPath: string }) => p.relPath === '254/settings.json').id,
+    );
+    const duration = (relPath: string) =>
+      stored.routeOptions.find((o: { relPath: string }) => o.relPath === relPath).trajectory.durationS;
+    expect(duration('254/paths/Pickup.path')).toBeCloseTo(10.074476474759628, 6);
+    expect(duration('254/paths/Score.path')).toBeCloseTo(10.619182604797595, 6);
+    expect(duration('254/autos/Example Auto.auto')).toBeCloseTo(22.693659079557223, 6);
+    for (const route of stored.routeOptions) {
+      expect(route.trajectory.geometrySource).toBe('file');
+      expect(route.trajectory.timingSource).toBe('full-config');
+    }
   });
 });

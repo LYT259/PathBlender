@@ -77,6 +77,143 @@ describe('parseRobotProfile (PathPlanner settings.json, both generations)', () =
   });
 });
 
+describe('v2025.2.7 flat settings.json fields (upstream home_page.dart writer)', () => {
+  // The real file is top-level flat: every key sits at the JSON root exactly
+  // as _saveProjectSettingsToFile writes it at tag v2025.2.7 — no robotConfig
+  // or generationSettings wrapper. Module corner order matches upstream
+  // RobotConfig.fromPrefs: [fl, fr, bl, br] with fl=(+x,+y), fr=(+x,-y).
+  const flatSettings = JSON.stringify({
+    robotWidth: 0.85,
+    robotLength: 0.85,
+    holonomicMode: true,
+    robotMass: 68,
+    flModuleX: 0.273, flModuleY: 0.273,
+    frModuleX: 0.273, frModuleY: -0.273,
+    blModuleX: -0.273, blModuleY: 0.273,
+    brModuleX: -0.273, brModuleY: -0.273,
+    driveMotorType: 'falcon500FOC',
+    driveCurrentLimit: 80,
+  });
+
+  it('reads flat module corners, motor type, and current limit', () => {
+    const profile = parseRobotProfile(flatSettings, '254/deploy/pathplanner/settings.json');
+    expect(profile).not.toBeNull();
+    expect(profile!.holonomic).toBe(true);
+    expect(profile!.massKG).toBe(68);
+    expect(profile!.moduleLocations).toEqual([
+      { x: 0.273, y: 0.273 },
+      { x: 0.273, y: -0.273 },
+      { x: -0.273, y: 0.273 },
+      { x: -0.273, y: -0.273 },
+    ]);
+    expect(profile!.dynamics!.driveMotorType).toBe('falcon500FOC');
+    expect(profile!.dynamics!.driveCurrentLimitA).toBe(80);
+    expect(profile!.rejectedGenerationFields).toBeUndefined();
+  });
+
+  it('ignores partial flat corners and falls back to nested modules', () => {
+    // One stray flat corner inside a robotConfig must not hijack the nested
+    // modules array: the flat set is all-or-nothing (eight finite values).
+    const nested = parseRobotProfile(
+      JSON.stringify({
+        robotConfig: {
+          robotWidth: 0.85,
+          robotLength: 0.85,
+          flModuleX: 0.3,
+          modules: [{ x: 0.25, y: 0.25 }, { x: 0.25, y: -0.25 }],
+        },
+      }),
+      'a/settings.json',
+    );
+    expect(nested!.moduleLocations).toHaveLength(2);
+    expect(nested!.moduleLocations[0]).toEqual({ x: 0.25, y: 0.25 });
+
+    // Six of eight corners present → the flat set is absent as far as the
+    // parser is concerned, and there is nothing to fall back to.
+    const partial = parseRobotProfile(
+      JSON.stringify({
+        robotWidth: 0.85,
+        robotLength: 0.85,
+        flModuleX: 0.3, flModuleY: 0.3,
+        frModuleX: 0.3, frModuleY: -0.3,
+        blModuleX: -0.3, blModuleY: 0.3,
+      }),
+      'a/settings.json',
+    );
+    expect(partial!.moduleLocations).toEqual([]);
+  });
+
+  it('rejects non-positive current limit but records the raw value as rejected', () => {
+    const profile = parseRobotProfile(
+      JSON.stringify({
+        robotWidth: 0.9,
+        robotLength: 0.9,
+        driveMotorType: 'falcon500FOC',
+        driveCurrentLimit: 0,
+      }),
+      'a/settings.json',
+    );
+    expect(profile!.dynamics!.driveCurrentLimitA).toBeUndefined();
+    expect(profile!.dynamics!.driveMotorType).toBe('falcon500FOC');
+    // Metadata distinguishes "file said 0" from "file said nothing".
+    expect(profile!.rejectedGenerationFields).toEqual({ driveCurrentLimit: 0 });
+
+    const emptyMotor = parseRobotProfile(
+      JSON.stringify({
+        robotWidth: 0.9,
+        robotLength: 0.9,
+        driveMotorType: '',
+        driveCurrentLimit: 60,
+      }),
+      'a/settings.json',
+    );
+    expect(emptyMotor!.dynamics!.driveMotorType).toBeUndefined();
+    expect(emptyMotor!.dynamics!.driveCurrentLimitA).toBe(60);
+    expect(emptyMotor!.rejectedGenerationFields).toEqual({ driveMotorType: '' });
+  });
+
+  it('prefers flat corners over nested modules when both exist', () => {
+    // Upstream current versions write flat corners; a legacy nested array in
+    // the same file must not win.
+    const profile = parseRobotProfile(
+      JSON.stringify({
+        robotWidth: 0.85,
+        robotLength: 0.85,
+        holonomicMode: true,
+        flModuleX: 0.273, flModuleY: 0.273,
+        frModuleX: 0.273, frModuleY: -0.273,
+        blModuleX: -0.273, blModuleY: 0.273,
+        brModuleX: -0.273, brModuleY: -0.273,
+        modules: [{ x: 9, y: 9 }],
+      }),
+      'a/settings.json',
+    );
+    expect(profile!.moduleLocations).toHaveLength(4);
+    expect(profile!.moduleLocations[0]).toEqual({ x: 0.273, y: 0.273 });
+    expect(profile!.moduleLocations.some((m) => m.x === 9)).toBe(false);
+  });
+
+  it('builds the diff-drive layout from robotTrackwidth when holonomicMode is false', () => {
+    // Mirrors RobotConfig.fromPrefs at v2025.2.7: non-holonomic projects
+    // ignore the flat corner fields and use (0, ±trackwidth/2).
+    const profile = parseRobotProfile(
+      JSON.stringify({
+        robotWidth: 0.85,
+        robotLength: 0.85,
+        holonomicMode: false,
+        robotTrackwidth: 0.7,
+        flModuleX: 0.273, flModuleY: 0.273,
+        frModuleX: 0.273, frModuleY: -0.273,
+        blModuleX: -0.273, blModuleY: 0.273,
+        brModuleX: -0.273, brModuleY: -0.273,
+      }),
+      'a/settings.json',
+    );
+    expect(profile!.holonomic).toBe(false);
+    expect(profile!.moduleLocations).toEqual([{ x: 0, y: 0.35 }, { x: 0, y: -0.35 }]);
+  });
+});
+
 describe('parseRobotProfile (Choreo project .chor, red book v1.15 companion read)', () => {
   it('parses the real committed sample: bumper, mirrored modules, mass, drive type', () => {
     const profile = parseRobotProfile(chorSample, 'BLACKHOLE2026-auto-paths/choreo/choreo.chor');

@@ -20,6 +20,11 @@ they are not a representation that every bundled asset is open source:
 - **PathPlanner / PathPlannerLib** (MIT) — https://github.com/mjansen4857/pathplanner
   Trajectory generation algorithms ported to TypeScript in Phase 2 must carry
   source attribution in code comments and release notes.
+  The pinned reference samples in `samples/pathplanner/reference/`
+  (settings.json, Pickup.path, Score.path at tag v2025.2.7, plus golden
+  outputs computed with the official robotpy-pathplannerlib 2025.2.7 wheel)
+  come from this MIT-licensed project; see the README in that directory for
+  provenance and SHA256 hashes.
 - **Choreo / ChoreoLib** (BSD-3-Clause) — https://github.com/SleipnirGroup/Choreo
   Referenced for `.traj` file format behavior.
 - **Collaborative PathPlanner fork (FRC Team 103, Cybersonics)** (MIT derivative

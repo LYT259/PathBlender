@@ -42,6 +42,7 @@ export function parsePathPlannerPath(text: string, fileName: string): Trajectory
     moduleLocations: config.moduleLocations,
     events: generated.events,
     warnings,
+    timingSource: 'default-config',
     editable: { kind: 'pathplanner', path },
   };
 }

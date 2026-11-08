@@ -7,15 +7,19 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  generateAutoTrajectory,
   generatePathPoints,
   generateTrajectory,
   makeRobotConfig,
+  parseAutoStructure,
   parsePathFile,
   parsePathJson,
   parsePathPlannerAuto,
   samplePath,
+  trajectoryDuration,
   ParseError,
 } from '../src';
+import type { ParsedAuto } from '../src';
 
 const SAMPLES = resolve(__dirname, '../../../samples');
 const read = (rel: string): string =>
@@ -227,6 +231,8 @@ describe('.auto routine semantics', () => {
   const pickupText = read('pathplanner/Pickup.path');
   const scoreText = read('pathplanner/Score.path');
   const autoText = read('pathplanner/Example Auto.auto');
+  const resolveSamplePaths = (name: string): string | undefined =>
+    name === 'Pickup' ? pickupText : name === 'Score' ? scoreText : undefined;
 
   it('chains Pickup → 1s wait → 1s wait → Score with events', () => {
     const traj = parsePathFile(autoText, 'Example Auto.auto', (name) =>
@@ -276,5 +282,157 @@ describe('.auto routine semantics', () => {
     const traj = parsePathFile(scoreText, 'Score.path');
     expect(traj.source).toBe('pathplanner-path');
     expect(traj.durationS).toBeGreaterThan(1);
+  });
+
+  it('parsePathPlannerAuto preserves the editable auto structure', () => {
+    const traj = parsePathPlannerAuto(autoText, 'Example Auto.auto', resolveSamplePaths);
+    expect(traj.editable?.kind).toBe('pathplanner-auto');
+    const auto = (traj.editable as { kind: 'pathplanner-auto'; auto: ParsedAuto }).auto;
+    // Hand-derived from Example Auto.auto: path, 1s wait, named, 1s wait, path.
+    expect(auto.segments).toEqual([
+      { kind: 'path', pathName: 'Pickup' },
+      { kind: 'wait', seconds: 1 },
+      { kind: 'named', name: 'print hello' },
+      { kind: 'wait', seconds: 1 },
+      { kind: 'path', pathName: 'Score' },
+    ]);
+    // The .auto file carries no "name" field → the fileName minus extension.
+    expect(auto.name).toBe('Example Auto');
+    expect(Object.keys(auto.paths)).toEqual(['Pickup', 'Score']);
+    expect(auto.paths['Pickup']!.waypoints).toHaveLength(2);
+    expect(auto.commandWarnings).toEqual([]);
+  });
+
+  it('deadline groups flatten with an approximation warning', () => {
+    const autoJson = JSON.stringify({
+      version: '2025.0',
+      command: {
+        type: 'deadline',
+        data: {
+          commands: [
+            { type: 'path', data: { pathName: 'Pickup' } },
+            { type: 'path', data: { pathName: 'Score' } },
+          ],
+        },
+      },
+      resetOdom: true,
+    });
+    const auto = parseAutoStructure(autoJson, 'Deadline.auto', resolveSamplePaths);
+    expect(auto.segments).toEqual([
+      { kind: 'path', pathName: 'Pickup' },
+      { kind: 'path', pathName: 'Score' },
+    ]);
+    expect(auto.commandWarnings).toEqual([
+      '"deadline" command group approximated as sequential — the group ends when its first command finishes, so the summed duration is an upper-bound estimate',
+    ]);
+
+    const traj = parsePathPlannerAuto(autoJson, 'Deadline.auto', resolveSamplePaths);
+    expect(traj.samples.length).toBeGreaterThan(2);
+    expect(traj.warnings.join('\n')).toContain('"deadline" command group approximated as sequential');
+    expect(traj.warnings.join('\n')).not.toContain('unsupported command type "deadline" ignored');
+  });
+
+  it('structure round-trips through structuredClone and regenerates identically', () => {
+    const auto = parseAutoStructure(autoText, 'Example Auto.auto', resolveSamplePaths);
+    const fromClone = generateAutoTrajectory(structuredClone(auto), makeRobotConfig());
+    // The original structure is itself a generation input — a purity check
+    // against only ever-cloned inputs would be vacuous.
+    const fromOriginal = generateAutoTrajectory(auto, makeRobotConfig());
+    expect(fromOriginal.samples).toEqual(fromClone.samples);
+    expect(fromOriginal.events).toEqual(fromClone.events);
+    expect(fromOriginal.warnings).toEqual(fromClone.warnings);
+
+    // Generation is pure: the parsed structure is deep-equal to a fresh
+    // parse after being used as a generation input.
+    expect(auto).toEqual(parseAutoStructure(autoText, 'Example Auto.auto', resolveSamplePaths));
+  });
+
+  it('warns when a segment references a path missing from the parsed structure', () => {
+    // Hand-built or corrupted ParsedAuto: the Score entry is gone.
+    // Generation stays lenient (no crash, remaining segments still
+    // generate) but must say which path was skipped — import-time parsing
+    // still throws for unresolved paths instead (guidance test above).
+    const auto = parseAutoStructure(autoText, 'Example Auto.auto', resolveSamplePaths);
+    const handBuilt: ParsedAuto = { ...auto, paths: { ...auto.paths } };
+    delete handBuilt.paths['Score'];
+    const generated = generateAutoTrajectory(handBuilt, makeRobotConfig());
+    expect(generated.warnings.join('\n')).toContain(
+      'segment references path "Score" with no parsed source — segment skipped',
+    );
+    expect(generated.samples.length).toBeGreaterThan(2);
+  });
+
+  it('import emits the unlimited-constraints caveat for each applicable referenced path', () => {
+    // Same mutation the single-path parser test uses: the velocity cap is
+    // dropped so the path parses to +∞ constraints. A routine references
+    // several paths, so the caveat must name which one is unlimited.
+    const unlimited = (text: string) => {
+      const asJson = JSON.parse(text) as { globalConstraints: Record<string, unknown> };
+      delete asJson.globalConstraints.maxVelocity;
+      asJson.globalConstraints.unlimited = true;
+      return JSON.stringify(asJson);
+    };
+
+    // Pickup unlimited, Score constrained: exactly one caveat, naming Pickup.
+    const oneUnlimited = parsePathPlannerAuto(
+      autoText,
+      'Example Auto.auto',
+      (name) => (name === 'Pickup' ? unlimited(pickupText) : name === 'Score' ? scoreText : undefined),
+    );
+    expect(oneUnlimited.warnings.join('\n')).toContain(
+      'referenced path "Pickup" has unlimited global constraints; results may be unrealistic',
+    );
+    expect(oneUnlimited.warnings.join('\n')).not.toContain('referenced path "Score"');
+    expect(oneUnlimited.warnings.filter((w) => w.includes('unlimited global constraints'))).toHaveLength(1);
+
+    // Both referenced paths unlimited: one caveat per path — "each applicable
+    // referenced path", not one collapsed blanket entry.
+    const both = parsePathPlannerAuto(
+      autoText,
+      'Example Auto.auto',
+      (name) => (name === 'Pickup' ? unlimited(pickupText) : name === 'Score' ? unlimited(scoreText) : undefined),
+    );
+    expect(both.warnings.join('\n')).toContain(
+      'referenced path "Score" has unlimited global constraints; results may be unrealistic',
+    );
+    expect(both.warnings.filter((w) => w.includes('unlimited global constraints'))).toHaveLength(2);
+  });
+
+  it('warns for a degenerate motion segment even when a wait keeps the total duration positive', () => {
+    // Path + 1 s wait. Probed: at 20 A per module and 150 kg the path
+    // degenerates to 33 samples that never leave t=0 (upstream-identical
+    // torque-loss cancellation) while the wait alone holds the total at
+    // 1 s — a total-duration check would stay silent; the segment must not.
+    const autoJson = JSON.stringify({
+      version: '2025.0',
+      command: {
+        type: 'sequential',
+        data: {
+          commands: [
+            { type: 'path', data: { pathName: 'Constrained' } },
+            { type: 'wait', data: { waitTime: 1.0 } },
+          ],
+        },
+      },
+    });
+    const constrainedText = read('pathplanner/constrained_pointing.path');
+    const auto = parseAutoStructure(autoJson, 'Probe.auto', (name) =>
+      name === 'Constrained' ? constrainedText : undefined,
+    );
+
+    const starved = makeRobotConfig({ massKG: 150, moduleConfig: { driveCurrentLimitA: 20 } });
+    const degenerate = generateAutoTrajectory(auto, starved);
+    // The wait is legitimate structure: it keeps the timeline non-empty and
+    // must never be read as degenerate itself.
+    expect(trajectoryDuration(degenerate.samples)).toBeCloseTo(1, 9);
+    expect(degenerate.warnings.join('\n')).toContain(
+      'segment 1 ("Constrained") generated zero-duration motion — the robot cannot move under this config; not a valid motion plan',
+    );
+
+    // No false positive: the same structure on the default config is healthy
+    // motion plus the same wait, with no degenerate warning.
+    const healthy = generateAutoTrajectory(auto, config);
+    expect(trajectoryDuration(healthy.samples)).toBeGreaterThan(9);
+    expect(healthy.warnings.join('\n')).not.toContain('zero-duration motion');
   });
 });

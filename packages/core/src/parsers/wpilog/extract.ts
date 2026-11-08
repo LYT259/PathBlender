@@ -614,5 +614,6 @@ export function extractWpilogTrajectory(
     })),
     gaps: gaps.length > 0 ? gaps : undefined,
     warnings,
+    timingSource: 'logged',
   };
 }

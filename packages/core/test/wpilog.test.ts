@@ -502,6 +502,8 @@ describe('wpilog extraction', () => {
     });
     expect(traj.source).toBe('wpilog');
     expect(traj.alliance).toBe('blue');
+    // Logged reality, not a generated plan.
+    expect(traj.timingSource).toBe('logged');
     // Auto started at t=0; samples carry their original spacing.
     expect(traj.samples[0]!.t).toBe(0);
     expect(traj.samples.map((s) => s.t)).toEqual([0, 0.02, 0.04, 5.02, 5.04]);

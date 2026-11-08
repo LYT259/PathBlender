@@ -3,7 +3,7 @@
  * The current route and all alternatives travel with that team slot.
  */
 
-import { makeSession } from '@pathblender/core';
+import { applyProfileToRobot, makeSession } from '@pathblender/core';
 import type { SessionProfileOption, SessionRouteOption, SessionTrajectory, Trajectory } from '@pathblender/core';
 import { teamNumberFromName } from '@pathblender/core';
 
@@ -87,9 +87,21 @@ export function robotsFromImport(routes: LibraryRoute[], profiles: LibraryProfil
     robot.profileOptions = ownProfiles;
     const entry = ownProfiles.length === 1 ? ownProfiles[0] : undefined;
     const profile = entry?.profile;
-    if (profile && robot.trajectory.geometrySource !== 'file') {
+    // File-carried geometry is never clobbered (v1.14 read-only lock) — and
+    // the lock binds every route of the slot, not just the current one:
+    // application rewrites each option's geometry, so a Choreo alternative
+    // embedding its own robot geometry makes the slot mixed-source and
+    // automatic application is skipped entirely (the profile stays
+    // selectable; applying it later is an explicit user decision). Otherwise
+    // the folder's single profile applies to the whole team slot — the
+    // current route and every option through the same core entry as the
+    // upload and select flows, so timing regenerates, not just geometry.
+    const geometryLocked = options.some((option) => option.trajectory.geometrySource === 'file');
+    if (profile && !geometryLocked) {
+      const applied = applyProfileToRobot(robot, profile);
+      robot.trajectory = applied.trajectory;
+      robot.routeOptions = applied.routeOptions;
       robot.profileId = entry!.id;
-      robot.trajectory = { ...robot.trajectory, geometry: profile.geometry, moduleLocations: profile.moduleLocations, geometrySource: 'file' };
     }
     return robot;
   });

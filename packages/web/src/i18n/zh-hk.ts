@@ -73,6 +73,10 @@ export const zhHkOverrides: Partial<Record<MessageKey, string>> = {
   'help.group.robot': '機械人',
   'help.switchRobot': '上一部 / 下一部機械人',
   'help.hideShow': '顯示 / 隱藏選取的機械人',
+  // 時序 provenance hints (2026-11-07): the 機器人 rule reaches the new timing rows.
+  'robots.timingDefaultHint': '使用 PathBlender 預設機械人參數估算',
+  'robots.timingFullHint': '由該隊匯入的機械人參數產生——仍是計畫，不是實測',
+  'robots.timingLoggedHint': '記錄自實跑時的機械人日誌',
 };
 
 /** What `DICTS` consumes: the Taiwan dictionary with the HK rows applied. */

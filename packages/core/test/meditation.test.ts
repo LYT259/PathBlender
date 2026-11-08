@@ -10,13 +10,16 @@ import { describe, expect, it } from 'vitest';
 import {
   addPpWaypoint,
   adjustedName,
+  applyProfileToTrajectory,
   exportGhostAuto,
   exportPathPlannerPath,
   exportTraj,
   moveChoreoWaypoint,
   movePpWaypoint,
-  reparameterize,
+  parseRobotProfile,
   removePpWaypoint,
+  reparameterize,
+  resetToOriginal,
 } from '../src';
 import { parseGhostAuto } from '../src/parsers/ghostauto';
 import { parseTraj } from '../src/parsers/traj';
@@ -130,5 +133,76 @@ describe('adjustedName', () => {
   it('appends once', () => {
     expect(adjustedName('Pickup')).toBe('Pickup-adjusted');
     expect(adjustedName('Pickup-adjusted')).toBe('Pickup-adjusted');
+  });
+});
+
+const fullSettingsProfile = () =>
+  parseRobotProfile(
+    JSON.stringify({
+      robotWidth: 0.85,
+      robotLength: 0.85,
+      holonomicMode: true,
+      robotMass: 150,
+      robotMOI: 6.9,
+      wheelCOF: 1.2,
+      driveWheelRadius: 0.048,
+      driveGearing: 6.08,
+      maxDriveSpeed: 4.5,
+      driveMotorType: 'krakenX60',
+      driveCurrentLimit: 200,
+      flModuleX: 0.273, flModuleY: 0.273,
+      frModuleX: -0.273, frModuleY: 0.273,
+      blModuleX: 0.273, blModuleY: -0.273,
+      brModuleX: -0.273, brModuleY: -0.273,
+    }),
+    '254/pathplanner/settings.json',
+  )!;
+
+describe('reset restores timing provenance', () => {
+  it('reset returns the badge to the timing source of the pre-edit state', () => {
+    const traj = parsePathFile(read('pathplanner/Pickup.path'), 'Pickup.path');
+    const applied = applyProfileToTrajectory(traj, fullSettingsProfile());
+    expect(applied.timingSource).toBe('full-config');
+    // An edit without the bound profile regenerates on defaults and must not
+    // leave that default-config badge on the reset result.
+    const edited = reparameterize(movePpWaypoint(applied, 1, { anchor: { x: 6.0, y: 3.0 } }));
+    expect(edited.timingSource).toBe('default-config');
+    const reset = resetToOriginal(edited);
+    expect(reset.timingSource).toBe('full-config');
+    expect(reset.durationS).toBeCloseTo(applied.durationS, 9);
+  });
+
+  it('reset never keeps an edit-era full-config badge over restored default samples', () => {
+    const traj = parsePathFile(read('pathplanner/Pickup.path'), 'Pickup.path');
+    const editedOnce = reparameterize(movePpWaypoint(traj, 1, { anchor: { x: 6.0, y: 3.0 } }));
+    expect(editedOnce.timingSource).toBe('default-config');
+    const applied = applyProfileToTrajectory(editedOnce, fullSettingsProfile());
+    const editedTwice = reparameterize(
+      movePpWaypoint(applied, 1, { anchor: { x: 6.2, y: 3.0 } }),
+      fullSettingsProfile(),
+    );
+    expect(editedTwice.timingSource).toBe('full-config');
+    const reset = resetToOriginal(editedTwice);
+    // The first edit snapshot predates the profile: those were default-config
+    // samples, and the badge must say so again.
+    expect(reset.timingSource).toBe('default-config');
+  });
+
+  it('a pre-timingSource snapshot (old session) resets to an absent timing source', () => {
+    const traj = parsePathFile(read('pathplanner/Pickup.path'), 'Pickup.path');
+    const edited = reparameterize(movePpWaypoint(traj, 1, { anchor: { x: 6.0, y: 3.0 } }));
+    const aged: typeof edited = {
+      ...edited,
+      timingSource: 'full-config',
+      original: edited.original && {
+        editable: edited.original.editable,
+        samples: edited.original.samples,
+        events: edited.original.events,
+        warnings: edited.original.warnings,
+        durationS: edited.original.durationS,
+      },
+    };
+    const reset = resetToOriginal(aged);
+    expect(reset.timingSource).toBeUndefined();
   });
 });

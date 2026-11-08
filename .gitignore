@@ -57,6 +57,8 @@ PathBlender_新用户入门与功能发现方案.md
 
 # 官方资料本地档案：历年手册/场地图纸/AprilTag 布局 JSON（2026-10-02 用户指令，不入库）
 reference/
+# 例外：samples/pathplanner/reference 是钉版官方参照夹具（测试资产，须入库）
+!samples/pathplanner/reference/
 
 # Cloudflare/wrangler 本地临时目录（直传部署用，不入库）
 .wrangler/
