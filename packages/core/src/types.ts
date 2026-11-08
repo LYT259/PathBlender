@@ -172,6 +172,9 @@ export interface Trajectory {
     events: TrajectoryEvent[];
     warnings: string[];
     durationS: number;
+    /** Timing provenance at snapshot time; absent in pre-2026-11-07 sessions,
+     * where reset honestly yields an unknown timing source (badge falls back). */
+    timingSource?: TimingSource;
   };
 }
 
