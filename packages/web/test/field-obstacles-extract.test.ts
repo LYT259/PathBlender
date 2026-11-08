@@ -353,12 +353,59 @@ describe('seasons 2022-2025 data', () => {
     expect(union / spanning, `union ${union} vs spanning ${spanning}`).toBeLessThan(0.35);
   });
 
-  it('2025 barge contributes only its center post (overhead truss/cages excluded, manual §5.4)', () => {
-    const barge = FIELD_OBSTACLE_DATA['reefscape-2025']!.welded.filter((o) => o.id.startsWith('barge'));
-    expect(barge).toHaveLength(1);
-    expect(barge[0]!.id).toBe('barge-post');
-    const spansX = Math.max(...barge[0]!.hull.map((p) => p.x)) - Math.min(...barge[0]!.hull.map((p) => p.x));
-    expect(spansX).toBeLessThan(1.0);
+  it('2025 barge bumper-band geometry is 5 disjoint per-post hulls with real y gaps, in both variants (manual §5.4)', () => {
+    // Independent-review Critical regression: the committed data merged the
+    // bumper-band BARGE geometry into ONE hull spanning y 0.700–7.353 m, so
+    // every legal midfield crossing between posts reported a collision (the
+    // old assertion only checked the x-span, which the merged hull passed
+    // vacuously at 0.305 m). Measured official-GLB truth (identical in both
+    // variants): the in-playfield in-band BARGE geometry is the centre
+    // support column (FE-01003, y 3.874–4.179) plus 4 CAGE post bases
+    // (GE-25201, y ≈ 0.700–0.885 / 2.881–3.067 / 4.986–5.172 / 7.167–7.353).
+    // The two remaining FE-01003 legs stand outside the guardrails
+    // (y −0.41..−0.11 and 8.16..8.46) and stay excluded — beyond the
+    // playfield rect they are boundary geometry (detectFieldBounds domain).
+    const reef = fieldByIdCore('reefscape-2025');
+    for (const variant of ['welded', 'andymark'] as const) {
+      const set = FIELD_OBSTACLE_DATA['reefscape-2025']!;
+      const posts = (variant === 'welded' ? set.welded : set.andymark)!
+        .filter((o) => o.id.startsWith('barge-post'));
+      // 1 centre column + 4 cage posts — never one spanning band.
+      expect(posts, variant).toHaveLength(5);
+      // No single post hull may grow into the old 6.65 m band (real posts
+      // measure ≤ 0.31 m in y and ≤ 0.31 m in x).
+      for (const o of posts) {
+        expect(span(o.hull, 'y'), `${variant}/${o.id} y span`).toBeLessThan(0.5);
+        expect(span(o.hull, 'x'), `${variant}/${o.id} x span`).toBeLessThan(0.5);
+      }
+      // All posts share the midfield x band, so disjoint y-projections ⇒
+      // disjoint hulls. Consecutive gaps are the drivable corridors:
+      // measured 0.807 m next to the centre column and ~2.0 m between cage
+      // posts — a merged or bridged hull zeroes these out.
+      const intervals = posts
+        .map((o) => ({
+          id: o.id,
+          lo: Math.min(...o.hull.map((p) => p.y)),
+          hi: Math.max(...o.hull.map((p) => p.y)),
+          cx: center(o.hull, 'x'),
+        }))
+        .sort((a, b) => a.lo - b.lo);
+      const gaps: number[] = [];
+      for (let i = 1; i < intervals.length; i++) {
+        const gap = intervals[i]!.lo - intervals[i - 1]!.hi;
+        gaps.push(gap);
+        expect(gap, `${variant}: ${intervals[i - 1]!.id} → ${intervals[i]!.id}`).toBeGreaterThan(0.75);
+      }
+      expect(gaps, variant).toHaveLength(4);
+      // The two outer corridors are wide legal crossings (measured ~2.0 m).
+      expect(Math.max(...gaps), variant).toBeGreaterThan(1.9);
+      // §5.4 "supported in the center of the FIELD by vertical truss": the
+      // post straddling the width midline is the centre column and sits on
+      // the length midline (measured centre 8.7735 vs 17.548/2).
+      const centre = intervals.find((iv) => iv.lo <= reef.widthM / 2 && iv.hi >= reef.widthM / 2);
+      expect(centre, `${variant}: no post straddles the width midline`).toBeDefined();
+      within(centre!.cx, reef.lengthM / 2, 0.02);
+    }
   });
 
   it('per-season tag anchors validate (2025 reef faces, 2024 speaker/source walls, 2023 grids/substation)', () => {

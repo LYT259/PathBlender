@@ -53,7 +53,9 @@ export { pointNearHull };
  */
 const BAND_FLOOR_M = 0.05;
 /** Cluster cell size — connects same-element substructure (2023 GRID
- * dividers ~47 cm apart), separates genuinely disjoint legs (≥ 2.7 m). */
+ * dividers ~47 cm apart), separates genuinely disjoint legs (≥ 2.7 m).
+ * Rows whose disjoint parts sit closer than 2 × this cell can override it
+ * with clusterCellM (2025 barge posts, 0.807 m apart). */
 const CLUSTER_CELL_M = 0.5;
 
 export const SEASONS = [
@@ -363,8 +365,8 @@ export const SEASONS = [
         citation: '2025 Game Manual §5.6.2 (CORAL STATION)',
       },
       {
-        match: /^BARGE /, id: 'barge-post', name: 'Barge Post', action: 'include',
-        reason: 'the BARGE truss/cages are overhead (truss at 5\'2", §5.4) and its legs stand outside the guardrails — but the centre support column rises from the carpet at midfield (§5.4 "supported in the center of the FIELD by vertical truss"), which is real bumper-band blocking geometry (deviation from the plan\'s blanket barge exclusion, driven by measured GLB geometry; cluster naming keeps only the post)',
+        match: /^BARGE /, id: 'barge-post', name: 'Barge Post', action: 'include', split: 'legs', clusterCellM: 0.35,
+        reason: 'the BARGE truss/cages are overhead (truss at 5\'2", §5.4) and its end legs stand outside the guardrails (in-band FE-01003 at y −0.41..−0.11 / 8.16..8.46, removed by the playfield rect filter — boundary geometry). In-field in-band the BARGE is 5 disjoint posts: the centre support column FE-01003 on the midline (§5.4 "supported in the center of the FIELD by vertical truss") plus 4 CAGE post bases GE-25201 (measured y ≈ 0.79 / 2.97 / 5.08 / 7.26; nearest gap 0.807 m). Per-post hulls keep the legal between-post crossings reportable — the default 0.5 m cells would merge post↔centre-column across that gap via cell adjacency (separation is guaranteed only when gap ≥ 2 × cell), so this row overrides the cell to 0.35 m (0.807/2 ≈ 0.40 minus authoring-noise margin); the global 0.5 stays tuned for the 2023 GRID dividers',
         citation: '2025 Game Manual §5.4 (BARGE)',
       },
       {
@@ -472,7 +474,9 @@ export async function extractSeason(season) {
       // other row takes ONE hull over all its in-band points (the tower
       // baseplate lives below BAND_FLOOR_M and only clustering on the
       // remaining islands would shatter it).
-      const clusters = row.split === 'legs' ? clusterPoints(pts, CLUSTER_CELL_M) : [pts];
+      const clusters = row.split === 'legs'
+        ? clusterPoints(pts, row.clusterCellM ?? CLUSTER_CELL_M)
+        : [pts];
       if (clusters.length === 0) {
         errors.push(`${group.name}: only sub-tolerance clusters in band`);
         continue;

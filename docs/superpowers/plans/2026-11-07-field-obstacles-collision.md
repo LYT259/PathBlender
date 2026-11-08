@@ -595,3 +595,22 @@ Items outside this plan's reach that no implementer may claim as done without re
 ## Delivery (execution-agent responsibilities, per AGENTS.md — not tasks in this plan)
 
 After Task 8: full-repo `npm run typecheck` + `npm test` green; regenerate-and-`--check` reproducibility confirmed; then the standing repo flow — `node scripts/bump-version.mjs beta "<one-line user-facing note>"` (+ 40-language note completion per `version-notes.test.ts`), PR into `beta`, pre-merge tri-platform verification per the 2026-11-04 Beta delivery rules. The 3 in tolerance and any new visual treatment are existing precedent (bounds) — no new user-confirmation gates are introduced by this plan; if implementation adds any *new* persistent visual element beyond the established red-bumper/panel language, stop and surface it for user decision instead of deciding silently (AGENTS.md 正确性与审美).
+
+## Fix round 1 (2026-11-08): independent-review Critical — 2025 barge-post per-post hulls
+
+The independent read-only review of `ee6d4c21` (pre-merge fact collection, board task `场地障碍物工作包独立只读复核`) found one Critical: the 2025 `barge-post` row produced **one** hull per variant spanning the bumper band y 0.70–7.35 m, so every legal midfield crossing between posts would report a ~0.24 m false-positive collision; the then-test only asserted the x-span (< 1.0 m), which the merged hull passed vacuously.
+
+**Measured official-GLB ground truth (both variants identical, per-node walk of `BARGE (GE-25200)`):** the bumper band (z 0.05–0.5 m) inside the playfield rect contains exactly **5 disjoint posts** — the centre support column FE-01003 (y 3.874–4.179, z to 0.473) plus 4 CAGE post bases GE-25201 (y 0.700–0.885 / 2.881–3.067 / 4.986–5.172 / 7.167–7.353). The review's "7 columns" count included the two remaining FE-01003 legs at y −0.41..−0.11 and 8.16..8.46, which stand **outside the guardrails**; the rect filter keeps them out — boundary geometry is `detectFieldBounds`' domain (a hull vertex there would also fail the playfield ±0.05 validation). Nearest in-field post gap: 0.807 m (cage post ↔ centre column); the two outer corridors measure ~2.0 m.
+
+**Fix (TDD, minimal):**
+- RED first: replaced the vacuous x-span-only test (`field-obstacles-extract.test.ts`) with a both-variants assertion of 5 disjoint per-post hulls, per-hull x/y span < 0.5 m, all 4 consecutive y-gaps > 0.75 m, widest corridor > 1.9 m, and the midline-straddling post centred on the length midline ±2 cm (§5.4 "supported in the center of the FIELD"). Observed failure before the fix: `Expected 5, Received 1`.
+- `seasons.mjs` barge row gains `split: 'legs'` plus a per-row `clusterCellM: 0.35` override. The override is necessary: the default 0.5 m cells merge cage post ↔ centre column across the 0.807 m gap via 8-neighbour cell adjacency (guaranteed separation needs gap ≥ 2 × cell; 0.5 → 3 clusters with the middle one re-bridging posts into a 2.29 m band). 0.35 keeps a margin below 0.807/2 ≈ 0.40 for the documented 11–15 mm authoring noise; the global 0.5 m cell stays untouched for the 2023 GRID dividers. Pipeline change is one line (`row.clusterCellM ?? CLUSTER_CELL_M`); 2022/2024/2026 data is byte-identical after regeneration (diff touches only the two `barge-post` entries).
+- Regenerated `field-obstacles-data.ts`: `barge-post-blue-leg1..5` per variant (group centroid x 8.77363 < 8.774 → blue side, deterministic and identical across variants).
+
+**Verification rerun on the fixed tree:** tag anchors + manual dims re-validated for every season/variant inside `extractSeason` during regeneration; `extract-footprints.mjs --check` byte-reproducible PASS; focused `field-obstacles-extract` 22/22; core 306/306; web 129 files/1392; root `npm run typecheck` 0 errors; root `npm test` green.
+
+**Non-blocking review items recorded (not fixed in this round):**
+- Minor: `ConflictPanel.tsx:70` — the obstacles section is indented one level deeper than the sibling bounds section (cosmetic only).
+- The review's external-unverified list stands unchanged (real-field assembly, real-user feedback, no 2022/2023 tag decals, tri-platform install).
+
+**Scope guards honoured:** no push, no PR, no version bump, no beta/stable merge, engineering log and red book untouched, other sessions' PR #409 untouched.
