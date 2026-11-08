@@ -6,8 +6,9 @@
 # ~/.tauri/pathblender-updater.key) + TAURI_SIGNING_PRIVATE_KEY_PASSWORD
 # (see docs/releasing.md — key backup discipline).
 #
-# Public releases contain a Universal macOS DMG, Windows NSIS installer,
-# Linux DEB/AppImage/RPM, and signed updater artifacts for all four platform keys.
+# Public releases contain a Universal macOS DMG, Windows NSIS installers
+# (online + offline; the offline one embeds the WebView2 Runtime), Linux
+# DEB/AppImage/RPM, and signed updater artifacts for all four platform keys.
 name: Release
 
 on:
@@ -128,6 +129,28 @@ jobs:
           mkdir -p release
           cp packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe release/
           cp packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe.sig release/
+      - name: Build offline NSIS installer
+        # Second Windows artifact embeds the WebView2 Evergreen Standalone
+        # Installer (~127 MB, downloaded from Microsoft at build time). It
+        # overwrites bundle/nsis, which is safe because the online pair is
+        # already staged in release/; the updater feed keeps pointing at the
+        # online exe.
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        shell: bash
+        run: cd packages/desktop && npx tauri build --config src-tauri/tauri.windows-offline.conf.json --bundles nsis
+      - name: Stage offline installer
+        # No `|| true`: a release without the offline artifact must fail loudly.
+        shell: bash
+        run: |
+          V="${RELEASE_TAG#v}"
+          mkdir -p release-offline
+          cp "packages/desktop/src-tauri/target/release/bundle/nsis/PathBlender_${V}_x64-setup.exe" "release-offline/PathBlender_${V}_x64-offline-setup.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-offline
+          path: release-offline/
       - uses: actions/upload-artifact@v4
         with:
           name: windows

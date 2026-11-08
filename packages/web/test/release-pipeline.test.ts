@@ -481,3 +481,16 @@ describe('Windows offline NSIS overlay config', () => {
     expect(base.plugins.updater.endpoints).toContain('https://github.com/LYT259/pathblender/releases/latest/download/latest.json');
   });
 });
+
+describe('Windows offline installer pipeline', () => {
+  it('release.yml builds the overlay, renames to the pinned offline name and uploads windows-offline', () => {
+    expect(workflow).toContain('--config src-tauri/tauri.windows-offline.conf.json --bundles nsis');
+    expect(workflow).toContain('release-offline/PathBlender_${V}_x64-offline-setup.exe');
+    expect(workflow).toContain('name: windows-offline');
+    // The online pair is staged BEFORE the offline build overwrites bundle/nsis.
+    const stageOnline = workflow.indexOf('cp packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe release/');
+    const offlineBuild = workflow.indexOf('--config src-tauri/tauri.windows-offline.conf.json');
+    expect(stageOnline).toBeGreaterThan(-1);
+    expect(offlineBuild).toBeGreaterThan(stageOnline);
+  });
+});
