@@ -297,6 +297,8 @@ export const de = {
   'customField.cancel': 'Abbrechen',
   'bounds.title': 'Feldgrenzen',
   'bounds.item': '{start}–{end} s · {depth} jenseits der {edge} Wand',
+  'obstacles.title': 'Feldhindernisse',
+  'obstacles.item': '{start}–{end} s · {depth} in {name}',
   'edges.far': 'hinteren', 'edges.left': 'linken', 'edges.near': 'vorderen', 'edges.right': 'rechten',
   'customField.tags': 'AprilTag-Layout laden…',
   'updates.upToDate': "Sie sind auf dem neuesten Stand",

@@ -271,6 +271,8 @@ export const en = {
   // to change, which is why the trap went unnoticed until the 2026-10-06 audit
   // found 17 languages rendering "past left wall".
   'bounds.item': '{start}–{end} s · {depth} past the {edge} wall',
+  'obstacles.title': 'Field obstacles',
+  'obstacles.item': '{start}–{end} s · {depth} into {name}',
   'edges.far': 'far', 'edges.left': 'left', 'edges.near': 'near', 'edges.right': 'right',
   'customField.tags': 'Load AprilTag layout…',
   'updates.upToDate': "You’re up to date",

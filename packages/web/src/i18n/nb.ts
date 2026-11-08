@@ -273,6 +273,8 @@ export const nb = {
   'customField.cancel': "Avbryt",
   'bounds.title': "Banegrenser",
   'bounds.item': "{start}–{end} s · {depth} utenfor {edge}veggen",
+  'obstacles.title': "Banehindringer",
+  'obstacles.item': "{start}–{end} s · {depth} inn i {name}",
   'edges.far': "bak", 'edges.left': "venstre", 'edges.near': "front", 'edges.right': "høyre",
   'customField.tags': "Last AprilTag-layout…",
   'updates.upToDate': "Du er oppdatert",

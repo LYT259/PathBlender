@@ -319,6 +319,8 @@ export const he: Record<MessageKey, string> = {
   'customField.cancel': 'ביטול',
   'bounds.title': 'גבולות המגרש',
   'bounds.item': '{start}–{end} ש׳ · {depth} מעבר לקיר ה{edge}',
+  'obstacles.title': 'מכשולי המגרש',
+  'obstacles.item': '{start}–{end} ש׳ · {depth} בתוך {name}',
   'edges.far': 'רחוק', 'edges.left': 'שמאלי', 'edges.near': 'קרוב', 'edges.right': 'ימני',
   'customField.tags': 'טעינת פריסת AprilTag…',
   'updates.upToDate': 'הכול מעודכן',

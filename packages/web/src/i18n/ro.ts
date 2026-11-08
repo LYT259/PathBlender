@@ -274,6 +274,8 @@ export const ro = {
   'customField.cancel': 'Anulează',
   'bounds.title': 'Limite teren',
   'bounds.item': '{start}–{end} s · {depth} dincolo de peretele {edge}',
+  'obstacles.title': 'Obstacole teren',
+  'obstacles.item': '{start}–{end} s · {depth} în {name}',
   'edges.far': 'îndepărtat', 'edges.left': 'din stânga', 'edges.near': 'apropiat', 'edges.right': 'din dreapta',
   'customField.tags': 'Încarcă așezarea AprilTag…',
   'updates.upToDate': "Ești la zi",

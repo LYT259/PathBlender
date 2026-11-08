@@ -273,6 +273,8 @@ export const el = {
   'customField.cancel': 'Ακύρωση',
   'bounds.title': 'Όρια πεδίου',
   'bounds.item': '{start}–{end} s · {depth} πέρα από τον {edge} τοίχο',
+  'obstacles.title': 'Εμπόδια πεδίου',
+  'obstacles.item': '{start}–{end} s · {depth} μέσα στο {name}',
   'edges.far': 'μακρινό', 'edges.left': 'αριστερό', 'edges.near': 'κοντινό', 'edges.right': 'δεξιό',
   'customField.tags': 'Φόρτωση διάταξης AprilTag…',
   'updates.upToDate': "Είστε ενημερωμένοι",

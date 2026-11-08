@@ -317,6 +317,8 @@ export const pl: Record<MessageKey, string> = {
   'customField.cancel': 'Anuluj',
   'bounds.title': 'Granice boiska',
   'bounds.item': '{start}–{end} s · {depth} za {edge} ścianą',
+  'obstacles.title': 'Przeszkody na boisku',
+  'obstacles.item': '{start}–{end} s · {depth} w {name}',
   'edges.far': 'dalszą', 'edges.left': 'lewą', 'edges.near': 'bliższą', 'edges.right': 'prawą',
   'customField.tags': 'Wczytaj układ znaczników AprilTag…',
   'updates.upToDate': 'Masz najnowszą wersję',

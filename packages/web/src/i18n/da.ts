@@ -273,6 +273,8 @@ export const da = {
   'customField.cancel': "Annuller",
   'bounds.title': "Markgrænser",
   'bounds.item': "{start}–{end} s · {depth} uden for den {edge} væg",
+  'obstacles.title': "Markforhindringer",
+  'obstacles.item': "{start}–{end} s · {depth} ind i {name}",
   'edges.far': "fjerne", 'edges.left': "venstre", 'edges.near': "nære", 'edges.right': "højre",
   'customField.tags': "Indlæs AprilTag-layout…",
   'updates.upToDate': "Du er opdateret",

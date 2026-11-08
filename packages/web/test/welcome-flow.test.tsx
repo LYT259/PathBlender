@@ -288,7 +288,7 @@ describe('welcome flow', () => {
     expect(document.querySelector('.bounds-count')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Hide 11019 on field' }));
-    expect(screen.getByText('0', { selector: '.conflict-count' })).toBeInTheDocument();
+    expect(screen.getByText('0', { selector: '.conflict-count:not(.bounds-count):not(.obstacles-count)' })).toBeInTheDocument();
     expect(document.querySelector('.bounds-count')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show 8814 on field' }));

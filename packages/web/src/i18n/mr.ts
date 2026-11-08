@@ -297,6 +297,8 @@ export const mr = {
   'customField.cancel': 'रद्द करा',
   'bounds.title': 'फील्ड सीमा',
   'bounds.item': '{start}–{end} से · {edge} भिंतीच्या {depth} पलीकडे',
+  'obstacles.title': 'फील्ड अडथळे',
+  'obstacles.item': '{start}–{end} से · {name}मध्ये {depth} आत',
   'edges.far': 'दूर', 'edges.left': 'डावी', 'edges.near': 'जवळची', 'edges.right': 'उजवी',
   'customField.tags': 'AprilTag लेआउट लोड करा…',
   'updates.upToDate': "तुम्ही अप-टू-डेट आहात",

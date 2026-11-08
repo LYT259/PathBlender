@@ -21,6 +21,8 @@ import {
   CUSTOM_FIELD_ID,
   detectCollisions,
   detectFieldBounds,
+  detectObstacleCollisions,
+  obstaclesForField,
   deserializeSession,
   FIELDS,
   fieldById,
@@ -460,6 +462,10 @@ function AppBody() {
     [visible, toleranceS],
   );
   const bounds = useMemo(() => detectFieldBounds(visible, field), [visible, field]);
+  // Field-obstacle checks follow the same visible set and re-key on the
+  // construction variant (2025 welded vs AndyMark hulls differ ~7 cm).
+  const obstacleDefs = useMemo(() => obstaclesForField(field, fieldVariant), [field, fieldVariant]);
+  const obstacleHits = useMemo(() => detectObstacleCollisions(visible, obstacleDefs), [visible, obstacleDefs]);
 
   // .path texts stay available so later .auto imports can resolve their
   // pathName references (within the same batch or across this session).
@@ -1247,7 +1253,7 @@ function AppBody() {
   // Both side panels stay open while robots exist — there is no collapse
   // entry point left, so a panel can never be closed without a way back.
   const leftOpen = hasRobots;
-  const issueCount = conflicts.length + bounds.length;
+  const issueCount = conflicts.length + bounds.length + obstacleHits.length;
   const rightOpen = hasRobots;
   const openImport = () => importInputRef.current?.click();
   // The repo link must open the user's system browser from the desktop shell
@@ -1394,6 +1400,7 @@ function AppBody() {
           settingsFiles: settingsFilesRef.current,
           conflicts,
           bounds,
+          obstacleHits,
           appVersion: APP_VERSION,
           secondsLabel: tr('sequence.seconds'),
           moreLabel: (count) => tr('sequence.moreActions', { n: count }),
@@ -1413,7 +1420,7 @@ function AppBody() {
         setExportingPackage(false);
       }
     })();
-  }, [exportingPackage, robots, visible, field, fieldId, fieldImageUrl, conflicts, bounds, flash, tr]);
+  }, [exportingPackage, robots, visible, field, fieldId, fieldImageUrl, conflicts, bounds, obstacleHits, flash, tr]);
 
   // Native menu undo/redo: the ⌘Z accelerator is claimed by the menu, so the
   // old keydown path never fires on desktop. Inside a text field the session
@@ -1732,7 +1739,7 @@ function AppBody() {
                     <FieldCanvas3D active={view3D} showTrail={showTrail} showHeatmap={showHeatmap} ref={canvas3DRef} variant={fieldVariant} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} dimPathIds={dimPathIds} />
                   </Suspense>
                 </div>}
-                {!view3D && <FieldCanvas ref={canvasRef} showTrail={showTrail} showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} dimPathIds={dimPathIds} labelMemory={labelMemory2D.current} />}
+                {!view3D && <FieldCanvas ref={canvasRef} showTrail={showTrail} showHeatmap={showHeatmap} field={field} fieldImageUrl={fieldImageUrl} robots={previewRobots ?? visible} currentT={previewSource ? previewTime : t} conflicts={previewSource ? [] : conflicts} bounds={previewSource ? [] : bounds} obstacleHits={previewSource ? [] : obstacleHits} dimPathIds={dimPathIds} labelMemory={labelMemory2D.current} />}
               </>}
             </div>
             {hasRobots && <div className="workspace-status"><span>{tr('workspace.imported', { n: robots.length })}</span>{/* A pure indicator, not a control — no ring, no click (user 2026-10-07). */}
@@ -1743,7 +1750,7 @@ function AppBody() {
               <button className={inspectorMode === 'checks' ? 'on' : ''} aria-pressed={inspectorMode === 'checks'} onClick={() => setInspectorMode('checks')}>{tr('workspace.checks')}{issueCount > 0 && <span className="tab-count">{issueCount}</span>}</button>
               <button className={inspectorMode === 'robot' ? 'on' : ''} aria-pressed={inspectorMode === 'robot'} onClick={() => setInspectorMode('robot')}>{tr('workspace.details')}</button>
             </div></div>
-            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} onJump={jumpToIssue} toleranceS={toleranceS} onToleranceChange={setToleranceS} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
+            {inspectorMode === 'checks' && <ConflictPanel robots={robots} conflicts={conflicts} bounds={bounds} obstacleHits={obstacleHits} obstacleDefs={obstacleDefs} onJump={jumpToIssue} toleranceS={toleranceS} onToleranceChange={setToleranceS} guide={issueCount > 0 && showCheckTip && <UsageTip text={tr('onboarding.check')} onDismiss={dismissCheckTip} />} />}
             {inspectorMode === 'robot' && <div className="inspector-scroll"><RobotInspector robot={selectedRobot ? withSeasonGeometry(selectedRobot, field.year) : undefined} libraryProfiles={selectedRobot?.profileOptions ?? []} onApplyProfile={applyProfile} /></div>}
           </aside>
         </main>

@@ -317,6 +317,8 @@ export const ja: Record<MessageKey, string> = {
   'customField.cancel': 'キャンセル',
   'bounds.title': 'フィールド境界',
   'bounds.item': '{start}–{end} s · {edge}の壁から {depth} 超過',
+  'obstacles.title': 'フィールド障害物',
+  'obstacles.item': '{start}–{end} s · {name}に {depth} 侵入',
   'edges.far': '奥', 'edges.left': '左', 'edges.near': '手前', 'edges.right': '右',
   'customField.tags': 'AprilTag レイアウトを読み込む…',
   'updates.upToDate': '最新の状態です',

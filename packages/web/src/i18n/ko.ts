@@ -315,6 +315,8 @@ export const ko: Record<MessageKey, string> = {
   'customField.cancel': '취소',
   'bounds.title': '필드 경계',
   'bounds.item': '{start}–{end} s · {edge} 벽을 {depth} 넘어감',
+  'obstacles.title': '필드 장애물',
+  'obstacles.item': '{start}–{end} s · {name}에 {depth} 침입',
   'edges.far': '먼 쪽', 'edges.left': '왼쪽', 'edges.near': '가까운 쪽', 'edges.right': '오른쪽',
   'customField.tags': 'AprilTag 레이아웃 불러오기…',
   'updates.upToDate': '최신 버전입니다',

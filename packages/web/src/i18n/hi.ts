@@ -297,6 +297,8 @@ export const hi = {
   'customField.cancel': 'रद्द करें',
   'bounds.title': 'फ़ील्ड सीमाएं',
   'bounds.item': '{start}–{end} से · {edge} दीवार से {depth} पार',
+  'obstacles.title': 'फ़ील्ड अवरोध',
+  'obstacles.item': '{start}–{end} से · {name} में {depth} अंदर',
   'edges.far': 'दूर की', 'edges.left': 'बाईं', 'edges.near': 'पास की', 'edges.right': 'दाईं',
   'customField.tags': 'AprilTag लेआउट लोड करें…',
   'updates.upToDate': "आप अप-टू-डेट हैं",

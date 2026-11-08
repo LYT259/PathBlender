@@ -314,6 +314,8 @@ export const nl: Record<MessageKey, string> = {
   'customField.cancel': 'Annuleren',
   'bounds.title': 'Veldgrenzen',
   'bounds.item': '{start}–{end} s · {depth} voorbij {edge}',
+  'obstacles.title': 'Veldhindernissen',
+  'obstacles.item': '{start}–{end} s · {depth} in {name}',
   'edges.far': 'de verre wand', 'edges.left': 'de linkerwand', 'edges.near': 'de nabije wand', 'edges.right': 'de rechterwand',
   'customField.tags': 'AprilTag-layout laden…',
   'updates.upToDate': "U bent up-to-date",

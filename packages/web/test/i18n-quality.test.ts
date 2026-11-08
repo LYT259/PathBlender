@@ -87,6 +87,7 @@ describe('values carry no stray whitespace', () => {
 const PREFORMATTED: Record<string, string> = {
   'conflicts.item': '{d}',
   'bounds.item': '{depth}',
+  'obstacles.item': '{depth}',
   'sequence.joinPosition': '{d}',
   'sequence.libraryBlocked': '{p}',
 };

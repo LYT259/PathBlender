@@ -275,6 +275,8 @@ export const uk = {
   'customField.cancel': "Скасувати",
   'bounds.title': "Межі поля",
   'bounds.item': "{start}–{end} с · {depth} за {edge} стіною",
+  'obstacles.title': "Перешкоди поля",
+  'obstacles.item': "{start}–{end} с · {depth} у {name}",
   'edges.far': "дальньою", 'edges.left': "лівою", 'edges.near': "ближньою", 'edges.right': "правою",
   'customField.tags': "Завантажити розташування AprilTag…",
   'updates.upToDate': "У вас найновіша версія",

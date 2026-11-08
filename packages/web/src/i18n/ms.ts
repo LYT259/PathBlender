@@ -297,6 +297,8 @@ export const ms = {
   'customField.cancel': 'Batal',
   'bounds.title': 'Sempadan padang',
   'bounds.item': '{start}–{end} s · {depth} melepasi dinding {edge}',
+  'obstacles.title': 'Halangan padang',
+  'obstacles.item': '{start}–{end} s · {depth} ke dalam {name}',
   'edges.far': 'jauh', 'edges.left': 'kiri', 'edges.near': 'dekat', 'edges.right': 'kanan',
   'customField.tags': 'Muatkan susun atur AprilTag…',
   'updates.upToDate': "Anda sudah terkini",

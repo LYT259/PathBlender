@@ -297,6 +297,8 @@ export const vi = {
   'customField.cancel': 'Hủy',
   'bounds.title': 'Ranh giới sân',
   'bounds.item': '{start}–{end} s · {depth} qua tường {edge}',
+  'obstacles.title': 'Chướng ngại sân',
+  'obstacles.item': '{start}–{end} s · {depth} vào {name}',
   'edges.far': 'xa', 'edges.left': 'trái', 'edges.near': 'gần', 'edges.right': 'phải',
   'customField.tags': 'Tải bố cục AprilTag…',
   'updates.upToDate': "Bạn đã cập nhật mới nhất",
