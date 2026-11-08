@@ -152,7 +152,8 @@ export type {
   HullPoint,
 } from './field-obstacles';
 export { FIELD_OBSTACLE_DATA } from './field-obstacles-data';
-export { obbVsConvexPolygonDepth } from './collision/obstacles';
+export { obbVsConvexPolygonDepth, detectObstacleCollisions } from './collision/obstacles';
+export type { ObstacleCollisionInterval, ObstacleDetectOptions } from './collision/obstacles';
 
 export {
   COLORBLIND_COLORS,
