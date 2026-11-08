@@ -1,0 +1,49 @@
+WEBVTT
+
+00:00:00.500 --> 00:00:05.500
+PathBlender blends each team's route files into one field view.
+
+00:00:06.500 --> 00:00:11.000
+Both teams' exported files are processed locally in the browser.
+
+00:00:11.500 --> 00:00:15.500
+Two robots appear, and the conflict check reports 1.
+
+00:00:16.500 --> 00:00:21.000
+Press Play to move both robots on one shared clock.
+
+00:00:21.500 --> 00:00:25.500
+Pause anywhere to inspect a single moment.
+
+00:00:26.500 --> 00:00:31.000
+The checks panel lists each conflict moment.
+
+00:00:31.500 --> 00:00:35.500
+Click an entry to jump the clock right to it.
+
+00:00:36.500 --> 00:00:40.000
+"Try an example" loads three real robots with routes.
+
+00:00:40.500 --> 00:00:43.500
+The conflict check reports 3.
+
+00:00:44.500 --> 00:00:51.000
+"Arrange timeline" swaps in another route from the library.
+
+00:00:51.500 --> 00:00:57.500
+The check goes from 3 to 1; swapping back restores 3.
+
+00:00:58.500 --> 00:01:03.000
+"Mirror left/right" flips robot 11019 to the mirrored side.
+
+00:01:03.500 --> 00:01:07.500
+The check goes from 3 to 2.
+
+00:01:08.500 --> 00:01:15.500
+Switch the whole session red or blue: verdicts stay the same.
+
+00:01:16.500 --> 00:01:19.000
+The analysis view never rewrites your original files or robot programs.
+
+00:01:19.500 --> 00:01:21.500
+Learn more in Help → Quick guide.

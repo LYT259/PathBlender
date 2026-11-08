@@ -36,6 +36,11 @@ If the exercise helped, [Star PathBlender on GitHub](https://github.com/LYT259/p
 For a problem, [open an issue](https://github.com/LYT259/pathblender/issues) —
 you do not have to share your private route files.
 
+Prefer watching first? An 83-second demo covers import, shared-clock
+replay, locating a check result, comparing routes, and mirroring:
+[demo video (MP4)](screenshots/demo-video.en.mp4),
+[captions (WebVTT)](screenshots/demo-video.en.vtt).
+
 ## Your first alliance path check
 
 Seven steps from zero to a finished check. No files yet? Every step can be
