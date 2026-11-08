@@ -58,6 +58,7 @@ type UpdateCheck =
   | { kind: 'upToDate' }
   | { kind: 'found'; version: string }
   | { kind: 'installing'; version: string }
+  | { kind: 'blocked'; version: string }
   | { kind: 'failed' };
 
 /** Shared settings; changes only reach other windows after Save. */
@@ -134,8 +135,9 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved, initialS
       : updateCheck.kind === 'upToDate' ? t('updates.upToDate')
         : updateCheck.kind === 'found' ? t('prefs.updateAvailable', { v: updateCheck.version })
           : updateCheck.kind === 'installing' ? t('updates.downloading', { v: updateCheck.version })
-            : updateCheck.kind === 'failed' ? t('updates.failed')
-              : '';
+            : updateCheck.kind === 'blocked' ? t('updates.blocked')
+              : updateCheck.kind === 'failed' ? t('updates.failed')
+                : '';
   // A channel draft that differs from the saved channel does NOT steer the
   // check — say so next to the button, in the saved channel's own name.
   const savedChannelHint = channelDraft != null && channelDraft !== channel
@@ -195,9 +197,16 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved, initialS
   }, [autoCheckUpdates, goUpdates]);
 
   function startInstall() {
-    if (updateCheck.kind !== 'found') return;
-    setUpdateCheck({ kind: 'installing', version: updateCheck.version });
-    void installPendingUpdate().catch(() => setUpdateCheck({ kind: 'failed' }));
+    // 'blocked' retries too: a refused install leaves the update stashed
+    // native-side, so a retry after the session saves needs no re-check.
+    if (updateCheck.kind !== 'found' && updateCheck.kind !== 'blocked') return;
+    const version = updateCheck.version;
+    setUpdateCheck({ kind: 'installing', version });
+    void installPendingUpdate()
+      .then((outcome) => {
+        if (outcome === 'blocked') setUpdateCheck({ kind: 'blocked', version });
+      })
+      .catch(() => setUpdateCheck({ kind: 'failed' }));
   }
 
   function save() {
@@ -350,7 +359,7 @@ export function PreferencesPanel({ desktop, onClose, onColorblindSaved, initialS
             <div className="update-actions">
               <button type="button" className="btn accent" disabled={updateCheck.kind === 'checking' || updateCheck.kind === 'installing'}
                 aria-describedby={`${id}-update-status`} onClick={startUpdateCheck}><Icon name="refresh" size={15} />{t('prefs.checkUpdates')}</button>
-              {updateCheck.kind === 'found' &&
+              {(updateCheck.kind === 'found' || updateCheck.kind === 'blocked') &&
                 <button type="button" className="btn" onClick={startInstall}>{t('prefs.installUpdate')}</button>}
             </div>
             <p id={`${id}-update-status`} role="status">{updateStatusText}</p>

@@ -234,6 +234,30 @@ describe('shared desktop preferences', () => {
     expect(prefsCheck.install).not.toHaveBeenCalled();
   });
 
+  it('a blocked install shows the blocked status and keeps the install button', async () => {
+    await renderPreferences();
+    openUpdates();
+    fireEvent.click(screen.getByRole('button', { name: 'Check for updates' }));
+    act(() => prefsCheck.onEvent!({ kind: 'found', version: '9.9.9' }));
+    // The Rust session guard refused: the stashed update survives, so the
+    // button stays for a retry after the session saves.
+    prefsCheck.install.mockResolvedValueOnce('blocked');
+    fireEvent.click(screen.getByRole('button', { name: 'Install and relaunch' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Update paused — the latest session changes are not saved yet. Try again in a moment.'));
+    expect(screen.getByRole('button', { name: 'Install and relaunch' })).toBeEnabled();
+  });
+
+  it('a failed install shows the failure and drops the install button', async () => {
+    await renderPreferences();
+    openUpdates();
+    fireEvent.click(screen.getByRole('button', { name: 'Check for updates' }));
+    act(() => prefsCheck.onEvent!({ kind: 'found', version: '9.9.9' }));
+    prefsCheck.install.mockRejectedValueOnce(new Error('disk'));
+    fireEvent.click(screen.getByRole('button', { name: 'Install and relaunch' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Update check failed — check your connection and try again'));
+    expect(screen.queryByRole('button', { name: 'Install and relaunch' })).toBeNull();
+  });
+
   it('Escape layers: an open dropdown consumes it before the window closes', async () => {
     await renderPreferences();
     const channel = openUpdates();
