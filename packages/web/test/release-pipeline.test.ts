@@ -501,4 +501,15 @@ describe('Windows offline installer pipeline', () => {
     expect(windows).toContain('_x64-offline-setup.exe');
     expect(windows).toContain('-ArgumentList "/S"');
   });
+  it('release-verify downloads, digest-pins, size-floors, installs and launches the offline asset', () => {
+    const verifyText2 = readFileSync(resolve(ROOT, '.github/workflows/release-verify.yml'), 'utf-8');
+    const windows = verifyText2.slice(verifyText2.indexOf('  windows-installer:'), verifyText2.indexOf('  macos-intel-dmg:'));
+    for (const s of [
+      'PathBlender_${VER}_x64-offline-setup.exe',
+      'sha256-offline.log',
+      '104857600',
+      'offline installer is smaller than 100 MiB',
+    ]) expect(windows).toContain(s);
+    expect((windows.match(/-ArgumentList "\/S"/g) ?? []).length).toBe(2);
+  });
 });
