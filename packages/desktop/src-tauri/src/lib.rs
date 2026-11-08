@@ -39,6 +39,37 @@ const FEED_BETA: &str = "https://github.com/LYT259/pathblender/releases/latest/d
 /// consumes it (the webview drives both, mirroring the plugin's JS API).
 struct PendingUpdate(Mutex<Option<Update>>);
 
+/// The exact error string the JS side matches (update-guard.ts
+/// UPDATE_BLOCKED_MARKER) — rewording either side silently degrades blocked
+/// installs into generic failures.
+const UPDATE_BLOCKED_ERR: &str = "update blocked: unsaved session";
+
+/// Fail-closed default: installs are blocked until the webview explicitly
+/// reports a clean session — a page that never reports cannot lose work.
+const UPDATE_SESSION_DIRTY_DEFAULT: bool = true;
+
+/// Last session-dirty report from the main window. The main window owns the
+/// session (and thus the dirty computation); the prefs window only installs.
+struct UpdateSessionGuard(AtomicBool);
+
+/// The main window reports its session-dirty state here after every autosave
+/// transition; the flag holds the last delivered value.
+#[tauri::command]
+fn set_update_guard(guard: State<'_, UpdateSessionGuard>, dirty: bool) -> Result<(), String> {
+    guard.0.store(dirty, Ordering::SeqCst);
+    Ok(())
+}
+
+/// Gate before take: a blocked attempt must NOT consume the pending update,
+/// so the retry after saving reuses the stashed update without re-checking
+/// the feed.
+fn gate_then_take<T>(dirty: bool, pending: &mut Option<T>) -> Result<T, &'static str> {
+    if dirty {
+        return Err(UPDATE_BLOCKED_ERR);
+    }
+    pending.take().ok_or("no update was checked")
+}
+
 #[derive(serde::Serialize)]
 struct UpdateMeta {
     version: String,
@@ -71,17 +102,20 @@ async fn check_update(
     Ok(meta)
 }
 
-/// Download and install the update found by `check_update`. The webview
-/// relaunches afterwards; on Windows the NSIS installer exits the app
-/// itself, so callers must treat install as the last reliable step.
+/// Download and install the update found by `check_update`. The session
+/// guard is checked BEFORE the pending update is taken: everything after
+/// that point may be interrupted by the Windows installer, so this is the
+/// last controllable moment. The webview relaunches afterwards; on Windows
+/// the NSIS installer exits the app itself, so callers must treat install
+/// as the last reliable step.
 #[tauri::command]
-async fn install_update(pending: State<'_, PendingUpdate>) -> Result<(), String> {
+async fn install_update(
+    pending: State<'_, PendingUpdate>,
+    guard: State<'_, UpdateSessionGuard>,
+) -> Result<(), String> {
     let update = {
-        let mut guard = pending.0.lock().map_err(|e| e.to_string())?;
-        guard.take()
-    };
-    let Some(update) = update else {
-        return Err("no update was checked".into());
+        let mut pending = pending.0.lock().map_err(|e| e.to_string())?;
+        gate_then_take(guard.0.load(Ordering::SeqCst), &mut *pending)?
     };
     update
         .download_and_install(|_chunk, _total| {}, || {})
@@ -612,12 +646,16 @@ pub fn run() {
             hoot::hoot_status,
             hoot::hoot_accept_eula,
             hoot::hoot_download_owlet,
-            hoot::hoot_convert
+            hoot::hoot_convert,
+            set_update_guard
         ])
         .manage(MenuState {
             ids: Mutex::new(Vec::new()),
         })
         .manage(PendingUpdate(Mutex::new(None)))
+        .manage(UpdateSessionGuard(AtomicBool::new(
+            UPDATE_SESSION_DIRTY_DEFAULT,
+        )))
         .setup(|app| {
             let menu = startup_menu(app.handle())?;
             app.set_menu(menu)?;
@@ -751,7 +789,11 @@ async fn save_file(
 
 #[cfg(test)]
 mod tests {
-    use super::{dock_icon_resource, is_allowed_external_url};
+    use super::{
+        dock_icon_resource, gate_then_take, is_allowed_external_url, UPDATE_BLOCKED_ERR,
+        UPDATE_SESSION_DIRTY_DEFAULT,
+    };
+    use std::sync::atomic::{AtomicBool, Ordering};
 
     /// The whitelist is the whole contract: every (style, dark) pair maps to
     /// one of the four bundled dock resources, and anything unexpected falls
@@ -779,9 +821,7 @@ mod tests {
         assert!(is_allowed_external_url(
             "https://github.com/LYT259/pathblender/releases/latest"
         ));
-        assert!(is_allowed_external_url(
-            "https://v6.docs.ctr-electronics.com/en/stable/"
-        ));
+        assert!(is_allowed_external_url("https://v6.docs.ctr-electronics.com/en/stable/"));
         assert!(is_allowed_external_url("https://www.ctr-electronics.com/"));
         assert!(!is_allowed_external_url("https://evil.example"));
         // Starts with the repo URL's characters but is a different name.
@@ -790,5 +830,41 @@ mod tests {
         // not the whitelisted origins.
         assert!(!is_allowed_external_url("http://github.com/LYT259/pathblender"));
         assert!(!is_allowed_external_url("https://ctr-electronics.com/"));
+    }
+
+    /// A blocked attempt must NOT consume the pending update: the retry after
+    /// saving reuses the stashed update without re-checking the feed.
+    #[test]
+    fn gate_blocks_before_consuming_the_pending_update() {
+        let mut pending = Some("update");
+        assert_eq!(gate_then_take(true, &mut pending), Err(UPDATE_BLOCKED_ERR));
+        assert_eq!(pending, Some("update"));
+    }
+
+    #[test]
+    fn gate_passes_clean_sessions_through() {
+        let mut pending = Some("update");
+        assert_eq!(gate_then_take(false, &mut pending), Ok("update"));
+        assert_eq!(pending, None);
+    }
+
+    #[test]
+    fn clean_but_unchecked_is_still_the_no_update_error() {
+        let mut pending: Option<&str> = None;
+        assert_eq!(gate_then_take(false, &mut pending), Err("no update was checked"));
+    }
+
+    /// The JS side matches on this exact string (update-guard.ts) — rewording
+    /// either side silently degrades blocked installs into generic failures.
+    #[test]
+    fn blocked_error_string_is_pinned_to_the_js_marker() {
+        assert_eq!(UPDATE_BLOCKED_ERR, "update blocked: unsaved session");
+    }
+
+    /// Fail-closed: before the webview ever reports, installs are blocked.
+    #[test]
+    fn guard_defaults_to_blocked() {
+        assert!(UPDATE_SESSION_DIRTY_DEFAULT);
+        assert!(AtomicBool::new(UPDATE_SESSION_DIRTY_DEFAULT).load(Ordering::SeqCst));
     }
 }
