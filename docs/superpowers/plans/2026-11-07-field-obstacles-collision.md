@@ -1,6 +1,6 @@
 # Field Obstacles Collision Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Detect robots driving into field interior obstacles (hub, reef, stage legs, …) — red-book §6.2's long-term item "机器人 OBB vs 场地元素（墙、障碍物）" — for the five bundled seasons 2022–2026, with footprints programmatically extracted from the bundled official-CAD GLBs and surfaced in the checks panel.
 
@@ -73,7 +73,7 @@ export function obstaclesForField(
 ): readonly FieldObstacle[];
 ```
 
-- [ ] **Step 1: Write the failing tests** in `packages/core/test/field-obstacles.test.ts`:
+- [x] **Step 1: Write the failing tests** in `packages/core/test/field-obstacles.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -126,12 +126,12 @@ describe('generated obstacle data integrity', () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npm test -w @pathblender/core -- field-obstacles`
 Expected: FAIL — `obstaclesForField` / `FIELD_OBSTACLE_DATA` not exported.
 
-- [ ] **Step 3: Implement** `packages/core/src/field-obstacles.ts` (types above + `obstaclesForField`: index into `FIELD_OBSTACLE_DATA[field.id]`; return `[]` when absent; when present and `variant === 'andymark'`, return `set.andymark ?? set.welded`) and `packages/core/src/field-obstacles-data.ts`:
+- [x] **Step 3: Implement** `packages/core/src/field-obstacles.ts` (types above + `obstaclesForField`: index into `FIELD_OBSTACLE_DATA[field.id]`; return `[]` when absent; when present and `variant === 'andymark'`, return `set.andymark ?? set.welded`) and `packages/core/src/field-obstacles-data.ts`:
 
 ```ts
 // GENERATED FILE — do not edit by hand. Regenerate: node scripts/field-obstacles/extract-footprints.mjs
@@ -145,13 +145,13 @@ export const FIELD_OBSTACLE_DATA: Record<string, FieldObstacleVariantSet> = {};
 
 Export `obstaclesForField`, `FieldObstacle`, `FieldObstacleVariantSet`, `HullPoint`, and `FIELD_OBSTACLE_DATA` from `packages/core/src/index.ts` next to the field-bounds exports. Import `FieldPackage` type in `field-obstacles.ts` only as a `Pick<FieldPackage, 'id'>` parameter (no cycle with `field.ts`).
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `npm test -w @pathblender/core -- field-obstacles`
 Expected: PASS (2 describes, data test vacuously green).
 Also run: `npm run typecheck -w @pathblender/core` — Expected: 0 errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/src/field-obstacles.ts packages/core/src/field-obstacles-data.ts packages/core/src/index.ts packages/core/test/field-obstacles.test.ts
@@ -179,7 +179,7 @@ git commit -m "feat(core): field obstacle data types and per-season lookup"
 export function obbVsConvexPolygonDepth(obb: Obb, hull: readonly HullPoint[]): number;
 ```
 
-- [ ] **Step 1: Write failing tests** in `packages/core/test/obstacle-sat.test.ts`. Axis-aligned unit square obstacle `{(2,0),(3,0),(3,1),(2,1)}`; OBB via `poseToObb({ x, y, heading }, { lengthM, widthM, offsetX: 0, offsetY: 0 })`:
+- [x] **Step 1: Write failing tests** in `packages/core/test/obstacle-sat.test.ts`. Axis-aligned unit square obstacle `{(2,0),(3,0),(3,1),(2,1)}`; OBB via `poseToObb({ x, y, heading }, { lengthM, widthM, offsetX: 0, offsetY: 0 })`:
 
 ```ts
 it('reports exact overlap for a face-to-face square-on-square hit', () => {
@@ -207,19 +207,19 @@ it('depth equals the face overlap for a partial edge crossing', () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npm test -w @pathblender/core -- obstacle-sat`
 Expected: FAIL — module/function not found.
 
-- [ ] **Step 3: Implement** `obbVsConvexPolygonDepth` in `packages/core/src/collision/obstacles.ts`. Approach: project both shapes on each candidate axis (reuse the projection arithmetic pattern from `obb.ts:project`; hull projection is min/max of dot products over hull points). If any axis separates (`pa.max < pb.min || pb.max < pa.min`) return 0; else return the minimum `min(pa.max, pb.max) − max(pa.min, pb.min)` over all axes. Export from `index.ts`.
+- [x] **Step 3: Implement** `obbVsConvexPolygonDepth` in `packages/core/src/collision/obstacles.ts`. Approach: project both shapes on each candidate axis (reuse the projection arithmetic pattern from `obb.ts:project`; hull projection is min/max of dot products over hull points). If any axis separates (`pa.max < pb.min || pb.max < pa.min`) return 0; else return the minimum `min(pa.max, pb.max) − max(pa.min, pb.min)` over all axes. Export from `index.ts`.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `npm test -w @pathblender/core -- obstacle-sat && npm run typecheck -w @pathblender/core`
 Expected: PASS / 0 errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/src/collision/obstacles.ts packages/core/src/index.ts packages/core/test/obstacle-sat.test.ts
@@ -258,7 +258,7 @@ export function detectObstacleCollisions(
 ): ObstacleCollisionInterval[];
 ```
 
-- [ ] **Step 1: Write failing tests** in `packages/core/test/obstacle-detect.test.ts`. Build synthetic robots with `makeSession({ id, name, teamName: '', samples: [...], ... })` exactly like `field-bounds.test.ts`'s `parked()` helper (read that helper first and copy its shape; 0.9 m default geometry). One square obstacle `HUB = { id: 'test-hub', name: 'Test Hub', hull: [{x:2,y:2},{x:3,y:2},{x:3,y:3},{x:2,y:3}], zMinM: 0, zMaxM: 1 }`:
+- [x] **Step 1: Write failing tests** in `packages/core/test/obstacle-detect.test.ts`. Build synthetic robots with `makeSession({ id, name, teamName: '', samples: [...], ... })` exactly like `field-bounds.test.ts`'s `parked()` helper (read that helper first and copy its shape; 0.9 m default geometry). One square obstacle `HUB = { id: 'test-hub', name: 'Test Hub', hull: [{x:2,y:2},{x:3,y:2},{x:3,y:3},{x:2,y:3}], zMinM: 0, zMaxM: 1 }`:
 
 ```ts
 it('flags a path driven through the obstacle with interval, depth and worst pose', ...);          // robot crossing (2.5, 2.5) between t=1..3 → 1 interval, startT/endT bracket the crossing, maxPenetrationM > 0, worstPose inside hull
@@ -269,19 +269,19 @@ it('default step is 0.05 s', ...);                                              
 it('honors a custom stepS option', ...);                                                           // same dwell at stepS 0.5 → coarser first/last sample times
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npm test -w @pathblender/core -- obstacle-detect`
 Expected: FAIL — `detectObstacleCollisions` not exported.
 
-- [ ] **Step 3: Implement** `detectObstacleCollisions` mirroring `detectFieldBounds` (field-bounds.ts:93-139) line for line in structure: per robot, `from = activeStartT(robot)`, `to = activeEndT(robot)`, sample `poseToObb(samplePoseAt(robot, t), robot.trajectory.geometry)`, per obstacle `depth = obbVsConvexPolygonDepth(obb, o.hull)`; a sample counts as a hit when `depth >= BOUNDS_TOLERANCE_M` (the ≥ rule is the user's "equal already counts" precedent); merge with the `1.5 * step` gap rule; track `maxPenetrationM` (raw depth) and `worstPose`. Sort by `startT`. Step default `0.05`.
+- [x] **Step 3: Implement** `detectObstacleCollisions` mirroring `detectFieldBounds` (field-bounds.ts:93-139) line for line in structure: per robot, `from = activeStartT(robot)`, `to = activeEndT(robot)`, sample `poseToObb(samplePoseAt(robot, t), robot.trajectory.geometry)`, per obstacle `depth = obbVsConvexPolygonDepth(obb, o.hull)`; a sample counts as a hit when `depth >= BOUNDS_TOLERANCE_M` (the ≥ rule is the user's "equal already counts" precedent); merge with the `1.5 * step` gap rule; track `maxPenetrationM` (raw depth) and `worstPose`. Sort by `startT`. Step default `0.05`.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `npm test -w @pathblender/core && npm run typecheck -w @pathblender/core`
 Expected: all core tests PASS (new + existing).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/src/collision/obstacles.ts packages/core/src/index.ts packages/core/test/obstacle-detect.test.ts
@@ -311,7 +311,7 @@ export function hullPointsOfGroup(json, bin, group, { zMin, zMax })  // → { hu
 
 - The transform contract (from `packages/web/src/field3d-frame.ts`, already registration-verified to 1.3 mm/11 mm against the shipped assets — cite that file in comments): native point `p` → (mirror `'z'`: `(p.x, p.y, −p.z)`; mirror `'x'`: `(−p.x, p.y, p.z)`) → world `x = cx − X`, `y = cy − Z`, height `= Y`, where `cx, cy` come from core's `fieldImageWorldRect(field.image, …)` center. **The generator must compute `mirror` from the field's shipped `packages/web/public/fields3d/<dir>/config.json` `rotations` using the same rule as `configMirrorAxis` (field3d-frame.ts:118 — a `z:180°` entry ⇒ `'x'`, else `'z'`), and the season config may only record the derived value with a test asserting it matches the config.json — never an independently hand-set axis.**
 
-- [ ] **Step 1: Write failing tests** in `packages/web/test/field-obstacles-extract.test.ts`:
+- [x] **Step 1: Write failing tests** in `packages/web/test/field-obstacles-extract.test.ts`:
 
 ```ts
 // Synthetic GLB fixture built in-test: hand-assemble the 12-byte GLB header,
@@ -333,12 +333,12 @@ it('hullPointsOfGroup filters by z band and reports the in-band z range', ...); 
 it('parses the real 2026 GLB: > 3000 nodes, root element groups are non-empty', ...);  // read packages/web/public/fields3d/2026-rebuilt/model.glb
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npm test -w @pathblender/web -- field-obstacles-extract`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement** `scripts/field-obstacles/extract.mjs` as pure ESM JS:
+- [x] **Step 3: Implement** `scripts/field-obstacles/extract.mjs` as pure ESM JS:
   - `parseGlb`: walk chunks (JSON type `0x4e4f534a`, BIN `0x004e4942`); decode POSITION accessors honoring `componentType` 5126 (FLOAT), `bufferView.byteOffset/byteStride` (the shipped GLBs use stride 0/12 — assert and throw on anything else rather than guessing), and accessor `count`. Use accessor `min/max` only as a sanity cross-check (|computed − declared| < 1e-3).
   - `localMatrix`: column-major glTF matrix layout → compose TRS when absent (hand-written 4x4 multiply; no dependencies).
   - Node world transform: post-multiply child by parent along the node tree (`scene.nodes → root → assemblies → meshes`; the world matrix of a mesh is the product of ancestor local matrices — same as three's `updateMatrixWorld`, documented in field3d-model.test.ts).
@@ -346,12 +346,12 @@ Expected: FAIL — module not found.
   - `makeNativeToWorld(mirror, cx, cy)`: the two-step contract above, returning world `{ x, y, height }`.
   - `monotoneChainHull`: Andrew's monotone chain on `HullPoint[]`; unique points; error (not a degenerate return) when the hull has < 3 vertices.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `npm test -w @pathblender/web -- field-obstacles-extract && npm run typecheck -w @pathblender/web`
 Expected: PASS / 0 errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/field-obstacles/extract.mjs packages/web/test/field-obstacles-extract.test.ts
@@ -372,7 +372,7 @@ git commit -m "feat(scripts): dependency-free GLB parse, world transform and con
 - Consumes: everything from Task 4; `FIELDS`/`REBUILT_2026` shape from `packages/core/src/field.ts` (read the constants with the same regex-parsing approach as `scripts/cad/render-field-topdown.mjs:readWeldedTags2026` — the script must not import TS; alternatively `npm run build -w @pathblender/core` and import `@pathblender/core` dist — pick ONE, document it in the script header; the dist-import option is preferred because regex parsing breaks on refactors).
 - Produces: `FIELD_OBSTACLE_DATA['rebuilt-2026'] = { welded: FieldObstacle[] }` consumed by Task 1's `obstaclesForField`.
 
-- [ ] **Step 1: Write failing tests** (append to `field-obstacles-extract.test.ts`) — these validate the **committed data** and the **config**, not the generator run:
+- [x] **Step 1: Write failing tests** (append to `field-obstacles-extract.test.ts`) — these validate the **committed data** and the **config**, not the generator run:
 
 ```ts
 it('2026 data exists and every element id is mapped in the season config', ...);
@@ -394,12 +394,12 @@ it('season config mirror values equal configMirrorAxis(fields3d/<dir>/config.jso
 it('regenerating from the GLBs reproduces the committed data (run the lib functions in-test and deep-compare against FIELD_OBSTACLE_DATA)', ...);
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npm test -w @pathblender/web -- field-obstacles-extract`
 Expected: FAIL — no 2026 data / no config.
 
-- [ ] **Step 3: Implement.**
+- [x] **Step 3: Implement.**
   - `seasons.mjs`: one entry per season `{ fieldId, glbDir, mirror: '<derived, asserted against config.json>', variants: ['welded'] | ['welded','andymark'], bandTopM: 1.5, elements: [...], tagAnchors: [...], manualDims: [...] }`.
     - `bandTopM = 1.5` with rationale comment: above every season's max robot envelope, so overhead-only structure (e.g. 2025 barge) cannot collide with the flat bumper model; `zMin = 0`.
     - `elements`: for 2026 run `node scripts/field-obstacles/extract-footprints.mjs --list rebuilt-2026` and map each element group by name: `{ match: <RegExp on the exact group name from --list output, e.g. /^GE-26100: Bump/i>, id: 'bump', name: 'Bump', action: 'exclude', reason: '…', citation: '2026 Game Manual §5.5 (drive-over)' }` — copy patterns from the real `--list` names, never invent part numbers; the exact include/exclude split comes from the `--list` output + the manual's §5 element table; **every row cites its source**. Alliance-paired elements get id suffix `-blue`/`-red` assigned by the generator from centroid x vs `lengthM/2` (never by hand). Depot and wall-mounted perimeter furniture: include or exclude per the manual (if a robot can legally contact it at bumper height, include).
@@ -408,12 +408,12 @@ Expected: FAIL — no 2026 data / no config.
   - `extract-footprints.mjs`: loads config + GLBs, extracts per element group (band filter → world vertices → hull), runs validations (all `tagAnchors`, `manualDims`, containment, convexity — reuse the core-side invariants), writes `packages/core/src/field-obstacles-data.ts` with sorted keys/ids and 4-decimal coordinates; `--check` runs everything and writes nothing (exit 1 on any failure); `--list` prints the group table. Validation failure = non-zero exit, never a "best effort" write.
   - Run `node scripts/field-obstacles/extract-footprints.mjs` and confirm the data file diff shows only the new generated content.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `npm test -w @pathblender/web -- field-obstacles-extract && npm test -w @pathblender/core && node scripts/field-obstacles/extract-footprints.mjs --check`
 Expected: all PASS, `--check` exits 0.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/field-obstacles/seasons.mjs scripts/field-obstacles/extract-footprints.mjs packages/core/src/field-obstacles-data.ts packages/web/test/field-obstacles-extract.test.ts
@@ -433,7 +433,7 @@ git commit -m "feat(field-obstacles): 2026 REBUILT footprint extraction with tag
 - Consumes: Task 4/5 machinery unchanged.
 - Produces: `FIELD_OBSTACLE_DATA` entries for `rapidreact-2022`, `chargedup-2023`, `crescendo-2024`, `reefscape-2025` (2025 with both `welded` and `andymark` arrays).
 
-- [ ] **Step 1: Write failing tests** (append):
+- [x] **Step 1: Write failing tests** (append):
 
 ```ts
 it('all five bundled seasons have obstacle sets; 2025 has distinct welded and andymark arrays', () => {
@@ -451,23 +451,23 @@ it('manual dims validate where the config carries them', ...);   // rows added i
 it('regeneration reproduces committed data for all seasons', ...);
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npm test -w @pathblender/web -- field-obstacles-extract`
 Expected: FAIL — seasons missing.
 
-- [ ] **Step 3: Implement** per season (the manual lookup is implementation work — every number gets a citation or is explicitly not used):
+- [x] **Step 3: Implement** per season (the manual lookup is implementation work — every number gets a citation or is explicitly not used):
   - Run `--list <fieldId>`; read that season's official Game Manual §5 (ARENA) element table; classify every element group: include (blocks ground robots at bumper height) / exclude (drivable, drive-under, overhead-only above `bandTopM`, or floor marking) — each with citation. Known-from-directive exclusions: **2023 Charge Station** (drive-on platform), **2026 Trench + BUMPs** (already Task 5). Watch for: 2024 STAGE legs — include **per-leg hulls** via subgroup node names from `--list` (a single hull over all legs would wrongly block under-stage driving — split `elements` rows by part node when a group's blocking geometry is disjoint); 2025 barge (overhead — band filter excludes it; still list it as an excluded row with reason).
   - `tagAnchors` per season from the WPILib layouts in `field.ts` + manual tag assignment (2025: reef face tags; 2024: structure-mounted tags per manual §5 assignment; 2022/2023 ship no tag decals — see caveat below).
   - `manualDims`: fill each season's span/position rows from its manual (e.g. 2025 reef, 2024 stage leg spacing, 2023 grid substation, 2022 hub diameter) with §/page citations. **Where a dimension cannot be verified from an official source, do NOT invent one** — omit the row and record the gap in a `// UNVERIFIED:` comment in `seasons.mjs`; that season then relies on tag anchors + containment only (2022/2023 partially — see Review Focus line 1).
   - Regenerate; confirm core data-integrity test now exercises all seasons.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `npm test -w @pathblender/web -- field-obstacles-extract && npm test -w @pathblender/core && node scripts/field-obstacles/extract-footprints.mjs --check`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/field-obstacles/seasons.mjs packages/core/src/field-obstacles-data.ts packages/web/test/field-obstacles-extract.test.ts
@@ -497,7 +497,7 @@ git commit -m "feat(field-obstacles): 2022-2025 footprints incl. dual 2025 const
 
 *i18n keys land in the same task and commit as the wiring — the dictionaries are `Record<MessageKey, string>`-complete, so a keys-only or wiring-only commit cannot typecheck.*
 
-- [ ] **Step 1: Write failing tests** in `packages/web/test/conflict-panel-obstacles.test.tsx` (follow `checks-summary.test.tsx`: full `<App />` render + dropped `File` objects; the default field is `rebuilt-2026` welded):
+- [x] **Step 1: Write failing tests** in `packages/web/test/conflict-panel-obstacles.test.tsx` (follow `checks-summary.test.tsx`: full `<App />` render + dropped `File` objects; the default field is `rebuilt-2026` welded):
 
 ```ts
 it('shows the obstacle section with a hit when a path drives through the 2026 blue hub', async () => {
@@ -513,23 +513,23 @@ it('jump button calls back with the interval midpoint', ...);             // pan
 it('hidden robots contribute no obstacle hits', ...);                     // App-level: hide the robot (RobotList toggle), item disappears
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npm test -w @pathblender/web -- conflict-panel-obstacles`
 Expected: FAIL — props/section missing (`t()` falls back to the raw key, so heading-text assertions fail too).
 
-- [ ] **Step 3: Implement**:
+- [x] **Step 3: Implement**:
   - App.tsx: `const obstacleDefs = useMemo(() => obstaclesForField(field, fieldVariant), [field, fieldVariant]);` and `const obstacleHits = useMemo(() => detectObstacleCollisions(visible, obstacleDefs), [visible, obstacleDefs]);` (the `visible` set — hidden robots are absent from checks, user request 2026-10-04); thread both into `<ConflictPanel>` and `<FieldCanvas>` (whatever prop name the canvas component takes for `renderFieldFrame` params).
   - ConflictPanel: `issues = conflicts.length + bounds.length + obstacleHits.length`; render the section only when `obstacleDefs.length > 0`; item text uses key `obstacles.item` with `{start} {end} {depth} {name}` where `name` resolves from `obstacleDefs.find(o => o.id === hit.obstacleId)?.name ?? hit.obstacleId`; jump = `onJump((startT+endT)/2, [robotId])` — mirror the bounds row markup (`conflict-jump bounds` classes) for consistent styling.
   - canvas2d-render.ts: extend the `outOfBoundsNow` loop (line ~348) to also add robots inside an `obstacleHits` interval at `currentT` — keep passing one boolean into `drawRobot` (line ~429), i.e. `outOfBoundsNow.has(id) || obstacleNow.has(id)`; no new visual vocabulary (red bumper is the established "in violation now" indicator).
   - i18n: add both keys to `en.ts` (verbatim above), then to every complete dictionary — translate the section title and item template per language, anchoring terminology on that dictionary's existing `bounds.title` / `bounds.item` translations (e.g. zh: `'obstacles.title': '场地障碍物'`, `'obstacles.item': '{start}–{end} s · 深入{name} {depth}'` — follow each language's established word order and unit conventions; keep placeholders `{start} {end} {depth} {name}` exactly). `en-gb`/`zh-hk`/`zh-mo` are override tables and inherit automatically. Add `'obstacles.item': '{depth}'` to `PREFORMATTED` in `i18n-quality.test.ts` (`formatLength` already appends the unit — prevents the "0.93 m m" double-unit bug class documented in that test's header).
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `npm test -w @pathblender/web && npm run typecheck -w @pathblender/web`
 Expected: ALL web tests PASS (including `i18n.test.ts` completeness/placeholder parity and `i18n-quality.test.ts`), typecheck 0 errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/web/src/App.tsx packages/web/src/components/ConflictPanel.tsx packages/web/src/canvas2d-render.ts packages/web/src/i18n packages/web/test/i18n-quality.test.ts packages/web/test/conflict-panel-obstacles.test.tsx
@@ -547,7 +547,7 @@ git commit -m "feat(web): obstacle collisions in checks panel and canvas, i18n i
 **Interfaces:**
 - Consumes: `detectObstacleCollisions`, `obstaclesForField`, `REBUILT_2026` from `@pathblender/core` (Tasks 1, 3, 5–6).
 
-- [ ] **Step 1: Write the failing test** `packages/core/test/obstacle-perf.test.ts`:
+- [x] **Step 1: Write the failing test** `packages/core/test/obstacle-perf.test.ts`:
 
 ```ts
 it('full-scan budget: 6 robots × 20 s × the 2026 obstacle set stays well under 0.5 s', () => {
@@ -561,19 +561,19 @@ it('full-scan budget: 6 robots × 20 s × the 2026 obstacle set stays well under
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npm test -w @pathblender/core -- obstacle-perf`
 Expected: FAIL — module/test file not found (run before implementing the workload helper). This task's test is a regression pin rather than a design driver: once the helper exists the assertion itself should pass comfortably; record the measured time in the PR description.
 
-- [ ] **Step 3: Implement** the workload helper (6 robots, full-length crossing paths) and, in the user guides, one short paragraph each (en/zh) in the checks section: what obstacle checks report, the 3 in forgiveness, seasons covered (2022–2026, 2025 dual builds), custom fields have none.
+- [x] **Step 3: Implement** the workload helper (6 robots, full-length crossing paths) and, in the user guides, one short paragraph each (en/zh) in the checks section: what obstacle checks report, the 3 in forgiveness, seasons covered (2022–2026, 2025 dual builds), custom fields have none.
 
-- [ ] **Step 4: Run to verify pass**
+- [x] **Step 4: Run to verify pass**
 
 Run: `npm test -w @pathblender/web && npm test -w @pathblender/core && npm run typecheck`
 Expected: ALL tests PASS, typecheck 0 errors (full suites — this is the whole-repo gate for the feature).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/test/obstacle-perf.test.ts docs/user-guide.en.md docs/user-guide.zh.md
