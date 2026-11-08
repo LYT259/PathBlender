@@ -214,6 +214,10 @@ describe('install guidance (offline installer + OS security prompts)', () => {
     expect(zh).toContain('比在线版约多 130 MB');
     expect(zh).toContain('实际总大小以 CI 实测为准');
     expect(plan).not.toContain('(larger, ≈130 MB;');
+    // Review Focus 2 must not guess the offline exe's total either: ~127 MB
+    // is the WebView2 increment over the online exe, never the payload size.
+    expect(plan).toContain('~127 MB larger than the online exe');
+    expect(plan).not.toContain('would ship a ~127 MB update');
   });
 });
 
@@ -596,10 +600,16 @@ describe('Windows offline installer pipeline', () => {
       const stopBlock = job.slice(stop, install);
       // Targeted stop: only the app's own pinned process name, never a
       // broad kill (wildcards, window-title matching) that could hit
-      // unrelated processes.
+      // unrelated processes. The kill itself must be per-PID on exactly
+      // those enumerated processes, under pwsh (the syntax is PowerShell),
+      // and the wait must poll with a real deadline before giving up.
+      expect(stopBlock, label).toContain('shell: pwsh');
       expect(stopBlock, label).toContain('Get-Process -Name "pathblender-desktop"');
-      expect(stopBlock, label).toContain('Stop-Process');
-      expect(stopBlock, label).not.toContain('*');
+      expect(stopBlock, label).toContain('Stop-Process -Id $p.Id -Force');
+      expect(stopBlock, label).not.toContain('Stop-Process -Name');
+      expect(stopBlock, label).toContain('AddSeconds(30)');
+      expect(stopBlock, label).toContain('Start-Sleep -Milliseconds 500');
+      expect(stopBlock, label).toContain('$ErrorActionPreference = "Stop"');
       // A survivor must fail the job — the stop must not be swallowed.
       expect(stopBlock, label).toContain('::error::');
       expect(stopBlock, label).toContain('exit 1');

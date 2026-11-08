@@ -27,7 +27,7 @@
 Five input classes / failure modes the spec implies but no single task's happy path covers; each is pinned by the test named here:
 
 1. **A release silently missing the offline asset** (workflow staged only the online exe, or the collector tolerated absence) — `prepare-release-artifacts.test.ts` "rejects missing windows-offline" (Task 2) and the count/name assertions on `release.yml` (Task 3).
-2. **The updater feed pointing at the offline exe** (would ship a ~127 MB update and desync the feed contract) — `prepare-release-artifacts.test.ts` feed guard: `platforms['windows-x86_64'].url` ends `_x64-setup.exe` and contains no `offline` (Task 2).
+2. **The updater feed pointing at the offline exe** (would ship the offline installer — ~127 MB larger than the online exe because it embeds the WebView2 Runtime, with the exact payload only known from the CI manifest — and desync the feed contract) — `prepare-release-artifacts.test.ts` feed guard: `platforms['windows-x86_64'].url` ends `_x64-setup.exe` and contains no `offline` (Task 2).
 3. **An "offline" asset that is not offline** (overlay not applied, renamed online build) — the `104857600` floor asserted at collection (Task 2), at the beta gate (Task 4), and against the published asset (Task 5).
 4. **Release notes rendering `undefined` for a locale** (a `windowsOffline` label missing in one of the 8 locales ships broken bodies in all of them) — Task 6's test asserts all 8 labels appear in the rendered notes.
 5. **Guidance drifting from honesty** (guides claiming verified prompts, or the checklist read as "smoke passed") — Task 8's docs contract test pins the exact prompt vocabulary in both guides, and Task 10's test pins the "not verified" markers in `docs/releasing.md`.
