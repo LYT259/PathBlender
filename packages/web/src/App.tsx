@@ -75,6 +75,7 @@ import { seasonLabel } from './i18n/season-names';
 import { CustomFieldPanel } from './components/CustomFieldPanel';
 import { useUpdateChannel, type UpdateChannel } from './update-channel';
 import { runUpdateCheck } from './update-check';
+import { createSessionGuard, type SessionGuard } from './update-guard';
 import { listenPrefs, readColorblind } from './pref-sync';
 import { effectiveReverseScroll, useMouseControls, useReverseScrollZoom } from './mouse-controls';
 import { setReverseScrollZoom } from './zoom';
@@ -1007,6 +1008,24 @@ function AppBody() {
     return () => window.removeEventListener('keydown', onKey);
   }, [composerOpen, closeComposer]);
 
+  // Session-dirty guard (update safety gate, red book §7.1): the main
+  // window owns the session, so it owns the dirty computation — the pure
+  // state machine is fed by saveAutosave's outcome and reports to the Rust
+  // fail-closed flag (set_update_guard). Dirty means only an unpersisted
+  // scene edit or an autosave that failed in both shapes. The browser build
+  // stays inert: the send no-ops without the desktop marker.
+  const sessionGuard = useRef<SessionGuard | null>(null);
+  if (sessionGuard.current === null) {
+    sessionGuard.current = createSessionGuard((dirty) => {
+      if (!IS_DESKTOP) return Promise.resolve();
+      return import('@tauri-apps/api/core')
+        .then(({ invoke }) => invoke('set_update_guard', { dirty }));
+    });
+  }
+  // The mount-time restore drives the scene-op save below once; that pass
+  // is a restore, not a user edit (a non-empty session is not dirty).
+  const restoreReporting = useRef(false);
+
   // Launch continuity (user report 2026-10-02: quitting in 3D reopened to
   // the welcome page — the 3D pref was honored but only after a fresh
   // import). Restore the autosaved session once on mount; a desktop
@@ -1014,6 +1033,7 @@ function AppBody() {
   useEffect(() => {
     const restored = loadAutosave();
     if (!restored) return;
+    restoreReporting.current = true;
     const apply = (robots: typeof restored.robots) => {
       setScene({ ...restoreSessionAlliance({ ...restored, robots: withTeamPlaceholders(withColorblindPalette(robots, colorblindRef.current)) }), fieldId: restored.fieldId, customField: restored.field, customImageUrl: undefined });
       // Reopen exactly where the user left (2026-10-04): saved selection
@@ -1052,6 +1072,13 @@ function AppBody() {
     pendingRestoreT.current = null;
   }, [duration, setT]);
 
+  // First guard report: a restored or empty session starts clean — the
+  // Rust flag is fail-closed until this lands, so a page that never gets
+  // further never unblocks installs by accident.
+  useEffect(() => {
+    sessionGuard.current?.sync();
+  }, []);
+
   // Persist completed scene operations even while the playback clock runs.
   // Skip the initial empty render so the mount-time restore owns that pass.
   const lastSavedScene = useRef({ robots, fieldId, field, selectedId, playbackRange });
@@ -1061,7 +1088,17 @@ function AppBody() {
     const previous = lastSavedScene.current;
     if (previous.robots === robots && previous.fieldId === fieldId && previous.field === field && previous.selectedId === selectedId && previous.playbackRange === playbackRange) return;
     lastSavedScene.current = { robots, fieldId, field, selectedId, playbackRange };
-    saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, latestSessionUi.current);
+    if (restoreReporting.current) {
+      // Restore pass: report the save outcome only. A failed restore-time
+      // save is still dirty (the data is not on disk); a healthy one stays
+      // clean — transiently reporting dirty would block updates on every
+      // relaunch of a non-empty session.
+      restoreReporting.current = false;
+      sessionGuard.current?.autosaveDone(saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, latestSessionUi.current));
+      return;
+    }
+    sessionGuard.current?.edit();
+    sessionGuard.current?.autosaveDone(saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, latestSessionUi.current));
   }, [robots, fieldId, field, selectedId, playbackRange]);
 
   // Keep the autosave current (debounced; removing the last robot clears
@@ -1070,7 +1107,12 @@ function AppBody() {
   // and playback range ride along with the robots.
   useEffect(() => {
     const id = setTimeout(
-      () => saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, { selectedId, t, playbackRange }),
+      () => {
+        // Playhead-only saves are accepted-stale by design: never edit()
+        // here — the debounce resets every frame during playback, so
+        // marking it dirty would block updates for an entire playback.
+        sessionGuard.current?.autosaveDone(saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, { selectedId, t, playbackRange }));
+      },
       600,
     );
     return () => clearTimeout(id);
@@ -1085,7 +1127,7 @@ function AppBody() {
   // and delay are on disk the moment they change. Only the playhead can be up
   // to one debounce window stale, and there is no desktop hook to close it.
   const autosaveFlush = useRef<() => void>(() => {});
-  autosaveFlush.current = () => saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, { selectedId, t, playbackRange });
+  autosaveFlush.current = () => sessionGuard.current?.autosaveDone(saveAutosave(robots, fieldId, fieldId === CUSTOM_FIELD_ID ? field : undefined, { selectedId, t, playbackRange }));
   useEffect(() => {
     const flush = () => autosaveFlush.current();
     window.addEventListener('beforeunload', flush);
@@ -1115,6 +1157,7 @@ function AppBody() {
       void runUpdateCheck(ch, (e) => {
         if (e.kind === 'found') flash(tr('updates.downloading', { v: e.version }));
         else if (e.kind === 'upToDate') flash(tr('updates.upToDate'));
+        else if (e.kind === 'blocked') flash(tr('updates.blocked'), 'error');
         else if (e.kind === 'failed') flash(tr('updates.failed'), 'error');
         // 'installed' — the relaunch is already in flight; nothing left to say.
       });
