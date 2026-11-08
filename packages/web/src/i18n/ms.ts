@@ -302,6 +302,7 @@ export const ms = {
   'updates.upToDate': "Anda sudah terkini",
   'updates.downloading': 'Ditemui v{v}, memuat turun dan melancarkan semula…',
   'updates.failed': 'Semakan kemas kini gagal — semak sambungan Anda dan cuba lagi',
+  'updates.blocked': 'Kemas kini dijeda — perubahan terkini sesi belum disimpan, cuba lagi sebentar lagi',
   'actions.saveHint': 'Simpan semua robot dan tetapan sesi (.pb). Buka semula dengan Import. Eksport laluan individu daripada pemeriksa robot.',
   'actions.clearHint': 'Keluarkan semua robot daripada sesi semasa (tidak pernah menyentuh fail yang diimport)',
   'rail.import': 'Import',

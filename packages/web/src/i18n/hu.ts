@@ -278,6 +278,7 @@ export const hu = {
   'updates.upToDate': "Naprakész vagy",
   'updates.downloading': 'Találtunk v{v}-t, letöltés és újraindítás…',
   'updates.failed': 'A frissítésellenőrzés sikertelen — ellenőrizd a kapcsolatot, és próbáld újra',
+  'updates.blocked': 'A frissítés szüneteltetve — a munkamenet legutóbbi módosításai még nincsenek elmentve, próbáld újra egy pillanat múlva',
   'actions.saveHint': 'Mentsd el az összes robotot és a munkamenet-beállításokat (.pb). Újra megnyitás az Importálással. Egyedi útvonalakat a robotvizsgálóból exportálhatsz.',
   'actions.clearHint': 'Távolítsd el az összes robotot a jelenlegi munkamenetből (az importált fájlokat soha nem érinti)',
   'rail.import': 'Importálás',

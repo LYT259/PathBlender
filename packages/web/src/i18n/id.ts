@@ -302,6 +302,7 @@ export const id = {
   'updates.upToDate': "Anda sudah memakai versi terbaru",
   'updates.downloading': 'Ditemukan v{v}, mengunduh dan meluncurkan ulang…',
   'updates.failed': 'Pemeriksaan pembaruan gagal — periksa koneksi Anda dan coba lagi',
+  'updates.blocked': 'Pembaruan dijeda — perubahan terbaru sesi belum tersimpan, coba lagi sebentar lagi',
   'actions.saveHint': 'Simpan semua robot dan pengaturan sesi (.pb). Buka lagi dengan Impor. Ekspor jalur individual dari inspektur robot.',
   'actions.clearHint': 'Hapus semua robot dari sesi saat ini (tidak pernah menyentuh berkas yang diimpor)',
   'rail.import': 'Impor',

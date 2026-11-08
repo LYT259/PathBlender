@@ -278,6 +278,7 @@ export const rw = {
   'updates.upToDate': "Uri ku ntera nshya",
   'updates.downloading': "Habonetse v{v}, iramanura hanyuma itangira bushya…",
   'updates.failed': "Igenzura ry’ivugururwa ryananiwe — genzura ukwihuza kwawe ongera ugerageze",
+  'updates.blocked': "Ivugurura ryahagarawe — impinduka nshya z’isesengura ntiziracyarabikwa, ongera ugerageze mu kanya gato",
   'actions.saveHint': "Bika roboti zose n’ibigenamiterere by’isesengura (.pb). Ongera ufungure ukoresheje Injiza. Sohora inzira ku giti cyazo ukoresheje igenzura rya roboti.",
   'actions.clearHint': "Kura roboti zose mu isesengura ririho (ntigera ikora ku dosiye zinjijwe)",
   'rail.import': "Injiza",

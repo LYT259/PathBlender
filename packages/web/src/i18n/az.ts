@@ -278,6 +278,7 @@ export const az = {
   'updates.upToDate': "Ən son versiyadasınız",
   'updates.downloading': 'v{v} tapıldı, endirilir və yenidən başladılır…',
   'updates.failed': 'Yeniləmə yoxlaması uğursuz oldu — bağlantınızı yoxlayın və yenidən cəhd edin',
+  'updates.blocked': 'Yeniləmə dayandırıldı — sessiyanın son dəyişiklikləri hələ yadda saxlanılmayıb, bir azdan yenidən cəhd edin',
   'actions.saveHint': 'Bütün robotları və sessiya parametrlərini saxlayın (.pb). İdxal ilə yenidən açın. Robot müfəttişindən fərdi marşrutları ixrac edin.',
   'actions.clearHint': 'Cari sessiyadan bütün robotları silin (idxal edilmiş fayllara heç vaxt toxunmur)',
   'rail.import': 'İdxal',

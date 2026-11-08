@@ -278,6 +278,7 @@ export const sv = {
   'updates.upToDate': "Du har den senaste versionen",
   'updates.downloading': 'Hittade v{v}, laddar ner och startar om…',
   'updates.failed': 'Uppdateringskontrollen misslyckades — kontrollera din anslutning och försök igen',
+  'updates.blocked': 'Uppdateringen har pausats — sessionens senaste ändringar är inte sparade än, försök igen om en stund',
   'actions.saveHint': 'Spara alla robotar och sessionsinställningar (.pb). Öppna igen med Importera. Exportera enskilda rutter från robotinspektören.',
   'actions.clearHint': 'Ta bort alla robotar från den aktuella sessionen (rör aldrig de importerade filerna)',
   'rail.import': 'Importera',

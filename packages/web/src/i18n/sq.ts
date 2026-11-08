@@ -279,6 +279,7 @@ export const sq = {
   'updates.upToDate': "Jeni të përditësuar",
   'updates.downloading': 'U gjet v{v}, po shkarkohet dhe po riniset…',
   'updates.failed': 'Kontrolli i përditësimeve dështoi — kontrolloni lidhjen tuaj dhe provoni përsëri',
+  'updates.blocked': 'Përditësimi është ndalur përkohësisht — ndryshimet e fundit të sesionit nuk janë ruajtur ende, provoni përsëri pas një çasti',
   'actions.saveHint': 'Ruani të gjithë robotët dhe cilësimet e sesionit (.pb). Rihapni me Import. Eksportoni rrugë individuale nga inspektori i robotit.',
   'actions.clearHint': 'Hiqni të gjithë robotët nga sesioni aktual (kurrë nuk prek skedarët e importuar)',
   'rail.import': 'Importoni',

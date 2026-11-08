@@ -276,6 +276,7 @@ export const en = {
   'updates.upToDate': "You’re up to date",
   'updates.downloading': 'Found v{v}, downloading and relaunching…',
   'updates.failed': 'Update check failed — check your connection and try again',
+  'updates.blocked': 'Update paused — the latest session changes are not saved yet. Try again in a moment.',
   'actions.saveHint': 'Save all robots and session settings (.pb). Reopen with Import. Export individual paths from the robot inspector.',
   'actions.clearHint': 'Remove all robots from the current session (never touches the imported files)',
   'rail.import': 'Import',

@@ -309,6 +309,7 @@ export const zh: Record<MessageKey, string> = {
   'updates.upToDate': '已是最新版本',
   'updates.downloading': '发现 v{v}，正在下载安装并重启…',
   'updates.failed': '更新检查失败，请检查网络后重试',
+  'updates.blocked': '已暂停更新——会话的最新改动尚未保存，请稍后重试。',
   'actions.saveHint': '保存全部机器人和会话设置（.pb），用「导入」重新打开。单条路径在右侧机器人面板中导出。',
   'actions.clearHint': '移除当前会话的全部机器人（不会改动已导入的文件）',
   'rail.import': '导入',

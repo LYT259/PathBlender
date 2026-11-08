@@ -90,6 +90,21 @@ describe('runUpdateCheck', () => {
     ]);
     expect(relaunch).not.toHaveBeenCalled();
   });
+
+  it('maps the blocked sentinel to a blocked event — no relaunch, no failed', async () => {
+    invoke.mockResolvedValueOnce({ version: '0.2.0' })
+         .mockRejectedValueOnce(new Error('update blocked: unsaved session'));
+    expect(await events('stable')).toEqual([
+      { kind: 'found', version: '0.2.0' },
+      { kind: 'blocked' },
+    ]);
+    expect(relaunch).not.toHaveBeenCalled();
+  });
+
+  it('a non-sentinel install failure is still failed', async () => {
+    invoke.mockResolvedValueOnce({ version: '0.2.0' }).mockRejectedValueOnce(new Error('disk'));
+    expect(await events('stable')).toEqual([{ kind: 'found', version: '0.2.0' }, { kind: 'failed' }]);
+  });
 });
 
 describe('checkForUpdate', () => {
@@ -129,12 +144,23 @@ describe('installPendingUpdate', () => {
   it('does not throw when relaunch rejects (Windows installer exits the app)', async () => {
     invoke.mockResolvedValueOnce(undefined);
     relaunch.mockRejectedValueOnce(new Error('process exiting'));
-    await expect(installPendingUpdate()).resolves.toBeUndefined();
+    await expect(installPendingUpdate()).resolves.toBe('installed');
   });
 
   it('propagates an install failure so the UI can show the failed state', async () => {
     invoke.mockRejectedValueOnce(new Error('disk full'));
     await expect(installPendingUpdate()).rejects.toThrow('disk full');
     expect(relaunch).not.toHaveBeenCalled();
+  });
+
+  it('installPendingUpdate resolves blocked on the sentinel (no relaunch)', async () => {
+    invoke.mockRejectedValueOnce('update blocked: unsaved session'); // Tauri rejects with the raw string
+    await expect(installPendingUpdate()).resolves.toBe('blocked');
+    expect(relaunch).not.toHaveBeenCalled();
+  });
+
+  it('installPendingUpdate still rejects on other errors', async () => {
+    invoke.mockRejectedValueOnce(new Error('disk'));
+    await expect(installPendingUpdate()).rejects.toThrow('disk');
   });
 });
