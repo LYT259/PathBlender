@@ -178,6 +178,15 @@ describe('third-party legal notices', () => {
     expect(notice).toContain('does not relicense these assets under Apache-2.0, MIT, CC0, or any other standard open-source license');
     expect(notice).toContain('does not cover the Kraken X60 geometry or the maintainer-built frame assemblies');
   });
+
+  it('registers the WebView2 Runtime redistribution in the notice', () => {
+    const notice = readFileSync(resolve(ROOT, 'NOTICE.md'), 'utf8');
+    expect(notice).toContain('**Microsoft Edge WebView2 Runtime** (Microsoft Software License Terms');
+    expect(notice).toContain('https://learn.microsoft.com/microsoft-edge/webview2/concepts/distribution');
+    expect(notice).toContain('Evergreen Standalone Installer');
+    const releasing = readFileSync(resolve(ROOT, 'docs/releasing.md'), 'utf8');
+    expect(releasing).toContain('WebView2');
+  });
 });
 
 describe('shipped-artifact verification gates', () => {

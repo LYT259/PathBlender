@@ -110,6 +110,14 @@ Runtime dependencies of the shipped app, each under its own license:
 - **window-vibrancy** (Apache-2.0 OR MIT) —
   https://github.com/tauri-apps/tauri-plugin-vibrancy — macOS sidebar
   material.
+- **Microsoft Edge WebView2 Runtime** (Microsoft Software License Terms) —
+  the offline Windows NSIS installer
+  (`PathBlender_<version>_x64-offline-setup.exe`) redistributes the
+  Evergreen Standalone Installer, which embeds the runtime and its license
+  terms; redistribution terms per
+  https://learn.microsoft.com/microsoft-edge/webview2/concepts/distribution.
+  The default online installer downloads Microsoft's bootstrapper at
+  install time and does not redistribute runtime binaries.
 - Dev-time only (not shipped in the bundle): Vite, vitest, TypeScript,
   Playwright (all MIT), OpenCC/opencc-js (Apache-2.0, generates the
   Traditional-Chinese dictionary at build time).
