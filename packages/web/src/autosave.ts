@@ -41,6 +41,10 @@ export interface AutosavedSession {
   ui?: SessionUiState;
 }
 
+/** How a `saveAutosave` call ended — 'failed' means both write shapes were
+ * refused, so the session will not come back after quit. */
+export type AutosaveStatus = 'saved' | 'cleared' | 'failed';
+
 /** Read the optional `ui` key from a serialized session blob, sanitized. */
 export function readSessionUi(text: string): SessionUiState | undefined {
   try {
@@ -78,7 +82,10 @@ function autosaveText(
 }
 
 /**
- * Persist the current session; an empty session clears the slot.
+ * Persist the current session; an empty session clears the slot. The return
+ * tells the caller how it ended: `'saved'` when either shape wrote,
+ * `'cleared'` when the session was empty (the slot is removed — or was
+ * already unusable), `'failed'` when both writes were refused.
  *
  * Two shapes, biggest first. A refused write used to be swallowed here, and
  * that silence is what broke launch-to-launch continuity: the welcome demo's
@@ -92,24 +99,25 @@ export function saveAutosave(
   fieldId: string,
   customField?: FieldPackage,
   ui?: SessionUiState,
-): void {
+): AutosaveStatus {
   if (sts.length === 0) {
     try {
       localStorage.removeItem(KEY);
     } catch {
       /* nothing to recover — the slot was already unusable */
     }
-    return;
+    return 'cleared';
   }
   for (const stripAllLibraries of [false, true]) {
     try {
       localStorage.setItem(KEY, autosaveText(sts, fieldId, customField, ui, stripAllLibraries));
-      return;
+      return 'saved';
     } catch {
       /* quota: retry with the smaller shape */
     }
   }
   console.warn('[pathblender] autosave rejected — this session will not come back after quit');
+  return 'failed';
 }
 
 /** Restore the last session, or null when there is nothing usable. */

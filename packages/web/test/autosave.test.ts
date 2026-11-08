@@ -19,6 +19,16 @@ const robots = (): SessionTrajectory[] => [
   makeSession(parseGhostAuto(SAMPLE, 'straight_run.ghostauto')),
 ];
 
+// A user robot with a route library, so "the smaller shape" is observable.
+const withLibrary = (): SessionTrajectory[] => [{
+  ...robots()[0]!,
+  routeOptions: Array.from({ length: 4 }, (_, i) => ({
+    id: `r${i}`,
+    relPath: `dir/r${i}.traj`,
+    trajectory: { ...robots()[0]!.trajectory, id: `r${i}`, name: `r${i}` },
+  })),
+}];
+
 beforeEach(() => {
   localStorage.clear();
 });
@@ -65,15 +75,6 @@ describe('saveAutosave / loadAutosave', () => {
     const dom = new JSDOM('', { url: 'https://localhost/' });
     vi.stubGlobal('localStorage', dom.window.localStorage);
     vi.stubGlobal('Storage', dom.window.Storage);
-    // A user robot with a route library, so "the smaller shape" is observable.
-    const withLibrary: SessionTrajectory[] = [{
-      ...robots()[0]!,
-      routeOptions: Array.from({ length: 4 }, (_, i) => ({
-        id: `r${i}`,
-        relPath: `dir/r${i}.traj`,
-        trajectory: { ...robots()[0]!.trajectory, id: `r${i}`, name: `r${i}` },
-      })),
-    }];
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const real = localStorage.setItem.bind(localStorage);
     const owner = Object.hasOwn(localStorage, 'setItem') ? localStorage : Storage.prototype;
@@ -84,7 +85,7 @@ describe('saveAutosave / loadAutosave', () => {
       real(k, v);
     });
     try {
-      expect(() => saveAutosave(withLibrary, 'rebuilt-2026')).not.toThrow();
+      expect(() => saveAutosave(withLibrary(), 'rebuilt-2026')).not.toThrow();
       const stored = JSON.parse(localStorage.getItem('pb.autosave.v1')!) as { robots: Record<string, unknown>[] };
       expect(stored.robots[0]!.samples).toBeDefined();
       expect(stored.robots[0]!.routeOptions).toBeUndefined();
@@ -93,7 +94,7 @@ describe('saveAutosave / loadAutosave', () => {
       // Nothing fits: the user hears about it instead of losing the session in
       // silence — the exact failure that went unnoticed for three days.
       refusals = 99;
-      expect(() => saveAutosave(withLibrary, 'rebuilt-2026')).not.toThrow();
+      expect(() => saveAutosave(withLibrary(), 'rebuilt-2026')).not.toThrow();
       expect(warn).toHaveBeenCalledTimes(1);
     } finally {
       setItem.mockRestore();
@@ -142,5 +143,59 @@ describe('saveAutosave / loadAutosave', () => {
     const back = loadAutosave();
     expect(back!.robots).toHaveLength(example.length);
     expect(back!.ui?.t).toBe(1.5);
+  });
+
+  it('reports saved when the full shape fits', () => {
+    expect(saveAutosave(robots(), 'rebuilt-2026')).toBe('saved');
+  });
+
+  it('reports saved when only the library-stripped shape fits', async () => {
+    // Reuse the withLibrary + refusals=1 spy setup from the existing quota test:
+    // first setItem throws, the stripped retry writes.
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM('', { url: 'https://localhost/' });
+    vi.stubGlobal('localStorage', dom.window.localStorage);
+    vi.stubGlobal('Storage', dom.window.Storage);
+    const real = localStorage.setItem.bind(localStorage);
+    const owner = Object.hasOwn(localStorage, 'setItem') ? localStorage : Storage.prototype;
+    let refusals = 1;
+    const setItem = vi.spyOn(owner, 'setItem').mockImplementation((k, v) => {
+      if (refusals-- > 0) throw new DOMException('quota', 'QuotaExceededError');
+      real(k, v);
+    });
+    try {
+      expect(saveAutosave(withLibrary(), 'rebuilt-2026')).toBe('saved');
+    } finally {
+      setItem.mockRestore();
+      vi.unstubAllGlobals();
+      dom.window.close();
+    }
+  });
+
+  it('reports failed when both shapes are refused', async () => {
+    // refusals = ∞ spy: every setItem throws.
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM('', { url: 'https://localhost/' });
+    vi.stubGlobal('localStorage', dom.window.localStorage);
+    vi.stubGlobal('Storage', dom.window.Storage);
+    const owner = Object.hasOwn(localStorage, 'setItem') ? localStorage : Storage.prototype;
+    const setItem = vi.spyOn(owner, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota', 'QuotaExceededError');
+    });
+    try {
+      expect(saveAutosave(robots(), 'rebuilt-2026')).toBe('failed');
+    } finally {
+      setItem.mockRestore();
+      vi.unstubAllGlobals();
+      dom.window.close();
+    }
+  });
+
+  it('reports cleared when the session empties — even if removeItem throws', () => {
+    const owner = Object.hasOwn(localStorage, 'removeItem') ? localStorage : Storage.prototype;
+    const rm = vi.spyOn(owner, 'removeItem').mockImplementation(() => { throw new DOMException('quota', 'QuotaExceededError'); });
+    try {
+      expect(saveAutosave([], 'rebuilt-2026')).toBe('cleared');
+    } finally { rm.mockRestore(); }
   });
 });
