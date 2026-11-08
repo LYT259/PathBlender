@@ -203,6 +203,19 @@ describe('install guidance (offline installer + OS security prompts)', () => {
   });
 });
 
+describe('not-verified environment registry', () => {
+  it('releasing.md pins the three unverified items with explicit markers', () => {
+    const releasing = readFileSync(resolve(ROOT, 'docs/releasing.md'), 'utf8');
+    for (const s of [
+      '未验环境清单',
+      '无浏览器裸机冒烟',
+      'NOT performed — no clean Windows 10 (without WebView2), macOS or Linux machine is available',
+      'SmartScreen / Gatekeeper prompt screenshots: NOT captured',
+      'homebrew tap repo: not yet created',
+    ]) expect(releasing).toContain(s);
+  });
+});
+
 describe('shipped-artifact verification gates', () => {
   it('builds and verifies Universal Mac binaries before collecting the version-matched image', () => {
     expect(workflow).toContain('npx tauri build --target universal-apple-darwin --bundles app');

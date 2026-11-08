@@ -60,6 +60,14 @@ Documentation-only PRs retain review and privacy checks but skip platform builds
 - [ ] README 隐私声明与实际行为一致（文件本地解析）
 - [ ] **历史隐私独立核查**：pre-push 只扫描本次实际待推对象，不证明既有提交、GitHub PR/缓存引用、其他克隆或旧 Release 附件已清理。公开前单独记录脱敏核查范围、已知残留与接受/处置决定；未核查或仍有残留的不得写成已清理。
 
+## 未验环境清单 / Not-verified environment registry
+
+以下三项是当前环境**无法验证**的发布要求。任何后续会话在没有新证据前不得把任何一行读作「已通过」；补齐方式随行附上，供将来收口。
+
+1. **无浏览器裸机冒烟 (spec §7.1)** — NOT performed — no clean Windows 10 (without WebView2), macOS or Linux machine is available. 收口方式：在断网的干净虚拟机/实机安装——offline 安装包必须零网络出站完成安装，且应用通过核心导入/回放/检查流程。CI 的 release-verify 证明的是 GitHub runner（自带 WebView2）上的匿名下载 + 安装 + 启动，不是本项。
+2. **SmartScreen / Gatekeeper prompt screenshots: NOT captured** — no physical Windows machine; CI runners show no prompt. zh/en 指南描述的是文档化步骤；真实机器产出截图之前，不得附带或宣称提示截图。
+3. **homebrew tap repo: not yet created** — cask 生成器已随仓库交付（`scripts/gen-homebrew-cask.mjs`）；`brew audit` / `brew style` / 实际安装均未对 `LYT259/homebrew-tap` 运行过，因为该仓库尚不存在（用户授权的外部步骤，见「GitHub（发布操作纪律）」节）。
+
 ## GitHub（发布操作纪律）
 
 - [ ] 推送 / PR / Pages 配置一律手动单发，不写自动重试循环；失败间隔 ≥60 秒再评估
