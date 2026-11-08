@@ -274,6 +274,8 @@ export const hy = {
   'customField.cancel': 'Չեղարկել',
   'bounds.title': 'Դաշտի սահմաններ',
   'bounds.item': '{start}–{end} վ · {edge} պատից {depth} այն կողմ',
+  'obstacles.title': 'Դաշտի արգելքներ',
+  'obstacles.item': '{start}–{end} վ · {depth} {name}ի մեջ',
   'edges.far': 'հեռավոր', 'edges.left': 'ձախ', 'edges.near': 'մոտակա', 'edges.right': 'աջ',
   'customField.tags': 'Բեռնել AprilTag դասավորությունը…',
   'updates.upToDate': "Դուք ամենավերջին տարբերակի վրա եք",

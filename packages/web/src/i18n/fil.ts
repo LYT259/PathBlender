@@ -297,6 +297,8 @@ export const fil = {
   'customField.cancel': 'Kanselahin',
   'bounds.title': 'Mga hangganan ng field',
   'bounds.item': '{start}–{end} s · {depth} lampas sa {edge} dingding',
+  'obstacles.title': 'Mga hadlang sa field',
+  'obstacles.item': '{start}–{end} s · {depth} sa loob ng {name}',
   'edges.far': 'malayong', 'edges.left': 'kaliwang', 'edges.near': 'malapit na', 'edges.right': 'kanang',
   'customField.tags': 'I-load ang AprilTag layout…',
   'updates.upToDate': "Ikaw ay updated na",

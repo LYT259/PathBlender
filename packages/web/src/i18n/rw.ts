@@ -273,6 +273,8 @@ export const rw = {
   'customField.cancel': "Reka",
   'bounds.title': "Imipaka y’ikibuga",
   'bounds.item': "{start}–{end} s · {depth} kurenga urukuta {edge}",
+  'obstacles.title': "Impuruza z’ikibuga",
+  'obstacles.item': "{start}–{end} s · {depth} mu {name}",
   'edges.far': "rwa kure", 'edges.left': "ibumoso", 'edges.near': "rwa hafi", 'edges.right': "iburyo",
   'customField.tags': "Umiza igenamiterere rya AprilTag…",
   'updates.upToDate': "Uri ku ntera nshya",

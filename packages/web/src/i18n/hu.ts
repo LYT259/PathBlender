@@ -273,6 +273,8 @@ export const hu = {
   'customField.cancel': 'Mégse',
   'bounds.title': 'Pályahatárok',
   'bounds.item': '{start}–{end} mp · {depth} túl a(z) {edge} falon',
+  'obstacles.title': 'Pályaakadályok',
+  'obstacles.item': '{start}–{end} mp · {depth} a(z) {name}ban',
   'edges.far': 'távoli', 'edges.left': 'bal', 'edges.near': 'közeli', 'edges.right': 'jobb',
   'customField.tags': 'AprilTag elrendezés betöltése…',
   'updates.upToDate': "Naprakész vagy",

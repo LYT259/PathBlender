@@ -1,6 +1,6 @@
 import { robotIdentity } from '../robot-identity';
 import type { ReactNode } from 'react';
-import type { CollisionInterval, OutOfBoundsInterval, SessionTrajectory } from '@pathblender/core';
+import type { CollisionInterval, FieldObstacle, ObstacleCollisionInterval, OutOfBoundsInterval, SessionTrajectory } from '@pathblender/core';
 import { useI18n } from '../i18n';
 import { formatLength, useLengthUnit } from '../length-units';
 import { Icon } from './Icon';
@@ -9,6 +9,10 @@ interface Props {
   robots: SessionTrajectory[];
   conflicts: CollisionInterval[];
   bounds: OutOfBoundsInterval[];
+  obstacleHits?: ObstacleCollisionInterval[];
+  /** Obstacle definitions of the active field — the section hides on fields
+   *  that carry none (custom fields, older seasons without a model). */
+  obstacleDefs?: readonly FieldObstacle[];
   onJump: (t: number, robotIds?: string[]) => void;
   guide?: ReactNode;
   /** ±δ start-execution window for the worst-case rescan (§6.5-①). */
@@ -16,14 +20,14 @@ interface Props {
   onToleranceChange?: (delta: number) => void;
 }
 
-export function ConflictPanel({ robots, conflicts, bounds, onJump, guide, toleranceS = 0, onToleranceChange }: Props) {
+export function ConflictPanel({ robots, conflicts, bounds, obstacleHits = [], obstacleDefs = [], onJump, guide, toleranceS = 0, onToleranceChange }: Props) {
   const { t, n, lang } = useI18n();
   const [unit] = useLengthUnit();
   const nameOf = (id: string) => {
     const robot = robots.find((r) => r.trajectory.id === id);
     return robot ? robotIdentity(robot.trajectory) : '?';
   };
-  const issues = conflicts.length + bounds.length;
+  const issues = conflicts.length + bounds.length + obstacleHits.length;
   const hidden = robots.filter((r) => !r.visible).length;
   const estimated = robots.some((r) => r.trajectory.geometrySource === 'default');
   const toleranceLabel = t('checks.tolerance', { delta: n(toleranceS, 1) });
@@ -63,5 +67,6 @@ export function ConflictPanel({ robots, conflicts, bounds, onJump, guide, tolera
     </li>;
     })}</ul>}
     {bounds.length > 0 && <><h3 className="check-section-heading">{t('bounds.title')}<span className="conflict-count bounds-count">{bounds.length}</span></h3><ul className="conflict-list">{bounds.map((b) => <li key={`${b.robotId}-${b.startT}`} className="conflict-item"><button className="conflict-jump bounds" onClick={() => onJump((b.startT + b.endT) / 2, [b.robotId])}><span className="conflict-pair">{nameOf(b.robotId)}</span><span className="conflict-when">{t('bounds.item', { start: n(b.startT, 2), end: n(b.endT, 2), depth: formatLength(b.maxPenetrationM, unit, lang), edge: b.edges.map((e) => t(`edges.${e}` as const)).join('/') })}</span><span className="issue-action">{t('checks.jump')} →</span></button></li>)}</ul></>}
+        {obstacleDefs.length > 0 && <><h3 className="check-section-heading obstacles-heading">{t('obstacles.title')}<span className={`conflict-count obstacles-count${obstacleHits.length ? ' bad' : ''}`}>{obstacleHits.length}</span></h3><ul className="conflict-list">{obstacleHits.map((h) => <li key={`${h.robotId}-${h.obstacleId}-${h.startT}`} className="conflict-item"><button className="conflict-jump obstacles" onClick={() => onJump((h.startT + h.endT) / 2, [h.robotId])}><span className="conflict-pair">{nameOf(h.robotId)}</span><span className="conflict-when">{t('obstacles.item', { start: n(h.startT, 2), end: n(h.endT, 2), depth: formatLength(h.maxPenetrationM, unit, lang), name: obstacleDefs.find((o) => o.id === h.obstacleId)?.name ?? h.obstacleId })}</span><span className="issue-action">{t('checks.jump')} →</span></button></li>)}</ul></>}
   </section>;
 }

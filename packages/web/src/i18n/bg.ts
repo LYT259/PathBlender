@@ -273,6 +273,8 @@ export const bg = {
   'customField.cancel': 'Отказ',
   'bounds.title': 'Границите на игрището',
   'bounds.item': '{start}–{end} с · {depth} отвъд {edge} стена',
+  'obstacles.title': 'Препятствия на игрището',
+  'obstacles.item': '{start}–{end} с · {depth} навътре в {name}',
   'edges.far': 'далечната', 'edges.left': 'лявата', 'edges.near': 'близката', 'edges.right': 'дясната',
   'customField.tags': 'Зареждане на AprilTag разположението…',
   'updates.upToDate': "Всичко е обновено",

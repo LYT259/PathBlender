@@ -297,6 +297,8 @@ export const ar = {
   'customField.cancel': 'إلغاء',
   'bounds.title': 'حدود الملعب',
   'bounds.item': '{start}–{end} ث · {depth} خلف الجدار {edge}',
+  'obstacles.title': 'عوائق الملعب',
+  'obstacles.item': '{start}–{end} ث · {depth} داخل {name}',
   'edges.far': 'البعيد', 'edges.left': 'الأيسر', 'edges.near': 'القريب', 'edges.right': 'الأيمن',
   'customField.tags': 'تحميل تخطيط AprilTag…',
   'updates.upToDate': "أنت على أحدث إصدار",

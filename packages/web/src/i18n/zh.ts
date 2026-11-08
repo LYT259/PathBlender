@@ -304,6 +304,8 @@ export const zh: Record<MessageKey, string> = {
   'customField.cancel': '取消',
   'bounds.title': '场地边界',
   'bounds.item': '{start}–{end} 秒 · 越出{edge}侧围墙 {depth}',
+  'obstacles.title': '场地障碍物',
+  'obstacles.item': '{start}–{end} 秒 · 深入{name} {depth}',
   'edges.far': '远端', 'edges.left': '左', 'edges.near': '近端', 'edges.right': '右',
   'customField.tags': '载入 AprilTag 布局…',
   'updates.upToDate': '已是最新版本',

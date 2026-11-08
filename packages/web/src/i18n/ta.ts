@@ -297,6 +297,8 @@ export const ta = {
   'customField.cancel': 'ரத்து',
   'bounds.title': 'மைதான எல்லைகள்',
   'bounds.item': '{start}–{end} வி · {edge} சுவரை {depth} தாண்டி',
+  'obstacles.title': 'மைதான தடைகள்',
+  'obstacles.item': '{start}–{end} வி · {name} உள்ளே {depth}',
   'edges.far': 'தொலைவிலுள்ள', 'edges.left': 'இடது', 'edges.near': 'அருகிலுள்ள', 'edges.right': 'வலது',
   'customField.tags': 'AprilTag தளவமைப்பை ஏற்று…',
   'updates.upToDate': "நீங்கள் புதுப்பித்த நிலையில் உள்ளீர்கள்",

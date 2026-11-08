@@ -297,6 +297,8 @@ export const id = {
   'customField.cancel': 'Batal',
   'bounds.title': 'Batas lapangan',
   'bounds.item': '{start}–{end} s · {depth} melewati dinding {edge}',
+  'obstacles.title': 'Rintangan lapangan',
+  'obstacles.item': '{start}–{end} s · {depth} ke dalam {name}',
   'edges.far': 'jauh', 'edges.left': 'kiri', 'edges.near': 'dekat', 'edges.right': 'kanan',
   'customField.tags': 'Muat tata letak AprilTag…',
   'updates.upToDate': "Anda sudah memakai versi terbaru",

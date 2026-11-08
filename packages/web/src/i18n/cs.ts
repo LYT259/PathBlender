@@ -314,6 +314,8 @@ export const cs: Record<MessageKey, string> = {
   'customField.cancel': 'Zrušit',
   'bounds.title': 'Hranice hřiště',
   'bounds.item': '{start}–{end} s · {depth} za {edge} stěnou',
+  'obstacles.title': 'Překážky na hřišti',
+  'obstacles.item': '{start}–{end} s · {depth} do {name}',
   'edges.far': 'vzdálenou', 'edges.left': 'levou', 'edges.near': 'blízkou', 'edges.right': 'pravou',
   'customField.tags': 'Načíst rozložení značek AprilTag…',
   'updates.upToDate': 'Máte nejnovější verzi',

@@ -21,6 +21,7 @@
 import type {
   CollisionInterval,
   FieldPackage,
+  ObstacleCollisionInterval,
   OutOfBoundsInterval,
   SessionTrajectory,
 } from '@pathblender/core';
@@ -55,6 +56,7 @@ interface ExportScene {
   robots: SessionTrajectory[];
   conflicts: CollisionInterval[];
   bounds: OutOfBoundsInterval[];
+  obstacleHits?: ObstacleCollisionInterval[];
   width: number;
   height: number;
   /** Localized card strings so the package matches the on-screen workspace
@@ -81,6 +83,7 @@ export interface SolutionPackageOptions {
   settingsFiles: ReadonlyMap<string, File>;
   conflicts: CollisionInterval[];
   bounds: OutOfBoundsInterval[];
+  obstacleHits?: ObstacleCollisionInterval[];
   appVersion: string;
   /** UI-language time unit for the robot cards (defaults to "s"). */
   secondsLabel?: string;
@@ -275,6 +278,7 @@ function drawScene(
     currentT: t,
     conflicts: scene.conflicts,
     bounds: scene.bounds,
+    obstacleHits: scene.obstacleHits,
     showTrail: true,
     showHeatmap: false,
     clockLabel,
@@ -374,6 +378,7 @@ function formatDelay(robot: SessionTrajectory): string {
   teams: TeamArtifact[];
   conflicts: number;
   bounds: number;
+  obstacleHits: number;
   videoMime: string | null;
   videoExt: string | null;
   videoSeconds: number;
@@ -416,6 +421,7 @@ ${teamLinesEn.join('\n')}
 
 - Collision intervals 碰撞区间: ${o.conflicts}
 - Out-of-bounds intervals 出界区间: ${o.bounds}
+- Field-obstacle intervals 场地障碍区间: ${o.obstacleHits}
 
 Numbers reflect PathBlender's tolerance-scan at export time; the .pb sessions
 recompute live. 以上数字为导出时的检查结果；在 PathBlender 中打开 .pb 会实时重算。
@@ -465,6 +471,7 @@ export async function buildSolutionPackage(o: SolutionPackageOptions): Promise<S
     robots: o.visibleRobots,
     conflicts: o.conflicts,
     bounds: o.bounds,
+    obstacleHits: o.obstacleHits,
     width: VIDEO_WIDTH,
     height: VIDEO_HEIGHT,
     secondsLabel: o.secondsLabel,
@@ -498,6 +505,7 @@ export async function buildSolutionPackage(o: SolutionPackageOptions): Promise<S
     teams,
     conflicts: o.conflicts.length,
     bounds: o.bounds.length,
+    obstacleHits: (o.obstacleHits ?? []).length,
     videoMime: video?.mime ?? null,
     videoExt: video?.ext ?? null,
     videoSeconds,

@@ -312,6 +312,8 @@ export const tr: Record<MessageKey, string> = {
   'customField.cancel': 'Vazgeç',
   'bounds.title': 'Saha sınırları',
   'bounds.item': '{start}–{end} sn · {edge} duvarın {depth} ötesi',
+  'obstacles.title': 'Saha engelleri',
+  'obstacles.item': '{start}–{end} sn · {name} içine {depth}',
   'edges.far': 'uzak', 'edges.left': 'sol', 'edges.near': 'yakın', 'edges.right': 'sağ',
   'customField.tags': 'AprilTag yerleşimini yükle…',
   'updates.upToDate': 'Güncelsiniz',

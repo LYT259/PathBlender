@@ -315,6 +315,8 @@ export const ptBR: Record<MessageKey, string> = {
   'customField.cancel': 'Cancelar',
   'bounds.title': 'Limites do campo',
   'bounds.item': '{start}–{end} s · {depth} além da parede {edge}',
+  'obstacles.title': 'Obstáculos do campo',
+  'obstacles.item': '{start}–{end} s · {depth} em {name}',
   'edges.far': 'distante', 'edges.left': 'esquerda', 'edges.near': 'próxima', 'edges.right': 'direita',
   'customField.tags': 'Carregar layout de AprilTags…',
   'updates.upToDate': 'Você está em dia',

@@ -273,6 +273,8 @@ export const hr = {
   'customField.cancel': 'Odustani',
   'bounds.title': 'Granice terena',
   'bounds.item': '{start}–{end} s · {depth} preko {edge} zida',
+  'obstacles.title': 'Prepreke na terenu',
+  'obstacles.item': '{start}–{end} s · {depth} u {name}',
   'edges.far': 'dalekog', 'edges.left': 'lijevog', 'edges.near': 'bliskog', 'edges.right': 'desnog',
   'customField.tags': 'Učitaj AprilTag raspored…',
   'updates.upToDate': "Imate najnoviju verziju",

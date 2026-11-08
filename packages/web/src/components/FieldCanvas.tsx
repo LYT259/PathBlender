@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
-import type { CollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
+import type { CollisionInterval, ObstacleCollisionInterval, OutOfBoundsInterval } from '@pathblender/core';
 import { renderFieldFrame, fitViewFor, clampZoomView, type RenderView } from '../canvas2d-render';
 import type { RobotLabelMemory } from '../robot-label-layout';
 import { saveBytes } from '../download';
@@ -31,6 +31,7 @@ interface Props {
   currentT: number;
   conflicts: CollisionInterval[];
   bounds: OutOfBoundsInterval[];
+  obstacleHits?: ObstacleCollisionInterval[];
   /** Robot currently in meditation-edit mode (report v1.4 §6.3); null = off. */
   editRobot?: SessionTrajectory | null;
   onBeginEdit?: () => void;
@@ -68,6 +69,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
     currentT,
     conflicts,
     bounds,
+    obstacleHits,
     showTrail = true,
     showHeatmap = false,
     dimPathIds,
@@ -521,6 +523,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
         currentT: effT,
         conflicts,
         bounds,
+        obstacleHits,
         showTrail,
         showHeatmap,
         dimPathIds,
@@ -528,7 +531,7 @@ export const FieldCanvas = forwardRef<FieldCanvasHandle, Props>(function FieldCa
       });
     };
     requestDraw();
-  }, [field, robots, currentT, conflicts, bounds, showTrail, showHeatmap, dimPathIds, imgReady, spriteReady, theme, t, lang, requestDraw]);
+  }, [field, robots, currentT, conflicts, bounds, obstacleHits, showTrail, showHeatmap, dimPathIds, imgReady, spriteReady, theme, t, lang, requestDraw]);
 
   useImperativeHandle(ref, () => ({
     exportGif: (onDone?: (ok: boolean) => void) => {

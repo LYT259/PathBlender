@@ -13,6 +13,7 @@
 
 import type {
   CollisionInterval,
+  ObstacleCollisionInterval,
   FieldPackage,
   ModuleLocation,
   OutOfBoundsInterval,
@@ -174,6 +175,9 @@ export interface FieldFrameParams {
   currentT: number;
   conflicts: CollisionInterval[];
   bounds: OutOfBoundsInterval[];
+  /** Robots inside an obstacle interval at currentT share the bounds
+   *  red-bumper "in violation now" treatment (no new visual vocabulary). */
+  obstacleHits?: ObstacleCollisionInterval[];
   showTrail?: boolean;
   showHeatmap?: boolean;
   /** Robot (trajectory) ids whose path tape renders gray instead of the
@@ -349,6 +353,11 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
   for (const b of bounds) {
     if (currentT >= b.startT - 1e-9 && currentT <= b.endT + 1e-9) {
       outOfBoundsNow.add(b.robotId);
+    }
+  }
+  for (const h of p.obstacleHits ?? []) {
+    if (currentT >= h.startT - 1e-9 && currentT <= h.endT + 1e-9) {
+      outOfBoundsNow.add(h.robotId);
     }
   }
 

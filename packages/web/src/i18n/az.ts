@@ -273,6 +273,8 @@ export const az = {
   'customField.cancel': 'Ləğv et',
   'bounds.title': 'Meydan sərhədləri',
   'bounds.item': '{start}–{end} s · {edge} divarından {depth} kənarda',
+  'obstacles.title': 'Meydan maneələri',
+  'obstacles.item': '{start}–{end} s · {name} içinə {depth}',
   'edges.far': 'uzaq', 'edges.left': 'sol', 'edges.near': 'yaxın', 'edges.right': 'sağ',
   'customField.tags': 'AprilTag düzülüşünü yüklə…',
   'updates.upToDate': "Ən son versiyadasınız",

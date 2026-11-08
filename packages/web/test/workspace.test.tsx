@@ -117,7 +117,7 @@ describe('workspace workflow', () => {
     // Hidden means absent for checks too (user request 2026-10-04): the
     // conflict pair and its count leave with the robot…
     expect(screen.queryByText('0001 × 0002', { selector: '.conflict-pair' })).not.toBeInTheDocument();
-    expect(screen.getByText('0', { selector: '.conflict-count' })).toBeInTheDocument();
+    expect(screen.getByText('0', { selector: '.conflict-count:not(.bounds-count):not(.obstacles-count)' })).toBeInTheDocument();
 
     // …and come back when it does.
     fireEvent.click(screen.getByRole('button', { name: /show.*0001/i }));

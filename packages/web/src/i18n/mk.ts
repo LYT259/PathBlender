@@ -273,6 +273,8 @@ export const mk = {
   'customField.cancel': 'Откажи',
   'bounds.title': 'Граници на полето',
   'bounds.item': '{start}–{end} с · {depth} преку {edge} ѕид',
+  'obstacles.title': 'Пречки на полето',
+  'obstacles.item': '{start}–{end} с · {depth} во {name}',
   'edges.far': 'далечниот', 'edges.left': 'левиот', 'edges.near': 'блискиот', 'edges.right': 'десниот',
   'customField.tags': 'Вчитај го AprilTag распоредот…',
   'updates.upToDate': "Најнови сте",

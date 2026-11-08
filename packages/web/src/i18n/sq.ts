@@ -274,6 +274,8 @@ export const sq = {
   'customField.cancel': 'Anulo',
   'bounds.title': 'Kufijtë e fushës',
   'bounds.item': '{start}–{end} s · {depth} përtej murit {edge}',
+  'obstacles.title': 'Objektet e fushës',
+  'obstacles.item': '{start}–{end} s · {depth} brenda {name}',
   'edges.far': 'të largët', 'edges.left': 'të majtë', 'edges.near': 'të afërt', 'edges.right': 'të djathtë',
   'customField.tags': 'Ngarkoni planin e AprilTag…',
   'updates.upToDate': "Jeni të përditësuar",

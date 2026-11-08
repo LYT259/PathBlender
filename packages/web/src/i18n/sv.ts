@@ -273,6 +273,8 @@ export const sv = {
   'customField.cancel': 'Avbryt',
   'bounds.title': 'Fältgränser',
   'bounds.item': '{start}–{end} s · {depth} bortom {edge} väggen',
+  'obstacles.title': 'Fälthinder',
+  'obstacles.item': '{start}–{end} s · {depth} in i {name}',
   'edges.far': 'bortre', 'edges.left': 'vänstra', 'edges.near': 'främre', 'edges.right': 'högra',
   'customField.tags': 'Ladda AprilTag-layout…',
   'updates.upToDate': "Du har den senaste versionen",

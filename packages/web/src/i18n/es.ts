@@ -313,6 +313,8 @@ export const es: Record<MessageKey, string> = {
   'customField.cancel': 'Cancelar',
   'bounds.title': 'Límites del campo',
   'bounds.item': '{start}–{end} s · {depth} más allá del muro {edge}',
+  'obstacles.title': 'Obstáculos del campo',
+  'obstacles.item': '{start}–{end} s · {depth} dentro de {name}',
   'edges.far': 'lejano', 'edges.left': 'izquierdo', 'edges.near': 'cercano', 'edges.right': 'derecho',
   'customField.tags': 'Cargar disposición de AprilTag…',
   'updates.upToDate': 'Ya tienes la última versión',
