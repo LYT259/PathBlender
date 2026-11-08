@@ -302,6 +302,78 @@ export function hullPointsOfGroup(json, bin, group, { zMin, zMax, toWorld }) {
   return { hull, zMinM: zLo, zMaxM: zHi, vertexCount };
 }
 
+/**
+ * All band-passing world-frame points of one element group (before any
+ * rect filter or hulling) — the clustering pipeline consumes these.
+ */
+export function groupWorldPoints(json, bin, group, { zMin, zMax, toWorld }) {
+  const world = worldMatrices(json);
+  const pts = [];
+  for (const ni of group.nodeIndices) {
+    const node = json.nodes[ni];
+    if (node.mesh === undefined) continue;
+    const m = world[ni];
+    if (!m) throw new Error(`node ${ni} (${node.name}) unreachable from the scene`);
+    for (const prim of json.meshes[node.mesh].primitives) {
+      for (const v of accessorVertices(json, bin, prim.attributes.POSITION)) {
+        const p = [0, 1, 2].map((i) => m[i][0] * v[0] + m[i][1] * v[1] + m[i][2] * v[2] + m[i][3]);
+        const w = toWorld(p);
+        if (w.height >= zMin && w.height <= zMax) pts.push(w);
+      }
+    }
+  }
+  return pts;
+}
+
+/**
+ * Connected-component clustering on a coarse square grid (8-neighbour
+ * adjacency). Threshold guide: 0.5 m cells connect same-element substructure
+ * (2023 GRID hybrid-node dividers sit ~47 cm apart) while keeping genuinely
+ * disjoint legs (2022 HANGAR / 2024 STAGE, ≥ 2.7 m apart) separate.
+ * Clusters smaller than minDiagM in diagonal are dropped (stray fastener
+ * meshes; anything < 10 cm is below the 3 in collision tolerance anyway).
+ */
+export function clusterPoints(points, cellM, minDiagM = 0.1) {
+  const cell = new Map();
+  for (const p of points) {
+    const key = `${Math.floor(p.x / cellM)} ${Math.floor(p.y / cellM)}`;
+    const list = cell.get(key);
+    if (list) list.push(p);
+    else cell.set(key, [p]);
+  }
+  const visited = new Set();
+  const clusters = [];
+  for (const key of cell.keys()) {
+    if (visited.has(key)) continue;
+    const stack = [key];
+    const members = [];
+    visited.add(key);
+    while (stack.length > 0) {
+      const k = stack.pop();
+      if (k === undefined) continue;
+      members.push(...cell.get(k));
+      const [cx, cy] = k.split(' ').map(Number);
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          const nk = `${cx + dx} ${cy + dy}`;
+          if (!visited.has(nk) && cell.has(nk)) {
+            visited.add(nk);
+            stack.push(nk);
+          }
+        }
+      }
+    }
+    let lo = [Infinity, Infinity];
+    let hi = [-Infinity, -Infinity];
+    for (const p of members) {
+      lo = [Math.min(lo[0], p.x), Math.min(lo[1], p.y)];
+      hi = [Math.max(hi[0], p.x), Math.max(hi[1], p.y)];
+    }
+    if (Math.hypot(hi[0] - lo[0], hi[1] - lo[1]) >= minDiagM) clusters.push(members);
+  }
+  return clusters;
+}
+
 /** Clip a CCW convex polygon to the axis-aligned rect (Sutherland–Hodgman;
  *  output stays convex CCW). Empty output → null. */
 export function clipConvexHullToRect(hull, x0, y0, x1, y1) {

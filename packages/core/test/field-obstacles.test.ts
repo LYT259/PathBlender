@@ -16,13 +16,16 @@ describe('generated obstacle data integrity', () => {
   it('every hull is convex, counterclockwise, >= 3 points, inside its field, and ids are unique per variant set', () => {
     for (const [fieldId, set] of Object.entries(FIELD_OBSTACLE_DATA)) {
       const field = FIELDS.find((f) => f.id === fieldId)!;
-      const seen = new Set<string>();
-      // Plan snippet's `as const` widens the spread to string[]; pin the
-      // variant type so set[variant] indexes FieldObstacleVariantSet.
+      // Plan snippet artifact: it hoisted `seen` across variants, which fails
+      // by construction for 2025's two variants (same id sets by design — the
+      // variants differ in hulls, not ids). The test's own title says "unique
+      // per variant set"; uniqueness is per variant array. (The snippet's
+      // `as const` also widens the spread to string[]; pin the tuple type.)
       const variants: ReadonlyArray<'welded' | 'andymark'> = set.andymark
         ? ['welded', 'andymark']
         : ['welded'];
       for (const variant of variants) {
+        const seen = new Set<string>();
         for (const o of set[variant] ?? []) {
           expect(seen.has(o.id), `${fieldId}/${variant}/${o.id} duplicate`).toBe(false);
           seen.add(o.id);

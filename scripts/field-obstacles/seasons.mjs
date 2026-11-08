@@ -17,8 +17,9 @@ import {
   elementGroups,
   worldMatrices,
   makeNativeToWorld,
-  hullPointsOfGroup,
-  clipConvexHullToRect,
+  monotoneChainHull,
+  groupWorldPoints,
+  clusterPoints,
   pointNearHull,
   accessorVertices,
 } from './extract.mjs';
@@ -41,6 +42,19 @@ export function configMirrorAxis(rotations) {
 }
 
 export { pointNearHull };
+
+/**
+ * Lower edge of the extraction band, meters. FRC bumpers never reach below
+ * ~2 in (5.08 cm) off the carpet, so structure that exists only under this
+ * line cannot touch a bumper and is drivable floor furniture (HANGAR
+ * baseplates ⅛ in, floor-protection hardboard ⅜ in, cable-protector floor
+ * runs ¾ in, CARGO rings ⅛ in). Keeping them out also stops floor sheets
+ * from bridging disjoint legs into one cluster.
+ */
+const BAND_FLOOR_M = 0.05;
+/** Cluster cell size — connects same-element substructure (2023 GRID
+ * dividers ~47 cm apart), separates genuinely disjoint legs (≥ 2.7 m). */
+const CLUSTER_CELL_M = 0.5;
 
 export const SEASONS = [
   {
@@ -129,10 +143,276 @@ export const SEASONS = [
       { obstacleId: 'hub-red', kind: 'span', axis: 'y', expectM: 1.1938, tolM: 0.02, citation: '§5.4 47 in' },
       { obstacleId: 'hub-red', kind: 'max', axis: 'x', expectM: 16.54 - 4.0284, tolM: 0.02, citation: '§5.4 mirrored: 158.6 in from red wall' },
       { obstacleId: 'hub-red', kind: 'center', axis: 'y', expectM: 4.0346, tolM: 0.02, citation: '§5.4 centered on midline' },
-      { obstacleId: 'tower-blue', kind: 'span', axis: 'y', expectM: 1.25095, tolM: 0.02, citation: '§5.8 49.25 in wide' },
-      { obstacleId: 'tower-blue', kind: 'max', axis: 'x', expectM: 1.143, tolM: 0.02, citation: '§5.8 45.0 in deep (base plate 45.18 in)' },
-      { obstacleId: 'tower-red', kind: 'span', axis: 'y', expectM: 1.25095, tolM: 0.02, citation: '§5.8 49.25 in wide' },
-      { obstacleId: 'tower-red', kind: 'min', axis: 'x', expectM: 16.54 - 1.143, tolM: 0.02, citation: '§5.8 45.0 in deep, mirrored' },
+      // Tower dims deliberately absent: §5.8's 49.25 in width / 45.0 in depth
+      // describe the TOWER WALL + baseplate extents; the baseplate (0.2–0.3 in
+      // tall edges) is drivable floor furniture below BAND_FLOOR_M, so the
+      // extracted bumper-band hull (uprights + wall, measured 1.1178 × 1.1062)
+      // has no manual dimension to pin. Tower-wall tag anchors + the
+      // direction-sensitive hub dims carry the orientation check.
+    ],
+  },
+  {
+    fieldId: 'rapidreact-2022',
+    glbDir: { welded: '2022-rapidreact' },
+    bandTopM: 0.5,
+    // UNVERIFIED (orientation residual, red book §16.26): 2022 ships no
+    // AprilTag decals and the layout is rotationally symmetric, so no
+    // tag anchor can catch a 180° flip. Orientation rests on the shared
+    // config-derived mirror contract (configMirrorAxis, pinned by the
+    // 2024-2026 tag registration in field3d-model.test.ts) plus the
+    // CAD-named HANGAR alliances cross-checked against the schematic's
+    // alliance-colour order (field.ts rapidreact-2022 imageRendered
+    // comment). No manual dim row below is direction-sensitive.
+    tagAnchors: [],
+    elements: [
+      {
+        match: /^THE HUB /, id: 'hub', name: 'Hub', action: 'include',
+        reason: 'shared central HUB: fenders, lower hub base and exit mouths all stand on the carpet (§5.3)',
+        citation: '2022 Game Manual §5.3 (HUB)',
+      },
+      {
+        match: /^HANGAR /, id: 'hangar', name: 'Hangar', action: 'include', alliancePaired: true, split: 'legs',
+        reason: 'truss legs rise from baseplates on the carpet (§5.4.1); per-leg hulls keep the open interior drivable',
+        citation: '2022 Game Manual §5.4 (HANGAR)',
+      },
+      {
+        match: /^TERMINAL /, id: 'terminal', name: 'Terminal', action: 'include', alliancePaired: true,
+        reason: 'corner assembly whose front faces bound the FIELD (§5) but whose body occupies ~2 m of reachable playfield corner — clipping the rect keeps the corner honest',
+        citation: '2022 Game Manual §5.5 (TERMINAL)',
+      },
+      {
+        match: /^CARGORINGS_HUB$|Tennis Ball/, id: 'cargo', name: 'Cargo', action: 'exclude',
+        reason: 'game pieces + ⅛ in floor O-rings (not field structure)',
+        citation: '2022 Game Manual §5 (CARGO / CARGO RING)',
+      },
+      {
+        match: /^GE-00305 |^FE-00300|^GE-22600/, id: 'cable-protector', name: 'Cable Protector', action: 'exclude',
+        reason: 'cable protector run: floor segments ⅞ in tall (below the 3 in tolerance); exit segment rides the guardrail',
+        citation: '2022 Game Manual §5 (cable protector)',
+      },
+      {
+        match: /^GE-22202_Weldment/, id: 'hangar-wall', name: 'Hangar Wall', action: 'exclude',
+        reason: 'HANGAR WALL between DRIVER STATION 1 and the guardrail is integrated into the alliance wall (2\'9⅝" wide, in-rect sliver 3 mm)',
+        citation: '2022 Game Manual §5.6.2 (HANGAR WALLS)',
+      },
+      {
+        match: /^Field Wall|^Driver Station Wall/, id: 'perimeter', name: 'Perimeter', action: 'exclude',
+        reason: 'walls + guardrails owned by detectFieldBounds',
+        citation: '2022 Game Manual §5',
+      },
+      {
+        match: /^Carpet|^tapeline_|^Field Pin/, id: 'markings', name: 'Markings', action: 'exclude',
+        reason: 'carpet, tape lines/zone markings and floor pins',
+        citation: '2022 Game Manual §5 (zones and markings)',
+      },
+    ],
+    manualDims: [
+      // §5.3: the HUB is "centered on the FIELD" — flip-invariant, stated
+      // honestly. No span row: the in-band hull (2.635 m) is a composite of
+      // fenders + lower exits that no single manual dimension describes
+      // (§5.3.1 fender faces 2'9⅞" from centre; §5.3 8'11" overall includes
+      // the UPPER exits at 2.64 m height).
+      { obstacleId: 'hub', kind: 'center', axis: 'x', expectM: 16.4592 / 2, tolM: 0.02, citation: '§5.3 centered on the FIELD' },
+      { obstacleId: 'hub', kind: 'center', axis: 'y', expectM: 8.2296 / 2, tolM: 0.02, citation: '§5.3 centered on the FIELD' },
+    ],
+  },
+  {
+    fieldId: 'chargedup-2023',
+    glbDir: { welded: '2023-chargedup' },
+    bandTopM: 0.5,
+    elements: [
+      {
+        match: /Grid \(GE-23000\)/, id: 'grid', name: 'Grid', action: 'include', alliancePaired: true,
+        reason: 'grid columns, hybrid dividers (5 in) and node structure stand on the carpet in front of the alliance wall (§5.5)',
+        citation: '2023 Game Manual §5.5 (GRIDS)',
+      },
+      {
+        match: /^Barrier /, id: 'barrier', name: 'Barrier', action: 'include', alliancePaired: true,
+        reason: '1\'4" base + 1\'¼" (31 cm) polycarbonate wall separating COMMUNITY from LOADING ZONE (§5.5) — bumper-height wall',
+        citation: '2023 Game Manual §5.5 (BARRIER)',
+      },
+      {
+        match: /^Double Substation /, id: 'substation', name: 'Double Substation', action: 'include', alliancePaired: true,
+        reason: 'extends 1\'2" into the FIELD past the alliance wall (§5.6.2) — robots legally touch its face; suffix = field end (the substation at the blue wall is the red alliance\'s, §5.5)',
+        citation: '2023 Game Manual §5.6.2 (DOUBLE SUBSTATION)',
+      },
+      {
+        match: /^Charging Station /, id: 'charge-station', name: 'Charging Station', action: 'exclude',
+        reason: 'drive-on platform (plan directive; §5.4 pivoting surface + ramps)',
+        citation: '2023 Game Manual §5.4 (CHARGE STATION)',
+      },
+      {
+        match: /Single Substation /, id: 'single-substation', name: 'Single Substation', action: 'exclude',
+        reason: 'in-line with the guardrail, FIELD-facing wall 3⅛ in BEHIND the guardrail (§5.6.1) — boundary, in-rect sliver ~4 cm',
+        citation: '2023 Game Manual §5.6.1 (SINGLE SUBSTATION)',
+      },
+      {
+        match: /^FE-0030[07]|^GE-23500 /, id: 'cable-protector', name: 'Cable Protector', action: 'exclude',
+        reason: 'cable protector runs: floor segments ⅞ in tall; exit segment extends 1¾ in past the guardrail (§5) — below the 3 in tolerance',
+        citation: '2023 Game Manual §5 (cable protector)',
+      },
+      {
+        match: /Field Wall|^Driver Station Wall/, id: 'perimeter', name: 'Perimeter', action: 'exclude',
+        reason: 'walls + guardrails owned by detectFieldBounds',
+        citation: '2023 Game Manual §5',
+      },
+      {
+        match: /^Carpet|^Cube v3|^Traffic Cone|^Staging Mark|Staged Game Pieces|^Tape_|Grid Front Tape|Scoring Zone Tape|Loading Station Zone|Centerline/, id: 'markings', name: 'Markings', action: 'exclude',
+        reason: 'carpet, tape markings and staged game pieces',
+        citation: '2023 Game Manual §5 (zones and markings, §5.8)',
+      },
+    ],
+    // §5.9.2: GRID tags on the middle-row cube nodes (z=0.4628); DOUBLE
+    // SUBSTATION tags at z=0.6955 — both face-mounted, z < 1.0 m.
+    tagAnchors: [
+      { obstacleId: 'grid-blue', tagIds: [6, 7, 8], citation: '§5.9.2 GRID AprilTags' },
+      { obstacleId: 'grid-red', tagIds: [1, 2, 3], citation: '§5.9.2 GRID AprilTags' },
+      { obstacleId: 'substation-blue', tagIds: [5], citation: '§5.9.2 DOUBLE SUBSTATION AprilTags' },
+      { obstacleId: 'substation-red', tagIds: [4], citation: '§5.9.2 DOUBLE SUBSTATION AprilTags' },
+    ],
+    manualDims: [
+      // Grid structure front sits ~5 cm behind the assembly's front tape
+      // line (§5.5 4'8¼" assembly incl. tape; the tape is a separate
+      // markings group) — only the width row is manual-verifiable.
+      { obstacleId: 'grid-blue', kind: 'span', axis: 'y', expectM: 5.4991, tolM: 0.02, citation: '§5.5 18 ft ½ in wide' },
+      { obstacleId: 'grid-red', kind: 'span', axis: 'y', expectM: 5.4991, tolM: 0.02, citation: '§5.5 18 ft ½ in wide' },
+      { obstacleId: 'barrier-blue', kind: 'span', axis: 'x', expectM: 2.2352 - 2 * 0.0127, tolM: 0.02, citation: '§5.5 base 7 ft 4 in; hull = ½ in-thick wall inset ½ in per end (base itself is ¼ in floor furniture below BAND_FLOOR_M)' },
+      { obstacleId: 'barrier-red', kind: 'span', axis: 'x', expectM: 2.2352 - 2 * 0.0127, tolM: 0.02, citation: '§5.5 derived (see barrier-blue)' },
+      { obstacleId: 'substation-blue', kind: 'max', axis: 'x', expectM: 0.3556, tolM: 0.02, citation: '§5.6.2 extends 1 ft 2 in into the FIELD' },
+      { obstacleId: 'substation-red', kind: 'min', axis: 'x', expectM: 16.5405 - 0.3556, tolM: 0.02, citation: '§5.6.2 mirrored' },
+    ],
+  },
+  {
+    fieldId: 'crescendo-2024',
+    glbDir: { welded: '2024-crescendo' },
+    bandTopM: 0.5,
+    elements: [
+      {
+        match: /^Speaker /, id: 'speaker', name: 'Speaker', action: 'include', alliancePaired: true,
+        reason: 'SUBWOOFER: 6-faced element against the alliance wall extending 3\'⅛" into the FIELD, structure from the carpet (§5.6.1)',
+        citation: '2024 Game Manual §5.6.1 (SPEAKER / SUBWOOFER)',
+      },
+      {
+        match: /^Source /, id: 'source', name: 'Source', action: 'include', alliancePaired: true,
+        reason: 'corner SOURCE assembly (§5.4) occupies ~1.8 × 1.1 m of reachable playfield corner',
+        citation: '2024 Game Manual §5.4 (SOURCE)',
+      },
+      {
+        match: /^Stage /, id: 'stage', name: 'Stage', action: 'include', alliancePaired: true, split: 'legs',
+        reason: '3 truss feet from the carpet per STAGE (§5.5); core clears at 2\'3⅞" (71 cm) and chains hang at 72 cm — per-leg hulls keep under-stage driving free',
+        citation: '2024 Game Manual §5.5 (STAGE)',
+      },
+      {
+        match: /^Amp /, id: 'amp', name: 'Amp', action: 'exclude',
+        reason: 'guardrail-mounted (§5.1: FIELD bounded by AMPS); in-rect extent ~1.1 cm — below the 3 in tolerance either way',
+        citation: '2024 Game Manual §5.3 (AMP), §5.1',
+      },
+      {
+        match: /^Note Holder /, id: 'note-holder', name: 'Note Holder', action: 'exclude',
+        reason: 'sub-assembly inside the SOURCE footprint (measured containment, GE-24400 ⊂ GE-24000) — covered by the source hull; avoids double counting',
+        citation: '2024 Game Manual §5.4 (SOURCE assembly)',
+      },
+      {
+        match: /^Note$|^High Note$/, id: 'note', name: 'Note', action: 'exclude',
+        reason: 'game pieces',
+        citation: '2024 Game Manual §5.7 (NOTE / HIGH NOTE)',
+      },
+      {
+        match: /Field Wall|Driver Stations/, id: 'perimeter', name: 'Perimeter', action: 'exclude',
+        reason: 'walls + guardrails owned by detectFieldBounds',
+        citation: '2024 Game Manual §5',
+      },
+      {
+        match: /^Carpet & Tape/, id: 'markings', name: 'Markings', action: 'exclude',
+        reason: 'carpet + tape markings',
+        citation: '2024 Game Manual §5.2',
+      },
+    ],
+    // §5.8: SPEAKER tags 3/4/7/8 sit on the ALLIANCE WALL above the
+    // SUBWOOFER (z=1.4511, wall plane flush with the subwoofer back);
+    // SOURCE tags 1/2/9/10 on the SOURCE wall (z=1.3559, vertical face).
+    // STAGE tags 11–16 are mounted on the suspended STAGE core (§5.8,
+    // z=1.3208) — they hover between the legs and are NOT admissible.
+    // AMP tags 5/6: amp excluded.
+    tagAnchors: [
+      { obstacleId: 'speaker-blue', tagIds: [7, 8], citation: '§5.8 SPEAKER AprilTags' },
+      { obstacleId: 'speaker-red', tagIds: [3, 4], citation: '§5.8 SPEAKER AprilTags' },
+      { obstacleId: 'source-blue', tagIds: [9, 10], citation: '§5.8 SOURCE AprilTags' },
+      { obstacleId: 'source-red', tagIds: [1, 2], citation: '§5.8 SOURCE AprilTags' },
+    ],
+    manualDims: [
+      // §5.6.1: the SUBWOOFER extends 3 ft ⅛ in (0.9171 m) from the ALLIANCE
+      // WALL. No width row: the manual states no SUBWOOFER width.
+      { obstacleId: 'speaker-blue', kind: 'max', axis: 'x', expectM: 0.9171, tolM: 0.02, citation: '§5.6.1 SUBWOOFER 3 ft ⅛ in' },
+      { obstacleId: 'speaker-red', kind: 'min', axis: 'x', expectM: 16.5405 - 0.9171, tolM: 0.02, citation: '§5.6.1 mirrored' },
+    ],
+  },
+  {
+    fieldId: 'reefscape-2025',
+    glbDir: { welded: '2025-reefscape-welded', andymark: '2025-reefscape-andymark' },
+    bandTopM: 0.5,
+    elements: [
+      {
+        match: /^REEF /, id: 'reef', name: 'Reef', action: 'include', alliancePaired: true,
+        reason: 'hexagonal base with trough (front edge 46 cm) and vertical pipes from the carpet (§5.3)',
+        citation: '2025 Game Manual §5.3 (REEF)',
+      },
+      {
+        match: /^CORAL STATION /, id: 'coral-station', name: 'Coral Station', action: 'include', multiPaired: true,
+        reason: 'corner assemblies connecting guardrail to ALLIANCE WALL (§5.6.2) occupying ~1.7 × 1.3 m of reachable corner; the welded/AndyMark builds differ ~7 cm here (field.ts 2025 imageRendered comment)',
+        citation: '2025 Game Manual §5.6.2 (CORAL STATION)',
+      },
+      {
+        match: /^BARGE /, id: 'barge-post', name: 'Barge Post', action: 'include',
+        reason: 'the BARGE truss/cages are overhead (truss at 5\'2", §5.4) and its legs stand outside the guardrails — but the centre support column rises from the carpet at midfield (§5.4 "supported in the center of the FIELD by vertical truss"), which is real bumper-band blocking geometry (deviation from the plan\'s blanket barge exclusion, driven by measured GLB geometry; cluster naming keeps only the post)',
+        citation: '2025 Game Manual §5.4 (BARGE)',
+      },
+      {
+        match: /^PROCESSOR /, id: 'processor', name: 'Processor', action: 'exclude',
+        reason: 'integrated into the guardrail (§5.1 FIELD bounded by PROCESSORS); measured in-rect extent ~1 mm',
+        citation: '2025 Game Manual §5.5 (PROCESSOR), §5.1',
+      },
+      {
+        match: /^CORAL HOLDER /, id: 'coral-holder', name: 'Coral Holder', action: 'exclude',
+        reason: 'sub-assembly inside the CORAL STATION footprint (measured containment, GE-25410 ⊂ GE-25000) — covered by the station hull',
+        citation: '2025 Game Manual §5.6.2',
+      },
+      {
+        match: /^ALGAE|^CORAL \(|^algae$/, id: 'game-pieces', name: 'Coral & Algae', action: 'exclude',
+        reason: 'scoring elements',
+        citation: '2025 Game Manual §5.7',
+      },
+      {
+        match: /FIELD WALL|DRIVER STATIONS/, id: 'perimeter', name: 'Perimeter', action: 'exclude',
+        reason: 'walls + guardrails owned by detectFieldBounds',
+        citation: '2025 Game Manual §5',
+      },
+      {
+        match: /^Carpet & Tape/, id: 'markings', name: 'Markings', action: 'exclude',
+        reason: 'carpet + tape markings',
+        citation: '2025 Game Manual §5.2',
+      },
+    ],
+    // §5.8: REEF face tags at z=0.3081 (6⅞ in, mounted on the faces);
+    // CORAL STATION tags at z=1.4859 face-mounted on the station (a tall
+    // box to 1.7 m — cross-section at tag height equals the base footprint).
+    // BARGE tags 4/5/14/15 (z=1.8679, 30° lean above the cages) and
+    // PROCESSOR tags 3/16 (processor excluded) anchor nothing.
+    tagAnchors: [
+      { obstacleId: 'reef-blue', tagIds: [17, 18, 19, 20, 21, 22], citation: '§5.8 REEF AprilTags (faces)' },
+      { obstacleId: 'reef-red', tagIds: [6, 7, 8, 9, 10, 11], citation: '§5.8 REEF AprilTags (faces)' },
+      { obstacleId: 'coral-station-blue-low', tagIds: [12], citation: '§5.8 CORAL STATION AprilTags' },
+      { obstacleId: 'coral-station-blue-high', tagIds: [13], citation: '§5.8 CORAL STATION AprilTags' },
+      { obstacleId: 'coral-station-red-low', tagIds: [1], citation: '§5.8 CORAL STATION AprilTags' },
+      { obstacleId: 'coral-station-red-high', tagIds: [2], citation: '§5.8 CORAL STATION AprilTags' },
+    ],
+    manualDims: [
+      { obstacleId: 'reef-blue', kind: 'span', axis: 'x', expectM: 1.6637, tolM: 0.02, citation: '§5.3 5 ft 5½ in hexagon (face to face)' },
+      { obstacleId: 'reef-blue', kind: 'min', axis: 'x', expectM: 3.6576, tolM: 0.02, citation: '§5.3 12 ft from the ALLIANCE WALL (near face)' },
+      { obstacleId: 'reef-blue', kind: 'center', axis: 'y', expectM: 8.052 / 2, tolM: 0.02, citation: '§5.3 centered between guardrails' },
+      { obstacleId: 'reef-red', kind: 'span', axis: 'x', expectM: 1.6637, tolM: 0.02, citation: '§5.3 mirrored' },
+      { obstacleId: 'reef-red', kind: 'max', axis: 'x', expectM: 17.548 - 3.6576, tolM: 0.02, citation: '§5.3 mirrored' },
+      { obstacleId: 'reef-red', kind: 'center', axis: 'y', expectM: 8.052 / 2, tolM: 0.02, citation: '§5.3 centered between guardrails' },
     ],
   },
 ];
@@ -175,33 +455,90 @@ export async function extractSeason(season) {
     const seenIds = new Set();
     for (const { group, row } of classified) {
       if (row?.action !== 'include') continue;
-      const { hull, zMinM, zMaxM } = hullPointsOfGroup(json, bin, group, {
-        zMin: 0,
+      // Band-passing world points, restricted to the playfield rectangle
+      // BEFORE hulling: geometry beyond the walls belongs to the boundary
+      // (detectFieldBounds) and would otherwise span hulls across the field
+      // (measured: 2025 BARGE legs just outside the guardrails).
+      const pts = groupWorldPoints(json, bin, group, {
+        zMin: BAND_FLOOR_M,
         zMax: season.bandTopM,
         toWorld,
-      });
-      if (hull.length < 3) {
-        errors.push(`${group.name}: in-band hull has < 3 points`);
+      }).filter((p) => p.x >= 0 && p.x <= field.lengthM && p.y >= 0 && p.y <= field.widthM);
+      if (pts.length === 0) {
+        errors.push(`${group.name}: no in-playfield in-band geometry`);
         continue;
       }
-      const clipped = clipConvexHullToRect(hull, 0, 0, field.lengthM, field.widthM);
-      if (!clipped || clipped.length < 3) {
-        errors.push(`${group.name}: hull empty after playfield clip`);
+      // Split rows (disjoint legs) cluster their structure points; every
+      // other row takes ONE hull over all its in-band points (the tower
+      // baseplate lives below BAND_FLOOR_M and only clustering on the
+      // remaining islands would shatter it).
+      const clusters = row.split === 'legs' ? clusterPoints(pts, CLUSTER_CELL_M) : [pts];
+      if (clusters.length === 0) {
+        errors.push(`${group.name}: only sub-tolerance clusters in band`);
         continue;
       }
-      // Alliance suffix from centroid x (never assigned by hand).
-      const centroidX = clipped.reduce((s, p) => s + p.x, 0) / clipped.length;
-      const suffix = row.alliancePaired ? (centroidX < field.lengthM / 2 ? 'blue' : 'red') : '';
-      const id = `${row.id}${suffix ? `-${suffix}` : ''}`;
-      if (seenIds.has(id)) errors.push(`duplicate obstacle id ${id}`);
-      seenIds.add(id);
-      obstacles.push({
-        id,
-        name: row.name,
-        hull: clipped.map((p) => ({ x: round4(p.x), y: round4(p.y) })),
-        zMinM: round4(zMinM),
-        zMaxM: round4(zMaxM),
+      // Deterministic cluster order: sort by centroid (y, then x).
+      const centroid = (arr) => [
+        arr.reduce((s, p) => s + p.x, 0) / arr.length,
+        arr.reduce((s, p) => s + p.y, 0) / arr.length,
+      ];
+      clusters.sort((a, b) => {
+        const [ax, ay] = centroid(a);
+        const [bx, by] = centroid(b);
+        return ay - by || ax - bx;
       });
+      // Alliance/position suffixes come from the GROUP centroid (never hand-set).
+      const [gcx, gcy] = centroid(pts);
+      const xSide = gcx < field.lengthM / 2 ? 'blue' : 'red';
+      const ySide = gcy < field.widthM / 2 ? 'low' : 'high';
+      for (let ci = 0; ci < clusters.length; ci++) {
+        const cluster = clusters[ci];
+        let hull;
+        try {
+          hull = monotoneChainHull(cluster.map((p) => ({ x: p.x, y: p.y })));
+        } catch (err) {
+          errors.push(`${group.name} cluster ${ci}: ${err.message}`);
+          continue;
+        }
+        let zLo = Infinity;
+        let zHi = -Infinity;
+        for (const p of cluster) {
+          if (p.height < zLo) zLo = p.height;
+          if (p.height > zHi) zHi = p.height;
+        }
+        // Round to 4 decimals, then drop vertices that rounding left
+        // collinear or micro-concave (keeps hulls strictly CCW-convex and
+        // free of collinear clutter). Iterate: each drop changes the
+        // neighbours, so re-check until stable.
+        let clean = hull.map((p) => ({ x: round4(p.x), y: round4(p.y) }));
+        for (;;) {
+          const next = clean.filter((p, i) => {
+            const a = clean[(i + clean.length - 1) % clean.length];
+            const c = clean[(i + 1) % clean.length];
+            if (!a || !c) return false;
+            return (p.x - a.x) * (c.y - p.y) - (p.y - a.y) * (c.x - p.x) > 1e-9;
+          });
+          if (next.length === clean.length) break;
+          clean = next;
+        }
+        if (clean.length < 3) {
+          errors.push(`${group.name} cluster ${ci}: < 3 vertices survive rounding cleanup`);
+          continue;
+        }
+        const id =
+          row.split === 'legs' ? `${row.id}-${xSide}-leg${ci + 1}`
+          : row.multiPaired ? `${row.id}-${xSide}-${ySide}`
+          : `${row.id}${row.alliancePaired ? `-${xSide}` : ''}`;
+        if (seenIds.has(id)) errors.push(`duplicate obstacle id ${id}`);
+        seenIds.add(id);
+        obstacles.push({
+          id,
+          name: row.split === 'legs' ? `${row.name} Leg` : row.name,
+          hull: clean,
+          zMinM: round4(zLo),
+          zMaxM: round4(zHi),
+        });
+      }
     }
     obstacles.sort((a, b) => a.id.localeCompare(b.id));
 
