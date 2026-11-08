@@ -129,6 +129,72 @@ jobs:
           Write-Host "Window title: '$($proc.MainWindowTitle)'"
           if ($proc.MainWindowTitle -ne "PathBlender") { Write-Host "::warning::unexpected window title" }
           "running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath smoke-result.txt
+      - name: Build offline NSIS installer
+        # Beta-gate the second Windows artifact too: the overlay build embeds
+        # the WebView2 Evergreen Standalone Installer. A bash step's exports
+        # do not survive the step, so the throwaway key is re-read here.
+        shell: bash
+        run: |
+          cd packages/desktop
+          export TAURI_SIGNING_PRIVATE_KEY="$(cat "$RUNNER_TEMP/smoke-updater.key")"
+          export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
+          npx tauri build --config src-tauri/tauri.windows-offline.conf.json --bundles nsis
+      - name: Assert offline artifact size
+        # An "offline" build below 100 MiB means the overlay was not applied —
+        # the exe is just another online installer. Stage it under the pinned
+        # published name so the gate installs the exact asset users download.
+        shell: bash
+        run: |
+          V=$(node -p "require('./package.json').version")
+          NSIS_DIR=packages/desktop/src-tauri/target/release/bundle/nsis
+          SIZE=$(stat -c %s "$NSIS_DIR/PathBlender_${V}_x64-setup.exe")
+          if [ "$SIZE" -lt 104857600 ]; then
+            echo "::error::offline installer is ${SIZE} bytes (< 104857600) — overlay not applied?"
+            exit 1
+          fi
+          cp "$NSIS_DIR/PathBlender_${V}_x64-setup.exe" "$NSIS_DIR/PathBlender_${V}_x64-offline-setup.exe"
+          echo "offline installer: PathBlender_${V}_x64-offline-setup.exe, ${SIZE} bytes"
+      - name: Silent install (offline)
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem "packages/desktop/src-tauri/target/release/bundle/nsis/*_x64-offline-setup.exe" | Select-Object -First 1
+          if (-not $setup) { Write-Host "::error::no offline setup.exe found"; exit 1 }
+          Write-Host "Installing $($setup.Name)"
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Host "::error::offline installer exit code $($p.ExitCode)"; exit 1 }
+      - name: Locate, launch and assert (offline)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          # Install location from the per-user uninstall registry entry
+          # (currentUser NSIS installs under HKCU), with the known default as
+          # fallback.
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $installDir = $installDir.Trim('"', "'")
+          $exe = Join-Path $installDir "pathblender-desktop.exe"
+          if (-not (Test-Path $exe)) {
+            Write-Host "::error::pathblender-desktop.exe not found at $exe"
+            Get-ChildItem -Path $installDir -Recurse -File | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+          }
+          $expected = (Get-Content package.json | ConvertFrom-Json).version
+          $actual = (Get-Item $exe).VersionInfo.ProductVersion
+          Write-Host "Installed version: $actual (tree: $expected)"
+          if ($actual -ne $expected) { Write-Host "::error::installed version $actual != tree version $expected"; exit 1 }
+
+          Start-Process -FilePath $exe
+          Start-Sleep -Seconds 15
+          $proc = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $proc) { Write-Host "::error::PathBlender process not running 15s after launch"; exit 1 }
+          $proc.Refresh()
+          if (-not $proc.MainWindowTitle) { Write-Host "::error::PathBlender running but has no main window"; exit 1 }
+          Write-Host "Window title: '$($proc.MainWindowTitle)'"
+          if ($proc.MainWindowTitle -ne "PathBlender") { Write-Host "::warning::unexpected window title" }
+          "offline install running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath smoke-offline-result.txt
       - name: Screenshot
         shell: pwsh
         run: |
@@ -147,6 +213,7 @@ jobs:
           path: |
             smoke-screenshot.png
             smoke-result.txt
+            smoke-offline-result.txt
             packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
             packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe.sig
           if-no-files-found: error

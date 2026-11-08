@@ -493,4 +493,12 @@ describe('Windows offline installer pipeline', () => {
     expect(stageOnline).toBeGreaterThan(-1);
     expect(offlineBuild).toBeGreaterThan(stageOnline);
   });
+  it('beta-verify builds, size-checks, installs and launches the offline installer', () => {
+    const beta = readFileSync(resolve(ROOT, '.github/workflows/beta-verify.yml'), 'utf-8');
+    const windows = beta.slice(beta.indexOf('  windows:'), beta.indexOf('  macos:'));
+    expect(windows).toContain('--config src-tauri/tauri.windows-offline.conf.json');
+    expect(windows).toContain('104857600');
+    expect(windows).toContain('_x64-offline-setup.exe');
+    expect(windows).toContain('-ArgumentList "/S"');
+  });
 });
