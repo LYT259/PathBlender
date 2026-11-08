@@ -56,7 +56,7 @@ PathBlender 比较导入的规划，不运行机器人代码。碰撞检查取�
 | 平台 | 下载文件 |
 | --- | --- |
 | macOS 13+ | Apple Silicon 与 Intel 通用的 Universal DMG |
-| Windows x86_64 | `*_x64-setup.exe` |
+| Windows x86_64 | `*_x64-setup.exe`（在线）或 `*_x64-offline-setup.exe`（离线版，内嵌 WebView2） |
 | Linux x86_64 | AppImage、DEB 或 RPM |
 
 桌面版提供会话保存、GIF 回放和方案包导出。Linux 的应用内更新使用 AppImage；DEB／RPM 用户安装新版软件包。安装与更新细节见[使用指南](docs/user-guide.zh.md)。

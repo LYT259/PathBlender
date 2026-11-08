@@ -189,6 +189,20 @@ describe('third-party legal notices', () => {
   });
 });
 
+describe('install guidance (offline installer + OS security prompts)', () => {
+  it('both user guides explain the offline installer and both OS prompts', () => {
+    const en = readFileSync(resolve(ROOT, 'docs/user-guide.en.md'), 'utf8');
+    const zh = readFileSync(resolve(ROOT, 'docs/user-guide.zh.md'), 'utf8');
+    for (const s of ['_x64-offline-setup.exe', 'Open Anyway', 'More info', 'Run anyway']) expect(en).toContain(s);
+    for (const s of ['_x64-offline-setup.exe', '仍要打开', '更多信息', '仍要运行']) expect(zh).toContain(s);
+  });
+  it('every README download section mentions the offline Windows installer', () => {
+    for (const file of ['README.md', 'README.zh-CN.md', 'README.zh-Hant.md', 'README.es.md', 'README.fr.md', 'README.tr.md', 'README.pt-BR.md', 'README.he.md']) {
+      expect(readFileSync(resolve(ROOT, file), 'utf8'), file).toContain('_x64-offline-setup.exe');
+    }
+  });
+});
+
 describe('shipped-artifact verification gates', () => {
   it('builds and verifies Universal Mac binaries before collecting the version-matched image', () => {
     expect(workflow).toContain('npx tauri build --target universal-apple-darwin --bundles app');

@@ -87,7 +87,7 @@ Get the desktop app from [GitHub Releases](https://github.com/LYT259/pathblender
 | Platform | Download |
 | --- | --- |
 | macOS 13+ | Universal DMG for Apple Silicon and Intel |
-| Windows x86_64 | `*_x64-setup.exe` |
+| Windows x86_64 | `*_x64-setup.exe` (online) or `*_x64-offline-setup.exe` (offline, embeds WebView2) |
 | Linux x86_64 | AppImage, DEB or RPM |
 
 Desktop includes session saving, GIF replay and solution-package export.

@@ -138,7 +138,7 @@
 
 ## 安装桌面版
 
-桌面版各平台的下载都在 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 页：macOS Universal DMG（Apple Silicon 与 Intel 一份通用包，macOS 13+）、Windows x86_64 安装包 `*_x64-setup.exe`、Linux x86_64 的 DEB / AppImage / RPM。Linux 下载好安装包后在终端安装——下面以 0.1.9 为例，文件名中的版本号以 Releases 页为准：
+桌面版各平台的下载都在 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 页：macOS Universal DMG（Apple Silicon 与 Intel 一份通用包，macOS 13+）、Windows x86_64 安装包 `*_x64-setup.exe`（体积小，安装时从 Microsoft 下载 WebView2 运行时）或 `PathBlender_<version>_x64-offline-setup.exe`（约 130 MB，内嵌 WebView2——适合离线/赛场机器与未装 WebView2 的干净 Windows 10）、Linux x86_64 的 DEB / AppImage / RPM。Linux 下载好安装包后在终端安装——下面以 0.1.9 为例，文件名中的版本号以 Releases 页为准：
 
 ```bash
 # DEB（Debian/Ubuntu 示例）
@@ -152,6 +152,11 @@ sudo dnf install ./PathBlender-0.1.9-1.x86_64.rpm
 ```
 
 应用内更新走 AppImage；DEB/RPM 安装的用户下载新包覆盖安装即可更新。
+
+### 首次启动的安全提示
+
+- **macOS Gatekeeper**（应用未经 Apple 开发者签名）：首次打开会被拦截。右键点按应用 → **打开** → **打开**，或到 系统设置 → 隐私与安全性 → 下拉到底 → **仍要打开**。macOS 会要求输入一次密码，整个过程约 30 秒，每台 Mac 只发生一次。
+- **Windows SmartScreen**（安装包未签名）：出现「Windows 已保护你的电脑」→ 点 **更多信息** → **仍要运行**。我们未购买开发者账号签名，与 PathPlanner / Choreo 等社区工具相同。
 
 ## 网页版与桌面版
 
