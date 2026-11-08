@@ -9,13 +9,20 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { UPDATE_BLOCKED_MARKER } from './update-guard';
 import type { UpdateChannel } from './update-channel';
 
 export type UpdateEvent =
   | { kind: 'found'; version: string }
   | { kind: 'upToDate' }
   | { kind: 'installed' }
+  | { kind: 'blocked' }
   | { kind: 'failed' };
+
+/** The Rust gate rejects with the marker string (bare, not wrapped in Error). */
+function errorIsBlocked(e: unknown): boolean {
+  return String(e).includes(UPDATE_BLOCKED_MARKER);
+}
 
 export async function runUpdateCheck(
   channel: UpdateChannel,
@@ -31,7 +38,18 @@ export async function runUpdateCheck(
       return;
     }
     onEvent({ kind: 'found', version: meta.version });
-    await invoke('install_update');
+    try {
+      await invoke('install_update');
+    } catch (e) {
+      // A blocked install leaves the stashed update in place (Rust gates
+      // before taking it), so the user can retry after saving — this is not
+      // a failure of the check itself.
+      if (errorIsBlocked(e)) {
+        onEvent({ kind: 'blocked' });
+        return;
+      }
+      throw e;
+    }
     // On Windows the installer exits the app itself, so the relaunch call may
     // never resolve — best effort only.
     await relaunch().catch(() => undefined);
@@ -73,10 +91,20 @@ export async function checkForUpdate(
   }
 }
 
-/** Installs the update stashed by checkForUpdate, then relaunches. */
-export async function installPendingUpdate(): Promise<void> {
-  await invoke('install_update');
+/**
+ * Installs the update stashed by checkForUpdate, then relaunches. Resolves
+ * 'blocked' (without relaunching) when the Rust session guard refused the
+ * install — the stashed update survives, so a retry needs no re-check.
+ */
+export async function installPendingUpdate(): Promise<'installed' | 'blocked'> {
+  try {
+    await invoke('install_update');
+  } catch (e) {
+    if (errorIsBlocked(e)) return 'blocked';
+    throw e;
+  }
   // On Windows the installer exits the app itself, so the relaunch call may
   // never resolve — best effort only.
   await relaunch().catch(() => undefined);
+  return 'installed';
 }
