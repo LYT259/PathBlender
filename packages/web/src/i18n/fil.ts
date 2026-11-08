@@ -302,6 +302,7 @@ export const fil = {
   'updates.upToDate': "Ikaw ay updated na",
   'updates.downloading': 'Natagpuan ang v{v}, dina-download at muling inilulunsad…',
   'updates.failed': 'Nabigo ang pagsusuri ng update — suriin ang iyong koneksyon at subukang muli',
+  'updates.blocked': 'Naka-pause ang update — hindi pa naka-save ang pinakabagong mga pagbabago sa session, subukan ulit makalipas ang ilang sandali',
   'actions.saveHint': 'I-save ang lahat ng robot at session settings (.pb). Buksan muli gamit ang Import. Mag-export ng mga indibidwal na path mula sa robot inspector.',
   'actions.clearHint': 'Alisin ang lahat ng robot sa kasalukuyang session (hindi kailanman ginagalaw ang mga na-import na file)',
   'rail.import': 'I-import',

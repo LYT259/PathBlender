@@ -319,6 +319,7 @@ export const nl: Record<MessageKey, string> = {
   'updates.upToDate': "U bent up-to-date",
   'updates.downloading': 'v{v} gevonden, wordt gedownload en opnieuw gestart…',
   'updates.failed': 'Updatecontrole mislukt — controleer uw verbinding en probeer het opnieuw',
+  'updates.blocked': 'Update gepauzeerd — de laatste wijzigingen in de sessie zijn nog niet opgeslagen, probeer het over een ogenblik opnieuw',
   'actions.saveHint': 'Slaat alle robots en sessie-instellingen op (.pb). Opnieuw openen met Importeren. Afzonderlijke routes exporteren vanuit de robotinspecteur.',
   'actions.clearHint': 'Verwijdert alle robots uit de huidige sessie (laat de geïmporteerde bestanden altijd ongemoeid)',
   'rail.import': 'Importeren',

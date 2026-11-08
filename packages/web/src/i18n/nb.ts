@@ -278,6 +278,7 @@ export const nb = {
   'updates.upToDate': "Du er oppdatert",
   'updates.downloading': "Fant v{v}, laster ned og starter på nytt…",
   'updates.failed': "Oppdateringskontroll mislyktes — sjekk tilkoblingen og prøv igjen",
+  'updates.blocked': "Oppdateringen er satt på pause — de siste endringene i sesjonen er ennå ikke lagret, prøv igjen om et øyeblikk",
   'actions.saveHint': "Lagre alle roboter og sesjonsinnstillinger (.pb). Gjenåpne med Importer. Eksporter individuelle ruter fra robotinspektøren.",
   'actions.clearHint': "Fjern alle roboter fra gjeldende sesjon (berører aldri de importerte filene)",
   'rail.import': "Importer",

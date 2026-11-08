@@ -302,6 +302,7 @@ export const it = {
   'updates.upToDate': "Sei aggiornato",
   'updates.downloading': 'Trovato v{v}, download e riavvio in corso…',
   'updates.failed': 'Controllo aggiornamenti fallito — verifica la connessione e riprova',
+  'updates.blocked': 'Aggiornamento in pausa — le ultime modifiche della sessione non sono ancora salvate, riprova tra un momento',
   'actions.saveHint': 'Salva tutti i robot e le impostazioni della sessione (.pb). Riapri con Importa. Esporta percorsi singoli dall’ispettore robot.',
   'actions.clearHint': 'Rimuovi tutti i robot dalla sessione corrente (non tocca mai i file importati)',
   'rail.import': 'Importa',

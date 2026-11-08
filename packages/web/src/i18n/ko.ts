@@ -320,6 +320,7 @@ export const ko: Record<MessageKey, string> = {
   'updates.upToDate': '최신 버전입니다',
   'updates.downloading': 'v{v} 발견 — 다운로드하고 다시 시작합니다…',
   'updates.failed': '업데이트 확인 실패 — 연결을 확인하고 다시 시도하세요',
+  'updates.blocked': '업데이트가 일시 중지되었습니다 — 세션의 최신 변경 사항이 아직 저장되지 않았습니다. 잠시 후 다시 시도하세요',
   'actions.saveHint': '모든 로봇과 세션 설정을 저장합니다 (.pb). 가져오기로 다시 열 수 있습니다. 개별 경로는 로봇 인스펙터에서 내보냅니다.',
   'actions.clearHint': '현재 세션에서 모든 로봇을 제거합니다 (가져온 파일은 변경하지 않음)',
   'rail.import': '가져오기',

@@ -279,6 +279,7 @@ export const ro = {
   'updates.upToDate': "Ești la zi",
   'updates.downloading': 'Am găsit v{v}, se descarcă și se repornește…',
   'updates.failed': 'Verificarea actualizărilor a eșuat — verifică conexiunea și încearcă din nou',
+  'updates.blocked': 'Actualizare pusă în pauză — ultimele modificări ale sesiunii nu sunt încă salvate, încearcă din nou peste o clipă',
   'actions.saveHint': 'Salvează toți roboții și setările sesiunii (.pb). Redeschide cu Import. Exportă rute individuale din inspectorul robotului.',
   'actions.clearHint': 'Elimină toți roboții din sesiunea curentă (nu atinge niciodată fișierele importate)',
   'rail.import': 'Importare',

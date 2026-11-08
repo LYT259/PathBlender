@@ -322,6 +322,7 @@ export const ja: Record<MessageKey, string> = {
   'updates.upToDate': '最新の状態です',
   'updates.downloading': 'v{v} が見つかりました。ダウンロードして再起動しています…',
   'updates.failed': 'アップデートの確認に失敗しました — 接続を確認してもう一度お試しください',
+  'updates.blocked': 'アップデートを一時停止しました — セッションの最新の変更がまだ保存されていません。少し待ってからもう一度お試しください',
   'actions.saveHint': 'すべてのロボットとセッション設定を保存します (.pb)。開き直すにはインポートを使います。個別のパスはロボットインスペクタからエクスポートできます。',
   'actions.clearHint': '現在のセッションからすべてのロボットを削除します (インポートしたファイルには触れません)',
   'rail.import': 'インポート',

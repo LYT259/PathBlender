@@ -278,6 +278,7 @@ export const sr = {
   'updates.upToDate': "Vi ste ažurni",
   'updates.downloading': "Pronađeno v{v}, preuzimanje i ponovno pokretanje…",
   'updates.failed': "Provera ažuriranja nije uspela — proverite vezu i pokušajte ponovo",
+  'updates.blocked': "Ažuriranje je pauzirano — najnovije izmene sesije još nisu sačuvane, pokušajte ponovo za koji trenutak",
   'actions.saveHint': "Sačuvajte sve robote i podešavanja sesije (.pb). Ponovo otvorite pomoću Uvoza. Izvezite pojedinačne rute iz inspektora robota.",
   'actions.clearHint': "Uklonite sve robote iz trenutne sesije (nikada ne dira uvezene fajlove)",
   'rail.import': "Uvoz",

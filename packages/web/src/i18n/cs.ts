@@ -319,6 +319,7 @@ export const cs: Record<MessageKey, string> = {
   'updates.upToDate': 'Máte nejnovější verzi',
   'updates.downloading': 'Nalezena verze v{v}, stahování a restartování…',
   'updates.failed': 'Kontrola aktualizací se nezdařila — zkontrolujte připojení a zkuste to znovu',
+  'updates.blocked': 'Aktualizace byla pozastavena — nejnovější změny relace ještě nejsou uloženy, zkuste to za chvíli znovu',
   'actions.saveHint': 'Uloží všechny roboty a nastavení relace (.pb). Znovu otevřete pomocí Importovat. Jednotlivé trasy lze exportovat z inspektoru robota.',
   'actions.clearHint': 'Odebere všechny roboty z aktuální relace (importovaných souborů se nikdy nedotýká)',
   'rail.import': 'Importovat',

@@ -322,6 +322,7 @@ export const pl: Record<MessageKey, string> = {
   'updates.upToDate': 'Masz najnowszą wersję',
   'updates.downloading': 'Znaleziono v{v} — pobieranie i ponowne uruchamianie…',
   'updates.failed': 'Sprawdzanie aktualizacji nie powiodło się — sprawdź połączenie i spróbuj ponownie',
+  'updates.blocked': 'Aktualizacja wstrzymana — najnowsze zmiany sesji nie zostały jeszcze zapisane, spróbuj ponownie za chwilę',
   'actions.saveHint': 'Zapisz wszystkie roboty i ustawienia sesji (.pb). Otwórz ponownie przez Importuj. Eksportuj pojedyncze trasy z inspektora robota.',
   'actions.clearHint': 'Usuń wszystkie roboty z bieżącej sesji (zaimportowane pliki pozostają nietknięte)',
   'rail.import': 'Importuj',

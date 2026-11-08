@@ -302,6 +302,7 @@ export const vi = {
   'updates.upToDate': "Bạn đã cập nhật mới nhất",
   'updates.downloading': 'Đã tìm thấy v{v}, đang tải xuống và khởi động lại…',
   'updates.failed': 'Kiểm tra cập nhật thất bại — kiểm tra kết nối và thử lại',
+  'updates.blocked': 'Đã tạm dừng cập nhật — các thay đổi mới nhất của phiên vẫn chưa được lưu, hãy thử lại sau một lát',
   'actions.saveHint': 'Lưu tất cả robot và cài đặt phiên (.pb). Mở lại bằng Nhập. Xuất từng đường đi từ trình kiểm tra robot.',
   'actions.clearHint': 'Xóa tất cả robot khỏi phiên hiện tại (không bao giờ đụng đến tệp đã nhập)',
   'rail.import': 'Nhập',

@@ -302,6 +302,7 @@ export const de = {
   'updates.upToDate': "Sie sind auf dem neuesten Stand",
   'updates.downloading': 'v{v} gefunden, wird heruntergeladen und neu gestartet…',
   'updates.failed': 'Update-Prüfung fehlgeschlagen — überprüfen Sie Ihre Verbindung und versuchen Sie es erneut',
+  'updates.blocked': 'Update pausiert — die neuesten Sitzungsänderungen sind noch nicht gespeichert, versuchen Sie es gleich noch einmal',
   'actions.saveHint': 'Alle Roboter und Sitzungseinstellungen speichern (.pb). Wieder öffnen mit Import. Einzelne Pfade aus dem Roboter-Inspektor exportieren.',
   'actions.clearHint': 'Alle Roboter aus der aktuellen Sitzung entfernen (berührt nie die importierten Dateien)',
   'rail.import': 'Importieren',
