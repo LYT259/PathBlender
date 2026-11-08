@@ -236,6 +236,34 @@ jobs:
             echo "::error::offline installer is smaller than 100 MiB — not an offlineInstaller build"
             exit 1
           fi
+      - name: Stop the online-installed PathBlender before the offline install
+        # The online assert step above leaves the app running. The offline
+        # install must not reinstall over a live process, and the offline
+        # launch assert below must not be satisfied by that leftover
+        # process. Only the app's own pinned process name is stopped —
+        # never a broad kill that could hit unrelated processes — and a
+        # process that refuses to stop fails the job instead of being
+        # swallowed.
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $leftover = @(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue)
+          if ($leftover.Count -eq 0) {
+            Write-Host "No leftover PathBlender process to stop"
+          } else {
+            Write-Host "Stopping $($leftover.Count) leftover PathBlender process(es)"
+            foreach ($p in $leftover) { Stop-Process -Id $p.Id -Force }
+            $deadline = (Get-Date).AddSeconds(30)
+            do {
+              Start-Sleep -Milliseconds 500
+              $leftover = @(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue)
+            } while ($leftover.Count -gt 0 -and (Get-Date) -lt $deadline)
+            if ($leftover.Count -gt 0) {
+              Write-Host "::error::$($leftover.Count) PathBlender process(es) still running 30s after Stop-Process — refusing to install offline over a live app"
+              exit 1
+            }
+            Write-Host "Leftover PathBlender process(es) stopped"
+          }
       - name: Silently install the offline installer
         shell: pwsh
         run: |

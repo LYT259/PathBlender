@@ -248,9 +248,11 @@ Downloads for every platform are on the
 the macOS Universal DMG (one download for Apple Silicon and Intel,
 macOS 13+), the Windows x86_64 installer `*_x64-setup.exe` (small; it
 downloads the WebView2 Runtime from Microsoft at install time) or
-`PathBlender_<version>_x64-offline-setup.exe` (larger, ≈130 MB; it embeds
-WebView2 — for offline or event machines and clean Windows 10 systems
-without WebView2), and Linux x86_64 DEB / AppImage / RPM packages. On
+`PathBlender_<version>_x64-offline-setup.exe` (larger — embedding WebView2
+adds ≈130 MB over the online installer; the exact total size is measured
+in CI and listed in each release’s notes; for offline or event machines
+and clean Windows 10 systems without WebView2), and Linux x86_64
+DEB / AppImage / RPM packages. On
 Linux, after downloading the package — the examples use version 0.1.9;
 file names follow the version on the Releases page:
 

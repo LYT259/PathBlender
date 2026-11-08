@@ -138,7 +138,7 @@
 
 ## 安装桌面版
 
-桌面版各平台的下载都在 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 页：macOS Universal DMG（Apple Silicon 与 Intel 一份通用包，macOS 13+）、Windows x86_64 安装包 `*_x64-setup.exe`（体积小，安装时从 Microsoft 下载 WebView2 运行时）或 `PathBlender_<version>_x64-offline-setup.exe`（约 130 MB，内嵌 WebView2——适合离线/赛场机器与未装 WebView2 的干净 Windows 10）、Linux x86_64 的 DEB / AppImage / RPM。Linux 下载好安装包后在终端安装——下面以 0.1.9 为例，文件名中的版本号以 Releases 页为准：
+桌面版各平台的下载都在 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 页：macOS Universal DMG（Apple Silicon 与 Intel 一份通用包，macOS 13+）、Windows x86_64 安装包 `*_x64-setup.exe`（体积小，安装时从 Microsoft 下载 WebView2 运行时）或 `PathBlender_<version>_x64-offline-setup.exe`（内嵌 WebView2，比在线版约多 130 MB——安装包实际总大小以 CI 实测为准，见各版本 Release notes 标注的体积；适合离线/赛场机器与未装 WebView2 的干净 Windows 10）、Linux x86_64 的 DEB / AppImage / RPM。Linux 下载好安装包后在终端安装——下面以 0.1.9 为例，文件名中的版本号以 Releases 页为准：
 
 ```bash
 # DEB（Debian/Ubuntu 示例）

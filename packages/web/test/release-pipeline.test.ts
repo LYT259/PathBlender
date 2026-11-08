@@ -8,7 +8,7 @@
  * verification happens in CI: the script mounts and checks the finished
  * dmg before staging).
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -199,6 +199,33 @@ describe('install guidance (offline installer + OS security prompts)', () => {
   it('every README download section mentions the offline Windows installer', () => {
     for (const file of ['README.md', 'README.zh-CN.md', 'README.zh-Hant.md', 'README.es.md', 'README.fr.md', 'README.tr.md', 'README.pt-BR.md', 'README.he.md']) {
       expect(readFileSync(resolve(ROOT, file), 'utf8'), file).toContain('_x64-offline-setup.exe');
+    }
+  });
+  it('frames ≈130 MB as the WebView2 increment, never as a measured installer total', () => {
+    const en = readFileSync(resolve(ROOT, 'docs/user-guide.en.md'), 'utf8');
+    const zh = readFileSync(resolve(ROOT, 'docs/user-guide.zh.md'), 'utf8');
+    const plan = readFileSync(resolve(ROOT, 'docs/superpowers/plans/2026-11-07-offline-install-distribution.md'), 'utf8');
+    // ≈130 MB is the estimated size the embedded WebView2 Runtime ADDS over
+    // the online installer; the actual total is only known once CI measures
+    // it (manifest bytes -> release notes). Guides must not guess a total.
+    expect(en).toContain('adds ≈130 MB over the online installer');
+    expect(en).toContain('total size is measured');
+    expect(en).toContain('listed in each release’s notes');
+    expect(zh).toContain('比在线版约多 130 MB');
+    expect(zh).toContain('实际总大小以 CI 实测为准');
+    expect(plan).not.toContain('(larger, ≈130 MB;');
+  });
+});
+
+describe('public plan documents privacy hygiene', () => {
+  it('tracked plan docs carry no personal absolute paths', () => {
+    const dir = resolve(ROOT, 'docs/superpowers/plans');
+    const plans = readdirSync(dir);
+    expect(plans.length).toBeGreaterThan(0);
+    for (const name of plans) {
+      const text = readFileSync(resolve(dir, name), 'utf8');
+      expect(text, name).not.toMatch(/\/Users\/[^\s`"')]+/);
+      expect(text, name).not.toMatch(/\/home\/[^\s`"')]+/);
     }
   });
 });
@@ -547,5 +574,36 @@ describe('Windows offline installer pipeline', () => {
       'offline installer is smaller than 100 MiB',
     ]) expect(windows).toContain(s);
     expect((windows.match(/-ArgumentList "\/S"/g) ?? []).length).toBe(2);
+  });
+  it('stops leftover online-launched PathBlender processes before each offline install', () => {
+    const beta = readFileSync(resolve(ROOT, '.github/workflows/beta-verify.yml'), 'utf-8');
+    const betaWin = beta.slice(beta.indexOf('  windows:'), beta.indexOf('  macos:'));
+    const rel = readFileSync(resolve(ROOT, '.github/workflows/release-verify.yml'), 'utf-8');
+    const relWin = rel.slice(rel.indexOf('  windows-installer:'), rel.indexOf('  macos-intel-dmg:'));
+    // The online assert step leaves the app running; the offline install
+    // must not reinstall over a live process, and the offline launch assert
+    // must not be satisfied by that leftover process.
+    const cases: Array<[string, string, string]> = [
+      ['beta-verify', betaWin, 'Silent install (offline)'],
+      ['release-verify', relWin, 'Silently install the offline installer'],
+    ];
+    for (const [label, job, installStep] of cases) {
+      const stop = job.indexOf('Stop the online-installed PathBlender before the offline install');
+      const install = job.indexOf(installStep);
+      expect(stop, `${label}: stop step missing`).toBeGreaterThan(-1);
+      expect(install, `${label}: offline install step missing`).toBeGreaterThan(-1);
+      expect(stop, `${label}: stop must precede the offline install`).toBeLessThan(install);
+      const stopBlock = job.slice(stop, install);
+      // Targeted stop: only the app's own pinned process name, never a
+      // broad kill (wildcards, window-title matching) that could hit
+      // unrelated processes.
+      expect(stopBlock, label).toContain('Get-Process -Name "pathblender-desktop"');
+      expect(stopBlock, label).toContain('Stop-Process');
+      expect(stopBlock, label).not.toContain('*');
+      // A survivor must fail the job — the stop must not be swallowed.
+      expect(stopBlock, label).toContain('::error::');
+      expect(stopBlock, label).toContain('exit 1');
+      expect(stopBlock, label).not.toContain('|| true');
+    }
   });
 });
