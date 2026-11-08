@@ -208,6 +208,11 @@ export const tr: Record<MessageKey, string> = {
   'field.style.schematic': 'Şematik',
 
   'field.style.rendered': 'Gerçekçi',
+  'season.rapidreact2022': 'Rapid React',
+  'season.chargedup2023': 'Charged Up',
+  'season.crescendo2024': 'Crescendo',
+  'season.reefscape2025': 'Reefscape',
+  'season.rebuilt2026': 'REBUILT',
   'conflicts.title': 'Çakışmalar',
   'conflicts.toleranceBadge': '±{delta} sn kayma',
   'checks.tolerance': 'Tolerans kontrolü: en kötü durum ±{delta} sn başlangıç',

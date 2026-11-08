@@ -201,6 +201,11 @@ export const zh: Record<MessageKey, string> = {
   'field.style.schematic': '示意图',
 
   'field.style.rendered': '渲染图',
+  'season.rapidreact2022': 'Rapid React',
+  'season.chargedup2023': 'Charged Up',
+  'season.crescendo2024': 'Crescendo',
+  'season.reefscape2025': '珊瑚拯救',
+  'season.rebuilt2026': '发掘重建',
   'conflicts.title': '冲突',
   'conflicts.toleranceBadge': '±{delta} 秒滑移',
   'checks.tolerance': '公差检查：起步执行最坏情况 ±{delta} 秒',

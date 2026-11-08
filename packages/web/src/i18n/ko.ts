@@ -211,6 +211,11 @@ export const ko: Record<MessageKey, string> = {
   'field.style.schematic': '도식',
 
   'field.style.rendered': '렌더링',
+  'season.rapidreact2022': 'Rapid React',
+  'season.chargedup2023': 'Charged Up',
+  'season.crescendo2024': 'Crescendo',
+  'season.reefscape2025': 'Reefscape',
+  'season.rebuilt2026': 'REBUILT',
   'conflicts.title': '충돌',
 'conflicts.toleranceBadge': '±{delta}초 편차',
   'checks.tolerance': '허용 오차 검사: 최악 ±{delta}초 시작 실행',

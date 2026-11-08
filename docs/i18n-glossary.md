@@ -48,7 +48,14 @@
 
 - **文案翻**：界面标签、提示、错误说明。
 - **数据不翻、不改写**：用户导入的文件名、路线名、机器人名、队号，以及写进导出文件（`.pb` 会话、GIF 与方案包文件名）的内容——任何语言下都保持原文。
-- 内置场地/赛季名属**文案**，需要本地化时按本节补表（当前实现仍显示官方英文名，未本地化——待办）。
+- 内置场地/赛季名属**文案**，在显示层按下列 FIRST 官方手册译名本地化；没有官方一手译名的语言或赛季保留英文，不自行翻译。用户数据与导出内容仍按上一条保持原文。
+
+| field id | en | locale | 显示值 | 一手来源（2026-11-07 核查） |
+|---|---|---|---|---|
+| `reefscape-2025` | Reefscape | zh / zh-tw；zh-hk / zh-mo 沿继承链 | 珊瑚拯救 / 珊瑚拯救 | [FIRST 2025 简体中文比赛手册](https://firstfrc.blob.core.windows.net/frc2025/Manual/TranslatedManuals/2025GameManual-CN.pdf) |
+| `rebuilt-2026` | REBUILT | zh / zh-tw；zh-hk / zh-mo 沿继承链 | 发掘重建 / 發掘重建 | [FIRST 2026 简体中文比赛手册](https://firstfrc.blob.core.windows.net/frc2026/Manual/Translations/2026GameManual-CS.pdf) |
+
+其余尚未取得官方一手译名的语言/赛季组合保留英文，并继续使用各自的 `KEEP_VERBATIM` 条目；港澳沿继承链使用上述值，不另开覆盖键。新增官方译名时再补表和修剪白名单。
 
 ## 4. 数字与排版
 

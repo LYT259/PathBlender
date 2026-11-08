@@ -206,6 +206,11 @@ export const zhTw: Record<MessageKey, string> = {
   'field.style.schematic': '示意圖',
 
   'field.style.rendered': '渲染圖',
+  'season.rapidreact2022': 'Rapid React',
+  'season.chargedup2023': 'Charged Up',
+  'season.crescendo2024': 'Crescendo',
+  'season.reefscape2025': '珊瑚拯救',
+  'season.rebuilt2026': '發掘重建',
   'conflicts.title': '衝突',
   'conflicts.toleranceBadge': '±{delta} 秒滑移',
   'checks.tolerance': '公差檢查：起步執行最壞情況 ±{delta} 秒',

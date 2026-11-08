@@ -104,6 +104,21 @@ describe('menu spec', () => {
     expect(seasons.items?.find((e) => e.id === 'season-rebuilt-2026')?.checked).toBe(true);
   });
 
+  it('season items render through the i18n season keys, not the raw core name', () => {
+    // Identity t exposes the key path: any label still reading the raw core
+    // name would show 'REBUILT 2026' instead of the key. Section labels route
+    // through t as well, so the View section echoes 'menu.view'; the season
+    // submenu label echoes 'workspace.season'.
+    const keyed = buildMenuSpec(ctx({ t: (key) => key }));
+    const view = keyed.find((m) => m.label === 'menu.view')!;
+    const seasons = view.items.find((e) => e.kind === 'submenu' && e.label === 'workspace.season')!;
+    const items = seasons.items ?? [];
+    expect(items.find((e) => e.id === 'season-rebuilt-2026')?.label).toBe('season.rebuilt2026 2026');
+    expect(items.find((e) => e.id === 'season-rapidreact-2022')?.label).toBe('season.rapidreact2022 2022');
+    // The custom entry is product copy with its own key, never a season key.
+    expect(items.find((e) => e.id === 'season-custom')?.label).toBe('customField.title');
+  });
+
   it('Playback menu maps the transport, speeds, range and first-issue jump', () => {
     const playback = find(buildMenuSpec(ctx({ speed: 0.5 })), 'Playback')!;
     const ids = idsOf(playback.items);
