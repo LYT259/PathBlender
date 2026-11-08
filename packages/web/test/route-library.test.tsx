@@ -338,4 +338,39 @@ describe('profile application at import (Task 6)', () => {
     expect(robot.routeOptions![0]!.trajectory.timingSource).toBe('partial-config');
     expect(robot.routeOptions![0]!.trajectory.durationS).toBeCloseTo(7.629417092969108, 6);
   });
+
+  it('mixed-source folders never clobber a file-geometry option', () => {
+    // A Choreo .traj whose own file carries robot geometry (bumper block):
+    // parse marks it geometrySource 'file' — the v1.14 read-only lock.
+    const withCarriedConfig = (text: string): string => {
+      const obj = JSON.parse(text) as Record<string, unknown>;
+      obj.config = { bumper: { front: 0.45, back: 0.45, side: 0.425 } };
+      return JSON.stringify(obj);
+    };
+    const choreoOption = (relPath: string): LibraryRoute => ({
+      id: crypto.randomUUID(),
+      relPath,
+      trajectory: parsePathFile(withCarriedConfig(TRAJ), relPath),
+    });
+    const routes = [route('254/pointing.path'), choreoOption('254/Z9.traj')];
+    // Fixture sanity: the choreo alternative embeds its own geometry while
+    // the current route (natural filename order: pointing < Z9) is default.
+    expect(routes[0]!.trajectory.geometrySource).toBe('default');
+    expect(routes[1]!.trajectory.geometrySource).toBe('file');
+    const fileGeometry = routes[1]!.trajectory.geometry;
+    const fileSamples = routes[1]!.trajectory.samples;
+    const profiles = [massProfile('254/settings.json', 45, 2.0)];
+    const [robot] = robotsFromImport(routes, profiles, true);
+    // Mixed-source slot: automatic application is skipped entirely — the
+    // profile stays selectable, and the choreo option keeps its file-carried
+    // geometry and samples untouched (selecting the profile later is an
+    // explicit user decision).
+    expect(robot.profileId).toBeUndefined();
+    expect(robot.profileOptions?.map((p) => p.id)).toEqual(['profile-45']);
+    expect(robot.trajectory.durationS).toBeCloseTo(8.010485665780992, 6);
+    const option = robot.routeOptions!.find((o) => o.relPath.endsWith('Z9.traj'))!;
+    expect(option.trajectory.geometrySource).toBe('file');
+    expect(option.trajectory.geometry).toBe(fileGeometry);
+    expect(option.trajectory.samples).toBe(fileSamples);
+  });
 });
