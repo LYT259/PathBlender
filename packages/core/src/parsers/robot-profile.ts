@@ -280,10 +280,12 @@ function choreoProjectProfile(
  * PP settings.json dynamics + generation defaults. Field names are the
  * v2025.2.7 top-level flat keys (verified against home_page.dart at the
  * pinned tag; the 2024 nested robotConfig/generationSettings shapes stay
- * supported as compatibility coverage). The local real samples carry none
- * of them, so every field is optional and a file without them yields no
- * dynamics — behavior is then unchanged. 实测留待：遇到携带动力学字段的真机
- * settings.json 时回填样本.
+ * supported as compatibility coverage). The only real sample today is the
+ * upstream example settings.json under samples/pathplanner/reference/
+ * (complete flat config); the sample library otherwise carries none of
+ * these fields, so every field is optional and a file without them yields
+ * no dynamics — behavior is then unchanged. 实测留待：遇到携带动力学字段
+ * 的真机 settings.json 时回填样本.
  *
  * Present in the v2025.2.7 file but not consumed here:
  * - pathFolders, autoFolders — UI tree organization only, no generation role.

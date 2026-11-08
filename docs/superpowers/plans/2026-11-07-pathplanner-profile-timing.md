@@ -349,7 +349,7 @@ git commit -m "feat(core): track timing source status and persist it in sessions
 
 - Core `profile-apply.test.ts`: `applyProfileToRobot regenerates the current trajectory and every route option` — robot with a `.path` current trajectory + two route options (one `.path`, one `.auto`): all three get `geometrySource 'file'`, regenerable ones get new durations, Choreo option samples untouched; `profileId`/`profileOptions` unchanged by the core function.
 - Core: `reparameterize honors a bound profile` — edited `constrained_pointing.path` (`movePpWaypoint`) + profile with lighter mass → `reparameterize(traj, profile).durationS` differs from `reparameterize(traj)`; without a profile the old default-config behavior is bit-identical to today.
-- Web `robot-profile-ui.test.tsx`: 
+- Web `robot-profile-ui.test.tsx`:
   - `upload and select entries produce identical application` — `applyUploadedProfile(robot, profile, 'x/settings.json')` route-option trajectories deep-equal `applyProfileToRobot(robot, profile)` route-option trajectories (bookkeeping aside);
   - `selecting a profile from the inspector applies it to the whole route library` — App-level render (existing pattern in this file): import a team folder with a `.path` + `.auto` + `settings.json`, then select the profile via the inspector dropdown; assert the library routes' durations changed and `robot.profileId` set (today's select-entry bug: only the current trajectory changed);
   - `multi-profile folders apply nothing automatically` — `robotsFromImport` with two profiles: no application, both listed in `profileOptions`, `profileId` undefined;

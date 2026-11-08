@@ -29,9 +29,10 @@ GitHub contents API at their exact upstream paths:
 | `Pickup.path` | `examples/java/src/main/deploy/pathplanner/paths/Pickup.path` | `cd8d84c892f581703c9a3fd590c5153015a31da1d4e32877430de347d5393b46` |
 | `Score.path` | `examples/java/src/main/deploy/pathplanner/paths/Score.path` | `2c9677bf72408e2d4228e45ffae505b97faaef292fd72d0aa5e18f83fd86f145` |
 
-The same three files are byte-identical to the long-standing
-`samples/pathplanner/` copies (`Pickup.path`, `Score.path`); this directory
-re-lands them with pinned provenance and hashes.
+`Pickup.path` and `Score.path` are byte-identical to the long-standing
+`samples/pathplanner/` copies; `settings.json` exists only here (the sample
+library never carried one) — this directory re-lands the paths with pinned
+provenance and hashes and adds the settings file.
 
 Golden outputs (`golden-pickup.json`, `golden-score.json`) were computed once
 on 2026-11-07 with the **official PyPI wheel `robotpy-pathplannerlib`
