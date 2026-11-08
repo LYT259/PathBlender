@@ -169,6 +169,141 @@ jobs:
           if (-not $proc.MainWindowTitle) { Write-Host "::error::PathBlender running but has no main window"; exit 1 }
           Write-Host "Window title: '$($proc.MainWindowTitle)'"
           "running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath launch-result.txt -Encoding utf8
+      - name: Resolve and anonymously download the published offline installer
+        # Same anonymous + server-side sha256 digest contract as the online
+        # exe, replayed for the offline asset. The release metadata was
+        # already fetched into release.json by the online step, so only the
+        # asset download itself is repeated here. The 100 MiB floor is the
+        # published proof that this asset really embeds the WebView2 Runtime.
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="$RELEASE_TAG"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::invalid tag: $TAG"
+            exit 1
+          fi
+          VER="${TAG#v}"
+          WANT="PathBlender_${VER}_x64-offline-setup.exe"
+          export TAG WANT
+          node -e '
+            const fs = require("fs");
+            const rel = JSON.parse(fs.readFileSync("release.json", "utf8"));
+            if (rel.tag_name !== process.env.TAG) {
+              console.error(`::error::release tag_name ${rel.tag_name} != ${process.env.TAG}`);
+              process.exit(1);
+            }
+            const asset = (rel.assets || []).find((a) => a.name === process.env.WANT);
+            if (!asset) {
+              console.error(`::error::asset not found: ${process.env.WANT}; assets: ${(rel.assets || []).map((a) => a.name).join(", ")}`);
+              process.exit(1);
+            }
+            if (!/^sha256:[0-9a-f]{64}$/.test(asset.digest || "")) {
+              console.error(`::error::${asset.name} has no server-side sha256 digest`);
+              process.exit(1);
+            }
+            console.log(asset.browser_download_url);
+            console.log(asset.digest.slice("sha256:".length));
+            console.log(asset.size);
+          ' > meta.txt
+          if [[ "$(wc -l < meta.txt | tr -d " ")" != "3" ]]; then
+            echo "::error::failed to resolve release asset metadata"
+            cat meta.txt
+            exit 1
+          fi
+          URL=$(sed -n 1p meta.txt)
+          EXPECTED=$(sed -n 2p meta.txt)
+          SIZE=$(sed -n 3p meta.txt)
+          curl -fL --retry 3 -o "dl/$WANT" "$URL"
+          ACTUAL=$(sha256sum "dl/$WANT" | cut -d" " -f1)
+          GOT=$(wc -c < "dl/$WANT" | tr -d " ")
+          {
+            echo "tag: $TAG"
+            echo "asset: $WANT"
+            echo "expected sha256 (GitHub server-side digest): $EXPECTED"
+            echo "actual   sha256 (locally computed): $ACTUAL"
+            echo "size: $GOT bytes (GitHub: $SIZE)"
+          } | tee sha256-offline.log
+          if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+            echo "::error::sha256 mismatch for $WANT"
+            exit 1
+          fi
+          if [[ "$GOT" != "$SIZE" ]]; then
+            echo "::error::size mismatch for $WANT"
+            exit 1
+          fi
+          if [ "$(wc -c < "dl/$WANT" | tr -d " ")" -lt 104857600 ]; then
+            echo "::error::offline installer is smaller than 100 MiB — not an offlineInstaller build"
+            exit 1
+          fi
+      - name: Stop the online-installed PathBlender before the offline install
+        # The online assert step above leaves the app running. The offline
+        # install must not reinstall over a live process, and the offline
+        # launch assert below must not be satisfied by that leftover
+        # process. Only the app's own pinned process name is stopped —
+        # never a broad kill that could hit unrelated processes — and a
+        # process that refuses to stop fails the job instead of being
+        # swallowed.
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $leftover = @(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue)
+          if ($leftover.Count -eq 0) {
+            Write-Host "No leftover PathBlender process to stop"
+          } else {
+            Write-Host "Stopping $($leftover.Count) leftover PathBlender process(es)"
+            foreach ($p in $leftover) { Stop-Process -Id $p.Id -Force }
+            $deadline = (Get-Date).AddSeconds(30)
+            do {
+              Start-Sleep -Milliseconds 500
+              $leftover = @(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue)
+            } while ($leftover.Count -gt 0 -and (Get-Date) -lt $deadline)
+            if ($leftover.Count -gt 0) {
+              Write-Host "::error::$($leftover.Count) PathBlender process(es) still running 30s after Stop-Process — refusing to install offline over a live app"
+              exit 1
+            }
+            Write-Host "Leftover PathBlender process(es) stopped"
+          }
+      - name: Silently install the offline installer
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem "dl/*_x64-offline-setup.exe" | Select-Object -First 1
+          if (-not $setup) { Write-Host "::error::no offline setup.exe found"; exit 1 }
+          Write-Host "Installing $($setup.Name)"
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Host "::error::offline installer exit code $($p.ExitCode)"; exit 1 }
+      - name: Locate, launch and assert (offline)
+        # Same per-user install discovery as the online path; the expected
+        # version comes from the release tag because this workflow never
+        # checks out the tree.
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $installDir = $installDir.Trim('"', "'")
+          $exe = Join-Path $installDir "pathblender-desktop.exe"
+          if (-not (Test-Path $exe)) {
+            Write-Host "::error::pathblender-desktop.exe not found at $exe"
+            Get-ChildItem -Path $installDir -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+          }
+          $expected = $env:RELEASE_TAG -replace "^v", ""
+          $actual = (Get-Item $exe).VersionInfo.ProductVersion
+          Write-Host "Installed version: $actual (release tag: $env:RELEASE_TAG)"
+          if ($actual -ne $expected) { Write-Host "::error::installed version $actual != release version $expected"; exit 1 }
+
+          Start-Process -FilePath $exe
+          Start-Sleep -Seconds 15
+          $proc = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $proc) { Write-Host "::error::PathBlender process not running 15s after offline launch"; exit 1 }
+          $proc.Refresh()
+          if (-not $proc.MainWindowTitle) { Write-Host "::error::PathBlender running but has no main window"; exit 1 }
+          Write-Host "Window title: '$($proc.MainWindowTitle)'"
+          "offline install running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath launch-offline-result.txt -Encoding utf8
       - name: Screenshot the running app
         shell: pwsh
         run: |
@@ -187,7 +322,9 @@ jobs:
           path: |
             windows-screenshot.png
             launch-result.txt
+            launch-offline-result.txt
             sha256.log
+            sha256-offline.log
             release.json
           if-no-files-found: error
 

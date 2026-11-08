@@ -8,7 +8,7 @@
  * verification happens in CI: the script mounts and checks the finished
  * dmg before staging).
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -177,6 +177,73 @@ describe('third-party legal notices', () => {
     expect(notice).toContain('SDS MK5i CAD-derived visualization assets are used and distributed with PathBlender with express permission from Swerve Drive Specialties.');
     expect(notice).toContain('does not relicense these assets under Apache-2.0, MIT, CC0, or any other standard open-source license');
     expect(notice).toContain('does not cover the Kraken X60 geometry or the maintainer-built frame assemblies');
+  });
+
+  it('registers the WebView2 Runtime redistribution in the notice', () => {
+    const notice = readFileSync(resolve(ROOT, 'NOTICE.md'), 'utf8');
+    expect(notice).toContain('**Microsoft Edge WebView2 Runtime** (Microsoft Software License Terms');
+    expect(notice).toContain('https://learn.microsoft.com/microsoft-edge/webview2/concepts/distribution');
+    expect(notice).toContain('Evergreen Standalone Installer');
+    const releasing = readFileSync(resolve(ROOT, 'docs/releasing.md'), 'utf8');
+    expect(releasing).toContain('WebView2');
+  });
+});
+
+describe('install guidance (offline installer + OS security prompts)', () => {
+  it('both user guides explain the offline installer and both OS prompts', () => {
+    const en = readFileSync(resolve(ROOT, 'docs/user-guide.en.md'), 'utf8');
+    const zh = readFileSync(resolve(ROOT, 'docs/user-guide.zh.md'), 'utf8');
+    for (const s of ['_x64-offline-setup.exe', 'Open Anyway', 'More info', 'Run anyway']) expect(en).toContain(s);
+    for (const s of ['_x64-offline-setup.exe', '仍要打开', '更多信息', '仍要运行']) expect(zh).toContain(s);
+  });
+  it('every README download section mentions the offline Windows installer', () => {
+    for (const file of ['README.md', 'README.zh-CN.md', 'README.zh-Hant.md', 'README.es.md', 'README.fr.md', 'README.tr.md', 'README.pt-BR.md', 'README.he.md']) {
+      expect(readFileSync(resolve(ROOT, file), 'utf8'), file).toContain('_x64-offline-setup.exe');
+    }
+  });
+  it('frames ≈130 MB as the WebView2 increment, never as a measured installer total', () => {
+    const en = readFileSync(resolve(ROOT, 'docs/user-guide.en.md'), 'utf8');
+    const zh = readFileSync(resolve(ROOT, 'docs/user-guide.zh.md'), 'utf8');
+    const plan = readFileSync(resolve(ROOT, 'docs/superpowers/plans/2026-11-07-offline-install-distribution.md'), 'utf8');
+    // ≈130 MB is the estimated size the embedded WebView2 Runtime ADDS over
+    // the online installer; the actual total is only known once CI measures
+    // it (manifest bytes -> release notes). Guides must not guess a total.
+    expect(en).toContain('adds ≈130 MB over the online installer');
+    expect(en).toContain('total size is measured');
+    expect(en).toContain('listed in each release’s notes');
+    expect(zh).toContain('比在线版约多 130 MB');
+    expect(zh).toContain('实际总大小以 CI 实测为准');
+    expect(plan).not.toContain('(larger, ≈130 MB;');
+    // Review Focus 2 must not guess the offline exe's total either: ~127 MB
+    // is the WebView2 increment over the online exe, never the payload size.
+    expect(plan).toContain('~127 MB larger than the online exe');
+    expect(plan).not.toContain('would ship a ~127 MB update');
+  });
+});
+
+describe('public plan documents privacy hygiene', () => {
+  it('tracked plan docs carry no personal absolute paths', () => {
+    const dir = resolve(ROOT, 'docs/superpowers/plans');
+    const plans = readdirSync(dir);
+    expect(plans.length).toBeGreaterThan(0);
+    for (const name of plans) {
+      const text = readFileSync(resolve(dir, name), 'utf8');
+      expect(text, name).not.toMatch(/\/Users\/[^\s`"')]+/);
+      expect(text, name).not.toMatch(/\/home\/[^\s`"')]+/);
+    }
+  });
+});
+
+describe('not-verified environment registry', () => {
+  it('releasing.md pins the three unverified items with explicit markers', () => {
+    const releasing = readFileSync(resolve(ROOT, 'docs/releasing.md'), 'utf8');
+    for (const s of [
+      '未验环境清单',
+      '无浏览器裸机冒烟',
+      'NOT performed — no clean Windows 10 (without WebView2), macOS or Linux machine is available',
+      'SmartScreen / Gatekeeper prompt screenshots: NOT captured',
+      'homebrew tap repo: not yet created',
+    ]) expect(releasing).toContain(s);
   });
 });
 
@@ -462,5 +529,91 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     expect(smoke.jobs.smoke.steps.length).toBeGreaterThanOrEqual(10);
     expect(smoke.jobs.smoke.steps.some((step: any) => (step.run ?? '').includes('-ArgumentList "/S"'))).toBe(true);
     expect(smoke.jobs.smoke.steps.some((step: any) => (step.run ?? '').includes('CopyFromScreen'))).toBe(true);
+  });
+});
+
+describe('Windows offline NSIS overlay config', () => {
+  const read = (p: string) => JSON.parse(readFileSync(resolve(ROOT, p), 'utf8'));
+  it('flips only webviewInstallMode to offlineInstaller', () => {
+    const overlay = read('packages/desktop/src-tauri/tauri.windows-offline.conf.json');
+    expect(overlay.bundle.windows.webviewInstallMode).toEqual({ type: 'offlineInstaller' });
+    expect(Object.keys(overlay.bundle.windows)).toEqual(['webviewInstallMode']);
+    expect(Object.keys(overlay.bundle)).toEqual(['windows']);
+    expect(Object.keys(overlay).filter((k) => k !== '$schema')).toEqual(['bundle']);
+  });
+  it('keeps the base config on the online installer and updater untouched', () => {
+    const base = read('packages/desktop/src-tauri/tauri.conf.json');
+    expect(base.bundle.windows.webviewInstallMode).toEqual({ type: 'downloadBootstrapper' });
+    expect(base.bundle.createUpdaterArtifacts).toBe(true);
+    expect(base.plugins.updater.endpoints).toContain('https://github.com/LYT259/pathblender/releases/latest/download/latest.json');
+  });
+});
+
+describe('Windows offline installer pipeline', () => {
+  it('release.yml builds the overlay, renames to the pinned offline name and uploads windows-offline', () => {
+    expect(workflow).toContain('--config src-tauri/tauri.windows-offline.conf.json --bundles nsis');
+    expect(workflow).toContain('release-offline/PathBlender_${V}_x64-offline-setup.exe');
+    expect(workflow).toContain('name: windows-offline');
+    // The online pair is staged BEFORE the offline build overwrites bundle/nsis.
+    const stageOnline = workflow.indexOf('cp packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe release/');
+    const offlineBuild = workflow.indexOf('--config src-tauri/tauri.windows-offline.conf.json');
+    expect(stageOnline).toBeGreaterThan(-1);
+    expect(offlineBuild).toBeGreaterThan(stageOnline);
+  });
+  it('beta-verify builds, size-checks, installs and launches the offline installer', () => {
+    const beta = readFileSync(resolve(ROOT, '.github/workflows/beta-verify.yml'), 'utf-8');
+    const windows = beta.slice(beta.indexOf('  windows:'), beta.indexOf('  macos:'));
+    expect(windows).toContain('--config src-tauri/tauri.windows-offline.conf.json');
+    expect(windows).toContain('104857600');
+    expect(windows).toContain('_x64-offline-setup.exe');
+    expect(windows).toContain('-ArgumentList "/S"');
+  });
+  it('release-verify downloads, digest-pins, size-floors, installs and launches the offline asset', () => {
+    const verifyText2 = readFileSync(resolve(ROOT, '.github/workflows/release-verify.yml'), 'utf-8');
+    const windows = verifyText2.slice(verifyText2.indexOf('  windows-installer:'), verifyText2.indexOf('  macos-intel-dmg:'));
+    for (const s of [
+      'PathBlender_${VER}_x64-offline-setup.exe',
+      'sha256-offline.log',
+      '104857600',
+      'offline installer is smaller than 100 MiB',
+    ]) expect(windows).toContain(s);
+    expect((windows.match(/-ArgumentList "\/S"/g) ?? []).length).toBe(2);
+  });
+  it('stops leftover online-launched PathBlender processes before each offline install', () => {
+    const beta = readFileSync(resolve(ROOT, '.github/workflows/beta-verify.yml'), 'utf-8');
+    const betaWin = beta.slice(beta.indexOf('  windows:'), beta.indexOf('  macos:'));
+    const rel = readFileSync(resolve(ROOT, '.github/workflows/release-verify.yml'), 'utf-8');
+    const relWin = rel.slice(rel.indexOf('  windows-installer:'), rel.indexOf('  macos-intel-dmg:'));
+    // The online assert step leaves the app running; the offline install
+    // must not reinstall over a live process, and the offline launch assert
+    // must not be satisfied by that leftover process.
+    const cases: Array<[string, string, string]> = [
+      ['beta-verify', betaWin, 'Silent install (offline)'],
+      ['release-verify', relWin, 'Silently install the offline installer'],
+    ];
+    for (const [label, job, installStep] of cases) {
+      const stop = job.indexOf('Stop the online-installed PathBlender before the offline install');
+      const install = job.indexOf(installStep);
+      expect(stop, `${label}: stop step missing`).toBeGreaterThan(-1);
+      expect(install, `${label}: offline install step missing`).toBeGreaterThan(-1);
+      expect(stop, `${label}: stop must precede the offline install`).toBeLessThan(install);
+      const stopBlock = job.slice(stop, install);
+      // Targeted stop: only the app's own pinned process name, never a
+      // broad kill (wildcards, window-title matching) that could hit
+      // unrelated processes. The kill itself must be per-PID on exactly
+      // those enumerated processes, under pwsh (the syntax is PowerShell),
+      // and the wait must poll with a real deadline before giving up.
+      expect(stopBlock, label).toContain('shell: pwsh');
+      expect(stopBlock, label).toContain('Get-Process -Name "pathblender-desktop"');
+      expect(stopBlock, label).toContain('Stop-Process -Id $p.Id -Force');
+      expect(stopBlock, label).not.toContain('Stop-Process -Name');
+      expect(stopBlock, label).toContain('AddSeconds(30)');
+      expect(stopBlock, label).toContain('Start-Sleep -Milliseconds 500');
+      expect(stopBlock, label).toContain('$ErrorActionPreference = "Stop"');
+      // A survivor must fail the job — the stop must not be swallowed.
+      expect(stopBlock, label).toContain('::error::');
+      expect(stopBlock, label).toContain('exit 1');
+      expect(stopBlock, label).not.toContain('|| true');
+    }
   });
 });

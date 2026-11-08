@@ -246,10 +246,15 @@ rest of the alliance.
 Downloads for every platform are on the
 [GitHub Releases](https://github.com/LYT259/pathblender/releases) page:
 the macOS Universal DMG (one download for Apple Silicon and Intel,
-macOS 13+), the Windows x86_64 installer `*_x64-setup.exe`, and Linux
-x86_64 DEB / AppImage / RPM packages. On Linux, after downloading the
-package — the examples use version 0.1.9; file names follow the version
-on the Releases page:
+macOS 13+), the Windows x86_64 installer `*_x64-setup.exe` (small; it
+downloads the WebView2 Runtime from Microsoft at install time) or
+`PathBlender_<version>_x64-offline-setup.exe` (larger — embedding WebView2
+adds ≈130 MB over the online installer; the exact total size is measured
+in CI and listed in each release’s notes; for offline or event machines
+and clean Windows 10 systems without WebView2), and Linux x86_64
+DEB / AppImage / RPM packages. On
+Linux, after downloading the package — the examples use version 0.1.9;
+file names follow the version on the Releases page:
 
 ```bash
 # DEB (Debian/Ubuntu example)
@@ -264,6 +269,16 @@ sudo dnf install ./PathBlender-0.1.9-1.x86_64.rpm
 
 In-app updates use the AppImage; DEB/RPM installs update by installing
 the new package over the old one.
+
+### First-launch security prompts
+
+- **macOS Gatekeeper** (the app is not Apple-developer-signed): the first
+  open is blocked. Either right-click the app → **Open** → **Open**, or
+  System Settings → Privacy & Security → scroll down → **Open Anyway**.
+  macOS asks for your password once; the detour takes about 30 seconds
+  and happens once per Mac.
+- **Windows SmartScreen** (unsigned installer): "Windows protected your
+  PC" → **More info** → **Run anyway**.
 
 ## Web app vs desktop app
 

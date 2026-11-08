@@ -63,7 +63,7 @@ Terrains : FRC 2022–2026 intégrés, plus l’import de terrains personnalis�
 ## Où l’obtenir
 
 - **macOS** (macOS 13+) — téléchargez le DMG Universal (`*_universal.dmg` ; un seul téléchargement pour Apple Silicon et Intel) depuis [GitHub Releases](https://github.com/LYT259/pathblender/releases), ouvrez-le et glissez PathBlender dans Applications.
-- **Windows** (x86_64) — téléchargez l’installateur NSIS `*_x64-setup.exe` depuis la page des releases et exécutez-le.
+- **Windows** (x86_64) — téléchargez l’installateur NSIS `*_x64-setup.exe` (en ligne) ou `*_x64-offline-setup.exe` (hors ligne, WebView2 intégré) depuis la page des releases et exécutez-le.
 - **Linux** (x86_64) — téléchargez le paquet DEB, AppImage ou RPM depuis la page des releases (le guide utilisateur contient des exemples d’installation en terminal). Les mises à jour intégrées passeront par l’AppImage ; les utilisateurs de DEB/RPM mettront à jour en installant le nouveau paquet par-dessus l’ancien.
 - Mises à jour : menu **PathBlender → Rechercher des mises à jour…** (en bêta : activez d’abord le canal bêta dans **Préférences → Mises à jour**). Les autres fichiers de la page (`.tar.gz`, `.sig`, `.json`) relèvent du moteur de mise à jour — vous n’en avez pas besoin.
 - **Application web** (build visionneuse : les mêmes imports que l’application — fichiers et dossiers entiers — plus lecture et détection ; sans enregistrement de session ni export GIF ou paquet de solution) — site officiel sur [lyt259.github.io/PathBlender](https://lyt259.github.io/PathBlender/), avec [pathblender.pages.dev](https://pathblender.pages.dev) en miroir de secours.

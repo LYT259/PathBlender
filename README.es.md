@@ -63,7 +63,7 @@ Campos: FRC 2022–2026 integrados, más importación de campos personalizados c
 ## Dónde conseguirla
 
 - **macOS** (macOS 13+) — descarga el DMG Universal (`*_universal.dmg`; una sola descarga para Apple Silicon e Intel) desde [GitHub Releases](https://github.com/LYT259/pathblender/releases), ábrelo y arrastra PathBlender a Aplicaciones.
-- **Windows** (x86_64) — descarga el instalador NSIS `*_x64-setup.exe` desde la página de releases y ejecútalo.
+- **Windows** (x86_64) — descarga el instalador NSIS `*_x64-setup.exe` (en línea) o `*_x64-offline-setup.exe` (sin conexión, con WebView2 integrado) desde la página de releases y ejecútalo.
 - **Linux** (x86_64) — descarga el paquete DEB, AppImage o RPM desde la página de releases (la guía de usuario incluye ejemplos de instalación por terminal). Las actualizaciones integradas usan el AppImage; los usuarios de DEB/RPM actualizarán instalando el paquete nuevo sobre el anterior.
 - Actualizaciones: menú **PathBlender → Buscar actualizaciones…** (en betas: activa antes el canal beta en **Preferencias → Actualizaciones**). Los demás archivos de la página de releases (`.tar.gz`, `.sig`, `.json`) son internos del actualizador — no los necesitas.
 - **Aplicación web** (compilación visor: las mismas importaciones que la aplicación — archivos y carpetas enteras — más reproducción y comprobación; sin guardar sesiones ni exportar GIF o paquete de solución) — sitio oficial en [lyt259.github.io/PathBlender](https://lyt259.github.io/PathBlender/), con [pathblender.pages.dev](https://pathblender.pages.dev) como espejo de respaldo.

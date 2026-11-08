@@ -10,7 +10,7 @@ Browser walkthroughs pin a hardware-backed ANGLE backend per platform (Metal on 
 
 For owner-directed work, the PR app creates the PR; an independent reviewer agent reviews the final diff and evidence, then the executing agent submits the delegated owner approval and merges once required checks pass. External contributions still require the owner's personal approval. A green gate alone does not grant review approval.
 
-Each non-documentation merge to beta receives a unique, increasing beta version and **its own Pre-release**. The push workflow pins the tag to that merge commit and calls the release workflow explicitly; it does not rely on a token-created tag triggering another workflow. Confirm the Release and all five installer formats exist before reporting delivery. Stable promotion retains its separate approval requirements.
+Each non-documentation merge to beta receives a unique, increasing beta version and **its own Pre-release**. The push workflow pins the tag to that merge commit and calls the release workflow explicitly; it does not rely on a token-created tag triggering another workflow. Confirm the Release and all six installer assets exist (Universal DMG, Windows online + offline NSIS, DEB, AppImage, RPM) plus updater artifacts and feeds before reporting delivery. Stable promotion retains its separate approval requirements.
 
 Documentation-only PRs retain review and privacy checks but skip platform builds, version bumps, tags and releases. The classifier permits only README/contribution/security prose and Markdown under docs, excluding release-note inputs. Mixed changes, packaged notices, dependencies, workflows, translations, code and assets are not documentation-only. “Direct merge” means the normal approved PR merge, never a bypass of branch protection.
 
@@ -41,6 +41,7 @@ Documentation-only PRs retain review and privacy checks but skip platform builds
 - [ ] NOTICE.md 归属清单与当前代码一致（PathPlanner / Choreo / 103 fork / WPILib / FRC Designs）
 - [ ] **MK5i 模组许可与分发文件**：FRCDesignApp GitHub 仓库采用 MIT，`licenses/FRCDesignApp-MIT.txt` 保存该仓库的完整许可证及 `Copyright (c) 2026 FRCDesign.org`，不得把整个 Onshape 模组直接概括成已明确适用 MIT。NOTICE 保留 Onshape Swerve V235 来源和 GLB/2D 转换说明；Discord 原回复仅表示对模型用于教育目的不持异议，项目方认为当前用途相符属于自身理解，免费不当然等于教育用途，公开仓库、GLB 转换、安装包再分发及下游条件未逐项确认。SDS 已明确书面许可本项目使用并分发 SDS MK5i 的 CAD 衍生可视化素材，这是针对本项目的许可，不是标准开源许可证，不覆盖 Kraken X60 电机几何或用户自建车架，也不构成 SDS 赞助、认证或背书；WCP 及其他第三方权利仍未确认。Web 构建须把 `LICENSE`、`NOTICE.md`、`licenses/` 复制进 `packages/web/dist`；Tauri 资源与最终 DMG 查验须含同样文件
 - [ ] PathPlanner 轨迹生成移植说明保留在发布说明中（MIT 要求注明）
+- [ ] **WebView2 Runtime 再分发复查**：每次公开发版前核对 NOTICE.md 的 WebView2 再分发登记仍与 Microsoft 分发条款（https://learn.microsoft.com/microsoft-edge/webview2/concepts/distribution）一致，并确认 offline 安装包确实内嵌运行时（CI 的 100 MiB 体积下限守门）。
 - [ ] **FIRST 场地素材条款复查**：核对当赛季（当前：2026 REBUILT）Game Manual / Official Field Drawings 的素材使用条款是否仍允许工具内置场地图片（AdvantageScope / PathPlanner 先例）；若收紧 → 停发内置场地、改走已就位的用户自导入场地路径
   - **2026-10-31 复查记录**：FIRST 官方 [Policy on the Use of FIRST Trademarks and Copyrighted Materials](https://www.firstinspires.org/hubfs/web/about/policy/ip-policy-trademarks-copyrighted-materials-first-lego.pdf?hsLang=en) 仍为 rev 04/19/25。§II.2 的适用主体是已注册 FIRST 队伍或参与者，限于 FIRST 项目相关非商业活动，相关收入须用于支付 FIRST 参与成本；§III 仍禁止以修改形式使用版权材料。§IV.A 的商标免责声明与 §IV.B 的英文版权免责声明是两项不同要求，NOTICE 与各语言 README 现已同时保留这两段原文。2026 REBUILT 的 [Playing Field](https://www.firstinspires.org/resources/library/frc/playing-field) 页面列出 Field Manual（updated Mar 24）及 REBUILT specific drawings，[Season Materials](https://www.firstinspires.org/resources/library/frc/season-materials) 提供官方 Game Manual 入口；本次查阅未见单独的修改／再分发许可，场地裁剪/缩放标定仍按灰区处理，不把社区先例写成官方许可。直接访问 `frc-manual.usfirst.org` 在本环境未能解析，未将该项记为已核查；若条款收紧，继续使用用户自导入场地回退路径。
   - **2026-08-26 复查记录**（依据：FIRST《Policy on the Use of FIRST® Trademarks and Copyrighted Materials》rev. 04/19/25，官方 PDF）：①注册 FIRST 队伍可非商业使用 FIRST 版权材料（**明文含 field designs**）开展 FIRST 项目相关活动，条件是展示 §IV 标准 disclaimer（已落入 NOTICE.md 与 README）；②**「copyrighted materials may never be used in any modified form」**——本项目场地图为裁剪/缩放标定版，处于该条款灰区；社区先例（AdvantageScope / PathPlanner 内置场地多年）支持继续内置，但若 FIRST 收紧执法：立即停发内置场地、启用用户自导入场地路径（已就位）；③FIRST 保留随时终止许可的权利——每次发版重新核对本条；④Logos（图形商标）不可用，仅 word marks 可提及。
@@ -59,6 +60,14 @@ Documentation-only PRs retain review and privacy checks but skip platform builds
 - [ ] README 隐私声明与实际行为一致（文件本地解析）
 - [ ] **历史隐私独立核查**：pre-push 只扫描本次实际待推对象，不证明既有提交、GitHub PR/缓存引用、其他克隆或旧 Release 附件已清理。公开前单独记录脱敏核查范围、已知残留与接受/处置决定；未核查或仍有残留的不得写成已清理。
 
+## 未验环境清单 / Not-verified environment registry
+
+以下三项是当前环境**无法验证**的发布要求。任何后续会话在没有新证据前不得把任何一行读作「已通过」；补齐方式随行附上，供将来收口。
+
+1. **无浏览器裸机冒烟 (spec §7.1)** — NOT performed — no clean Windows 10 (without WebView2), macOS or Linux machine is available. 收口方式：在断网的干净虚拟机/实机安装——offline 安装包必须零网络出站完成安装，且应用通过核心导入/回放/检查流程。CI 的 release-verify 证明的是 GitHub runner（自带 WebView2）上的匿名下载 + 安装 + 启动，不是本项。
+2. **SmartScreen / Gatekeeper prompt screenshots: NOT captured** — no physical Windows machine; CI runners show no prompt. zh/en 指南描述的是文档化步骤；真实机器产出截图之前，不得附带或宣称提示截图。
+3. **homebrew tap repo: not yet created** — cask 生成器已随仓库交付（`scripts/gen-homebrew-cask.mjs`）；`brew audit` / `brew style` / 实际安装均未对 `LYT259/homebrew-tap` 运行过，因为该仓库尚不存在（用户授权的外部步骤，见「GitHub（发布操作纪律）」节）。
+
 ## GitHub（发布操作纪律）
 
 - [ ] 推送 / PR / Pages 配置一律手动单发，不写自动重试循环；失败间隔 ≥60 秒再评估
@@ -76,6 +85,8 @@ Documentation-only PRs retain review and privacy checks but skip platform builds
       ⑥ Demo 站（2026-11-01 用户定稿：双站点常设同步部署；同日并入 deploy.yml 自动化）：GitHub Pages 主入口由 deploy.yml（push beta 自动部署）以 `VITE_VIEWER_ONLY=1` viewer 构建产出，Cloudflare 备份镜像由同一工作流 `deploy-cloudflare` job 用**同一构建产物**自动直传（`CLOUDFLARE_API_TOKEN` secret 配置生效）；`verify` job 自动双端回读 `https://lyt259.github.io/PathBlender/sw.js` 与 `https://pathblender.pages.dev/sw.js` 核对缓存名版本部分均与树内一致，任一端失败或落后不得视为完成；
       ⑦ 核对 README 三语的「获取方式」链接与真实可达状态一致（补充 Windows 下载说明）；更新 feed / Release 资产对未认证用户转可达（无需改动——端点本就是 GitHub 公网 URL）；
       ⑧ 反馈渠道=GitHub Issues（转公开即活；README/指南/模板已指向 issues 链接）；Chief Delphi 发布帖由用户本人发（用户决定 2026-10-03）。
+
+- [ ] **Homebrew cask 发布（owner 授权的外部步骤）**：stable 发版后，如需经 Homebrew 分发——① 对已发布的 `PathBlender_<version>_universal.dmg` 计算 `shasum -a 256`；② 运行 `node scripts/gen-homebrew-cask.mjs <version> <sha256>` 生成 cask 正文；③ 以该输出在 `LYT259/homebrew-tap` 仓库创建/更新 `Casks/pathblender.rb`；用户随后 `brew install --cask LYT259/tap/pathblender` 安装。红线：task agent 不得在没有用户明确指令时创建、推送或发布 tap 仓库——本仓只提供生成器与契约测试（`scripts/gen-homebrew-cask.mjs` 零文件写入、零 git、零网络）；`brew audit` / `brew style` 与真实安装尚未对实际 tap 运行过（当前无本地 tap），按「未验环境清单」登记，不得写成已验证。
 
 - [ ] 发布帖（Chief Delphi）中注明：PathPlanner 移植关系与 MIT 来源、Choreo 互操作定位、零上传承诺
 
