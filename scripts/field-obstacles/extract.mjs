@@ -301,3 +301,52 @@ export function hullPointsOfGroup(json, bin, group, { zMin, zMax, toWorld }) {
   const hull = monotoneChainHull(pts);
   return { hull, zMinM: zLo, zMaxM: zHi, vertexCount };
 }
+
+/** Clip a CCW convex polygon to the axis-aligned rect (Sutherland–Hodgman;
+ *  output stays convex CCW). Empty output → null. */
+export function clipConvexHullToRect(hull, x0, y0, x1, y1) {
+  let poly = hull;
+  const planes = [
+    { inside: (p) => p.x >= x0, intersect: (a, b) => ({ x: x0, y: a.y + ((b.y - a.y) * (x0 - a.x)) / (b.x - a.x) }) },
+    { inside: (p) => p.x <= x1, intersect: (a, b) => ({ x: x1, y: a.y + ((b.y - a.y) * (x1 - a.x)) / (b.x - a.x) }) },
+    { inside: (p) => p.y >= y0, intersect: (a, b) => ({ y: y0, x: a.x + ((b.x - a.x) * (y0 - a.y)) / (b.y - a.y) }) },
+    { inside: (p) => p.y <= y1, intersect: (a, b) => ({ y: y1, x: a.x + ((b.x - a.x) * (y1 - a.y)) / (b.y - a.y) }) },
+  ];
+  for (const plane of planes) {
+    const out = [];
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i];
+      const b = poly[(i + 1) % poly.length];
+      if (plane.inside(a)) {
+        out.push(a);
+        if (!plane.inside(b)) out.push(plane.intersect(a, b));
+      } else if (plane.inside(b)) {
+        out.push(plane.intersect(a, b));
+      }
+    }
+    poly = out;
+    if (poly.length === 0) return null;
+  }
+  return poly;
+}
+
+/** True when the point is inside the CCW convex hull or within tol of its
+ *  boundary (tag-anchor validation). */
+export function pointNearHull(p, hull, tol) {
+  let inside = true;
+  let best = Infinity;
+  for (let i = 0; i < hull.length; i++) {
+    const a = hull[i];
+    const b = hull[(i + 1) % hull.length];
+    const cross = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+    if (cross < 0) inside = false;
+    // distance point→segment ab
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2)) : 0;
+    const d = Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+    if (d < best) best = d;
+  }
+  return inside || best <= tol;
+}
