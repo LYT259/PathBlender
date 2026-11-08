@@ -131,6 +131,11 @@ a **red segment** on the timeline, and an entry in the checks panel —
 **Where to click**: any entry in the checks panel jumps the clock straight
 to that moment; robots leaving the field are marked out of bounds at the
 exact times it happens.
+The panel also flags **field obstacles** — hubs, towers and other interior
+structures a bumper drives into, with how deep it went. Overlaps under
+3 in (the same forgiveness as field bounds) stay silent. Obstacle sets cover
+the bundled 2022–2026 seasons (2025 in both welded and AndyMark builds);
+custom field images carry no obstacles.
 **What you should see**: the clock jumps and the two robots meet/overlap
 inside the red ring.
 
