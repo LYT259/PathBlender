@@ -51,6 +51,18 @@ describe('complete release collection', () => {
     writeFileSync(registry, "{ version: '0.2.0', date: '2026.10.07', note: { en: 'Update', zh: '更新', es: 'Actualización', fr: 'Mise à jour', tr: 'Güncelleme', 'pt-br': 'Atualização', he: 'עדכון' } }");
     const notes = execFileSync('node', [join(ROOT, 'scripts/release-notes-for.mjs'), '0.2.0', registry], { encoding: 'utf8', env: { ...process.env, ...result.environment } });
     for (const file of [result.manifest.macos.dmg, result.manifest.windows.nsis, ...Object.values(result.manifest.linux)]) expect(notes).toContain(file);
+    expect(notes).toContain(result.manifest.windows.nsisOffline);
+    expect(notes).toMatch(/\(\d+ MB\)/);
+    for (const label of [
+      'Windows x86_64 (NSIS, offline — embeds WebView2)',
+      'Windows x86_64（NSIS 离线版，内嵌 WebView2）',
+      'Windows x86_64（NSIS 離線版，內嵌 WebView2）',
+      'Windows x86_64 (NSIS sin conexión, con WebView2 integrado)',
+      'Windows x86_64 (NSIS hors ligne, WebView2 intégré)',
+      'Windows x86_64 (NSIS çevrimdışı, WebView2 gömülü)',
+      'Windows x86_64 (NSIS offline, com WebView2 integrado)',
+      'Windows x86_64 (NSIS ללא חיבור לאינטרנט, כולל WebView2 מוטמע)',
+    ]) expect(notes).toContain(label);
     expect(notes).not.toContain('installers are not provided');
   });
   it.each(['rpm', 'signature', 'duplicate', 'staleVersion', 'offlineMissing', 'offlineUndersized', 'offlineWrongName'])('rejects %s before creating release assets', (problem) => {

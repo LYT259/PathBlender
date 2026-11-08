@@ -104,7 +104,7 @@ const manifest = process.env.PB_RELEASE_ARTIFACTS
   ? JSON.parse(readFileSync(resolve(process.env.PB_RELEASE_ARTIFACTS), 'utf8')) : null;
 if (manifest && manifest.version !== version) throw new Error('release artifact manifest version mismatch');
 const assets = manifest ? [
-  ['macos', manifest.macos.dmg], ['windows', manifest.windows.nsis],
+  ['macos', manifest.macos.dmg], ['windows', manifest.windows.nsis], ['windowsOffline', manifest.windows.nsisOffline],
   ['deb', manifest.linux.deb], ['appimage', manifest.linux.appimage], ['rpm', manifest.linux.rpm],
 ] : [['macosLegacy', `PathBlender_${version}_aarch64.dmg`]];
 if (assets.some(([, name]) => typeof name !== 'string' || !/^[\w.+-]+$/.test(name))) throw new Error('invalid release artifact name');
@@ -127,7 +127,7 @@ function render(lang) {
     if (!text?.trim()) throw new Error(`release note translation missing: ${e.version} ${lang}`);
     return `- v${e.version} (${e.date}): ${text.trim()}`;
   }).join('\n') || t.fallback;
-  const downloads = assets.map(([platform, name]) => `- **${t.platforms[platform]}** — \`${name}\``).join('\n');
+  const downloads = assets.map(([platform, name]) => `- **${t.platforms[platform]}** — \`${name}\`${platform === 'windowsOffline' ? ` (${Math.round(manifest.windows.nsisOfflineBytes / 1048576)} MB)` : ''}`).join('\n');
   return `## ${t.changes}\n\n${changes}\n\n## ${t.download}\n\n${downloads}\n\n${t.web}\n\n## ${t.issues}\n\n${issuesFor(lang)}\n\n## ${t.update}\n\n${t.instructions}`;
 }
 console.log(render('en') + Object.entries(translations).filter(([lang]) => lang !== 'en').map(([lang, t]) =>

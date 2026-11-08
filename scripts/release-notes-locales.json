@@ -10,6 +10,7 @@
       "macos": "macOS 13.0+ (Apple Silicon and Intel)",
       "macosLegacy": "macOS 13.0+ (Apple Silicon)",
       "windows": "Windows x86_64 (NSIS)",
+      "windowsOffline": "Windows x86_64 (NSIS, offline — embeds WebView2)",
       "deb": "Linux x86_64 (DEB)",
       "appimage": "Linux x86_64 (AppImage)",
       "rpm": "Linux x86_64 (RPM)"
@@ -28,6 +29,7 @@
       "macos": "macOS 13.0+（Apple Silicon 与 Intel）",
       "macosLegacy": "macOS 13.0+（Apple Silicon）",
       "windows": "Windows x86_64（NSIS）",
+      "windowsOffline": "Windows x86_64（NSIS 离线版，内嵌 WebView2）",
       "deb": "Linux x86_64（DEB）",
       "appimage": "Linux x86_64（AppImage）",
       "rpm": "Linux x86_64（RPM）"
@@ -46,6 +48,7 @@
       "macos": "macOS 13.0+（Apple Silicon 與 Intel）",
       "macosLegacy": "macOS 13.0+（Apple Silicon）",
       "windows": "Windows x86_64（NSIS）",
+      "windowsOffline": "Windows x86_64（NSIS 離線版，內嵌 WebView2）",
       "deb": "Linux x86_64（DEB）",
       "appimage": "Linux x86_64（AppImage）",
       "rpm": "Linux x86_64（RPM）"
@@ -64,6 +67,7 @@
       "macos": "macOS 13.0+ (Apple Silicon e Intel)",
       "macosLegacy": "macOS 13.0+ (Apple Silicon)",
       "windows": "Windows x86_64 (NSIS)",
+      "windowsOffline": "Windows x86_64 (NSIS sin conexión, con WebView2 integrado)",
       "deb": "Linux x86_64 (DEB)",
       "appimage": "Linux x86_64 (AppImage)",
       "rpm": "Linux x86_64 (RPM)"
@@ -82,6 +86,7 @@
       "macos": "macOS 13.0+ (Apple Silicon et Intel)",
       "macosLegacy": "macOS 13.0+ (Apple Silicon)",
       "windows": "Windows x86_64 (NSIS)",
+      "windowsOffline": "Windows x86_64 (NSIS hors ligne, WebView2 intégré)",
       "deb": "Linux x86_64 (DEB)",
       "appimage": "Linux x86_64 (AppImage)",
       "rpm": "Linux x86_64 (RPM)"
@@ -100,6 +105,7 @@
       "macos": "macOS 13.0+ (Apple Silicon ve Intel)",
       "macosLegacy": "macOS 13.0+ (Apple Silicon)",
       "windows": "Windows x86_64 (NSIS)",
+      "windowsOffline": "Windows x86_64 (NSIS çevrimdışı, WebView2 gömülü)",
       "deb": "Linux x86_64 (DEB)",
       "appimage": "Linux x86_64 (AppImage)",
       "rpm": "Linux x86_64 (RPM)"
@@ -118,6 +124,7 @@
       "macos": "macOS 13.0+ (Apple Silicon e Intel)",
       "macosLegacy": "macOS 13.0+ (Apple Silicon)",
       "windows": "Windows x86_64 (NSIS)",
+      "windowsOffline": "Windows x86_64 (NSIS offline, com WebView2 integrado)",
       "deb": "Linux x86_64 (DEB)",
       "appimage": "Linux x86_64 (AppImage)",
       "rpm": "Linux x86_64 (RPM)"
@@ -136,6 +143,7 @@
       "macos": "macOS 13.0+ (Apple Silicon ו-Intel)",
       "macosLegacy": "macOS 13.0+ (Apple Silicon)",
       "windows": "Windows x86_64 (NSIS)",
+      "windowsOffline": "Windows x86_64 (NSIS ללא חיבור לאינטרנט, כולל WebView2 מוטמע)",
       "deb": "Linux x86_64 (DEB)",
       "appimage": "Linux x86_64 (AppImage)",
       "rpm": "Linux x86_64 (RPM)"
