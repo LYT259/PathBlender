@@ -273,7 +273,7 @@ Expected: FAIL — guides do not yet contain the links (files exist from Task 3,
 
 - [ ] **Step 3: Add one short paragraph to each guide**
 
-At the end of "Try it without files" (EN) / the matching zh section, one concise sentence + two links, e.g. EN: `Prefer watching first? A 83-second demo covers import, shared-clock replay, locating a check result, comparing routes, and mirroring: [demo video (MP4)](screenshots/demo-video.en.mp4), [captions (WebVTT)](screenshots/demo-video.en.vtt).` The zh guide gets the zh pair with equivalent copy (concise, factual, no dev history). Do not paste the video inline into README (out of scope here).
+At the end of "Try it without files" (EN) / the matching zh section, one concise sentence + two links, e.g. EN: `Prefer watching first? An 83-second demo covers import, shared-clock replay, locating a check result, comparing routes, and mirroring: [demo video (MP4)](screenshots/demo-video.en.mp4), [captions (WebVTT)](screenshots/demo-video.en.vtt).` The zh guide gets the zh pair with equivalent copy (concise, factual, no dev history). Do not paste the video inline into README (out of scope here).
 
 - [ ] **Step 4: Run the test to verify it passes**
 
@@ -367,7 +367,7 @@ Expected: both green across workspaces (includes the four new test files and the
 
 - [ ] **Step 2: Bump the beta version with the required note**
 
-Run: `node scripts/bump-version.mjs beta "Add a 83-second onboarding demo video with EN/zh captions and guide links"` plus the same note translated for every NOTE_LANGS language in the same invocation/commit (check the script's args; `version-notes.test.ts` enforces completeness — a missing language is a red build, not a nit).
+Run: `node scripts/bump-version.mjs beta "Add an 83-second onboarding demo video with EN/zh captions and guide links"` plus the same note translated for every NOTE_LANGS language in the same invocation/commit (check the script's args; `version-notes.test.ts` enforces completeness — a missing language is a red build, not a nit).
 Expected: version bump lands in exactly the version files; `git status` shows nothing else.
 
 - [ ] **Step 3: Commit the bump**
