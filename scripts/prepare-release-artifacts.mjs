@@ -20,8 +20,12 @@ const macUpdater = join(input, 'macos', 'PathBlender.app.tar.gz');
 const macDmg = one('macos', '.dmg');
 if (basename(macDmg) !== `PathBlender_${version}_universal.dmg`) throw new Error('macOS: missing the version-matched Universal DMG');
 const win = one('windows', '-setup.exe');
+const winOffline = one('windows-offline', '-offline-setup.exe');
+if (basename(winOffline) !== `PathBlender_${version}_x64-offline-setup.exe`) throw new Error('windows-offline: missing the version-matched offline NSIS installer');
+const winOfflineBytes = statSync(winOffline).size;
+if (winOfflineBytes < 104857600) throw new Error(`windows-offline: ${basename(winOffline)} is ${winOfflineBytes} bytes; an offline installer embeds the WebView2 Runtime (~127 MB) — this looks like an online build`);
 const deb = one('linux', '.deb'), appimage = one('linux', '.AppImage'), rpm = one('linux', '.rpm');
-const sources = [macDmg, macUpdater, `${macUpdater}.sig`, win, `${win}.sig`, deb, appimage, `${appimage}.sig`, rpm];
+const sources = [macDmg, macUpdater, `${macUpdater}.sig`, win, `${win}.sig`, winOffline, deb, appimage, `${appimage}.sig`, rpm];
 for (const file of sources) {
   if (!existsSync(file) || !statSync(file).isFile() || statSync(file).size === 0) throw new Error(`missing or empty release artifact: ${basename(file)}`);
   if (file.endsWith('.sig') && !readFileSync(file, 'utf8').trim()) throw new Error(`empty updater signature: ${basename(file)}`);
@@ -40,7 +44,7 @@ for (const [dir, files] of [['macos', [macUpdater, `${macUpdater}.sig`]], ['nsis
 const manifest = {
   version,
   macos: { dmg: basename(macDmg), architectures: ['aarch64', 'x86_64'] },
-  windows: { nsis: basename(win) },
+  windows: { nsis: basename(win), nsisOffline: basename(winOffline), nsisOfflineBytes: winOfflineBytes },
   linux: { deb: basename(deb), appimage: basename(appimage), rpm: basename(rpm) },
 };
 writeFileSync(join(bundle, 'release-artifacts.json'), JSON.stringify(manifest, null, 2) + '\n');
