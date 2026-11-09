@@ -56,13 +56,15 @@ cherry-pick 到一个可发布集成分支；不重新设计功能、不抬号�
   102,933,199 字节、1835 entries、0 corrupt-timestamp 警告、655 ms，
   与原验收会话数字一致。样本按设计不入库（本地 /tmp，未提交）。
 
-## 发现（未改，保持 cherry-pick 补丁保真）
+## 发现与处置
 
 - `samples/hoot/README.md` 的示例命令 `npx vitest run test/hoot-samples.test.ts
   -w packages/core` 中 `-w` 落在 vitest 侧等于 watch——套件会跑完并打印结果
-  但进程不退出（实测 DEV 模式驻留）。正确等价写法：在 `packages/core` 目录
-  直接 `HOOT_SAMPLE_DIR=… npx vitest run test/hoot-samples.test.ts`。留待
-  源分支 owner 或控制器定夺，本分支不改原提交内容。
+  但进程不退出（实测 DEV 模式驻留）。控制器 2026-11-09 跟进指令已在本分支
+  修复：先加两个静态文档契约测试（要求仓库根可退出的
+  `HOOT_SAMPLE_DIR="$PWD" npm test -w @pathblender/core -- test/hoot-samples.test.ts`
+  形态；禁止 vitest 调用带 `-w`），RED 后仅改该示例命令一行转 GREEN；真实
+  样本按新形态从仓库根实跑，进程退出 exit 0、5/5 绿。
 
 ## 未验项（如实登记）
 

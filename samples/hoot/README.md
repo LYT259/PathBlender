@@ -22,7 +22,7 @@ absent):
 ```sh
 curl -LO https://www.chiefdelphi.com/uploads/short-url/6OoR8IOIt3tuAaEzMAY2pBG4AHR.zip
 unzip 6OoR8IOIt3tuAaEzMAY2pBG4AHR.zip   # → sim_2025-02-27_16-16-47.hoot.wpilog
-HOOT_SAMPLE_DIR="$PWD" npx vitest run test/hoot-samples.test.ts -w packages/core
+HOOT_SAMPLE_DIR="$PWD" npm test -w @pathblender/core -- test/hoot-samples.test.ts
 ```
 
 Verified with this sample (2026-11-09): the production WPILOG pipeline

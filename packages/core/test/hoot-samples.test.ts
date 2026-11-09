@@ -32,6 +32,20 @@ function samplePath(): string | undefined {
   return existsSync(path) ? path : undefined;
 }
 
+describe('sample README command contract (static; runs without the local fixture)', () => {
+  const readme = readFileSync(resolve(__dirname, '../../../samples/hoot/README.md'), 'utf8');
+
+  it('shows the repo-root npm form of the gated-suite command, which exits', () => {
+    expect(readme).toContain(
+      'HOOT_SAMPLE_DIR="$PWD" npm test -w @pathblender/core -- test/hoot-samples.test.ts',
+    );
+  });
+
+  it('never passes -w to vitest (watch mode runs the suite but never exits)', () => {
+    expect(readme).not.toMatch(/vitest[^\n]*\s-w\b/);
+  });
+});
+
 describe.skipIf(!samplePath())('real CTRE-converted WPILOG sample', () => {
   it('matches the recorded bytes (fixture pin)', () => {
     const path = samplePath()!;
