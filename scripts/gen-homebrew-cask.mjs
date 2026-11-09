@@ -34,8 +34,7 @@ console.log(`cask "pathblender" do
   desc "Free, open-source FRC autonomous path viewer"
   homepage "https://github.com/LYT259/pathblender"
 
-  depends_on macos: ">= :ventura"
+  depends_on macos: :ventura
 
   app "PathBlender.app"
-end
-`);
+end`);

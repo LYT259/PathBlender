@@ -24,10 +24,11 @@ describe('homebrew cask generator', () => {
       'name "PathBlender"',
       'desc "Free, open-source FRC autonomous path viewer"',
       'homepage "https://github.com/LYT259/pathblender"',
-      'depends_on macos: ">= :ventura"',
+      'depends_on macos: :ventura',
       'app "PathBlender.app"',
     ]) expect(out).toContain(s);
-    expect(out.trimEnd().endsWith('end')).toBe(true);
+    expect(out.endsWith('end\n')).toBe(true);
+    expect(out.endsWith('\n\n')).toBe(false);
   });
 
   it.each([
