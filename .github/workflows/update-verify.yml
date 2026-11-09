@@ -179,6 +179,10 @@ jobs:
           $actual = (Get-Item $exe).VersionInfo.ProductVersion
           Write-Host "Installed OLD version: $actual (from tag: $env:FROM_VERSION)"
           if ($actual -ne $env:FROM_VERSION) { Write-Host "::error::installed version $actual != FROM version $($env:FROM_VERSION)"; exit 1 }
+          # pwsh steps run in separate processes: export the resolved dir so
+          # the UI-drive step can re-derive $exe instead of reading a
+          # variable that does not exist in its own scope.
+          "INSTALL_DIR=$installDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           Start-Process -FilePath $exe
           Start-Sleep -Seconds 15
           $proc = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -204,6 +208,11 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
+          # Re-derive the exe path from the exported dir: this step is a
+          # separate pwsh process and cannot see the install step's variables.
+          $installDir = $env:INSTALL_DIR
+          if (-not $installDir) { Write-Host "::error::INSTALL_DIR not exported by the install step"; exit 1 }
+          $exe = Join-Path $installDir "pathblender-desktop.exe"
           Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes
           Add-Type -AssemblyName System.Windows.Forms
 
@@ -230,6 +239,7 @@ jobs:
                 $pat = $null
                 if ($el.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pat)) { return $el }
                 if ($el.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$pat)) { return $el }
+                if ($el.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$pat)) { return $el }
               }
               Start-Sleep -Milliseconds 400
             }
@@ -239,6 +249,9 @@ jobs:
             $pat = $null
             if ($El.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pat)) { $pat.Invoke(); return }
             if ($El.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$pat)) { $pat.Select(); return }
+            # The channel picker is a role="combobox" <button>: UIA may
+            # expose only ExpandCollapse for it — Expand opens the list.
+            if ($El.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$pat)) { $pat.Expand(); return }
             throw ("element not invokable: " + $El.Current.Name)
           }
 

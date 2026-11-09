@@ -840,4 +840,26 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     expect(run).toContain('CopyFromScreen');
     expect((job.steps as any[]).some((step: any) => step.uses === 'actions/upload-artifact@v4')).toBe(true);
   });
+
+  it('carries the install dir between the pwsh steps via GITHUB_ENV (steps run in separate processes)', () => {
+    const steps = job.steps as any[];
+    const installStep = steps.find((s: any) => (s.name ?? '').includes('Install, launch and assert'));
+    const driveStep = steps.find((s: any) => (s.name ?? '').includes('Drive the real UI'));
+    expect(installStep).toBeDefined();
+    expect(driveStep).toBeDefined();
+    // PowerShell variables do NOT survive across run: steps — the install
+    // step must export the resolved dir and the drive step must re-derive
+    // $exe from $env:, or the takeover watcher dies on a null -Path.
+    expect(installStep.run).toContain('INSTALL_DIR=');
+    expect(installStep.run).toContain('$env:GITHUB_ENV');
+    expect(driveStep.run).toContain('$installDir = $env:INSTALL_DIR');
+    expect(driveStep.run).toContain('$exe = Join-Path $installDir "pathblender-desktop.exe"');
+  });
+
+  it('opens the channel combobox even when UIA exposes only ExpandCollapse, not Invoke', () => {
+    // The channel control is a role="combobox" <button> (SelectControl.tsx);
+    // UIA may expose only ExpandCollapsePattern for it, so the click helper
+    // must fall back to Expand before giving up.
+    expect(run).toContain('ExpandCollapsePattern');
+  });
 });
