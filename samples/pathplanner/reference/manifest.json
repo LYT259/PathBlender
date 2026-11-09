@@ -20,6 +20,11 @@
         "file": "Score.path",
         "upstreamPath": "examples/java/src/main/deploy/pathplanner/paths/Score.path",
         "sha256": "2c9677bf72408e2d4228e45ffae505b97faaef292fd72d0aa5e18f83fd86f145"
+      },
+      {
+        "file": "Example Auto.auto",
+        "upstreamPath": "examples/java/src/main/deploy/pathplanner/autos/Example Auto.auto",
+        "sha256": "fa5a1e34ba44e20637ff1f0a0d4c58879550abccb84acedbe897bbc6a4e3fdb1"
       }
     ],
     "expectedComputedBy": "robotpy-pathplannerlib 2025.2.7 (official PyPI wheel published from tag v2025.2.7) via golden-runner.py in this directory; RobotConfig.fromGUISettings() + PathPlannerPath.fromPathFile() + generateTrajectory(), ideal starting states, run once on 2026-11-07. Golden files record every official state; expected literals below are transcribed from those files.",
@@ -30,7 +35,7 @@
       },
       {
         "want": "official .auto routine trajectory (e.g. examples 'Example Auto.auto')",
-        "finding": "no library API at v2025.2.7 computes a routine trajectory — pathplannerlib .../lib/auto/ contains only AutoBuilder, AutoBuilderException, CommandUtil, NamedCommands (PathPlannerAuto no longer exists); the python port's auto.py builds commands only; GUI preview numbers are not exportable. No .auto acceptance case can honestly land; add one only with a real export from the GUI at this exact tag."
+        "finding": "no library API at v2025.2.7 computes a routine trajectory — pathplannerlib .../lib/auto/ contains only AutoBuilder, AutoBuilderException, CommandUtil, NamedCommands (PathPlannerAuto no longer exists in the Java lib; the python port keeps a PathPlannerAuto but it is a runtime Command — commands.py FollowPathCommand.initialize generates each segment from live robot speeds/rotation); GUI preview numbers are not exportable. A true official whole-routine golden remains unobtainable; the example-auto-composite case below is a declared composite baseline (official wheel per-segment numbers + declared chaining), never an official routine output."
       }
     ]
   },
@@ -90,6 +95,41 @@
         "maxSpeedMPS": 3.0000000000000004,
         "peakAccelMPSSq": 2.829278637467962,
         "caps": [{ "maxVelocityMPS": 3.0 }]
+      }
+    },
+    {
+      "name": "example-auto-composite-v2025.2.7",
+      "kind": "auto",
+      "basis": "official-wheel-composite — NOT an official routine output: no library API computes one at v2025.2.7 (see upstream.unobtainable). Segment numbers are official wheel output under a declared chaining model (ideal starting states, declared waits hold at 10 Hz, named commands zero-duration); the model provably coincides with official runtime semantics for THIS routine — resetOdom resets to path0 point 0 + ideal rotation, Pickup ends at rest/0° at exactly Score's first anchor, and each wait leaves the robot stationary, so every FollowPathCommand.initialize generateTrajectory call sees exactly the ideal starting speeds/rotation (wheel auto.py:207-222, commands.py:111). Expected values computed once with auto-golden-runner.py from the official wheel (see README).",
+      "autoFile": "Example Auto.auto",
+      "pathFiles": ["Pickup.path", "Score.path"],
+      "settingsFile": "settings.json",
+      "goldenFile": "golden-example-auto.json",
+      "sha256": {
+        "settings.json": "ded3e52d3c063e3eaf65096eabcabfced4fbd20f8a56433e3ee3dc9fc15bb3d1",
+        "Pickup.path": "cd8d84c892f581703c9a3fd590c5153015a31da1d4e32877430de347d5393b46",
+        "Score.path": "2c9677bf72408e2d4228e45ffae505b97faaef292fd72d0aa5e18f83fd86f145",
+        "Example Auto.auto": "fa5a1e34ba44e20637ff1f0a0d4c58879550abccb84acedbe897bbc6a4e3fdb1",
+        "golden-example-auto.json": "735ef5707bd8ce341e6a66ace862bd0733d75cb9498176a31fcd8b9b5fb3aad3"
+      },
+      "expected": {
+        "durationS": 9.209644216248757,
+        "startSpeedMPS": 0.0,
+        "endSpeedMPS": 0.0,
+        "endX": 2.0728986001800274,
+        "endY": 2.834336688351374,
+        "endHeadingDeg": 122.06194368281356,
+        "maxSpeedMPS": 3.0000000000000004,
+        "peakAccelMPSSq": 3.0000000000000018,
+        "caps": [{ "maxVelocityMPS": 3.0 }],
+        "joins": [
+          {
+            "holdSeconds": 2.0,
+            "x": 7.726886294559709,
+            "y": 0.8077125277685265,
+            "note": "the routine declares two 1.0 s waits around an instant named command; with zero-duration named semantics they form one continuous ~2 s hold at Pickup's end pose"
+          }
+        ]
       }
     }
   ]
