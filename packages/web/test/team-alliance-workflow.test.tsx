@@ -80,6 +80,48 @@ describe('per-team alliance at folder import', () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(screen.queryAllByTestId('field-2d')).toHaveLength(0);
   });
+
+  it('Enter at the dialog’s initial focus imports the defaults exactly once', async () => {
+    render(<App />);
+    const dialog = await dropFolder([folderFile('straight_run.ghostauto', '9999', 'Straight.ghostauto')]);
+    // The shared Dialog moves initial focus onto the dialog container itself.
+    expect(document.activeElement).toBe(dialog);
+    fireEvent.keyDown(dialog, { key: 'Enter' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(fieldRobots()).toHaveLength(1);
+    expect(fieldRobots()[0]!.teamAlliance).toBe('blue');
+    expect(fieldRobots()[0]!.trajectory.samples[0]!.x).toBe(2);
+  });
+
+  it('Enter on a focused radio imports the chosen alliance exactly once', async () => {
+    render(<App />);
+    const dialog = await dropFolder([folderFile('straight_run.ghostauto', '9999', 'Straight.ghostauto')]);
+    const red = within(within(dialog).getByRole('group', { name: 'Team alliance: 9999' })).getByRole('radio', { name: 'Red' });
+    fireEvent.click(red);
+    red.focus();
+    fireEvent.keyDown(red, { key: 'Enter' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(fieldRobots()).toHaveLength(1);
+    expect(fieldRobots()[0]!.teamAlliance).toBe('red');
+    expect(fieldRobots()[0]!.trajectory.samples[0]!.x).toBeCloseTo(REBUILT_2026.lengthM - 2, 9);
+  });
+
+  it('clicking Import submits the native form exactly once — no double fire', async () => {
+    render(<App />);
+    const dialog = await dropFolder([folderFile('straight_run.ghostauto', '9999', 'Straight.ghostauto')]);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Import' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(fieldRobots()).toHaveLength(1);
+  });
+
+  it('Escape cancels the dialog without adding any robot', async () => {
+    render(<App />);
+    const dialog = await dropFolder([folderFile('straight_run.ghostauto', '9999', 'Straight.ghostauto')]);
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryAllByTestId('field-2d')).toHaveLength(0);
+  });
 });
 
 describe('per-robot alliance radio on the robot card', () => {
