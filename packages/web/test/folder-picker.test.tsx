@@ -14,6 +14,7 @@ import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App';
+import { confirmAllianceChoice } from './alliance-confirm';
 
 const samples = resolve(__dirname, '../../../samples');
 
@@ -63,6 +64,7 @@ describe('folder picker wiring', () => {
       folderFile('traj/v3_swerve.traj', '254/autos/L1.traj'),
       folderFile('ghostauto/straight_run.ghostauto', '254/autos/straight_run.ghostauto'),
     ]);
+    await confirmAllianceChoice();
     // A folder import seeds one robot and keeps the rest in the library.
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
     expect(document.querySelector('.import-banner')).toBeNull();

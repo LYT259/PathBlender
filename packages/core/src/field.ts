@@ -688,17 +688,25 @@ export function flipPoseToBlue(pose: Pose2d, field: Pick<FieldPackage, 'lengthM'
  * `field` the caller vouches the samples are already blue. Zone boundaries
  * are inclusive (tape belongs to the zone); no samples means nothing to
  * gate.
+ *
+ * `teamAlliance` (red book #14): a RED-team robot legally starts on the red
+ * wall — the 180° flip of the blue rects. Passing 'red' judges the pose
+ * once more through the field symmetry, i.e. against the team's own wall;
+ * undefined/'blue' keeps the blue-side rects. Frame-invariant together with
+ * `field`.
  */
 export function startsInAllianceZone(
   trajectory: Trajectory,
   zone: readonly StartZoneRect[],
   field?: Pick<FieldPackage, 'lengthM' | 'widthM'>,
+  teamAlliance?: Alliance,
 ): boolean {
   const first = trajectory.samples[0];
   if (!first) return true;
-  const pose = field && trajectory.alliance === 'red'
+  let pose = field && trajectory.alliance === 'red'
     ? flipPoseToBlue(first, field)
-    : first;
+    : { x: first.x, y: first.y, heading: first.heading };
+  if (teamAlliance === 'red' && field) pose = flipPoseToBlue(pose, field);
   return zone.some((r) =>
     pose.x >= r.xMinM - 1e-9 && pose.x <= r.xMaxM + 1e-9 &&
     pose.y >= r.yMinM - 1e-9 && pose.y <= r.yMaxM + 1e-9);
@@ -710,14 +718,24 @@ export function startsInAllianceZone(
  * unlike startsInAllianceZone this never gates anything, it just sorts.
  * Returns undefined when the season defines no classes, the route has no
  * samples, or the start matches none (the "other starts" bucket).
+ *
+ * `field` + `teamAlliance` (red book #14) judge the sample against the
+ * team's OWN wall (a red team's start classes are the flipped rects) so an
+ * opponent route groups by where it actually starts for its alliance.
  */
 export function routeStartRegion(
   trajectory: Trajectory,
   regions: readonly StartRegionClass[] | undefined,
+  field?: Pick<FieldPackage, 'lengthM' | 'widthM'>,
+  teamAlliance?: Alliance,
 ): string | undefined {
   if (!regions || regions.length === 0) return undefined;
-  const first = trajectory.samples[0];
-  if (!first) return undefined;
+  const firstSample = trajectory.samples[0];
+  if (!firstSample) return undefined;
+  let first = field && trajectory.alliance === 'red'
+    ? flipPoseToBlue(firstSample, field)
+    : { x: firstSample.x, y: firstSample.y, heading: firstSample.heading };
+  if (teamAlliance === 'red' && field) first = flipPoseToBlue(first, field);
   for (const region of regions) {
     const g = region.geometry;
     if (g.kind === 'aabb') {

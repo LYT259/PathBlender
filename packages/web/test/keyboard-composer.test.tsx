@@ -14,6 +14,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionTrajectory } from '@pathblender/core';
 import { App } from '../src/App';
+import { confirmAllianceChoice } from './alliance-confirm';
 
 vi.mock('../src/components/FieldCanvas', async () => {
   const { forwardRef } = await import('react');
@@ -41,6 +42,7 @@ async function openComposer() {
     return file;
   });
   fireEvent.drop(window, { dataTransfer: { files } });
+  await confirmAllianceChoice();
   await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
   const opener = document.querySelector('.robot-arrange-button') as HTMLButtonElement;
   // jsdom does not focus buttons on click — real browsers do; replicate so
@@ -159,6 +161,7 @@ describe('composer keyboard', () => {
       return file;
     });
     fireEvent.drop(window, { dataTransfer: { files } });
+  await confirmAllianceChoice();
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
     fireEvent.doubleClick(document.querySelector('.timeline-activity')!);
     await waitFor(() => expect(document.querySelector('.sequence-composer')).not.toBeNull());

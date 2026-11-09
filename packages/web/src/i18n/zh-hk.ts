@@ -77,6 +77,8 @@ export const zhHkOverrides: Partial<Record<MessageKey, string>> = {
   'robots.timingDefaultHint': '使用 PathBlender 預設機械人參數估算',
   'robots.timingFullHint': '由該隊匯入的機械人參數產生——仍是計畫，不是實測',
   'robots.timingLoggedHint': '記錄自實跑時的機械人日誌',
+  // 逐隊聯盟 (2026-11-09): the 機器人 rule reaches the new import dialog body.
+  'import.allianceBody': '紅方表示該隊的檔案從紅方聯盟牆匯出——其路線會落到紅半場，用於對手對照與遭遇分析。之後可在各機械人卡片上修改。',
 };
 
 /** What `DICTS` consumes: the Taiwan dictionary with the HK rows applied. */

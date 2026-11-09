@@ -269,6 +269,17 @@ await page.screenshot({ path: `${SHOTS}/02-collision.png` });
 // been read-only since the 2026-09-30 pivot).
 const routesInFolder = (await readdir(`${SAMPLES}/ghostauto`)).length;
 await page.locator('input[webkitdirectory]').first().setInputFiles(`${SAMPLES}/ghostauto`);
+// Folder imports queue the per-team alliance dialog (red book #14); the radio
+// semantics and Enter/Escape handling live in the vitest suites — here the
+// pointer path confirms it with the all-blue defaults, landing the same three
+// robots the pre-dialog import produced. The sample folder is flat (no team
+// subfolders), so every route's root segment is the folder itself: one team
+// row, one shared choice.
+const allianceTeamRows = page.locator('.team-alliance-dialog .team-alliance-team');
+await allianceTeamRows.first().waitFor({ timeout: 8000 });
+check('folder import asks for each team\'s alliance', (await allianceTeamRows.count()) === 1,
+  `teams=${await allianceTeamRows.count()}`);
+await page.locator('.team-alliance-dialog button[type="submit"]').click();
 await page.waitForFunction(() => document.querySelectorAll('.robot-library-row').length === 3, undefined, { timeout: 20000 });
 await rows().last().locator('.robot-arrange-button').click();
 await page.waitForSelector('.sequence-composer', { timeout: 8000 });

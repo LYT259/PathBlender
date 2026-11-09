@@ -352,5 +352,5 @@ export function sessionStartsInZone(
 ): boolean {
   if (!zone) return true;
   const first = resolveSequence(st)?.[0]?.trajectory ?? st.trajectory;
-  return startsInAllianceZone(first, zone, field);
+  return startsInAllianceZone(first, zone, field, st.teamAlliance);
 }

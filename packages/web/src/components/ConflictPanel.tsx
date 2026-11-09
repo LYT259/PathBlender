@@ -30,6 +30,9 @@ export function ConflictPanel({ robots, conflicts, bounds, obstacleHits = [], ob
   const issues = conflicts.length + bounds.length + obstacleHits.length;
   const hidden = robots.filter((r) => !r.visible).length;
   const estimated = robots.some((r) => r.trajectory.geometrySource === 'default');
+  // Relation badges only once the session actually uses per-team alliances —
+  // legacy single-alliance sessions see exactly the panel they saw before.
+  const usesTeamAlliances = robots.some((r) => r.teamAlliance !== undefined);
   const toleranceLabel = t('checks.tolerance', { delta: n(toleranceS, 1) });
   const title = !robots.length ? 'checks.emptyTitle' : issues ? 'checks.issues' : robots.length < 2 ? 'checks.singleTitle' : 'checks.clearTitle';
   return <section className="conflict-panel" aria-label={t('conflicts.title')}>
@@ -60,7 +63,9 @@ export function ConflictPanel({ robots, conflicts, bounds, obstacleHits = [], ob
     {conflicts.length > 0 && <ul className="conflict-list">{conflicts.map((c) => {
       return <li key={`${c.aId}-${c.bId}-${c.startT}-${c.kind}`} className={`conflict-item${c.kind === 'tolerance' ? ' is-tolerance' : ''}`}>
       <button className="conflict-jump" onClick={() => onJump(c.closestT, [c.aId, c.bId])} title={t('checks.jump')}>
-        <span className="conflict-pair">{t('conflicts.pair', { a: nameOf(c.aId), b: nameOf(c.bId) })}{c.kind === 'tolerance' && <em className="tolerance-badge">{t('conflicts.toleranceBadge', { delta: n(c.toleranceS ?? toleranceS, 1) })}</em>}</span>
+        <span className="conflict-pair">{t('conflicts.pair', { a: nameOf(c.aId), b: nameOf(c.bId) })}
+          {usesTeamAlliances && <em className={`relation-badge is-${c.relation}`}>{t(c.relation === 'teammates' ? 'conflicts.teammates' : 'conflicts.opponents')}</em>}
+          {c.kind === 'tolerance' && <em className="tolerance-badge">{t('conflicts.toleranceBadge', { delta: n(c.toleranceS ?? toleranceS, 1) })}</em>}</span>
         <span className="conflict-when">{t('conflicts.item', { start: n(c.startT, 2), end: n(c.endT, 2), d: formatLength(c.minCenterDistanceM, unit, lang), x: n((c.closestA.x + c.closestB.x) / 2, 1), y: n((c.closestA.y + c.closestB.y) / 2, 1) })}</span>
         <span className="issue-action">{t('checks.jump')} →</span>
       </button>

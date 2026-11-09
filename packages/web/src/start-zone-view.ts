@@ -40,8 +40,9 @@ export function previewDimsPath(
   target: SessionTrajectory | undefined,
   route: SessionTrajectory | undefined,
   zone: readonly StartZoneRect[] | undefined,
+  field?: Pick<FieldPackage, 'lengthM' | 'widthM'>,
 ): boolean {
   if (!zone || !route || !target) return false;
   return sequenceViewFor(target).segments.length === 0
-    && !startsInAllianceZone(route.trajectory, zone);
+    && !startsInAllianceZone(route.trajectory, zone, field, target.teamAlliance);
 }

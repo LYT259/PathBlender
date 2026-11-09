@@ -37,6 +37,12 @@ export interface CollisionInterval {
    * ran without tolerance.
    */
   kind: 'planned' | 'tolerance';
+  /**
+   * The pair's team relationship (red book #14): same team alliance
+   * (unset ≡ blue) = 'teammates' (队友相撞), different = 'opponents'
+   * (与对手交叠 — the counter-defense signal). Frame/view invariant.
+   */
+  relation: 'teammates' | 'opponents';
   /** Relative start shift of b vs a (seconds) that produced the closest approach. */
   offsetS: number;
   /** The tolerance the scan ran with, when tolerance-aware. */
@@ -151,20 +157,27 @@ export function detectCollisions(
             cur.offsetS = interval.offsetS;
           }
         } else {
-          if (cur) results.push(toCollision(cur, delta, a.trajectory.id, b.trajectory.id));
+          if (cur) results.push(toCollision(cur, delta, a, b));
           cur = { ...interval };
         }
       }
-      if (cur) results.push(toCollision(cur, delta, a.trajectory.id, b.trajectory.id));
+      if (cur) results.push(toCollision(cur, delta, a, b));
     }
   }
   return results.sort((x, y) => x.startT - y.startT);
 }
 
-function toCollision(raw: RawInterval, delta: number, aId: string, bId: string): CollisionInterval {
+function toCollision(
+  raw: RawInterval,
+  delta: number,
+  a: SessionTrajectory,
+  b: SessionTrajectory,
+): CollisionInterval {
+  const aTeam = a.teamAlliance ?? 'blue';
+  const bTeam = b.teamAlliance ?? 'blue';
   return {
-    aId,
-    bId,
+    aId: a.trajectory.id,
+    bId: b.trajectory.id,
     startT: raw.startT,
     endT: raw.endT,
     minCenterDistanceM: raw.minCenterDistanceM,
@@ -172,6 +185,7 @@ function toCollision(raw: RawInterval, delta: number, aId: string, bId: string):
     closestA: raw.closestA,
     closestB: raw.closestB,
     kind: raw.nominal ? 'planned' : 'tolerance',
+    relation: aTeam === bTeam ? 'teammates' : 'opponents',
     offsetS: raw.offsetS,
     toleranceS: delta > 0 ? delta : undefined,
   };

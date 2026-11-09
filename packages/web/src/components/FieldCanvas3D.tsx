@@ -15,6 +15,7 @@ import type { FieldPackage, SessionTrajectory } from '@pathblender/core';
 import {
   groupedActionsAt,
   chassisModules,
+  displayAlliance,
   robotVisualGeometry,
   samplePoseAt,
   sampleStateAt,
@@ -1388,7 +1389,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
     const st = sceneRef.current;
     if (!st) return;
     for (const { color, token } of st.themed) color.set(tokenColorHex(token, '#1c1c1e'));
-    for (const { robot, mesh } of st.heatmaps) (mesh.material as THREE.MeshBasicMaterial).color.set(heatmapColor(robot.trajectory.alliance, cssToken('--heatmap-blue', '#0a84ff'), cssToken('--heatmap-red', '#ff453a')));
+    for (const { robot, mesh } of st.heatmaps) (mesh.material as THREE.MeshBasicMaterial).color.set(heatmapColor(displayAlliance(robot), cssToken('--heatmap-blue', '#0a84ff'), cssToken('--heatmap-red', '#ff453a')));
     st.retintCube();
     st.dirty();
   }, [themeResolved]);
@@ -1583,7 +1584,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       // (2018 is gone). buildChassis3D scales the frame to the robot's
       // chassis rectangle, so file-sized robots still fit exactly.
       const frameSize: FrameSize = field.year === 2026 ? '27' : '30';
-      const chassis = buildChassis3D(vis, modules, bumperColor(r.trajectory.alliance), moduleTemplate, robotAnnotation(r.trajectory) || undefined, frameTemplates[frameSize] ?? null, st.renderer.capabilities.getMaxAnisotropy());
+      const chassis = buildChassis3D(vis, modules, bumperColor(displayAlliance(r)), moduleTemplate, robotAnnotation(r.trajectory) || undefined, frameTemplates[frameSize] ?? null, st.renderer.capabilities.getMaxAnisotropy());
       st.dynamic.add(chassis.group);
       st.rigs.push({
         root: chassis.group,
@@ -1665,7 +1666,7 @@ export const FieldCanvas3D = forwardRef<FieldCanvas3DHandle, Props>(function Fie
       labels={robots.map((robot) => ({
         id: robot.trajectory.id,
         identity: robotAnnotation(robot.trajectory) || robot.trajectory.name,
-        alliance: robot.trajectory.alliance,
+        alliance: displayAlliance(robot),
         pathColor: robot.color,
         actions: groupedActionsAt(robot, currentT),
       }))} />

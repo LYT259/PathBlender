@@ -9,6 +9,7 @@ import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App';
+import { confirmAllianceChoice } from './alliance-confirm';
 import { ThemeProvider } from '../src/theme';
 
 const SAMPLES = resolve(__dirname, '../../../samples');
@@ -49,6 +50,7 @@ describe('App import → fusion → collision flow', () => {
       const route = file('ghostauto/straight_run.ghostauto');
       Object.defineProperty(route, 'webkitRelativePath', { value: 'routes/straight_run.ghostauto' });
       dropFiles([route]);
+      await confirmAllianceChoice();
       await waitFor(() => expect(timeout.mock.calls.some((call) => call[1] === 2500)).toBe(true));
       const index = timeout.mock.calls.findIndex((call) => call[1] === 2500);
       const timer = timeout.mock.results[index].value;

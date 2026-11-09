@@ -5,6 +5,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { parsePathFile, parseRobotProfile } from '@pathblender/core';
 import { App } from '../src/App';
+import { confirmAllianceChoice } from './alliance-confirm';
 import { saveText } from '../src/download';
 import { robotsFromImport } from '../src/route-library';
 import type { LibraryProfile, LibraryRoute } from '../src/route-library';
@@ -19,7 +20,12 @@ function folderFile(relPath: string, text = TRAJ) {
   Object.defineProperty(file, 'webkitRelativePath', { value: relPath });
   return file;
 }
-function importFolder(files: File[]) { fireEvent.drop(window, { dataTransfer: { files } }); }
+async function importFolder(files: File[]) {
+  fireEvent.drop(window, { dataTransfer: { files } });
+  if (files.some((file) => ((file as File & { webkitRelativePath?: string }).webkitRelativePath ?? '').includes('/'))) {
+    await confirmAllianceChoice();
+  }
+}
 const rows = () => [...document.querySelectorAll('.robot-library-row')] as HTMLElement[];
 const rowFor = (label: string) => rows().find((r) => r.textContent?.includes(label))!;
 /** The composer is the one route-selection surface since the left picker left. */
@@ -55,7 +61,7 @@ describe('team folder workflow', () => {
 
   it('automatically places one team on the first naturally sorted route, without a library panel', async () => {
     render(<App />);
-    importFolder([folderFile('254/L10.traj'), folderFile('254/L2.traj'), folderFile('254/L1.traj'),
+    await importFolder([folderFile('254/L10.traj'), folderFile('254/L2.traj'), folderFile('254/L1.traj'),
       folderFile('254/settings.json', SETTINGS), folderFile('254/image.png', 'not a route')]);
     await waitFor(() => expect(rows()).toHaveLength(1));
     // The composer is the route surface: its library lists the whole folder in
@@ -72,9 +78,9 @@ describe('team folder workflow', () => {
 
   it('adds a second team even when both selected folders have the same name, without mixing their routes', async () => {
     render(<App />);
-    importFolder([folderFile('choreo/L3.traj'), folderFile('choreo/L1.traj')]);
+    await importFolder([folderFile('choreo/L3.traj'), folderFile('choreo/L1.traj')]);
     await waitFor(() => expect(rows()).toHaveLength(1));
-    importFolder([folderFile('choreo/L5.traj'), folderFile('choreo/L2.traj')]);
+    await importFolder([folderFile('choreo/L5.traj'), folderFile('choreo/L2.traj')]);
     await waitFor(() => expect(rows()).toHaveLength(2));
     await openComposer('AAAAAA');
     expect(sourceLabels()).toEqual(['L1', 'L3']);
@@ -90,7 +96,7 @@ describe('team folder workflow', () => {
 
   it('keeps the display name, alliance and route choices when switching and reopening a saved session', async () => {
     render(<App />);
-    importFolder([folderFile('choreo/L3.traj'), folderFile('choreo/L1.traj')]);
+    await importFolder([folderFile('choreo/L3.traj'), folderFile('choreo/L1.traj')]);
     await waitFor(() => expect(rows()).toHaveLength(1));
     fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
     const input = screen.getByRole('textbox', { name: 'Edit display name' });
@@ -114,7 +120,7 @@ describe('team folder workflow', () => {
     expect(stored.robots[0].routeOptions).toHaveLength(2);
     expect(stored.robots[0].sequence.segments).toHaveLength(1);
     expect(stored.robots[0].sequence.segments[0].routeId).toBe(stored.robots[0].routeOptions[1].id);
-    importFolder([new File([text], 'restored.pb')]);
+    await importFolder([new File([text], 'restored.pb')]);
     await waitFor(() => expect(rows()).toHaveLength(1));
     // The restored route choice survives the round trip, and switching back works.
     await openComposer('254');
@@ -127,7 +133,7 @@ describe('team folder workflow', () => {
 
   it('does not erase a placeholder when the editor is opened and left unchanged', async () => {
     render(<App />);
-    importFolder([folderFile('choreo/L1.traj')]);
+    await importFolder([folderFile('choreo/L1.traj')]);
     await screen.findByText('AAAAAA', { selector: '.robot-name' });
     fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
     fireEvent.blur(screen.getByRole('textbox', { name: 'Edit display name' }));
@@ -136,7 +142,7 @@ describe('team folder workflow', () => {
 
   it('clearing the display name restores the original placeholder identity everywhere', async () => {
     render(<App />);
-    importFolder([folderFile('choreo/L1.traj')]);
+    await importFolder([folderFile('choreo/L1.traj')]);
     await screen.findByText('AAAAAA', { selector: '.robot-name' });
     fireEvent.click(screen.getByRole('button', { name: 'Edit display name' }));
     const input = screen.getByRole('textbox', { name: 'Edit display name' });
@@ -151,9 +157,9 @@ describe('team folder workflow', () => {
 
   it('keeps each team\'s configuration choices separate', async () => {
     render(<App />);
-    importFolder([folderFile('254/straight.ghostauto', GHOST), folderFile('254/settings.json', SETTINGS)]);
+    await importFolder([folderFile('254/straight.ghostauto', GHOST), folderFile('254/settings.json', SETTINGS)]);
     await screen.findByText('254', { selector: '.robot-name' });
-    importFolder([folderFile('1678/L1.traj'), folderFile('1678/settings.json', SETTINGS)]);
+    await importFolder([folderFile('1678/L1.traj'), folderFile('1678/settings.json', SETTINGS)]);
     await screen.findByText('1678', { selector: '.robot-name' });
     fireEvent.click(screen.getByText('254', { selector: '.robot-name' }));
     const profileSelect = await screen.findByRole('combobox', { name: 'Robot profile' });
@@ -168,7 +174,7 @@ describe('team folder workflow', () => {
 
   it('keeps ordinary file imports placing one robot per file', async () => {
     render(<App />);
-    importFolder([new File([TRAJ], 'L1.traj'), new File([TRAJ], 'L2.traj')]);
+    await importFolder([new File([TRAJ], 'L1.traj'), new File([TRAJ], 'L2.traj')]);
     await waitFor(() => expect(rows()).toHaveLength(2));
     expect(screen.getByText('AAAAAA', { selector: '.robot-name' })).toBeInTheDocument();
     expect(screen.getByText('BBBBBB', { selector: '.robot-name' })).toBeInTheDocument();
@@ -176,7 +182,7 @@ describe('team folder workflow', () => {
 
   it('still reports malformed route files while using the valid routes', async () => {
     render(<App />);
-    importFolder([folderFile('choreo/broken.traj', '{}'), folderFile('choreo/L1.traj')]);
+    await importFolder([folderFile('choreo/broken.traj', '{}'), folderFile('choreo/L1.traj')]);
     await screen.findByText('AAAAAA', { selector: '.robot-name' });
     expect(document.querySelector('.import-banner')).toHaveTextContent('broken.traj');
     await openComposer('AAAAAA');
@@ -185,7 +191,7 @@ describe('team folder workflow', () => {
 
   it('restores independent route choices after restarting the app', async () => {
     const app = render(<App />);
-    importFolder([folderFile('choreo/L1.traj'), folderFile('choreo/L3.traj')]);
+    await importFolder([folderFile('choreo/L1.traj'), folderFile('choreo/L3.traj')]);
     await waitFor(() => expect(rows()).toHaveLength(1));
     await openComposer('AAAAAA');
     replaceOnlyClip('L3');
@@ -202,7 +208,7 @@ describe('team folder workflow', () => {
 
   it('distinguishes duplicate filenames in subfolders', async () => {
     render(<App />);
-    importFolder([folderFile('choreo/left/L1.traj'), folderFile('choreo/right/L1.traj')]);
+    await importFolder([folderFile('choreo/left/L1.traj'), folderFile('choreo/right/L1.traj')]);
     await waitFor(() => expect(rows()).toHaveLength(1));
     await openComposer('AAAAAA');
     expect(sourceLabels()).toEqual(['left/L1.traj', 'right/L1.traj']);
@@ -216,7 +222,7 @@ describe('team folder workflow', () => {
       for (const point of ['anchor', 'prevControl', 'nextControl']) if (waypoint[point]) waypoint[point].x += 2;
     }
     const auto = JSON.stringify({ version: '2025.0', command: { type: 'path', data: { pathName: 'Pickup' } }, resetOdom: true });
-    importFolder([folderFile('alpha/paths/Pickup.path', original), folderFile('alpha/autos/Run.auto', auto),
+    await importFolder([folderFile('alpha/paths/Pickup.path', original), folderFile('alpha/autos/Run.auto', auto),
       folderFile('beta/paths/Pickup.path', JSON.stringify(shifted)), folderFile('beta/autos/Run.auto', auto)]);
     await waitFor(() => expect(rows()).toHaveLength(2));
     await openComposer('AAAAAA');
@@ -229,7 +235,8 @@ describe('team folder workflow', () => {
     fireEvent.keyDown(window, { key: 's', metaKey: true });
     const stored = JSON.parse(vi.mocked(saveText).mock.calls.at(-1)![2]);
     expect(stored.robots[1].samples[0].x - stored.robots[0].samples[0].x).toBeCloseTo(2, 6);
-    importFolder([folderFile('gamma/Run.auto', auto)]);
+    // gamma's auto can't resolve its path — an error banner, never the alliance dialog.
+    fireEvent.drop(window, { dataTransfer: { files: [folderFile('gamma/Run.auto', auto)] } });
     await waitFor(() => expect(document.querySelector('.import-banner')).toHaveTextContent('Run.auto'));
     expect(rows()).toHaveLength(2);
   });
@@ -237,7 +244,7 @@ describe('team folder workflow', () => {
 
   it('retains an explicitly selected robot profile when changing the active route', async () => {
     render(<App />);
-    importFolder([folderFile('254/L1.traj'), folderFile('254/L3.traj'), folderFile('254/settings.json', SETTINGS)]);
+    await importFolder([folderFile('254/L1.traj'), folderFile('254/L3.traj'), folderFile('254/settings.json', SETTINGS)]);
     await waitFor(() => expect(rows()).toHaveLength(1));
     fireEvent.click(screen.getByText('254', { selector: '.robot-name' }));
     const profiles = screen.getByRole('combobox', { name: 'Robot profile' });
@@ -258,13 +265,13 @@ describe('team folder workflow', () => {
   it('keeps a loose Choreo project picked before its path, without assigning it to another folder', async () => {
     render(<App />);
     const project = readFileSync(resolve(samples, 'choreo/choreo.chor'), 'utf8');
-    importFolder([new File([project], 'choreo.chor')]);
+    await importFolder([new File([project], 'choreo.chor')]);
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('1 robot profile'));
-    importFolder([folderFile('folder/L1.traj')]);
+    await importFolder([folderFile('folder/L1.traj')]);
     await screen.findByText('AAAAAA', { selector: '.robot-name' });
     fireEvent.click(screen.getByText('AAAAAA', { selector: '.robot-name' }));
     expect(screen.queryByRole('combobox', { name: 'Robot profile' })).not.toBeInTheDocument();
-    importFolder([new File([TRAJ], 'L2.traj')]);
+    await importFolder([new File([TRAJ], 'L2.traj')]);
     await screen.findByText('BBBBBB', { selector: '.robot-name' });
     fireEvent.click(screen.getByText('BBBBBB', { selector: '.robot-name' }));
     expect(comboboxValues(screen.getByRole('combobox', { name: 'Robot profile' }))).toHaveLength(2);
