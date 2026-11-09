@@ -44,3 +44,28 @@ PR/合并由控制器统一交付。
 
 - 不动 beta/stable；不 push、不建 PR、不合并（控制器交付）。
 - 不顺手改 cask 其余 stanza（audit 如再报新问题，回到本文件追加计划再改）。
+
+## 第二轮追加（同日：真实 `brew audit --online` + livecheck 实测后）
+
+audit 在线检查又报 3 项，其中 2 项需要生成器再改：
+
+1. **`verified` URL 参数已被 Homebrew 7 弃用**（livecheck 运行时直接
+   Warning："Calling the `verified` parameter in the `url` stanza is
+   deprecated"）——生成器删除该参数（URL 主机与 homepage 同源，本就不需要）。
+2. **livecheck 版本不一致是硬错误且无豁免**（`cask/audit.rb:942` 直接
+   `add_error`）：默认策略只取 stable（0.1.9），且本仓存在历史异常 tag
+   `v0.2.0-beta.1`（2026-09-16 发布后版本号回落 0.1.10 线），任何按版本
+   比较的 livecheck 都会误报。修复：livecheck 用 `url :homepage` +
+   `strategy :git` + regex 钉在版本入参的 `\d+\.\d+\.\d+` 线
+   （`/^v0\.1\.10(?:-beta\.\d+)?$/i`，由版本入参推导、升版自动跟随；
+   忽略 0.2.0 异常 tag，跟踪同线新 beta/stable）。
+3. **pre-release 检查用 tap 级官方豁免**（非生成器问题）：
+   `utils/shared_audits.rb:318` 支持 tap 的
+   `audit_exceptions/github_prerelease_allowlist.json`，值 `any` =
+   允许该 cask prerelease/stable 混发——beta 渠道 tap 的正规声明方式。
+
+TDD：契约测试先改（新增 not.toContain('verified')、livecheck 三行、
+钉线 regex 断言，2 failed RED）→ 生成器实现 → 9/9 GREEN（worktree 内
+`npx vitest run test/gen-homebrew-cask.test.ts`）。真实验证在验收任务侧
+对本地 tap 重跑 `ruby -c`/`brew style`/`brew livecheck`/`brew audit
+--online`。

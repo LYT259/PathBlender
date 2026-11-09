@@ -24,15 +24,21 @@ if (!/^[0-9a-f]{64}$/.test(sha256)) {
   console.error(`invalid sha256 (expected 64 lowercase hex chars): ${sha256}`);
   process.exit(1);
 }
+const versionLine = version.match(/^(\d+\.\d+\.\d+)/)[1].replace(/\./g, '\\.');
 console.log(`cask "pathblender" do
   version "${version}"
   sha256 "${sha256}"
 
-  url "https://github.com/LYT259/pathblender/releases/download/v#{version}/PathBlender_#{version}_universal.dmg",
-      verified: "github.com/LYT259/pathblender/"
+  url "https://github.com/LYT259/pathblender/releases/download/v#{version}/PathBlender_#{version}_universal.dmg"
   name "PathBlender"
   desc "Free, open-source FRC autonomous path viewer"
   homepage "https://github.com/LYT259/pathblender"
+
+  livecheck do
+    url :homepage
+    strategy :git
+    regex(/^v${versionLine}(?:-beta\\.\\d+)?$/i)
+  end
 
   depends_on macos: :ventura
 
