@@ -911,7 +911,7 @@ html[dir='rtl'] .robot-team-input {
    opponents — same recipe as the tolerance badge, alliance data colors. */
 .relation-badge {
   font-style: normal; font-weight: 500; font-size: 11px;
-  border-radius: 8px; padding: 0 7px; margin-left: 6px; vertical-align: 1px;
+  border-radius: 8px; padding: 0 7px; margin-inline-start: 6px; vertical-align: 1px;
 }
 .relation-badge.is-teammates { background: var(--seg-blue-bg); color: var(--seg-blue-fg); }
 .relation-badge.is-opponents { background: var(--seg-red-bg); color: var(--seg-red-fg); }
