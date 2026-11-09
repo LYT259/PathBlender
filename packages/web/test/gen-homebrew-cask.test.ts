@@ -26,7 +26,7 @@ describe('homebrew cask generator', () => {
       'livecheck do',
       'url :homepage',
       'strategy :git',
-      'regex(/^v0\\.1\\.10(?:-beta\\.\\d+)?$/i)',
+      'regex(/^v(0\\.1\\.10(?:-beta\\.\\d+)?)$/i)',
       'depends_on macos: :ventura',
       'app "PathBlender.app"',
     ]) expect(out).toContain(s);
@@ -37,7 +37,7 @@ describe('homebrew cask generator', () => {
 
   it('pins the livecheck regex to the input version line (prerelease channel)', () => {
     const out = run(['0.1.10-beta.17', SHA]);
-    expect(out).toContain('regex(/^v0\\.1\\.10(?:-beta\\.\\d+)?$/i)');
+    expect(out).toContain('regex(/^v(0\\.1\\.10(?:-beta\\.\\d+)?)$/i)');
   });
 
   it.each([

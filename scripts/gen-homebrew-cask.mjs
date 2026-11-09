@@ -37,7 +37,7 @@ console.log(`cask "pathblender" do
   livecheck do
     url :homepage
     strategy :git
-    regex(/^v${versionLine}(?:-beta\\.\\d+)?$/i)
+    regex(/^v(${versionLine}(?:-beta\\.\\d+)?)$/i)
   end
 
   depends_on macos: :ventura

@@ -69,3 +69,13 @@ TDD：契约测试先改（新增 not.toContain('verified')、livecheck 三行�
 `npx vitest run test/gen-homebrew-cask.test.ts`）。真实验证在验收任务侧
 对本地 tap 重跑 `ruby -c`/`brew style`/`brew livecheck`/`brew audit
 --online`。
+
+## 第三轮追加（同日：livecheck 实测捕获组要求）
+
+带钉线 regex 的 cask 过了 `brew style`（0 违规），但 `brew livecheck`
+报 "Unable to get versions"。Homebrew Git 策略源码注释明确要求 regex
+「use a capture group around the version text」——`/^v0\.1\.10…$/` 无
+捕获组取不到版本。修正为捕获组包住版本线：
+`regex(/^v(0\.1\.10(?:-beta\.\d+)?)$/i)`（对 tag `v0.1.10-beta.17`
+捕获 `0.1.10-beta.17`，与 cask version 同形）。TDD 同前：断言先改
+（2 failed RED）→ 实现 → 9/9 GREEN。
