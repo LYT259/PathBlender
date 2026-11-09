@@ -15,7 +15,7 @@
  * the source-level contract.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const SRC = resolve(__dirname, '../src');
@@ -43,7 +43,9 @@ function extractDeclarations(): Decl[] {
   const decls: Decl[] = [];
   const physical = /^(margin|padding)-(left|right)$|^border(-(top|bottom))?(-(left|right))(-[a-z-]+)?$|^(left|right)$|^(float|clear)$|^(direction|unicode-bidi)$|^translate$|^transform$|^inset$/;
   for (const path of cssFiles(SRC)) {
-    const file = path.slice(SRC.length + 1);
+    // Forward-slash keys keep PHYSICAL_ALLOWLIST matching identical on every
+    // platform (Windows readdir yields backslash-separated paths).
+    const file = relative(SRC, path).split(sep).join('/');
     const lines = readFileSync(path, 'utf-8').split('\n');
     let selector = '';
     for (let i = 0; i < lines.length; i++) {
