@@ -1,9 +1,9 @@
 .prefs-modal.preferences-dialog { width: 780px; height: 540px; padding: 0; overflow: hidden; }
-.preferences-panel { display: grid; grid-template-columns: 176px minmax(0, 1fr); width: 100%; height: 100%; min-height: 0; text-align: left; color: var(--fg); }
-.preferences-sidebar { padding: 26px 12px; background: var(--material); border-right: 1px solid var(--border); }
+.preferences-panel { display: grid; grid-template-columns: 176px minmax(0, 1fr); width: 100%; height: 100%; min-height: 0; text-align: start; color: var(--fg); }
+.preferences-sidebar { padding: 26px 12px; background: var(--material); border-inline-end: 1px solid var(--border); }
 .preferences-sidebar h1 { font-size: 13px; line-height: 1.5; font-weight: 600; margin: 0 12px 22px; color: var(--fg-dim); }
 .preferences-nav { display: flex; flex-direction: column; gap: 4px; }
-.preferences-nav button { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 8px 12px; border: 0; border-radius: 7px; background: transparent; color: var(--fg); font: inherit; cursor: pointer; text-align: left; }
+.preferences-nav button { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 8px 12px; border: 0; border-radius: 7px; background: transparent; color: var(--fg); font: inherit; cursor: pointer; text-align: start; }
 .preferences-nav button:hover { background: var(--hover); }
 .preferences-nav button[aria-selected='true'] { background: var(--accent); color: var(--accent-fg); font-weight: 500; }
 .preferences-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg); }
@@ -59,7 +59,7 @@
 .preferences-history p { font-size: 12px; line-height: 1.7; margin: 8px 0 0; color: var(--fg-dim); overflow-wrap: anywhere; }
 .preferences-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg); flex-shrink: 0; }
 .preferences-save-hint { font-size: 11px; color: var(--fg-dim); }
-.preferences-footer > div { display: flex; gap: 8px; margin-left: auto; }
+.preferences-footer > div { display: flex; gap: 8px; margin-inline-start: auto; }
 .prefs-only.preferences-window { position: relative; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 /* Desktop settings window: the overlay title bar floats the traffic lights
    over this transparent drag layer — no divider line, no title text. The
@@ -75,7 +75,7 @@
 .preferences-window .preferences-main { padding-top: 44px; }
 @media (max-width: 640px) {
   .preferences-panel { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-  .preferences-sidebar { padding: 14px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .preferences-sidebar { padding: 14px; border-inline-end: 0; border-bottom: 1px solid var(--border); }
   /* Stacked layout: the sidebar itself is the top strip, so it alone keeps
      the traffic-light clearance; the main area needs none. */
   .preferences-window .preferences-main { padding-top: 0; }
@@ -160,9 +160,9 @@
 .preferences-checkbox + .preferences-checkbox { border-top: 1px solid var(--border); }
 .preferences-checkbox > span { font-weight: 400; }
 .preferences-checkbox input { appearance: none; position: relative; flex: none; width: 28px; height: 17px; margin: 0; border: 0; border-radius: 9px; background: var(--seg-bg); box-shadow: inset 0 0 0 1px var(--border); cursor: pointer; }
-.preferences-checkbox input::after { content: ''; position: absolute; width: 13px; height: 13px; top: 2px; left: 2px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px #0003; }
+.preferences-checkbox input::after { content: ''; position: absolute; width: 13px; height: 13px; top: 2px; inset-inline-start: 2px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px #0003; }
 .preferences-checkbox input:checked { background: var(--accent); }
-.preferences-checkbox input:checked::after { left: 13px; }
+.preferences-checkbox input:checked::after { inset-inline-start: 13px; }
 :where(html.kbd-nav) .preferences-checkbox input:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 3px; }
 /* No top padding here: the setting row above already carries 14px of bottom
    padding, and this block lost its border-top divider (7e55bcf) — extra

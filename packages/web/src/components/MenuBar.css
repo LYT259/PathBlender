@@ -44,7 +44,7 @@
 .menu-panel {
   position: absolute;
   top: 100%;
-  left: 0;
+  inset-inline-start: 0;
   min-width: 230px;
   background: var(--bg-panel);
   border: 1px solid var(--border);
@@ -62,7 +62,7 @@
 
 .menu-sub-panel {
   top: -4px;
-  left: calc(100% - 2px);
+  inset-inline-start: calc(100% - 2px);
   max-height: 320px;
 }
 
@@ -77,7 +77,7 @@
   align-items: center;
   gap: 6px;
   width: 100%;
-  text-align: left;
+  text-align: start;
   padding: 5px 10px;
   border-radius: 5px;
   cursor: pointer;
@@ -116,6 +116,9 @@
   color: inherit;
   opacity: 0.7;
 }
+/* In RTL the submenu flies out leftward (inset-inline-start above), so the
+   › arrow mirrors with it. */
+.menu-sub-arrow:dir(rtl) { transform: scaleX(-1); }
 
 .menu-separator {
   height: 1px;

@@ -21,7 +21,7 @@
   min-width: 168px;
   max-width: 220px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-inline-end: 4px;
 }
 
 .wpilog-file {
@@ -34,7 +34,7 @@
   border-radius: 6px;
   background: transparent;
   cursor: pointer;
-  text-align: left;
+  text-align: start;
 }
 
 .wpilog-file.active {
@@ -152,7 +152,7 @@
 
 .wpilog-logwarnings ul {
   margin: 4px 0 0;
-  padding-left: 18px;
+  padding-inline-start: 18px;
   font-size: 12px;
   opacity: 0.8;
 }
