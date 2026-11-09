@@ -235,15 +235,47 @@ describe('public plan documents privacy hygiene', () => {
 });
 
 describe('not-verified environment registry', () => {
-  it('releasing.md pins the three unverified items with explicit markers', () => {
+  it('releasing.md pins the remaining unverified items with explicit markers', () => {
     const releasing = readFileSync(resolve(ROOT, 'docs/releasing.md'), 'utf8');
     for (const s of [
       '未验环境清单',
       '无浏览器裸机冒烟',
       'NOT performed — no clean Windows 10 (without WebView2), macOS or Linux machine is available',
       'SmartScreen / Gatekeeper prompt screenshots: NOT captured',
-      'homebrew tap repo: not yet created',
     ]) expect(releasing).toContain(s);
+    // The Homebrew tap went live 2026-11-09 (LYT259/homebrew-tap@e1455129)
+    // and passed brew style / audit --online / livecheck plus a real isolated
+    // install; the registry must no longer list it as unverified.
+    expect(releasing).not.toContain('not yet created');
+    expect(releasing).not.toContain('尚未对实际 tap 运行过');
+    expect(releasing).not.toContain('当前无本地 tap');
+    expect(releasing).not.toContain('以下三项');
+  });
+});
+
+describe('homebrew tap distribution', () => {
+  it('releasing.md records the published tap and its 2026-11-09 verification', () => {
+    const releasing = readFileSync(resolve(ROOT, 'docs/releasing.md'), 'utf8');
+    for (const s of [
+      'LYT259/homebrew-tap',
+      'e1455129',
+      'brew style',
+      'brew audit --cask --online',
+      'brew livecheck',
+      '2026-11-09',
+      'brew trust LYT259/tap',
+    ]) expect(releasing).toContain(s);
+  });
+  it('both user guides give the Homebrew 7 install steps with Releases as the direct download', () => {
+    for (const file of ['docs/user-guide.en.md', 'docs/user-guide.zh.md']) {
+      const md = readFileSync(resolve(ROOT, file), 'utf8');
+      for (const s of [
+        'brew tap LYT259/tap',
+        'brew trust LYT259/tap',
+        'brew install --cask LYT259/tap/pathblender',
+        'https://github.com/LYT259/pathblender/releases',
+      ]) expect(md, file).toContain(s);
+    }
   });
 });
 

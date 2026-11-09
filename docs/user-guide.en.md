@@ -270,6 +270,21 @@ sudo dnf install ./PathBlender-0.1.9-1.x86_64.rpm
 In-app updates use the AppImage; DEB/RPM installs update by installing
 the new package over the old one.
 
+### Homebrew (macOS)
+
+On macOS you can also install with [Homebrew](https://brew.sh)
+(Homebrew 7 or newer):
+
+```bash
+brew tap LYT259/tap
+brew trust LYT259/tap   # one-time: trust this third-party tap
+brew install --cask LYT259/tap/pathblender
+```
+
+The cask installs the same universal build as the Releases DMG. You can
+always download the DMG directly from
+[GitHub Releases](https://github.com/LYT259/pathblender/releases) instead.
+
 ### First-launch security prompts
 
 - **macOS Gatekeeper** (the app is not Apple-developer-signed): the first

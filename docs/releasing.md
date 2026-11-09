@@ -62,11 +62,10 @@ Documentation-only PRs retain review and privacy checks but skip platform builds
 
 ## 未验环境清单 / Not-verified environment registry
 
-以下三项是当前环境**无法验证**的发布要求。任何后续会话在没有新证据前不得把任何一行读作「已通过」；补齐方式随行附上，供将来收口。
+以下两项是当前环境**无法验证**的发布要求。任何后续会话在没有新证据前不得把任何一行读作「已通过」；补齐方式随行附上，供将来收口。（原第 3 项 Homebrew tap 未创建已于 2026-11-09 收口：tap 已发布并全链路验证，见下方「Homebrew cask 发布」条目。）
 
 1. **无浏览器裸机冒烟 (spec §7.1)** — NOT performed — no clean Windows 10 (without WebView2), macOS or Linux machine is available. 收口方式：在断网的干净虚拟机/实机安装——offline 安装包必须零网络出站完成安装，且应用通过核心导入/回放/检查流程。CI 的 release-verify 证明的是 GitHub runner（自带 WebView2）上的匿名下载 + 安装 + 启动，不是本项。
 2. **SmartScreen / Gatekeeper prompt screenshots: NOT captured** — no physical Windows machine; CI runners show no prompt. zh/en 指南描述的是文档化步骤；真实机器产出截图之前，不得附带或宣称提示截图。
-3. **homebrew tap repo: not yet created** — cask 生成器已随仓库交付（`scripts/gen-homebrew-cask.mjs`）；`brew audit` / `brew style` / 实际安装均未对 `LYT259/homebrew-tap` 运行过，因为该仓库尚不存在（用户授权的外部步骤，见「GitHub（发布操作纪律）」节）。
 
 ## GitHub（发布操作纪律）
 
@@ -86,7 +85,7 @@ Documentation-only PRs retain review and privacy checks but skip platform builds
       ⑦ 核对 README 三语的「获取方式」链接与真实可达状态一致（补充 Windows 下载说明）；更新 feed / Release 资产对未认证用户转可达（无需改动——端点本就是 GitHub 公网 URL）；
       ⑧ 反馈渠道=GitHub Issues（转公开即活；README/指南/模板已指向 issues 链接）；Chief Delphi 发布帖由用户本人发（用户决定 2026-10-03）。
 
-- [ ] **Homebrew cask 发布（owner 授权的外部步骤）**：stable 发版后，如需经 Homebrew 分发——① 对已发布的 `PathBlender_<version>_universal.dmg` 计算 `shasum -a 256`；② 运行 `node scripts/gen-homebrew-cask.mjs <version> <sha256>` 生成 cask 正文；③ 以该输出在 `LYT259/homebrew-tap` 仓库创建/更新 `Casks/pathblender.rb`；用户随后 `brew install --cask LYT259/tap/pathblender` 安装。红线：task agent 不得在没有用户明确指令时创建、推送或发布 tap 仓库——本仓只提供生成器与契约测试（`scripts/gen-homebrew-cask.mjs` 零文件写入、零 git、零网络）；`brew audit` / `brew style` 与真实安装尚未对实际 tap 运行过（当前无本地 tap），按「未验环境清单」登记，不得写成已验证。
+- [ ] **Homebrew cask 发布（owner 授权的外部步骤）**：每次发版后，如需经 Homebrew 分发——① 对已发布的 `PathBlender_<version>_universal.dmg` 计算 `shasum -a 256`；② 运行 `node scripts/gen-homebrew-cask.mjs <version> <sha256>` 生成 cask 正文；③ 以该输出在 `LYT259/homebrew-tap` 仓库更新 `Casks/pathblender.rb`。tap 已于 2026-11-09 经用户授权创建并公开（https://github.com/LYT259/homebrew-tap ，单提交 `e1455129`：0.1.10-beta.17 cask + `audit_exceptions/github_prerelease_allowlist.json` 预发布豁免）；当日已对真实 tap 完成验证：`brew style --cask` 0 违规、`brew audit --cask --online` 通过、`brew livecheck` 钉线输出正确（0.1.10-beta.17）、隔离 appdir 真实安装 `brew install --cask` 成功（codesign strict 密封 OK、启动冒烟、卸载干净；Gatekeeper 首启弹窗路径未走，归上方「未验环境清单」第 2 项）。用户安装（Homebrew 7+）：`brew tap LYT259/tap` → `brew trust LYT259/tap`（信任第三方 tap，一次性）→ `brew install --cask LYT259/tap/pathblender`。红线不变：task agent 不得在没有用户明确指令时创建、推送或发布 tap 仓库（2026-11-09 创建属用户授权的验收操作）；本仓只提供生成器与契约测试（`scripts/gen-homebrew-cask.mjs` 零文件写入、零 git、零网络）。
 
 - [ ] 发布帖（Chief Delphi）中注明：PathPlanner 移植关系与 MIT 来源、Choreo 互操作定位、零上传承诺
 

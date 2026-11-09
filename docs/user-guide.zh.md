@@ -153,6 +153,19 @@ sudo dnf install ./PathBlender-0.1.9-1.x86_64.rpm
 
 应用内更新走 AppImage；DEB/RPM 安装的用户下载新包覆盖安装即可更新。
 
+### Homebrew（macOS）
+
+macOS 也可以用 [Homebrew](https://brew.sh)（Homebrew 7 及以上）安装：
+
+```bash
+brew tap LYT259/tap
+brew trust LYT259/tap   # 首次一次性：信任该第三方 tap
+brew install --cask LYT259/tap/pathblender
+```
+
+cask 安装的就是 Releases 页同一份 Universal 包；也可以随时直接从
+[GitHub Releases](https://github.com/LYT259/pathblender/releases) 下载 DMG。
+
 ### 首次启动的安全提示
 
 - **macOS Gatekeeper**（应用未经 Apple 开发者签名）：首次打开会被拦截。右键点按应用 → **打开** → **打开**，或到 系统设置 → 隐私与安全性 → 下拉到底 → **仍要打开**。macOS 会要求输入一次密码，整个过程约 30 秒，每台 Mac 只发生一次。
