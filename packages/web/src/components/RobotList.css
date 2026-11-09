@@ -4,10 +4,10 @@
 .robot-library-add, .robot-library-visibility { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 30px; height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--fg-dim); cursor: pointer; }
 .robot-library-add:hover, .robot-library-visibility:hover { background: var(--hover); color: var(--fg); }
 .robot-library-items { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 3px; }
-.robot-library-row { display: flex; align-items: center; border-radius: 8px; padding-right: 4px; border: 1px solid transparent; }
+.robot-library-row { display: flex; align-items: center; border-radius: 8px; padding-inline-end: 4px; border: 1px solid transparent; }
 .robot-library-row:hover { background: var(--hover); }
 .robot-library-row.is-selected { background: var(--accent-dim); border-color: var(--accent-dim); }
-.robot-library-select { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 9px; padding: 11px 7px 11px 10px; border: 0; border-radius: 7px; text-align: left; color: var(--fg); background: transparent; font: inherit; cursor: pointer; }
+.robot-library-select { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 9px; padding-block: 11px; padding-inline: 10px 7px; border: 0; border-radius: 7px; text-align: start; color: var(--fg); background: transparent; font: inherit; cursor: pointer; }
 .robot-library-select > .band-dot { margin-top: 5px; width: 7px; height: 7px; border-radius: 50%; }
 .robot-library-content { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
 .robot-library-name { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
@@ -41,7 +41,7 @@
 .robot-dimensions dt, .robot-dimensions label > span { font-size: 10.5px; color: var(--fg-dim); }
 .robot-dimensions dd { margin: 0; font-size: 14px; font-weight: 550; font-variant-numeric: tabular-nums; }
 .robot-inspector .robot-dimensions-editable input { width: 100%; background: var(--bg-panel); }
-.robot-inspector-warnings { margin: 12px 0 0; padding-left: 15px; color: var(--warn); font-size: 11px; line-height: 1.6; }
+.robot-inspector-warnings { margin: 12px 0 0; padding-inline-start: 15px; color: var(--warn); font-size: 11px; line-height: 1.6; }
 .robot-inspector-warnings li + li { margin-top: 5px; }
 
 /* Per-robot route picker: flip between imported autos without re-importing. */
@@ -60,7 +60,7 @@
 
 /* The editor occupies the name's position, with no duplicate team chip. */
 .robot-team-chip { width: 30px; align-self: flex-start; margin-top: 5px; }
-.robot-team-editor { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; padding: 7px 7px 7px 10px; }
+.robot-team-editor { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; padding-block: 7px; padding-inline: 10px 7px; }
 .robot-team-editor .band-dot { flex: none; width: 7px; height: 7px; }
 .robot-team-editor .robot-team-input { width: 100%; min-width: 0; flex: 1; font: inherit; font-size: 12.5px; text-align: start; padding-inline: 8px; }
 
@@ -72,7 +72,7 @@
 .robot-identity-cell { display: grid; grid-template-columns: minmax(0, max-content) 24px minmax(0, 1fr); align-items: start; flex: 1; min-width: 0; }
 .robot-identity-cell .robot-library-select { grid-column: 1; padding-bottom: 0; }
 .robot-identity-cell .robot-team-chip { grid-column: 2; }
-.robot-identity-cell > .robot-library-meta { grid-column: 1 / -1; margin: 5px 0 11px 26px; }
+.robot-identity-cell > .robot-library-meta { grid-column: 1 / -1; margin-block: 5px 11px; margin-inline-start: 26px; }
 .robot-identity-cell .robot-library-team { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Missing PathPlanner profile: the second row disappears after file selection. */
@@ -80,11 +80,11 @@
 .robot-library-row.needs-settings .robot-identity-cell { grid-column: 1; grid-row: 1; }
 .robot-library-row.needs-settings .route-picker { grid-column: 2; grid-row: 1; }
 .robot-library-row.needs-settings .robot-library-visibility { grid-column: 3; grid-row: 1; }
-.robot-settings-upload { grid-row: 2; grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0 7px 9px 10px; min-height: 30px; padding: 5px 9px; border: 1px solid color-mix(in srgb, var(--accent-text) 45%, var(--border)); border-radius: 5px; background: var(--accent-dim); color: var(--accent-text); font: inherit; font-size: 11px; font-weight: 550; cursor: pointer; }
+.robot-settings-upload { grid-row: 2; grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 7px; margin-block: 0 9px; margin-inline: 10px 7px; min-height: 30px; padding: 5px 9px; border: 1px solid color-mix(in srgb, var(--accent-text) 45%, var(--border)); border-radius: 5px; background: var(--accent-dim); color: var(--accent-text); font: inherit; font-size: 11px; font-weight: 550; cursor: pointer; }
 .robot-settings-upload:hover { border-color: var(--accent-text); }
 
 /* Team cards separate identity, route arrangement and missing-file action. */
-.robot-library .robot-library-row { display: grid; grid-template-columns: minmax(0, 1fr) 28px; gap: 0 2px; padding: 0 6px 8px 0; margin-bottom: 6px; border-color: var(--border); background: var(--bg-panel); cursor: pointer; }
+.robot-library .robot-library-row { display: grid; grid-template-columns: minmax(0, 1fr) 28px; gap: 0 2px; padding-block: 0 8px; margin-bottom: 6px; border-color: var(--border); background: var(--bg-panel); cursor: pointer; }
 .robot-library .robot-library-row.is-selected { background: var(--accent-dim); border-color: var(--accent-text); }
 :where(html.kbd-nav) .robot-library-row:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 /* Selecting is by TEAM, so the identity button's ring wraps the whole card,
@@ -96,10 +96,10 @@
 .robot-library-row:has(.robot-library-select.focus-silent) { outline: none !important; }
 .robot-library .robot-library-row .robot-identity-cell, .robot-library .robot-library-row .robot-team-editor { grid-column: 1; grid-row: 1; }
 .robot-library .robot-library-row .robot-library-visibility { grid-column: 2; grid-row: 1; align-self: start; margin-top: 6px; }
-.robot-arrange-button { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; gap: 7px; min-height: 30px; margin: 0 2px 0 10px; padding: 4px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--btn-bg); color: var(--fg); font: inherit; font-size: 11px; cursor: pointer; }
+.robot-arrange-button { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; gap: 7px; min-height: 30px; margin-block: 0; margin-inline: 10px 2px; padding: 4px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--btn-bg); color: var(--fg); font: inherit; font-size: 11px; cursor: pointer; }
 .robot-arrange-button .ui-icon { color: var(--accent-text); }
 .robot-arrange-button:hover:not(:disabled) { border-color: var(--accent-text); background: var(--bg-panel); }
-.robot-library .robot-settings-upload { grid-column: 1 / -1; grid-row: 4; min-height: 32px; margin: 7px 2px 0 10px; padding: 6px 9px; border: 1px solid transparent; border-radius: 7px; background: var(--accent); color: var(--accent-fg); font-size: 12px; font-weight: 500; }
+.robot-library .robot-settings-upload { grid-column: 1 / -1; grid-row: 4; min-height: 32px; margin-block: 7px 0; margin-inline: 10px 2px; padding: 6px 9px; border: 1px solid transparent; border-radius: 7px; background: var(--accent); color: var(--accent-fg); font-size: 12px; font-weight: 500; }
 .robot-library .robot-settings-upload:hover { background: var(--accent); filter: brightness(1.05); }
 .robot-settings-upload:active { opacity: .85; }
 

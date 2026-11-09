@@ -449,7 +449,7 @@ input[type="number"], input[type="text"] {
   background: var(--badge-err-bg); border-bottom: 1px solid var(--danger);
   padding: 8px 16px; font-size: 13px;
 }
-.import-banner ul { margin: 4px 0 0; padding-left: 18px; }
+.import-banner ul { margin: 4px 0 0; padding-inline-start: 18px; }
 .import-banner code { color: var(--badge-err-fg); }
 
 /* ---------- main 3-column ---------- */
@@ -463,7 +463,7 @@ input[type="number"], input[type="text"] {
 
 /* robot list — Choreo-style compact expandable rows */
 .robot-list {
-  border-right: 1px solid var(--border); padding: 10px 8px;
+  border-inline-end: 1px solid var(--border); padding: 10px 8px;
   overflow-y: auto; background: var(--material);
 }
 .robot-list h2, .conflict-panel h2 {
@@ -539,7 +539,7 @@ input[type="number"], input[type="text"] {
 
 /* conflict panel */
 .conflict-panel {
-  border-left: 1px solid var(--border); padding: 12px;
+  border-inline-start: 1px solid var(--border); padding: 12px;
   overflow-y: auto; background: var(--material);
 }
 .conflict-count { font-size: 13px; padding: 1px 8px; border-radius: 10px; }
@@ -571,7 +571,7 @@ input[type="number"], input[type="text"] {
 .tolerance-badge {
   font-style: normal; font-weight: 500; font-size: 11px;
   background: var(--warn-bg, #f5d890); color: var(--warn-fg, #5c4400);
-  border-radius: 8px; padding: 0 7px; margin-left: 6px; vertical-align: 1px;
+  border-radius: 8px; padding: 0 7px; margin-inline-start: 6px; vertical-align: 1px;
 }
 .conflict-item.is-tolerance .conflict-jump { border-left-color: var(--warn, #c98a00); }
 
@@ -637,7 +637,7 @@ input[type="number"], input[type="text"] {
 
 /* custom field calibration panel */
 .cf-panel {
-  position: fixed; top: 56px; left: 280px; z-index: 20;
+  position: fixed; top: 56px; inset-inline-start: 280px; z-index: 20;
   background: var(--bg-panel); border: 1px solid var(--border);
   border-radius: 10px; padding: 14px; width: 280px;
   box-shadow: 0 8px 30px var(--shadow);
