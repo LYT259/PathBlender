@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { resolveSequence, type SessionTrajectory, type TrajectoryGap } from '@pathblender/core';
+import { resolveSequence, displayAlliance, type SessionTrajectory, type TrajectoryGap } from '@pathblender/core';
 import { groundTrailData, TRAIL_HEIGHT_M } from './ground-trail';
 import { worldToRenderVec3 } from './field3d-frame';
 import { heatmapColor } from './robot-identity';
@@ -121,7 +121,7 @@ export function createGroundHeatmap(
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
   const material = new THREE.MeshBasicMaterial({
-    color: heatmapColor(robot.trajectory.alliance, blue, red),
+    color: heatmapColor(displayAlliance(robot), blue, red),
     transparent: true,
     opacity: 0.06,
     depthWrite: false,

@@ -4,6 +4,8 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { REBUILT_2026, type SessionTrajectory } from '@pathblender/core';
 import { App } from '../src/App';
+import { confirmAllianceChoice } from './alliance-confirm';
+
 import { saveText } from '../src/download';
 
 vi.mock('../src/download', () => ({ saveText: vi.fn(), copyText: vi.fn() }));
@@ -57,6 +59,7 @@ describe('whole-session alliance control', () => {
     Object.defineProperty(a, 'webkitRelativePath', { value: 'choreo/Straight.ghostauto' });
     Object.defineProperty(b, 'webkitRelativePath', { value: 'choreo/Side.ghostauto' });
     drop([a, b]);
+    await confirmAllianceChoice();
     await waitFor(() => expect(fieldRobots()).toHaveLength(3));
     // Route replacement now lives in the composer; the alliance must survive it.
     const folderRow = [...document.querySelectorAll('.robot-library-row')]
@@ -93,6 +96,7 @@ describe('whole-session alliance control', () => {
     const file = pathFile('straight_run.ghostauto');
     Object.defineProperty(file, 'webkitRelativePath', { value: 'autos/straight_run.ghostauto' });
     drop([file]);
+    await confirmAllianceChoice();
     await screen.findByText('0001', { selector: '.robot-name' });
     expect(fieldRobots()).toHaveLength(4);
     const mine = () => fieldRobots().find((r) => r.trajectory.teamNumber === '0001')!;

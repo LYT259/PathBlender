@@ -10,6 +10,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { REBUILT_2026, DEFAULT_GEOMETRY, makeSession, serializeSession, type SessionTrajectory } from '@pathblender/core';
 import { App } from '../src/App';
+import { confirmAllianceChoice } from './alliance-confirm';
 import { saveText } from '../src/download';
 
 vi.mock('../src/download', () => ({ saveText: vi.fn(), copyText: vi.fn() }));
@@ -70,6 +71,7 @@ describe('per-team left/right mirror', () => {
       return file;
     });
     drop(files);
+    await confirmAllianceChoice();
     await waitFor(() => expect(rows()).toHaveLength(1));
     // Compose two routes in the composer, save, then mirror the team.
     fireEvent.click(within(rows()[0]!).getByRole('button', { name: 'Arrange timeline' }));

@@ -171,6 +171,8 @@ export {
 } from './session';
 export type { SessionFileV1, SessionTrajectory, SessionRouteOption, SessionProfileOption, SessionSerializeOptions } from './session';
 
+export { displayAlliance, flipTrajectoryForTeam, setTeamAlliance } from './team-alliance';
+
 export {
   LIBRARY_CHAIN_TOLERANCES,
   SEQUENCE_JOIN_TOLERANCES,

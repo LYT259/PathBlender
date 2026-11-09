@@ -12,6 +12,7 @@ import { Icon } from './components/Icon';
 import { Dialog } from './components/Dialog';
 import type { TeamOrderUI } from './components/TeamOrderUI';
 import { GuideDialog } from './components/GuideDialog';
+import { TeamAllianceDialog } from './components/TeamAllianceDialog';
 import { PreferencesPanel } from './components/PreferencesPanel';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { UsageTip, useUsageTip } from './components/UsageTip';
@@ -34,8 +35,10 @@ import {
   REBUILT_2026,
   serializeSession,
   sessionDuration,
+  setTeamAlliance,
   hasEmptyArrangement,
   withFieldVariant,
+  type Alliance,
   type FieldArtStyle,
   withSeasonGeometry,
 } from '@pathblender/core';
@@ -396,7 +399,7 @@ function AppBody() {
       const target = previewRobotId
         ? sourceRobots.find((robot) => robot.trajectory.id === previewRobotId)
         : sourceRobots.find((robot) => robot.trajectory.id === selectedId) ?? sourceRobots[0];
-      return previewDimsPath(target, previewSource, field.startZone)
+      return previewDimsPath(target, previewSource, field.startZone, field)
         ? new Set([previewSource.trajectory.id])
         : new Set<string>();
     }
@@ -484,6 +487,10 @@ function AppBody() {
   // Pending .hoot logs queued for the desktop converter flow (HOOT import,
   // 2026-11). Task 7 only fills it; Task 8 mounts the dialog that drains it.
   const [hootQueue, setHootQueue] = useState<Array<{ file: File; relPath: string }> | null>(null);
+  // Parsed-but-uncommitted folder import awaiting the per-team alliance
+  // choice (red book #14): the dialog lists one row per team folder and the
+  // commit applies each choice through the import layer.
+  const [teamAllianceQueue, setTeamAllianceQueue] = useState<{ routes: LibraryRoute[]; profiles: LibraryProfile[] } | null>(null);
 
   const importFiles = useCallback(async (files: FileList | File[] | IncomingFile[], opts?: { fromFolder?: boolean }) => {
     exampleRequest.current += 1;
@@ -601,10 +608,18 @@ function AppBody() {
       });
     }
     if (!fromFolder) pathTextsRef.current = batch;
+    // Folder imports stop at the per-team alliance dialog (red book #14):
+    // nothing commits until the user confirms each team's side. Cancel
+    // drops the whole batch; the defaults reproduce today's import exactly.
+    if (addedRoutes.length > 0 && fromFolder) {
+      setTeamAllianceQueue({ routes: addedRoutes, profiles: addedProfiles });
+      setErrors(nextErrors);
+      return;
+    }
     if (addedRoutes.length > 0) {
-      const profiles = fromFolder ? addedProfiles : [...pendingProfilesRef.current, ...addedProfiles];
-      const additions = robotsFromImport(addedRoutes, profiles, fromFolder, sourceRobots.length);
-      if (!fromFolder) pendingProfilesRef.current = [];
+      const profiles = [...pendingProfilesRef.current, ...addedProfiles];
+      const additions = robotsFromImport(addedRoutes, profiles, false, sourceRobots.length);
+      pendingProfilesRef.current = [];
       setRobots((prev) => withTeamPlaceholders(withColorblindPalette([...prev, ...additions], colorblindRef.current)));
       setSelectedId(additions[0]!.trajectory.id);
       setInspectorMode('checks');
@@ -678,6 +693,32 @@ function AppBody() {
       ]);
     }
   }, []);
+
+  /**
+   * Confirmed per-team alliance choices commit the folder import: one robot
+   * slot per team folder, `setTeamAlliance` applies the choice through the
+   * import layer (red = authored-from-the-red-wall, geometry lands on the
+   * red half), and the explicit flag rides the slot for classification,
+   * display and later correction on the card.
+   */
+  const commitTeamAllianceImport = useCallback((choices: Record<string, Alliance>) => {
+    const queue = teamAllianceQueue;
+    if (!queue) return;
+    setTeamAllianceQueue(null);
+    const rootOf = (route: LibraryRoute) => (route.relPath.includes('/') ? route.relPath.split('/')[0]! : route.id);
+    const additions = robotsFromImport(queue.routes, queue.profiles, true, sourceRobots.length)
+      .map((robot) => setTeamAlliance(robot, choices[rootOf(robot.routeOptions![0]!)] ?? 'blue', field));
+    setRobots((prev) => withTeamPlaceholders(withColorblindPalette([...prev, ...additions], colorblindRef.current)));
+    setSelectedId(additions[0]!.trajectory.id);
+    setInspectorMode('checks');
+    flash(tr('library.imported', { n: queue.routes.length, m: queue.profiles.length }));
+  }, [teamAllianceQueue, sourceRobots.length, field, setRobots, tr, flash]);
+
+  /** Card-side correction (red book #14): one history step, geometry flips
+   *  relative to the slot's current flag — never twice. */
+  const setRobotTeamAlliance = useCallback((id: string, alliance: Alliance) => {
+    setRobots((prev) => prev.map((robot) => (robot.trajectory.id === id ? setTeamAlliance(robot, alliance, field) : robot)));
+  }, [field, setRobots]);
 
   /**
    * Folder picker result, with every silent exit removed. Before this handler
@@ -1665,7 +1706,7 @@ function AppBody() {
       <div className="app-col">
         <ImportBanner errors={errors} onDismiss={() => setErrors([])} />
         <main className={`app-body workspace-body ${hasFirstCheck ? 'is-first-check' : ''} ${leftOpen ? 'with-paths' : ''} ${rightOpen ? 'with-inspector' : ''}`}>
-          {leftOpen && <RobotList teamOrder={teamOrder} robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={openSequenceFor} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} renameSignal={renameSignal} header={
+          {leftOpen && <RobotList teamOrder={teamOrder} robots={robots} conflicts={conflicts} selectedId={selectedRobot?.trajectory.id ?? null} onSelect={selectRobot} onImport={openImport} onUpdate={updateRobot} onArrange={openSequenceFor} onSelectSettings={(id, file) => { void applySettingsFile(id, file); }} onRemoveFromMenu={removeSlot} onMirror={toggleMirror} onMirrorButtonClick={toggleMirror} mirroredIds={mirroredIds} onSetTeamAlliance={setRobotTeamAlliance} renameSignal={renameSignal} header={
             hasExample && !tour.dismissed ? <><OnboardingTasks done={tour.done} expanded={tour.expanded} onToggle={tour.toggle} onDismiss={tour.dismiss} />{Object.values(tour.done).every(Boolean) && <ProjectSupport dismissible />}</> : undefined
           } />}
           <section className="workspace-stage" aria-label={tr('canvas.view')}>
@@ -1756,7 +1797,7 @@ function AppBody() {
         </main>
         {/* Playback spans the full workspace, below both side panels. */}
 {hasRobots && !composerOpen && <footer className="app-footer"><Timeline teamOrder={teamOrder} composeAction={<button ref={composeButtonRef} className="btn small" aria-keyshortcuts="e" onClick={() => { const id = (selectedRobot ?? robots[0])?.trajectory.id; if (id) openSequenceFor(id); }}>{tr('sequence.arrange')}</button>} robots={robots} autoPeriodS={field.autoPeriodS} duration={duration} visibleDuration={visibleDuration} playback={playback} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} onEditTeam={openSequenceFor} onJump={jumpToIssue} guide={showPlayTip && <UsageTip text={tr('onboarding.play')} onDismiss={dismissPlayTip} />} /></footer>}
-        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} startZone={field.startZone} startRegions={field.startRegions} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={(routeId, robotId) => { setPreviewRouteId(routeId); setPreviewRobotId(routeId ? robotId : undefined); }} onDragPreview={onComposerDragPreview} joins={sequenceJoins} playback={playback} playbackEndS={playbackEndS} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} onJump={jumpToSeam} />}
+        {hasRobots && <SequenceTimelineComposer robots={sourceRobots} selectedId={selectedRobot?.trajectory.id} onSelect={selectRobot} autoPeriodS={field.autoPeriodS} startZone={field.startZone} field={field} startRegions={field.startRegions} open={composerOpen} onClose={closeComposer} onChange={editSequence} onPreviewRoute={(routeId, robotId) => { setPreviewRouteId(routeId); setPreviewRobotId(routeId ? robotId : undefined); }} onDragPreview={onComposerDragPreview} joins={sequenceJoins} playback={playback} playbackEndS={playbackEndS} playbackRange={playbackRange} onPlaybackRangeChange={setPlaybackRange} onJump={jumpToSeam} />}
 
       {cfOpen && <CustomFieldPanel
         open
@@ -1771,6 +1812,15 @@ function AppBody() {
       {showPrefs && <Dialog title={tr('prefs.title')} onClose={() => setShowPrefs(false)} className="preferences-dialog">
         <PreferencesPanel desktop={IS_DESKTOP} onClose={() => setShowPrefs(false)} onColorblindSaved={setColorblind} />
       </Dialog>}
+      {teamAllianceQueue && (
+        <TeamAllianceDialog
+          teams={[...new Set(teamAllianceQueue.routes.map((route) =>
+            route.relPath.includes('/') ? route.relPath.split('/')[0]! : route.id,
+          ))].map((key) => ({ key, label: key }))}
+          onApply={commitTeamAllianceImport}
+          onCancel={() => setTeamAllianceQueue(null)}
+        />
+      )}
       {wpilogQueue && wpilogQueue.length > 0 && (
         <WpilogImportDialog
           files={wpilogQueue}

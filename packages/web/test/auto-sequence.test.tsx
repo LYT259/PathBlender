@@ -14,6 +14,7 @@ import {
 } from '@pathblender/core';
 import { applySequenceSegments, sequenceViewFor, type AutoSequenceSegment } from '../src/auto-sequence-state';
 import { App } from '../src/App';
+import { confirmAllianceChoice } from './alliance-confirm';
 import { saveText } from '../src/download';
 
 vi.mock('../src/download', () => ({ saveText: vi.fn(async () => true) }));
@@ -142,8 +143,11 @@ describe('auto sequence state', () => {
 });
 
 describe('auto sequence in the workspace', () => {
-  function dropFiles(files: File[]) {
+  async function dropFiles(files: File[]) {
     fireEvent.drop(window, { dataTransfer: { files } });
+    if (files.some((file) => ((file as File & { webkitRelativePath?: string }).webkitRelativePath ?? '').includes('/'))) {
+      await confirmAllianceChoice();
+    }
   }
   const openComposer = () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Arrange timeline' })[0]!);
@@ -165,7 +169,7 @@ describe('auto sequence in the workspace', () => {
       Object.defineProperty(file, 'webkitRelativePath', { value: `team/${name}.ghostauto` });
       return file;
     });
-    dropFiles(files);
+    await dropFiles(files);
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
     openComposer();
     fireEvent.click(screen.getByRole('button', { name: /^B: / }));
@@ -200,7 +204,7 @@ describe('auto sequence in the workspace', () => {
       Object.defineProperty(file, 'webkitRelativePath', { value: `team/${name}.ghostauto` });
       return file;
     });
-    dropFiles(files);
+    await dropFiles(files);
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
     openComposer(); fireEvent.click(screen.getByRole('button', { name: /^B: / }));
     fireEvent.pointerDown(document.body);
@@ -221,7 +225,7 @@ describe('auto sequence in the workspace', () => {
       Object.defineProperty(file, 'webkitRelativePath', { value: `team/${name}.ghostauto` });
       return file;
     });
-    dropFiles(files);
+    await dropFiles(files);
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
     fireEvent.click(screen.getByRole('button', { name: 'Play', exact: true }));
     // Open WITHOUT the helper's slider scrub (scrubbing is a transport act
@@ -240,7 +244,7 @@ describe('auto sequence in the workspace', () => {
       Object.defineProperty(file, 'webkitRelativePath', { value: `${name}.ghostauto` });
       return file;
     });
-    dropFiles(files);
+    await dropFiles(files);
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
     openComposer();
     await waitFor(() => expect(document.querySelector('.sequence-composer')).not.toBeNull());

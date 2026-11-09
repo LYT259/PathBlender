@@ -40,6 +40,12 @@ interface RobotListProps {
   /** Always-visible card button; App wires it to the same toggle as the context menu. */
   onMirrorButtonClick?: (robotId: string) => void;
   mirroredIds?: ReadonlySet<string>;
+  /**
+   * Per-team original alliance (red book #14): App commits through
+   * `setTeamAlliance` so the geometry flips exactly once relative to the
+   * slot's current flag. Absent = the session predates the feature.
+   */
+  onSetTeamAlliance?: (robotId: string, alliance: 'blue' | 'red') => void;
   /** Bumped by Edit ▸ Rename Selected Team (menu bar): opens the inline editor. */
   renameSignal?: number;
   /** Optional slot above the list heading — the example session's onboarding card. */
@@ -114,7 +120,7 @@ function TeamNumberCell({ robot, onUpdate, editing, onStartEdit, onEndEdit, chil
 }
 
 /** Selection lives in the workspace so the list, field and inspector agree. */
-export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, onMirrorButtonClick, mirroredIds, renameSignal, header, teamOrder }: RobotListProps) {  const { t, n, lang } = useI18n();
+export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, onUpdate, onSelectSettings, onArrange, onRemoveFromMenu, onMirror, onMirrorButtonClick, mirroredIds, onSetTeamAlliance, renameSignal, header, teamOrder }: RobotListProps) {  const { t, n, lang } = useI18n();
   const reorder = useTeamOrderUI(teamOrder);
   const settingsInput = useRef<HTMLInputElement>(null);
   const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
@@ -207,7 +213,24 @@ export function RobotList({ robots, conflicts, selectedId, onSelect, onImport, o
                 {needsSettings && onSelectSettings && <button type="button" className="robot-settings-upload" onClick={() => { settingsRobot.current = trajectory.id; settingsInput.current?.click(); }}>
                   <Icon name="import" size={15} />{t('robots.uploadSettings')}
                 </button>}
-                <div className="robot-library-status"><span className="robot-library-meta">
+                <div className="robot-library-status">
+                  {onSetTeamAlliance && (
+                    <fieldset className="robot-team-alliance">
+                      <legend>{t('robots.teamAlliance', { name: robotIdentity(trajectory) })}</legend>
+                      {(['blue', 'red'] as const).map((side) => (
+                        <label key={side} className={`team-alliance-option-${side}`}>
+                          <input
+                            type="radio"
+                            name={`robot-team-alliance-${trajectory.id}`}
+                            checked={robot.teamAlliance === side}
+                            onChange={() => onSetTeamAlliance(trajectory.id, side)}
+                          />
+                          {t(side === 'blue' ? 'robots.blue' : 'robots.red')}
+                        </label>
+                      ))}
+                    </fieldset>
+                  )}
+                  <span className="robot-library-meta">
                   <span>{sourceLabel(trajectory.source)}</span><span>{n(shownDuration, 2)} s</span>
                   {composed && <span>{t('sequence.count', { n: robot.sequence!.segments.length })}</span>}
                   {hit && <span className="robot-library-conflict">{t('robots.collision')}</span>}

@@ -147,3 +147,14 @@
 .robot-library-settings-missing { flex: 0 1 auto; min-width: 0; max-width: 100%; color: var(--danger); font-weight: 600; overflow-wrap: anywhere; }
 
 .robot-identity-cell .robot-library-select { padding-inline: 10px 7px; }
+
+/* Per-team original alliance (red book #14): native visible radios with
+   persistent text labels — keyboard-operable by construction. The legend
+   is visually hidden but native; colors reuse the alliance data tokens. */
+.robot-team-alliance { display: inline-flex; align-items: center; gap: 8px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.robot-team-alliance legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.robot-team-alliance label { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--fg-dim); cursor: pointer; }
+.robot-team-alliance label:has(input:checked) { color: var(--fg); font-weight: 600; }
+.robot-team-alliance input { margin: 0; }
+.robot-team-alliance .team-alliance-option-blue input { accent-color: var(--seg-blue-fg); }
+.robot-team-alliance .team-alliance-option-red input { accent-color: var(--seg-red-fg); }

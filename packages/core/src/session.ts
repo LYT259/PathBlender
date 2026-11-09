@@ -4,7 +4,7 @@
  * start delay (what-if adjustment that never mutates the parsed file).
  */
 
-import type { Pose2d, RobotGeometry, Trajectory, TrajectorySample } from './types';
+import type { Alliance, Pose2d, RobotGeometry, Trajectory, TrajectorySample } from './types';
 import { sampleTrajectory } from './math';
 import { TIMING_SOURCE_VALUES } from './types';
 import { makeCustomField } from './field';
@@ -40,6 +40,16 @@ export interface SessionTrajectory {
    * inherit it because every view path reads the slot flag.
    */
   mirrored?: boolean;
+  /**
+   * The team's own alliance (red book #14/§6.1): `red` marks an opponent
+   * team whose file was authored from the red wall — the import layer
+   * normalized its geometry into the blue world frame, and this flag drives
+   * teammates/opponents classification, display color and start-zone
+   * judging. Undefined = unset ≡ blue (legacy sessions; display then
+   * follows the session view exactly as before). Orthogonal to the global
+   * view switch: never read by the frame derivation.
+   */
+  teamAlliance?: Alliance;
   /** Alternatives belong to this team slot, including after save/restore. */
   routeOptions?: SessionRouteOption[];
   profileOptions?: SessionProfileOption[];
@@ -219,6 +229,8 @@ export interface SessionFileV1 {
     routeId?: string;
     /** Per-team left/right mirror (optional since 2026-10-05; absent = off). */
     mirrored?: boolean;
+    /** Team's own alliance (red book #14; absent = unset ≡ blue). */
+    teamAlliance?: Alliance;
     routeOptions?: SessionRouteOption[];
     profileOptions?: SessionProfileOption[];
     profileId?: string;
@@ -304,6 +316,7 @@ export function serializeSession(
       visible: st.visible,
       routeId: st.routeId,
       mirrored: st.mirrored === true ? true : undefined,
+      teamAlliance: st.teamAlliance,
       // `undefined` drops the key from the JSON entirely.
       routeOptions: options.omitRouteOptions?.(st) ? undefined : st.routeOptions,
       profileOptions: st.profileOptions,
@@ -383,6 +396,7 @@ export function deserializeSession(text: string): {
       visible: r.visible,
       routeId: r.routeId,
       mirrored: r.mirrored === true ? true : undefined,
+      teamAlliance: r.teamAlliance === 'red' || r.teamAlliance === 'blue' ? r.teamAlliance : undefined,
       routeOptions: readRouteOptions(r.routeOptions),
       profileOptions: readProfileOptions(r.profileOptions),
       profileId: typeof r.profileId === 'string' ? r.profileId : undefined,

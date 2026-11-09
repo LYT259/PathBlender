@@ -14,6 +14,7 @@ import { resolve } from 'node:path';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App';
+import { confirmAllianceChoice } from './alliance-confirm';
 
 const mode = vi.hoisted(() => ({ viewerOnly: false }));
 
@@ -64,6 +65,7 @@ describe('website build folder import', () => {
       writable: true,
     });
     fireEvent.change(input);
+    await confirmAllianceChoice();
     // One team named after the folder root, the other route kept in the library.
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(1));
     expect(document.querySelector('.import-banner')).toBeNull();
@@ -80,6 +82,7 @@ describe('website build folder import', () => {
         ],
       },
     });
+    await confirmAllianceChoice();
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row').length).toBeGreaterThan(0));
     expect(document.querySelector('.import-banner')).toBeNull();
   });

@@ -1,6 +1,6 @@
 import { SelectControl } from './SelectControl';
 import { Fragment, useEffect, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type PointerEvent } from 'react';
-import { routeConnectsAfter, routeStartRegion, LIBRARY_CHAIN_TOLERANCES, startsInAllianceZone, type RouteContinuity, type SequenceJoinIssue, type SessionRouteOption, type SessionTrajectory, type StartRegionClass, type StartZoneRect } from '@pathblender/core';
+import { routeConnectsAfter, routeStartRegion, LIBRARY_CHAIN_TOLERANCES, startsInAllianceZone, type FieldPackage, type RouteContinuity, type SequenceJoinIssue, type SessionRouteOption, type SessionTrajectory, type StartRegionClass, type StartZoneRect } from '@pathblender/core';
 import { sequenceViewFor, type AutoSequenceSegment } from '../auto-sequence-state';
 import { boundedClipStart, canPlaceClip, clipGaps, clipsFor, placeClip, sameClipLayout, segmentsFromClips, type TimelineClip } from '../sequence-timeline-clips';
 import { robotIdentity } from '../robot-identity';
@@ -31,6 +31,9 @@ interface Props {
    * leg is pose-gated instead. Undefined = the season defines no region
    * and the first route stays ungated (2022 today). */
   startZone?: StartZoneRect[];
+  /** Field dimensions for team-aware zone judging (red book #14): a red
+   *  team's legal start region is the 180° flip of the blue rects. */
+  field?: Pick<FieldPackage, 'lengthM' | 'widthM'>;
   /** Named start-position classes for the "group by start" library order;
    *  seasons without them hide the toggle (always alphabetical). */
   startRegions?: readonly StartRegionClass[];
@@ -78,7 +81,7 @@ const clampToAxis = (t: number, axisS: number) => Math.min(axisS, Math.max(0, t)
 
 /** Pointer capture works across WebKit and mouse/touch/pen, without relying
  * on custom HTML drag payloads. A gesture is one undoable operation. */
-export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, startZone, startRegions, open, onClose, onChange, onPreviewRoute, onDragPreview, joins = [], playback, playbackEndS, playbackRange = 'full', onPlaybackRangeChange, onJump }: Props) {
+export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPeriodS, startZone, field, startRegions, open, onClose, onChange, onPreviewRoute, onDragPreview, joins = [], playback, playbackEndS, playbackRange = 'full', onPlaybackRangeChange, onJump }: Props) {
   const { t, n, lang } = useI18n();
   const [unit] = useLengthUnit();
   const [selected, setSelected] = useState<{ robotId: string; clipId: string } | null>(null);
@@ -162,8 +165,11 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
     : undefined;
   for (const route of active?.routes ?? []) {
     const overAuto = route.trajectory.durationS > autoPeriodS;
+    // Team-aware first-leg zoning (red book #14): a red team's legal region
+    // is the flipped one, judged through the same pose flip as the field.
+    const teamAlliance = active?.robot.teamAlliance;
     const outOfZone = zone !== undefined
-      && !startsInAllianceZone(route.trajectory, zone);
+      && !startsInAllianceZone(route.trajectory, zone, field, teamAlliance);
     // Driveable-chain gate (user 2026-10-08): LIBRARY_CHAIN_TOLERANCES
     // answers "can the robot drive there"; the seam badges still grade the
     // join itself at the strict SEQUENCE_JOIN_TOLERANCES.
@@ -173,8 +179,8 @@ export function SequenceTimelineComposer({ robots, selectedId, onSelect, autoPer
       blocked: occupied || route.trajectory.durationS <= 0 || overAuto || outOfZone || (continuity ? !continuity.connects : false),
       outOfZone: outOfZone || undefined,
       continuity,
-      region: startZone !== undefined && startsInAllianceZone(route.trajectory, startZone)
-        ? routeStartRegion(route.trajectory, startRegions) || undefined
+      region: startZone !== undefined && startsInAllianceZone(route.trajectory, startZone, field, teamAlliance)
+        ? routeStartRegion(route.trajectory, startRegions, field, teamAlliance) || undefined
         : undefined,
     });
   }

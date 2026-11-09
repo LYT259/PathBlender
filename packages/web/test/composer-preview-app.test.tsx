@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionTrajectory } from '@pathblender/core';
 import { App } from '../src/App';
+import { confirmAllianceChoice } from './alliance-confirm';
 vi.mock('../src/components/FieldCanvas', async () => {
   const { forwardRef } = await import('react');
   return { FieldCanvas: forwardRef((props: { robots: SessionTrajectory[]; currentT: number }, _ref) => <div data-testid="field">{JSON.stringify(props)}</div>) };
@@ -36,6 +37,7 @@ describe('composer hover preview in the real app', () => {
       Object.defineProperty(file, 'webkitRelativePath', { value: `${name}.ghostauto` }); return file;
     });
     fireEvent.drop(window, { dataTransfer: { files } });
+    await confirmAllianceChoice();
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
     fireEvent.doubleClick(document.querySelector('.timeline-activity')!);
     fireEvent.change(screen.getByRole('slider', { name: 'Playback position' }), { target: { value: '9' } });
@@ -60,6 +62,7 @@ describe('composer hover preview in the real app', () => {
       Object.defineProperty(file, 'webkitRelativePath', { value: `${name}.ghostauto` }); return file;
     });
     fireEvent.drop(window, { dataTransfer: { files } });
+    await confirmAllianceChoice();
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
     fireEvent.doubleClick(document.querySelector('.timeline-activity')!);
     await waitFor(() => expect(document.querySelector('.sequence-composer')).not.toBeNull());
@@ -95,6 +98,7 @@ describe('composer hover preview in the real app', () => {
       Object.defineProperty(file, 'webkitRelativePath', { value: `${name}.ghostauto` }); return file;
     });
     fireEvent.drop(window, { dataTransfer: { files } });
+    await confirmAllianceChoice();
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
     fireEvent.doubleClick(document.querySelector('.timeline-activity')!);
     await waitFor(() => expect(document.querySelector('.sequence-composer')).not.toBeNull());
@@ -121,6 +125,7 @@ describe('composer hover preview in the real app', () => {
       Object.defineProperty(file, 'webkitRelativePath', { value: `${name}.ghostauto` }); return file;
     });
     fireEvent.drop(window, { dataTransfer: { files } });
+    await confirmAllianceChoice();
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
     expect(field().robots).toHaveLength(2);
     // Both imports carry no team digits, so both rows read #0001 — select
@@ -150,6 +155,7 @@ describe('composer drag what-if in the real app (user 2026-10-11)', () => {
       Object.defineProperty(file, 'webkitRelativePath', { value: `${name}.ghostauto` }); return file;
     });
     fireEvent.drop(window, { dataTransfer: { files } });
+    await confirmAllianceChoice();
     await waitFor(() => expect(document.querySelectorAll('.robot-library-row')).toHaveLength(2));
   };
   const openComposer = async () => {

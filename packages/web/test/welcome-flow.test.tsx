@@ -5,6 +5,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { makeSession, parsePathFile, serializeSession } from '@pathblender/core';
 import { App } from '../src/App';
+import { confirmAllianceChoice } from './alliance-confirm';
 import { en } from '../src/i18n/en';
 import { engagementEnglish } from '../src/engagement-copy';
 import { expectComboboxValue } from './combobox';
@@ -304,6 +305,7 @@ describe('welcome flow', () => {
     const route = new File([sampleText], 'straight_run.ghostauto');
     Object.defineProperty(route, 'webkitRelativePath', { value: 'routes/straight_run.ghostauto' });
     fireEvent.drop(window, { dataTransfer: { files: [route] } });
+    await confirmAllianceChoice();
     await screen.findByText('0001', { selector: '.robot-name' });
     expect(document.querySelectorAll('.robot-library-row')).toHaveLength(4);
     expect(screen.getByText('8814', { selector: '.robot-name' })).toBeInTheDocument();

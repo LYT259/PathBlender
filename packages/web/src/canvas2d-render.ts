@@ -22,6 +22,7 @@ import type {
 } from '@pathblender/core';
 import {
   chassisModules,
+  displayAlliance,
   fieldImageWorldRect,
   moduleBaseYaw,
   resolveSequence,
@@ -279,7 +280,8 @@ export function renderFieldFrame(ctx: CanvasRenderingContext2D, p: FieldFramePar
     ctx.globalAlpha = 0.06;
     for (const r of robots) {
       // Alliance tint: blue keeps the accent, red pairs with the theme red.
-      ctx.fillStyle = heatmapColor(r.trajectory.alliance, cssVar('--heatmap-blue', '#0a84ff'), cssVar('--heatmap-red', '#ff453a'));
+      // Per-team alliances paint each robot with its OWN side (red book #14).
+      ctx.fillStyle = heatmapColor(displayAlliance(r), cssVar('--heatmap-blue', '#0a84ff'), cssVar('--heatmap-red', '#ff453a'));
       // Composed robots contribute every segment; legacy robots their one route.
       const segmentSamples = pathSegments(r);
       const stride = Math.max(1, Math.ceil(segmentSamples.length / 120));
@@ -491,7 +493,7 @@ function drawRobot(
   const W = outer.widthM * scale;
   const ox = outer.offsetX * scale;
   const oy = outer.offsetY * scale;
-  ctx.strokeStyle = collided ? '#ff3b30' : outOfBounds ? '#ffa726' : bumperColor(r.trajectory.alliance);
+  ctx.strokeStyle = collided ? '#ff3b30' : outOfBounds ? '#ffa726' : bumperColor(displayAlliance(r));
   ctx.lineWidth = collided || outOfBounds ? 3 : 2;
   // Only the perimeter band carries the alliance color — the base plate
   // inside stays transparent so the field artwork shows through (user
@@ -499,7 +501,7 @@ function drawRobot(
   // no seams anywhere (same user request, second pass): the outer square
   // minus the inner square, punched with the even-odd rule.
   const bd = Math.min(vis.bumperDepthM * scale, L / 2, W / 2);
-  ctx.fillStyle = bumperColor(r.trajectory.alliance);
+  ctx.fillStyle = bumperColor(displayAlliance(r));
   ctx.beginPath();
   ctx.rect(ox - L / 2, -oy - W / 2, L, W);
   ctx.rect(ox - L / 2 + bd, -oy - W / 2 + bd, L - 2 * bd, W - 2 * bd);
@@ -621,7 +623,7 @@ function drawRobot(
     border: cssVar('--border', 'rgba(0, 0, 0, 0.10)'),
     foreground: cssVar('--fg', '#181617'),
     dim: cssVar('--fg-dim', '#8e8e93'),
-    alliance: cssVar(r.trajectory.alliance === 'red' ? '--seg-red-fg' : '--seg-blue-fg', bumperColor(r.trajectory.alliance)),
+    alliance: cssVar(displayAlliance(r) === 'red' ? '--seg-red-fg' : '--seg-blue-fg', bumperColor(displayAlliance(r))),
     path: r.color,
   };
   const leader = leaderGeometry(anchor, rect);

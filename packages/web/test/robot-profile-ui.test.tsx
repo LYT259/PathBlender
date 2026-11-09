@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyProfileToRobot, makeSession, parseGhostAuto, parsePathFile, parseRobotProfile, type SessionTrajectory } from '@pathblender/core';
 import { I18nProvider } from '../src/i18n';
 import { App } from '../src/App';
+import { confirmAllianceChoice } from './alliance-confirm';
 import { saveText } from '../src/download';
 import { applyUploadedProfile, inspectorWarnings } from '../src/robot-profile-ui';
 import { comboboxValues, openCombobox } from './combobox';
@@ -164,7 +165,10 @@ describe('unified application entries (Task 6)', () => {
     Object.defineProperty(file, 'webkitRelativePath', { value: relPath });
     return file;
   }
-  const dropFolder = (files: File[]) => fireEvent.drop(window, { dataTransfer: { files } });
+  const dropFolder = async (files: File[]) => {
+    fireEvent.drop(window, { dataTransfer: { files } });
+    await confirmAllianceChoice();
+  };
 
   it('upload and select entries produce identical application', () => {
     const robot = constrainedRobot();
@@ -187,7 +191,7 @@ describe('unified application entries (Task 6)', () => {
     // Two profiles in the folder → no automatic pick at import, so this test
     // isolates the select entry itself (a single-profile folder would let the
     // import-time application mask a select-only regression).
-    dropFolder([
+    await dropFolder([
       folderFile('254/paths/Pickup.path', constrainedText),
       folderFile('254/paths/Score.path', scoreText),
       folderFile('254/autos/Example Auto.auto', autoText),
