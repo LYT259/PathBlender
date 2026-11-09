@@ -59,16 +59,29 @@ jobs:
       # actions/deploy-pages occasionally dies in syncing_files on the Pages
       # platform side (run 42205751060: 600 s timeout, deployment cancelled).
       # One delayed retry; the failed attempt's log stays as evidence.
+      #
+      # attempt 1 carries continue-on-error so its failure does not sink the
+      # job before the retry can run (failure() would never fire otherwise,
+      # and a step-level failure cannot be cleared later). The retry keys on
+      # steps.deploy1.outcome — NOT failure(), which a continue-on-error step
+      # never raises. The closing gate turns "both attempts failed" back into
+      # a real job failure so verify's needs.deploy.result check rejects it.
       - name: Deploy viewer (attempt 1)
         id: deploy1
+        continue-on-error: true
         uses: actions/deploy-pages@v4
       - name: Wait before the retry
-        if: failure()
+        if: steps.deploy1.outcome != 'success'
         run: sleep 30
       - name: Deploy viewer (retry)
         id: deploy2
-        if: failure()
+        if: steps.deploy1.outcome != 'success'
         uses: actions/deploy-pages@v4
+      - name: Fail the deployment unless an attempt succeeded
+        if: steps.deploy1.outcome != 'success' && steps.deploy2.outcome != 'success'
+        run: |
+          echo "::error::both Pages deploy attempts failed (attempt 1: ${{ steps.deploy1.outcome }}, retry: ${{ steps.deploy2.outcome }})"
+          exit 1
   deploy-cloudflare:
     needs: build
     if: github.event.repository.private == false
