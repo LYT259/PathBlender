@@ -56,10 +56,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsSL --retry 3 "https://github.com/$GITHUB_REPOSITORY/releases/latest/download/latest-beta.json" -o feed.json
+          if ! curl -fsSL --retry 3 "https://github.com/$GITHUB_REPOSITORY/releases/latest/download/latest-beta.json" -o feed.json; then
+            echo "::error::failed to download latest-beta.json from the live feed"
+            exit 1
+          fi
           node -e '
             const fs = require("fs");
-            const feed = JSON.parse(fs.readFileSync("feed.json", "utf8"));
+            let feed;
+            try {
+              feed = JSON.parse(fs.readFileSync("feed.json", "utf8"));
+            } catch (e) {
+              console.error("::error::latest-beta.json is not valid JSON: " + e.message);
+              process.exit(1);
+            }
             const win = feed.platforms && feed.platforms["windows-x86_64"];
             if (!win || !win.url || !(win.signature || "").length) {
               console.error("::error::feed has no signed windows-x86_64 entry");
@@ -74,7 +83,11 @@ jobs:
           echo "FROM version to install first:      $FROM_VERSION"
           node -e '
             const num = (s) => s.split("-")[0].split(".").map(Number);
-            const pre = (s) => s.split("-")[1] || "";
+            // The prerelease is EVERYTHING after the first hyphen: hyphens
+            // are legal inside alphanumeric identifiers (semver §9), so
+            // splitting on every hyphen truncates "beta.9-a" to "beta.9"
+            // and misreads a real update as a downgrade.
+            const pre = (s) => { const i = s.indexOf("-"); return i === -1 ? "" : s.slice(i + 1); };
             // semver §11: prerelease precedence compares dot-separated
             // identifiers — numeric ones as NUMBERS (beta.9 < beta.10),
             // numeric below alphanumeric, and a longer set above its prefix.
@@ -271,7 +284,8 @@ jobs:
             # The channel picker is a role="combobox" <button>: UIA may
             # expose only ExpandCollapse for it — Expand opens the list.
             if ($El.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$pat)) { $pat.Expand(); return }
-            throw ("element not invokable: " + $El.Current.Name)
+            Write-Host ("::error::element not invokable: " + $El.Current.Name)
+            exit 1
           }
 
           $main = Wait-Window "PathBlender" 30
@@ -309,11 +323,15 @@ jobs:
           # checks the live feed and installs on its own. Give that up to
           # 150s (feed fetch + download); after 30s also work the prefs
           # two-step fallback so a quiet broadcast still gets exercised.
+          # Takeover is detected by the OLD pid exiting — a fast installer
+          # can exit the old app and start the new one between two polls,
+          # so an "all same-name processes gone" check would never fire and
+          # would keep clicking a prefs window that no longer exists.
           $flow = ""
           $watch = [System.Diagnostics.Stopwatch]::StartNew()
           while ($watch.Elapsed.TotalSeconds -lt 150) {
-            $alive = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue
-            if (-not $alive) { $flow = "channel-switch auto"; break }
+            $oldAlive = Get-Process -Id $oldPid -ErrorAction SilentlyContinue
+            if (-not $oldAlive) { $flow = "channel-switch auto"; break }
             if ($watch.Elapsed.TotalSeconds -gt 30) {
               $check = Wait-Element $prefs "Check for updates" 2
               if ($check -and $check.Current.IsEnabled) { Invoke-Element $check; Start-Sleep -Seconds 2 }

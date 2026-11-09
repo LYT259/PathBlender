@@ -66,6 +66,23 @@ cherry-pick 到一个可发布集成分支；不重新设计功能、不抬号�
   形态；禁止 vitest 调用带 `-w`），RED 后仅改该示例命令一行转 GREEN；真实
   样本按新形态从仓库根实跑，进程退出 exit 0、5/5 绿。
 
+## 独立复核与修复轮（2026-11-09 交付时）
+
+最终候选（beta.21 抬号后）经全新无头 Codex 会话独立只读复核，结论
+REQUEST_CHANGES（0 Critical / 2 Important / 2 Minor），全部修复：
+
+- 更新说明 40 语原文把尚未执行的 Windows 真实 dispatch 写成“已端到端
+  验证”→ 改为“新增端到端更新链验证”的能力性表述（真实 dispatch 由
+  控制器在合并后执行，见下）。
+- update-verify takeover 判定按 `$oldPid` 退出，不再用“同名进程全部
+  消失”（快速重启竞态下永不触发且会点击已失效的 prefs 窗口）。
+- semver 预发布段取第一个连字符之后的整段（`beta.9-a` 不再被截断为
+  `beta.9`）；数字标识符仍低于字母数字标识符（semver §11）。
+- feed 下载失败、feed JSON 解析失败、UIA 元素不可调用三处补显式
+  `::error::`。
+- 契约测试先 RED（3 失败）后 GREEN（58/58），新增 oldPid 接管、
+  连字符预发布、`::error::` 三组断言。
+
 ## 未验项（如实登记）
 
 - update-verify workflow 的真实 Windows dispatch（分支未推送，dispatch 需要

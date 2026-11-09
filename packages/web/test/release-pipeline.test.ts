@@ -841,6 +841,26 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     expect((job.steps as any[]).some((step: any) => step.uses === 'actions/upload-artifact@v4')).toBe(true);
   });
 
+  it('detects the takeover by the OLD pid exiting, not by "no same-name process left"', () => {
+    // A fast installer can exit the old app and start the new one between
+    // two 500ms polls: an all-gone check then never fires while the dead
+    // prefs window invites stray clicks on stale UIA elements. The watch
+    // must key on the recorded $oldPid, and the all-gone condition must
+    // stay out of the watch loop.
+    expect(run).toContain('$oldAlive = Get-Process -Id $oldPid');
+    expect(run).toContain('if (-not $oldAlive) { $flow = "channel-switch auto"; break }');
+    expect(run).not.toContain('if (-not $alive) { $flow = "channel-switch auto"; break }');
+  });
+
+  it('reports every failure path with an explicit ::error:: annotation', () => {
+    // Fail-closed alone is not enough on CI: the feed download, the feed
+    // parse and the UIA invoke fallback all need a visible ::error:: marker
+    // in the step log, not just a bare non-zero exit.
+    expect(run).toContain('::error::failed to download latest-beta.json');
+    expect(run).toContain('::error::latest-beta.json is not valid JSON');
+    expect(run).toContain('::error::element not invokable');
+  });
+
   it('carries the install dir between the pwsh steps via GITHUB_ENV (steps run in separate processes)', () => {
     const steps = job.steps as any[];
     const installStep = steps.find((s: any) => (s.name ?? '').includes('Install, launch and assert'));
@@ -889,6 +909,13 @@ describe('update chain verification workflow (update-verify.yml)', () => {
       ['0.1.10-beta.9', '0.1.10-beta.9x'],
       ['0.1.9-beta.9', '0.1.10-beta.9'],
       ['0.1.10-beta.17', '0.1.10'],
+      // Hyphens are legal INSIDE alphanumeric prerelease identifiers
+      // (semver §9-§11): the prerelease is everything after the FIRST
+      // hyphen, so splitting on every hyphen truncates "beta.9-a" to
+      // "beta.9" and misreads a real update as a downgrade.
+      ['0.1.10-beta.9-a', '0.1.10-beta.9-b'],
+      ['0.1.10-rc.1-x.2', '0.1.10-rc.1-x.10'],
+      ['0.1.10-beta.10', '0.1.10-beta.10-a'],
     ];
     for (const [from, to] of updates) {
       expect(gateAllows(from, to), `${from} must be accepted as sorting below ${to}`).toBe(true);
@@ -898,6 +925,11 @@ describe('update chain verification workflow (update-verify.yml)', () => {
       ['0.1.10-beta.10', '0.1.10-beta.9'],
       ['0.1.10-beta.10', '0.1.10-beta.9.1'],
       ['0.1.10', '0.1.10-beta.17'],
+      ['0.1.10-beta.9-b', '0.1.10-beta.9-a'],
+      ['0.1.10-beta.9-x', '0.1.10-beta.9-a'],
+      // Numeric identifiers sit BELOW alphanumeric ones (semver §11), so
+      // beta.10 < beta.9-a: that pair is a downgrade, not an update.
+      ['0.1.10-beta.9-a', '0.1.10-beta.10'],
     ];
     for (const [from, to] of notUpdates) {
       expect(gateAllows(from, to), `${from} must be rejected against ${to}`).toBe(false);
