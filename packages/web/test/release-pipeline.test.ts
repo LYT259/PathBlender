@@ -862,4 +862,62 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     // must fall back to Expand before giving up.
     expect(run).toContain('ExpandCollapsePattern');
   });
+
+  it('orders prerelease identifiers numerically per semver §11 — beta.9 must gate-pass below beta.10', () => {
+    // The FROM<TARGET gate runs as an inline node script inside the step.
+    // Execute the very script the workflow ships (extracted from the run
+    // text) so the contract is behavior, not a string match: lexicographic
+    // "beta.9" < "beta.10" is false, which used to misread a real published
+    // update as "no update to take" and abort the run before it started.
+    // Several node -e scripts live in the run text; each closes at its own
+    // trailing quote (they contain no single quotes), and the gate is the
+    // one that fails the step with "must sort below".
+    const scripts = [...run.matchAll(/node -e '\n([\s\S]*?)'/g)].map((x) => x[1]);
+    const gateScript = scripts.find((s) => s.includes('must sort below'));
+    if (!gateScript) throw new Error('FROM<TARGET gate script not found in the run text');
+    const gateAllows = (from: string, to: string): boolean => {
+      let code = 0;
+      const fakeProcess = { argv: ['node', from, to], exit: (c: number) => { code = c; } };
+      new Function('process', 'console', gateScript)(fakeProcess, { error: () => undefined });
+      return code === 0;
+    };
+    const updates: Array<[string, string]> = [
+      ['0.1.10-beta.9', '0.1.10-beta.10'],
+      ['0.1.10-beta.16', '0.1.10-beta.17'],
+      ['0.1.10-beta.2', '0.1.10-beta.10'],
+      ['0.1.10-beta.9', '0.1.10-beta.9.1'],
+      ['0.1.10-beta.9', '0.1.10-beta.9x'],
+      ['0.1.9-beta.9', '0.1.10-beta.9'],
+      ['0.1.10-beta.17', '0.1.10'],
+    ];
+    for (const [from, to] of updates) {
+      expect(gateAllows(from, to), `${from} must be accepted as sorting below ${to}`).toBe(true);
+    }
+    const notUpdates: Array<[string, string]> = [
+      ['0.1.10-beta.17', '0.1.10-beta.17'],
+      ['0.1.10-beta.10', '0.1.10-beta.9'],
+      ['0.1.10-beta.10', '0.1.10-beta.9.1'],
+      ['0.1.10', '0.1.10-beta.17'],
+    ];
+    for (const [from, to] of notUpdates) {
+      expect(gateAllows(from, to), `${from} must be rejected against ${to}`).toBe(false);
+    }
+  });
+
+  it('uploads the evidence artifacts even when the run fails — without swallowing the failure', () => {
+    const steps = job.steps as any[];
+    const upload = steps.find((s: any) => s.uses === 'actions/upload-artifact@v4');
+    expect(upload).toBeDefined();
+    // Failure evidence (screenshots, update-log.txt) is the whole point of
+    // this workflow's artifacts: a failed drive/takeover step must still
+    // upload what it produced, not only green runs.
+    expect(upload?.if).toBe('always()');
+    expect(upload?.with?.['if-no-files-found']).toBe('error');
+    // always() must not degrade into failure masking: no step may swallow
+    // its own failure, and the run steps keep their explicit ::error:: exits.
+    for (const step of steps) {
+      expect(step['continue-on-error'], `${step.name ?? step.uses}: continue-on-error must stay off`).toBeUndefined();
+    }
+    expect((run.match(/::error::/g) ?? []).length).toBeGreaterThan(0);
+  });
 });

@@ -75,6 +75,25 @@ jobs:
           node -e '
             const num = (s) => s.split("-")[0].split(".").map(Number);
             const pre = (s) => s.split("-")[1] || "";
+            // semver §11: prerelease precedence compares dot-separated
+            // identifiers — numeric ones as NUMBERS (beta.9 < beta.10),
+            // numeric below alphanumeric, and a longer set above its prefix.
+            // A plain string compare would read beta.9 > beta.10 and abort a
+            // real update run as "no update to take".
+            const idLt = (x, y) => {
+              const xn = /^[0-9]+$/.test(x), yn = /^[0-9]+$/.test(y);
+              if (xn && yn) return Number(x) < Number(y);
+              if (xn !== yn) return xn;
+              return x < y;
+            };
+            const preLt = (a, b) => {
+              const A = a.split("."), B = b.split(".");
+              const n = Math.min(A.length, B.length);
+              for (let i = 0; i < n; i++) {
+                if (idLt(A[i], B[i]) !== idLt(B[i], A[i])) return idLt(A[i], B[i]);
+              }
+              return A.length < B.length;
+            };
             const lt = (a, b) => {
               const A = num(a), B = num(b);
               for (let i = 0; i < 3; i++) if (A[i] !== B[i]) return A[i] < B[i];
@@ -82,7 +101,7 @@ jobs:
               if (pa === pb) return false;
               if (pa === "") return false;
               if (pb === "") return true;
-              return pa < pb;
+              return preLt(pa, pb);
             };
             const from = process.argv[1], to = process.argv[2];
             if (!lt(from, to)) {
@@ -367,6 +386,11 @@ jobs:
           $bmp.Save("$PWD/update-after.png")
           $g.Dispose(); $bmp.Dispose()
       - uses: actions/upload-artifact@v4
+        # Evidence must survive a failed step: the screenshots and the log
+        # are how a failed drive or takeover gets diagnosed after the fact,
+        # so upload runs on red too. always() only runs this step; it does
+        # not un-fail the job.
+        if: always()
         with:
           name: update-verify-windows
           path: |
