@@ -755,3 +755,89 @@ describe('Windows offline installer pipeline', () => {
     }
   });
 });
+
+describe('update chain verification workflow (update-verify.yml)', () => {
+  const text = readFileSync(resolve(ROOT, '.github/workflows/update-verify.yml'), 'utf-8');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const wf = parseWorkflowYaml(text) as any;
+  const job = wf.jobs['windows-update'];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const run = (job.steps as any[]).map((step: any) => step.run ?? '').join('\n');
+
+  it('dispatches manually only, with read-only permissions and a public-repo guard', () => {
+    expect(wf.on.workflow_dispatch.inputs.from_tag).toMatchObject({ default: 'v0.1.10-beta.16', required: 'true' });
+    expect(wf.on.push).toBeUndefined();
+    expect(wf.on.pull_request).toBeUndefined();
+    expect(wf.permissions).toEqual({ contents: 'read' });
+    expect(job['runs-on']).toBe('windows-latest');
+    expect(job['timeout-minutes']).toBe('45');
+    expect(job.if).toBe('github.event.repository.private == false');
+  });
+
+  it('verifies published artifacts only — no checkout, no rebuild, no repo secret material', () => {
+    expect((job.steps as any[]).some((step: any) => step.uses === 'actions/checkout@v4')).toBe(false);
+    for (const banned of ['npx tauri build', 'npm ci', 'cargo ', 'tauri signer generate', 'secrets.', 'GITHUB_TOKEN', 'GH_TOKEN']) {
+      expect(text, `must not contain ${banned}`).not.toContain(banned);
+    }
+    // The only credential-shaped env var is the built-in read-only token for
+    // release METADATA (anonymous API hits shared-runner-IP 403 limits);
+    // every asset and feed download stays anonymous.
+    expect((text.match(/GH_METADATA_TOKEN: \$\{\{ github\.token \}\}/g) ?? []).length).toBe(1);
+  });
+
+  it('takes the TARGET version from the live feed, never from a workflow input', () => {
+    expect(run).toContain('releases/latest/download/latest-beta.json');
+    expect(run).toContain('platforms["windows-x86_64"]');
+    expect(run).toContain('feed has no signed windows-x86_64 entry');
+    // The old version must sort below the feed version, or the run is
+    // measuring "no update available", not the takeover chain.
+    expect(run).toContain('TARGET version');
+    expect(run).toContain('must sort below');
+  });
+
+  it('downloads the old installer anonymously and pins it against the server-side digest', () => {
+    expect(run).toContain('^v[0-9]+\\.[0-9]+\\.[0-9]+');
+    expect(run).toContain('browser_download_url');
+    expect(run).toContain('/^sha256:[0-9a-f]{64}$/');
+    expect(run).toContain('sha256 mismatch');
+    expect(run).toContain('size mismatch');
+    expect(run).toContain('curl -fL --retry 3 -o "dl/$WANT" "$URL"');
+    const downloadLine = text.split('\n').find((l) => l.includes('curl -fL --retry 3'));
+    expect(downloadLine).toBeDefined();
+    expect(downloadLine).not.toContain('Authorization');
+  });
+
+  it('installs and launches the OLD version first and asserts it', () => {
+    expect(run).toContain('-ArgumentList "/S"');
+    expect(run).toContain('HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall');
+    expect(run).toContain('Join-Path $installDir "pathblender-desktop.exe"');
+    expect(run).toContain('VersionInfo.ProductVersion');
+    expect(run).toContain('FROM_VERSION');
+    expect(run).toContain('Get-Process -Name "pathblender-desktop"');
+    expect(run).toContain('MainWindowTitle');
+  });
+
+  it('drives the real UI — no test hooks, no injected state', () => {
+    expect(run).toContain('System.Windows.Automation');
+    expect(run).toContain('"Update channel"');
+    expect(run).toContain('"Beta"');
+    expect(run).toContain('"Save"');
+    expect(run).toContain('"Check for updates"');
+    expect(run).toContain('"Install and relaunch"');
+    // Saved-channel semantics: the draft channel must be SAVED before the
+    // check, and the fallback clicks are the prefs two-step flow.
+    expect(run).toContain('Updates');
+  });
+
+  it('watches the real NSIS takeover: old process exits, file bumps, app returns', () => {
+    // The install click / channel save is followed by a bounded poll that
+    // distinguishes an installer-driven relaunch from a manual one — both
+    // recorded, neither assumed.
+    expect(run).toContain('old process still running');
+    expect(run).toContain('auto-relaunch');
+    expect(run).toContain('relaunched manually by the workflow');
+    expect(run).toContain('TO_VERSION');
+    expect(run).toContain('CopyFromScreen');
+    expect((job.steps as any[]).some((step: any) => step.uses === 'actions/upload-artifact@v4')).toBe(true);
+  });
+});
