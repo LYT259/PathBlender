@@ -33,12 +33,19 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: packages/web/dist
+      - name: Read the build's cache identifier
+        id: cache
+        run: >-
+          echo "name=$(sed -nE "s/^.*const CACHE = '(pb-[^']+)'.*$/\1/p"
+          packages/web/dist/sw.js | head -1)" >> "$GITHUB_OUTPUT"
       - name: Upload viewer dist for the Cloudflare mirror
         uses: actions/upload-artifact@v4
         with:
           name: viewer-dist
           path: packages/web/dist
           if-no-files-found: error
+    outputs:
+      cache_name: ${{ steps.cache.outputs.name }}
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -47,11 +54,34 @@ jobs:
       id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deploy2.outputs.page_url || steps.deploy1.outputs.page_url }}
     steps:
-      - name: Deploy viewer
-        id: deployment
+      # actions/deploy-pages occasionally dies in syncing_files on the Pages
+      # platform side (run 42205751060: 600 s timeout, deployment cancelled).
+      # One delayed retry; the failed attempt's log stays as evidence.
+      #
+      # attempt 1 carries continue-on-error so its failure does not sink the
+      # job before the retry can run (failure() would never fire otherwise,
+      # and a step-level failure cannot be cleared later). The retry keys on
+      # steps.deploy1.outcome — NOT failure(), which a continue-on-error step
+      # never raises. The closing gate turns "both attempts failed" back into
+      # a real job failure so verify's needs.deploy.result check rejects it.
+      - name: Deploy viewer (attempt 1)
+        id: deploy1
+        continue-on-error: true
         uses: actions/deploy-pages@v4
+      - name: Wait before the retry
+        if: steps.deploy1.outcome != 'success'
+        run: sleep 30
+      - name: Deploy viewer (retry)
+        id: deploy2
+        if: steps.deploy1.outcome != 'success'
+        uses: actions/deploy-pages@v4
+      - name: Fail the deployment unless an attempt succeeded
+        if: steps.deploy1.outcome != 'success' && steps.deploy2.outcome != 'success'
+        run: |
+          echo "::error::both Pages deploy attempts failed (attempt 1: ${{ steps.deploy1.outcome }}, retry: ${{ steps.deploy2.outcome }})"
+          exit 1
   deploy-cloudflare:
     needs: build
     if: github.event.repository.private == false
@@ -81,7 +111,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: 3ead0c685117a2d82b3bded63ccf47d9
         run: npx --yes wrangler@4.147.0 pages deploy viewer-dist --project-name=pathblender --branch=stable
   verify:
-    needs: [deploy, deploy-cloudflare]
+    needs: [build, deploy, deploy-cloudflare]
     if: always() && github.event.repository.private == false
     runs-on: ubuntu-latest
     env:
@@ -91,28 +121,40 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 23
-      - name: Read tree version
-        run: |
-          version=$(node -p "require('./package.json').version")
-          echo "EXPECTED_VERSION=$version" >> "$GITHUB_ENV"
-      - name: Verify both sites serve the tree version
+      # A green verify must mean the deployment actually finished: a failed
+      # Pages deploy used to leave verify green because the live site still
+      # served the same version from an earlier build (acceptance 2026-11-06,
+      # run 42205751060 — Pages timed out, Cloudflare had the new build, both
+      # "passed" a version-only comparison).
+      - name: Require every deployment to have succeeded
         run: |
           set -euo pipefail
-          expected="$EXPECTED_VERSION"
+          fail=0
+          [ "${{ needs.build.result }}" = "success" ] || { echo "::error::build result ${{ needs.build.result }}"; fail=1; }
+          [ "${{ needs.deploy.result }}" = "success" ] || { echo "::error::github pages deploy result ${{ needs.deploy.result }}"; fail=1; }
+          [ "${{ needs.deploy-cloudflare.result }}" = "success" ] || { echo "::error::cloudflare deploy result ${{ needs.deploy-cloudflare.result }}"; fail=1; }
+          [ "$fail" = 0 ] || exit 1
+      - name: Verify both sites serve this exact build
+        run: |
+          set -euo pipefail
+          expected="${{ needs.build.outputs.cache_name }}"
+          if [ -z "$expected" ]; then
+            echo "::error::build did not report a cache identifier"
+            exit 1
+          fi
+          echo "expecting both sites to serve: $expected"
           check_site() {
             local url="$1" label="$2"
-            local attempt body cache version
+            local attempt body cache
             for attempt in 1 2 3 4 5 6; do
               if body="$(curl -fsSL --max-time 30 "${url}?sync=${GITHUB_RUN_ID}-${attempt}")"; then
                 cache="$(printf '%s' "$body" | sed -nE "s/^.*const CACHE = '(pb-[^']+)'.*$/\1/p" | head -1)"
                 if [ -n "$cache" ]; then
-                  version="${cache%-*}"
-                  version="${version#pb-}"
-                  if [ "$version" = "$expected" ]; then
+                  if [ "$cache" = "$expected" ]; then
                     echo "$label OK: $cache"
                     return 0
                   fi
-                  echo "$label stale (attempt $attempt): $cache, expected pb-$expected-*"
+                  echo "$label stale (attempt $attempt): $cache, expected $expected"
                 else
                   echo "$label: CACHE line missing (attempt $attempt)"
                 fi
@@ -121,7 +163,7 @@ jobs:
               fi
               sleep 15
             done
-            echo "::error::$label never served the tree version $expected"
+            echo "::error::$label never served this build's identifier $expected"
             return 1
           }
           check_site "https://lyt259.github.io/PathBlender/sw.js" "github-pages"

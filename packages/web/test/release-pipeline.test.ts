@@ -258,7 +258,8 @@ describe('shipped-artifact verification gates', () => {
   });
 
   it('keeps public deployment dormant while private and builds the viewer on beta pushes', () => {
-    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8');
+    // Windows checkouts carry CRLF; assert against LF-normalized content.
+    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8').replace(/\r\n/g, '\n');
     expect(deploy).toContain('if: github.event.repository.private == false');
     expect(deploy).toContain('branches: [beta]');
     expect(deploy).toContain("VITE_VIEWER_ONLY: '1'");
@@ -266,8 +267,105 @@ describe('shipped-artifact verification gates', () => {
     expect(workflow).toContain('needs: [build-macos, build-windows, build-linux]');
     expect(workflow).toContain('node scripts/prepare-release-artifacts.mjs');
   });
+  // Behavioral double for the Pages deploy retry (review 2026-11-09 MAJOR-1):
+  // the old shape (no continue-on-error + failure()) could never recover,
+  // because a failed step sinks the job before the retry runs and a later
+  // success cannot clear it. This test parses the deploy job's steps from
+  // deploy.yml and EXECUTES them under a controlled model of GitHub's
+  // documented semantics instead of asserting source strings.
+  //
+  // Simulation scope (deliberately narrow, no real deployment involved):
+  // - uses-steps take their outcome from the scenario table below;
+  // - plain run-steps (the sleep) succeed when executed;
+  // - the closing gate step (a run: step containing `exit 1`) fails the job
+  //   when its condition evaluates true;
+  // - continue-on-error: a failed step records its outcome but does not
+  //   fail the job (docs.github.com actions contexts);
+  // - a skipped step has outcome 'skipped' and never runs;
+  // - the job fails iff any executed step failed without continue-on-error.
+  const deployWorkflow = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8').replace(/\r\n/g, '\n');
+  const deployJob = deployWorkflow.slice(deployWorkflow.indexOf('  deploy:\n'), deployWorkflow.indexOf('  deploy-cloudflare:'));
+  const steps: Array<{ name: string; id?: string; if?: string; continueOnError: boolean; kind: 'uses' | 'run' | 'gate' }> = [];
+  for (const m of deployJob.matchAll(/      - name: ([^\n]+)\n((?:        .+\n)+?)(?=      - |    outputs:|$)/g)) {
+    const body = m[2];
+    const id = /        id: (\S+)/.exec(body)?.[1];
+    const cond = /        if: ([^\n]+)/.exec(body)?.[1].trim();
+    const continueOnError = /        continue-on-error: true/.test(body);
+    const kind = body.includes('exit 1') ? 'gate' : body.includes('uses:') ? 'uses' : 'run';
+    steps.push({ name: m[1], id, if: cond, continueOnError, kind });
+  }
+  // Minimal evaluator for the expression grammar this job uses:
+  // steps.<id>.outcome [!=|==] 'success' (&& same)*
+  const evalCond = (cond: string | undefined, outcomes: Record<string, string>): boolean => {
+    if (!cond) return true;
+    return cond.split('&&').every((clause) => {
+      const m = /steps\.(\w+)\.outcome\s*([!=]=)\s*'success'/.exec(clause.trim());
+      if (!m) throw new Error(`unmodeled condition grammar: ${clause.trim()}`);
+      const actual = outcomes[m[1]!] ?? 'skipped';
+      return m[2] === '!=' ? actual !== 'success' : actual === 'success';
+    });
+  };
+  const runJob = (attempt1: string, retryWhenRun: string): 'success' | 'failure' => {
+    const outcomes: Record<string, string> = {};
+    let jobFailed = false;
+    for (const step of steps) {
+      if (!evalCond(step.if, outcomes)) {
+        if (step.id) outcomes[step.id] = 'skipped';
+        continue;
+      }
+      let failed = false;
+      if (step.kind === 'uses') {
+        const outcome = step.id === 'deploy1' ? attempt1 : step.id === 'deploy2' ? retryWhenRun : 'success';
+        if (step.id) outcomes[step.id] = outcome;
+        failed = outcome !== 'success';
+      } else if (step.kind === 'gate') {
+        failed = true;
+      }
+      if (failed && !step.continueOnError) jobFailed = true;
+    }
+    return jobFailed ? 'failure' : 'success';
+  };
+  it('retry state machine: first-attempt success needs no retry', () => {
+    expect(steps.find((s) => s.id === 'deploy1')?.continueOnError).toBe(true);
+    expect(steps.find((s) => s.id === 'deploy2')?.continueOnError).toBeFalsy();
+    expect(runJob('success', 'skipped')).toBe('success');
+  });
+  it('retry state machine: platform timeout then successful retry recovers the job', () => {
+    expect(runJob('failure', 'success')).toBe('success');
+  });
+  it('retry state machine: both attempts failing sinks the job for verify', () => {
+    expect(runJob('failure', 'failure')).toBe('failure');
+  });
+  it('retry state machine: the old shape (no continue-on-error, failure()-keyed) cannot recover', () => {
+    // Counterfactual guard: apply the OLD step shape to the same model and
+    // show the recovery scenario stays failed — proving this test detects
+    // the regression it was written for, not just the happy path.
+    const oldShape = steps.map((s) => ({
+      ...s,
+      continueOnError: false,
+      if: s.if?.includes('steps.deploy1.outcome') ? 'failure()' : s.if,
+    }));
+    const runOld = (attempt1: string, retryWhenRun: string): string => {
+      const outcomes: Record<string, string> = {};
+      let jobFailed = false;
+      for (const step of oldShape) {
+        const cond = step.if === 'failure()' ? jobFailed : (() => { try { return evalCond(step.if, outcomes); } catch { return true; } })();
+        if (!cond) { if (step.id) outcomes[step.id] = 'skipped'; continue; }
+        let failed = false;
+        if (step.kind === 'uses') {
+          const outcome = step.id === 'deploy1' ? attempt1 : step.id === 'deploy2' ? retryWhenRun : 'success';
+          if (step.id) outcomes[step.id] = outcome;
+          failed = outcome !== 'success';
+        } else if (step.kind === 'gate') failed = true;
+        if (failed && !step.continueOnError) jobFailed = true;
+      }
+      return jobFailed ? 'failure' : 'success';
+    };
+    expect(runOld('failure', 'success')).toBe('failure');
+  });
+
   it('mirrors the same viewer build to Cloudflare Pages and verifies both sites', () => {
-    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8');
+    const deploy = readFileSync(resolve(ROOT, '.github/workflows/deploy.yml'), 'utf8').replace(/\r\n/g, '\n');
     expect(deploy).toContain('name: viewer-dist');
     expect(deploy).toContain('path: packages/web/dist');
     expect(deploy).toContain('actions/download-artifact@v4');
@@ -280,7 +378,15 @@ describe('shipped-artifact verification gates', () => {
     expect(deploy).not.toContain('\\\"');
     expect(deploy).toContain('https://lyt259.github.io/PathBlender/sw.js');
     expect(deploy).toContain('https://pathblender.pages.dev/sw.js');
-    expect(deploy).toContain('"$version" = "$expected"');
+    // Verification binds to THIS build's full cache identifier (version +
+    // build timestamp) and refuses to go green when any deployment failed
+    // (acceptance 2026-11-06: a version-only compare passed while Pages was
+    // down and the mirror had the new build).
+    expect(deploy).toContain('outputs:\n      cache_name: ${{ steps.cache.outputs.name }}');
+    expect(deploy).toContain('needs: [build, deploy, deploy-cloudflare]');
+    expect(deploy).toContain('Require every deployment to have succeeded');
+    expect(deploy).toContain('"$cache" = "$expected"');
+    expect(deploy).not.toContain('"$version" = "$expected"');
   });
   it('installs locked Node dependencies before composing release notes in the publish job', () => {
     const publish = workflow.slice(workflow.indexOf('  publish:'));
