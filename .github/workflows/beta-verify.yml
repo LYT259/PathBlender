@@ -129,6 +129,126 @@ jobs:
           Write-Host "Window title: '$($proc.MainWindowTitle)'"
           if ($proc.MainWindowTitle -ne "PathBlender") { Write-Host "::warning::unexpected window title" }
           "running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath smoke-result.txt
+      - name: Open Preferences on the candidate build
+        # The published-artifact update workflow cannot cover a branch-side
+        # window fix. Exercise the actual candidate: Help > Check for updates
+        # must open a populated Preferences window with its channel combobox.
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes
+          Add-Type -AssemblyName System.Windows.Forms
+          Add-Type -AssemblyName System.Drawing
+          function Save-CandidateScreen {
+            $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+            $bmp.Save("$PWD/preferences-candidate.png")
+            $g.Dispose(); $bmp.Dispose()
+          }
+          function Wait-Window([string]$Name, [int]$Seconds) {
+            $deadline = (Get-Date).AddSeconds($Seconds)
+            while ((Get-Date) -lt $deadline) {
+              $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $Name)
+              $win = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
+              if ($win) { return $win }
+              Start-Sleep -Milliseconds 500
+            }
+            return $null
+          }
+          function Wait-Element($Root, [string]$Name, [int]$Seconds) {
+            $deadline = (Get-Date).AddSeconds($Seconds)
+            while ((Get-Date) -lt $deadline) {
+              $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $Name)
+              $all = $Root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $cond)
+              foreach ($el in $all) {
+                if (-not $el.Current.IsEnabled) { continue }
+                $pat = $null
+                if ($el.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pat)) { return $el }
+                if ($el.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$pat)) { return $el }
+                if ($el.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$pat)) { return $el }
+              }
+              Start-Sleep -Milliseconds 400
+            }
+            return $null
+          }
+          function Wait-ControlType($Root, $Type, [int]$Seconds) {
+            $deadline = (Get-Date).AddSeconds($Seconds)
+            while ((Get-Date) -lt $deadline) {
+              $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, $Type)
+              $all = $Root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $cond)
+              foreach ($el in $all) {
+                if ($el.Current.IsEnabled) { return $el }
+              }
+              Start-Sleep -Milliseconds 400
+            }
+            return $null
+          }
+          function Invoke-Element($El) {
+            $pat = $null
+            if ($El.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pat)) { $pat.Invoke(); return }
+            if ($El.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$pat)) { $pat.Select(); return }
+            if ($El.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$pat)) { $pat.Expand(); return }
+            throw "element not invokable: $($El.Current.Name)"
+          }
+          function Invoke-MenuItem($El) {
+            $pat = $null
+            if ($El.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pat)) { $pat.Invoke(); return $true }
+            $legacy = $null
+            if ($El.TryGetCurrentPattern([System.Windows.Automation.AutomationElement]::LegacyIAccessiblePattern, [ref]$legacy)) { $legacy.DoDefaultAction(); return $true }
+            return $false
+          }
+          function Open-HelpMenuItem($main, [string]$ItemName, [int]$Seconds) {
+            $help = Wait-Element $main "Help" 30
+            if (-not $help) { return $false }
+            $deadline = (Get-Date).AddSeconds($Seconds)
+            while ((Get-Date) -lt $deadline) {
+              try {
+                $pat = $null
+                if ($help.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$pat)) { $pat.Expand() }
+                elseif (-not (Invoke-MenuItem $help)) { Start-Sleep -Milliseconds 400; continue }
+                $itemCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $ItemName)
+                $item = $help.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $itemCond)
+                if (-not $item) {
+                  $menuCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Menu)
+                  foreach ($popup in [System.Windows.Automation.AutomationElement]::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, $menuCond)) {
+                    $item = $popup.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $itemCond)
+                    if ($item) { break }
+                  }
+                }
+                if ($item -and (Invoke-MenuItem $item)) { return $true }
+              } catch {
+                # A transient menu closure is retried inside the deadline.
+              }
+              Start-Sleep -Milliseconds 300
+            }
+            return $false
+          }
+          Save-CandidateScreen
+          try {
+            $main = Wait-Window "PathBlender" 30
+            if (-not $main) { Write-Host "::error::candidate main window not found"; exit 1 }
+            $main.SetFocus()
+            if (-not (Open-HelpMenuItem $main "Check for updates" 20)) { Write-Host "::error::Help > Check for updates was not invokable"; exit 1 }
+            $prefs = Wait-Window "Preferences" 30
+            if (-not $prefs) { Write-Host "::error::Preferences window did not open"; exit 1 }
+            $updates = Wait-Element $prefs "Updates" 30
+            if (-not $updates) { Write-Host "::error::Updates tab not found on the candidate build"; exit 1 }
+            Invoke-Element $updates
+            $channel = Wait-Element $prefs "Update channel" 30
+            if (-not $channel) { $channel = Wait-ControlType $prefs ([System.Windows.Automation.ControlType]::ComboBox) 15 }
+            if (-not $channel) { Write-Host "::error::Update channel control not found on the candidate build"; exit 1 }
+            Write-Host "Preferences opened with a live channel combobox on the candidate build"
+          } finally {
+            Save-CandidateScreen
+          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: beta-verify-windows-preferences
+          path: preferences-candidate.png
+          if-no-files-found: error
       - name: Build offline NSIS installer
         # Beta-gate the second Windows artifact too: the overlay build embeds
         # the WebView2 Evergreen Standalone Installer. A bash step's exports
@@ -240,6 +360,7 @@ jobs:
           name: beta-verify-windows
           path: |
             smoke-screenshot.png
+            preferences-candidate.png
             smoke-result.txt
             smoke-offline-result.txt
             packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe

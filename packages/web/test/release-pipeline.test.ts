@@ -731,6 +731,29 @@ describe('Windows offline installer pipeline', () => {
     expect(windows).toContain('_x64-offline-setup.exe');
     expect(windows).toContain('-ArgumentList "/S"');
   });
+  it('waits for the real Windows menu, loads screenshot support and preserves failure evidence', () => {
+    const beta = readFileSync(resolve(ROOT, '.github/workflows/beta-verify.yml'), 'utf-8');
+    const windows = beta.slice(beta.indexOf('  windows:'), beta.indexOf('  macos:'));
+    const start = windows.indexOf('      - name: Open Preferences on the candidate build');
+    const end = windows.indexOf('      - name: Build offline NSIS installer', start);
+    const step = windows.slice(start, end);
+    expect(step).toContain('Add-Type -AssemblyName System.Windows.Forms');
+    expect(step).toContain('function Wait-Element');
+    expect(step).toContain('$help = Wait-Element $main "Help" 30');
+    expect(step).toContain('$updates = Wait-Element $prefs "Updates" 30');
+    expect(step).toContain('Invoke-Element $updates');
+    expect(step).toContain('$channel = Wait-Element $prefs "Update channel" 30');
+    expect(step).toContain('Wait-ControlType $prefs');
+    expect(step).toContain('"Check for updates"');
+    const uploadStart = windows.indexOf('      - uses: actions/upload-artifact@v4', start);
+    expect(uploadStart).toBeGreaterThan(start);
+    expect(uploadStart).toBeLessThan(end);
+    const upload = windows.slice(uploadStart, end);
+    expect(upload).toContain('if: always()');
+    expect(upload).toContain('name: beta-verify-windows-preferences');
+    expect(upload).toContain('path: preferences-candidate.png');
+    expect(upload).toContain('if-no-files-found: error');
+  });
   it('release-verify downloads, digest-pins, size-floors, installs and launches the offline asset', () => {
     const verifyText2 = readFileSync(resolve(ROOT, '.github/workflows/release-verify.yml'), 'utf-8');
     const windows = verifyText2.slice(verifyText2.indexOf('  windows-installer:'), verifyText2.indexOf('  macos-intel-dmg:'));
@@ -979,6 +1002,94 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     // UIA may expose only ExpandCollapsePattern for it, so the click helper
     // must fall back to Expand before giving up.
     expect(run).toContain('ExpandCollapsePattern');
+  });
+
+  it('finds the update channel by native ComboBox role when its text label is not exposed', () => {
+    // Run 43393373576 opened Preferences through the native Help menu but
+    // could not find Name="Update channel". The single combobox on the
+    // Updates pane is SelectControl (PreferencesPanel.tsx). Preserve the
+    // accessible-name path, then fall back to the native role and log the
+    // remaining UIA names/types instead of failing without diagnostics.
+    const nameLookup = run.indexOf('Wait-Element $prefs "Update channel"');
+    const roleFallback = run.indexOf('Wait-ControlType $prefs ([System.Windows.Automation.ControlType]::ComboBox)');
+    expect(nameLookup).toBeGreaterThan(0);
+    expect(run).toContain('function Wait-ControlType');
+    expect(roleFallback, 'native ComboBox role fallback missing').toBeGreaterThan(nameLookup);
+    expect(run.indexOf('Invoke-Element $channel')).toBeGreaterThan(roleFallback);
+    expect(run).toContain('uia diagnostic:');
+    // The diagnostics capture the Preferences pane itself and must survive a
+    // failed drive, not merely the initial window and the completed update.
+    expect(run.match(/prefs-open\.png/g) ?? []).toHaveLength(1);
+    expect(text.match(/prefs-open\.png/g) ?? []).toHaveLength(2);
+  });
+
+  it('creates the Preferences webview off the synchronous Windows menu thread', () => {
+    // The real run 43396146347 shows a native Preferences frame with a blank
+    // webview. Tauri documents WebviewWindowBuilder.build() as deadlocking in
+    // synchronous commands/event handlers on Windows; creation must move to a
+    // separate thread while the existing-window focus/eval path stays intact.
+    const rust = readFileSync(resolve(ROOT, 'packages/desktop/src-tauri/src/lib.rs'), 'utf-8');
+    const start = rust.indexOf('fn open_prefs(');
+    const end = rust.indexOf('\nfn create_prefs_window', start);
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const opener = rust.slice(start, end);
+    expect(opener).toContain('#[cfg(target_os = "windows")]');
+    expect(opener).toContain('std::thread::spawn');
+    expect(opener).toContain('create_prefs_window');
+  });
+
+  it('opens Preferences by expanding the native Help menu — no Ctrl+, SendKeys (dead on Windows)', () => {
+    // Run 43390027355 proved the opener dead: CmdOrCtrl+, only exists in the
+    // macOnly app menu (menu-spec.ts; build_menu_from_spec skips mac_only on
+    // Windows, so the native menu has no Preferences item/accelerator) and
+    // the web keydown handler early-returns on ctrl/meta — SendKeys "^," is
+    // a no-op regardless of focus. The drive must instead expand the Help
+    // menu-bar item and invoke its entries, with the Expand BEFORE the
+    // dropdown-item search (a collapsed Win32 dropdown is not an invokable
+    // descendant of the app window — the old fallback timed out on it).
+    expect(run).not.toContain('SendWait("^,")');
+    const helpFnIdx = run.indexOf('function Open-HelpMenuItem');
+    expect(helpFnIdx, 'Help menu opener helper missing').toBeGreaterThan(0);
+    const helpIdx = run.indexOf('"Help"', helpFnIdx);
+    expect(helpIdx, 'Help menu-bar item lookup missing').toBeGreaterThan(helpFnIdx);
+    const expandIdx = run.indexOf('$pat.Expand()', helpFnIdx);
+    expect(expandIdx, 'menu Expand call missing').toBeGreaterThan(helpIdx);
+    const checkIdx = run.indexOf('Open-HelpMenuItem "Check for updates"');
+    expect(checkIdx, 'Check for updates menu invocation missing').toBeGreaterThan(expandIdx);
+  });
+
+  it('falls back to the About PathBlender menu entry before declaring the opener failed', () => {
+    // Help > About PathBlender opens the plain Preferences window on desktop
+    // (menuHandlers 'about'); it is the second menu attempt, and the failure
+    // error only fires after both.
+    const checkIdx = run.indexOf('Open-HelpMenuItem "Check for updates"');
+    const aboutIdx = run.indexOf('Open-HelpMenuItem "About PathBlender"');
+    expect(checkIdx).toBeGreaterThan(0);
+    expect(aboutIdx).toBeGreaterThan(checkIdx);
+    const failIdx = run.indexOf('::error::Preferences window never opened');
+    expect(failIdx).toBeGreaterThan(aboutIdx);
+  });
+
+  it('searches the open dropdown both under the expanded item and under the desktop-root menu popup', () => {
+    // A Win32 menu dropdown is a #32768 popup parented to the DESKTOP root,
+    // not to the app window: the finder must cover the expanded bar item's
+    // subtree AND root's child Menu windows, or a healthy menu looks empty.
+    expect(run).toContain('[System.Windows.Automation.ControlType]::Menu');
+    expect(run).toContain('RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, $menuCond)');
+  });
+
+  it('invokes menu items via LegacyIAccessible DoDefaultAction when Invoke is absent, and logs menu discovery', () => {
+    // Win32 menu items sometimes expose only the legacy MSAA pattern; the
+    // item invoker must try Invoke then DoDefaultAction. And because this
+    // workflow forbids screenshot viewing for diagnosis, the discovered
+    // top-level menu names land in the step log AND update-log.txt.
+    expect(run).toContain('LegacyIAccessiblePattern');
+    expect(run).toContain('DoDefaultAction()');
+    expect(run).toMatch(/Log-Line "menu bar: \$\(/);
+    const logFn = run.slice(run.indexOf('function Log-Line'), run.indexOf('function Log-Line') + 400);
+    expect(logFn).toContain('Write-Host');
+    expect(logFn).toContain('Out-File -FilePath update-log.txt -Append');
   });
 
   it('orders prerelease identifiers numerically per semver §11 — beta.9 must gate-pass below beta.10', () => {
