@@ -380,6 +380,19 @@ fn open_prefs(app: &AppHandle, updates: bool) {
         let _ = win.set_focus();
         return;
     }
+    // Windows/WebView2 deadlocks when a window is built synchronously inside
+    // a command or native menu event. Only creation moves off that thread;
+    // focusing or re-targeting an existing window remains synchronous.
+    #[cfg(target_os = "windows")]
+    {
+        let handle = app.clone();
+        let _ = std::thread::spawn(move || create_prefs_window(&handle, updates));
+    }
+    #[cfg(not(target_os = "windows"))]
+    create_prefs_window(app, updates);
+}
+
+fn create_prefs_window(app: &AppHandle, updates: bool) {
     let url = if updates {
         "index.html?window=prefs&go=updates"
     } else {
@@ -402,7 +415,9 @@ fn open_prefs(app: &AppHandle, updates: bool) {
         .title_bar_style(tauri::TitleBarStyle::Overlay)
         .hidden_title(true)
         .traffic_light_position(tauri::Position::Logical(tauri::LogicalPosition::new(18.0, 35.0)));
-    let _ = builder.build();
+    if let Err(error) = builder.build() {
+        eprintln!("failed to create Preferences window: {error}");
+    }
     #[cfg(target_os = "macos")]
     if let Some(win) = app.get_webview_window(PREFS_WINDOW) {
         disable_webview_scroll_bounce(&win);
