@@ -88,7 +88,11 @@ REQUEST_CHANGES（0 Critical / 2 Important / 2 Minor），全部修复：
 `$prefs` 的 UIA 调用会把正常更新误判为失败。已再修复（RED→GREEN
 59/59）：fallback 全程包 try/catch，等待与调用之间重查 `$oldPid`，
 退出即按接管收尾；旧进程仍存活时 UIA 错误照常 re-throw 保持失败
-语义。
+语义。第三轮复核再指出一处循环收尾遗漏：150 秒窗口恰在最后一次
+元素等待期间到期时，`Wait-Element` 返回空且不抛异常，循环退出后
+入口探针不再运行，已发生的接管被误报为失败。已补最终探针（RED→
+GREEN 60/60）：空 `$flow` 失败判定前重查 `$oldPid`，已退出按接管
+收尾；未退出的真实失败语义不变（phase 2 仍断言文件版本）。
 
 ## 未验项（如实登记）
 

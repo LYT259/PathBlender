@@ -856,13 +856,34 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     // The fallback's element waits and the 2s sleep can span the moment
     // the channel-switch install exits the old process: without a
     // re-check, the next Wait-Element runs $Root.FindAll on a dead
-    // window and a normal update fails as a UIA crash. Three probe
+    // window and a normal update fails as a UIA crash. Four probe
     // points are required: the loop entry, the mid-fallback re-check,
-    // and the catch arm that must re-throw while the old process is
-    // still alive (real UIA errors stay failures).
-    expect((run.match(/Get-Process -Id \$oldPid -ErrorAction SilentlyContinue/g) ?? []).length).toBe(3);
+    // the catch arm that must re-throw while the old process is still
+    // alive (real UIA errors stay failures), and the post-loop guard
+    // covered by its own test below.
+    expect((run.match(/Get-Process -Id \$oldPid -ErrorAction SilentlyContinue/g) ?? []).length).toBe(4);
     expect(run).toMatch(/Start-Sleep -Seconds 2 \}\r?\n\s*if \(-not \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\) \{ \$flow = "channel-switch auto"; break \}/);
     expect(run).toMatch(/\} catch \{\r?\n\s*if \(-not \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\) \{ \$flow = "channel-switch auto"; break \}\r?\n\s*throw/);
+  });
+
+  it('reads an empty flow with the old process already gone as a takeover, not a failure', () => {
+    // The 150s watch window can expire between the final fallback probe
+    // and the next loop-entry check: the takeover lands inside the last
+    // element wait, Wait-Element returns null WITHOUT throwing (so the
+    // catch arm never runs), and the loop exits with an empty flow while
+    // the old process is already gone. The empty-flow ::error:: must be
+    // preceded by one more old-pid probe that converts exactly this case
+    // into the channel-switch auto flow; a still-live old process keeps
+    // the failure semantics (phase 2 then re-asserts the file version).
+    const failMarker = '::error::neither the channel-switch install nor the prefs two-step produced an install';
+    const failIdx = run.indexOf(failMarker);
+    expect(failIdx).toBeGreaterThan(0);
+    const afterLoop = run.indexOf('$flow = "prefs two-step"; break }');
+    expect(afterLoop).toBeGreaterThan(0);
+    const probe = 'if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto" }';
+    const probeIdx = run.indexOf(probe, afterLoop);
+    expect(probeIdx).toBeGreaterThan(afterLoop);
+    expect(probeIdx).toBeLessThan(failIdx);
   });
 
   it('reports every failure path with an explicit ::error:: annotation', () => {

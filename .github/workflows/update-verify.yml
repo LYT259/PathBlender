@@ -352,6 +352,16 @@ jobs:
             }
             Start-Sleep -Milliseconds 500
           }
+          if (-not $flow) {
+            # The takeover can land inside the FINAL element wait: the
+            # loop condition can expire between the last fallback probe
+            # and the next entry check, so Wait-Element returns null
+            # without throwing while the old process is already gone.
+            # That is a completed install, not a failure to install —
+            # phase 2 still asserts the file version, so an exit that
+            # was NOT an update still fails the run honestly.
+            if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto" }
+          }
           if (-not $flow) { Write-Host "::error::neither the channel-switch install nor the prefs two-step produced an install"; exit 1 }
           "update flow: $flow" | Out-File -FilePath update-log.txt -Append -Encoding utf8
 
