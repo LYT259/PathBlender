@@ -287,6 +287,55 @@ jobs:
             Write-Host ("::error::element not invokable: " + $El.Current.Name)
             exit 1
           }
+          function Log-Line([string]$s) {
+            Write-Host $s
+            $s | Out-File -FilePath update-log.txt -Append -Encoding utf8
+          }
+          function Invoke-MenuItem($El) {
+            # Win32 menu items usually carry Invoke; some expose only the
+            # legacy MSAA pattern, whose default action is the same click.
+            $pat = $null
+            if ($El.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pat)) { $pat.Invoke(); return $true }
+            $legacy = $null
+            if ($El.TryGetCurrentPattern([System.Windows.Automation.AutomationElement]::LegacyIAccessiblePattern, [ref]$legacy)) { $legacy.DoDefaultAction(); return $true }
+            return $false
+          }
+          function Open-HelpMenuItem([string]$ItemName, [int]$Seconds) {
+            # Expand the Help menu-bar item, then find and click $ItemName in
+            # its dropdown. Returns $true only when the item was invoked; a
+            # UIA hiccup mid-attempt (menu auto-closed, pattern vanished)
+            # retries inside the deadline instead of failing the step.
+            $deadline = (Get-Date).AddSeconds($Seconds)
+            while ((Get-Date) -lt $deadline) {
+              try {
+                $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Help")
+                $help = $main.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $cond)
+                if (-not $help) { Start-Sleep -Milliseconds 400; continue }
+                $pat = $null
+                if ($help.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$pat)) { $pat.Expand() }
+                elseif (-not (Invoke-MenuItem $help)) { Start-Sleep -Milliseconds 400; continue }
+                # A Win32 dropdown is a #32768 popup parented to the DESKTOP
+                # root, not to the app window — search the expanded bar
+                # item's subtree AND root's child Menu windows, or a healthy
+                # menu looks empty (exactly the 43390027355 fallback timeout:
+                # it searched only the app window and found nothing).
+                $itemCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $ItemName)
+                $item = $help.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $itemCond)
+                if (-not $item) {
+                  $menuCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Menu)
+                  foreach ($popup in [System.Windows.Automation.AutomationElement]::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, $menuCond)) {
+                    $item = $popup.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $itemCond)
+                    if ($item) { break }
+                  }
+                }
+                if ($item -and (Invoke-MenuItem $item)) { return $true }
+              } catch {
+                # Menu closed under us between expand and click — retry.
+              }
+              Start-Sleep -Milliseconds 300
+            }
+            return $false
+          }
 
           $main = Wait-Window "PathBlender" 30
           if (-not $main) { Write-Host "::error::main window not found"; exit 1 }
@@ -297,15 +346,36 @@ jobs:
 
           $main.SetFocus()
           Start-Sleep -Milliseconds 800
-          [System.Windows.Forms.SendKeys]::SendWait("^,")
-          $prefs = Wait-Window "Preferences" 25
-          if (-not $prefs) {
-            Write-Host "Ctrl+, did not open Preferences — falling back to the native menu item"
-            $menu = Wait-Element $main "Check for updates" 15
-            if ($menu) { Invoke-Element $menu }
-            $prefs = Wait-Window "Preferences" 25
+          # Windows has no Ctrl+, accelerator: the menu entry carrying it is
+          # in the macOnly app menu (the Rust builder skips mac_only
+          # sections off macOS) and the page's keydown handler ignores
+          # ctrl/meta keys — run 43390027355 proved SendKeys "^," cannot
+          # open Preferences here. The real user path is the native Help
+          # menu: "Check for updates" opens the Preferences window straight
+          # on its Updates section (open_preferences with updates=true);
+          # "About PathBlender" opens the plain window as the second try.
+          $menuNames = @()
+          $barCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::MenuBar)
+          $bar = $main.FindFirst([System.Windows.Automation.TreeScope]::Children, $barCond)
+          if ($bar) {
+            foreach ($top in $bar.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)) {
+              $menuNames += $top.Current.Name
+            }
           }
-          if (-not $prefs) { Write-Host "::error::Preferences window never opened"; exit 1 }
+          Log-Line "menu bar: $($menuNames -join ' | ')"
+          $prefs = $null
+          if (Open-HelpMenuItem "Check for updates" 20) {
+            $prefs = Wait-Window "Preferences" 25
+          } else {
+            Log-Line "Help > Check for updates was not invokable"
+          }
+          if (-not $prefs) {
+            Log-Line "menu 'Check for updates' did not open Preferences — trying 'About PathBlender'"
+            if (Open-HelpMenuItem "About PathBlender" 20) {
+              $prefs = Wait-Window "Preferences" 25
+            }
+          }
+          if (-not $prefs) { Write-Host "::error::Preferences window never opened via the Help menu"; exit 1 }
           $tab = Wait-Element $prefs "Updates" 30
           if ($tab) { Invoke-Element $tab }
           $channel = Wait-Element $prefs "Update channel" 30
