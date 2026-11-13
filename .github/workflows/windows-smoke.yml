@@ -16,6 +16,17 @@
 # someone wants eyes on a real Windows install. Standard runners on a public
 # repo are free; before going public this costs private-repo minutes (~2x
 # Windows rate) — dispatch deliberately.
+#
+# Debug-branch extension (debug/windows-main-webview, one-shot): this copy
+# additionally builds the OFFLINE NSIS installer (the flavor release-verify
+# installs, and where the beta.24 white main window was observed, run
+# 43434507742), installs it, and runs the read-only CDP probe against the
+# main WebView. The remote-debugging port is opened by the app itself via
+# WebviewWindowBuilder::additional_browser_args (src-tauri/src/lib.rs setup,
+# gated on PB_DEBUG_WEBVIEW_BROWSER_ARGS/PB_DEBUG_WEBVIEW_DATA_DIR) because
+# the WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS env var provably never reached
+# the webview (run 43438334743: PORT_UNAVAILABLE). Diagnostic-only; never
+# merge this branch's scaffolding as a product change.
 name: Windows smoke test
 
 on:
@@ -31,7 +42,7 @@ concurrency:
 jobs:
   smoke:
     runs-on: windows-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -52,6 +63,14 @@ jobs:
           export TAURI_SIGNING_PRIVATE_KEY="$(cat "$RUNNER_TEMP/smoke-updater.key")"
           export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
           npx tauri build --bundles nsis
+      - name: Stage online installer pair
+        # Same staging as release.yml build-windows: the offline pass below
+        # overwrites bundle/nsis, so the online pair is copied out first.
+        shell: bash
+        run: |
+          mkdir -p release
+          cp packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe release/
+          cp packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe.sig release/
       - name: Smoke the updater feed generator
         # The release pipeline's PB_WINDOWS_ARTIFACT branch, exercised for
         # real: the feed must carry a windows-x86_64 entry pointing at the
@@ -62,7 +81,7 @@ jobs:
           # gen-latest-json exits nonzero when NO platform has artifacts, so
           # the Windows entry must be pointed at explicitly — same env var the
           # release publish job sets (a smoke runner has no macOS bundle).
-          ART=$(basename packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe)
+          ART=$(basename release/*-setup.exe)
           PB_WINDOWS_ARTIFACT="$ART" node scripts/gen-latest-json.mjs "$VERSION" packages/desktop/src-tauri/target/release/bundle > feed.json
           node -e "
             const feed = require('./feed.json');
@@ -73,14 +92,148 @@ jobs:
             }
             console.log('feed OK:', win.url);
           "
-      - name: Silent install (per-user)
+      - name: Build offline NSIS installer
+        # Second Windows artifact exactly as the release pipeline builds it:
+        # embeds the WebView2 Evergreen Standalone Installer (~127 MB from
+        # Microsoft at build time). release-verify installs this offline
+        # flavor, and the beta.24 white main window was observed on exactly
+        # that install path (run 43434507742), so the diagnostic below
+        # targets it too.
+        shell: bash
+        run: |
+          cd packages/desktop
+          export TAURI_SIGNING_PRIVATE_KEY="$(cat "$RUNNER_TEMP/smoke-updater.key")"
+          export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
+          npx tauri build --config src-tauri/tauri.windows-offline.conf.json --bundles nsis
+      - name: Stage offline installer
+        # No `|| true`: a run without the offline artifact must fail loudly.
+        shell: bash
+        run: |
+          V=$(node -p "require('./package.json').version")
+          mkdir -p release-offline
+          cp "packages/desktop/src-tauri/target/release/bundle/nsis/PathBlender_${V}_x64-setup.exe" "release-offline/PathBlender_${V}_x64-offline-setup.exe"
+      - name: Silent install (per-user, offline flavor)
+        # Installs the OFFLINE setup — the same flavor release-verify installs
+        # — so the CDP diagnosis below runs against the install type that
+        # showed the white main window on beta.24.
         shell: pwsh
         run: |
-          $setup = Get-ChildItem "packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
-          if (-not $setup) { Write-Host "::error::no setup.exe found"; exit 1 }
+          $setup = Get-ChildItem "release-offline/*-offline-setup.exe" | Select-Object -First 1
+          if (-not $setup) { Write-Host "::error::no offline setup.exe found"; exit 1 }
           Write-Host "Installing $($setup.Name)"
           $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
           if ($p.ExitCode -ne 0) { Write-Host "::error::installer exit code $($p.ExitCode)"; exit 1 }
+      - name: One-shot CDP diagnostics - launch the main WebView with a real remote-debugging port
+        # Diagnostic-only step (debug branch). The port is opened by the app
+        # itself: this build creates the main window through
+        # WebviewWindowBuilder::additional_browser_args when
+        # PB_DEBUG_WEBVIEW_BROWSER_ARGS is set (keeping wry's default
+        # --disable-features list) and uses a dedicated WebView2 user-data
+        # folder from PB_DEBUG_WEBVIEW_DATA_DIR.
+        # WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS is deliberately NOT set: the
+        # port must come from the builder path or the diagnosis proves
+        # nothing. The probe (scripts/windows-webview-probe.mjs, this commit)
+        # is strictly read-only and always exits 0 — findings surface in the
+        # probe artifact and workflow annotations, never as a hidden failure.
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          "commit: $(git rev-parse HEAD)" | Out-File -FilePath diag-build-info.txt -Encoding utf8
+          $treeVersion = node -p "require('./package.json').version"
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $installDir = $installDir.Trim('"', "'")
+          $exe = Join-Path $installDir "pathblender-desktop.exe"
+          if (-not (Test-Path $exe)) { Write-Host "::error::pathblender-desktop.exe not found at $exe"; exit 1 }
+          $env:PB_DEBUG_WEBVIEW_BROWSER_ARGS = "--remote-debugging-port=9222"
+          $env:PB_DEBUG_WEBVIEW_DATA_DIR = Join-Path $env:RUNNER_TEMP "pb-debug-webview-data"
+          New-Item -ItemType Directory -Force -Path $env:PB_DEBUG_WEBVIEW_DATA_DIR | Out-Null
+          @(
+            "tree version: $treeVersion",
+            "installed exe: $exe",
+            "installer flavor: offline NSIS built from this debug branch (NOT the published beta.24 package)",
+            "PB_DEBUG_WEBVIEW_BROWSER_ARGS: $env:PB_DEBUG_WEBVIEW_BROWSER_ARGS",
+            "PB_DEBUG_WEBVIEW_DATA_DIR: $env:PB_DEBUG_WEBVIEW_DATA_DIR",
+            "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: explicitly unset (builder path only)"
+          ) | Add-Content -Path diag-build-info.txt -Encoding utf8
+          try {
+            Write-Host "Launching $exe with a builder-passed remote debugging port on 127.0.0.1:9222"
+            $null = Start-Process -FilePath $exe -PassThru
+            Start-Sleep -Seconds 2
+            $proc = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($proc) {
+              $proc.Refresh()
+              "probe launch: pid $($proc.Id), window title '$($proc.MainWindowTitle)'" | Out-File -FilePath probe-launch.txt -Encoding utf8
+            } else {
+              "probe launch: no pathblender-desktop process 2s after Start-Process" | Out-File -FilePath probe-launch.txt -Encoding utf8
+            }
+            node scripts/windows-webview-probe.mjs --port 9222 --wait-ms 90000 --observe-ms 45000 --out-dir probe-out
+            if (Test-Path "probe-out/webview-probe-result.json") {
+              $r = Get-Content "probe-out/webview-probe-result.json" -Raw | ConvertFrom-Json
+              Write-Host "probe verdict: $($r.verdict)"
+              if ($r.portWaitError) { Write-Host "port wait error: $($r.portWaitError)" }
+              foreach ($p in @($r.pages)) {
+                Write-Host ("page: url={0} title={1} screenshot={2}" -f $p.url, $p.title, $p.screenshot)
+                $late = $p.lateSnapshot
+                if ($late -and $late.href) { Write-Host ("  late DOM: readyState={0} elements={1} bodyTextLength={2}" -f $late.readyState, $late.elementCount, $late.bodyTextLength) }
+              }
+              if ($r.verdict -like 'PORT_UNAVAILABLE*') { Write-Host "::warning::CDP endpoint never answered - full evidence in the windows-smoke-webview-probe artifact" }
+            } else {
+              Write-Host "::warning::probe produced no result JSON - check the probe artifact"
+            }
+          } finally {
+            Remove-Item Env:\PB_DEBUG_WEBVIEW_BROWSER_ARGS -ErrorAction SilentlyContinue
+            Remove-Item Env:\PB_DEBUG_WEBVIEW_DATA_DIR -ErrorAction SilentlyContinue
+            # Read-only side evidence: WebView2 child processes, the 9222
+            # socket state and recent app-related Application-log entries.
+            $wv = Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" -ErrorAction SilentlyContinue
+            if ($wv) {
+              $wv | ForEach-Object { "{0} pid={1} ppid={2}`n  cmd: {3}" -f $_.Name, $_.ProcessId, $_.ParentProcessId, $_.CommandLine } |
+                Out-File -FilePath webview2-processes.txt -Encoding utf8
+            } else {
+              "no msedgewebview2.exe processes observed" | Out-File -FilePath webview2-processes.txt -Encoding utf8
+            }
+            $listeners = Get-NetTCPConnection -LocalPort 9222 -ErrorAction SilentlyContinue
+            if ($listeners) {
+              $listeners | Select-Object LocalAddress, LocalPort, State, OwningProcess | Format-Table -AutoSize |
+                Out-File -FilePath webview2-port-9222.txt -Encoding utf8
+            } else {
+              "no socket on port 9222" | Out-File -FilePath webview2-port-9222.txt -Encoding utf8
+            }
+            try {
+              $lines = Get-WinEvent -FilterHashtable @{ LogName = 'Application'; Level = 2, 3; StartTime = (Get-Date).AddMinutes(-20) } -ErrorAction SilentlyContinue |
+                Where-Object { $_.Message -match 'pathblender|msedgewebview2|WebView2' } |
+                Select-Object -First 20 |
+                ForEach-Object {
+                  $msg = ($_.Message -replace "\r?\n", " ")
+                  if ($msg.Length -gt 500) { $msg = $msg.Substring(0, 500) }
+                  "{0} {1} id={2} {3}" -f $_.TimeCreated, $_.ProviderName, $_.Id, $msg
+                }
+              if ($lines) { $lines | Out-File -FilePath app-eventlog.txt -Encoding utf8 }
+              else { "no matching Application-log entries (read-only query)" | Out-File -FilePath app-eventlog.txt -Encoding utf8 }
+            } catch {
+              "event log read failed: $_" | Out-File -FilePath app-eventlog.txt -Encoding utf8
+            }
+            # Teardown: stop only the app's own pinned process name (per-PID),
+            # then any WebView2 child carrying our diagnostic port argument.
+            foreach ($p in @(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue)) { Stop-Process -Id $p.Id -Force }
+            $deadline = (Get-Date).AddSeconds(30)
+            do {
+              Start-Sleep -Milliseconds 500
+              $left = @(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue)
+            } while ($left.Count -gt 0 -and (Get-Date) -lt $deadline)
+            if ($left.Count -gt 0) {
+              Write-Host "::error::$($left.Count) probe PathBlender process(es) still running 30s after Stop-Process — refusing to leave a live app for the next step"
+              exit 1
+            }
+            $wvLeft = @(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" -ErrorAction SilentlyContinue |
+              Where-Object { $_.CommandLine -match '--remote-debugging-port=9222' })
+            foreach ($w in $wvLeft) { Stop-Process -Id $w.ProcessId -Force }
+            Write-Host "Probe teardown complete"
+          }
       - name: Locate, launch and assert
         shell: pwsh
         run: |
@@ -126,12 +279,28 @@ jobs:
           $bmp.Save("$PWD/smoke-screenshot.png")
           $g.Dispose(); $bmp.Dispose()
           Write-Host "Screenshot saved: $PWD/smoke-screenshot.png"
+      - name: Upload the WebView probe evidence (always)
+        # Diagnostic companion to the one-shot CDP step: its findings must
+        # survive even when a later step fails, and a missing probe bundle
+        # only warns when the diagnostic step itself never ran.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-smoke-webview-probe
+          path: |
+            probe-out/**
+            probe-launch.txt
+            webview2-processes.txt
+            webview2-port-9222.txt
+            app-eventlog.txt
+            diag-build-info.txt
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: windows-smoke
           path: |
             smoke-screenshot.png
             smoke-result.txt
-            packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
-            packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe.sig
+            release/
+            release-offline/
           if-no-files-found: error

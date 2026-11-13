@@ -732,6 +732,46 @@ pub fn run() {
             UPDATE_SESSION_DIRTY_DEFAULT,
         )))
         .setup(|app| {
+            // Debug-branch diagnostic scaffolding (debug/windows-main-webview,
+            // NOT a product fix): tauri creates config windows before this
+            // closure runs, which leaves no way to pass WebView2 browser
+            // arguments to the main window. The config marks it `create:
+            // false` so it is built here from the very same config instead.
+            // Without the diagnostic env vars below the window is built
+            // exactly as before; the extra args only ever come from the
+            // one-shot CDP workflow on this branch.
+            let main_config = app
+                .config()
+                .app
+                .windows
+                .iter()
+                .find(|w| w.label == "main")
+                .cloned()
+                .expect("main window config missing from tauri.conf.json");
+            let mut main_builder = WebviewWindowBuilder::from_config(app.handle(), &main_config)?;
+            if let Ok(extra_args) = std::env::var("PB_DEBUG_WEBVIEW_BROWSER_ARGS") {
+                let extra_args = extra_args.trim();
+                if !extra_args.is_empty() {
+                    // `additional_browser_args` REPLACES wry's built-in
+                    // defaults (wry-0.57.1 webview2/mod.rs builds
+                    // `--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection`
+                    // only when no args are given), so the defaults are
+                    // restated verbatim before the diagnostic flags. WebView2
+                    // requires webviews with different browser arguments to
+                    // use different data directories — the diagnostic
+                    // workflow always sets PB_DEBUG_WEBVIEW_DATA_DIR.
+                    main_builder = main_builder.additional_browser_args(&format!(
+                        "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection {extra_args}"
+                    ));
+                    if let Ok(dir) = std::env::var("PB_DEBUG_WEBVIEW_DATA_DIR") {
+                        let dir = dir.trim();
+                        if !dir.is_empty() {
+                            main_builder = main_builder.data_directory(PathBuf::from(dir));
+                        }
+                    }
+                }
+            }
+            main_builder.build()?;
             let menu = startup_menu(app.handle())?;
             app.set_menu(menu)?;
             #[cfg(target_os = "macos")]
