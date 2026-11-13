@@ -35,6 +35,7 @@ PathBlender comble ce manque :
 
 - **Zéro installation, zéro envoi (web)** — une application web statique : les fichiers de parcours sont analysés et vérifiés localement dans votre navigateur ;
 - **Aussi une application de bureau** — la même interface dans une enveloppe Tauri légère pour macOS, Windows et Linux, qui ajoute l’enregistrement/ouverture de sessions, la réexportation GIF et le paquet de solution, et les mises à jour intégrées (canal stable ou bêta). Les vérifications de mises à jour du bureau contactent GitHub Releases.
+- **Partage proche par Bluetooth** (bureau uniquement) — transmettez les fichiers de parcours directement à l’ordinateur voisin par Bluetooth ; indisponible sur le web.
 
 ## Démarrage rapide
 

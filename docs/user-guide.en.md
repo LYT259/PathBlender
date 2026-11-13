@@ -241,6 +241,24 @@ rest of the alliance.
 - **Updates** (desktop): menu **PathBlender → Check for Updates…**;
   Preferences → Updates switches between the stable and beta channels.
 
+## Sharing files with a nearby computer (Bluetooth)
+
+In the desktop app, **File → Share nearby (Bluetooth)** exchanges path files
+directly with a nearby computer over Bluetooth — no Wi-Fi, hotspot, or
+internet is involved at any point. The other computer opens the same dialog
+and chooses **Receive files**; the sender picks the files and the device.
+Both screens then show the same 6-digit code: compare them and confirm on
+each side only if they match exactly — that comparison is what detects an
+invisible man-in-the-middle. Every incoming file is then offered by name and
+size for a separate Accept or Reject; accepted files are SHA-256-verified
+and go through the same import flow as manual imports. Single files are
+limited to 2 MB — Bluetooth is too slow for large files, so use a USB drive
+for those. Nearby share exists only in the macOS and Windows desktop apps;
+the web app shows a desktop-only notice. If you plan to use it at a
+competition, check the current season's rules on Bluetooth and wireless
+devices yourself first — PathBlender does not claim this feature is
+competition-legal in any season.
+
 ## Installing the desktop app
 
 Downloads for every platform are on the

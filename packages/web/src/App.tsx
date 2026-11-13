@@ -47,6 +47,8 @@ import { filesFromDataTransfer, toIncoming, type IncomingFile } from './dropped-
 import { WpilogImportDialog, type WpilogImportResult, type WpilogIncomingFile } from './wpilog/WpilogImportDialog';
 import { HootImportFlow } from './hoot/HootImportFlow';
 import { routeHootFiles } from './hoot/gate';
+import { ShareDialog } from './ble/ShareDialog';
+import { bleCancel } from './ble/client';
 import './wpilog/WpilogImportDialog.css';
 import './hoot/HootImportFlow.css';
 import { displayName, robotsFromImport, type LibraryProfile, type LibraryRoute } from './route-library';
@@ -491,6 +493,9 @@ function AppBody() {
   // choice (red book #14): the dialog lists one row per team folder and the
   // commit applies each choice through the import layer.
   const [teamAllianceQueue, setTeamAllianceQueue] = useState<{ routes: LibraryRoute[]; profiles: LibraryProfile[] } | null>(null);
+  // BLE nearby-share dialog (2026-11): open from File ▸ Share nearby; the
+  // dialog itself gates on the host (web shows a desktop-only notice).
+  const [bleShareOpen, setBleShareOpen] = useState(false);
 
   const importFiles = useCallback(async (files: FileList | File[] | IncomingFile[], opts?: { fromFolder?: boolean }) => {
     exampleRequest.current += 1;
@@ -1547,6 +1552,7 @@ function AppBody() {
   menuHandlersRef.current = {
     import: openImport,
     'import-folder': () => folderInputRef.current?.click(),
+    'share-ble': () => setBleShareOpen(true),
     'open-session': () => sessionInputRef.current?.click(),
     save: saveSession,
     'export-package': exportSolutionPackage,
@@ -1837,6 +1843,7 @@ function AppBody() {
           onCancel={() => setHootQueue(null)}
         />
       )}
+      {bleShareOpen && <ShareDialog onClose={() => { setBleShareOpen(false); if (IS_DESKTOP) void bleCancel().catch(() => undefined); }} onReceived={(files) => { setBleShareOpen(false); void importFiles(files.map(({ name, data }) => new File([new Uint8Array(data)], name))); }} />}
       {showGuide && <GuideDialog onClose={() => setShowGuide(false)} onOpenShortcuts={() => { setShowGuide(false); setShowHelp(true); }} onOpenUrl={openExternalUrl} />}
       {showHelp && <Dialog title={tr('help.title')} onClose={() => setShowHelp(false)} className="help-dialog">
         <p className="help-intro">{tr('help.intro')}</p>

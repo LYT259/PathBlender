@@ -144,6 +144,17 @@ describe('third-party legal notices', () => {
     });
   });
 
+  it('ships the five BLE dependency licenses as desktop bundle resources', () => {
+    const config = JSON.parse(readFileSync(resolve(ROOT, 'packages/desktop/src-tauri/tauri.conf.json'), 'utf8'));
+    expect(config.bundle.resources).toMatchObject({
+      '../../../licenses/ble-peripheral-rust-MIT.txt': 'licenses/ble-peripheral-rust-MIT.txt',
+      '../../../licenses/btleplug-LICENSE.md': 'licenses/btleplug-LICENSE.md',
+      '../../../licenses/x25519-dalek-LICENSE': 'licenses/x25519-dalek-LICENSE',
+      '../../../licenses/chacha20poly1305-LICENSE': 'licenses/chacha20poly1305-LICENSE',
+      '../../../licenses/hkdf-LICENSE': 'licenses/hkdf-LICENSE',
+    });
+  });
+
   it('copies the same legal files into the web distribution after Vite empties it', () => {
     const pkg = JSON.parse(readFileSync(resolve(ROOT, 'packages/web/package.json'), 'utf8'));
     const copyScript = readFileSync(resolve(ROOT, 'scripts/copy-legal-files.mjs'), 'utf8');
@@ -442,7 +453,14 @@ describe('shipped-artifact verification gates', () => {
   it('the app and mounted dmg must carry the legal notices', () => {
     expect(script).toContain('verify_legal_notices "$APP"');
     expect(script).toContain('verify_legal_notices "$MNT/PathBlender.app"');
-    expect(script).toContain('licenses/FRCDesignApp-MIT.txt');
+    for (const f of [
+      'licenses/FRCDesignApp-MIT.txt',
+      'licenses/ble-peripheral-rust-MIT.txt',
+      'licenses/btleplug-LICENSE.md',
+      'licenses/x25519-dalek-LICENSE',
+      'licenses/chacha20poly1305-LICENSE',
+      'licenses/hkdf-LICENSE',
+    ]) expect(script, `packaging script must check ${f}`).toContain(f);
   });
 
   it('the updater archive is regenerated from the sealed bundle (never tauri’s pre-seal wrap)', () => {
@@ -553,7 +571,14 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     expect(run).toContain('CFBundleShortVersionString');
     expect(run).toContain('hdiutil attach -readonly -mountpoint');
     expect(run).toContain('NOTICE.md');
-    expect(run).toContain('licenses/FRCDesignApp-MIT.txt');
+    for (const f of [
+      'licenses/FRCDesignApp-MIT.txt',
+      'licenses/ble-peripheral-rust-MIT.txt',
+      'licenses/btleplug-LICENSE.md',
+      'licenses/x25519-dalek-LICENSE',
+      'licenses/chacha20poly1305-LICENSE',
+      'licenses/hkdf-LICENSE',
+    ]) expect(run, `release-verify mac mount check must cover ${f}`).toContain(f);
     expect(run).toContain('Assets.car');
     expect(run).toContain('open "$APP"');
     expect(run).toContain('pgrep -f "$MNT/PathBlender.app/Contents/MacOS/$EXE"');

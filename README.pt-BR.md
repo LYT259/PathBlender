@@ -35,6 +35,7 @@ O PathBlender preenche essa lacuna:
 
 - **Zero instalação, zero envio (web)** — um web app estático: os arquivos de trajetórias são analisados e verificados localmente no seu navegador;
 - **Também um aplicativo de desktop** — a mesma interface num envoltório Tauri leve para macOS, Windows e Linux, que acrescenta salvar/abrir sessões, repetição em GIF e exportação de pacote de solução, além de atualizações dentro do app (canal estável ou beta). As verificações de atualização do desktop contatam o GitHub Releases.
+- **Compartilhamento por perto via Bluetooth** (só no desktop) — envie arquivos de trajetórias direto para o computador ao lado por Bluetooth; não existe na web.
 
 ## Início rápido
 

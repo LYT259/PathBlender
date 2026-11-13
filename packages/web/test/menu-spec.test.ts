@@ -52,7 +52,7 @@ describe('menu spec', () => {
   it('File menu carries every import/save/export entry point', () => {
     const file = find(buildMenuSpec(ctx()), 'File')!;
     expect(idsOf(file.items)).toEqual([
-      'import', 'import-folder', 'open-session', 'role:separator',
+      'import', 'import-folder', 'share-ble', 'open-session', 'role:separator',
       'save', 'export-package', 'export-gif', 'role:separator', 'clear',
     ]);
     expect(file.items.find((e) => e.id === 'save')?.accelerator).toBe('CmdOrCtrl+S');

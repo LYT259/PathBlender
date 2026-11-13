@@ -40,6 +40,8 @@ You can also [follow me](https://github.com/LYT259) for updates and future proje
 - Robot-overlap and field-boundary checks.
 - 2D and 3D views with FRC 2022–2026 fields; custom fields in 2D.
 - Multiple interface languages and light/dark themes.
+- Nearby share: hand path files to a neighboring computer over Bluetooth
+  (desktop app only; not available on the web).
 
 | Files | How they are used |
 | --- | --- |

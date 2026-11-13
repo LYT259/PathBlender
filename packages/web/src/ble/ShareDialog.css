@@ -1,0 +1,58 @@
+/* BLE nearby-share dialog: pick a role → transfer → summary. Mirrors the
+   HOOT import flow dialog's sizing and body rhythm (Task 11 brief: reuse
+   only — same width, same flex gap, same existing tokens). */
+
+.ble-share-dialog {
+  width: min(520px, calc(100vw - 32px));
+}
+
+.ble-share-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ble-share-heading {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.ble-share-error {
+  color: var(--danger, #ff453a);
+  font-size: 13px;
+  margin: 0;
+}
+
+.ble-share-hint {
+  font-size: 13px;
+  margin: 0;
+  opacity: 0.7;
+}
+
+.ble-share-devices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ble-share-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ble-share-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  margin: 0;
+}
+
+.ble-share-progress progress {
+  width: 100%;
+}

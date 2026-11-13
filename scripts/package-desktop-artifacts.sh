@@ -60,7 +60,10 @@ APP="$BUNDLE/macos/PathBlender.app"
 
 verify_legal_notices() {
   local app="$1" relative
-  for relative in LICENSE NOTICE.md licenses/FRCDesignApp-MIT.txt; do
+  for relative in LICENSE NOTICE.md licenses/FRCDesignApp-MIT.txt \
+      licenses/ble-peripheral-rust-MIT.txt licenses/btleplug-LICENSE.md \
+      licenses/x25519-dalek-LICENSE licenses/chacha20poly1305-LICENSE \
+      licenses/hkdf-LICENSE; do
     [[ -f "$app/Contents/Resources/$relative" ]] || {
       echo "package-desktop-artifacts.sh: missing legal notice: $app/Contents/Resources/$relative" >&2
       return 1

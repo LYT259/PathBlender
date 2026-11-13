@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<!-- Deliberately empty: the user-configured AI endpoints these keys were
-     declared for were removed in full on 2026-09-30 (no local-network or
-     plain-http traffic remains — the updater talks HTTPS). -->
-<dict/>
+<!-- Bluetooth is used only for explicit nearby file exchange. -->
+<dict>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>PathBlender uses Bluetooth to exchange path files directly between nearby computers. No files are sent over the internet.</string>
+</dict>
 </plist>

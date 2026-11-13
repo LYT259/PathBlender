@@ -110,6 +110,36 @@ Runtime dependencies of the shipped app, each under its own license:
 - **window-vibrancy** (Apache-2.0 OR MIT) —
   https://github.com/tauri-apps/tauri-plugin-vibrancy — macOS sidebar
   material.
+- **btleplug** 0.13.5 (MIT/Apache-2.0/BSD-3-Clause, any one at the user's
+  option) — https://github.com/deviceplug/btleplug — Bluetooth LE central
+  role (scanning, connection, GATT client) for the desktop nearby-share
+  feature; the full triple license text is kept at
+  `licenses/btleplug-LICENSE.md`.
+- **ble-peripheral-rust** 0.2.0 (MIT) —
+  https://github.com/rohitsangwan01/ble-peripheral-rust — Bluetooth LE
+  peripheral/GATT server role for nearby share; the MIT text is kept at
+  `licenses/ble-peripheral-rust-MIT.txt`. On Apple platforms this crate
+  pulls in the `objc2 0.5.3` / `objc2-core-bluetooth 0.2.2` line and on
+  Windows the `windows 0.57.0` line, which coexist with the `objc2 0.6.4`
+  and `windows 0.62.2` lines already used by the Tauri stack (Cargo permits
+  multiple semver-incompatible versions; the cost is compile time only).
+- **x25519-dalek** 2.0.1 (BSD-3-Clause, as declared by and shipped with the
+  crate) — https://github.com/dalek-cryptography/curve25519-dalek/tree/main/x25519-dalek —
+  X25519 key agreement (RFC 7748) for nearby-share session keys; the license
+  text is kept at `licenses/x25519-dalek-LICENSE`.
+- **chacha20poly1305** 0.10.1 (MIT OR Apache-2.0) —
+  https://github.com/RustCrypto/AEADs — ChaCha20-Poly1305 AEAD (RFC 8439)
+  for nearby-share frames; both license texts are kept at
+  `licenses/chacha20poly1305-LICENSE`.
+- **hkdf** 0.12.4 (MIT OR Apache-2.0) —
+  https://github.com/RustCrypto/KDFs — HKDF-SHA256 (RFC 5869) key derivation
+  for nearby share; both license texts are kept at `licenses/hkdf-LICENSE`.
+- **rand_core** 0.6.4 (MIT OR Apache-2.0) —
+  https://github.com/rust-random/rand — operating-system randomness for
+  nearby-share key generation.
+- **async-trait** 0.1.92 (MIT OR Apache-2.0) —
+  https://github.com/dtolnay/async-trait — async trait support for the
+  nearby-share radio adapters.
 - **Microsoft Edge WebView2 Runtime** (Microsoft Software License Terms) —
   the offline Windows NSIS installer
   (`PathBlender_<version>_x64-offline-setup.exe`) redistributes the

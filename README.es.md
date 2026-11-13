@@ -35,6 +35,7 @@ PathBlender cubre ese hueco:
 
 - **Cero instalación, cero subidas (web)** — una aplicación web estática: los archivos de rutas se analizan y comprueban localmente en tu navegador;
 - **También aplicación de escritorio** — la misma interfaz en un entorno Tauri ligero para macOS, Windows y Linux, que añade guardar/abrir sesiones, repetición GIF y exportación de paquete de solución, y actualizaciones integradas (canal estable o beta). Las comprobaciones de actualización del escritorio contactan con GitHub Releases.
+- **Compartir cercano por Bluetooth** (solo escritorio) — envía archivos de rutas directamente al ordenador de al lado por Bluetooth; no disponible en la web.
 
 ## Inicio rápido
 
