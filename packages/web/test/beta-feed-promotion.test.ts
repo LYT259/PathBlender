@@ -1,3 +1,7 @@
+import { execFileSync } from 'node:child_process';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error repository scripts are plain JavaScript
 import { compareVersions, planPromotion } from '../../../scripts/promote-beta-feed.mjs';
@@ -48,5 +52,83 @@ describe('beta feed promotion recovery', () => {
     ], stable).sourceTag).toBe('v0.1.9');
     expect(() => planPromotion([], stable)).toThrow('No completed');
     expect(() => planPromotion([stable], { ...stable, prerelease: true })).toThrow('stable');
+  });
+});
+
+describe('beta feed promotion against a real gh invocation', () => {
+  // This script runs only on Ubuntu in release.yml; its POSIX fake gh is not a Windows executable.
+  it.skipIf(process.platform === 'win32')('reads paginated releases larger than the default 1 MiB exec buffer and promotes the feed', () => {
+    const root = mkdtempSync(join(tmpdir(), 'pb-feed-promote-'));
+    try {
+      const state = join(root, 'state');
+      const bin = join(root, 'bin');
+      mkdirSync(state);
+      mkdirSync(bin);
+      const pad = 'release notes regression padding for the beta feed promotion test. ';
+      const beta = {
+        tag_name: 'v0.1.10-beta.23',
+        draft: false,
+        prerelease: true,
+        body: pad.repeat(Math.ceil((2.5 * 1024 * 1024) / pad.length)),
+        assets: [{ name: 'latest-beta.json', state: 'uploaded', size: 23082 }],
+      };
+      const stable = {
+        tag_name: 'v0.1.9',
+        draft: false,
+        prerelease: false,
+        assets: [{ name: 'latest.json', state: 'uploaded', size: 23081 }],
+      };
+      const releases = JSON.stringify([[beta, stable]]);
+      expect(Buffer.byteLength(releases)).toBeGreaterThan(2 * 1024 * 1024);
+      writeFileSync(join(state, 'releases.json'), releases);
+      writeFileSync(join(state, 'latest.json'), JSON.stringify(stable));
+      const feed = JSON.stringify({ version: '0.1.10-beta.23', pub_date: '2026-11-13T12:00:00Z', platforms: {} });
+      writeFileSync(join(state, 'latest-beta-feed.json'), feed);
+      const fakeGh = [
+        '#!/usr/bin/env node',
+        'const { copyFileSync, readFileSync, writeFileSync, writeSync } = require(\'node:fs\');',
+        'const { join } = require(\'node:path\');',
+        'const state = process.env.FAKE_GH_STATE;',
+        'const args = process.argv.slice(2);',
+        'if (args[0] === \'api\') {',
+        '  const file = args.includes(\'--paginate\') ? \'releases.json\' : \'latest.json\';',
+        '  const data = readFileSync(join(state, file));',
+        '  let offset = 0;',
+        '  while (offset < data.length) offset += writeSync(1, data, offset, data.length - offset);',
+        '  process.exit(0);',
+        '}',
+        'if (args[0] === \'release\' && args[1] === \'download\') {',
+        '  const dir = args[args.indexOf(\'--dir\') + 1];',
+        '  const pattern = args[args.indexOf(\'--pattern\') + 1];',
+        '  writeFileSync(join(dir, pattern), readFileSync(join(state, \'latest-beta-feed.json\'), \'utf8\'));',
+        '  process.exit(0);',
+        '}',
+        'if (args[0] === \'release\' && args[1] === \'upload\') {',
+        '  if (!args.includes(\'--clobber\') || args[args.indexOf(\'--repo\') + 1] !== \'acme/widget\') process.exit(65);',
+        '  copyFileSync(args[3], join(state, \'uploaded-latest-beta.json\'));',
+        '  process.exit(0);',
+        '}',
+        'process.stderr.write(\'fake gh: unexpected invocation \' + JSON.stringify(args) + \'\\n\');',
+        'process.exit(64);',
+        ''
+      ].join('\n');
+      writeFileSync(join(bin, 'gh'), fakeGh);
+      chmodSync(join(bin, 'gh'), 0o755);
+      const script = resolve(__dirname, '../../../scripts/promote-beta-feed.mjs');
+      const stdout = execFileSync(process.execPath, [script], {
+        cwd: root,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          GITHUB_REPOSITORY: 'acme/widget',
+          PATH: `${bin}:${process.env.PATH ?? ''}`,
+          FAKE_GH_STATE: state,
+        },
+      }).trim();
+      expect(stdout).toBe('Promoted 0.1.10-beta.23 onto v0.1.9');
+      expect(readFileSync(join(state, 'uploaded-latest-beta.json'), 'utf8')).toBe(feed);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

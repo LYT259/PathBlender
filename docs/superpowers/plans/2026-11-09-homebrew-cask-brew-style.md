@@ -10,7 +10,7 @@ Homebrew 真实分发验收（task:homebrew-tap-acceptance-20261109）在本机
 1. `Casks/pathblender.rb:11:21: C: [Correctable] Homebrew/OSDependsOn:
    Use depends_on macos: :ventura.` —— 生成器输出
    `depends_on macos: ">= :ventura"`，新版 rubocop 要求单一下限用裸符号
-   `depends_on macos: :ventura`（语义等价：ventura 及以上）。
+   `depends_on macos: :ventura`（当时误判为语义等价；2026-11-13 实测更正：not equivalent on Homebrew 4.x，裸符号表示仅 Ventura，跨版本最低版本必须保留 `>=`）。
 2. `Casks/pathblender.rb:15:1: C: [Correctable] Layout/TrailingEmptyLines:
    1 trailing blank lines detected.` —— 模板以 `end\n` 结尾且 `console.log`
    再补一个 `\n`，产物以 `end\n\n` 结尾，多一个空行。
@@ -21,12 +21,12 @@ PR/合并由控制器统一交付。
 ## 改动（最小）
 
 - `scripts/gen-homebrew-cask.mjs`：
-  - `depends_on macos: ">= :ventura"` → `depends_on macos: :ventura`；
+  - `depends_on macos: ">= :ventura"` → `depends_on macos: :ventura`（当时步骤；比较符变更已于 2026-11-13 回退，见第四轮更正）；
   - 模板结尾由 `end\n`（+console.log 换行）改为 `end`，产物以单个 `end\n`
     结尾（无尾部空行）。
 - `packages/web/test/gen-homebrew-cask.test.ts`：契约断言同步为期望输出
   （先改测试确认 RED，再改实现到 GREEN）：
-  - contains `depends_on macos: :ventura`；
+  - contains `depends_on macos: :ventura`（当时步骤；已于 2026-11-13 改为正向钉住 `>=` 并补裸符号反向断言）；
   - `out.endsWith('end\n')` 为真且不以 `\n\n` 结尾。
 
 ## 验证
@@ -79,3 +79,7 @@ TDD：契约测试先改（新增 not.toContain('verified')、livecheck 三行�
 `regex(/^v(0\.1\.10(?:-beta\.\d+)?)$/i)`（对 tag `v0.1.10-beta.17`
 捕获 `0.1.10-beta.17`，与 cask version 同形）。TDD 同前：断言先改
 （2 failed RED）→ 实现 → 9/9 GREEN。
+
+## 第四轮更正（2026-11-13：跨版本最低系统约束）
+
+后续实测发现 Homebrew 4.x 将裸 `:ventura` 解释为“仅 Ventura”，而非最低版本；前文按新版 style 建议改成裸符号的变更不可跨版本移植。当前生成器与公开 tap 恢复 `depends_on macos: ">= :ventura"`，与 App 的最低 macOS 13 一致。不得再用 `brew style --fix` 把这行改成裸符号；新版 Homebrew 的格式化偏好不得覆盖旧版实际安装兼容性。

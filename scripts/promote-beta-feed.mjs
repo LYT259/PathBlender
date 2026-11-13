@@ -46,7 +46,7 @@ export function planPromotion(releases, stable) {
 function promote() {
   const repo = process.env.GITHUB_REPOSITORY;
   if (!/^[\w.-]+\/[\w.-]+$/.test(repo ?? '')) throw new Error('Missing repository');
-  const gh = args => execFileSync('gh', args, { encoding: 'utf8' });
+  const gh = args => execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 1024 * 1024 * 64 });
   const pages = JSON.parse(gh(['api', '--paginate', '--slurp', `repos/${repo}/releases?per_page=100`]));
   const releases = pages.flat();
   if (!releases.some(release => !release.draft && !release.prerelease)) {

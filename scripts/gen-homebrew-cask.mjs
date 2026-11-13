@@ -40,7 +40,7 @@ console.log(`cask "pathblender" do
     regex(/^v(${versionLine}(?:-beta\\.\\d+)?)$/i)
   end
 
-  depends_on macos: :ventura
+  depends_on macos: ">= :ventura"
 
   app "PathBlender.app"
 end`);
