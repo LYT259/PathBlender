@@ -706,6 +706,18 @@ describe('Windows offline installer pipeline', () => {
     expect(windows).toContain('_x64-offline-setup.exe');
     expect(windows).toContain('-ArgumentList "/S"');
   });
+  it('opens Preferences and finds the channel control on the actual Windows candidate build', () => {
+    const beta = readFileSync(resolve(ROOT, '.github/workflows/beta-verify.yml'), 'utf-8');
+    const windows = beta.slice(beta.indexOf('  windows:'), beta.indexOf('  macos:'));
+    // update-verify intentionally uses only published artifacts, so it cannot
+    // prove a branch-side blank-window fix. The PR's own Windows package must
+    // open Preferences through the native Help menu and expose its combobox.
+    expect(windows).toContain('Open Preferences on the candidate build');
+    expect(windows).toContain('"Help"');
+    expect(windows).toContain('"Check for updates"');
+    expect(windows).toContain('[System.Windows.Automation.ControlType]::ComboBox');
+    expect(windows.indexOf('Open Preferences on the candidate build')).toBeLessThan(windows.indexOf('Stop the online-installed PathBlender before the offline install'));
+  });
   it('release-verify downloads, digest-pins, size-floors, installs and launches the offline asset', () => {
     const verifyText2 = readFileSync(resolve(ROOT, '.github/workflows/release-verify.yml'), 'utf-8');
     const windows = verifyText2.slice(verifyText2.indexOf('  windows-installer:'), verifyText2.indexOf('  macos-intel-dmg:'));
