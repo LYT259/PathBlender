@@ -21,12 +21,12 @@ PR/合并由控制器统一交付。
 ## 改动（最小）
 
 - `scripts/gen-homebrew-cask.mjs`：
-  - `depends_on macos: ">= :ventura"` → `depends_on macos: :ventura`；
+  - `depends_on macos: ">= :ventura"` → `depends_on macos: :ventura`（当时步骤；比较符变更已于 2026-11-13 回退，见第四轮更正）；
   - 模板结尾由 `end\n`（+console.log 换行）改为 `end`，产物以单个 `end\n`
     结尾（无尾部空行）。
 - `packages/web/test/gen-homebrew-cask.test.ts`：契约断言同步为期望输出
   （先改测试确认 RED，再改实现到 GREEN）：
-  - contains `depends_on macos: :ventura`；
+  - contains `depends_on macos: :ventura`（当时步骤；已于 2026-11-13 改为正向钉住 `>=` 并补裸符号反向断言）；
   - `out.endsWith('end\n')` 为真且不以 `\n\n` 结尾。
 
 ## 验证
