@@ -27,7 +27,10 @@ describe('homebrew cask generator', () => {
       'url :homepage',
       'strategy :git',
       'regex(/^v(0\\.1\\.10(?:-beta\\.\\d+)?)$/i)',
-      'depends_on macos: :ventura',
+      // The app declares a MINIMUM of macOS 13 (Ventura), not an exact-only
+      // release. Real installation on macOS 27 proved that the bare symbol is
+      // rejected as "versions other than Ventura"; keep the >= comparator.
+      'depends_on macos: ">= :ventura"',
       'app "PathBlender.app"',
     ]) expect(out).toContain(s);
     expect(out.endsWith('end\n')).toBe(true);
