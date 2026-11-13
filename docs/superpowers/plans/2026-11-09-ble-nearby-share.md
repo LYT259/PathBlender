@@ -660,7 +660,7 @@
 - [ ] `node scripts/check-version.mjs` 通过（版本未被本分支私改——抬号属交付链）
 
 **三端验证（AGENTS Beta 交付流程，合并前对最终候选执行）：**
-- Mac（本机隔离环境，不覆盖用户 /Applications 路径的日常 App——按 install-desktop 的隔离验证惯例）+ Linux（验证主机 已指定的验证主机，离线则如实标未验并按流程处理）+ Windows（CI Beta gate：真实 NSIS 构建/安装/启动；BLE 无线电 CI 不可验，如实标注）。任一端失败不得合入。
+- Mac（本机隔离环境，不覆盖用户 /Applications 路径的日常 App——按 install-desktop 的隔离验证惯例）+ Linux（已指定的验证主机，离线则如实标未验并按流程处理）+ Windows（CI Beta gate：真实 NSIS 构建/安装/启动；BLE 无线电 CI 不可验，如实标注）。任一端失败不得合入。
 
 **真机验收清单（执行后把结果如实写入 `docs/ble-nearby-share.md` 验收记录节；没做就标「未验」）：**
 1. Mac ↔ Mac（同一台也可双实例）：发现→SAS 确认→单文件 .traj 传输→SHA 校验→importFiles 正常出轨迹；
