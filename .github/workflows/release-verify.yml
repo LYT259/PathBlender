@@ -272,6 +272,90 @@ jobs:
           Write-Host "Installing $($setup.Name)"
           $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
           if ($p.ExitCode -ne 0) { Write-Host "::error::offline installer exit code $($p.ExitCode)"; exit 1 }
+      - name: One-shot WebView diagnostics - launch under a loopback CDP port and inspect the main page
+        # Diagnostic-only step (debug branch): launches the offline-installed
+        # app with WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS pinning a remote
+        # debugging port to 127.0.0.1 on this ephemeral runner, then runs the
+        # read-only probe script against it. The probe never navigates, never
+        # injects page state and reads no credentials; it records the page
+        # URL, DOM state, resource loads and JS errors so the beta.24 white
+        # main window can be diagnosed from evidence instead of guesses.
+        # Everything the probe observes is torn down before the next step.
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          curl.exe -fsSL --retry 3 -o windows-webview-probe.mjs "https://raw.githubusercontent.com/$env:GITHUB_REPOSITORY/$env:GITHUB_SHA/scripts/windows-webview-probe.mjs"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::failed to fetch windows-webview-probe.mjs"; exit 1 }
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $installDir = $installDir.Trim('"', "'")
+          $exe = Join-Path $installDir "pathblender-desktop.exe"
+          if (-not (Test-Path $exe)) { Write-Host "::error::pathblender-desktop.exe not found at $exe"; exit 1 }
+          $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222"
+          try {
+            Write-Host "Launching $exe with a loopback-only remote debugging port"
+            $null = Start-Process -FilePath $exe -PassThru
+            Start-Sleep -Seconds 2
+            $proc = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($proc) {
+              $proc.Refresh()
+              "probe launch: pid $($proc.Id), window title '$($proc.MainWindowTitle)'" | Out-File -FilePath probe-launch.txt -Encoding utf8
+            } else {
+              "probe launch: no pathblender-desktop process 2s after Start-Process" | Out-File -FilePath probe-launch.txt -Encoding utf8
+            }
+            node windows-webview-probe.mjs --port 9222 --wait-ms 90000 --observe-ms 45000 --out-dir probe-out
+          } finally {
+            Remove-Item Env:\WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
+            # Read-only side evidence: WebView2 child processes, the 9222
+            # socket state and recent app-related Application-log entries.
+            $wv = Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" -ErrorAction SilentlyContinue
+            if ($wv) {
+              $wv | ForEach-Object { "{0} pid={1} ppid={2}`n  cmd: {3}" -f $_.Name, $_.ProcessId, $_.ParentProcessId, $_.CommandLine } |
+                Out-File -FilePath webview2-processes.txt -Encoding utf8
+            } else {
+              "no msedgewebview2.exe processes observed" | Out-File -FilePath webview2-processes.txt -Encoding utf8
+            }
+            $listeners = Get-NetTCPConnection -LocalPort 9222 -ErrorAction SilentlyContinue
+            if ($listeners) {
+              $listeners | Select-Object LocalAddress, LocalPort, State, OwningProcess | Format-Table -AutoSize |
+                Out-File -FilePath webview2-port-9222.txt -Encoding utf8
+            } else {
+              "no socket on port 9222" | Out-File -FilePath webview2-port-9222.txt -Encoding utf8
+            }
+            try {
+              $lines = Get-WinEvent -FilterHashtable @{ LogName = 'Application'; Level = 2, 3; StartTime = (Get-Date).AddMinutes(-20) } -ErrorAction SilentlyContinue |
+                Where-Object { $_.Message -match 'pathblender|msedgewebview2|WebView2' } |
+                Select-Object -First 20 |
+                ForEach-Object {
+                  $msg = ($_.Message -replace "\r?\n", " ")
+                  if ($msg.Length -gt 500) { $msg = $msg.Substring(0, 500) }
+                  "{0} {1} id={2} {3}" -f $_.TimeCreated, $_.ProviderName, $_.Id, $msg
+                }
+              if ($lines) { $lines | Out-File -FilePath app-eventlog.txt -Encoding utf8 }
+              else { "no matching Application-log entries (read-only query)" | Out-File -FilePath app-eventlog.txt -Encoding utf8 }
+            } catch {
+              "event log read failed: $_" | Out-File -FilePath app-eventlog.txt -Encoding utf8
+            }
+            # Teardown: stop only the app's own pinned process name (per-PID),
+            # then any WebView2 child carrying our diagnostic port argument.
+            foreach ($p in @(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue)) { Stop-Process -Id $p.Id -Force }
+            $deadline = (Get-Date).AddSeconds(30)
+            do {
+              Start-Sleep -Milliseconds 500
+              $left = @(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue)
+            } while ($left.Count -gt 0 -and (Get-Date) -lt $deadline)
+            if ($left.Count -gt 0) {
+              Write-Host "::error::$($left.Count) probe PathBlender process(es) still running 30s after Stop-Process — refusing to leave a live app for the next step"
+              exit 1
+            }
+            $wvLeft = @(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" -ErrorAction SilentlyContinue |
+              Where-Object { $_.CommandLine -match '--remote-debugging-port=9222' })
+            foreach ($w in $wvLeft) { Stop-Process -Id $w.ProcessId -Force }
+            Write-Host "Probe teardown complete"
+          }
       - name: Locate, launch and assert (offline)
         # Same per-user install discovery as the online path; the expected
         # version comes from the release tag because this workflow never
@@ -327,6 +411,21 @@ jobs:
             sha256-offline.log
             release.json
           if-no-files-found: error
+      - name: Upload the WebView probe evidence (always)
+        # Diagnostic companion to the one-shot probe step: its findings must
+        # survive even when a later verification step fails, and a missing
+        # probe bundle only warns when the probe step itself never ran.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-verify-windows-probe
+          path: |
+            probe-out/**
+            probe-launch.txt
+            webview2-processes.txt
+            webview2-port-9222.txt
+            app-eventlog.txt
+          if-no-files-found: warn
 
   macos-intel-dmg:
     if: github.event.repository.private == false
