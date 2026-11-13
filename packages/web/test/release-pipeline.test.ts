@@ -1000,6 +1000,22 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     expect(text.match(/prefs-open\.png/g) ?? []).toHaveLength(2);
   });
 
+  it('creates the Preferences webview off the synchronous Windows menu thread', () => {
+    // The real run 43396146347 shows a native Preferences frame with a blank
+    // webview. Tauri documents WebviewWindowBuilder.build() as deadlocking in
+    // synchronous commands/event handlers on Windows; creation must move to a
+    // separate thread while the existing-window focus/eval path stays intact.
+    const rust = readFileSync(resolve(ROOT, 'packages/desktop/src-tauri/src/lib.rs'), 'utf-8');
+    const start = rust.indexOf('fn open_prefs(');
+    const end = rust.indexOf('\nfn create_prefs_window', start);
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const opener = rust.slice(start, end);
+    expect(opener).toContain('#[cfg(target_os = "windows")]');
+    expect(opener).toContain('std::thread::spawn');
+    expect(opener).toContain('create_prefs_window');
+  });
+
   it('opens Preferences by expanding the native Help menu — no Ctrl+, SendKeys (dead on Windows)', () => {
     // Run 43390027355 proved the opener dead: CmdOrCtrl+, only exists in the
     // macOnly app menu (menu-spec.ts; build_menu_from_spec skips mac_only on
