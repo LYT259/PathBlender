@@ -853,17 +853,29 @@ describe('update chain verification workflow (update-verify.yml)', () => {
   });
 
   it('re-checks the old pid INSIDE the prefs fallback and reads a dead-window UIA failure as the takeover', () => {
-    // The fallback's element waits and the 2s sleep can span the moment
-    // the channel-switch install exits the old process: without a
-    // re-check, the next Wait-Element runs $Root.FindAll on a dead
-    // window and a normal update fails as a UIA crash. Four probe
-    // points are required: the loop entry, the mid-fallback re-check,
-    // the catch arm that must re-throw while the old process is still
-    // alive (real UIA errors stay failures), and the post-loop guard
-    // covered by its own test below.
-    expect((run.match(/Get-Process -Id \$oldPid -ErrorAction SilentlyContinue/g) ?? []).length).toBe(4);
-    expect(run).toMatch(/Start-Sleep -Seconds 2 \}\r?\n\s*if \(-not \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\) \{ \$flow = "channel-switch auto"; break \}/);
+    // The fallback's element waits can span the moment the channel-switch
+    // install exits the old process: without re-checks, the next
+    // Wait-Element runs $Root.FindAll on a dead window and a normal
+    // update fails as a UIA crash. Six probe points are required: the
+    // watch entry, every iteration of the bounded install wait, the
+    // catch arm that must re-throw while the old process is still alive
+    // (real UIA errors stay failures), the post-loop guard (own test
+    // below), and phase 1's loop condition plus its final re-query.
+    expect((run.match(/Get-Process -Id \$oldPid -ErrorAction SilentlyContinue/g) ?? []).length).toBe(6);
+    expect(run).toMatch(/if \(-not \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\) \{ \$flow = "channel-switch auto"; break \}\r?\n\s*\$install = Wait-Element \$prefs "Install and relaunch" 2/);
     expect(run).toMatch(/\} catch \{\r?\n\s*if \(-not \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\) \{ \$flow = "channel-switch auto"; break \}\r?\n\s*throw/);
+  });
+
+  it('clicks the prefs check at most once per bounded install wait — re-clicking resets the panel', () => {
+    // PreferencesPanel hides the install button while a check is in
+    // flight, so a fallback that re-clicks "Check for updates" every
+    // loop iteration against a slow feed livelocks: the click clears
+    // the found state before the 2s install wait can see the button
+    // (simulated 23 checks, 0 install clicks). The fallback must bound
+    // each check with a patient install wait (20s) instead of the
+    // watch loop's own cadence.
+    expect((run.match(/Invoke-Element \$check/g) ?? []).length).toBe(1);
+    expect(run).toContain('$installDeadline = (Get-Date).AddSeconds(20)');
   });
 
   it('reads an empty flow with the old process already gone as a takeover, not a failure', () => {
@@ -871,19 +883,37 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     // and the next loop-entry check: the takeover lands inside the last
     // element wait, Wait-Element returns null WITHOUT throwing (so the
     // catch arm never runs), and the loop exits with an empty flow while
-    // the old process is already gone. The empty-flow ::error:: must be
-    // preceded by one more old-pid probe that converts exactly this case
-    // into the channel-switch auto flow; a still-live old process keeps
-    // the failure semantics (phase 2 then re-asserts the file version).
+    // the old process is already gone. The guard must sit OUTSIDE the
+    // watch loop (step-body indentation, before phase 1) and before the
+    // empty-flow ::error::; a still-live old process keeps the failure
+    // semantics (phase 2 then re-asserts the file version).
     const failMarker = '::error::neither the channel-switch install nor the prefs two-step produced an install';
     const failIdx = run.indexOf(failMarker);
     expect(failIdx).toBeGreaterThan(0);
-    const afterLoop = run.indexOf('$flow = "prefs two-step"; break }');
-    expect(afterLoop).toBeGreaterThan(0);
-    const probe = 'if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto" }';
-    const probeIdx = run.indexOf(probe, afterLoop);
-    expect(probeIdx).toBeGreaterThan(afterLoop);
-    expect(probeIdx).toBeLessThan(failIdx);
+    const watchIdx = run.indexOf('while ($watch.Elapsed.TotalSeconds -lt 150) {');
+    expect(watchIdx).toBeGreaterThan(0);
+    const phase1Idx = run.indexOf('# Takeover phase 1:');
+    expect(phase1Idx).toBeGreaterThan(watchIdx);
+    // The YAML parser strips the step's base indentation, so in the
+    // joined run text step-body statements sit at column 0 while
+    // in-loop statements are indented — the guard must open at column 0.
+    const guard = run.match(/\nif \(-not \$flow\) \{\r?\n  #[^\n]*\r?\n(?:  [^\n]*\r?\n){0,8}  if \(-not \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\) \{ \$flow = "channel-switch auto" \}\r?\n\}/);
+    expect(guard, 'post-loop old-pid guard must exist at step-body indentation').toBeTruthy();
+    const guardIdx = guard ? (run.indexOf(guard[0]) ?? -1) : -1;
+    expect(guardIdx).toBeGreaterThan(watchIdx);
+    expect(guardIdx).toBeLessThan(failIdx);
+    expect(failIdx).toBeLessThan(phase1Idx);
+  });
+
+  it('phase 1 re-queries the old pid before declaring the takeover failed', () => {
+    // The 180s deadline can expire during the last 500ms sleep with the
+    // old process exiting inside it: trusting the loop's last
+    // observation then fails a takeover that actually happened. The
+    // loop condition must query fresh every iteration and the failure
+    // branch must re-query again instead of reusing a stale object.
+    expect(run).toMatch(/do \{\r?\n\s*Start-Sleep -Milliseconds 500\r?\n\s*\} while \(\(Get-Date\) -lt \$deadline -and \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\)/);
+    expect(run).toMatch(/if \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\) \{ Write-Host "::error::old process still running/);
+    expect(run).not.toContain('$alive = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Where-Object');
   });
 
   it('reports every failure path with an explicit ::error:: annotation', () => {

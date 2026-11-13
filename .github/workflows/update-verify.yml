@@ -326,7 +326,11 @@ jobs:
           # Takeover is detected by the OLD pid exiting — a fast installer
           # can exit the old app and start the new one between two polls,
           # so an "all same-name processes gone" check would never fire and
-          # would keep clicking a prefs window that no longer exists.
+          # would keep clicking a prefs window that no longer exists. The
+          # fallback bounds each check click with a patient 20s install
+          # wait: the panel hides the install button while a check is in
+          # flight, so re-clicking on the watch cadence clears the found
+          # state and a slow feed livelocks with the button never clicked.
           $flow = ""
           $watch = [System.Diagnostics.Stopwatch]::StartNew()
           while ($watch.Elapsed.TotalSeconds -lt 150) {
@@ -334,21 +338,28 @@ jobs:
             if (-not $oldAlive) { $flow = "channel-switch auto"; break }
             if ($watch.Elapsed.TotalSeconds -gt 30) {
               # The channel-switch install can take over DURING these
-              # waits: re-check the old pid before touching the prefs
-              # window again, and read a UIA failure on that window as
-              # the takeover signature when the old process is gone —
-              # never as a false workflow failure. Real UIA errors with
-              # the old process still alive stay failures (re-throw).
+              # waits: re-check the old pid before every prefs touch, and
+              # read a UIA failure on that window as the takeover
+              # signature when the old process is gone — never as a false
+              # workflow failure. Real UIA errors with the old process
+              # still alive stay failures (re-throw).
               try {
                 $check = Wait-Element $prefs "Check for updates" 2
-                if ($check -and $check.Current.IsEnabled) { Invoke-Element $check; Start-Sleep -Seconds 2 }
-                if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto"; break }
-                $install = Wait-Element $prefs "Install and relaunch" 2
-                if ($install) { Invoke-Element $install; $flow = "prefs two-step"; break }
+                if ($check -and $check.Current.IsEnabled) {
+                  Invoke-Element $check
+                  $installDeadline = (Get-Date).AddSeconds(20)
+                  while ((Get-Date) -lt $installDeadline) {
+                    if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto"; break }
+                    $install = Wait-Element $prefs "Install and relaunch" 2
+                    if ($install) { Invoke-Element $install; $flow = "prefs two-step"; break }
+                    Start-Sleep -Milliseconds 500
+                  }
+                }
               } catch {
                 if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto"; break }
                 throw
               }
+              if ($flow) { break }
             }
             Start-Sleep -Milliseconds 500
           }
@@ -365,14 +376,16 @@ jobs:
           if (-not $flow) { Write-Host "::error::neither the channel-switch install nor the prefs two-step produced an install"; exit 1 }
           "update flow: $flow" | Out-File -FilePath update-log.txt -Append -Encoding utf8
 
-          # Takeover phase 1: the installer exits the old process.
+          # Takeover phase 1: the installer exits the old process. The
+          # deadline can expire during the last 500ms sleep with the old
+          # process exiting inside it, so the loop queries fresh every
+          # iteration and the failure branch re-queries again instead of
+          # trusting a stale observation.
           $deadline = (Get-Date).AddSeconds(180)
-          while ((Get-Date) -lt $deadline) {
-            $alive = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Where-Object { $_.Id -eq $oldPid }
-            if (-not $alive) { break }
+          do {
             Start-Sleep -Milliseconds 500
-          }
-          if ($alive) { Write-Host "::error::old process still running 180s after the install click — NSIS never took over"; exit 1 }
+          } while ((Get-Date) -lt $deadline -and (Get-Process -Id $oldPid -ErrorAction SilentlyContinue))
+          if (Get-Process -Id $oldPid -ErrorAction SilentlyContinue) { Write-Host "::error::old process still running 180s after the install click — NSIS never took over"; exit 1 }
 
           # Takeover phase 2: the installed file bumps to the feed version.
           $deadline = (Get-Date).AddSeconds(300)
