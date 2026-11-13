@@ -391,18 +391,13 @@ fn open_prefs(app: &AppHandle, updates: bool) {
     .inner_size(780.0, 580.0)
     .min_inner_size(640.0, 480.0)
     .resizable(true);
-    // Same chrome as the main window (user request 2026-10-04): an overlay
-    // title bar — no native divider, no "Preferences" title text; the
-    // traffic lights float over the web side's invisible drag strip.
-    // The traffic-light position mirrors the main window's
-    // tauri.conf.json trafficLightPosition (18, 35) — keep the two in sync
-    // so the buttons sit at the exact same window offset in both windows
-    // (AX-verified: close button lands at offset (17, 25) from the origin).
+    // Same chrome as the main window: a visible native title bar (with its
+    // own drag area and window menu) — the web side renders plain content
+    // with no custom drag layer (2026-11-13, Approach B).
     #[cfg(target_os = "macos")]
     let builder = builder
-        .title_bar_style(tauri::TitleBarStyle::Overlay)
-        .hidden_title(true)
-        .traffic_light_position(tauri::Position::Logical(tauri::LogicalPosition::new(18.0, 35.0)));
+        .title_bar_style(tauri::TitleBarStyle::Visible)
+        .hidden_title(false);
     let _ = builder.build();
     #[cfg(target_os = "macos")]
     if let Some(win) = app.get_webview_window(PREFS_WINDOW) {

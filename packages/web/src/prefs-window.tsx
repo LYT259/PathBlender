@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { useI18n } from './i18n';
 import { PreferencesPanel } from './components/PreferencesPanel';
 
@@ -28,20 +28,9 @@ export function PrefsWindow() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
-  // The overlay title bar leaves no native drag area, so a transparent layer
-  // covers the top strip. Besides the injected data-tauri-drag-region
-  // handler we call startDragging() directly: the attribute path silently
-  // no-ops in this window (user report 2026-10-04), the API path is
-  // deterministic. When the injected handler does fire it calls
-  // stopImmediatePropagation(), so the two never double-invoke.
-  const startDrag = (event: ReactMouseEvent) => {
-    if (event.button !== 0) return;
-    void import('@tauri-apps/api/window')
-      .then(({ getCurrentWindow }) => getCurrentWindow().startDragging())
-      .catch(() => {});
-  };
+  // The visible native title bar owns dragging and the window menu
+  // (2026-11-13) — the web side only renders the panel itself.
   return <div className="prefs-only preferences-window">
-    <div className="prefs-drag-layer" data-tauri-drag-region onMouseDown={startDrag} />
     <PreferencesPanel desktop initialSection={goUpdates ? 'updates' : undefined} autoCheckUpdates={goUpdates} onClose={close} />
     {closeFailed && <div className="toast error" role="alert">{t('prefs.closeFailed')}</div>}
   </div>;

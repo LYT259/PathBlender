@@ -23,12 +23,10 @@ installFocusModality();
 // shared settings interface — see prefs-window.tsx.
 const isPrefsWindow = new URLSearchParams(location.search).get('window') === 'prefs';
 
-// Desktop (Tauri) shell marker: the overlay title bar's traffic lights sit
-// inside the toolbar's left padding (see .desktop .toolbar in app.css).
-// desktop-macos marks the platforms that actually render that overlay title
-// bar — Windows keeps native decorations (titleBarStyle/trafficLightPosition
-// are macOS-only), so it must not reserve traffic-light space or inherit the
-// macOS vibrancy transparency (body would fall back to opaque --bg).
+// Desktop (Tauri) shell marker. desktop-macos marks the platforms whose
+// windows carry native macOS vibrancy (body transparency in app.css picks
+// it up behind translucent panels) — Windows keeps native decorations and
+// an opaque --bg body, so it must not inherit that transparency.
 if (typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || window.location.protocol === 'tauri:' || window.location.protocol === 'asset:')) {
   document.body.classList.add('desktop');
   if (/Macintosh/.test(navigator.userAgent)) document.body.classList.add('desktop-macos');

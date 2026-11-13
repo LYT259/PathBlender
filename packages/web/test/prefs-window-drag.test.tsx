@@ -1,10 +1,8 @@
 /**
- * Settings-window dragging (user report 2026-10-04): the overlay title bar
- * leaves no native drag area, so the transparent top layer must start the
- * drag. Besides the injected data-tauri-drag-region attribute path, the
- * layer calls getCurrentWindow().startDragging() directly on mouse down —
- * the deterministic path that keeps the window draggable. Right-clicks and
- * clicks on the panel below must NOT start a drag.
+ * Settings window under the native title bar (2026-11-13, Approach B): the
+ * window ships a visible native macOS title bar, so AppKit owns dragging and
+ * the window menu — the web side renders no drag layer and never calls
+ * startDragging itself. Escape still closes via the Tauri window API.
  */
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -33,6 +31,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.resetModules();
   native.startDragging.mockClear();
+  native.close.mockClear();
 });
 
 async function renderPrefsWindow() {
@@ -56,23 +55,25 @@ async function renderPrefsWindow() {
   );
 }
 
-describe('settings window drag layer', () => {
-  it('left mouse down on the drag layer calls startDragging, and the layer stays a drag region for the injected handler', async () => {
+describe('settings window native chrome', () => {
+  it('renders the panel with no drag layer — the native title bar owns dragging', async () => {
     const { container } = await renderPrefsWindow();
-    const layer = container.querySelector('.prefs-drag-layer');
-    expect(layer).not.toBeNull();
-    expect(layer!.getAttribute('data-tauri-drag-region')).not.toBeNull();
-    fireEvent.mouseDown(layer!, { button: 0 });
-    await vi.waitFor(() => expect(native.startDragging).toHaveBeenCalledTimes(1));
+    expect(container.querySelector('.preferences-panel')).not.toBeNull();
+    expect(container.querySelector('.prefs-drag-layer')).toBeNull();
   });
 
-  it('ignores non-left buttons and clicks below the layer', async () => {
+  it('mouse down on the window content never calls startDragging', async () => {
     const { container } = await renderPrefsWindow();
-    const layer = container.querySelector('.prefs-drag-layer')!;
-    fireEvent.mouseDown(layer, { button: 2 });
     const panel = container.querySelector('.preferences-panel')!;
     fireEvent.mouseDown(panel, { button: 0 });
+    fireEvent.mouseDown(container.querySelector('.preferences-window')!, { button: 0 });
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(native.startDragging).not.toHaveBeenCalled();
+  });
+
+  it('Escape still closes the window through the Tauri API', async () => {
+    await renderPrefsWindow();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await vi.waitFor(() => expect(native.close).toHaveBeenCalledTimes(1));
   });
 });

@@ -290,9 +290,6 @@ body.desktop.desktop-macos { background: transparent; }
   padding: 6px 10px; background: var(--material);
   border-bottom: 1px solid var(--border);
 }
-/* Desktop overlay title bar: the traffic lights (centered at y=16) sit in
-   the toolbar's left padding; the strip doubles as the window drag region. */
-body.desktop.desktop-macos .toolbar { padding-left: 84px; }
 .toolbar-spacer, .canvas-spacer { flex: 1; }
 .tool-btn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -675,7 +672,6 @@ input[type="number"], input[type="text"] {
   padding: 6px 10px; background: var(--material);
   border-bottom: 1px solid var(--border);
 }
-body.desktop.desktop-macos .editor-bar { padding-left: 84px; }
 .editor-title {
   display: inline-flex; align-items: center; gap: 8px;
   font-weight: 600; min-width: 0; overflow: hidden; white-space: nowrap;

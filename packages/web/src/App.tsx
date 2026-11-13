@@ -2,7 +2,8 @@ import { SelectControl } from './components/SelectControl';
 import { moveTeamOrder } from './team-order';
 import { previewRouteFor, useRoutePreviewClock } from './route-preview';
 import { dimmedPathRobotIds, previewDimsPath } from './start-zone-view';
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useSessionHistory } from './session-history';
 import { robotsForAlliance, restoreSessionAlliance } from './session-alliance';
 import { isExampleRobot, refreshExampleRobots } from './example-robot';
@@ -151,6 +152,26 @@ function rememberView3D(on: boolean) {
 
 // Native menus supplement the same visible workspace actions.
 const IS_DESKTOP = '__TAURI_INTERNALS__' in window || location.protocol === 'tauri:' || location.protocol === 'asset:';
+
+// The visible native title bar owns the window menu; the toolbar stays an
+// explicit in-content drag surface (2026-11-13). The injected
+// data-tauri-drag-region path is kept, and this deterministic call covers
+// it — left button only, never on interactive controls (their clicks keep
+// their own meaning), and never in browsers where no window exists.
+const INTERACTIVE_TOOLBAR_TARGET = [
+  'button', 'a', 'input', 'select', 'textarea', 'label', 'form',
+  '[contenteditable="true"]',
+  '[tabindex]:not([tabindex="-1"])',
+  '[role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]',
+  '[role="option"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"]',
+  '[role="slider"], [role="textbox"], [role="combobox"], [role="listbox"], [role="searchbox"], [role="spinbutton"]',
+].join(', ');
+function toolbarStartDrag(event: ReactMouseEvent) {
+  if (!IS_DESKTOP || event.button !== 0) return;
+  const el = event.target as HTMLElement | null;
+  if (el?.closest(INTERACTIVE_TOOLBAR_TARGET)) return;
+  void getCurrentWindow().startDragging().catch(() => {});
+}
 
 export function App() {
   return (
@@ -1654,7 +1675,7 @@ function AppBody() {
       {/* The web has no native menu — the shared spec renders as a DOM
           menubar. Desktop keeps its native menu and never mounts this. */}
       {!IS_DESKTOP && <MenuBar menus={menuSpec} onCommand={runMenuCommand} />}
-      <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label={tr('app.title')}>
+      <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label={tr('app.title')} onMouseDown={toolbarStartDrag}>
         {hasRobots && <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>}
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
         {hasRobots && <button className="btn accent import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>}

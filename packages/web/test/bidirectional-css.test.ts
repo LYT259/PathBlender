@@ -111,10 +111,6 @@ const PHYSICAL_ALLOWLIST: { file: string; selector: string; prop: string; why: s
   { file: 'workspace.css', selector: '.conflict-jump', prop: '*', why: 'border-left-width pairs with the pinned-ltr conflict-jump stripe' },
   { file: 'components/TeamOrderUI.css', selector: '.team-order-ghost', prop: '*', why: 'fixed drag ghost rides the physical pointer position' },
 
-  // --- Window chrome: the platform draws these, direction does not move them ---
-  { file: 'app.css', selector: 'body.desktop.desktop-macos .toolbar', prop: 'padding-left', why: 'macOS traffic lights sit at the physical top-left in every locale' },
-  { file: 'workspace.css', selector: 'body.desktop.desktop-macos .workspace-toolbar', prop: 'padding-left', why: 'macOS traffic lights sit at the physical top-left in every locale' },
-
   // --- Canvas overlays: field geometry and pointer position are physical ---
   { file: 'app.css', selector: '.viewcube', prop: 'right', why: '3D orientation gizmo overlays the physical canvas viewport' },
   { file: 'components/RobotLabels3D.css', selector: '.robot-label-3d', prop: 'left', why: 'labels are placed by projected field coordinates' },
@@ -133,7 +129,6 @@ const PHYSICAL_ALLOWLIST: { file: string; selector: string; prop: string; why: s
   // --- Direction-neutral motion / symmetric centering ---
   { file: 'components/OnboardingTasks.css', selector: '.tour-toggle', prop: 'transform', why: 'rotate(±90deg) yields vertical (up/down) arrows — direction-neutral' },
   { file: 'components/WelcomeScreen.css', selector: '.start-secondary::before', prop: '*', why: 'left:50% + translate(-50%,-50%) is symmetric centering' },
-  { file: 'components/PreferencesPanel.css', selector: '.prefs-drag-layer', prop: '*', why: 'symmetric left:0;right:0 stretch behind the prefs window' },
   { file: 'app.css', selector: '.toast', prop: '*', why: 'symmetric centering (left:0;right:0;margin:auto)' },
 
   // --- The RTL infrastructure itself ---
@@ -144,7 +139,6 @@ const PHYSICAL_ALLOWLIST: { file: string; selector: string; prop: string; why: s
   //     all .tsx/.ts). Left in place; removal is a separate cleanup, and the
   //     entries below keep them from masking new live regressions. ---
   { file: 'app.css', selector: '.ai-', prop: '*', why: 'dead: AI feature removed 2026-09-30, no TSX references' },
-  { file: 'app.css', selector: '.editor-bar', prop: '*', why: 'dead selector, no TSX references' },
   { file: 'app.css', selector: '.editor-actions', prop: '*', why: 'dead selector, no TSX references' },
   { file: 'app.css', selector: '.waypoint-panel', prop: '*', why: 'dead selector, no TSX references' },
   { file: 'app.css', selector: '.wp-', prop: '*', why: 'dead waypoint editor styles, no TSX references' },
