@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // One-shot diagnostics for the Windows main-window white page (beta.24,
 // release-verify run 43434507742). The caller launches pathblender-desktop
-// with WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=<port>;
-// this probe is strictly READ-ONLY against the app:
+// with the diagnostic builder's PB_DEBUG_WEBVIEW_BROWSER_ARGS and a dedicated
+// PB_DEBUG_WEBVIEW_DATA_DIR; the WebView2 environment-variable override is not
+// relied on. This probe is strictly READ-ONLY against the app:
 //   - polls the loopback remote-debugging endpoint until /json/version answers,
 //   - lists every target from /json,
 //   - connects over CDP ONLY to page targets whose URL is local app content,
-//   - evaluates read-only DOM/location/performance queries,
+//   - evaluates read-only DOM/location/performance/service-worker queries,
 //   - passively records console errors, runtime exceptions, failed loads and
 //     HTTP >= 400 responses while attached,
 //   - captures an in-WebView screenshot (Page.captureScreenshot).
@@ -185,6 +186,27 @@ const SNAPSHOT_EXPR = `(() => {
   return out;
 })()`;
 
+const SERVICE_WORKER_EXPR = `(async () => {
+  try {
+    if (!('serviceWorker' in navigator)) return { supported: false, secureContext: window.isSecureContext };
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    const describe = (worker) => worker ? { scriptURL: worker.scriptURL, state: worker.state } : null;
+    return {
+      supported: true,
+      secureContext: window.isSecureContext,
+      controller: navigator.serviceWorker.controller ? navigator.serviceWorker.controller.scriptURL : null,
+      registrations: registrations.map((r) => ({
+        scope: r.scope,
+        active: describe(r.active),
+        waiting: describe(r.waiting),
+        installing: describe(r.installing),
+      })),
+    };
+  } catch (e) {
+    return { error: String(e && e.message ? e.message : e), secureContext: window.isSecureContext };
+  }
+})()`;
+
 function normEval(r) {
   if (r === undefined || r === null) return { evalError: 'no result' };
   if (r.evalError) return r;
@@ -328,6 +350,9 @@ async function main() {
     const lateRaw = await session.send('Runtime.evaluate', { expression: SNAPSHOT_EXPR, returnByValue: true })
       .catch((e) => ({ evalError: String(e && e.message ? e.message : e) }));
     const late = normEval(lateRaw);
+    const serviceWorkerRaw = await session.send('Runtime.evaluate', { expression: SERVICE_WORKER_EXPR, awaitPromise: true, returnByValue: true })
+      .catch((e) => ({ evalError: String(e && e.message ? e.message : e) }));
+    const serviceWorkers = normEval(serviceWorkerRaw);
     const navigation = await session.send('Page.getNavigationHistory')
       .then((h) => ({
         currentIndex: h.currentIndex,
@@ -344,7 +369,7 @@ async function main() {
     }
     session.close();
     log(`page ${i + 1}: verdict input ready (early/late snapshots + ${events.length} events), screenshot: ${screenshot}`);
-    const pageResult = { url: page.url, title: String(page.title || '').slice(0, 120), earlySnapshot: early, lateSnapshot: late, navigation, screenshot, events };
+    const pageResult = { url: page.url, title: String(page.title || '').slice(0, 120), earlySnapshot: early, lateSnapshot: late, serviceWorkers, navigation, screenshot, events };
     result.pages.push(pageResult);
     if (i === 0) result.verdict = classify(late, events);
   }

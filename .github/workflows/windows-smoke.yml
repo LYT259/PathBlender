@@ -41,9 +41,11 @@ on:
           - smoke
           - restart-compare
           - startup-isolation
+          - profile-copy-probe
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: windows-smoke
@@ -549,4 +551,94 @@ jobs:
         with:
           name: windows-startup-${{ matrix.case }}
           path: native-probe-out/**
+          if-no-files-found: error
+  profilecopy:
+    if: github.event.inputs.scenario == 'profile-copy-probe'
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - name: Download the diagnostic installer
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-smoke
+          path: dl
+          run-id: 43516458258
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+      - name: Create the default-profile state with a healthy first launch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Remove-Item Env:\PB_DEBUG_WEBVIEW_BROWSER_ARGS -ErrorAction SilentlyContinue
+          Remove-Item Env:\PB_DEBUG_WEBVIEW_DATA_DIR -ErrorAction SilentlyContinue
+          Remove-Item Env:\WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
+          $setup = @(Get-ChildItem -Path dl -Recurse -File -Filter "PathBlender_0.1.10-beta.24_x64-setup.exe")
+          if ($setup.Count -ne 1) { throw "[DEBUG-window-restart] expected one diagnostic online setup.exe, got $($setup.Count)" }
+          $p = Start-Process -FilePath $setup[0].FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "[DEBUG-window-restart] online installer exit code $($p.ExitCode)" }
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $exe = Join-Path $installDir.Trim('"', "'") "pathblender-desktop.exe"
+          if ((Get-Item $exe).VersionInfo.ProductVersion -ne "0.1.10-beta.24") { throw "[DEBUG-window-restart] the diagnostic app is not beta.24" }
+          $online = Start-Process -FilePath $exe -PassThru
+          & "$PWD/scripts/windows-native-capture.ps1" -Phase "online-first-launch" -ProcessId $online.Id -CloseAfterCapture
+      - name: Inspect a copy of the synthetic default profile with CDP
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $source = Join-Path $env:LOCALAPPDATA "org.gh-frc.pathblender\EBWebView"
+          if (-not (Test-Path $source -PathType Container)) { throw "[DEBUG-window-restart] synthetic default WebView2 directory missing" }
+          $deadline = (Get-Date).AddSeconds(30)
+          do {
+            $remaining = @(Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" -ErrorAction SilentlyContinue |
+              Where-Object { $_.CommandLine -like "*$source*" -and $_.CommandLine -notlike "*--type=crashpad-handler*" })
+            if ($remaining.Count -eq 0) { break }
+            Start-Sleep -Milliseconds 500
+          } while ((Get-Date) -lt $deadline)
+          if ($remaining.Count -ne 0) { throw "[DEBUG-window-restart] WebView2 children still hold the source profile after 30s" }
+          $container = Join-Path $env:RUNNER_TEMP "pb-cdp-profile-copy"
+          if (Test-Path $container) { throw "[DEBUG-window-restart] diagnostic copy path already exists; refusing to reset it" }
+          New-Item -ItemType Directory -Path $container | Out-Null
+          $copy = Join-Path $container "EBWebView"
+          Copy-Item -Path $source -Destination $copy -Recurse
+          [pscustomobject]@{
+            source = $source
+            destination = $copy
+            dataDirectory = $container
+            originalUnmodified = $true
+            syntheticFreshRunnerOnly = $true
+            importedUserPaths = $false
+          } | ConvertTo-Json | Out-File -FilePath "profile-copy-metadata.json" -Encoding utf8
+          $env:PB_DEBUG_WEBVIEW_BROWSER_ARGS = "--remote-debugging-port=9222"
+          $env:PB_DEBUG_WEBVIEW_DATA_DIR = $container
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $exe = Join-Path $installDir.Trim('"', "'") "pathblender-desktop.exe"
+          try {
+            $second = Start-Process -FilePath $exe -PassThru
+            node scripts/windows-webview-probe.mjs --port 9222 --wait-ms 30000 --observe-ms 15000 --out-dir probe-out
+            & "$PWD/scripts/windows-native-capture.ps1" -Phase "online-second-launch-profile-copy" -ProcessId $second.Id -StopAfterCapture
+          } finally {
+            Remove-Item Env:\PB_DEBUG_WEBVIEW_BROWSER_ARGS -ErrorAction SilentlyContinue
+            Remove-Item Env:\PB_DEBUG_WEBVIEW_DATA_DIR -ErrorAction SilentlyContinue
+          }
+      - name: Upload the profile-copy evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-profile-copy-probe
+          path: |
+            native-probe-out/**
+            probe-out/**
+            profile-copy-metadata.json
           if-no-files-found: error
