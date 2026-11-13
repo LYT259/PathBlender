@@ -235,15 +235,47 @@ describe('public plan documents privacy hygiene', () => {
 });
 
 describe('not-verified environment registry', () => {
-  it('releasing.md pins the three unverified items with explicit markers', () => {
+  it('releasing.md pins the remaining unverified items with explicit markers', () => {
     const releasing = readFileSync(resolve(ROOT, 'docs/releasing.md'), 'utf8');
     for (const s of [
       '未验环境清单',
       '无浏览器裸机冒烟',
       'NOT performed — no clean Windows 10 (without WebView2), macOS or Linux machine is available',
       'SmartScreen / Gatekeeper prompt screenshots: NOT captured',
-      'homebrew tap repo: not yet created',
     ]) expect(releasing).toContain(s);
+    // The Homebrew tap went live 2026-11-09 (LYT259/homebrew-tap@e1455129)
+    // and passed brew style / audit --online / livecheck plus a real isolated
+    // install; the registry must no longer list it as unverified.
+    expect(releasing).not.toContain('not yet created');
+    expect(releasing).not.toContain('尚未对实际 tap 运行过');
+    expect(releasing).not.toContain('当前无本地 tap');
+    expect(releasing).not.toContain('以下三项');
+  });
+});
+
+describe('homebrew tap distribution', () => {
+  it('releasing.md records the published tap and its 2026-11-09 verification', () => {
+    const releasing = readFileSync(resolve(ROOT, 'docs/releasing.md'), 'utf8');
+    for (const s of [
+      'LYT259/homebrew-tap',
+      'e1455129',
+      'brew style',
+      'brew audit --cask --online',
+      'brew livecheck',
+      '2026-11-09',
+      'brew trust LYT259/tap',
+    ]) expect(releasing).toContain(s);
+  });
+  it('both user guides give the Homebrew 7 install steps with Releases as the direct download', () => {
+    for (const file of ['docs/user-guide.en.md', 'docs/user-guide.zh.md']) {
+      const md = readFileSync(resolve(ROOT, file), 'utf8');
+      for (const s of [
+        'brew tap LYT259/tap',
+        'brew trust LYT259/tap',
+        'brew install --cask LYT259/tap/pathblender',
+        'https://github.com/LYT259/pathblender/releases',
+      ]) expect(md, file).toContain(s);
+    }
   });
 });
 
@@ -721,5 +753,276 @@ describe('Windows offline installer pipeline', () => {
       expect(stopBlock, label).toContain('exit 1');
       expect(stopBlock, label).not.toContain('|| true');
     }
+  });
+});
+
+describe('update chain verification workflow (update-verify.yml)', () => {
+  const text = readFileSync(resolve(ROOT, '.github/workflows/update-verify.yml'), 'utf-8');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const wf = parseWorkflowYaml(text) as any;
+  const job = wf.jobs['windows-update'];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const run = (job.steps as any[]).map((step: any) => step.run ?? '').join('\n');
+
+  it('dispatches manually only, with read-only permissions and a public-repo guard', () => {
+    expect(wf.on.workflow_dispatch.inputs.from_tag).toMatchObject({ default: 'v0.1.10-beta.16', required: 'true' });
+    expect(wf.on.push).toBeUndefined();
+    expect(wf.on.pull_request).toBeUndefined();
+    expect(wf.permissions).toEqual({ contents: 'read' });
+    expect(job['runs-on']).toBe('windows-latest');
+    expect(job['timeout-minutes']).toBe('45');
+    expect(job.if).toBe('github.event.repository.private == false');
+  });
+
+  it('verifies published artifacts only — no checkout, no rebuild, no repo secret material', () => {
+    expect((job.steps as any[]).some((step: any) => step.uses === 'actions/checkout@v4')).toBe(false);
+    for (const banned of ['npx tauri build', 'npm ci', 'cargo ', 'tauri signer generate', 'secrets.', 'GITHUB_TOKEN', 'GH_TOKEN']) {
+      expect(text, `must not contain ${banned}`).not.toContain(banned);
+    }
+    // The only credential-shaped env var is the built-in read-only token for
+    // release METADATA (anonymous API hits shared-runner-IP 403 limits);
+    // every asset and feed download stays anonymous.
+    expect((text.match(/GH_METADATA_TOKEN: \$\{\{ github\.token \}\}/g) ?? []).length).toBe(1);
+  });
+
+  it('takes the TARGET version from the live feed, never from a workflow input', () => {
+    expect(run).toContain('releases/latest/download/latest-beta.json');
+    expect(run).toContain('platforms["windows-x86_64"]');
+    expect(run).toContain('feed has no signed windows-x86_64 entry');
+    // The old version must sort below the feed version, or the run is
+    // measuring "no update available", not the takeover chain.
+    expect(run).toContain('TARGET version');
+    expect(run).toContain('must sort below');
+  });
+
+  it('downloads the old installer anonymously and pins it against the server-side digest', () => {
+    expect(run).toContain('^v[0-9]+\\.[0-9]+\\.[0-9]+');
+    expect(run).toContain('browser_download_url');
+    expect(run).toContain('/^sha256:[0-9a-f]{64}$/');
+    expect(run).toContain('sha256 mismatch');
+    expect(run).toContain('size mismatch');
+    expect(run).toContain('curl -fL --retry 3 -o "dl/$WANT" "$URL"');
+    const downloadLine = text.split('\n').find((l) => l.includes('curl -fL --retry 3'));
+    expect(downloadLine).toBeDefined();
+    expect(downloadLine).not.toContain('Authorization');
+  });
+
+  it('installs and launches the OLD version first and asserts it', () => {
+    expect(run).toContain('-ArgumentList "/S"');
+    expect(run).toContain('HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall');
+    expect(run).toContain('Join-Path $installDir "pathblender-desktop.exe"');
+    expect(run).toContain('VersionInfo.ProductVersion');
+    expect(run).toContain('FROM_VERSION');
+    expect(run).toContain('Get-Process -Name "pathblender-desktop"');
+    expect(run).toContain('MainWindowTitle');
+  });
+
+  it('drives the real UI — no test hooks, no injected state', () => {
+    expect(run).toContain('System.Windows.Automation');
+    expect(run).toContain('"Update channel"');
+    expect(run).toContain('"Beta"');
+    expect(run).toContain('"Save"');
+    expect(run).toContain('"Check for updates"');
+    expect(run).toContain('"Install and relaunch"');
+    // Saved-channel semantics: the draft channel must be SAVED before the
+    // check, and the fallback clicks are the prefs two-step flow.
+    expect(run).toContain('Updates');
+  });
+
+  it('watches the real NSIS takeover: old process exits, file bumps, app returns', () => {
+    // The install click / channel save is followed by a bounded poll that
+    // distinguishes an installer-driven relaunch from a manual one — both
+    // recorded, neither assumed.
+    expect(run).toContain('old process still running');
+    expect(run).toContain('auto-relaunch');
+    expect(run).toContain('relaunched manually by the workflow');
+    expect(run).toContain('TO_VERSION');
+    expect(run).toContain('CopyFromScreen');
+    expect((job.steps as any[]).some((step: any) => step.uses === 'actions/upload-artifact@v4')).toBe(true);
+  });
+
+  it('detects the takeover by the OLD pid exiting, not by "no same-name process left"', () => {
+    // A fast installer can exit the old app and start the new one between
+    // two 500ms polls: an all-gone check then never fires while the dead
+    // prefs window invites stray clicks on stale UIA elements. The watch
+    // must key on the recorded $oldPid, and the all-gone condition must
+    // stay out of the watch loop.
+    expect(run).toContain('$oldAlive = Get-Process -Id $oldPid');
+    expect(run).toContain('if (-not $oldAlive) { $flow = "channel-switch auto"; break }');
+    expect(run).not.toContain('if (-not $alive) { $flow = "channel-switch auto"; break }');
+  });
+
+  it('re-checks the old pid at every decision point of the drive and reads a dead-window UIA failure as the takeover', () => {
+    // The fallback's element waits can span the moment the channel-switch
+    // install exits the old process: without re-checks, the next
+    // Wait-Element runs $Root.FindAll on a dead window and a normal
+    // update fails as a UIA crash. Five probe points are required: the
+    // watch entry, the catch arm that must re-throw while the old
+    // process is still alive (real UIA errors stay failures), the
+    // post-loop guard (own test below), and phase 1's loop condition
+    // plus its final re-query.
+    expect((run.match(/Get-Process -Id \$oldPid -ErrorAction SilentlyContinue/g) ?? []).length).toBe(5);
+    expect(run).toMatch(/\} catch \{\r?\n\s*if \(-not \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\) \{ \$flow = "channel-switch auto"; break \}\r?\n\s*throw/);
+  });
+
+  it('consumes a found update before clicking check, and rate-limits check clicks', () => {
+    // PreferencesPanel hides the install button while a check is in
+    // flight, and a re-click resets a completed check back to checking
+    // (clearing the button). The fallback must therefore (a) poll for
+    // the install button FIRST each iteration so a check that completed
+    // after the previous poll is consumed, and (b) re-click check at
+    // most once per 45s — comfortably longer than a feed check — so an
+    // in-flight check is never reset (the review simulated livelocks
+    // at 5s and 25s per check; both must terminate with the install
+    // button clicked).
+    const checkClickIdx = run.indexOf('Invoke-Element $check');
+    expect(checkClickIdx).toBeGreaterThan(0);
+    const installPollIdx = run.indexOf('Wait-Element $prefs "Install and relaunch" 3');
+    expect(installPollIdx).toBeGreaterThan(0);
+    expect(installPollIdx).toBeLessThan(checkClickIdx);
+    expect((run.match(/Invoke-Element \$check/g) ?? []).length).toBe(1);
+    expect(run).toContain('if (($watch.Elapsed.TotalSeconds - $lastCheckAt) -ge 45) {');
+    expect(run).toMatch(/Invoke-Element \$check\r?\n\s*\$lastCheckAt = \$watch\.Elapsed\.TotalSeconds/);
+  });
+
+  it('reads an empty flow with the old process already gone as a takeover, not a failure', () => {
+    // The 150s watch window can expire between the final fallback probe
+    // and the next loop-entry check: the takeover lands inside the last
+    // element wait, Wait-Element returns null WITHOUT throwing (so the
+    // catch arm never runs), and the loop exits with an empty flow while
+    // the old process is already gone. The guard must sit OUTSIDE the
+    // watch loop — pinned by brace-matching the loop's closing brace,
+    // not by indentation (PowerShell scopes by braces) — and before the
+    // empty-flow ::error::; a still-live old process keeps the failure
+    // semantics (phase 2 then re-asserts the file version).
+    const watchIdx = run.indexOf('while ($watch.Elapsed.TotalSeconds -lt 150) {');
+    expect(watchIdx).toBeGreaterThan(0);
+    let depth = 0;
+    let loopEnd = -1;
+    for (let i = run.indexOf('{', watchIdx); i < run.length; i++) {
+      if (run[i] === '{') depth++;
+      else if (run[i] === '}') { depth--; if (depth === 0) { loopEnd = i; break; } }
+    }
+    expect(loopEnd, 'watch loop closing brace not found').toBeGreaterThan(watchIdx);
+    const guardIdx = run.indexOf('if (-not $flow) {', loopEnd);
+    expect(guardIdx).toBeGreaterThan(loopEnd);
+    const probe = 'if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto" }';
+    expect(run.slice(guardIdx, guardIdx + 700)).toContain(probe);
+    const failIdx = run.indexOf('::error::neither the channel-switch install nor the prefs two-step produced an install');
+    expect(failIdx).toBeGreaterThan(guardIdx);
+    const phase1Idx = run.indexOf('# Takeover phase 1:');
+    expect(phase1Idx).toBeGreaterThan(failIdx);
+  });
+
+  it('phase 1 re-queries the old pid before declaring the takeover failed', () => {
+    // The 180s deadline can expire during the last 500ms sleep with the
+    // old process exiting inside it: trusting the loop's last
+    // observation then fails a takeover that actually happened. The
+    // loop condition must query fresh every iteration and the failure
+    // branch must re-query again instead of reusing a stale object.
+    expect(run).toMatch(/do \{\r?\n\s*Start-Sleep -Milliseconds 500\r?\n\s*\} while \(\(Get-Date\) -lt \$deadline -and \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\)/);
+    expect(run).toMatch(/if \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\) \{ Write-Host "::error::old process still running/);
+    expect(run).not.toContain('$alive = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Where-Object');
+  });
+
+  it('reports every failure path with an explicit ::error:: annotation', () => {
+    // Fail-closed alone is not enough on CI: the feed download, the feed
+    // parse and the UIA invoke fallback all need a visible ::error:: marker
+    // in the step log, not just a bare non-zero exit.
+    expect(run).toContain('::error::failed to download latest-beta.json');
+    expect(run).toContain('::error::latest-beta.json is not valid JSON');
+    expect(run).toContain('::error::element not invokable');
+  });
+
+  it('carries the install dir between the pwsh steps via GITHUB_ENV (steps run in separate processes)', () => {
+    const steps = job.steps as any[];
+    const installStep = steps.find((s: any) => (s.name ?? '').includes('Install, launch and assert'));
+    const driveStep = steps.find((s: any) => (s.name ?? '').includes('Drive the real UI'));
+    expect(installStep).toBeDefined();
+    expect(driveStep).toBeDefined();
+    // PowerShell variables do NOT survive across run: steps — the install
+    // step must export the resolved dir and the drive step must re-derive
+    // $exe from $env:, or the takeover watcher dies on a null -Path.
+    expect(installStep.run).toContain('INSTALL_DIR=');
+    expect(installStep.run).toContain('$env:GITHUB_ENV');
+    expect(driveStep.run).toContain('$installDir = $env:INSTALL_DIR');
+    expect(driveStep.run).toContain('$exe = Join-Path $installDir "pathblender-desktop.exe"');
+  });
+
+  it('opens the channel combobox even when UIA exposes only ExpandCollapse, not Invoke', () => {
+    // The channel control is a role="combobox" <button> (SelectControl.tsx);
+    // UIA may expose only ExpandCollapsePattern for it, so the click helper
+    // must fall back to Expand before giving up.
+    expect(run).toContain('ExpandCollapsePattern');
+  });
+
+  it('orders prerelease identifiers numerically per semver §11 — beta.9 must gate-pass below beta.10', () => {
+    // The FROM<TARGET gate runs as an inline node script inside the step.
+    // Execute the very script the workflow ships (extracted from the run
+    // text) so the contract is behavior, not a string match: lexicographic
+    // "beta.9" < "beta.10" is false, which used to misread a real published
+    // update as "no update to take" and abort the run before it started.
+    // Several node -e scripts live in the run text; each closes at its own
+    // trailing quote (they contain no single quotes), and the gate is the
+    // one that fails the step with "must sort below".
+    const scripts = [...run.matchAll(/node -e '\n([\s\S]*?)'/g)].map((x) => x[1]);
+    const gateScript = scripts.find((s) => s.includes('must sort below'));
+    if (!gateScript) throw new Error('FROM<TARGET gate script not found in the run text');
+    const gateAllows = (from: string, to: string): boolean => {
+      let code = 0;
+      const fakeProcess = { argv: ['node', from, to], exit: (c: number) => { code = c; } };
+      new Function('process', 'console', gateScript)(fakeProcess, { error: () => undefined });
+      return code === 0;
+    };
+    const updates: Array<[string, string]> = [
+      ['0.1.10-beta.9', '0.1.10-beta.10'],
+      ['0.1.10-beta.16', '0.1.10-beta.17'],
+      ['0.1.10-beta.2', '0.1.10-beta.10'],
+      ['0.1.10-beta.9', '0.1.10-beta.9.1'],
+      ['0.1.10-beta.9', '0.1.10-beta.9x'],
+      ['0.1.9-beta.9', '0.1.10-beta.9'],
+      ['0.1.10-beta.17', '0.1.10'],
+      // Hyphens are legal INSIDE alphanumeric prerelease identifiers
+      // (semver §9-§11): the prerelease is everything after the FIRST
+      // hyphen, so splitting on every hyphen truncates "beta.9-a" to
+      // "beta.9" and misreads a real update as a downgrade.
+      ['0.1.10-beta.9-a', '0.1.10-beta.9-b'],
+      ['0.1.10-rc.1-x.2', '0.1.10-rc.1-x.10'],
+      ['0.1.10-beta.10', '0.1.10-beta.10-a'],
+    ];
+    for (const [from, to] of updates) {
+      expect(gateAllows(from, to), `${from} must be accepted as sorting below ${to}`).toBe(true);
+    }
+    const notUpdates: Array<[string, string]> = [
+      ['0.1.10-beta.17', '0.1.10-beta.17'],
+      ['0.1.10-beta.10', '0.1.10-beta.9'],
+      ['0.1.10-beta.10', '0.1.10-beta.9.1'],
+      ['0.1.10', '0.1.10-beta.17'],
+      ['0.1.10-beta.9-b', '0.1.10-beta.9-a'],
+      ['0.1.10-beta.9-x', '0.1.10-beta.9-a'],
+      // Numeric identifiers sit BELOW alphanumeric ones (semver §11), so
+      // beta.10 < beta.9-a: that pair is a downgrade, not an update.
+      ['0.1.10-beta.9-a', '0.1.10-beta.10'],
+    ];
+    for (const [from, to] of notUpdates) {
+      expect(gateAllows(from, to), `${from} must be rejected against ${to}`).toBe(false);
+    }
+  });
+
+  it('uploads the evidence artifacts even when the run fails — without swallowing the failure', () => {
+    const steps = job.steps as any[];
+    const upload = steps.find((s: any) => s.uses === 'actions/upload-artifact@v4');
+    expect(upload).toBeDefined();
+    // Failure evidence (screenshots, update-log.txt) is the whole point of
+    // this workflow's artifacts: a failed drive/takeover step must still
+    // upload what it produced, not only green runs.
+    expect(upload?.if).toBe('always()');
+    expect(upload?.with?.['if-no-files-found']).toBe('error');
+    // always() must not degrade into failure masking: no step may swallow
+    // its own failure, and the run steps keep their explicit ::error:: exits.
+    for (const step of steps) {
+      expect(step['continue-on-error'], `${step.name ?? step.uses}: continue-on-error must stay off`).toBeUndefined();
+    }
+    expect((run.match(/::error::/g) ?? []).length).toBeGreaterThan(0);
   });
 });

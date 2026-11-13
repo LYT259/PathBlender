@@ -1,0 +1,461 @@
+# Real update-chain verification (red book §7.1 gap: the takeover path was
+# only ever smoke-tested against a locally generated feed). A manual
+# dispatch that installs a PUBLISHED older release exactly the way an
+# anonymous user gets it, then drives the app's REAL UI — UI Automation on
+# the rendered window, no test hooks, no injected state — to switch to the
+# beta channel and save, which is the delivered user flow that checks the
+# live feed, downloads and installs. The job then watches the actual NSIS
+# takeover: the old process exits, the installed exe bumps to the version
+# the live feed served, and the app comes back up.
+#
+# - The TARGET version is read from the live beta feed at run time, never
+#   from a workflow input: the run measures the chain users really get.
+# - Release METADATA goes through the built-in read-only github.token (the
+#   anonymous API hits shared-runner-IP 403 rate limits); the ASSET and
+#   FEED downloads themselves are anonymous browser URLs.
+# - No checkout, no rebuild: published artifacts only, so nothing here can
+#   mask a broken release with a fresh build. Read-only permissions, and
+#   the public-repo guard matches deploy.yml / release-verify.yml.
+# - The relaunch outcome is RECORDED, never assumed: whether the installer
+#   restarted the app by itself or the workflow had to relaunch it, both
+#   land in the log and the artifacts.
+name: Update verify
+
+on:
+  workflow_dispatch:
+    inputs:
+      from_tag:
+        description: 'Published release tag to install first (update FROM)'
+        required: true
+        default: 'v0.1.10-beta.16'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-verify
+  cancel-in-progress: false
+
+jobs:
+  windows-update:
+    if: github.event.repository.private == false
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      RELEASE_TAG: ${{ inputs.from_tag }}
+      GH_METADATA_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23
+      - name: Resolve the target version from the live update feed
+        # The takeover asserts against what the feed really serves, so the
+        # target must come from the live beta feed — never a second input.
+        # The FROM input must sort strictly below it, or the run would be
+        # measuring "no update available" instead of the update chain.
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! curl -fsSL --retry 3 "https://github.com/$GITHUB_REPOSITORY/releases/latest/download/latest-beta.json" -o feed.json; then
+            echo "::error::failed to download latest-beta.json from the live feed"
+            exit 1
+          fi
+          node -e '
+            const fs = require("fs");
+            let feed;
+            try {
+              feed = JSON.parse(fs.readFileSync("feed.json", "utf8"));
+            } catch (e) {
+              console.error("::error::latest-beta.json is not valid JSON: " + e.message);
+              process.exit(1);
+            }
+            const win = feed.platforms && feed.platforms["windows-x86_64"];
+            if (!win || !win.url || !(win.signature || "").length) {
+              console.error("::error::feed has no signed windows-x86_64 entry");
+              process.exit(1);
+            }
+            console.log(feed.version);
+          ' > target-version.txt
+          TO_VERSION=$(tr -d "[:space:]" < target-version.txt)
+          FROM_VERSION="${RELEASE_TAG#v}"
+          test -n "$TO_VERSION"
+          echo "TARGET version from the live feed: $TO_VERSION"
+          echo "FROM version to install first:      $FROM_VERSION"
+          node -e '
+            const num = (s) => s.split("-")[0].split(".").map(Number);
+            // The prerelease is EVERYTHING after the first hyphen: hyphens
+            // are legal inside alphanumeric identifiers (semver §9), so
+            // splitting on every hyphen truncates "beta.9-a" to "beta.9"
+            // and misreads a real update as a downgrade.
+            const pre = (s) => { const i = s.indexOf("-"); return i === -1 ? "" : s.slice(i + 1); };
+            // semver §11: prerelease precedence compares dot-separated
+            // identifiers — numeric ones as NUMBERS (beta.9 < beta.10),
+            // numeric below alphanumeric, and a longer set above its prefix.
+            // A plain string compare would read beta.9 > beta.10 and abort a
+            // real update run as "no update to take".
+            const idLt = (x, y) => {
+              const xn = /^[0-9]+$/.test(x), yn = /^[0-9]+$/.test(y);
+              if (xn && yn) return Number(x) < Number(y);
+              if (xn !== yn) return xn;
+              return x < y;
+            };
+            const preLt = (a, b) => {
+              const A = a.split("."), B = b.split(".");
+              const n = Math.min(A.length, B.length);
+              for (let i = 0; i < n; i++) {
+                if (idLt(A[i], B[i]) !== idLt(B[i], A[i])) return idLt(A[i], B[i]);
+              }
+              return A.length < B.length;
+            };
+            const lt = (a, b) => {
+              const A = num(a), B = num(b);
+              for (let i = 0; i < 3; i++) if (A[i] !== B[i]) return A[i] < B[i];
+              const pa = pre(a), pb = pre(b);
+              if (pa === pb) return false;
+              if (pa === "") return false;
+              if (pb === "") return true;
+              return preLt(pa, pb);
+            };
+            const from = process.argv[1], to = process.argv[2];
+            if (!lt(from, to)) {
+              console.error(`::error::FROM ${from} must sort below TARGET ${to} or there is no update to take`);
+              process.exit(1);
+            }
+          ' "$FROM_VERSION" "$TO_VERSION"
+          echo "FROM_VERSION=$FROM_VERSION" >> "$GITHUB_ENV"
+          echo "TO_VERSION=$TO_VERSION" >> "$GITHUB_ENV"
+      - name: Resolve and anonymously download the old installer
+        # Same contract as release-verify.yml: metadata through the
+        # read-only token, asset download anonymous, integrity anchored to
+        # GitHub's server-side sha256 digest.
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="$RELEASE_TAG"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::invalid tag: $TAG"
+            exit 1
+          fi
+          VER="${TAG#v}"
+          WANT="PathBlender_${VER}_x64-setup.exe"
+          export TAG WANT
+          curl -fsSL -H "Authorization: Bearer $GH_METADATA_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/releases/tags/$TAG" -o release.json
+          node -e '
+            const fs = require("fs");
+            const rel = JSON.parse(fs.readFileSync("release.json", "utf8"));
+            if (rel.tag_name !== process.env.TAG) {
+              console.error(`::error::release tag_name ${rel.tag_name} != ${process.env.TAG}`);
+              process.exit(1);
+            }
+            const asset = (rel.assets || []).find((a) => a.name === process.env.WANT);
+            if (!asset) {
+              console.error(`::error::asset not found: ${process.env.WANT}; assets: ${(rel.assets || []).map((a) => a.name).join(", ")}`);
+              process.exit(1);
+            }
+            if (!/^sha256:[0-9a-f]{64}$/.test(asset.digest || "")) {
+              console.error(`::error::${asset.name} has no server-side sha256 digest`);
+              process.exit(1);
+            }
+            console.log(asset.browser_download_url);
+            console.log(asset.digest.slice("sha256:".length));
+            console.log(asset.size);
+          ' > meta.txt
+          if [[ "$(wc -l < meta.txt | tr -d " ")" != "3" ]]; then
+            echo "::error::failed to resolve release asset metadata"
+            cat meta.txt
+            exit 1
+          fi
+          URL=$(sed -n 1p meta.txt)
+          EXPECTED=$(sed -n 2p meta.txt)
+          SIZE=$(sed -n 3p meta.txt)
+          mkdir -p dl
+          curl -fL --retry 3 -o "dl/$WANT" "$URL"
+          ACTUAL=$(sha256sum "dl/$WANT" | cut -d" " -f1)
+          GOT=$(wc -c < "dl/$WANT" | tr -d " ")
+          {
+            echo "tag: $TAG"
+            echo "asset: $WANT"
+            echo "expected sha256 (GitHub server-side digest): $EXPECTED"
+            echo "actual   sha256 (locally computed): $ACTUAL"
+            echo "size: $GOT bytes (GitHub: $SIZE)"
+          } | tee sha256.log
+          if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+            echo "::error::sha256 mismatch for $WANT"
+            exit 1
+          fi
+          if [[ "$GOT" != "$SIZE" ]]; then
+            echo "::error::size mismatch for $WANT"
+            exit 1
+          fi
+      - name: Install, launch and assert the OLD version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $setup = Get-ChildItem "dl/*_x64-setup.exe" | Select-Object -First 1
+          if (-not $setup) { Write-Host "::error::no setup.exe found"; exit 1 }
+          Write-Host "Installing $($setup.Name)"
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Write-Host "::error::installer exit code $($p.ExitCode)"; exit 1 }
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $installDir = $installDir.Trim('"', "'")
+          $exe = Join-Path $installDir "pathblender-desktop.exe"
+          if (-not (Test-Path $exe)) {
+            Write-Host "::error::pathblender-desktop.exe not found at $exe"
+            Get-ChildItem -Path $installDir -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+          }
+          $actual = (Get-Item $exe).VersionInfo.ProductVersion
+          Write-Host "Installed OLD version: $actual (from tag: $env:FROM_VERSION)"
+          if ($actual -ne $env:FROM_VERSION) { Write-Host "::error::installed version $actual != FROM version $($env:FROM_VERSION)"; exit 1 }
+          # pwsh steps run in separate processes: export the resolved dir so
+          # the UI-drive step can re-derive $exe instead of reading a
+          # variable that does not exist in its own scope.
+          "INSTALL_DIR=$installDir" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Start-Process -FilePath $exe
+          Start-Sleep -Seconds 15
+          $proc = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $proc) { Write-Host "::error::old PathBlender not running 15s after launch"; exit 1 }
+          $proc.Refresh()
+          if (-not $proc.MainWindowTitle) { Write-Host "::error::old PathBlender running but has no main window"; exit 1 }
+          "old install ok, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath update-log.txt -Encoding utf8
+          Add-Type -AssemblyName System.Windows.Forms
+          Add-Type -AssemblyName System.Drawing
+          $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+          $bmp.Save("$PWD/update-before.png")
+          $g.Dispose(); $bmp.Dispose()
+      - name: Drive the real UI to the beta channel and watch the takeover
+        # No test hooks: the steps click the same rendered controls a user
+        # sees. Saving the beta channel is the delivered flow that makes
+        # the main window check the live feed and install; the prefs
+        # two-step buttons are the fallback when that broadcast does not
+        # fire. Either way the NSIS takeover itself is only observed, never
+        # performed by the workflow.
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          # Re-derive the exe path from the exported dir: this step is a
+          # separate pwsh process and cannot see the install step's variables.
+          $installDir = $env:INSTALL_DIR
+          if (-not $installDir) { Write-Host "::error::INSTALL_DIR not exported by the install step"; exit 1 }
+          $exe = Join-Path $installDir "pathblender-desktop.exe"
+          Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes
+          Add-Type -AssemblyName System.Windows.Forms
+
+          function Wait-Window([string]$Name, [int]$Seconds) {
+            $deadline = (Get-Date).AddSeconds($Seconds)
+            while ((Get-Date) -lt $deadline) {
+              $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $Name)
+              $win = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $cond)
+              if ($win) { return $win }
+              Start-Sleep -Milliseconds 500
+            }
+            return $null
+          }
+          function Wait-Element($Root, [string]$Name, [int]$Seconds) {
+            # Several labels double as headings (the "Updates" tab and the
+            # panel heading share a name), so collect every name match and
+            # prefer one that is enabled AND invokable.
+            $deadline = (Get-Date).AddSeconds($Seconds)
+            while ((Get-Date) -lt $deadline) {
+              $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $Name)
+              $all = $Root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $cond)
+              foreach ($el in $all) {
+                if (-not $el.Current.IsEnabled) { continue }
+                $pat = $null
+                if ($el.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pat)) { return $el }
+                if ($el.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$pat)) { return $el }
+                if ($el.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$pat)) { return $el }
+              }
+              Start-Sleep -Milliseconds 400
+            }
+            return $null
+          }
+          function Invoke-Element($El) {
+            $pat = $null
+            if ($El.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pat)) { $pat.Invoke(); return }
+            if ($El.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$pat)) { $pat.Select(); return }
+            # The channel picker is a role="combobox" <button>: UIA may
+            # expose only ExpandCollapse for it — Expand opens the list.
+            if ($El.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$pat)) { $pat.Expand(); return }
+            Write-Host ("::error::element not invokable: " + $El.Current.Name)
+            exit 1
+          }
+
+          $main = Wait-Window "PathBlender" 30
+          if (-not $main) { Write-Host "::error::main window not found"; exit 1 }
+          $old = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $old) { Write-Host "::error::old process gone before the UI drive"; exit 1 }
+          $oldPid = $old.Id
+          "old process pid: $oldPid" | Out-File -FilePath update-log.txt -Append -Encoding utf8
+
+          $main.SetFocus()
+          Start-Sleep -Milliseconds 800
+          [System.Windows.Forms.SendKeys]::SendWait("^,")
+          $prefs = Wait-Window "Preferences" 25
+          if (-not $prefs) {
+            Write-Host "Ctrl+, did not open Preferences — falling back to the native menu item"
+            $menu = Wait-Element $main "Check for updates" 15
+            if ($menu) { Invoke-Element $menu }
+            $prefs = Wait-Window "Preferences" 25
+          }
+          if (-not $prefs) { Write-Host "::error::Preferences window never opened"; exit 1 }
+          $tab = Wait-Element $prefs "Updates" 30
+          if ($tab) { Invoke-Element $tab }
+          $channel = Wait-Element $prefs "Update channel" 30
+          if (-not $channel) { Write-Host "::error::Update channel control not found"; exit 1 }
+          Invoke-Element $channel
+          $beta = Wait-Element $prefs "Beta" 15
+          if (-not $beta) { Write-Host "::error::Beta option not found"; exit 1 }
+          Invoke-Element $beta
+          $save = Wait-Element $prefs "Save" 15
+          if (-not $save) { Write-Host "::error::Save button not found or never enabled"; exit 1 }
+          Invoke-Element $save
+          "channel switched to Beta and saved" | Out-File -FilePath update-log.txt -Append -Encoding utf8
+
+          # Saving the channel is the delivered trigger: the main window
+          # checks the live feed and installs on its own. Give that up to
+          # 150s (feed fetch + download); after 30s also work the prefs
+          # two-step fallback so a quiet broadcast still gets exercised.
+          # Takeover is detected by the OLD pid exiting — a fast installer
+          # can exit the old app and start the new one between two polls,
+          # so an "all same-name processes gone" check would never fire and
+          # would keep clicking a prefs window that no longer exists. The
+          # fallback polls the install button FIRST each iteration (a
+          # completed check must be consumed, never reset) and re-clicks
+          # check at most once per 45s: the panel hides the install button
+          # while a check is in flight and a re-click clears a found
+          # update, so watch-cadence re-clicks livelock a slow feed.
+          $flow = ""
+          $lastCheckAt = -45.0
+          $watch = [System.Diagnostics.Stopwatch]::StartNew()
+          while ($watch.Elapsed.TotalSeconds -lt 150) {
+            $oldAlive = Get-Process -Id $oldPid -ErrorAction SilentlyContinue
+            if (-not $oldAlive) { $flow = "channel-switch auto"; break }
+            if ($watch.Elapsed.TotalSeconds -gt 30) {
+              # The channel-switch install can take over DURING these
+              # waits: read a UIA failure on the prefs window as the
+              # takeover signature when the old process is gone — never
+              # as a false workflow failure. Real UIA errors with the
+              # old process still alive stay failures (re-throw).
+              try {
+                # Consume an already-found update first: a check that
+                # completed after the previous poll shows the install
+                # button here, and clicking check below would reset the
+                # panel back to checking and hide it again.
+                $install = Wait-Element $prefs "Install and relaunch" 3
+                if ($install) { Invoke-Element $install; $flow = "prefs two-step"; break }
+                # At most one check click per 45s — comfortably longer
+                # than any single feed check — so an in-flight check is
+                # never reset by a re-click.
+                if (($watch.Elapsed.TotalSeconds - $lastCheckAt) -ge 45) {
+                  $check = Wait-Element $prefs "Check for updates" 2
+                  if ($check -and $check.Current.IsEnabled) {
+                    Invoke-Element $check
+                    $lastCheckAt = $watch.Elapsed.TotalSeconds
+                  }
+                }
+              } catch {
+                if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto"; break }
+                throw
+              }
+            }
+            Start-Sleep -Milliseconds 500
+          }
+          if (-not $flow) {
+            # The takeover can land inside the FINAL element wait: the
+            # loop condition can expire between the last fallback probe
+            # and the next entry check, so Wait-Element returns null
+            # without throwing while the old process is already gone.
+            # That is a completed install, not a failure to install —
+            # phase 2 still asserts the file version, so an exit that
+            # was NOT an update still fails the run honestly.
+            if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto" }
+          }
+          if (-not $flow) { Write-Host "::error::neither the channel-switch install nor the prefs two-step produced an install"; exit 1 }
+          "update flow: $flow" | Out-File -FilePath update-log.txt -Append -Encoding utf8
+
+          # Takeover phase 1: the installer exits the old process. The
+          # deadline can expire during the last 500ms sleep with the old
+          # process exiting inside it, so the loop queries fresh every
+          # iteration and the failure branch re-queries again instead of
+          # trusting a stale observation.
+          $deadline = (Get-Date).AddSeconds(180)
+          do {
+            Start-Sleep -Milliseconds 500
+          } while ((Get-Date) -lt $deadline -and (Get-Process -Id $oldPid -ErrorAction SilentlyContinue))
+          if (Get-Process -Id $oldPid -ErrorAction SilentlyContinue) { Write-Host "::error::old process still running 180s after the install click — NSIS never took over"; exit 1 }
+
+          # Takeover phase 2: the installed file bumps to the feed version.
+          $deadline = (Get-Date).AddSeconds(300)
+          $fileVer = ""
+          while ((Get-Date) -lt $deadline) {
+            Start-Sleep -Seconds 2
+            $fileVer = (Get-Item $exe).VersionInfo.ProductVersion
+            if ($fileVer -eq $env:TO_VERSION) { break }
+          }
+          if ($fileVer -ne $env:TO_VERSION) { Write-Host "::error::installed file still at $fileVer, expected TO_VERSION $($env:TO_VERSION)"; exit 1 }
+          "installed file version: $fileVer" | Out-File -FilePath update-log.txt -Append -Encoding utf8
+
+          # Takeover phase 3: the app comes back. Record whether the
+          # installer restarted it (auto-relaunch) or the workflow had to.
+          $deadline = (Get-Date).AddSeconds(180)
+          $auto = $false
+          $newProc = $null
+          while ((Get-Date) -lt $deadline) {
+            $newProc = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $oldPid } | Select-Object -First 1
+            if ($newProc) { $auto = $true; break }
+            Start-Sleep -Milliseconds 500
+          }
+          if ($auto) {
+            "auto-relaunch: yes — the installer restarted the app by itself" | Out-File -FilePath update-log.txt -Append -Encoding utf8
+          } else {
+            "auto-relaunch: no — relaunched manually by the workflow" | Out-File -FilePath update-log.txt -Append -Encoding utf8
+            Start-Process -FilePath $exe
+          }
+
+          $deadline = (Get-Date).AddSeconds(60)
+          while ((Get-Date) -lt $deadline) {
+            $newProc = Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($newProc -and $newProc.MainWindowTitle) { break }
+            Start-Sleep -Milliseconds 500
+            if ($newProc) { $newProc.Refresh() }
+          }
+          if (-not $newProc) { Write-Host "::error::PathBlender not running after the update"; exit 1 }
+          $newProc.Refresh()
+          if (-not $newProc.MainWindowTitle) { Write-Host "::error::updated PathBlender running but has no main window"; exit 1 }
+          $finalExe = Join-Path $installDir "pathblender-desktop.exe"
+          $finalVer = (Get-Item $finalExe).VersionInfo.ProductVersion
+          if ($finalVer -ne $env:TO_VERSION) { Write-Host "::error::running app version $finalVer != feed version $($env:TO_VERSION)"; exit 1 }
+          "UPDATE COMPLETE: $env:FROM_VERSION -> $finalVer, window: $($newProc.MainWindowTitle)" | Out-File -FilePath update-log.txt -Append -Encoding utf8
+          Write-Host "update complete: $env:FROM_VERSION -> $finalVer (flow: $flow, auto-relaunch: $auto)"
+
+          Add-Type -AssemblyName System.Drawing
+          $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+          $bmp.Save("$PWD/update-after.png")
+          $g.Dispose(); $bmp.Dispose()
+      - uses: actions/upload-artifact@v4
+        # Evidence must survive a failed step: the screenshots and the log
+        # are how a failed drive or takeover gets diagnosed after the fact,
+        # so upload runs on red too. always() only runs this step; it does
+        # not un-fail the job.
+        if: always()
+        with:
+          name: update-verify-windows
+          path: |
+            update-before.png
+            update-after.png
+            update-log.txt
+            sha256.log
+            feed.json
+            release.json
+          if-no-files-found: error

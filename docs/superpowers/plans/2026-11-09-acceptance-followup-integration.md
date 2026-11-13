@@ -1,0 +1,115 @@
+# 验收/分发分支集成说明（2026-11-09）
+
+Task: `task:acceptance-followup-integration`（board 71397909c949）。Worktree:
+`PathBlender-worktrees/acceptance-followup-integration`，分支
+`test/acceptance-followup-integration`，基于 `origin/beta@90b45229`
+（0.1.10-beta.20）。目标：把三条已完成、已独立复核的验收/分发分支按原提交
+cherry-pick 到一个可发布集成分支；不重新设计功能、不抬号、不推送、不建 PR、
+不 dispatch；不碰 stable/工程日志/红皮书。
+
+## 提交清单（按序，作者身份全保留）
+
+| # | 新 SHA | 原 SHA | 来源分支 | 主题 |
+|---|--------|--------|----------|------|
+| 1 | 2c2d37c6 | f31fb110 | test/format-reference-acceptance | 官方 wheel 组合基线 + 真实 CTRE 转 WPILOG 样本门控 |
+| 2 | c9e03b55 | ca4524e2 | fix/homebrew-cask-brew-style | brew style 清洁 cask（符号 macos 依赖、无尾空行） |
+| 3 | 4be37863 | 46f43176 | 〃 | 删弃用 verified 参数；钉线 livecheck |
+| 4 | db810445 | fffe9c5d | 〃 | livecheck regex 捕获组 |
+| 5 | 1de0b4c0 | b0c13a55 | 〃 | 记录已发布 tap 状态 + 用户指南三步安装 |
+| 6 | 4ec24efa | e719b980 | test/available-environment-acceptance-v3 | dispatch-only update-verify workflow + 契约测试 |
+| 7 | 49278040 | 19f0c79a | 〃 | 跨 step pwsh 变量修复 + combobox UIA 加固 |
+| 8 | a69bfcba | f1206a4a | 〃 | semver 预发布段排序 + 失败证据 always 上传 |
+
+审查结论：三条源分支相对 09c6d7d2 的全部提交恰好为上述 8 个（1+4+3），
+无一遗漏、无一重复、无一已在 beta；逐提交 `--stat` 与原提交完全一致。
+
+## 冲突与语义核验（对 #417 CSS / #418 对手路线 / PR#409）
+
+- **文本冲突：零**。与 PR#409（55ad213a）共享的两处文件由 git 自动合并，
+  逐项核验双方行为都在：
+  - `packages/web/test/release-pipeline.test.ts`：#409 的 retry 状态机 4 测试
+    与 CRLF 归一化保留；update-verify 契约（dispatch-only/只读 token/digest/
+    UIA/无 secrets 泄漏）与 tap 分发契约（brew style/livecheck/双指南安装步）
+    全部在场，合计 56/56 绿。
+  - `docs/releasing.md`：#409 的「verify 绑定完整构建标识」与「Star 邀请自动
+    附加恰一条」措辞保留；b0c13a55 的 tap 已发布状态与发布 checklist 改写
+    并存（第 65/88 行区段）。
+- #417 CSS、#418 对手路线、i18n、版本九文件与本次 8 提交零文件交集
+  （累计 17 文件 +2306/−25，全部在 samples/、docs/、core 测试、web 测试、
+  scripts/gen-homebrew-cask.mjs、update-verify.yml 范围内）。
+- 终态字节核验：update-verify.yml == f1206a4a 原版；gen-homebrew-cask.mjs
+  与其测试 == fffe9c5d 原版。
+
+## 门禁结果（全部在集成分支 HEAD=a69bfcba 实跑）
+
+- `npm run typecheck`（全仓）：0 错误。
+- `npm test`（core+web 全量）：144 文件 / 1551 测试全绿。
+- 格式参考：`pathplanner-reference` 29/29 绿（含新夹具
+  `example-auto-composite-v2025.2.7` 5 断言组）。
+- Homebrew：生成器按 beta.17 + 已发布 sha 重产 cask，与已发布 tap
+  （LYT259/homebrew-tap@e1455129 本地验收副本）**逐字节一致**；`ruby -c`
+  Syntax OK（beta.17 真实 sha 与 beta.20 占位 sha 各一次）。
+- workflow YAML：update-verify.yml 经独立 PyYAML 解析 OK（仅
+  workflow_dispatch 触发、单 windows-update job、permissions 只读）。
+- 真实 CTRE 门控样本：CD 附件实下，zip sha256 `17d1319e…` 与内层
+  `b830e32b…` 双双与登记一致；`hoot-samples` 3/3 绿——生产管线解析
+  102,933,199 字节、1835 entries、0 corrupt-timestamp 警告、655 ms，
+  与原验收会话数字一致。样本按设计不入库（本地 /tmp，未提交）。
+
+## 发现与处置
+
+- `samples/hoot/README.md` 的示例命令 `npx vitest run test/hoot-samples.test.ts
+  -w packages/core` 中 `-w` 落在 vitest 侧等于 watch——套件会跑完并打印结果
+  但进程不退出（实测 DEV 模式驻留）。控制器 2026-11-09 跟进指令已在本分支
+  修复：先加两个静态文档契约测试（要求仓库根可退出的
+  `HOOT_SAMPLE_DIR="$PWD" npm test -w @pathblender/core -- test/hoot-samples.test.ts`
+  形态；禁止 vitest 调用带 `-w`），RED 后仅改该示例命令一行转 GREEN；真实
+  样本按新形态从仓库根实跑，进程退出 exit 0、5/5 绿。
+
+## 独立复核与修复轮（2026-11-09 交付时）
+
+最终候选（beta.21 抬号后）经全新无头 Codex 会话独立只读复核，结论
+REQUEST_CHANGES（0 Critical / 2 Important / 2 Minor），全部修复：
+
+- 更新说明 40 语原文把尚未执行的 Windows 真实 dispatch 写成“已端到端
+  验证”→ 改为“新增端到端更新链验证”的能力性表述（真实 dispatch 由
+  控制器在合并后执行，见下）。
+- update-verify takeover 判定按 `$oldPid` 退出，不再用“同名进程全部
+  消失”（快速重启竞态下永不触发且会点击已失效的 prefs 窗口）。
+- semver 预发布段取第一个连字符之后的整段（`beta.9-a` 不再被截断为
+  `beta.9`）；数字标识符仍低于字母数字标识符（semver §11）。
+- feed 下载失败、feed JSON 解析失败、UIA 元素不可调用三处补显式
+  `::error::`。
+- 契约测试先 RED（3 失败）后 GREEN（58/58），新增 oldPid 接管、
+  连字符预发布、`::error::` 三组断言。
+
+第二轮独立复核（新会话）确认四项中三项修复，另指出 fallback 内部
+仍存在竞态窗口：元素等待与 2 秒休眠可横跨旧进程退出，随后对已失效
+`$prefs` 的 UIA 调用会把正常更新误判为失败。已再修复（RED→GREEN
+59/59）：fallback 全程包 try/catch，等待与调用之间重查 `$oldPid`，
+退出即按接管收尾；旧进程仍存活时 UIA 错误照常 re-throw 保持失败
+语义。第三轮复核再指出一处循环收尾遗漏：150 秒窗口恰在最后一次
+元素等待期间到期时，`Wait-Element` 返回空且不抛异常，循环退出后
+入口探针不再运行，已发生的接管被误报为失败。已补最终探针（RED→
+GREEN 60/60）：空 `$flow` 失败判定前重查 `$oldPid`，已退出按接管
+收尾；未退出的真实失败语义不变（phase 2 仍断言文件版本）。第四轮复核
+再指出两处：phase 1 的 180 秒等待可在最后一次休眠期间旧进程退出时依据
+陈旧存活对象误报失败；fallback 按监视节奏反复点击"Check for updates"
+会在慢 feed 下反复清除安装按钮形成活锁（模拟 23 次检查 0 次安装）。
+已修复（RED→GREEN 62/62）：phase 1 改 do/while 每轮现查、失败分支再
+查一次；fallback 每次检查配 20 秒有界耐心安装等待，检查点击全工作流
+恰一处；收尾探针契约测试改以列 0 缩进+锚点顺序约束可达性。第五轮复核
+指出活锁根因（任意时长检查均可被重置）与两个测试缺口（缩进不能证明
+可达、限速变量可声明而不使用）。已再修复（RED→GREEN 62/62）：fallback
+改消费优先——每轮先轮询安装按钮，已完成的检查立即被消费而非被重置；
+检查点击限频 45 秒且全工作流恰一处；收尾探针测试改用花括号配对定位
+循环闭合括号（变异验证：移入 catch 后确实变红）；安装等待契约改断言
+消费顺序与限频。
+
+## 未验项（如实登记）
+
+- update-verify workflow 的真实 Windows dispatch（分支未推送，dispatch 需要
+  远端分支；交控制器合并后执行）。
+- raw `.hoot` 容器、owlet 下载/转换（EULA）——门控样本边界，与源任务一致。
+- brew style/audit/livecheck 本次未对真实 tap 重跑（源验收已于 2026-11-09
+  对线上 tap 全绿；本分支以字节一致 + 契约测试 + ruby -c 覆盖回归面）。

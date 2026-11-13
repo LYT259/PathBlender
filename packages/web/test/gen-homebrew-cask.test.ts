@@ -20,14 +20,24 @@ describe('homebrew cask generator', () => {
       'version "0.1.10"',
       `sha256 "${SHA}"`,
       'url "https://github.com/LYT259/pathblender/releases/download/v#{version}/PathBlender_#{version}_universal.dmg"',
-      'verified: "github.com/LYT259/pathblender/"',
       'name "PathBlender"',
       'desc "Free, open-source FRC autonomous path viewer"',
       'homepage "https://github.com/LYT259/pathblender"',
-      'depends_on macos: ">= :ventura"',
+      'livecheck do',
+      'url :homepage',
+      'strategy :git',
+      'regex(/^v(0\\.1\\.10(?:-beta\\.\\d+)?)$/i)',
+      'depends_on macos: :ventura',
       'app "PathBlender.app"',
     ]) expect(out).toContain(s);
-    expect(out.trimEnd().endsWith('end')).toBe(true);
+    expect(out.endsWith('end\n')).toBe(true);
+    expect(out.endsWith('\n\n')).toBe(false);
+    expect(out).not.toContain('verified');
+  });
+
+  it('pins the livecheck regex to the input version line (prerelease channel)', () => {
+    const out = run(['0.1.10-beta.17', SHA]);
+    expect(out).toContain('regex(/^v(0\\.1\\.10(?:-beta\\.\\d+)?)$/i)');
   });
 
   it.each([
