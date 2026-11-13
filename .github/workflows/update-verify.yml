@@ -333,10 +333,22 @@ jobs:
             $oldAlive = Get-Process -Id $oldPid -ErrorAction SilentlyContinue
             if (-not $oldAlive) { $flow = "channel-switch auto"; break }
             if ($watch.Elapsed.TotalSeconds -gt 30) {
-              $check = Wait-Element $prefs "Check for updates" 2
-              if ($check -and $check.Current.IsEnabled) { Invoke-Element $check; Start-Sleep -Seconds 2 }
-              $install = Wait-Element $prefs "Install and relaunch" 2
-              if ($install) { Invoke-Element $install; $flow = "prefs two-step"; break }
+              # The channel-switch install can take over DURING these
+              # waits: re-check the old pid before touching the prefs
+              # window again, and read a UIA failure on that window as
+              # the takeover signature when the old process is gone —
+              # never as a false workflow failure. Real UIA errors with
+              # the old process still alive stay failures (re-throw).
+              try {
+                $check = Wait-Element $prefs "Check for updates" 2
+                if ($check -and $check.Current.IsEnabled) { Invoke-Element $check; Start-Sleep -Seconds 2 }
+                if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto"; break }
+                $install = Wait-Element $prefs "Install and relaunch" 2
+                if ($install) { Invoke-Element $install; $flow = "prefs two-step"; break }
+              } catch {
+                if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto"; break }
+                throw
+              }
             }
             Start-Sleep -Milliseconds 500
           }

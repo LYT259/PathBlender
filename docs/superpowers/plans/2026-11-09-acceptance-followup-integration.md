@@ -83,6 +83,13 @@ REQUEST_CHANGES（0 Critical / 2 Important / 2 Minor），全部修复：
 - 契约测试先 RED（3 失败）后 GREEN（58/58），新增 oldPid 接管、
   连字符预发布、`::error::` 三组断言。
 
+第二轮独立复核（新会话）确认四项中三项修复，另指出 fallback 内部
+仍存在竞态窗口：元素等待与 2 秒休眠可横跨旧进程退出，随后对已失效
+`$prefs` 的 UIA 调用会把正常更新误判为失败。已再修复（RED→GREEN
+59/59）：fallback 全程包 try/catch，等待与调用之间重查 `$oldPid`，
+退出即按接管收尾；旧进程仍存活时 UIA 错误照常 re-throw 保持失败
+语义。
+
 ## 未验项（如实登记）
 
 - update-verify workflow 的真实 Windows dispatch（分支未推送，dispatch 需要

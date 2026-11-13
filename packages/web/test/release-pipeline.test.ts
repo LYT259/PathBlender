@@ -852,6 +852,19 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     expect(run).not.toContain('if (-not $alive) { $flow = "channel-switch auto"; break }');
   });
 
+  it('re-checks the old pid INSIDE the prefs fallback and reads a dead-window UIA failure as the takeover', () => {
+    // The fallback's element waits and the 2s sleep can span the moment
+    // the channel-switch install exits the old process: without a
+    // re-check, the next Wait-Element runs $Root.FindAll on a dead
+    // window and a normal update fails as a UIA crash. Three probe
+    // points are required: the loop entry, the mid-fallback re-check,
+    // and the catch arm that must re-throw while the old process is
+    // still alive (real UIA errors stay failures).
+    expect((run.match(/Get-Process -Id \$oldPid -ErrorAction SilentlyContinue/g) ?? []).length).toBe(3);
+    expect(run).toMatch(/Start-Sleep -Seconds 2 \}\r?\n\s*if \(-not \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\) \{ \$flow = "channel-switch auto"; break \}/);
+    expect(run).toMatch(/\} catch \{\r?\n\s*if \(-not \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\) \{ \$flow = "channel-switch auto"; break \}\r?\n\s*throw/);
+  });
+
   it('reports every failure path with an explicit ::error:: annotation', () => {
     // Fail-closed alone is not enough on CI: the feed download, the feed
     // parse and the UIA invoke fallback all need a visible ::error:: marker
