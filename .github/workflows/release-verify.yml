@@ -304,19 +304,45 @@ jobs:
           if (-not $proc.MainWindowTitle) { Write-Host "::error::PathBlender running but has no main window"; exit 1 }
           Write-Host "Window title: '$($proc.MainWindowTitle)'"
           "offline install running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath launch-offline-result.txt -Encoding utf8
-      - name: Screenshot the running app
+      - name: Assert the welcome UI and capture it
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
+          Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes
           Add-Type -AssemblyName System.Windows.Forms
           Add-Type -AssemblyName System.Drawing
-          $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-          $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
-          $g = [System.Drawing.Graphics]::FromImage($bmp)
-          $g.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
-          $bmp.Save("$PWD/windows-screenshot.png")
-          $g.Dispose(); $bmp.Dispose()
+          function Capture-Screen {
+            $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+            $bmp.Save("$PWD/windows-screenshot.png")
+            $g.Dispose(); $bmp.Dispose()
+          }
+          function Wait-NamedElement($Root, [string]$Name, [int]$Seconds) {
+            $deadline = (Get-Date).AddSeconds($Seconds)
+            while ((Get-Date) -lt $deadline) {
+              $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, $Name)
+              $element = $Root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $cond)
+              if ($element -and $element.Current.IsEnabled) { return $element }
+              Start-Sleep -Milliseconds 400
+            }
+            return $null
+          }
+          try {
+            $desktop = [System.Windows.Automation.AutomationElement]::RootElement
+            $main = Wait-NamedElement $desktop "PathBlender" 60
+            if (-not $main) { Write-Host "::error::main window not found"; exit 1 }
+            $help = Wait-NamedElement $main "Help" 60
+            $import = Wait-NamedElement $main "Import path files" 60
+            if (-not $help -or -not $import) { Write-Host "::error::welcome UI did not become ready (Help=$($null -ne $help), Import=$($null -ne $import))"; exit 1 }
+            Write-Host "Real welcome UI is ready: Help menu and Import path files button"
+          } finally {
+            Capture-Screen
+          }
           Write-Host "Screenshot saved: $PWD/windows-screenshot.png"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: release-verify-windows
           path: |

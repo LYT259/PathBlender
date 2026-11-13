@@ -598,6 +598,15 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     expect(run).toContain('CopyFromScreen');
   });
 
+  it('requires real Windows welcome content before capturing the release screenshot', () => {
+    const run = runText(windows);
+    expect(run).toContain('function Wait-NamedElement');
+    expect(run).toContain('$help = Wait-NamedElement $main "Help" 60');
+    expect(run).toContain('$import = Wait-NamedElement $main "Import path files" 60');
+    expect(run).toContain('if (-not $help -or -not $import)');
+    expect(run).toContain('} finally {');
+  });
+
   it('Linux: apt-installs the DEB, runs the AppImage FUSE-free and unpacks the RPM payload', () => {
     const run = runText(linux);
     // Virtual display with a real WM + session bus, and software-rendering
