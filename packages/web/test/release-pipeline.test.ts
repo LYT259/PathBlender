@@ -969,6 +969,10 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     expect(roleFallback, 'native ComboBox role fallback missing').toBeGreaterThan(nameLookup);
     expect(run.indexOf('Invoke-Element $channel')).toBeGreaterThan(roleFallback);
     expect(run).toContain('uia diagnostic:');
+    // The diagnostics capture the Preferences pane itself and must survive a
+    // failed drive, not merely the initial window and the completed update.
+    expect(run.match(/prefs-open\.png/g) ?? []).toHaveLength(1);
+    expect(text.match(/prefs-open\.png/g) ?? []).toHaveLength(2);
   });
 
   it('opens Preferences by expanding the native Help menu — no Ctrl+, SendKeys (dead on Windows)', () => {
