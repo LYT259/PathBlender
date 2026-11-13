@@ -624,11 +624,13 @@ jobs:
             Select-Object -First 1
           $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
           $exe = Join-Path $installDir.Trim('"', "'") "pathblender-desktop.exe"
+          $env:PB_PROBE_SYNTHETIC_COPY = "1"
           try {
             $second = Start-Process -FilePath $exe -PassThru
-            node scripts/windows-webview-probe.mjs --port 9222 --wait-ms 30000 --observe-ms 15000 --out-dir probe-out
+            node scripts/windows-webview-probe.mjs --port 9222 --wait-ms 30000 --observe-ms 15000 --out-dir probe-out --recover-synthetic-copy
             & "$PWD/scripts/windows-native-capture.ps1" -Phase "online-second-launch-profile-copy" -ProcessId $second.Id -StopAfterCapture
           } finally {
+            Remove-Item Env:\PB_PROBE_SYNTHETIC_COPY -ErrorAction SilentlyContinue
             Remove-Item Env:\PB_DEBUG_WEBVIEW_BROWSER_ARGS -ErrorAction SilentlyContinue
             Remove-Item Env:\PB_DEBUG_WEBVIEW_DATA_DIR -ErrorAction SilentlyContinue
           }

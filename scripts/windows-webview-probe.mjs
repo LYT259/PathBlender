@@ -3,7 +3,7 @@
 // release-verify run 43434507742). The caller launches pathblender-desktop
 // with the diagnostic builder's PB_DEBUG_WEBVIEW_BROWSER_ARGS and a dedicated
 // PB_DEBUG_WEBVIEW_DATA_DIR; the WebView2 environment-variable override is not
-// relied on. This probe is strictly READ-ONLY against the app:
+// relied on. The default probe is strictly READ-ONLY against the app:
 //   - polls the loopback remote-debugging endpoint until /json/version answers,
 //   - lists every target from /json,
 //   - connects over CDP ONLY to page targets whose URL is local app content,
@@ -11,8 +11,10 @@
 //   - passively records console errors, runtime exceptions, failed loads and
 //     HTTP >= 400 responses while attached,
 //   - captures an in-WebView screenshot (Page.captureScreenshot).
-// It never navigates, never mutates page or app state, and reads no
-// credentials. The exit code is always 0: findings surface through
+// With BOTH --recover-synthetic-copy AND PB_PROBE_SYNTHETIC_COPY=1, an observed
+// empty, worker-controlled document additionally unregisters this origin's
+// worker and reloads, ONLY in the explicitly synthetic copied profile. It never
+// clears storage or reads credentials. The exit code is always 0: findings surface through
 // <out-dir>/webview-probe-result.json, not through workflow failure.
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 
@@ -27,6 +29,7 @@ const port = Number(arg('port', '9222'));
 const waitMs = Number(arg('wait-ms', '90000'));
 const observeMs = Number(arg('observe-ms', '45000'));
 const outDir = arg('out-dir', 'probe-out');
+const recoverSynthetic = args.includes('--recover-synthetic-copy') && process.env.PB_PROBE_SYNTHETIC_COPY === '1';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const startedAt = Date.now();
@@ -230,6 +233,48 @@ function classify(snapshot, events) {
   return exceptions > 0 ? `${core}+JS_EXCEPTIONS(${exceptions})` : core;
 }
 
+async function recoverSyntheticPage(session, pageNumber, late, serviceWorkers) {
+  if (late.bodyExists !== true || late.rootExists || (late.bodyTextLength || 0) > 0 || typeof serviceWorkers.controller !== 'string' || !serviceWorkers.controller.endsWith('/sw.js')) {
+    return { skipped: 'empty-document-and-service-worker-precondition-not-met' };
+  }
+  const expression = `(async () => {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    return Promise.all(registrations.filter((r) => r.scope === location.origin + '/').map((r) => r.unregister()));
+  })()`;
+  const unregistrations = normEval(await session.send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true }));
+  if (!Array.isArray(unregistrations) || unregistrations.length === 0 || unregistrations.some((value) => value !== true)) {
+    return { unregistrations, recovered: false, error: 'worker-unregister-failed' };
+  }
+  await session.send('Page.reload', { ignoreCache: true });
+  const deadline = Date.now() + 20000;
+  let lateSnapshot = null;
+  do {
+    const raw = await session.send('Runtime.evaluate', { expression: SNAPSHOT_EXPR, returnByValue: true })
+      .catch((e) => ({ evalError: String(e && e.message ? e.message : e) }));
+    lateSnapshot = normEval(raw);
+    if (lateSnapshot.rootExists && (lateSnapshot.bodyTextLength || 0) > 0) break;
+    await sleep(250);
+  } while (Date.now() < deadline);
+  const workersRaw = await session.send('Runtime.evaluate', { expression: SERVICE_WORKER_EXPR, awaitPromise: true, returnByValue: true })
+    .catch((e) => ({ evalError: String(e && e.message ? e.message : e) }));
+  const recovery = {
+    unregistrations,
+    recovered: lateSnapshot.rootExists === true && (lateSnapshot.bodyTextLength || 0) > 0,
+    lateSnapshot,
+    serviceWorkers: normEval(workersRaw),
+    screenshot: null,
+  };
+  try {
+    const cap = await session.send('Page.captureScreenshot', { format: 'png' });
+    recovery.screenshot = `webview-after-unregister-${pageNumber}.png`;
+    writeFileSync(`${outDir}/${recovery.screenshot}`, Buffer.from(cap.data, 'base64'));
+  } catch (e) {
+    recovery.screenshot = `capture failed: ${e && e.message ? e.message : e}`;
+  }
+  log(`[DEBUG-window-restart] synthetic recovery: recovered=${recovery.recovered}, screenshot=${recovery.screenshot}`);
+  return recovery;
+}
+
 async function main() {
   log(`probe start: endpoint ${base}, wait ${waitMs}ms, observe ${observeMs}ms, out ${outDir}`);
   if (typeof WebSocket !== 'function') {
@@ -367,9 +412,16 @@ async function main() {
     } catch (e) {
       screenshot = `capture failed: ${e && e.message ? e.message : e}`;
     }
+    const pageResult = { url: page.url, title: String(page.title || '').slice(0, 120), earlySnapshot: early, lateSnapshot: late, serviceWorkers, navigation, screenshot, events };
+    if (recoverSynthetic) {
+      try {
+        pageResult.syntheticRecovery = await recoverSyntheticPage(session, i + 1, late, serviceWorkers);
+      } catch (e) {
+        pageResult.syntheticRecovery = { recovered: false, error: String(e && e.message ? e.message : e) };
+      }
+    }
     session.close();
     log(`page ${i + 1}: verdict input ready (early/late snapshots + ${events.length} events), screenshot: ${screenshot}`);
-    const pageResult = { url: page.url, title: String(page.title || '').slice(0, 120), earlySnapshot: early, lateSnapshot: late, serviceWorkers, navigation, screenshot, events };
     result.pages.push(pageResult);
     if (i === 0) result.verdict = classify(late, events);
   }
