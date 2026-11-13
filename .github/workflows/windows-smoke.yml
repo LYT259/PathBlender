@@ -40,6 +40,7 @@ on:
         options:
           - smoke
           - restart-compare
+          - startup-isolation
 
 permissions:
   contents: read
@@ -50,7 +51,7 @@ concurrency:
 
 jobs:
   smoke:
-    if: github.event.inputs.scenario != 'restart-compare'
+    if: github.event.inputs.scenario == 'smoke'
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
@@ -463,5 +464,89 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-restart-compare-${{ matrix.stop-mode }}
+          path: native-probe-out/**
+          if-no-files-found: error
+  isolate:
+    # Offline-first on a clean runner versus a graceful restart of the exact
+    # same online installation. Both cases retain the default profile.
+    if: github.event.inputs.scenario == 'startup-isolation'
+    strategy:
+      fail-fast: false
+      matrix:
+        case:
+          - offline-only
+          - online-restart
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      CASE: ${{ matrix.case }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the published beta.24 installers
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG=v0.1.10-beta.24
+          VERSION="${TAG#v}"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern "PathBlender_${VERSION}_x64-setup.exe" \
+            --pattern "PathBlender_${VERSION}_x64-offline-setup.exe" \
+            --dir dl
+          sha256sum dl/*
+      - name: Launch and gracefully close the online app
+        if: matrix.case == 'online-restart'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (@(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue).Count -ne 0) { throw "[DEBUG-window-restart] unexpected app process before the online install" }
+          $setup = Get-ChildItem "dl/*_x64-setup.exe" | Select-Object -First 1
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "[DEBUG-window-restart] online installer exit code $($p.ExitCode)" }
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $exe = Join-Path $installDir.Trim('"', "'") "pathblender-desktop.exe"
+          if ((Get-Item $exe).VersionInfo.ProductVersion -ne "0.1.10-beta.24") { throw "[DEBUG-window-restart] the installed online app is not beta.24" }
+          $online = Start-Process -FilePath $exe -PassThru
+          & "$PWD/scripts/windows-native-capture.ps1" -Phase "online-first-launch" -ProcessId $online.Id -CloseAfterCapture
+      - name: Relaunch the same online installation without reinstalling
+        if: matrix.case == 'online-restart'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $exe = Join-Path $installDir.Trim('"', "'") "pathblender-desktop.exe"
+          $online = Start-Process -FilePath $exe -PassThru
+          & "$PWD/scripts/windows-native-capture.ps1" -Phase "online-second-launch" -ProcessId $online.Id -StopAfterCapture
+      - name: Install and capture the first offline launch on a clean runner
+        if: matrix.case == 'offline-only'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (@(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue).Count -ne 0) { throw "[DEBUG-window-restart] unexpected app process before the offline install" }
+          $setup = Get-ChildItem "dl/*_x64-offline-setup.exe" | Select-Object -First 1
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "[DEBUG-window-restart] offline installer exit code $($p.ExitCode)" }
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $exe = Join-Path $installDir.Trim('"', "'") "pathblender-desktop.exe"
+          if ((Get-Item $exe).VersionInfo.ProductVersion -ne "0.1.10-beta.24") { throw "[DEBUG-window-restart] the installed offline app is not beta.24" }
+          $offline = Start-Process -FilePath $exe -PassThru
+          & "$PWD/scripts/windows-native-capture.ps1" -Phase "offline-only-first-launch" -ProcessId $offline.Id -StopAfterCapture
+      - name: Upload the startup isolation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-startup-${{ matrix.case }}
           path: native-probe-out/**
           if-no-files-found: error
