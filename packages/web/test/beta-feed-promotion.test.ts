@@ -56,7 +56,8 @@ describe('beta feed promotion recovery', () => {
 });
 
 describe('beta feed promotion against a real gh invocation', () => {
-  it('reads paginated releases larger than the default 1 MiB exec buffer and promotes the feed', () => {
+  // This script runs only on Ubuntu in release.yml; its POSIX fake gh is not a Windows executable.
+  it.skipIf(process.platform === 'win32')('reads paginated releases larger than the default 1 MiB exec buffer and promotes the feed', () => {
     const root = mkdtempSync(join(tmpdir(), 'pb-feed-promote-'));
     try {
       const state = join(root, 'state');
@@ -103,6 +104,7 @@ describe('beta feed promotion against a real gh invocation', () => {
         '  process.exit(0);',
         '}',
         'if (args[0] === \'release\' && args[1] === \'upload\') {',
+        '  if (!args.includes(\'--clobber\') || args[args.indexOf(\'--repo\') + 1] !== \'acme/widget\') process.exit(65);',
         '  copyFileSync(args[3], join(state, \'uploaded-latest-beta.json\'));',
         '  process.exit(0);',
         '}',
