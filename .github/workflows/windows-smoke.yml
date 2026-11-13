@@ -112,10 +112,28 @@ jobs:
           V=$(node -p "require('./package.json').version")
           mkdir -p release-offline
           cp "packages/desktop/src-tauri/target/release/bundle/nsis/PathBlender_${V}_x64-setup.exe" "release-offline/PathBlender_${V}_x64-offline-setup.exe"
+      - name: Reproduce the online-installed launch before forced termination
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Remove-Item Env:\PB_DEBUG_WEBVIEW_BROWSER_ARGS -ErrorAction SilentlyContinue
+          Remove-Item Env:\PB_DEBUG_WEBVIEW_DATA_DIR -ErrorAction SilentlyContinue
+          Remove-Item Env:\WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
+          if (@(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue).Count -ne 0) { throw "[DEBUG-window-restart] unexpected app process before the online install" }
+          $setup = Get-ChildItem "release/*-setup.exe" | Select-Object -First 1
+          if (-not $setup) { throw "[DEBUG-window-restart] no online setup.exe found" }
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "[DEBUG-window-restart] online installer exit code $($p.ExitCode)" }
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $exe = Join-Path $installDir.Trim('"', "'") "pathblender-desktop.exe"
+          if (-not (Test-Path $exe)) { throw "[DEBUG-window-restart] installed exe missing: $exe" }
+          $online = Start-Process -FilePath $exe -PassThru
+          & "$PWD/scripts/windows-native-capture.ps1" -Phase "online-before-forced-stop" -ProcessId $online.Id -StopAfterCapture
       - name: Silent install (per-user, offline flavor)
-        # Installs the OFFLINE setup — the same flavor release-verify installs
-        # — so the CDP diagnosis below runs against the install type that
-        # showed the white main window on beta.24.
         shell: pwsh
         run: |
           $setup = Get-ChildItem "release-offline/*-offline-setup.exe" | Select-Object -First 1
@@ -123,6 +141,21 @@ jobs:
           Write-Host "Installing $($setup.Name)"
           $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
           if ($p.ExitCode -ne 0) { Write-Host "::error::installer exit code $($p.ExitCode)"; exit 1 }
+      - name: Capture the first offline launch before any debugging port
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Remove-Item Env:\PB_DEBUG_WEBVIEW_BROWSER_ARGS -ErrorAction SilentlyContinue
+          Remove-Item Env:\PB_DEBUG_WEBVIEW_DATA_DIR -ErrorAction SilentlyContinue
+          Remove-Item Env:\WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $exe = Join-Path $installDir.Trim('"', "'") "pathblender-desktop.exe"
+          $offline = Start-Process -FilePath $exe -PassThru
+          & "$PWD/scripts/windows-native-capture.ps1" -Phase "offline-after-forced-stop" -ProcessId $offline.Id -StopAfterCapture
       - name: One-shot CDP diagnostics - launch the main WebView with a real remote-debugging port
         # Diagnostic-only step (debug branch). The port is opened by the app
         # itself: this build creates the main window through
@@ -320,6 +353,7 @@ jobs:
         with:
           name: windows-smoke-webview-probe
           path: |
+            native-probe-out/**
             probe-out/**
             probe-launch.txt
             webview2-processes.txt
