@@ -391,12 +391,13 @@ jobs:
       - name: Screenshot the running app
         shell: pwsh
         run: |
-          Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes
-          $name = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "PathBlender")
-          $type = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Window)
-          $main = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, (New-Object System.Windows.Automation.AndCondition($name, $type)))
-          if (-not $main) { Write-Host "::error::main window not found for focused capture"; exit 1 }
-          $main.SetFocus()
+          $proc = Get-Process -Name "pathblender-desktop" -ErrorAction Stop | Select-Object -First 1
+          $proc.Refresh()
+          $handle = $proc.MainWindowHandle
+          if ($handle -eq [IntPtr]::Zero) { Write-Host "::error::no native main-window handle for focused capture"; exit 1 }
+          Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class FocusNative { [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int command); }'
+          [void][FocusNative]::ShowWindowAsync($handle, 9)
+          if (-not [FocusNative]::SetForegroundWindow($handle)) { Write-Host "::error::SetForegroundWindow failed"; exit 1 }
           Start-Sleep -Seconds 2
           Add-Type -AssemblyName System.Windows.Forms
           Add-Type -AssemblyName System.Drawing
