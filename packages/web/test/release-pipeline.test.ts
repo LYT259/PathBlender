@@ -981,6 +981,21 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     expect(run).toContain('ExpandCollapsePattern');
   });
 
+  it('finds the update channel by native ComboBox role when its text label is not exposed', () => {
+    // Run 43393373576 opened Preferences through the native Help menu but
+    // could not find Name="Update channel". The single combobox on the
+    // Updates pane is SelectControl (PreferencesPanel.tsx). Preserve the
+    // accessible-name path, then fall back to the native role and log the
+    // remaining UIA names/types instead of failing without diagnostics.
+    const nameLookup = run.indexOf('Wait-Element $prefs "Update channel"');
+    const roleFallback = run.indexOf('Wait-ControlType $prefs ([System.Windows.Automation.ControlType]::ComboBox)');
+    expect(nameLookup).toBeGreaterThan(0);
+    expect(run).toContain('function Wait-ControlType');
+    expect(roleFallback, 'native ComboBox role fallback missing').toBeGreaterThan(nameLookup);
+    expect(run.indexOf('Invoke-Element $channel')).toBeGreaterThan(roleFallback);
+    expect(run).toContain('uia diagnostic:');
+  });
+
   it('opens Preferences by expanding the native Help menu — no Ctrl+, SendKeys (dead on Windows)', () => {
     // Run 43390027355 proved the opener dead: CmdOrCtrl+, only exists in the
     // macOnly app menu (menu-spec.ts; build_menu_from_spec skips mac_only on

@@ -277,6 +277,21 @@ jobs:
             }
             return $null
           }
+          function Wait-ControlType($Root, $Type, [int]$Seconds) {
+            # UIA can expose the SelectControl button by role even when its
+            # associated label does not become the element's Name. The
+            # Updates pane has exactly one combobox: the update channel.
+            $deadline = (Get-Date).AddSeconds($Seconds)
+            while ((Get-Date) -lt $deadline) {
+              $cond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, $Type)
+              $all = $Root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $cond)
+              foreach ($el in $all) {
+                if ($el.Current.IsEnabled) { return $el }
+              }
+              Start-Sleep -Milliseconds 400
+            }
+            return $null
+          }
           function Invoke-Element($El) {
             $pat = $null
             if ($El.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pat)) { $pat.Invoke(); return }
@@ -379,6 +394,14 @@ jobs:
           $tab = Wait-Element $prefs "Updates" 30
           if ($tab) { Invoke-Element $tab }
           $channel = Wait-Element $prefs "Update channel" 30
+          if (-not $channel) {
+            Log-Line "Update channel label was not exposed as a UIA Name — trying the native ComboBox role"
+            $elements = $prefs.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition)
+            foreach ($el in $elements) {
+              Log-Line ("uia diagnostic: name='" + $el.Current.Name + "' type=" + $el.Current.ControlType.ProgrammaticName)
+            }
+            $channel = Wait-ControlType $prefs ([System.Windows.Automation.ControlType]::ComboBox) 15
+          }
           if (-not $channel) { Write-Host "::error::Update channel control not found"; exit 1 }
           Invoke-Element $channel
           $beta = Wait-Element $prefs "Beta" 15
