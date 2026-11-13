@@ -391,6 +391,13 @@ jobs:
             }
           }
           if (-not $prefs) { Write-Host "::error::Preferences window never opened via the Help menu"; exit 1 }
+          Add-Type -AssemblyName System.Drawing
+          $prefsBounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $prefsShot = New-Object System.Drawing.Bitmap $prefsBounds.Width, $prefsBounds.Height
+          $prefsGraphics = [System.Drawing.Graphics]::FromImage($prefsShot)
+          $prefsGraphics.CopyFromScreen($prefsBounds.Location, [System.Drawing.Point]::Empty, $prefsBounds.Size)
+          $prefsShot.Save("$PWD/prefs-open.png")
+          $prefsGraphics.Dispose(); $prefsShot.Dispose()
           $tab = Wait-Element $prefs "Updates" 30
           if ($tab) { Invoke-Element $tab }
           $channel = Wait-Element $prefs "Update channel" 30
@@ -546,6 +553,7 @@ jobs:
           name: update-verify-windows
           path: |
             update-before.png
+            prefs-open.png
             update-after.png
             update-log.txt
             sha256.log
