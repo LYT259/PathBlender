@@ -166,7 +166,7 @@ describe('copy that names a button names the real one', () => {
  */
 const BRANDS = [
   'pathblender', 'pathplanner', 'github', 'apriltag', 'andymark', 'viewcube',
-  'imagepixels', 'webgl', 'solidworks', 'okabe', 'choreo', 'onshape',
+  'imagepixels', 'webgl', 'macos', 'solidworks', 'okabe', 'choreo', 'onshape',
 ];
 
 describe('no camelCase leftovers in translated prose', () => {

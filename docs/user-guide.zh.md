@@ -136,6 +136,10 @@
 - **外观与语言**：偏好设置里深色/浅色/跟随系统（桌面 ⌘,）；界面支持 43 种语言——English (United States)、English (United Kingdom)、简体中文、繁體中文（香港）、繁體中文（澳門）、繁體中文（台灣）、Français、Español、Deutsch、Italiano、Português (Brasil)、Nederlands、Polski、Čeština、Türkçe、Ελληνικά、עברית、العربية、हिन्दी、日本語、한국어 等，完整清单见语言菜单（每行右侧带 简/繁/EN/あ/한 等短文字标识，不用旗帜）；未手动选择时跟随系统语言；
 - **更新**（桌面版）：菜单 **PathBlender → 检查更新…**；偏好设置 → 更新 可切换 stable / beta 通道。
 
+## 与旁边的电脑分享文件（蓝牙）
+
+桌面版菜单 **文件 → 附近分享（蓝牙）** 可与旁边的电脑直接经蓝牙交换路径文件——全程不经 Wi-Fi、热点或互联网。对方电脑打开同一对话框并选择**接收文件**；发送方选择文件与设备。随后两边屏幕显示同一个 6 位校验码：逐位比对，完全一致才各自确认——这一步用于识破看不见的中间人。每个收到的文件都会按名称和大小单独弹出接受/拒绝；接受的文件经 SHA-256 校验后，走与手动导入完全相同的导入流程。单个文件上限 2 MB——蓝牙传大文件太慢，大文件请继续用 U 盘。附近分享仅存在于 macOS 与 Windows 桌面版；网页版会给出「仅桌面版」提示。若打算在比赛中使用，请先自行核对当季规则中关于蓝牙与无线设备的规定——PathBlender 不宣称该功能在任何赛季符合赛事规则。
+
 ## 安装桌面版
 
 桌面版各平台的下载都在 [GitHub Releases](https://github.com/LYT259/pathblender/releases) 页：macOS Universal DMG（Apple Silicon 与 Intel 一份通用包，macOS 13+）、Windows x86_64 安装包 `*_x64-setup.exe`（体积小，安装时从 Microsoft 下载 WebView2 运行时）或 `PathBlender_<version>_x64-offline-setup.exe`（内嵌 WebView2，比在线版约多 130 MB——安装包实际总大小以 CI 实测为准，见各版本 Release notes 标注的体积；适合离线/赛场机器与未装 WebView2 的干净 Windows 10）、Linux x86_64 的 DEB / AppImage / RPM。Linux 下载好安装包后在终端安装——下面以 0.1.9 为例，文件名中的版本号以 Releases 页为准：

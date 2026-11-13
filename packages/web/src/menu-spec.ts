@@ -128,6 +128,7 @@ export function buildMenuSpec(ctx: MenuContext): MenuSection[] {
     item('import-folder', t('library.importFolder')),
   ];
   if (!ctx.viewerOnly) {
+    fileItems.push(item('share-ble', t('ble.menu')));
     fileItems.push(item('open-session', t('welcome.openSession')));
     fileItems.push(sep());
     fileItems.push(item('save', t('actions.save'), { accelerator: 'CmdOrCtrl+S' }));

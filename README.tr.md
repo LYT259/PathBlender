@@ -35,6 +35,7 @@ PathBlender bu boşluğu doldurur:
 
 - **Sıfır kurulum, sıfır yükleme (web)** — statik bir web uygulaması: yol dosyaları tarayıcınızda yerel olarak çözümlenir ve denetlenir;
 - **Ayrıca masaüstü uygulaması** — macOS, Windows ve Linux için hafif bir Tauri kabuğunda aynı arayüz; oturum kaydetme/açma, GIF tekrar oynatma ve çözüm paketi dışa aktarma ile uygulama içi güncellemeler (kararlı veya beta kanalı) ekler. Masaüstünün güncelleme denetimleri GitHub Releases'e bağlanır.
+- **Bluetooth ile yakın paylaşım** (yalnızca masaüstü) — yol dosyalarını yanındaki bilgisayara doğrudan Bluetooth ile aktarın; web'de yok.
 
 ## Hızlı başlangıç
 

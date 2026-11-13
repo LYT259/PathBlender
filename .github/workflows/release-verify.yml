@@ -443,7 +443,10 @@ jobs:
             echo "::error::app version $PLIST_VER != release version $VER"
             exit 1
           fi
-          for f in LICENSE NOTICE.md "licenses/FRCDesignApp-MIT.txt" Assets.car; do
+          for f in LICENSE NOTICE.md "licenses/FRCDesignApp-MIT.txt" \
+              "licenses/ble-peripheral-rust-MIT.txt" "licenses/btleplug-LICENSE.md" \
+              "licenses/x25519-dalek-LICENSE" "licenses/chacha20poly1305-LICENSE" \
+              "licenses/hkdf-LICENSE" Assets.car; do
             if [[ ! -e "$APP/Contents/Resources/$f" ]]; then
               echo "::error::missing $f in the mounted app"
               exit 1

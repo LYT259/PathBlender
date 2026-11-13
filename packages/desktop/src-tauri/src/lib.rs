@@ -17,6 +17,7 @@ use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_updater::{Update, UpdaterExt};
 
+mod ble;
 mod hoot;
 
 const PREFS_WINDOW: &str = "prefs";
@@ -647,7 +648,16 @@ pub fn run() {
             hoot::hoot_accept_eula,
             hoot::hoot_download_owlet,
             hoot::hoot_convert,
-            set_update_guard
+            set_update_guard,
+            ble::commands::ble_capabilities,
+            ble::commands::ble_start_scan,
+            ble::commands::ble_stop_scan,
+            ble::commands::ble_send_files,
+            ble::commands::ble_start_receiver,
+            ble::commands::ble_confirm_session,
+            ble::commands::ble_respond_file,
+            ble::commands::ble_take_received_files,
+            ble::commands::ble_cancel
         ])
         .manage(MenuState {
             ids: Mutex::new(Vec::new()),
