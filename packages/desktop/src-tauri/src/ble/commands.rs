@@ -918,9 +918,12 @@ mod tests {
         assert!(manager.take_received().is_empty());
     }
 
-    #[test]
-    fn unsupported_platform_capabilities_are_explicit() {
-        assert!(!capabilities_on_unsupported().platform_supported);
-        assert!(PLATFORM_SUPPORTED);
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    #[tokio::test]
+    async fn unsupported_platform_capabilities_are_explicit() {
+        let capabilities = ble_capabilities().await.unwrap();
+        assert!(!capabilities.platform_supported);
+        assert!(capabilities.central_powered.is_none());
+        assert!(capabilities.peripheral_powered.is_none());
     }
 }
