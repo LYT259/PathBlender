@@ -18,8 +18,12 @@
         "minHeight": 680,
         "transparent": false,
         "dragDropEnabled": false,
-        "titleBarStyle": "Visible",
-        "hiddenTitle": false
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 18,
+          "y": 35
+        }
       }
     ],
     "security": {

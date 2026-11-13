@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useI18n } from './i18n';
 import { PreferencesPanel } from './components/PreferencesPanel';
+import { disableWindowBackgroundDrag, startWindowDrag, updateWindowBackgroundDrag } from './window-chrome';
 
 /** The toolbar and ⌘, open the same native settings window. */
 export function PrefsWindow() {
@@ -28,9 +29,17 @@ export function PrefsWindow() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
-  // The visible native title bar owns dragging and the window menu
-  // (2026-11-13) — the web side only renders the panel itself.
+  // The overlay title bar leaves no native drag area. The transparent layer
+  // enables AppKit background dragging only while hovered and keeps the
+  // explicit startDragging() fallback for the injected attribute path.
   return <div className="prefs-only preferences-window">
+    <div
+      className="prefs-drag-layer"
+      data-tauri-drag-region
+      onPointerOver={updateWindowBackgroundDrag}
+      onPointerLeave={disableWindowBackgroundDrag}
+      onMouseDown={startWindowDrag}
+    />
     <PreferencesPanel desktop initialSection={goUpdates ? 'updates' : undefined} autoCheckUpdates={goUpdates} onClose={close} />
     {closeFailed && <div className="toast error" role="alert">{t('prefs.closeFailed')}</div>}
   </div>;
