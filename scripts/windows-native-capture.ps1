@@ -5,10 +5,12 @@ param(
   [Parameter(Mandatory = $true)]
   [int]$ProcessId,
   [string]$OutDir = 'native-probe-out',
-  [switch]$StopAfterCapture
+  [switch]$StopAfterCapture,
+  [switch]$CloseAfterCapture
 )
 
 $ErrorActionPreference = 'Stop'
+if ($StopAfterCapture -and $CloseAfterCapture) { throw '[DEBUG-window-restart] choose only one process exit mode' }
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 Add-Type -TypeDefinition @'
@@ -144,4 +146,28 @@ if ($StopAfterCapture) {
   } while ($running -and (Get-Date) -lt $deadline)
   if ($running) { throw "[DEBUG-window-restart] PID $ProcessId still running 30s after forced stop" }
   Write-ProcessEvidence "$Phase-after-stop.json"
+}
+
+if ($CloseAfterCapture) {
+  $closeRequested = $proc.CloseMainWindow()
+  $proc.Dispose()
+  $deadline = (Get-Date).AddSeconds(30)
+  do {
+    Start-Sleep -Milliseconds 500
+    $running = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+    if ($running -and $running.HasExited) {
+      $running.Dispose()
+      $running = $null
+    }
+  } while ($running -and (Get-Date) -lt $deadline)
+  [pscustomobject]@{
+    phase = $Phase
+    pid = $ProcessId
+    capturedAt = (Get-Date).ToUniversalTime().ToString('o')
+    closeMainWindowReturned = $closeRequested
+    processExited = (-not $running)
+  } | ConvertTo-Json | Out-File -FilePath (Join-Path $OutDir "$Phase-close.json") -Encoding utf8
+  Write-ProcessEvidence "$Phase-after-close.json"
+  if (-not $closeRequested) { throw "[DEBUG-window-restart] CloseMainWindow was not accepted for PID $ProcessId" }
+  if ($running) { throw "[DEBUG-window-restart] PID $ProcessId still running 30s after CloseMainWindow" }
 }

@@ -1,0 +1,97 @@
+# Diagnostic-only A/B against the published beta.24 bits; never merge as a
+# product fix. Each matrix leg starts on a fresh Windows runner. The only
+# changed variable is how the healthy online-installed app is closed before
+# the offline reinstall. No profile is deleted or inspected for user content.
+name: Windows restart comparison
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-restart-compare
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    strategy:
+      fail-fast: false
+      matrix:
+        stop-mode: [force, close]
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      STOP_MODE: ${{ matrix.stop-mode }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the published beta.24 installers
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG=v0.1.10-beta.24
+          VERSION="${TAG#v}"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern "PathBlender_${VERSION}_x64-setup.exe" \
+            --pattern "PathBlender_${VERSION}_x64-offline-setup.exe" \
+            --dir dl
+          sha256sum dl/*
+      - name: Install the online app and exit using the matrix mode
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Remove-Item Env:\PB_DEBUG_WEBVIEW_BROWSER_ARGS -ErrorAction SilentlyContinue
+          Remove-Item Env:\PB_DEBUG_WEBVIEW_DATA_DIR -ErrorAction SilentlyContinue
+          Remove-Item Env:\WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
+          if (@(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue).Count -ne 0) { throw "[DEBUG-window-restart] unexpected app process before the online install" }
+          $setup = Get-ChildItem "dl/*_x64-setup.exe" | Select-Object -First 1
+          if (-not $setup) { throw "[DEBUG-window-restart] no online setup.exe found" }
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "[DEBUG-window-restart] online installer exit code $($p.ExitCode)" }
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $exe = Join-Path $installDir.Trim('"', "'") "pathblender-desktop.exe"
+          if (-not (Test-Path $exe)) { throw "[DEBUG-window-restart] installed exe missing: $exe" }
+          if ((Get-Item $exe).VersionInfo.ProductVersion -ne "0.1.10-beta.24") { throw "[DEBUG-window-restart] the installed online app is not beta.24" }
+          $online = Start-Process -FilePath $exe -PassThru
+          $capture = @{
+            Phase = "online-before-$env:STOP_MODE-stop"
+            ProcessId = $online.Id
+            OutDir = "native-probe-out"
+          }
+          if ($env:STOP_MODE -eq "force") { $capture.StopAfterCapture = $true }
+          elseif ($env:STOP_MODE -eq "close") { $capture.CloseAfterCapture = $true }
+          else { throw "[DEBUG-window-restart] unknown stop mode: $env:STOP_MODE" }
+          & "$PWD/scripts/windows-native-capture.ps1" @capture
+      - name: Install the offline app and capture its first launch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Remove-Item Env:\PB_DEBUG_WEBVIEW_BROWSER_ARGS -ErrorAction SilentlyContinue
+          Remove-Item Env:\PB_DEBUG_WEBVIEW_DATA_DIR -ErrorAction SilentlyContinue
+          Remove-Item Env:\WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
+          $setup = Get-ChildItem "dl/*_x64-offline-setup.exe" | Select-Object -First 1
+          if (-not $setup) { throw "[DEBUG-window-restart] no offline setup.exe found" }
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "[DEBUG-window-restart] offline installer exit code $($p.ExitCode)" }
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $exe = Join-Path $installDir.Trim('"', "'") "pathblender-desktop.exe"
+          if ((Get-Item $exe).VersionInfo.ProductVersion -ne "0.1.10-beta.24") { throw "[DEBUG-window-restart] the installed offline app is not beta.24" }
+          $offline = Start-Process -FilePath $exe -PassThru
+          & "$PWD/scripts/windows-native-capture.ps1" -Phase "offline-after-$env:STOP_MODE-stop" -ProcessId $offline.Id -OutDir "native-probe-out" -StopAfterCapture
+      - name: Upload the restart comparison evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-restart-compare-${{ matrix.stop-mode }}
+          path: native-probe-out/**
+          if-no-files-found: error
