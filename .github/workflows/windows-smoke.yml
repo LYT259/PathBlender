@@ -267,10 +267,10 @@ jobs:
           Write-Host "Window title: '$($proc.MainWindowTitle)'"
           if ($proc.MainWindowTitle -ne "PathBlender") { Write-Host "::warning::unexpected window title" }
           "running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath smoke-result.txt
-      - name: Compare a fresh profile without a debugging port
-        # A/B comparison against probe-out: identical exe and fresh data dir,
-        # but no debugging port. Capture native pixels to isolate whether CDP
-        # itself changes page initialization or visibility.
+      - name: Compare the original profile without a debugging port
+        # Same builder arguments as the healthy fresh-profile capture, but
+        # use the app's original profile directory. This isolates profile
+        # state from any effect of the remote-debugging port itself.
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -282,7 +282,7 @@ jobs:
           $installDir = $installDir.Trim('"', "'")
           $exe = Join-Path $installDir "pathblender-desktop.exe"
           $env:PB_DEBUG_WEBVIEW_BROWSER_ARGS = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"
-          $env:PB_DEBUG_WEBVIEW_DATA_DIR = Join-Path $env:RUNNER_TEMP "pb-debug-webview-no-cdp"
+          Remove-Item Env:\PB_DEBUG_WEBVIEW_DATA_DIR -ErrorAction SilentlyContinue
           Add-Type -AssemblyName System.Windows.Forms
           Add-Type -AssemblyName System.Drawing
           try {
