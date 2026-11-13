@@ -981,6 +981,59 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     expect(run).toContain('ExpandCollapsePattern');
   });
 
+  it('opens Preferences by expanding the native Help menu — no Ctrl+, SendKeys (dead on Windows)', () => {
+    // Run 43390027355 proved the opener dead: CmdOrCtrl+, only exists in the
+    // macOnly app menu (menu-spec.ts; build_menu_from_spec skips mac_only on
+    // Windows, so the native menu has no Preferences item/accelerator) and
+    // the web keydown handler early-returns on ctrl/meta — SendKeys "^," is
+    // a no-op regardless of focus. The drive must instead expand the Help
+    // menu-bar item and invoke its entries, with the Expand BEFORE the
+    // dropdown-item search (a collapsed Win32 dropdown is not an invokable
+    // descendant of the app window — the old fallback timed out on it).
+    expect(run).not.toContain('SendWait("^,")');
+    const helpFnIdx = run.indexOf('function Open-HelpMenuItem');
+    expect(helpFnIdx, 'Help menu opener helper missing').toBeGreaterThan(0);
+    const helpIdx = run.indexOf('"Help"', helpFnIdx);
+    expect(helpIdx, 'Help menu-bar item lookup missing').toBeGreaterThan(helpFnIdx);
+    const expandIdx = run.indexOf('$pat.Expand()', helpFnIdx);
+    expect(expandIdx, 'menu Expand call missing').toBeGreaterThan(helpIdx);
+    const checkIdx = run.indexOf('Open-HelpMenuItem "Check for updates"');
+    expect(checkIdx, 'Check for updates menu invocation missing').toBeGreaterThan(expandIdx);
+  });
+
+  it('falls back to the About PathBlender menu entry before declaring the opener failed', () => {
+    // Help > About PathBlender opens the plain Preferences window on desktop
+    // (menuHandlers 'about'); it is the second menu attempt, and the failure
+    // error only fires after both.
+    const checkIdx = run.indexOf('Open-HelpMenuItem "Check for updates"');
+    const aboutIdx = run.indexOf('Open-HelpMenuItem "About PathBlender"');
+    expect(checkIdx).toBeGreaterThan(0);
+    expect(aboutIdx).toBeGreaterThan(checkIdx);
+    const failIdx = run.indexOf('::error::Preferences window never opened');
+    expect(failIdx).toBeGreaterThan(aboutIdx);
+  });
+
+  it('searches the open dropdown both under the expanded item and under the desktop-root menu popup', () => {
+    // A Win32 menu dropdown is a #32768 popup parented to the DESKTOP root,
+    // not to the app window: the finder must cover the expanded bar item's
+    // subtree AND root's child Menu windows, or a healthy menu looks empty.
+    expect(run).toContain('[System.Windows.Automation.ControlType]::Menu');
+    expect(run).toContain('RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, $menuCond)');
+  });
+
+  it('invokes menu items via LegacyIAccessible DoDefaultAction when Invoke is absent, and logs menu discovery', () => {
+    // Win32 menu items sometimes expose only the legacy MSAA pattern; the
+    // item invoker must try Invoke then DoDefaultAction. And because this
+    // workflow forbids screenshot viewing for diagnosis, the discovered
+    // top-level menu names land in the step log AND update-log.txt.
+    expect(run).toContain('LegacyIAccessiblePattern');
+    expect(run).toContain('DoDefaultAction()');
+    expect(run).toMatch(/Log-Line "menu bar: \$\(/);
+    const logFn = run.slice(run.indexOf('function Log-Line'), run.indexOf('function Log-Line') + 400);
+    expect(logFn).toContain('Write-Host');
+    expect(logFn).toContain('Out-File -FilePath update-log.txt -Append');
+  });
+
   it('orders prerelease identifiers numerically per semver §11 — beta.9 must gate-pass below beta.10', () => {
     // The FROM<TARGET gate runs as an inline node script inside the step.
     // Execute the very script the workflow ships (extracted from the run
