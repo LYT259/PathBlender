@@ -852,30 +852,37 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     expect(run).not.toContain('if (-not $alive) { $flow = "channel-switch auto"; break }');
   });
 
-  it('re-checks the old pid INSIDE the prefs fallback and reads a dead-window UIA failure as the takeover', () => {
+  it('re-checks the old pid at every decision point of the drive and reads a dead-window UIA failure as the takeover', () => {
     // The fallback's element waits can span the moment the channel-switch
     // install exits the old process: without re-checks, the next
     // Wait-Element runs $Root.FindAll on a dead window and a normal
-    // update fails as a UIA crash. Six probe points are required: the
-    // watch entry, every iteration of the bounded install wait, the
-    // catch arm that must re-throw while the old process is still alive
-    // (real UIA errors stay failures), the post-loop guard (own test
-    // below), and phase 1's loop condition plus its final re-query.
-    expect((run.match(/Get-Process -Id \$oldPid -ErrorAction SilentlyContinue/g) ?? []).length).toBe(6);
-    expect(run).toMatch(/if \(-not \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\) \{ \$flow = "channel-switch auto"; break \}\r?\n\s*\$install = Wait-Element \$prefs "Install and relaunch" 2/);
+    // update fails as a UIA crash. Five probe points are required: the
+    // watch entry, the catch arm that must re-throw while the old
+    // process is still alive (real UIA errors stay failures), the
+    // post-loop guard (own test below), and phase 1's loop condition
+    // plus its final re-query.
+    expect((run.match(/Get-Process -Id \$oldPid -ErrorAction SilentlyContinue/g) ?? []).length).toBe(5);
     expect(run).toMatch(/\} catch \{\r?\n\s*if \(-not \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\) \{ \$flow = "channel-switch auto"; break \}\r?\n\s*throw/);
   });
 
-  it('clicks the prefs check at most once per bounded install wait — re-clicking resets the panel', () => {
+  it('consumes a found update before clicking check, and rate-limits check clicks', () => {
     // PreferencesPanel hides the install button while a check is in
-    // flight, so a fallback that re-clicks "Check for updates" every
-    // loop iteration against a slow feed livelocks: the click clears
-    // the found state before the 2s install wait can see the button
-    // (simulated 23 checks, 0 install clicks). The fallback must bound
-    // each check with a patient install wait (20s) instead of the
-    // watch loop's own cadence.
+    // flight, and a re-click resets a completed check back to checking
+    // (clearing the button). The fallback must therefore (a) poll for
+    // the install button FIRST each iteration so a check that completed
+    // after the previous poll is consumed, and (b) re-click check at
+    // most once per 45s — comfortably longer than a feed check — so an
+    // in-flight check is never reset (the review simulated livelocks
+    // at 5s and 25s per check; both must terminate with the install
+    // button clicked).
+    const checkClickIdx = run.indexOf('Invoke-Element $check');
+    expect(checkClickIdx).toBeGreaterThan(0);
+    const installPollIdx = run.indexOf('Wait-Element $prefs "Install and relaunch" 3');
+    expect(installPollIdx).toBeGreaterThan(0);
+    expect(installPollIdx).toBeLessThan(checkClickIdx);
     expect((run.match(/Invoke-Element \$check/g) ?? []).length).toBe(1);
-    expect(run).toContain('$installDeadline = (Get-Date).AddSeconds(20)');
+    expect(run).toContain('if (($watch.Elapsed.TotalSeconds - $lastCheckAt) -ge 45) {');
+    expect(run).toMatch(/Invoke-Element \$check\r?\n\s*\$lastCheckAt = \$watch\.Elapsed\.TotalSeconds/);
   });
 
   it('reads an empty flow with the old process already gone as a takeover, not a failure', () => {
@@ -884,25 +891,27 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     // element wait, Wait-Element returns null WITHOUT throwing (so the
     // catch arm never runs), and the loop exits with an empty flow while
     // the old process is already gone. The guard must sit OUTSIDE the
-    // watch loop (step-body indentation, before phase 1) and before the
+    // watch loop — pinned by brace-matching the loop's closing brace,
+    // not by indentation (PowerShell scopes by braces) — and before the
     // empty-flow ::error::; a still-live old process keeps the failure
     // semantics (phase 2 then re-asserts the file version).
-    const failMarker = '::error::neither the channel-switch install nor the prefs two-step produced an install';
-    const failIdx = run.indexOf(failMarker);
-    expect(failIdx).toBeGreaterThan(0);
     const watchIdx = run.indexOf('while ($watch.Elapsed.TotalSeconds -lt 150) {');
     expect(watchIdx).toBeGreaterThan(0);
+    let depth = 0;
+    let loopEnd = -1;
+    for (let i = run.indexOf('{', watchIdx); i < run.length; i++) {
+      if (run[i] === '{') depth++;
+      else if (run[i] === '}') { depth--; if (depth === 0) { loopEnd = i; break; } }
+    }
+    expect(loopEnd, 'watch loop closing brace not found').toBeGreaterThan(watchIdx);
+    const guardIdx = run.indexOf('if (-not $flow) {', loopEnd);
+    expect(guardIdx).toBeGreaterThan(loopEnd);
+    const probe = 'if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto" }';
+    expect(run.slice(guardIdx, guardIdx + 700)).toContain(probe);
+    const failIdx = run.indexOf('::error::neither the channel-switch install nor the prefs two-step produced an install');
+    expect(failIdx).toBeGreaterThan(guardIdx);
     const phase1Idx = run.indexOf('# Takeover phase 1:');
-    expect(phase1Idx).toBeGreaterThan(watchIdx);
-    // The YAML parser strips the step's base indentation, so in the
-    // joined run text step-body statements sit at column 0 while
-    // in-loop statements are indented — the guard must open at column 0.
-    const guard = run.match(/\nif \(-not \$flow\) \{\r?\n  #[^\n]*\r?\n(?:  [^\n]*\r?\n){0,8}  if \(-not \(Get-Process -Id \$oldPid -ErrorAction SilentlyContinue\)\) \{ \$flow = "channel-switch auto" \}\r?\n\}/);
-    expect(guard, 'post-loop old-pid guard must exist at step-body indentation').toBeTruthy();
-    const guardIdx = guard ? (run.indexOf(guard[0]) ?? -1) : -1;
-    expect(guardIdx).toBeGreaterThan(watchIdx);
-    expect(guardIdx).toBeLessThan(failIdx);
-    expect(failIdx).toBeLessThan(phase1Idx);
+    expect(phase1Idx).toBeGreaterThan(failIdx);
   });
 
   it('phase 1 re-queries the old pid before declaring the takeover failed', () => {

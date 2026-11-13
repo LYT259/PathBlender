@@ -327,39 +327,44 @@ jobs:
           # can exit the old app and start the new one between two polls,
           # so an "all same-name processes gone" check would never fire and
           # would keep clicking a prefs window that no longer exists. The
-          # fallback bounds each check click with a patient 20s install
-          # wait: the panel hides the install button while a check is in
-          # flight, so re-clicking on the watch cadence clears the found
-          # state and a slow feed livelocks with the button never clicked.
+          # fallback polls the install button FIRST each iteration (a
+          # completed check must be consumed, never reset) and re-clicks
+          # check at most once per 45s: the panel hides the install button
+          # while a check is in flight and a re-click clears a found
+          # update, so watch-cadence re-clicks livelock a slow feed.
           $flow = ""
+          $lastCheckAt = -45.0
           $watch = [System.Diagnostics.Stopwatch]::StartNew()
           while ($watch.Elapsed.TotalSeconds -lt 150) {
             $oldAlive = Get-Process -Id $oldPid -ErrorAction SilentlyContinue
             if (-not $oldAlive) { $flow = "channel-switch auto"; break }
             if ($watch.Elapsed.TotalSeconds -gt 30) {
               # The channel-switch install can take over DURING these
-              # waits: re-check the old pid before every prefs touch, and
-              # read a UIA failure on that window as the takeover
-              # signature when the old process is gone — never as a false
-              # workflow failure. Real UIA errors with the old process
-              # still alive stay failures (re-throw).
+              # waits: read a UIA failure on the prefs window as the
+              # takeover signature when the old process is gone — never
+              # as a false workflow failure. Real UIA errors with the
+              # old process still alive stay failures (re-throw).
               try {
-                $check = Wait-Element $prefs "Check for updates" 2
-                if ($check -and $check.Current.IsEnabled) {
-                  Invoke-Element $check
-                  $installDeadline = (Get-Date).AddSeconds(20)
-                  while ((Get-Date) -lt $installDeadline) {
-                    if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto"; break }
-                    $install = Wait-Element $prefs "Install and relaunch" 2
-                    if ($install) { Invoke-Element $install; $flow = "prefs two-step"; break }
-                    Start-Sleep -Milliseconds 500
+                # Consume an already-found update first: a check that
+                # completed after the previous poll shows the install
+                # button here, and clicking check below would reset the
+                # panel back to checking and hide it again.
+                $install = Wait-Element $prefs "Install and relaunch" 3
+                if ($install) { Invoke-Element $install; $flow = "prefs two-step"; break }
+                # At most one check click per 45s — comfortably longer
+                # than any single feed check — so an in-flight check is
+                # never reset by a re-click.
+                if (($watch.Elapsed.TotalSeconds - $lastCheckAt) -ge 45) {
+                  $check = Wait-Element $prefs "Check for updates" 2
+                  if ($check -and $check.Current.IsEnabled) {
+                    Invoke-Element $check
+                    $lastCheckAt = $watch.Elapsed.TotalSeconds
                   }
                 }
               } catch {
                 if (-not (Get-Process -Id $oldPid -ErrorAction SilentlyContinue)) { $flow = "channel-switch auto"; break }
                 throw
               }
-              if ($flow) { break }
             }
             Start-Sleep -Milliseconds 500
           }
