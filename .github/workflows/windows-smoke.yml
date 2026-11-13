@@ -267,10 +267,10 @@ jobs:
           Write-Host "Window title: '$($proc.MainWindowTitle)'"
           if ($proc.MainWindowTitle -ne "PathBlender") { Write-Host "::warning::unexpected window title" }
           "running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath smoke-result.txt
-      - name: Compare the default WebView profile
-        # A/B comparison against probe-out: identical exe and debugging port,
-        # but no PB_DEBUG_WEBVIEW_DATA_DIR. This distinguishes a profile/cache
-        # issue from a product-wide renderer failure without changing app code.
+      - name: Compare a fresh profile without a debugging port
+        # A/B comparison against probe-out: identical exe and fresh data dir,
+        # but no debugging port. Capture native pixels to isolate whether CDP
+        # itself changes page initialization or visibility.
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -281,13 +281,22 @@ jobs:
           $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
           $installDir = $installDir.Trim('"', "'")
           $exe = Join-Path $installDir "pathblender-desktop.exe"
-          $env:PB_DEBUG_WEBVIEW_BROWSER_ARGS = "--remote-debugging-port=9222"
-          Remove-Item Env:\PB_DEBUG_WEBVIEW_DATA_DIR -ErrorAction SilentlyContinue
+          $env:PB_DEBUG_WEBVIEW_BROWSER_ARGS = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"
+          $env:PB_DEBUG_WEBVIEW_DATA_DIR = Join-Path $env:RUNNER_TEMP "pb-debug-webview-no-cdp"
+          Add-Type -AssemblyName System.Windows.Forms
+          Add-Type -AssemblyName System.Drawing
           try {
             Start-Process -FilePath $exe
-            node scripts/windows-webview-probe.mjs --port 9222 --wait-ms 90000 --observe-ms 45000 --out-dir probe-out/default-profile
+            Start-Sleep -Seconds 20
+            $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+            $bmp.Save("$PWD/probe-out/no-cdp.png")
+            $g.Dispose(); $bmp.Dispose()
           } finally {
             Remove-Item Env:\PB_DEBUG_WEBVIEW_BROWSER_ARGS -ErrorAction SilentlyContinue
+            Remove-Item Env:\PB_DEBUG_WEBVIEW_DATA_DIR -ErrorAction SilentlyContinue
             foreach ($p in @(Get-Process -Name "pathblender-desktop" -ErrorAction SilentlyContinue)) { Stop-Process -Id $p.Id -Force }
           }
       - name: Screenshot
