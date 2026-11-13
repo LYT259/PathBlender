@@ -38,7 +38,7 @@ creates the `Preferences` window already on its Updates section.
 Secondary: `Help → About PathBlender` (helpItems `about`, App.tsx:1598) opens
 the plain Preferences window.
 
-## Change (workflow-driven only — no product change)
+## Initial update-verify menu change
 
 In `.github/workflows/update-verify.yml`, drive step:
 
@@ -74,3 +74,22 @@ In `.github/workflows/update-verify.yml`, drive step:
 push → PR bot (`op run`) → three-platform Beta gate → real
 `gh workflow run update-verify.yml --ref fix/update-verify-preferences-menu
 -f from_tag=v0.1.10-beta.20` dispatch must show the actual takeover.
+
+## Windows candidate build and evidence chain
+
+The published beta.20 binary exposed a second, product-side failure: native
+Help could open a Preferences window, but its WebView content stayed blank.
+Tauri's `WebviewWindowBuilder` documentation says Windows can deadlock when a
+window is created in a synchronous command or menu handler. `open_prefs`
+therefore creates a new window on a separate thread on Windows; the existing
+window focus/eval path and other platforms are unchanged.
+
+The candidate check in `beta-verify.yml` installs and opens the branch's own
+NSIS build. Its first run (43398934479) found no Help item and then failed to
+capture evidence because `System.Windows.Forms` was not loaded. The check now
+waits for the asynchronous full-menu installation, uses the established
+Win32 popup handling, opens Updates, finds its named channel control with a
+role fallback, and uploads `preferences-candidate.png` with `if: always()`.
+Contract tests failed on the missing Forms assembly before these changes and
+pass afterward. The final gate must show this step passing on the real
+candidate package; static contracts alone are not evidence of the window fix.
