@@ -706,17 +706,28 @@ describe('Windows offline installer pipeline', () => {
     expect(windows).toContain('_x64-offline-setup.exe');
     expect(windows).toContain('-ArgumentList "/S"');
   });
-  it('opens Preferences and finds the channel control on the actual Windows candidate build', () => {
+  it('waits for the real Windows menu, loads screenshot support and preserves failure evidence', () => {
     const beta = readFileSync(resolve(ROOT, '.github/workflows/beta-verify.yml'), 'utf-8');
     const windows = beta.slice(beta.indexOf('  windows:'), beta.indexOf('  macos:'));
-    // update-verify intentionally uses only published artifacts, so it cannot
-    // prove a branch-side blank-window fix. The PR's own Windows package must
-    // open Preferences through the native Help menu and expose its combobox.
-    expect(windows).toContain('Open Preferences on the candidate build');
-    expect(windows).toContain('"Help"');
-    expect(windows).toContain('"Check for updates"');
-    expect(windows).toContain('[System.Windows.Automation.ControlType]::ComboBox');
-    expect(windows.indexOf('Open Preferences on the candidate build')).toBeLessThan(windows.indexOf('Stop the online-installed PathBlender before the offline install'));
+    const start = windows.indexOf('      - name: Open Preferences on the candidate build');
+    const end = windows.indexOf('      - name: Build offline NSIS installer', start);
+    const step = windows.slice(start, end);
+    expect(step).toContain('Add-Type -AssemblyName System.Windows.Forms');
+    expect(step).toContain('function Wait-Element');
+    expect(step).toContain('$help = Wait-Element $main "Help" 30');
+    expect(step).toContain('$updates = Wait-Element $prefs "Updates" 30');
+    expect(step).toContain('Invoke-Element $updates');
+    expect(step).toContain('$channel = Wait-Element $prefs "Update channel" 30');
+    expect(step).toContain('Wait-ControlType $prefs');
+    expect(step).toContain('"Check for updates"');
+    const uploadStart = windows.indexOf('      - uses: actions/upload-artifact@v4', start);
+    expect(uploadStart).toBeGreaterThan(start);
+    expect(uploadStart).toBeLessThan(end);
+    const upload = windows.slice(uploadStart, end);
+    expect(upload).toContain('if: always()');
+    expect(upload).toContain('name: beta-verify-windows-preferences');
+    expect(upload).toContain('path: preferences-candidate.png');
+    expect(upload).toContain('if-no-files-found: error');
   });
   it('release-verify downloads, digest-pins, size-floors, installs and launches the offline asset', () => {
     const verifyText2 = readFileSync(resolve(ROOT, '.github/workflows/release-verify.yml'), 'utf-8');
