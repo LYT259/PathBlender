@@ -2752,7 +2752,7 @@ dependencies = [
 
 [[package]]
 name = "pathblender-desktop"
-version = "0.1.10-beta.22"
+version = "0.1.10-beta.23"
 dependencies = [
  "async-trait",
  "base64 0.22.1",

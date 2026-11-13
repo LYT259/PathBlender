@@ -91,6 +91,7 @@ import { StarLink, ProjectSupport } from './components/ProjectSupport';
 import { SHOW_PROJECT_SUPPORT, GITHUB_URL } from './project-support';
 import { FirstCheckGuide } from './components/FirstCheckGuide';
 import { createFirstCheck, delayPracticeB, isFirstCheckSession, PRACTICE_B_ID, PRACTICE_FIELD } from './first-check';
+import { disableWindowBackgroundDrag, startWindowDrag, updateWindowBackgroundDrag } from './window-chrome';
 
 const SESSION_EXT = '.pb';
 // Sessions saved before the 2026-10-03 rename carry the legacy double
@@ -1654,7 +1655,14 @@ function AppBody() {
       {/* The web has no native menu — the shared spec renders as a DOM
           menubar. Desktop keeps its native menu and never mounts this. */}
       {!IS_DESKTOP && <MenuBar menus={menuSpec} onCommand={runMenuCommand} />}
-      <header className="toolbar workspace-toolbar" data-tauri-drag-region="deep" aria-label={tr('app.title')}>
+      <header
+        className="toolbar workspace-toolbar"
+        data-tauri-drag-region="deep"
+        aria-label={tr('app.title')}
+        onPointerOver={updateWindowBackgroundDrag}
+        onPointerLeave={disableWindowBackgroundDrag}
+        onMouseDown={startWindowDrag}
+      >
         {hasRobots && <button className="btn accent import-action" onClick={openImport}><Icon name="import" />{tr('robots.import')}</button>}
         <input ref={importInputRef} type="file" multiple hidden onChange={(e) => { if (e.target.files?.length) void importFiles(e.target.files); e.target.value = ''; }} />
         {hasRobots && <button className="btn accent import-folder-action" onClick={() => folderInputRef.current?.click()} title={tr('library.importFolderHint')}><Icon name="folder" />{tr('library.importFolder')}</button>}

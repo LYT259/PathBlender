@@ -1,15 +1,8 @@
-/**
- * Settings-window dragging (user report 2026-10-04): the overlay title bar
- * leaves no native drag area, so the transparent top layer must start the
- * drag. Besides the injected data-tauri-drag-region attribute path, the
- * layer calls getCurrentWindow().startDragging() directly on mouse down —
- * the deterministic path that keeps the window draggable. Right-clicks and
- * clicks on the panel below must NOT start a drag.
- */
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const native = vi.hoisted(() => ({
+  invoke: vi.fn((_c: string, ..._a: unknown[]) => Promise.resolve()),
   startDragging: vi.fn(() => Promise.resolve()),
   close: vi.fn(() => Promise.resolve()),
 }));
@@ -18,7 +11,7 @@ vi.mock('../src/update-check', () => ({
   checkForUpdate: vi.fn(),
   installPendingUpdate: vi.fn(),
 }));
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(() => Promise.resolve()) }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: native.invoke }));
 vi.mock('@tauri-apps/api/window', () => ({
   getCurrentWindow: () => ({ startDragging: native.startDragging, close: native.close }),
 }));
@@ -26,13 +19,18 @@ vi.mock('@tauri-apps/api/window', () => ({
 beforeEach(() => {
   localStorage.clear();
   vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = { invoke: native.invoke };
+  document.body.classList.add('desktop-macos');
+  native.invoke.mockClear();
+  native.startDragging.mockClear();
 });
 
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   vi.resetModules();
-  native.startDragging.mockClear();
+  delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+  document.body.classList.remove('desktop-macos');
 });
 
 async function renderPrefsWindow() {
@@ -74,5 +72,14 @@ describe('settings window drag layer', () => {
     fireEvent.mouseDown(panel, { button: 0 });
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(native.startDragging).not.toHaveBeenCalled();
+  });
+
+  it('enables native background dragging on entry and disables it on exit', async () => {
+    const { container } = await renderPrefsWindow();
+    const layer = container.querySelector('.prefs-drag-layer')!;
+    fireEvent.pointerOver(layer);
+    await vi.waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_window_background_movable', { movable: true }));
+    fireEvent.pointerLeave(layer);
+    await vi.waitFor(() => expect(native.invoke).toHaveBeenCalledWith('set_window_background_movable', { movable: false }));
   });
 });

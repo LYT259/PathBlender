@@ -1,6 +1,6 @@
 [package]
 name = "pathblender-desktop"
-version = "0.1.10-beta.22"
+version = "0.1.10-beta.23"
 description = "PathBlender — FRC alliance path fusion viewer (desktop shell)"
 edition = "2021"
 
@@ -53,9 +53,10 @@ futures = "0.3"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # Same versions as the existing lockfile entries (transitive via tauri on
-# macOS) — declared directly for the Dock-icon override; no new downloads.
+# macOS) — declared directly for the Dock-icon override and region-scoped
+# window dragging; no new downloads.
 objc2 = "=0.6.4"
-objc2-app-kit = { version = "=0.3.2", features = ["NSApplication", "NSImage"] }
+objc2-app-kit = { version = "=0.3.2", features = ["NSApplication", "NSImage", "NSWindow"] }
 # NSDictionary + NSObject: the About panel options dictionary (show_about_panel)
 objc2-foundation = { version = "=0.3.2", features = ["NSString", "NSDictionary", "NSObject"] }
 

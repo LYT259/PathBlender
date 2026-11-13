@@ -3,8 +3,8 @@
 /// a native menu rebuilt from the web's menu spec (`set_menu` — the web
 /// owns the labels in every UI language; PathBlender | File | Edit | View |
 /// Playback | Window | Help), a native import dialog, native save dialogs,
-/// a preferences window on ?window=prefs, and the HOOT import's owlet
-/// EULA/download/convert commands (hoot.rs).
+/// a preferences window on ?window=prefs, region-scoped native window dragging,
+/// and the HOOT import's owlet EULA/download/convert commands (hoot.rs).
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
@@ -453,6 +453,55 @@ fn disable_webview_scroll_bounce<R: tauri::Runtime>(window: &tauri::WebviewWindo
     });
 }
 
+/// Enable AppKit's native background drag only while the pointer is over a
+/// declared blank chrome region. Tao reads this flag synchronously from the
+/// real leftMouseDown event; the web layer also keeps startDragging() as a
+/// fallback. The source window is used so main and preferences stay isolated.
+#[tauri::command]
+fn set_window_background_movable(window: tauri::WebviewWindow, movable: bool) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        let target = window.clone();
+        let (tx, rx) = std::sync::mpsc::channel();
+        window
+            .run_on_main_thread(move || {
+                let _ = tx.send(set_native_window_background_movable(&target, movable));
+            })
+            .map_err(|e| format!("window drag dispatch failed: {e}"))?;
+        rx.recv()
+            .map_err(|_| "window drag task ended without a result".to_string())?
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (&window, movable);
+        Ok(())
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn set_native_window_background_movable(
+    window: &tauri::WebviewWindow,
+    movable: bool,
+) -> Result<(), String> {
+    use objc2::MainThreadMarker;
+    use objc2_app_kit::NSWindow;
+
+    if MainThreadMarker::new().is_none() {
+        return Err("window drag requires the main thread".to_string());
+    }
+    let raw = window
+        .ns_window()
+        .map_err(|e| format!("window has no native handle: {e}"))?;
+    if raw.is_null() {
+        return Err("window has no native NSWindow".to_string());
+    }
+    // SAFETY: ns_window returns the live source window on the main thread;
+    // the pointer is only borrowed for this setter.
+    let ns_window: &NSWindow = unsafe { &*(raw as *mut NSWindow) };
+    ns_window.setMovableByWindowBackground(movable);
+    Ok(())
+}
+
 /// Open an allowed external link in the user's system browser (handoff
 /// 2026-10-05). A plain `target="_blank"` anchor is not routed outward by
 /// WKWebView / WebKitGTK, so the web layer asks the shell. The allowlist
@@ -642,6 +691,7 @@ pub fn run() {
             open_preferences,
             open_external,
             set_dock_icon,
+            set_window_background_movable,
             check_update,
             install_update,
             hoot::hoot_status,
