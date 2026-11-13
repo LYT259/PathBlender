@@ -129,6 +129,75 @@ jobs:
           Write-Host "Window title: '$($proc.MainWindowTitle)'"
           if ($proc.MainWindowTitle -ne "PathBlender") { Write-Host "::warning::unexpected window title" }
           "running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath smoke-result.txt
+      - name: Open Preferences on the candidate build
+        # The published-artifact update workflow cannot cover a branch-side
+        # window fix. Exercise the actual candidate: Help > Check for updates
+        # must open a populated Preferences window with its channel combobox.
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes
+          Add-Type -AssemblyName System.Drawing
+          function Save-CandidateScreen {
+            $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+            $bmp.Save("$PWD/preferences-candidate.png")
+            $g.Dispose(); $bmp.Dispose()
+          }
+          $nameCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "PathBlender")
+          $main = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $nameCond)
+          if (-not $main) { Write-Host "::error::candidate main window not found"; Save-CandidateScreen; exit 1 }
+          $helpCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Help")
+          $help = $main.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $helpCond)
+          if (-not $help) { Write-Host "::error::Help menu not found"; Save-CandidateScreen; exit 1 }
+          $pat = $null
+          if ($help.TryGetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$pat)) { $pat.Expand() }
+          else {
+            $pat = $null
+            if ($help.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pat)) { $pat.Invoke() }
+            else {
+              $legacy = $null
+              if ($help.TryGetCurrentPattern([System.Windows.Automation.AutomationElement]::LegacyIAccessiblePattern, [ref]$legacy)) { $legacy.DoDefaultAction() }
+            }
+          }
+          Start-Sleep -Seconds 1
+          $itemCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Check for updates")
+          $item = $help.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $itemCond)
+          if (-not $item) {
+            $menuCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Menu)
+            foreach ($popup in [System.Windows.Automation.AutomationElement]::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, $menuCond)) {
+              $item = $popup.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $itemCond)
+              if ($item) { break }
+            }
+          }
+          if (-not $item) { Write-Host "::error::Check for updates menu item not found"; Save-CandidateScreen; exit 1 }
+          $pat = $null
+          if ($item.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$pat)) { $pat.Invoke() }
+          else {
+            $legacy = $null
+            if ($item.TryGetCurrentPattern([System.Windows.Automation.AutomationElement]::LegacyIAccessiblePattern, [ref]$legacy)) { $legacy.DoDefaultAction() }
+            else { Write-Host "::error::menu item is not invokable"; Save-CandidateScreen; exit 1 }
+          }
+          $prefsCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Preferences")
+          $deadline = (Get-Date).AddSeconds(30)
+          $prefs = $null
+          while ((Get-Date) -lt $deadline -and -not $prefs) {
+            $prefs = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $prefsCond)
+            if (-not $prefs) { Start-Sleep -Milliseconds 500 }
+          }
+          if (-not $prefs) { Write-Host "::error::Preferences window did not open"; Save-CandidateScreen; exit 1 }
+          $comboCond = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::ComboBox)
+          $deadline = (Get-Date).AddSeconds(30)
+          $combo = $null
+          while ((Get-Date) -lt $deadline -and -not $combo) {
+            $combo = $prefs.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $comboCond)
+            if (-not $combo) { Start-Sleep -Milliseconds 500 }
+          }
+          Save-CandidateScreen
+          if (-not $combo) { Write-Host "::error::Preferences has no channel combobox on the candidate build"; exit 1 }
+          Write-Host "Preferences opened with a live channel combobox on the candidate build"
       - name: Build offline NSIS installer
         # Beta-gate the second Windows artifact too: the overlay build embeds
         # the WebView2 Evergreen Standalone Installer. A bash step's exports
@@ -240,6 +309,7 @@ jobs:
           name: beta-verify-windows
           path: |
             smoke-screenshot.png
+            preferences-candidate.png
             smoke-result.txt
             smoke-offline-result.txt
             packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
