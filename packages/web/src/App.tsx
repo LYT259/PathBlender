@@ -1276,9 +1276,25 @@ function AppBody() {
     };
     window.addEventListener('pb-open-files', onOpen);
     // The shell may have delivered before React mounted — consume the stash.
+    // A service-worker recovery reload keeps the same one-shot payload in
+    // sessionStorage; remove it before importing so it cannot arrive twice.
     const w = window as { __pbOpenPayload?: unknown };
-    if (w.__pbOpenPayload) {
-      const stash = w.__pbOpenPayload;
+    let stash = w.__pbOpenPayload;
+    let recovered: string | null = null;
+    try {
+      recovered = sessionStorage.getItem('pb.open-files-recovery.v1');
+      sessionStorage.removeItem('pb.open-files-recovery.v1');
+    } catch {
+      recovered = null;
+    }
+    if (!stash && recovered) {
+      try {
+        stash = JSON.parse(recovered);
+      } catch {
+        stash = undefined;
+      }
+    }
+    if (stash) {
       delete w.__pbOpenPayload;
       deliver(stash);
     }

@@ -304,7 +304,17 @@ jobs:
           if (-not $proc.MainWindowTitle) { Write-Host "::error::PathBlender running but has no main window"; exit 1 }
           Write-Host "Window title: '$($proc.MainWindowTitle)'"
           "offline install running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath launch-offline-result.txt -Encoding utf8
-      - name: Assert the welcome UI and capture it
+      - name: Relaunch the offline app after a graceful close
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $proc = Get-Process -Name "pathblender-desktop" -ErrorAction Stop | Select-Object -First 1
+          $exe = $proc.Path
+          if (-not $proc.CloseMainWindow()) { throw "offline app refused CloseMainWindow" }
+          if (-not $proc.WaitForExit(30000)) { throw "offline app did not exit after CloseMainWindow" }
+          $second = Start-Process -FilePath $exe -PassThru
+          "offline second launch initiated, pid $($second.Id)" | Out-File -FilePath second-launch-result.txt -Encoding utf8
+      - name: Assert the welcome UI after the second launch and capture it
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -336,7 +346,8 @@ jobs:
             $help = Wait-NamedElement $main "Help" 60
             $import = Wait-NamedElement $main "Import path files" 60
             if (-not $help -or -not $import) { Write-Host "::error::welcome UI did not become ready (Help=$($null -ne $help), Import=$($null -ne $import))"; exit 1 }
-            Write-Host "Real welcome UI is ready: Help menu and Import path files button"
+            Write-Host "Real welcome UI is ready after the second launch: Help menu and Import path files button"
+            "offline second launch has real welcome content (Help and Import path files)" | Out-File -FilePath second-launch-result.txt -Encoding utf8
           } finally {
             Capture-Screen
           }
@@ -349,6 +360,7 @@ jobs:
             windows-screenshot.png
             launch-result.txt
             launch-offline-result.txt
+            second-launch-result.txt
             sha256.log
             sha256-offline.log
             release.json

@@ -16,7 +16,11 @@ import { ThemeProvider } from '../src/theme';
 const native = vi.hoisted(() => ({ invoke: vi.fn((_c: string, ..._a: unknown[]) => Promise.resolve()) }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: native.invoke }));
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  sessionStorage.clear();
+  Reflect.deleteProperty(window, '__pbOpenPayload');
+});
 
 const SAMPLES = resolve(__dirname, '../../../samples');
 const ghostautoB64 = (rel: string): string => {
@@ -66,6 +70,33 @@ describe('open-with channel', () => {
     await waitFor(() => expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument());
     expect(screen.getByText('0003', { selector: '.robot-name' })).toBeInTheDocument();
     expect((window as unknown as Record<string, unknown>).__pbOpenPayload).toBeUndefined();
+  });
+
+  it('consumes a recovery-stashed open payload once after the worker recovery reload', async () => {
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = { invoke: native.invoke };
+    sessionStorage.setItem('pb.open-files-recovery.v1', JSON.stringify([
+      ['straight_run.ghostauto', ghostautoB64('ghostauto/straight_run.ghostauto')],
+    ]));
+    renderApp();
+
+    await waitFor(() => expect(screen.getByText(/Robots \(1\)/)).toBeInTheDocument());
+    expect(screen.getByText('0001', { selector: '.robot-name' })).toBeInTheDocument();
+    expect(sessionStorage.getItem('pb.open-files-recovery.v1')).toBeNull();
+  });
+
+  it('keeps the welcome usable when recovery storage is unavailable', async () => {
+    const original = Storage.prototype.getItem;
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (this: Storage, key: string) {
+      if (key === 'pb.open-files-recovery.v1') throw new DOMException('storage unavailable', 'SecurityError');
+      return original.call(this, key);
+    });
+    try {
+      (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = { invoke: native.invoke };
+      renderApp();
+      await waitFor(() => expect(document.querySelector('header')).toBeTruthy());
+    } finally {
+      getItem.mockRestore();
+    }
   });
 
   it('ignores malformed payloads without crashing', async () => {
