@@ -343,6 +343,16 @@ jobs:
             $desktop = [System.Windows.Automation.AutomationElement]::RootElement
             $main = Wait-NamedElement $desktop "PathBlender" 60
             if (-not $main) { Write-Host "::error::main window not found"; exit 1 }
+            $handle = [IntPtr]$main.Current.NativeWindowHandle
+            if ($handle -eq [IntPtr]::Zero) { throw "main window has no native handle" }
+            Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class FocusNative { [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int command); }'
+            [void][FocusNative]::ShowWindowAsync($handle, 9)
+            $focused = [FocusNative]::SetForegroundWindow($handle)
+            Write-Host "[DEBUG-ui-refresh] SetForegroundWindow=$focused; main hwnd=$handle"
+            $children = $main.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
+            foreach ($el in $children) {
+              Write-Host "[DEBUG-ui-refresh] menu child: name='$($el.Current.Name)' type=$($el.Current.ControlType.ProgrammaticName) enabled=$($el.Current.IsEnabled) offscreen=$($el.Current.IsOffscreen)"
+            }
             $help = $null
             $helpDeadline = (Get-Date).AddSeconds(60)
             while ((Get-Date) -lt $helpDeadline) {

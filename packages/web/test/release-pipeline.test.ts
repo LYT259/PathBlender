@@ -1195,6 +1195,7 @@ describe('Windows service-worker recovery acceptance', () => {
     expect(workflow).toContain('second-launch-result.txt');
     expect(workflow).toContain('$helpDeadline = (Get-Date).AddSeconds(60)');
     expect(workflow).toContain('$main = Wait-NamedElement $desktop "PathBlender" 1');
+    expect(workflow).toContain('SetForegroundWindow');
   });
 
   it('unregisters only the legacy Tauri worker without clearing user data', () => {
