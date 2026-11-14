@@ -348,15 +348,8 @@ jobs:
             Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class FocusNative { [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int command); }'
             [void][FocusNative]::ShowWindowAsync($handle, 9)
             $focused = [FocusNative]::SetForegroundWindow($handle)
-            Write-Host "[DEBUG-ui-refresh] SetForegroundWindow=$focused; main hwnd=$handle"
-            $children = $main.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
-            foreach ($el in $children) {
-              Write-Host "[DEBUG-ui-refresh] menu child: name='$($el.Current.Name)' type=$($el.Current.ControlType.ProgrammaticName) enabled=$($el.Current.IsEnabled) offscreen=$($el.Current.IsOffscreen)"
-            }
-            $topLevel = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
-            foreach ($el in $topLevel) {
-              Write-Host "[DEBUG-ui-refresh] top-level: name='$($el.Current.Name)' type=$($el.Current.ControlType.ProgrammaticName) hwnd=$($el.Current.NativeWindowHandle) enabled=$($el.Current.IsEnabled) offscreen=$($el.Current.IsOffscreen)"
-            }
+            Write-Host "Native window focused: $focused"
+            # Win32 exposes the native menu text even when UIA only reports a pane.
             Add-Type -TypeDefinition 'using System; using System.Text; using System.Runtime.InteropServices; public static class NativeMenu { [DllImport("user32.dll")] public static extern IntPtr GetMenu(IntPtr hWnd); [DllImport("user32.dll")] public static extern int GetMenuItemCount(IntPtr hMenu); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetMenuStringW(IntPtr hMenu, uint item, StringBuilder text, int max, uint flags); }'
             function Get-NativeMenuLabels($windowHandle) {
               $menu = [NativeMenu]::GetMenu($windowHandle)
@@ -376,7 +369,7 @@ jobs:
               $main = Wait-NamedElement $desktop "PathBlender" 1
               if ($main) {
                 $labels = @(Get-NativeMenuLabels ([IntPtr]$main.Current.NativeWindowHandle))
-                Write-Host "[DEBUG-ui-refresh] native menu labels: $($labels -join ', ')"
+                Write-Host "Native menu labels: $($labels -join ', ')"
                 if ($labels -contains "Help") { $help = $true; break }
               }
               Start-Sleep -Milliseconds 400
