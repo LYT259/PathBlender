@@ -1171,3 +1171,46 @@ describe('update chain verification workflow (update-verify.yml)', () => {
     expect((run.match(/::error::/g) ?? []).length).toBeGreaterThan(0);
   });
 });
+
+describe('Windows service-worker recovery acceptance', () => {
+  it('recovers a legacy profile and proves an offline second launch in the beta gate', () => {
+    const workflow = readFileSync(resolve(ROOT, '.github/workflows/beta-verify.yml'), 'utf8');
+    expect(workflow).toContain('Seed a legacy Service Worker profile');
+    expect(workflow).toContain('PathBlender_0.1.10-beta.25_x64-setup.exe');
+    expect(workflow).toContain('Install and close the legacy app');
+    expect(workflow).toContain('EBWebView\\Default\\Service Worker\\ScriptCache');
+    expect(workflow).toContain('legacy-worker-seed.txt');
+    expect(workflow).toContain('Relaunch the offline app after a graceful close');
+    expect(workflow).toContain('CloseMainWindow()');
+    expect(workflow).toContain('Import path files');
+    expect(workflow).toContain('second-launch-result.txt');
+  });
+
+  it('proves a real offline second launch against published artifacts', () => {
+    const workflow = readFileSync(resolve(ROOT, '.github/workflows/release-verify.yml'), 'utf8');
+    expect(workflow).toContain('Relaunch the offline app after a graceful close');
+    expect(workflow).toContain('CloseMainWindow()');
+    expect(workflow).toContain('Import path files');
+    expect(workflow).toContain('second-launch-result.txt');
+  });
+
+  it('unregisters only the legacy Tauri worker without clearing user data', () => {
+    const shell = readFileSync(resolve(ROOT, 'packages/desktop/src-tauri/src/lib.rs'), 'utf8').replaceAll('\r\n', '\n');
+    expect(shell).toContain('#[cfg(target_os = "windows")]\nconst WINDOWS_SERVICE_WORKER_RECOVERY');
+    expect(shell).toContain('.eval(WINDOWS_SERVICE_WORKER_RECOVERY)');
+    expect(shell.indexOf('.eval(WINDOWS_SERVICE_WORKER_RECOVERY)')).toBeGreaterThan(shell.indexOf('window.__pbOpenPayload={json}'));
+    const start = shell.indexOf('const WINDOWS_SERVICE_WORKER_RECOVERY');
+    const script = shell.slice(start, shell.indexOf('"#;', start));
+    expect(script).toContain("location.hostname !== 'tauri.localhost'");
+    expect(script).toContain('navigator.serviceWorker.controller');
+    expect(script).toContain('navigator.serviceWorker.getRegistrations()');
+    expect(script).toContain("r.scope === location.origin + '/'");
+    expect(script).toContain('r.unregister()');
+    expect(script).toContain('removed.length === 0 || !removed.every(Boolean)');
+    expect(script).toContain("sessionStorage.setItem('pb.open-files-recovery.v1'");
+    expect(script).toContain('if (canReload) location.reload()');
+    expect(script).not.toContain('localStorage');
+    expect(script).not.toContain('caches.');
+    expect(script).not.toContain('clearBrowsingData');
+  });
+});

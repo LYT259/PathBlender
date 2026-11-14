@@ -22,6 +22,37 @@ mod hoot;
 
 const PREFS_WINDOW: &str = "prefs";
 
+// Windows Tauri uses an http origin. A legacy browser worker can turn later
+// shell navigations into blank documents; unregister only that worker and
+// reload, without touching the rest of the profile.
+#[cfg(target_os = "windows")]
+const WINDOWS_SERVICE_WORKER_RECOVERY: &str = r#"
+(() => {
+  if (location.hostname !== 'tauri.localhost' || !('serviceWorker' in navigator)) return;
+  const worker = navigator.serviceWorker.controller;
+  if (!worker || !worker.scriptURL.endsWith('/sw.js')) return;
+  void navigator.serviceWorker.getRegistrations()
+    .then((registrations) => Promise.all(
+      registrations
+        .filter((r) => r.scope === location.origin + '/')
+        .map((r) => r.unregister()),
+    ))
+    .then((removed) => {
+      if (removed.length === 0 || !removed.every(Boolean)) return;
+      let canReload = true;
+      try {
+        if (window.__pbOpenPayload) {
+          sessionStorage.setItem('pb.open-files-recovery.v1', JSON.stringify(window.__pbOpenPayload));
+        }
+      } catch {
+        canReload = false;
+      }
+      if (canReload) location.reload();
+    })
+    .catch(() => undefined);
+})();
+"#;
+
 /// Updater feeds per channel — the whitelist. Must stay in sync with
 /// scripts/gen-latest-json.mjs (which publishes latest.json /
 /// latest-beta.json onto GitHub releases). The channel choice cannot be
@@ -741,19 +772,20 @@ pub fn run() {
             Ok(())
         })
         .on_page_load(move |webview, payload| {
-            if payload.event() != tauri::webview::PageLoadEvent::Finished
-                || opened.is_empty()
-                || delivered.swap(true, Ordering::SeqCst)
-            {
+            if payload.event() != tauri::webview::PageLoadEvent::Finished {
                 return;
             }
-            let json = serde_json::to_string(&opened).expect("serialize argv files");
-            let js = format!(
-                "window.__pbOpenPayload={json};\
-                 window.dispatchEvent(new CustomEvent('pb-open-files',\
-                 {{detail:window.__pbOpenPayload}}))"
-            );
-            let _ = webview.eval(&js);
+            if !opened.is_empty() && !delivered.swap(true, Ordering::SeqCst) {
+                let json = serde_json::to_string(&opened).expect("serialize argv files");
+                let js = format!(
+                    "window.__pbOpenPayload={json};\
+                     window.dispatchEvent(new CustomEvent('pb-open-files',\
+                     {{detail:window.__pbOpenPayload}}))"
+                );
+                let _ = webview.eval(&js);
+            }
+            #[cfg(target_os = "windows")]
+            let _ = webview.eval(WINDOWS_SERVICE_WORKER_RECOVERY);
         })
         .on_menu_event(|app, event| {
             let id = event.id().as_ref();

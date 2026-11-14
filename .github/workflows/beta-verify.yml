@@ -88,6 +88,56 @@ jobs:
             }
             console.log('feed OK:', win.url);
           "
+      - name: Seed a legacy Service Worker profile
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v0.1.10-beta.25 --repo "$GITHUB_REPOSITORY" \
+            --pattern "PathBlender_0.1.10-beta.25_x64-setup.exe" --dir legacy
+      - name: Install and close the legacy app
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $setup = Get-ChildItem "legacy/*_x64-setup.exe" | Select-Object -First 1
+          if (-not $setup) { throw "legacy beta.25 setup.exe not found" }
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "legacy installer exit code $($p.ExitCode)" }
+          $key = Get-ChildItem "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-ItemProperty $_.PSPath } |
+            Where-Object { $_.DisplayName -eq "PathBlender" } |
+            Select-Object -First 1
+          $installDir = if ($key -and $key.InstallLocation) { $key.InstallLocation } else { "$env:LOCALAPPDATA\PathBlender" }
+          $exe = Join-Path $installDir.Trim('"', "'") "pathblender-desktop.exe"
+          if ((Get-Item $exe).VersionInfo.ProductVersion -ne "0.1.10-beta.25") { throw "legacy app version is not beta.25" }
+          Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes
+          $legacy = Start-Process -FilePath $exe -PassThru
+          $deadline = (Get-Date).AddSeconds(60)
+          do {
+            $legacy.Refresh()
+            if ($legacy.HasExited) { throw "legacy app exited before its first welcome page" }
+            $condition = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "PathBlender")
+            $main = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
+            $button = $null
+            if ($main) {
+              $condition = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Import path files")
+              $button = $main.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+            }
+            if ($button) { break }
+            Start-Sleep -Milliseconds 500
+          } while ((Get-Date) -lt $deadline)
+          if (-not $button) { throw "legacy first launch has no real welcome content" }
+          $workerDir = Join-Path $env:LOCALAPPDATA "org.gh-frc.pathblender\EBWebView\Default\Service Worker\ScriptCache"
+          $deadline = (Get-Date).AddSeconds(30)
+          do {
+            $workerFiles = @(Get-ChildItem -Path $workerDir -Recurse -File -ErrorAction SilentlyContinue)
+            if ($workerFiles.Count -gt 0) { break }
+            Start-Sleep -Milliseconds 500
+          } while ((Get-Date) -lt $deadline)
+          if ($workerFiles.Count -eq 0) { throw "legacy profile has no Service Worker script cache; recovery test would be vacuous" }
+          if (-not $legacy.CloseMainWindow()) { throw "legacy app refused CloseMainWindow" }
+          if (-not $legacy.WaitForExit(30000)) { throw "legacy app did not exit after CloseMainWindow" }
+          "legacy beta.25 first welcome verified; graceful exit complete; worker files: $($workerFiles.Count); profile retained for candidate recovery" | Out-File -FilePath legacy-worker-seed.txt -Encoding utf8
       - name: Silent install (per-user)
         shell: pwsh
         run: |
@@ -229,6 +279,7 @@ jobs:
           try {
             $main = Wait-Window "PathBlender" 30
             if (-not $main) { Write-Host "::error::candidate main window not found"; exit 1 }
+            if (-not (Wait-Element $main "Import path files" 30)) { Write-Host "::error::candidate main welcome content missing after legacy profile recovery"; exit 1 }
             $main.SetFocus()
             if (-not (Open-HelpMenuItem $main "Check for updates" 20)) { Write-Host "::error::Help > Check for updates was not invokable"; exit 1 }
             $prefs = Wait-Window "Preferences" 30
@@ -343,6 +394,32 @@ jobs:
           Write-Host "Window title: '$($proc.MainWindowTitle)'"
           if ($proc.MainWindowTitle -ne "PathBlender") { Write-Host "::warning::unexpected window title" }
           "offline install running, window: $($proc.MainWindowTitle), version: $actual" | Out-File -FilePath smoke-offline-result.txt
+      - name: Relaunch the offline app after a graceful close
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $proc = Get-Process -Name "pathblender-desktop" -ErrorAction Stop | Select-Object -First 1
+          $exe = $proc.Path
+          if (-not $proc.CloseMainWindow()) { throw "offline app refused CloseMainWindow" }
+          if (-not $proc.WaitForExit(30000)) { throw "offline app did not exit after CloseMainWindow" }
+          Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes
+          $second = Start-Process -FilePath $exe -PassThru
+          $deadline = (Get-Date).AddSeconds(60)
+          do {
+            $second.Refresh()
+            if ($second.HasExited) { throw "offline second launch exited before the welcome page" }
+            $condition = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "PathBlender")
+            $main = [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
+            $button = $null
+            if ($main) {
+              $condition = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, "Import path files")
+              $button = $main.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+            }
+            if ($button) { break }
+            Start-Sleep -Milliseconds 500
+          } while ((Get-Date) -lt $deadline)
+          if (-not $button) { throw "offline second launch has no real welcome content" }
+          "offline second launch has real welcome content (Import path files), pid $($second.Id)" | Out-File -FilePath second-launch-result.txt -Encoding utf8
       - name: Screenshot
         shell: pwsh
         run: |
@@ -356,6 +433,7 @@ jobs:
           $g.Dispose(); $bmp.Dispose()
           Write-Host "Screenshot saved: $PWD/smoke-screenshot.png"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: beta-verify-windows
           path: |
@@ -363,6 +441,8 @@ jobs:
             preferences-candidate.png
             smoke-result.txt
             smoke-offline-result.txt
+            legacy-worker-seed.txt
+            second-launch-result.txt
             packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
             packages/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe.sig
           if-no-files-found: error

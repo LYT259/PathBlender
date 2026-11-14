@@ -12,6 +12,8 @@ import { PrefsWindow } from './prefs-window';
 import { installFocusModality } from './focus-modality';
 import './app.css';
 import './workspace.css';
+import { isDesktop } from './pref-sync';
+import { registerServiceWorker } from './pwa';
 
 // Ring-or-not follows the physical input (mouse vs keyboard), not the
 // browser's :focus-visible guess — see focus-modality.ts. Covers the prefs
@@ -29,7 +31,7 @@ const isPrefsWindow = new URLSearchParams(location.search).get('window') === 'pr
 // bar — Windows keeps native decorations (titleBarStyle/trafficLightPosition
 // are macOS-only), so it must not reserve traffic-light space or inherit the
 // macOS vibrancy transparency (body would fall back to opaque --bg).
-if (typeof window !== 'undefined' && ('__TAURI_INTERNALS__' in window || window.location.protocol === 'tauri:' || window.location.protocol === 'asset:')) {
+if (isDesktop) {
   document.body.classList.add('desktop');
   if (/Macintosh/.test(navigator.userAgent)) document.body.classList.add('desktop-macos');
 }
@@ -46,19 +48,6 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 );
 
-// PWA: static-asset service worker, production builds only (study §7.1).
-// Browser contexts only — the Tauri desktop shell serves from tauri://,
-// where service workers don't register (and aren't needed: assets are local).
-if (
-  import.meta.env.PROD &&
-  'serviceWorker' in navigator &&
-  location.protocol.startsWith('http')
-) {
-  window.addEventListener('load', () => {
-    void navigator.serviceWorker
-      .register(new URL('sw.js', document.baseURI).href)
-      .catch(() => {
-        /* offline install is a bonus, never fatal */
-      });
-  });
-}
+// PWA belongs to the browser. The desktop shell already serves local assets;
+// on Windows its http origin must not be intercepted by a service worker.
+registerServiceWorker(import.meta.env.PROD);
