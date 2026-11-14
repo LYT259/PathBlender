@@ -353,12 +353,16 @@ jobs:
             foreach ($el in $children) {
               Write-Host "[DEBUG-ui-refresh] menu child: name='$($el.Current.Name)' type=$($el.Current.ControlType.ProgrammaticName) enabled=$($el.Current.IsEnabled) offscreen=$($el.Current.IsOffscreen)"
             }
+            $topLevel = $desktop.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
+            foreach ($el in $topLevel) {
+              Write-Host "[DEBUG-ui-refresh] top-level: name='$($el.Current.Name)' type=$($el.Current.ControlType.ProgrammaticName) hwnd=$($el.Current.NativeWindowHandle) enabled=$($el.Current.IsEnabled) offscreen=$($el.Current.IsOffscreen)"
+            }
             $help = $null
             $helpDeadline = (Get-Date).AddSeconds(60)
             while ((Get-Date) -lt $helpDeadline) {
               $main = Wait-NamedElement $desktop "PathBlender" 1
               if ($main) {
-                $help = Wait-NamedElement $main "Help" 1
+                $help = Wait-NamedElement $desktop "Help" 1
                 if ($help) { break }
               }
               Start-Sleep -Milliseconds 400
