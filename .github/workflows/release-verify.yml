@@ -357,13 +357,27 @@ jobs:
             foreach ($el in $topLevel) {
               Write-Host "[DEBUG-ui-refresh] top-level: name='$($el.Current.Name)' type=$($el.Current.ControlType.ProgrammaticName) hwnd=$($el.Current.NativeWindowHandle) enabled=$($el.Current.IsEnabled) offscreen=$($el.Current.IsOffscreen)"
             }
+            Add-Type -TypeDefinition 'using System; using System.Text; using System.Runtime.InteropServices; public static class NativeMenu { [DllImport("user32.dll")] public static extern IntPtr GetMenu(IntPtr hWnd); [DllImport("user32.dll")] public static extern int GetMenuItemCount(IntPtr hMenu); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetMenuStringW(IntPtr hMenu, uint item, StringBuilder text, int max, uint flags); }'
+            function Get-NativeMenuLabels($windowHandle) {
+              $menu = [NativeMenu]::GetMenu($windowHandle)
+              if ($menu -eq [IntPtr]::Zero) { return @() }
+              $count = [NativeMenu]::GetMenuItemCount($menu)
+              $labels = @()
+              for ($i = 0; $i -lt $count; $i++) {
+                $text = New-Object System.Text.StringBuilder 256
+                [void][NativeMenu]::GetMenuStringW($menu, [uint32]$i, $text, $text.Capacity, 0x400)
+                $labels += $text.ToString().TrimStart('&')
+              }
+              return $labels
+            }
             $help = $null
             $helpDeadline = (Get-Date).AddSeconds(60)
             while ((Get-Date) -lt $helpDeadline) {
               $main = Wait-NamedElement $desktop "PathBlender" 1
               if ($main) {
-                $help = Wait-NamedElement $desktop "Help" 1
-                if ($help) { break }
+                $labels = @(Get-NativeMenuLabels ([IntPtr]$main.Current.NativeWindowHandle))
+                Write-Host "[DEBUG-ui-refresh] native menu labels: $($labels -join ', ')"
+                if ($labels -contains "Help") { $help = $true; break }
               }
               Start-Sleep -Milliseconds 400
             }

@@ -602,7 +602,8 @@ describe('published-release verification workflow (release-verify.yml)', () => {
     const run = runText(windows);
     expect(run).toContain('function Wait-NamedElement');
     expect(run).toContain('$helpDeadline = (Get-Date).AddSeconds(60)');
-    expect(run).toContain('$help = Wait-NamedElement $desktop "Help" 1');
+    expect(run).toContain('GetMenuStringW');
+    expect(run).toContain('GetMenuItemCount');
     expect(run).toContain('$import = Wait-NamedElement $main "Import path files" 60');
     expect(run).toContain('if (-not $help -or -not $import)');
     expect(run).toContain('} finally {');
