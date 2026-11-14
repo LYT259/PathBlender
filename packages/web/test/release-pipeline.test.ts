@@ -601,7 +601,9 @@ describe('published-release verification workflow (release-verify.yml)', () => {
   it('requires real Windows welcome content before capturing the release screenshot', () => {
     const run = runText(windows);
     expect(run).toContain('function Wait-NamedElement');
-    expect(run).toContain('$help = Wait-NamedElement $main "Help" 60');
+    expect(run).toContain('$helpDeadline = (Get-Date).AddSeconds(60)');
+    expect(run).toContain('GetMenuStringW');
+    expect(run).toContain('GetMenuItemCount');
     expect(run).toContain('$import = Wait-NamedElement $main "Import path files" 60');
     expect(run).toContain('if (-not $help -or -not $import)');
     expect(run).toContain('} finally {');
@@ -1192,6 +1194,9 @@ describe('Windows service-worker recovery acceptance', () => {
     expect(workflow).toContain('CloseMainWindow()');
     expect(workflow).toContain('Import path files');
     expect(workflow).toContain('second-launch-result.txt');
+    expect(workflow).toContain('$helpDeadline = (Get-Date).AddSeconds(60)');
+    expect(workflow).toContain('$main = Wait-NamedElement $desktop "PathBlender" 1');
+    expect(workflow).toContain('SetForegroundWindow');
   });
 
   it('unregisters only the legacy Tauri worker without clearing user data', () => {

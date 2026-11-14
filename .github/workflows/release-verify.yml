@@ -343,7 +343,37 @@ jobs:
             $desktop = [System.Windows.Automation.AutomationElement]::RootElement
             $main = Wait-NamedElement $desktop "PathBlender" 60
             if (-not $main) { Write-Host "::error::main window not found"; exit 1 }
-            $help = Wait-NamedElement $main "Help" 60
+            $handle = [IntPtr]$main.Current.NativeWindowHandle
+            if ($handle -eq [IntPtr]::Zero) { throw "main window has no native handle" }
+            Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class FocusNative { [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int command); }'
+            [void][FocusNative]::ShowWindowAsync($handle, 9)
+            $focused = [FocusNative]::SetForegroundWindow($handle)
+            Write-Host "Native window focused: $focused"
+            # Win32 exposes the native menu text even when UIA only reports a pane.
+            Add-Type -TypeDefinition 'using System; using System.Text; using System.Runtime.InteropServices; public static class NativeMenu { [DllImport("user32.dll")] public static extern IntPtr GetMenu(IntPtr hWnd); [DllImport("user32.dll")] public static extern int GetMenuItemCount(IntPtr hMenu); [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetMenuStringW(IntPtr hMenu, uint item, StringBuilder text, int max, uint flags); }'
+            function Get-NativeMenuLabels($windowHandle) {
+              $menu = [NativeMenu]::GetMenu($windowHandle)
+              if ($menu -eq [IntPtr]::Zero) { return @() }
+              $count = [NativeMenu]::GetMenuItemCount($menu)
+              $labels = @()
+              for ($i = 0; $i -lt $count; $i++) {
+                $text = New-Object System.Text.StringBuilder 256
+                [void][NativeMenu]::GetMenuStringW($menu, [uint32]$i, $text, $text.Capacity, 0x400)
+                $labels += $text.ToString().TrimStart('&')
+              }
+              return $labels
+            }
+            $help = $null
+            $helpDeadline = (Get-Date).AddSeconds(60)
+            while ((Get-Date) -lt $helpDeadline) {
+              $main = Wait-NamedElement $desktop "PathBlender" 1
+              if ($main) {
+                $labels = @(Get-NativeMenuLabels ([IntPtr]$main.Current.NativeWindowHandle))
+                Write-Host "Native menu labels: $($labels -join ', ')"
+                if ($labels -contains "Help") { $help = $true; break }
+              }
+              Start-Sleep -Milliseconds 400
+            }
             $import = Wait-NamedElement $main "Import path files" 60
             if (-not $help -or -not $import) { Write-Host "::error::welcome UI did not become ready (Help=$($null -ne $help), Import=$($null -ne $import))"; exit 1 }
             Write-Host "Real welcome UI is ready after the second launch: Help menu and Import path files button"
