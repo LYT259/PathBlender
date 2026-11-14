@@ -1195,7 +1195,7 @@ describe('Windows service-worker recovery acceptance', () => {
   });
 
   it('unregisters only the legacy Tauri worker without clearing user data', () => {
-    const shell = readFileSync(resolve(ROOT, 'packages/desktop/src-tauri/src/lib.rs'), 'utf8');
+    const shell = readFileSync(resolve(ROOT, 'packages/desktop/src-tauri/src/lib.rs'), 'utf8').replaceAll('\r\n', '\n');
     expect(shell).toContain('#[cfg(target_os = "windows")]\nconst WINDOWS_SERVICE_WORKER_RECOVERY');
     expect(shell).toContain('.eval(WINDOWS_SERVICE_WORKER_RECOVERY)');
     expect(shell.indexOf('.eval(WINDOWS_SERVICE_WORKER_RECOVERY)')).toBeGreaterThan(shell.indexOf('window.__pbOpenPayload={json}'));
