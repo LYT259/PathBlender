@@ -343,7 +343,16 @@ jobs:
             $desktop = [System.Windows.Automation.AutomationElement]::RootElement
             $main = Wait-NamedElement $desktop "PathBlender" 60
             if (-not $main) { Write-Host "::error::main window not found"; exit 1 }
-            $help = Wait-NamedElement $main "Help" 60
+            $help = $null
+            $helpDeadline = (Get-Date).AddSeconds(60)
+            while ((Get-Date) -lt $helpDeadline) {
+              $main = Wait-NamedElement $desktop "PathBlender" 1
+              if ($main) {
+                $help = Wait-NamedElement $main "Help" 1
+                if ($help) { break }
+              }
+              Start-Sleep -Milliseconds 400
+            }
             $import = Wait-NamedElement $main "Import path files" 60
             if (-not $help -or -not $import) { Write-Host "::error::welcome UI did not become ready (Help=$($null -ne $help), Import=$($null -ne $import))"; exit 1 }
             Write-Host "Real welcome UI is ready after the second launch: Help menu and Import path files button"
